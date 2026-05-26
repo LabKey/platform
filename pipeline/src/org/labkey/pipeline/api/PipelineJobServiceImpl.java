@@ -686,7 +686,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String typeDefaultValue = null;
 
         if (!typeOptions.isEmpty())
-            typeDefaultValue = typeOptions.get(0).getValue();
+            typeDefaultValue = typeOptions.getFirst().getValue();
 
         List<Option<String>> taskOptions = new ArrayList<>();
         List<FileAnalysisTaskPipeline> tasks = getTaskPipelines(container)
@@ -1264,13 +1264,13 @@ public class PipelineJobServiceImpl implements PipelineJobService
                     .mapToInt(Map::size)
                     .sum();
 
-            LOG.info(pipelineCount + " task pipelines defined in all modules");
+            LOG.info("{} task pipelines defined in all modules", pipelineCount);
 
             int factoryCount = TASK_FACTORY_CACHE.streamAllResourceMaps()
                     .mapToInt(Map::size)
                     .sum();
 
-            LOG.info(factoryCount + " task factories defined in all modules");
+            LOG.info("{} task factories defined in all modules", factoryCount);
 
             // Make sure the cache retrieves the expected number of pipelines and factories from a couple test modules,
             // if an R engine is configured and the test modules are present

@@ -241,23 +241,9 @@ public class VisualizationSQLGenerator implements HasViewContext
 
                                 newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
                             }
-                            else if (dateOptions.isZeroDayVisitTagSet())
-                            {
-                                VisualizationSourceColumn zeroDayCol = null;
-                                boolean useProtocolDay = dateOptions.isUseProtocolDay();
-
-                                //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
-                                if (null != dateOptions.getZeroDayVisitTag())
-                                {
-                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false, dateOptions);
-                                    ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
-                                }
-
-                                newInterval = new VisualizationIntervalColumn(zeroDayCol, measureCol, interval, true);
-                            }
                             else
                             {
-                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are required.");
+                                throw new IllegalArgumentException("Either 'dateCol' or 'zeroDateCol' must be specified for date-based charts");
                             }
 
                             if (interval != null)
@@ -484,7 +470,6 @@ public class VisualizationSQLGenerator implements HasViewContext
 
 
     private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
-            throws SQLGenerationException
     {
         Map<String, Set<VisualizationSourceColumn>> columnAliases = getColumnMapping(_columnFactory, queries);
 
@@ -610,7 +595,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             if (query.getJoinTarget() == null)
             {
-                reorderedQueries.add(0, query);
+                reorderedQueries.addFirst(query);
             }
             else
             {
@@ -1006,12 +991,7 @@ public class VisualizationSQLGenerator implements HasViewContext
 
     private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, Set<VisualizationSourceColumn> newAliases)
     {
-        Set<VisualizationSourceColumn> aliases = colMap.get(name);
-        if (aliases == null)
-        {
-            aliases = new LinkedHashSet<>();
-            colMap.put(name, aliases);
-        }
+        Set<VisualizationSourceColumn> aliases = colMap.computeIfAbsent(name, _ -> new LinkedHashSet<>());
         aliases.addAll(newAliases);
     }
 
@@ -1258,7 +1238,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
                 // this is a surprise! we're implicitly grouping by participant,visit as well as gender
-                assertTrue(48 == r.getSize());        // Female, female, Male, male, null
+                assertEquals(48, r.getSize());        // Female, female, Male, male, null
                 assertEquals(8, r.getMetaData().getColumnCount());  // gender, count(*), avg(), stddev(), stderr()
             }
 
@@ -1315,7 +1295,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             q.addMeasure(ptid).addMeasure(condition);
             try (ResultsImpl r = (ResultsImpl)getResults(q))
             {
-                assertTrue(48 == r.getSize());
+                assertEquals(48, r.getSize());
                 assertEquals(4, r.getMetaData().getColumnCount());
             }
 

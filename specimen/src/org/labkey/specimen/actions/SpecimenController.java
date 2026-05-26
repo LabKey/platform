@@ -64,8 +64,10 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -152,6 +154,7 @@ import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestException;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
+import org.labkey.specimen.importer.QueryBasedSpecimenTransform;
 import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
@@ -195,7 +198,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -5678,7 +5680,7 @@ public class SpecimenController extends SpringActionController
                 }
                 catch (Exception e)
                 {
-                    LOG.error("Error encountered trying to get " + StudyService.get().getSubjectNounSingular(getContainer()) + " comments", e);
+                    LOG.error("Error encountered trying to get {} comments", StudyService.get().getSubjectNounSingular(getContainer()), e);
                 }
             }
             return null;
@@ -5757,6 +5759,145 @@ public class SpecimenController extends SpringActionController
         {
             super.addNavTrail(root);
             root.addChild("Insert " + _form.getQueryName());
+        }
+    }
+
+    public static class ConfigForm
+    {
+        private String _schemaName;
+        private String _queryName;
+        private String _viewName;
+        private String _enabled;
+        private int _userId;
+
+        public int getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            _userId = userId;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+
+        public String getEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(String enabled)
+        {
+            _enabled = enabled;
+        }
+
+        public Map<String, String> getOptions()
+        {
+            Map<String, String> valueMap = new HashMap<>();
+            valueMap.put("schemaName", _schemaName);
+            valueMap.put("queryName", _queryName);
+            valueMap.put("viewName", _viewName);
+            valueMap.put("enabled", _enabled);
+            valueMap.put("userId", String.valueOf(_userId));
+            return valueMap;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ConfigureQueryImportAction extends FormViewAction<ConfigForm>
+    {
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Query-based specimen import");
+        }
+
+        @Override
+        public void validateCommand(ConfigForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ConfigForm form, boolean reshow, BindException errors)
+        {
+            return new JspView<>("/org/labkey/specimen/view/configureQueryImport.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ConfigForm form, BindException errors)
+        {
+            String QBSpecimenImportKey = QueryBasedSpecimenTransform.PROPERTY_MAP_KEY;
+            WritablePropertyMap props = PropertyManager.getWritableProperties(getContainer(), QBSpecimenImportKey, true);
+            form.setUserId(getUser().getUserId());
+            Map<String, String> valuesToPersist = form.getOptions();
+
+            if (!valuesToPersist.isEmpty())
+            {
+                props.putAll(valuesToPersist);
+                props.save();
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ConfigForm configForm)
+        {
+            return PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(getContainer());
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ReloadQueryBasedImportAction extends MutatingApiAction<ConfigForm>
+    {
+        @Override
+        public Object execute(ConfigForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            try
+            {
+                SpecimenTransform transform = SpecimenService.get().getSpecimenTransform(QueryBasedSpecimenTransform.NAME);
+                PipelineJob job = SpecimenService.get().createSpecimenReloadJob(getContainer(), getUser(), transform, getViewContext().getActionURL());
+
+                PipelineService.get().queueJob(job);
+                response.put("success", true);
+            }
+            catch (PipelineValidationException e)
+            {
+                throw new IOException(e);
+            }
+            return response;
         }
     }
 }

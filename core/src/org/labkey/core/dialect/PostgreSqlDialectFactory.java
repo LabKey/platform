@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
+import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.PostgreSqlServerType;
@@ -143,6 +144,11 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     public static PostgreSql_13_Dialect getOldestSupportedDialect()
     {
         return new PostgreSql_13_Dialect();
+    }
+
+    public static BasePostgreSqlDialect getLatestSupportedDialect()
+    {
+        return new PostgreSql_18_Dialect();
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase

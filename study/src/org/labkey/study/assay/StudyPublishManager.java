@@ -516,7 +516,7 @@ public class StudyPublishManager implements StudyPublishService
 
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
-                    LOG.info("Can't create provenance run; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    LOG.info("Can't create provenance run; Assay provider '{}' for assay '{}' has no result row lsid prefix", provider.getName(), protocol.getName());
                     return;
                 }
 
@@ -1078,7 +1078,7 @@ public class StudyPublishManager implements StudyPublishService
     @Nullable
     public ActionURL autoLinkAssayResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {
-        LOG.debug("Considering whether to attempt auto-link results from assay run " + run.getName() + " from container " + container.getPath());
+        LOG.debug("Considering whether to attempt auto-link results from assay run {} from container {}", run.getName(), container.getPath());
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI) != null)
         {
@@ -1086,7 +1086,7 @@ public class StudyPublishManager implements StudyPublishService
             String targetStudyContainerId = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI).getStringValue();
             if (targetStudyContainerId != null)
             {
-                LOG.debug("Found configured target study container ID, " + targetStudyContainerId + " for auto-linking with " + run.getName() + " from container " + container.getPath());
+                LOG.debug("Found configured target study container ID, {} for auto-linking with {} from container {}", targetStudyContainerId, run.getName(), container.getPath());
                 final Container targetStudyContainer = ContainerManager.getForId(targetStudyContainerId);
 
                 // Determine if the category is predefined
@@ -1094,7 +1094,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI) != null)
                 {
                     categoryName = protocol.getObjectProperties().get(StudyPublishService.AUTO_LINK_CATEGORY_PROPERTY_URI).getStringValue();
-                    LOG.debug("Obtained predefined Dataset Category to assign, " + categoryName);
+                    LOG.debug("Obtained predefined Dataset Category to assign, {}", categoryName);
                 }
 
                 return autoLinkResults(protocol, provider, run, user, container, targetStudyContainer, categoryName, errors, LOG);
@@ -1125,6 +1125,11 @@ public class StudyPublishManager implements StudyPublishService
                 qs.setSchemaName(SamplesSchema.SCHEMA_NAME);
                 qs.setQueryName(sampleType.getName());
                 qs.setBaseFilter(new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), keys));
+
+                // GitHub Issue #901 : lineage sourced subject or timepoint information are not resolving in cross folder configurations
+                ContainerFilter cf = QueryService.get().getContainerFilterForFolder(container, user);
+                if (cf != null)
+                    qs.setContainerFilterName(cf.getType().name());
 
                 Map<StudyPublishService.LinkToStudyKeys, FieldKey> fieldKeyMap = StudyPublishService.get().getSamplePublishFieldKeys(user, container, sampleType, qs);
                 UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
@@ -1180,7 +1185,7 @@ public class StudyPublishManager implements StudyPublishService
     @Override
     public void autoLinkSamples(ExpSampleType sampleType, List<Map<FieldKey, Object>> results, Container container, User user)
     {
-        LOG.debug(String.format("Considering whether to attempt auto-link results for row insert to %s from container %s", sampleType.getName(), container.getPath()));
+        LOG.debug("Considering whether to attempt auto-link results for row insert to {} from container {}", sampleType.getName(), container.getPath());
 
         Container targetContainer = sampleType.getAutoLinkTargetContainer();
         List<String> publishErrors = new ArrayList<>();
@@ -1197,7 +1202,7 @@ public class StudyPublishManager implements StudyPublishService
                 String sampleTypeName = sampleType.getName();
                 String containerPath = container.getPath();
 
-                LOG.debug(String.format("Found configured target study container ID, %s for auto-linking with %s from container %s", study.getShortName(), sampleTypeName, containerPath));
+                LOG.debug("Found configured target study container ID, {} for auto-linking with {} from container {}", study.getShortName(), sampleTypeName, containerPath);
 
                 Set<Study> validStudies = StudyPublishService.get().getValidPublishTargets(user, InsertPermission.class);
                 if (validStudies.contains(study))
@@ -1205,7 +1210,7 @@ public class StudyPublishManager implements StudyPublishService
                     // Issue 49253 : QueryView needs a view context to initialize properly. Ensure a mock view context when running in the background
                     try (EnsureViewContext ignore = new EnsureViewContext(container, user))
                     {
-                        LOG.debug(String.format("Resolved target study in container %s for auto-linking with %s from container %s", targetContainerPath, sampleTypeName, containerPath));
+                        LOG.debug("Resolved target study in container {} for auto-linking with {} from container {}", targetContainerPath, sampleTypeName, containerPath);
                         List<Map<String, Object>> dataMaps = new ArrayList<>();
 
                         // attempt to match up the subject/timepoint information even if the sample has not been published to
@@ -1231,10 +1236,11 @@ public class StudyPublishManager implements StudyPublishService
                             for (Map<FieldKey, Object> row : results)
                             {
                                 Object timePointValue = getTimepointValue(row, publishKeys, visitBased, translateMap);
-                                if (row.containsKey(publishKeys.get(LinkToStudyKeys.ParticipantId)) && timePointValue != null)
+                                Object subjectId = row.get(publishKeys.get(LinkToStudyKeys.ParticipantId));
+                                if (subjectId != null  && timePointValue != null)
                                 {
                                     dataMaps.add(Map.of(
-                                            LinkToStudyKeys.ParticipantId.name(), row.get(publishKeys.get(LinkToStudyKeys.ParticipantId)),
+                                            LinkToStudyKeys.ParticipantId.name(), subjectId,
                                             timePointPropName, timePointValue,
                                             StudyPublishService.ROWID_PROPERTY_NAME, row.get(FieldKey.fromParts(StudyPublishService.ROWID_PROPERTY_NAME)),
                                             StudyPublishService.SOURCE_LSID_PROPERTY_NAME, sampleType.getLSID()
@@ -1261,12 +1267,12 @@ public class StudyPublishManager implements StudyPublishService
                 }
                 else
                 {
-                    LOG.error("Insufficient permission to link assay data to study in folder : " + targetContainerPath);
+                    LOG.error("Insufficient permission to link assay data to study in folder : {}", targetContainerPath);
                 }
             }
             else
             {
-                LOG.info("Unable to link the assay data, there is no study in the folder: " + targetContainerPath);
+                LOG.info("Unable to link the assay data, there is no study in the folder: {}", targetContainerPath);
             }
         }
     }
@@ -1328,11 +1334,11 @@ public class StudyPublishManager implements StudyPublishService
                 if (!hasPermission)
                 {
                     // We don't have permission to create or add to
-                    log.error("Insufficient permission to link assay data to study in folder : " + targetStudyContainer.getPath());
+                    log.error("Insufficient permission to link assay data to study in folder : {}", targetStudyContainer.getPath());
                     return null;
                 }
 
-                log.debug("Resolved target study in container " + targetStudyContainer.getPath() + " for auto-linking with " + run.getName() + " from container " + container.getPath());
+                log.debug("Resolved target study in container {} for auto-linking with {} from container {}", targetStudyContainer.getPath(), run.getName(), container.getPath());
 
                 FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
                 FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
@@ -1350,7 +1356,7 @@ public class StudyPublishManager implements StudyPublishService
                     for (ColumnInfo c : resultTable.getColumns())
                     {
                         // Check for a column with the PTID concept URI instead
-                        if (org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                        if (PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
                         {
                             ptidFK = c.getFieldKey();
                         }
@@ -1382,27 +1388,27 @@ public class StudyPublishManager implements StudyPublishService
                         {
                             float visitId = Float.parseFloat(visit.toString());
                             key = new PublishKey(targetContainer, ptid, visitId, objectId);
-                            log.debug("Resolved info (" + ptid + "/" + visitId + ") for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                            log.debug("Resolved info ({}/{}) for auto-linking of row {} for {} from container {}", ptid, visitId, objectId, run.getName(), container.getPath());
                         }
                         else
                         {
                             Date date = (Date) ConvertUtils.convert(visit.toString(), Date.class);
                             key = new PublishKey(targetContainer, ptid, date, objectId);
-                            log.debug("Resolved info (" + ptid + "/" + date + ") for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                            log.debug("Resolved info ({}/{}) for auto-linking of row {} for {} from container {}", ptid, date, objectId, run.getName(), container.getPath());
                         }
                         keys.put(objectId, key);
                     }
                     else
                     {
-                        log.debug("Missing ptid and/or visit info for auto-linking of row " + objectId + " for " + run.getName() + " from container " + container.getPath());
+                        log.debug("Missing ptid and/or visit info for auto-linking of row {} for {} from container {}", objectId, run.getName(), container.getPath());
                     }
                 });
 
-                log.debug("Identified " + keys + " rows with sufficient data to link to " + targetStudyContainer.getPath() + " for auto-linking with " + run.getName() + " from container " + container.getPath());
+                log.debug("Identified {} rows with sufficient data to link to {} for auto-linking with {} from container {}", keys, targetStudyContainer.getPath(), run.getName(), container.getPath());
                 return provider.linkToStudy(user, container, protocol, targetStudyContainer, datasetCategory, keys, errors);
             }
             else
-                log.info("Unable to link the assay data, there is no study in the folder: " + targetStudyContainer.getPath());
+                log.info("Unable to link the assay data, there is no study in the folder: {}", targetStudyContainer.getPath());
         }
         return null;
     }
@@ -1512,7 +1518,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Pair<String,Long>> pairs)
+    public void addRecallAuditEvent(Container sourceContainer, User user, Dataset def, int rowCount, @Nullable Collection<Long> rowIds)
     {
         Dataset.PublishSource sourceType = def.getPublishSource();
         if (sourceType != null)
@@ -1533,15 +1539,14 @@ public class StudyPublishManager implements StudyPublishService
             AuditLogService.get().addEvent(user, event);
 
             // Create sample timeline event for each of the samples
-            if (sourceType == Dataset.PublishSource.SampleType && pairs != null)
+            if (sourceType == Dataset.PublishSource.SampleType && rowIds != null && !rowIds.isEmpty())
             {
                 var timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.RECALL;
                 Map<String, Object> eventMetadata = new HashMap<>();
                 eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, timelineEventType.name());
                 String metadata = AbstractAuditTypeProvider.encodeForDataMap(eventMetadata);
 
-                List<Long> sampleIds = pairs.stream().map(Pair::getValue).collect(toList());
-                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(sampleIds);
+                List<? extends ExpMaterial> samples = ExperimentService.get().getExpMaterials(rowIds);
                 List<AuditTypeEvent> events = new ArrayList<>(samples.size());
                 for (ExpMaterial sample : samples)
                 {
@@ -1712,7 +1717,7 @@ public class StudyPublishManager implements StudyPublishService
 
                 if (col != null)
                 {
-                    if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    if (PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                     {
                         if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
                             fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
@@ -1722,7 +1727,7 @@ public class StudyPublishManager implements StudyPublishService
                             fieldKeyMap.put(LinkToStudyKeys.VisitLabel, ci.getFieldKey());
                     }
 
-                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
                     {
                         fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
                     }

@@ -174,7 +174,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -308,12 +307,6 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlReportInfo(Container c)
-        {
-            return new ActionURL(ReportInfoAction.class, c);
-        }
-
-        @Override
         public ActionURL urlAttachmentReport(Container c, ActionURL returnUrl)
         {
             return getCreateAttachmentReportURL(c, returnUrl);
@@ -326,9 +319,12 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlReportDetails(Container c, Report r)
+        public ActionURL urlReportDetails(Container c, @Nullable Report report)
         {
-            return new ActionURL(DetailsAction.class, c).addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+            ActionURL url = new ActionURL(DetailsAction.class, c);
+            if (report != null)
+                url.addParameter(ReportDescriptor.Prop.reportId, report.getDescriptor().getReportId().toString());
+            return url;
         }
 
         @Override
@@ -837,7 +833,7 @@ public class ReportsController extends SpringActionController
             Report report = bean.getReport(getViewContext());
             if (report != null)
             {
-                _log.trace("Executing report: " + report.getClass().getSimpleName());
+                _log.trace("Executing report: {}", report.getClass().getSimpleName());
                 if (bean.getIsDirty())
                     report.clearCache();
 
@@ -852,9 +848,9 @@ public class ReportsController extends SpringActionController
                 else
                 {
                     HttpView<?> renderedReport = report.renderReport(getViewContext());
-                    _log.trace("Report views: " + (renderedReport == null ? null : (
+                    _log.trace("Report views: {}", renderedReport == null ? null : (
                             renderedReport.getViews() == null ? renderedReport.getClass().getSimpleName() :
-                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", ")))));
+                                    renderedReport.getViews().stream().map(mv -> mv.getClass().getSimpleName()).collect(Collectors.joining(", "))));
                     resultsView.addView(renderedReport);
                 }
             }
@@ -894,13 +890,13 @@ public class ReportsController extends SpringActionController
 
             if (mr.getStatus() != HttpServletResponse.SC_OK)
             {
-                _log.trace("Report error. Status: " + mr.getStatus());
+                _log.trace("Report error. Status: {}", mr.getStatus());
                 resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
                 return null;
             }
 
             final String html = mr.getContentAsString();
-            _log.trace("Report rendered. Size: " + html.length());
+            _log.trace("Report rendered. Size: {}", html.length());
             resultProperties.put("html", html);
             resultProperties.put("requiredJsScripts", includes);
             resultProperties.put("requiredCssScripts", cssScripts);
@@ -1173,66 +1169,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public static class ReportInfoAction extends SimpleViewAction<ReportDesignBean<?>>
-    {
-        @Override
-        public ModelAndView getView(ReportDesignBean<?> form, BindException errors) throws Exception
-        {
-            return new ReportInfoView(form.getReport(getViewContext()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Report Debug Information");
-        }
-    }
-
-
-    public static class ReportInfoView extends HttpView<Object>
-    {
-        private final Report _report;
-
-        public ReportInfoView(Report report)
-        {
-            _report = report;
-        }
-
-        @Override
-        protected void renderInternal(Object model, PrintWriter out)
-        {
-            if (_report != null)
-            {
-                out.write("<table>");
-                addRow(out, "Name", PageFlowUtil.filter(_report.getDescriptor().getReportName()));
-
-                User user = UserManager.getUser(_report.getDescriptor().getCreatedBy());
-                if (user != null)
-                    addRow(out, "Created By", PageFlowUtil.filter(user.getDisplayName(getViewContext().getUser())));
-
-                addRow(out, "Key", PageFlowUtil.filter(_report.getDescriptor().getReportKey()));
-                for (Map.Entry<String, Object> prop : _report.getDescriptor().getProperties().entrySet())
-                {
-                    addRow(out, PageFlowUtil.filter(prop.getKey()), PageFlowUtil.filter(Objects.toString(prop.getValue(), "")));
-                }
-                out.write("<table>");
-            }
-            else
-                out.write("Report not found");
-        }
-
-        private void addRow(PrintWriter out, String key, String value)
-        {
-            out.write("<tr><td>");
-            out.write(key);
-            out.write("</td><td>");
-            out.write(value);
-            out.write("</td></tr>");
-        }
-    }
-
-
     protected void validatePermissions(ViewContext context, ScriptReport report, List<ValidationError> errors)
     {
         if (report != null)
@@ -1245,7 +1181,7 @@ public class ReportsController extends SpringActionController
 
                     if (engine != null)
                     {
-                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().get(0)))
+                        if (!ReportUtil.canCreateScript(context, engine.getFactory().getExtensions().getFirst()))
                             //TODO update the message text
                             errors.add(new SimpleValidationError("Only users with the site Analyst permission are allowed to create script views."));
                     }
@@ -1521,13 +1457,13 @@ public class ReportsController extends SpringActionController
 
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private, max-age=3600");
-                        _log.debug("Caching file: " + file);
+                        _log.debug("Caching file: {}", file);
                     }
                     PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
                     {
                         file.delete();
-                        _log.debug("Deleting file: " + file);
+                        _log.debug("Deleting file: {}", file);
                     }
                     return null;
                 }
@@ -1718,7 +1654,7 @@ public class ReportsController extends SpringActionController
                     {
                         // Convey previous state to save code, otherwise admins will be denied the ability to unshare.
                         descriptor.setWasShared();
-                        descriptor.setOwner(descriptor.getCreatedBy());
+                        descriptor.setOwner(descriptor.getCreatedBy() != 0 ? descriptor.getCreatedBy() : getUser().getUserId());
                     }
                 }
                 else

@@ -16,7 +16,6 @@
 
 package org.labkey.specimen.pipeline;
 
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.vfs.FileLike;
 
@@ -27,7 +26,7 @@ import org.labkey.vfs.FileLike;
 */
 public interface SpecimenJobSupport
 {
-    FileLike getSpecimenArchivePath() throws ImportException;
+    FileLike getSpecimenArchivePath();
     boolean isMerge();
     SimpleStudyImportContext getImportContext();
 }

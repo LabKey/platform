@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
-import org.labkey.api.data.validator.RequiredValidator;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;

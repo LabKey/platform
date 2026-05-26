@@ -56,7 +56,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             StudyImpl study = ctx.getStudyImpl();
             DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
-            ctx.getLogger().info("Loading " + getDescription());
+            ctx.getLogger().info("Loading {}", getDescription());
 
             Container c = ctx.getContainer();
             User user = ctx.getUser();

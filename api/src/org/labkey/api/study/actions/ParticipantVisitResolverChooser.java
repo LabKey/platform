@@ -90,7 +90,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
         if (selected == null)
         {
-            selected = _resolvers.get(0);
+            selected = _resolvers.getFirst();
         }
 
         ParticipantVisitResolverType finalSelected = selected;
@@ -168,7 +168,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                                             return ret2;
                                         }
                                     ),
-                                    disabledInput ? InputBuilder.hidden().name(_typeInputName).value(finalSelected.getName()).appendTo(out) : null
+                                    disabledInput ? InputBuilder.hidden().name(_typeInputName).value(finalSelected.getName()).getHtmlString() : null
                                 )
                             ).appendTo(out);
                         }

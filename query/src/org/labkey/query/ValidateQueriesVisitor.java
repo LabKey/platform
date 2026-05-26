@@ -84,7 +84,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
             {
                 String msg = String.format("Query %s.%s failed validation!", table.getPublicSchemaName(), table.getName());
                 if (logger != null)
-                    logger.warn("VALIDATION ERROR: " + msg, error.getCause());
+                    logger.warn("VALIDATION ERROR: {}", msg, error.getCause());
                 _warnings.add(Pair.of(msg, error.getCause()));
             }
             return false;
@@ -102,7 +102,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
         _totalCount++;
         String msg = String.format("Query %s.%s failed validation!", schema.getName(), name);
         if (logger != null)
-            logger.warn("VALIDATION ERROR: " + msg, e);
+            logger.warn("VALIDATION ERROR: {}", msg, e);
         _warnings.add(Pair.of(msg, e));
         return false;
     }

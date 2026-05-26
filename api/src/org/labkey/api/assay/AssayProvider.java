@@ -22,9 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
-import org.labkey.api.assay.plate.FilterCriteria;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
@@ -241,7 +241,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @NotNull
     List<AnalysisScript> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
-    void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
+    void setSaveScriptFiles(ExpProtocol protocol, boolean save);
     boolean isSaveScriptFiles(ExpProtocol protocol);
 
     /** Whether the provider is capable of letting users edit existing result rows */
@@ -330,8 +330,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @Nullable String getProtocolPattern();
 
     void registerLsidHandler();
-
-    boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type);
 
     /**@ return the module in which this assay provider is declared */
     Module getDeclaringModule();

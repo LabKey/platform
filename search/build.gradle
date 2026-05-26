@@ -5,7 +5,7 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.mime4jVersion="0.8.13"
+ext.mime4jVersion="0.8.14"
 
 dependencies {
     BuildUtils.addExternalDependency(
@@ -302,7 +302,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.drewnoakes:metadata-extractor:2.19.0",
+            "com.drewnoakes:metadata-extractor:2.20.0",
             "Metadata Extractor",
             "drewnoakes",
             "https://github.com/drewnoakes/metadata-extractor",
@@ -328,7 +328,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.codelibs:jhighlight:1.1.0",
+            "org.codelibs:jhighlight:2.0.0",
             "JHighlight",
             "codelibs",
             "https://github.com/codelibs/jhighlight",
@@ -406,7 +406,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.28",
+            "com.googlecode.plist:dd-plist:1.29",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",

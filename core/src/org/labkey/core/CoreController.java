@@ -429,7 +429,7 @@ public class CoreController extends SpringActionController
                 List<ColumnInfo> pkCols = table.getPkColumns();
                 if (pkCols.size() != 1)
                     throw new NotFoundException("Query must have only one pk column");
-                ColumnInfo pkCol = pkCols.get(0);
+                ColumnInfo pkCol = pkCols.getFirst();
 
                 ColumnInfo col = table.getColumn(pd.getName());
                 if (col == null)
@@ -487,7 +487,7 @@ public class CoreController extends SpringActionController
                 {
                     throw new NotFoundException("The file '" + file.getName() + "' attached to the object '" + identifiable.getName() + "' cannot be found. It may have been deleted.");
                 }
-                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system. It may have been deleted.");
+                throw new NotFoundException("File " + file.getName() + " does not exist on the server file system. It may have been deleted.");
             }
 
             if (file.isDirectory())
@@ -654,6 +654,7 @@ public class CoreController extends SpringActionController
         catch (StackOverflowError e)
         {
             // replaceAll() can blow up
+            _log.error("StackOverflowError compressing CSS");
         }
         return Compress.compressGzip(c.trim());
     }
@@ -701,12 +702,12 @@ public class CoreController extends SpringActionController
                 }
                 else
                 {
-                    _log.warn("Unable to retrieve icon file: " + path);
+                    _log.warn("Unable to retrieve icon file: {}", path);
                 }
             }
             else
             {
-                _log.warn("No icon file found for extension: " + StringUtils.trimToEmpty(form.getExtension()));
+                _log.warn("No icon file found for extension: {}", StringUtils.trimToEmpty(form.getExtension()));
             }
             return null;
         }
@@ -934,6 +935,11 @@ public class CoreController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "The container '" + parentIdentifier + "' is not a valid parent folder.");
                 return;
+            }
+
+            if (!target.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new UnauthorizedException("You must be an administrator for the target container");
             }
         }
 
@@ -2390,6 +2396,10 @@ public class CoreController extends SpringActionController
         }
     }
 
+    /**
+     * This action doesn't require any permissions, as the call to WarningService.getWarnings()
+     * only returns warnings appropriate for the user/guest
+     */
     @RequiresNoPermission
     @AllowedDuringUpgrade
     public static class DisplayWarningsAction extends MutatingApiAction<Object>
@@ -2721,7 +2731,7 @@ public class CoreController extends SpringActionController
     }
 
     @SuppressWarnings("unused") // Called from JavaScript: discuss.js, wikiEdit.js
-    @RequiresNoPermission
+    @RequiresPermission(ReadPermission.class)
     public static class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
     {
         @Override

@@ -228,7 +228,7 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
     public ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
-            log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
+            log.trace("CREATE TABLE: {} schema={}", null == st ? "null" : st.getName(), System.identityHashCode(this), new Throwable());
 
         ExpMaterialTable ret = ExperimentService.get().createMaterialTable(this, cf, st);
         ret.populate();
@@ -260,14 +260,17 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
 
             private TableInfo createLookupTableInfo()
             {
+                // Hack to support lookup via RowId or Name
+                if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
+                    _columnName = "Name";
+
+                // GitHub Issue #688
+                if (st != null)
+                    return getTable(tableName, getLookupContainerFilter());
+
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(SamplesSchema.this, getLookupContainerFilter(), st);
                 ret.populate();
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
-                if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
-                {
-                    // Hack to support lookup via RowId or Name
-                    _columnName = "Name";
-                }
                 ret.setLocked(true);
                 return ret;
             }

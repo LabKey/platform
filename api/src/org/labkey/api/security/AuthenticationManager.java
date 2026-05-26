@@ -22,8 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponseWriter.Format;
@@ -45,6 +45,8 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Project;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -263,6 +265,41 @@ public class AuthenticationManager
 
     public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
+    public static boolean isLoginAttemptControlEnabled()
+    {
+        return getAuthSetting(LOGIN_ATTEMPT_ENABLED_KEY, false);
+    }
+
+    public static int getLoginAttemptLimit()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_LIMIT_KEY, 3);
+    }
+
+    public static int getLoginAttemptPeriod()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_PERIOD_KEY, 30);
+    }
+
+    public static int getLoginAttemptResetTime()
+    {
+        return getAuthenticationProperty(LOGIN_ATTEMPT_RESET_TIME_KEY, 5);
+    }
+
+    // Convenience method that returns the default value on missing or bad value
+    private static int getAuthenticationProperty(@NotNull String key, int defaultValue)
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String value = props.get(key);
+        try
+        {
+            return value == null ? defaultValue : Integer.parseInt(value);
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
+    }
+
     public static @NotNull String getDefaultDomain()
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
@@ -291,7 +328,7 @@ public class AuthenticationManager
         saveAuthSetting(user, key, Boolean.toString(value), value ? "enabled" : "disabled");
     }
 
-    private static void saveAuthSetting(User user, String key, String value, String action)
+    public static void saveAuthSetting(User user, String key, String value, String action)
     {
         WritablePropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, value);
@@ -306,6 +343,41 @@ public class AuthenticationManager
         map.entrySet().stream()
             .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
             .forEach(e->saveAuthSetting(user, e.getKey(), e.getValue()));
+    }
+
+    // Returns true if any setting changed
+    public static boolean saveLoginAttemptSettings(User user, boolean enabled, int limit, int period, int resetTime)
+    {
+        if (limit < 1 ||  period < 1 || resetTime < 1)
+            throw new IllegalArgumentException("limit, period, and resetTime values must be positive!");
+
+        // Use standard saveAuthSetting() methods to ensure audit logging
+        boolean changed = false;
+        try (Transaction t = DbScope.getLabKeyScope().beginTransaction())
+        {
+            if (enabled != isLoginAttemptControlEnabled())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_ENABLED_KEY, enabled);
+                changed = true;
+            }
+            if (limit != getLoginAttemptLimit())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_LIMIT_KEY, String.valueOf(limit), "set to " + limit);
+                changed = true;
+            }
+            if (period != getLoginAttemptPeriod())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_PERIOD_KEY, String.valueOf(period), "set to " + period);
+                changed = true;
+            }
+            if (resetTime != getLoginAttemptResetTime())
+            {
+                saveAuthSetting(user, LOGIN_ATTEMPT_RESET_TIME_KEY, String.valueOf(resetTime), "set to " + resetTime);
+                changed = true;
+            }
+            t.commit();
+        }
+        return changed;
     }
 
     public static void reorderConfigurations(User user, String name, int[] rowIds)
@@ -327,41 +399,68 @@ public class AuthenticationManager
         }
     }
 
-    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = (oldPassPhrase, keySource, oldConfig) -> {
-        Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
-        _log.info("  Attempting to migrate encrypted properties in authentication configurations");
-        TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
-        Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
-                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
-        Map<String, String> saveMap = new HashMap<>();
+    static final EncryptionMigrationHandler ENCRYPTION_MIGRATION_HANDLER = new EncryptionMigrationHandler()
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Encrypted Authentication Properties";
+        }
 
-        map.forEach((key, value) -> {
-            try
-            {
-                _log.info("    Migrating encrypted properties for configuration " + key);
+        @Override
+        public void migrateEncryptedContent(String oldPassPhrase, String keySource, Encryption.AESConfig oldConfig)
+        {
+            Algorithm decryptAes = Encryption.getAES128(oldPassPhrase, keySource, oldConfig);
+            _log.info("  Attempting to migrate encrypted properties in authentication configurations");
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            Map<Integer, String> map = new TableSelector(tinfo, PageFlowUtil.set("RowId", "EncryptedProperties"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK), null).getValueMap(Integer.class);
+            Map<String, String> saveMap = new HashMap<>();
+
+            map.forEach((key, value) -> {
                 try
                 {
-                    String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
-                    String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
-                    assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
-
-                    if (newEncryptedValue != null)
+                    _log.info("    Migrating encrypted properties for configuration {}", key);
+                    try
                     {
-                        saveMap.put("EncryptedProperties", newEncryptedValue);
-                        Table.update(null, tinfo, saveMap, key);
+                        String decryptedValue = decryptAes.decrypt(Base64.decodeBase64(value));
+                        String newEncryptedValue = Base64.encodeBase64String(AES.get().encrypt(decryptedValue));
+                        assert decryptedValue.equals(AES.get().decrypt(Base64.decodeBase64(newEncryptedValue)));
+
+                        if (newEncryptedValue != null)
+                        {
+                            saveMap.put("EncryptedProperties", newEncryptedValue);
+                            Table.update(null, tinfo, saveMap, key);
+                        }
+                    }
+                    catch (DecryptionException e)
+                    {
+                        _log.info("    Failed to decrypt encrypted properties for configuration {}. It will be skipped.", key);
                     }
                 }
-                catch (DecryptionException e)
+                catch (Exception e)
                 {
-                    _log.info("    Failed to decrypt encrypted properties for configuration " + key + ". It will be skipped.");
+                    _log.error("Exception while migrating configuration {}", key, e);
                 }
-            }
-            catch (Exception e)
-            {
-                _log.error("Exception while migrating configuration " + key, e);
-            }
-        });
-        _log.info("  Migration of encrypted properties in authentication configurations is complete");
+            });
+            _log.info("  Migration of encrypted properties in authentication configurations is complete");
+        }
+
+        @Override
+        public void deleteEncryptedContent()
+        {
+            _log.info("Clearing the core.AuthenticationConfigurations.EncryptedProperties column");
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            new TableSelector(
+                tinfo,
+                PageFlowUtil.set("RowId"),
+                new SimpleFilter(FieldKey.fromParts("EncryptedProperties"), null, CompareType.NONBLANK),
+                null
+            ).forEach(
+                Integer.class,
+                rowId -> Table.update(null, tinfo, PageFlowUtil.map("EncryptedProperties", null), rowId)
+            );
+        }
     };
 
     // Register a handler so encrypted properties are migrated whenever the encryption key changes
@@ -459,7 +558,7 @@ public class AuthenticationManager
             }
             else
             {
-                HttpServletRequest request = getViewContext().getRequest();
+                HttpServletRequest request = getViewContext().getRequestOrThrow();
 
                 final PrimaryAuthenticationResult primaryResult;
 
@@ -512,7 +611,7 @@ public class AuthenticationManager
     public static void registerProvider(AuthenticationProvider authProvider, Priority priority)
     {
         if (Priority.High == priority)
-            _allProviders.add(0, authProvider);
+            _allProviders.addFirst(authProvider);
         else
             _allProviders.add(authProvider);
 
@@ -561,7 +660,8 @@ public class AuthenticationManager
         return AuthenticationProviderCache.getProvider(ResetPasswordProvider.class, name);
     }
 
-    public static @Nullable DisableLoginProvider getEnabledDisableLoginProviderForUser(String id)
+    // Return a DisableLoginProvider if it's enabled and applicable to this user
+    public static @Nullable DisableLoginProvider getDisableLoginProviderForUser(String id)
     {
         for (DisableLoginProvider provider : AuthenticationProviderCache.getProviders(DisableLoginProvider.class))
             if (provider.isEnabledForUser(id))
@@ -604,18 +704,26 @@ public class AuthenticationManager
 
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
-        saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
-        AuthenticationConfigurationCache.clear();
+        if (isAcceptOnlyFicamProviders() != enable)
+        {
+            saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+            AuthenticationConfigurationCache.clear();
+        }
     }
 
-    // Used by start-up properties
-    private static final String AUTHENTICATION_CATEGORY = "Authentication";
+    // Used by start-up properties and upgrade code
+    public static final String AUTHENTICATION_CATEGORY = "Authentication";
 
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String DEFAULT_DOMAIN = "DefaultDomain";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
+
+    public static final String LOGIN_ATTEMPT_ENABLED_KEY = "LoginAttemptEnabled";
+    public static final String LOGIN_ATTEMPT_LIMIT_KEY = "LoginAttemptLimit";
+    public static final String LOGIN_ATTEMPT_PERIOD_KEY = "LoginAttemptPeriod";
+    public static final String LOGIN_ATTEMPT_RESET_TIME_KEY = "LoginAttemptResetTime";
 
     public enum AuthenticationSettings implements StartupProperty
     {
@@ -904,7 +1012,7 @@ public class AuthenticationManager
         {
             BindException errors = new BindException(new Object(), "dummy");
             getStatus().addUserErrorMessage(errors, this, null, null, location);
-            return errors.hasErrors() ? errors.getAllErrors().get(0).getDefaultMessage() : null;
+            return errors.hasErrors() ? errors.getAllErrors().getFirst().getDefaultMessage() : null;
         }
     }
 
@@ -1033,13 +1141,13 @@ public class AuthenticationManager
                 if (null != user)
                 {
                     addAuditEvent(user, request, user.getEmail() + message);
-                    _log.warn(user.getEmail() + message);
+                    _log.warn("{}{}", user.getEmail(), message);
                 }
                 else if (null != emailAddress)
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
                     addAuditEvent(User.guest, request, emailAddress + message);
-                    _log.warn(emailAddress + message);
+                    _log.warn("{}{}", emailAddress, message);
                 }
                 else
                 {
@@ -1138,15 +1246,21 @@ public class AuthenticationManager
 
     // limit one bad login per second averaged out over 60sec
     private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
-    private static final Cache<Integer, RateLimiter> userLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "User limiter");
     private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
-    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, request) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, request) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
-    private static final CacheLoader<Integer, RateLimiter> userLoader = (key, request) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, _) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
+    private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, _) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
-    private static Integer _toKey(String s)
+    private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
+    private static final CacheLoader<String, RateLimiter> userLoader = (key, _) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
+
+    private static Integer getIntCacheKey(String s)
     {
         return null==s ? 0 : s.toLowerCase().hashCode() % 1000;
+    }
+
+    public static String getEmailCacheKey(String s)
+    {
+        return StringUtils.trimToEmpty(s).toLowerCase();
     }
 
     private static PrimaryAuthenticationResult _beforeAuthenticate(HttpServletRequest request, String id, String pwd)
@@ -1157,12 +1271,12 @@ public class AuthenticationManager
         long delay = 0;
 
         // slow down login attempts when we detect more than 20/minute bad attempts per user, password, or ip address
-        rl = addrLimiter.get(_toKey(request == null ? null : request.getRemoteAddr()));
+        rl = addrLimiter.get(getIntCacheKey(request == null ? null : request.getRemoteAddr()));
         if (null != rl)
-            delay = Math.max(delay,rl.add(0, false));
-         rl = pwdLimiter.get(_toKey(pwd));
+            delay = Math.max(delay, rl.getDelay());
+         rl = pwdLimiter.get(getIntCacheKey(pwd));
         if (null != rl)
-            delay = Math.max(delay, rl.add(0, false));
+            delay = Math.max(delay, rl.getDelay());
 
         try
         {
@@ -1182,7 +1296,7 @@ public class AuthenticationManager
 
     private static long getUserLoginDelay(String id) throws LoginDisabledException
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             return provider.getUserDelay(id);
         return getDefaultUserLoginDelay(id);
@@ -1190,9 +1304,9 @@ public class AuthenticationManager
 
     private static long getDefaultUserLoginDelay(String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id));
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id));
         if (null != rl)
-            return rl.add(0, false);
+            return rl.getDelay();
         return 0;
     }
 
@@ -1203,10 +1317,10 @@ public class AuthenticationManager
         if (result.getStatus() ==  AuthenticationStatus.BadCredentials || result.getStatus() == AuthenticationStatus.InactiveUser)
         {
             RateLimiter rl;
-            rl = addrLimiter.get(_toKey(request.getRemoteAddr()),request, addrLoader);
-            rl.add(1, false);
-            rl = pwdLimiter.get(_toKey(pwd),request, pwdLoader);
-            rl.add(1, false);
+            rl = addrLimiter.get(getIntCacheKey(request.getRemoteAddr()),request, addrLoader);
+            rl.tryAdd(1);
+            rl = pwdLimiter.get(getIntCacheKey(pwd),request, pwdLoader);
+            rl.tryAdd(1);
 
             addUserLoginDelay(request, id);
         }
@@ -1218,14 +1332,14 @@ public class AuthenticationManager
 
     private static void resetModuleUserLoginDelay(String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.resetUserDelay(id);
     }
 
     private static void addUserLoginDelay(HttpServletRequest request, String id)
     {
-        DisableLoginProvider provider = AuthenticationManager.getEnabledDisableLoginProviderForUser(id);
+        DisableLoginProvider provider = AuthenticationManager.getDisableLoginProviderForUser(id);
         if (provider != null)
             provider.addUserDelay(request, id, 1);
         else
@@ -1234,8 +1348,8 @@ public class AuthenticationManager
 
     private static void addDefaultUserLoginDelay(HttpServletRequest request, String id)
     {
-        RateLimiter rl = userLimiter.get(_toKey(id),request, userLoader);
-        rl.add(1, false);
+        RateLimiter rl = userLimiter.get(getEmailCacheKey(id),request, userLoader);
+        rl.tryAdd(1);
     }
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
@@ -1506,6 +1620,11 @@ public class AuthenticationManager
 
     public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
+        return handleAuthentication(request, c, true);
+    }
+
+    public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c, boolean setSession)
+    {
         HttpSession session = request.getSession(true);
         PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
         User primaryAuthUser;
@@ -1572,13 +1691,16 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user & authentication-related attributes
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
-
-        if (session.isNew() && !primaryAuthUser.isGuest())
+        if (setSession)
         {
-            // notify the websocket clients a new http session for the user has been started
-            NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            // Prep the new session and set the user & authentication-related attributes
+            session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
+
+            if (session.isNew() && !primaryAuthUser.isGuest())
+            {
+                // notify the websocket clients a new http session for the user has been started
+                NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            }
         }
 
         // Set the authentication validators into the new session
@@ -1645,6 +1767,34 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
+    public record Reauth(String token, User user){}
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";
+
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
+    {
+        if (token != null)
+        {
+            HttpSession session = request.getSession(false);
+
+            if (session != null)
+            {
+                Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
+
+                if (reauth != null)
+                {
+                    boolean matches = token.equals(reauth.token());
+
+                    if (matches)
+                    {
+                        session.removeAttribute(REAUTH_TOKEN_NAME);
+                        return reauth.user();
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
 
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
@@ -1738,7 +1888,7 @@ public class AuthenticationManager
             MockHttpServletRequest req = new MockHttpServletRequest("GET", "/home/project-begin.view")
             {
                 @Override
-                public String getRemoteAddr()
+                public @NotNull String getRemoteAddr()
                 {
                     return remoteAddr[0];
                 }

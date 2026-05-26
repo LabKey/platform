@@ -26,8 +26,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
-
 /**
  * A default, essentially no-op handler for {@link ExpData} that are not recognized by any other handlers.
  * User: jeckels
@@ -44,7 +42,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
     @Override
     public void importFile(@NotNull ExpData data, @NotNull FileLike dataFile, @NotNull ViewBackgroundInfo info, @NotNull Logger log, @NotNull XarContext context)
     {
-        log.debug("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
+        log.debug("No ExperimentDataHandler registered for data file {}, no special loading will be done on this file.", data.getDataFileURI());
     }
 
     @Override

@@ -250,7 +250,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 }
                 catch (InvalidPathException e)
                 {
-                    LOG.info("Invalid path: " + runFilePath, e);
+                    LOG.info("Invalid path: {}", runFilePath, e);
                     throw new NotFoundException("File not found: " + runFilePath);
                 }
             }
@@ -746,9 +746,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 return null;
 
             // Issue 52119: account for leading/trailing single quotes and decode double quotes and %
-            if (key.startsWith("'") && key.endsWith("'"))
+            if (key.length() >= 2 && key.startsWith("'") && key.endsWith("'"))
                 key = key.substring(1, key.length()-1);
-            key = PageFlowUtil.decodeQuoteEncodedFormDataKey(key);
+            key = PageFlowUtil.decodeFormName(key);
 
             return key;
         }

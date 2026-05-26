@@ -17,7 +17,6 @@ package org.labkey.issue.query;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -115,15 +114,9 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_NAMES;
-    }
-
-    @Override
-    public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
-    {
-        return INDEXES;
     }
 
     @Override
@@ -222,12 +215,6 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
         return DefaultValueType.values();
-    }
-
-    @Override
-    public DefaultValueType getDefaultDefaultType(Domain domain)
-    {
-        return DefaultValueType.FIXED_EDITABLE;
     }
 }
 

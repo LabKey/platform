@@ -216,7 +216,7 @@ public class LsidManager
         @Override
         public @Nullable ActionURL detailsURL()
         {
-            var urls = PageFlowUtil.urlProvider(AssayUrls.class);
+            var urls = PageFlowUtil.urlProviderOptional(AssayUrls.class);
             if (urls == null)
                 return null;
 
@@ -397,11 +397,11 @@ public class LsidManager
         List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);
         if (objectURIs.isEmpty())
         {
-            LOG.info("No objects to resolve in container (" + c.getId() + "): " + c);
+            LOG.info("No objects to resolve in container ({}): {}", c.getId(), c);
             return true;
         }
 
-        LOG.info("Resolving " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
+        LOG.info("Resolving {} LSIDs in container ({}): {}", objectURIs.size(), c.getId(), c.getPath());
 
         int success = 0;
         int failed = 0;
@@ -412,23 +412,23 @@ public class LsidManager
                 Identifiable obj = getObject(objectURI);
                 if (obj == null)
                 {
-                    LOG.warn("Failed to resolve '" + objectURI + "'");
+                    LOG.warn("Failed to resolve '{}'", objectURI);
                     failed++;
                 }
                 else
                 {
-                    LOG.info("Resolved '" + objectURI + "' to object (" + obj.getClass().getSimpleName() + "): " + obj.getName());
+                    LOG.info("Resolved '{}' to object ({}): {}", objectURI, obj.getClass().getSimpleName(), obj.getName());
                     success++;
                 }
             }
             catch (Exception e)
             {
-                LOG.error("Error when resolving '" + objectURI + "'", e);
+                LOG.error("Error when resolving '{}'", objectURI, e);
                 failed++;
             }
         }
 
-        LOG.info("Resolved " + success + " of " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
+        LOG.info("Resolved {} of {} LSIDs in container ({}): {}", success, objectURIs.size(), c.getId(), c.getPath());
         return failed == 0;
     }
 }

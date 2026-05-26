@@ -251,12 +251,13 @@ public class JsonWriter
 
             props.put("shortCaption", cinfo.getShortLabel());
 
-            if (dc instanceof IMultiValuedDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
+            if (PropertyType.FILE_LINK == cinfo.getPropertyType() || dc instanceof IMultiValuedDisplayColumn || (cinfo.getParentTable() != null && cinfo.getParentTable().getSqlDialect() != null && !cinfo.getParentTable().getSqlDialect().isSortableDataType(cinfo.getSqlTypeName())))
             {
+                // Disallow faceted filtering for file columns since the values are often absolute file path
+
                 // Disallow faceted filtering when the column is multi-valued, as the value that comes out of the
                 // database likely has a different delimiter compared to what the user wants to see and therefore
                 // doesn't work very well.
-
                 // Similarly, SQLServer doesn't allow doing a SELECT DISTINCT on TEXT columns, so check the data type (they also can't be sorted)
                 props.put("facetingBehaviorType", FacetingBehaviorType.ALWAYS_OFF);
             }
@@ -412,10 +413,7 @@ public class JsonWriter
                         TableInfo parentTable = columnInfo.getParentTable();
                         UserSchema userSchema = parentTable.getUserSchema();
                         String containerInfo = userSchema == null ? "" : " in container " + userSchema.getContainer().getPath();
-                        LOG.warn("Unable to resolve column '" + key + "' on lookup target " + schemaName + "." +
-                                queryName + " referenced by column '" + columnInfo.getName() + "' from table " +
-                                parentTable.getPublicSchemaName() + "." + parentTable.getPublicName() + containerInfo +
-                                ". Using the table's PK instead");
+                        LOG.warn("Unable to resolve column '{}' on lookup target {}.{} referenced by column '{}' from table {}.{}{}. Using the table's PK instead", key, schemaName, queryName, columnInfo.getName(), parentTable.getPublicSchemaName(), parentTable.getPublicName(), containerInfo);
                         key = null;
                     }
                 }

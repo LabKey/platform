@@ -447,9 +447,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    public void updateIndex()
+    public void updateIndex(String reason)
     {
-        super.updateIndex();
+        super.updateIndex(reason);
 
         // Commit and close current index
         commit();
@@ -464,7 +464,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         // Initialize new index and clear last indexed
         initializeIndex();
-        clearLastIndexed();
+        clearLastIndexed(reason);
     }
 
     @Override
@@ -547,7 +547,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             try
             {
                 if (getNumDocs() == 0)
-                    clearLastIndexed();
+                    clearLastIndexed("the index is empty or missing");
 
                 Map<String, String> map = getProperties();
                 @NotNull String serverGuid = AppProps.getInstance().getServerGUID();
@@ -619,7 +619,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         {
             // Queue the work to run on the indexing thread to avoid deadlocks with concurrent
             // database operations (e.g., truncating lastIndexed while indexing threads are querying)
-            _log.info("Queuing deletion of full-text search index because: " + reason);
+            _log.info("Queuing deletion of full-text search index because: {}", reason);
             final CountDownLatch latch = new CountDownLatch(1);
             _IndexTask task = createTask("DeleteIndex", new TaskListener()
             {
@@ -654,7 +654,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void deleteIndexImpl(String reason)
     {
-        _log.info("Deleting full-text search index and clearing last indexed because: " + reason);
+        _log.info("Deleting full-text search index because: {}", reason);
         if (isIndexManagerReady())
             closeIndex();
 
@@ -663,16 +663,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         if (indexDir != null && indexDir.exists())
             FileUtil.deleteDir(indexDir);
 
-        clearLastIndexed();
+        clearLastIndexed(reason);
     }
 
     @Override
-    public void clearLastIndexed()
+    public void clearLastIndexed(String reason)
     {
         // Short circuit if nothing has been indexed since clearLastIndexed() was last called
         if (_countIndexedSinceClearLastIndexed.get() > 0)
         {
-            super.clearLastIndexed();
+            super.clearLastIndexed(reason);
             _countIndexedSinceClearLastIndexed.set(0);
         }
     }
@@ -711,7 +711,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
             if (null == c)
             {
-                _log.debug("skipping item " + r.getDocumentId() + " because container is not found: " + r.getContainerId());
+                _log.debug("skipping item {} because container is not found: {}", r.getDocumentId(), r.getContainerId());
                 return false;
             }
 
@@ -806,7 +806,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (null == title)
                 logBadDocument("Null title", r);
 
-            _log.debug("parsed " + url);
+            _log.debug("parsed {}", url);
 
             if (null == props.get(PROPERTY.keywordsMed.toString()) && StringUtils.isBlank(keywordsMed.toString()))
                 keywordsMed = new StringBuilder(title);
@@ -911,9 +911,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (_log.isDebugEnabled())
             {
                 if (_log.isTraceEnabled())
-                    _log.trace("indexing " + dump(r, doc));
+                    _log.trace("indexing {}", dump(r, doc));
                 else
-                    _log.debug("indexing docid: " + r.getDocumentId());
+                    _log.debug("indexing docid: {}", r.getDocumentId());
             }
 
             boolean result = index(r.getDocumentId(), doc);
@@ -921,9 +921,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             if (_log.isDebugEnabled())
             {
                 if (_log.isTraceEnabled())
-                    _log.trace("finished indexing " + dump(r, doc));
+                    _log.trace("finished indexing {}", dump(r, doc));
                 else
-                    _log.debug("finished indexing docid: " + r.getDocumentId());
+                    _log.debug("finished indexing docid: {}", r.getDocumentId());
             }
 
             return result;
@@ -1178,7 +1178,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logBadDocument(String problem, WebdavResource r)
     {
-        _log.error(problem + " for " + r.getDocumentId());
+        _log.error("{} for {}", problem, r.getDocumentId());
         throw new IllegalStateException(problem);
     }
 
@@ -1334,7 +1334,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private void logAsWarning(WebdavResource r, String message, @Nullable String rootMessage)
     {
-        _log.warn("Can't index file \"" + getNameToLog(r) + "\" due to: " + message + (null != rootMessage ? " [" + rootMessage + "]" : ""));
+        _log.warn("Can't index file \"{}\" due to: {}{}", getNameToLog(r), message, null != rootMessage ? " [" + rootMessage + "]" : "");
     }
 
     private static class PreProcessingException extends Exception
@@ -1445,7 +1445,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs with prefix \"" + prefix + "\"");
+                _log.debug("Deleting {} docs with prefix \"{}\"", getDocCount(query), prefix);
             }
 
             _indexManager.deleteQuery(query);
@@ -1516,7 +1516,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         }
         catch(Throwable e)
         {
-            _log.error("Indexing error with " + id, e);
+            _log.error("Indexing error with {}", id, e);
         }
 
         return false;
@@ -1532,7 +1532,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Count the docs and log before deleting them, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
+                _log.debug("Deleting {} docs from container {}", getDocCount(query), id);
             }
 
             _indexManager.deleteQuery(query);
@@ -1561,7 +1561,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
-                _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
+                _log.debug("Deleting {} docs from container {}", getDocCount(query), container);
             }
 
             _indexManager.deleteQuery(query);
@@ -1573,7 +1573,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     }
 
     @Override
-    protected void commitIndex()
+    protected void commitIndex() throws ConfigurationException, IndexCommitException
     {
         try
         {
@@ -1588,9 +1588,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         catch (Throwable t)
         {
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
-            // the IndexManager unusable. Attempt to reset the index.
+            // the IndexManager unusable. Attempt to reset the index, then let the outer loop handle backoff.
             ExceptionUtil.logExceptionToMothership(null, t);
             initializeIndex();
+            throw new IndexCommitException(t);
         }
     }
 
@@ -1996,7 +1997,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
             for (File file : sampledata.listFiles(File::isFile))
             {
-                _log.info("Attempting to parse: " + file.getName());
+                _log.info("Attempting to parse: {}", file.getName());
                 String docId = "testtika";
                 SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getName()), docId, null, null, null, null, null);
                 ContentHandler handler = new BodyContentHandler(-1);
@@ -2059,7 +2060,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                         if (strict)
                             fail(file.getName() + ": " + message);
                         else
-                            _log.info(file.getName() + ": " + message);
+                            _log.info("{}: {}", file.getName(), message);
                     }
                 }
             }

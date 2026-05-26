@@ -443,7 +443,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             {
                 // We've determined that there is only one target study container (see .getTargetStudyContainers())
                 sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
-                sql.add(_containerList.get(0).getId());
+                sql.add(_containerList.getFirst().getId());
             }
             else
             {

@@ -8,7 +8,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleshooterPermission;
 
 import java.util.Set;
 
@@ -23,7 +22,7 @@ import java.util.Set;
     @Override
     public boolean canReadSchema()
     {
-        return super.canReadSchema() || getUser().hasRootPermission(TroubleshooterPermission.class);
+        return super.canReadSchema() || getUser().isTroubleshooter();
     }
 
     @Override

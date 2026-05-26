@@ -115,7 +115,7 @@ public class DefaultFolderType implements FolderType
     @Override @NotNull
     public FolderTab getDefaultTab()
     {
-        return getDefaultTabs().get(0);
+        return getDefaultTabs().getFirst();
     }
 
     @Override

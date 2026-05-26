@@ -9,7 +9,8 @@
 
 <!-- list of standard tasks (remove this comment to enable)
 #### Tasks 📍
+- [ ] Claude Code Review
 - [ ] Manual Testing
-- [ ] Needs Automation
+- [ ] Test Automation
 - [ ] Verify Fix
 -->

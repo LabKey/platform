@@ -81,7 +81,7 @@ public abstract class AbstractPipelineStartup
         if (pipelineModule != null)
         {
             modules.remove(pipelineModule);
-            modules.add(0, pipelineModule);
+            modules.addFirst(pipelineModule);
         }
         if (experimentModule != null)
         {

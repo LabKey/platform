@@ -71,7 +71,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         }
 
         @Override
-        public PipelineJob.Task createTask(PipelineJob job)
+        public XarGeneratorTask createTask(PipelineJob job)
         {
             return new XarGeneratorTask(this, job);
         }

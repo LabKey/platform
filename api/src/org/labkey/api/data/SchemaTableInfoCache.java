@@ -62,14 +62,14 @@ public class SchemaTableInfoCache
 
     void remove(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
     {
-        LOG.debug("remove " + type + " schema table: " + schemaName + "." + tableName);
+        LOG.debug("remove {} schema table: {}.{}", type, schemaName, tableName);
         String key = getCacheKey(schemaName, tableName, type);
         _blockingCache.remove(key);
     }
 
     void removeAllTables(@NotNull String schemaName, @NotNull DbSchemaType type)
     {
-        LOG.debug("remove all " + type + " schema tables: " + schemaName);
+        LOG.debug("remove all {} schema tables: {}", type, schemaName);
         final String prefix = type.getCacheKey(schemaName);
 
         // Note: A single database schema could be cached under multiple types, e.g., Module, Bare, Fast
@@ -91,13 +91,13 @@ public class SchemaTableInfoCache
 
             try
             {
-                LOG.debug("loading schema table: " + fullName);
+                LOG.debug("loading schema table: {}", fullName);
                 return options.getSchema().loadTable(options.getTableName(), options);
             }
             catch (SQLException e)
             {
                 // Issue 49506: Log all problems for the admin and report to mothership and throw instead of returning null.
-                LOG.error("Exception while attempting to load schema table \"" + fullName + "\"", e);
+                LOG.error("Exception while attempting to load schema table \"{}\"", fullName, e);
                 ExceptionUtil.logExceptionToMothership(null, e, false);
 
                 throw new RuntimeSQLException(e);

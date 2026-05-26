@@ -48,7 +48,6 @@ import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
@@ -120,7 +119,7 @@ public class OntologyManager
                 Container proj = c.getProject();
                 if (null == proj)
                     proj = c;
-                _log.debug("Loading a property descriptor for key " + key + " using project " + proj);
+                _log.debug("Loading a property descriptor for key {} using project {}", key, proj);
                 String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
                 List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI, proj, ContainerManager.getSharedContainer().getId()).getArrayList(PropertyDescriptor.class);
                 if (!pdArray.isEmpty())
@@ -131,11 +130,11 @@ public class OntologyManager
                     // and one of the two is in the shared project, use the project-level descriptor.
                     if (pdArray.size() > 1)
                     {
-                        _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
+                        _log.debug("Multiple PropertyDescriptors found for {}", propertyURI);
                         if (pd.getProject().equals(ContainerManager.getSharedContainer()))
                             pd = pdArray.get(1);
                     }
-                    _log.debug("Loaded property descriptor " + pd);
+                    _log.debug("Loaded property descriptor {}", pd);
                     ret = pd;
                 }
             }
@@ -377,7 +376,7 @@ public class OntologyManager
                 Map<String, Object> map = rows.getMap();
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
-                    throw new CancellationException();
+                    throw new RuntimeException();
 
                 assert before.start();
 
@@ -472,10 +471,10 @@ public class OntologyManager
         }
 
         assert total.stop();
-        _log.debug("\t" + total);
-        _log.debug("\t" + before);
-        _log.debug("\t" + ensure);
-        _log.debug("\t" + insert);
+        _log.debug("\t{}", total);
+        _log.debug("\t{}", before);
+        _log.debug("\t{}", ensure);
+        _log.debug("\t{}", insert);
     }
 
     /**
@@ -597,7 +596,7 @@ public class OntologyManager
 
                 // TODO: hack -- should exit and return cancellation status instead of throwing
                 if (Thread.currentThread().isInterrupted())
-                    throw new CancellationException();
+                    throw new RuntimeException();
 
                 parameterMap.clearParameters();
 
@@ -718,7 +717,7 @@ public class OntologyManager
 
             helper.afterBatchInsert(rowCount);
             if (logger != null)
-                logger.debug("inserted row " + rowCount + ".");
+                logger.debug("inserted row {}.", rowCount);
         }
         catch (ValidationException e)
         {
@@ -749,22 +748,32 @@ public class OntologyManager
     {
         boolean ret = true;
 
-        Object value = objectProperty.getObjectValue();
+        boolean isArray = prop.getPropertyType() == PropertyType.MULTI_CHOICE;
 
-        if (prop.isRequired() && value == null && objectProperty.getMvIndicator() == null)
+        Object value = isArray ? objectProperty.arrayValue : objectProperty.getObjectValue();
+        boolean isNull = value == null;
+
+        // GitHub Issue 995: Unable to import assay run with required MVTC values
+        if (isArray && value instanceof MultiChoice.Array array)
+            isNull = array.isEmpty();
+
+        if (prop.isRequired() && isNull && objectProperty.getMvIndicator() == null)
         {
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
             ret = false;
         }
 
         // Check if the string is too long. Use either the PropertyDescriptor's scale or VARCHAR(4000) for ontology managed values
-        int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
-        int stringLength = value == null ? 0 : value.toString().length();
-        if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+        if (!isArray)
         {
-            String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
-            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
-            ret = false;
+            int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
+            int stringLength = value == null ? 0 : value.toString().length();
+            if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
+            {
+                String s = stringLength <= 100 ? value.toString() : StringUtilsLabKey.leftSurrogatePairFriendly(value.toString(), 100);
+                errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
+                ret = false;
+            }
         }
 
         // TODO: check date is within postgres date range
@@ -787,9 +796,9 @@ public class OntologyManager
          */
         String beforeImportObject(Map<String, Object> map) throws SQLException;
 
-        void afterBatchInsert(int currentRow) throws SQLException;
+        void afterBatchInsert(int currentRow);
 
-        void updateStatistics(int currentRow) throws SQLException;
+        void updateStatistics(int currentRow);
     }
 
 
@@ -799,7 +808,7 @@ public class OntologyManager
          * may be used to process attachments, for auditing, etc
          * @return the LSID of the inserted row
          */
-        String afterImportObject(Map<String, Object> map) throws SQLException;
+        String afterImportObject(Map<String, Object> map);
 
         /**
          * may set parameters directly for columns that are not exposed by tableinfo
@@ -888,7 +897,7 @@ public class OntologyManager
                     }
                     catch (ConversionException e)
                     {
-                        _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                        _log.warn("Failed to parse PropertyOrder integer list: {}", order);
                     }
                 }
             }
@@ -1156,7 +1165,7 @@ public class OntologyManager
             dd = getDomainDescriptor(domainURI, container);
         if (null == dd)
         {
-            _log.debug("deleteObjectsOfType called on type not found in database:  " + domainURI);
+            _log.debug("deleteObjectsOfType called on type not found in database:  {}", domainURI);
             return;
         }
 
@@ -1364,7 +1373,7 @@ public class OntologyManager
 
     private static void copyDescriptors(final Container c, final Container project) throws ValidationException
     {
-        _log.debug("OntologyManager.copyDescriptors  " + c.getName() + " " + project.getName());
+        _log.debug("OntologyManager.copyDescriptors  {} {}", c.getName(), project.getName());
 
         // if c is (was) a project, then nothing to do
         if (c.getId().equals(project.getId()))
@@ -1454,7 +1463,7 @@ public class OntologyManager
 
                 if (pd.getContainer().getId().equals(c.getId()))
                 {
-                    _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+                    _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
                     PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                     DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
@@ -1500,7 +1509,7 @@ public class OntologyManager
 
     public static void moveContainer(@NotNull final Container c, @NotNull Container oldParent, @NotNull Container newParent) throws SQLException
     {
-        _log.debug("OntologyManager.moveContainer  " + c.getName() + " " + oldParent.getName() + "->" + newParent.getName());
+        _log.debug("OntologyManager.moveContainer  {} {}->{}", c.getName(), oldParent.getName(), newParent.getName());
 
         final Container oldProject = oldParent.getProject();
         Container newProject = newParent.getProject();
@@ -1708,7 +1717,7 @@ public class OntologyManager
             pd = out[0];
             if (1 == rowcount && null != pd)
             {
-                _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+                _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
                 PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
                 return pd;
             }
@@ -2165,7 +2174,7 @@ public class OntologyManager
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
             Pair<String, GUID> key = getCacheKey(pd);
-            _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
+            _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", key, pd);
             PROP_DESCRIPTOR_CACHE.remove(key);
             DOMAIN_PROPERTIES_CACHE.clear();
             transaction.commit();
@@ -2551,12 +2560,10 @@ public class OntologyManager
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
-
     public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
-
 
     public static Pair<String, GUID> getCacheKey(String uri, Container c)
     {
@@ -2651,7 +2658,6 @@ public class OntologyManager
         }
     }
 
-
     static final String parameters = "propertyuri,name,description,rangeuri,concepturi,label," +
             "format,container,project,lookupcontainer,lookupschema,lookupquery,defaultvaluetype,hidden," +
             "mvenabled,importaliases,url,urltarget,shownininsertview,showninupdateview,shownindetailsview,measure,dimension,scale," +
@@ -2660,7 +2666,7 @@ public class OntologyManager
             "excludefromshifting,mvindicatorstoragecolumnname,defaultscale,scannable";
     static final String[] parametersArray = parameters.split(",");
 
-    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists) throws SQLException
+    static ParameterMapStatement getInsertStmt(Connection conn, User user, TableInfo t, boolean ifNotExists)
     {
         user = null==user ? User.guest : user;
         SQLFragment sql = new SQLFragment("INSERT INTO exp.propertydescriptor\n\t\t(");
@@ -2694,88 +2700,22 @@ public class OntologyManager
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
     }
 
-    static ParameterMapStatement getUpdateStmt(Connection conn, User user, TableInfo t) throws SQLException
-    {
-        user = null==user ? User.guest : user;
-        SQLFragment sql = new SQLFragment("UPDATE exp.propertydescriptor SET ");
-        ColumnInfo c;
-        String comma = "";
-        for (var p : parametersArray)
-        {
-            if (null == (c = t.getColumn(p)))
-                continue;
-            sql.append(comma).append(p).append("=?");
-            comma = ", ";
-            sql.add(new Parameter(p, c.getJdbcType()));
-        }
-        sql.append(", modifiedby=" + user.getUserId() + ", modified={fn now()}");
-        sql.append("\nWHERE propertyid=?");
-        sql.add(new Parameter("propertyid", JdbcType.INTEGER));
-        return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);
-    }
-
-
-    public static void insertPropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getInsertStmt(conn, user, t, false))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
-    public static void updatePropertyDescriptors(User user, List<PropertyDescriptor> pds) throws SQLException
-    {
-        if (null == pds || pds.isEmpty())
-            return;
-        TableInfo t = getTinfoPropertyDescriptor();
-        try (Connection conn = t.getSchema().getScope().getConnection();
-             ParameterMapStatement stmt = getUpdateStmt(conn, user, t))
-        {
-            ObjectFactory<PropertyDescriptor> f = ObjectFactory.Registry.getFactory(PropertyDescriptor.class);
-            Map<String, Object> m = null;
-            for (PropertyDescriptor pd : pds)
-            {
-                m = f.toMap(pd, m);
-                stmt.clearParameters();
-                stmt.putAll(m);
-                stmt.addBatch();
-            }
-            stmt.executeBatch();
-        }
-    }
-
-
     public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws ChangePropertyDescriptorException
     {
         assert pd.getPropertyId() == 0;
         validatePropertyDescriptor(pd);
         pd = Table.insert(null, getTinfoPropertyDescriptor(), pd);
-        _log.debug("Adding property descriptor to cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+        _log.debug("Adding property descriptor to cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         return pd;
     }
-
 
     //todo:  we automatically update a pd to the last  one in?
     public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)
     {
         assert pd.getPropertyId() != 0;
         pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
-        _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
+        _log.debug("Updating property descriptor in cache. Key: {} descriptor: {}", getCacheKey(pd), pd);
         PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
         // It's possible that the propertyURI has changed, thus breaking our reference
         DOMAIN_PROPERTIES_CACHE.clear();

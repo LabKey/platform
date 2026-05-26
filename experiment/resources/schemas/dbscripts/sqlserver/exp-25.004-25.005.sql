@@ -1,3 +1,5 @@
+-- @LongRunningScript('updating all ObjectId columns to BIGINT')
+
 -- Viability no longer supports SQL Server, but its old schema may have been left behind. Ensure it and its FK to ObjectId are dropped.
 EXEC core.fn_dropifexists '*', 'viability', 'SCHEMA';
 

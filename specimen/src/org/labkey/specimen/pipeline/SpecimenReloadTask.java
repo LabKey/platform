@@ -28,9 +28,7 @@ import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.vfs.FileLike;
-import org.labkey.vfs.FileSystemLike;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 

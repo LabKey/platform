@@ -753,7 +753,7 @@ public class ParticipantGroupManager
             List<ParticipantGroup> groups = getParticipantGroups(c, user, def);
             if (groups.size() != 1)
                 throw new RuntimeException("Expected one group in category " + def.getLabel());
-            ParticipantGroup group = groups.get(0);
+            ParticipantGroup group = groups.getFirst();
 
             switch (ParticipantCategory.Type.valueOf(def.getType()))
             {
@@ -926,7 +926,7 @@ public class ParticipantGroupManager
                     List<ParticipantGroup> groups = getParticipantGroups(c, user, def);
                     if (groups.size() == 1)
                     {
-                        group = groups.get(0);
+                        group = groups.getFirst();
                         deleteGroupParticipants(c, user, group);
                     }
                 }
@@ -1009,7 +1009,7 @@ public class ParticipantGroupManager
             if (cat.getType().equals("list"))
             {
                 List<ParticipantGroup> groups = getParticipantGroups(c, user, cat);
-                if (groups.size() == 1 && groups.get(0).equals(group))
+                if (groups.size() == 1 && groups.getFirst().equals(group))
                 {
                     // delete the participant category
                     SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");

@@ -875,7 +875,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(RawAliquotUnit).getRenderer().addQueryFieldKeys(new HashSet<>(Set.of(AliquotUnit.fieldKey())));
 
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
-            defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
+        {
+            List<FieldKey> inventoryCols = InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser());
+            // GH Issue 1035: Don't include StorageTerminalLocation in the default view
+            defaultCols.addAll(inventoryCols.stream().filter(fk -> !fk.equals(InventoryService.InventoryStatusColumn.StorageTerminalLocation.fieldKey())).toList());
+        }
 
         SQLFragment sql;
         UserSchema plateUserSchema;
@@ -1677,12 +1681,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public @NotNull Set<String> getAltKeysForUpdate()
-    {
-        return MATERIAL_ALT_KEYS;
-    }
-
-    @Override
     public @Nullable Set<String> getExistingRecordKeyColumnNames(DataIteratorContext context, Map<String, Integer> colNameMap)
     {
         Set<String> keyColumnNames = new CaseInsensitiveHashSet();
@@ -1693,14 +1691,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 if (colNameMap.containsKey(RowId.name()))
                     keyColumnNames.add(RowId.name());
-                else
+                else if (colNameMap.containsKey(Name.name()))
                 {
-                    for (String altKey : getAltKeysForUpdate())
-                    {
-                        if (colNameMap.containsKey(altKey))
-                            keyColumnNames.add(altKey);
-                    }
+                    keyColumnNames.add(MaterialSourceId.name());
+                    keyColumnNames.add(Name.name());
                 }
+                else
+                    throw new IllegalArgumentException("Either RowId or Name is required for update.");
             }
             else
             {

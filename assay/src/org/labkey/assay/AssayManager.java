@@ -141,7 +141,7 @@ public class AssayManager implements AssayService
     };
 
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, argument) ->
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
         List<ExpProtocol> result = new ArrayList<>();
 
@@ -379,9 +379,15 @@ public class AssayManager implements AssayService
     @Override
     public @NotNull List<ExpProtocol> getAssayProtocols(Container container)
     {
+        return getAssayProtocols(container, false);
+    }
+
+    private @NotNull List<ExpProtocol> getAssayProtocols(Container container, boolean currentOnly)
+    {
         List<ExpProtocol> allProtocols = new ArrayList<>();
 
-        for (Container containerInScope : container.getContainersFor(ContainerType.DataType.protocol))
+        Collection<Container> containerScopes = currentOnly ? List.of(container) : container.getContainersFor(ContainerType.DataType.protocol);
+        for (Container containerInScope : containerScopes)
         {
             List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
             allProtocols.addAll(ids);
@@ -601,7 +607,7 @@ public class AssayManager implements AssayService
                 batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
             }
 
-            return batches.get(0);
+            return batches.getFirst();
         }
     }
 
@@ -622,14 +628,14 @@ public class AssayManager implements AssayService
     }
 
     /**
-     * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
-     * the names and comments from all the runs.
+     * Creates a single document per assay design, with some simple assay info (name, description).
+     * Note: the document for an assay protocol will just be associated with the protocol's container
      */
     @Override
     public void indexAssays(SearchService.TaskIndexingQueue queue)
     {
-        List<ExpProtocol> protocols = getAssayProtocols(queue.getContainer());
-
+        // GitHub Issue 895: for the assay protocol search document just user the current container's protocols
+        List<ExpProtocol> protocols = getAssayProtocols(queue.getContainer(), true);
         for (ExpProtocol protocol : protocols)
             indexAssay(queue, protocol);
     }
@@ -655,30 +661,14 @@ public class AssayManager implements AssayService
         ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
         assayBeginURL.setExtraPath(c.getId());
         String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-        StringBuilder body = new StringBuilder(StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment));
+        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
         Map<String, Object> m = new HashMap<>();
         m.put(SearchService.PROPERTY.title.toString(), name);
         m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
         m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
 
-        ExperimentService.get().getExpRuns(c, protocol, null)
-            .forEach(run -> {
-                StringBuilder runKeywords = new StringBuilder();
-
-                runKeywords.append(" ");
-                runKeywords.append(run.getName());
-
-                if (null != run.getComments())
-                {
-                    runKeywords.append(" ");
-                    runKeywords.append(run.getComments());
-                }
-
-                body.append(runKeywords);
-            });
-
         String docId = protocol.getDocumentId();
-        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body.toString(), assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getEntityId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
         queue.addResource(r);
     }
 
@@ -728,7 +718,7 @@ public class AssayManager implements AssayService
     {
         if (shouldIndexProtocolBatches(protocol))
         {
-            for (ExpExperiment batch : protocol.getBatches())
+            for (ExpExperiment batch : protocol.getBatches(queue.getContainer()))
             {
                 if (modifiedSince == null || modifiedSince.before(batch.getModified()))
                     indexAssayBatch(queue, batch);
@@ -965,7 +955,7 @@ public class AssayManager implements AssayService
             if (protocols.size() > 1)
                 throw new NotFoundException("More than one assay protocol named '" + protocol.getName() + "' was found.");
 
-            expProtocol = protocols.get(0);
+            expProtocol = protocols.getFirst();
         }
         return expProtocol;
     }
@@ -1075,10 +1065,10 @@ public class AssayManager implements AssayService
                 return checker.getValidationSql(container, user, protocol, assayDataTable);
             }
             else
-                log.error(String.format("Assay data table not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+                log.error("Assay data table not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
         }
         else
-            log.error(String.format("Assay provider not found for protocol : %s in folder : %s", protocol.getName(), container.getPath()));
+            log.error("Assay provider not found for protocol : {} in folder : {}", protocol.getName(), container.getPath());
 
         return null;
     }

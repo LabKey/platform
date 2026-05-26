@@ -309,7 +309,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             {
                 ft = FolderType.NONE;
                 iconPath = Path.parse(ft.getFolderIconPath());
-                LogManager.getLogger(ContainerTable.class).warn("Could not find specified icon: "+iconPath);
+                LogManager.getLogger(ContainerTable.class).warn("Could not find specified icon: {}", iconPath);
             }
             return AppProps.getInstance().getContextPath() + iconPath.toString("/","");
         }

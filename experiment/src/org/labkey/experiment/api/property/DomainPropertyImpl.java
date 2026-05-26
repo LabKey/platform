@@ -68,6 +68,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
+
 public class DomainPropertyImpl implements DomainProperty
 {
     private final DomainImpl _domain;
@@ -859,6 +861,13 @@ public class DomainPropertyImpl implements DomainProperty
             if (PropertyType.FILE_LINK.getInputType().equalsIgnoreCase(oldType.getInputType()) && oldType != newType)
                 throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.name() + " to " + newType.name() + ".");
 
+            // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+            if (oldType == PropertyType.MULTI_LINE &&
+                    (PropertyType.MULTI_CHOICE == newType ||TEXT_CHOICE_CONCEPT_URI.equals(_pd.getConceptURI())))
+            {
+                throw new ChangePropertyDescriptorException("Cannot convert a multiline text field to a text choice field.");
+            }
+
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
@@ -1189,12 +1198,7 @@ public class DomainPropertyImpl implements DomainProperty
         if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
-        {
-            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
-                map.put("Type", "Flag");
-            else
-                map.put("Type", getPropertyType().getXarName());
-        }
+            map.put("Type", getPropertyType().getXarName());
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
         if (!StringUtils.isEmpty(getDescription()))
@@ -1263,7 +1267,7 @@ public class DomainPropertyImpl implements DomainProperty
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
             assertTrue(_dp.isDirty());
             assertFalse(_dp._schemaChanged);
-            assertTrue(_dp.getPHI() == _pd.getPHI());
+            assertSame(_dp.getPHI(), _pd.getPHI());
 
             // Issue #18738 change the schema outside of a schema reload and verify that the column
             // change the schema but don't mark the property as "Schema Import"
@@ -1325,7 +1329,7 @@ public class DomainPropertyImpl implements DomainProperty
             _pd.setLookupQuery(query);
             _pd.setLookupSchema(schema);
             OntologyManager.updateDomainPropertyFromDescriptor(_dp, _pd);
-            assertTrue(_dp.isDirty() == expectedDirty);
+            assertEquals(_dp.isDirty(), (boolean) expectedDirty);
             assertFalse(_dp._schemaChanged);
 
             // verify the lookup object returned
@@ -1340,7 +1344,7 @@ public class DomainPropertyImpl implements DomainProperty
                 else if (query == null || schema == null)
                     assertTrue(true);
                 else
-                    assertTrue(false);
+                    fail();
             }
             else
             {

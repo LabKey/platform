@@ -70,7 +70,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
         }
         catch (IllegalArgumentException e)
         {
-            _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
+            _logger.error("Malformed XML for external table: {}.{}", getSchema(), getName(), e);
             //otherwise ignore malformed XML
         }
         return this;

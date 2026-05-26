@@ -33,7 +33,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -71,7 +70,6 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -263,13 +261,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return getReservedPropertyNames(domain, user, false);
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
@@ -295,7 +287,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         }
         catch (IOException e)
         {
-            logger.error(String.format("Failed to parse SampleType parent aliases for [%1$s]", st.getRowId()), e);
+            logger.error("Failed to parse SampleType parent aliases for [{}]", st.getRowId(), e);
         }
         return reserved;
     }
@@ -570,10 +562,6 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression,
                     templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds, arguments != null ? arguments.getAuditRecordMap() : null);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         catch (ExperimentException e)
         {

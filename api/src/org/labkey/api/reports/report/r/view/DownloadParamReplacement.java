@@ -22,7 +22,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
 import java.io.IOException;
 
 /**

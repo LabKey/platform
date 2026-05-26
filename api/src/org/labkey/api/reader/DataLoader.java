@@ -23,8 +23,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
@@ -33,6 +33,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -174,7 +175,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return _columns;
     }
 
-    public Map<String, ColumnInfo> getColumnInfoMap()
+    public @NotNull Map<String, ColumnInfo> getColumnInfoMap()
     {
         return _columnInfoMap;
     }
@@ -634,7 +635,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 Formatter formatter = new Formatter(sb);
                 for (var entry : next.entrySet())
                     LoggingDataIterator.appendFormattedNameValue(formatter, entry.getKey(), entry.getValue());
-                _log.debug(this.getClass().getName() + ".next():\n" + sb);
+                _log.debug("{}.next():\n{}", this.getClass().getName(), sb);
             }
 
             return next;
@@ -728,6 +729,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 boolean foundData = false;
                 for (int i = 0; i < _activeColumns.length; i++)
                 {
+                    boolean isEmptyArray = false;
                     ColumnDescriptor column = _activeColumns[i];
                     if (_preserveEmptyString && null == column.missingValues)
                     {
@@ -825,6 +827,18 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                                 values[i] = mvWrapper;
                             }
                         }
+                        else if (column.clazz == MultiChoice.Array.class)
+                        {
+                            // GitHub Issue 925: Not providing a MVTC value in an assay result throws error
+                            // convert blank to empty array, not null
+                            values[i] = column.converter.convert(column.clazz, fld);
+                            if (values[i] instanceof MultiChoice.Array array) // TODO: make this more generic? instanceof List and/or instanceof java.sql.Array?
+                            {
+                                // If line is blank, array will be empty array instead of null
+                                if (array.isEmpty())
+                                    isEmptyArray = true;
+                            }
+                        }
                         else
                         {
                             values[i] = ("".equals(fld)) ?
@@ -871,7 +885,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                             values[i] = column.errorValues;
                     }
 
-                    if (values[i] != null)
+                    if (values[i] != null && !isEmptyArray)
                         foundData = true;
                 }
 
@@ -900,7 +914,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 }
 
                 if (null != _file)
-                    _log.error("failed loading file " + _file.getName() + " at line: " + _lineNum + " " + e, e);
+                    _log.error("failed loading file {} at line: {} {}", _file.getName(), _lineNum, e, e);
             }
 
             // Return null to signals there are no more rows

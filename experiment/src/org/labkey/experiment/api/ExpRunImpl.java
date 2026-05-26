@@ -56,14 +56,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExperimentRunGraph;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +80,8 @@ import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
 
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
+    private static final Logger LOG = LogManager.getLogger(ExpRunImpl.class);
+
     public static final String NAMESPACE_PREFIX = "Run";
 
     private boolean _populated;
@@ -92,8 +92,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
     private Integer _maxOutputActionSequence = null;
-    private static final Logger LOG = LogManager.getLogger(ExpRunImpl.class);
-    private ExpProtocolApplication _workflowTask;
 
     static public List<ExpRunImpl> fromRuns(List<ExperimentRun> runs)
     {
@@ -189,13 +187,13 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         List<ExpExperimentImpl> exps = getExperiments();
         if (!exps.contains(batch))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to be in list of experiments: " + exps);
+            LOG.warn("Expected batch '{}' to be in list of experiments: {}", batch.getRowId(), exps);
             return false;
         }
 
         if (!getProtocol().equals(batch.getBatchProtocol()))
         {
-            LOG.warn("Expected batch '" + batch.getRowId() + "' to have same protocol as run.  Expected protocol '" + getProtocol() + "', but found '" + batch.getBatchProtocol() + "'");
+            LOG.warn("Expected batch '{}' to have same protocol as run.  Expected protocol '{}', but found '{}'", batch.getRowId(), getProtocol(), batch.getBatchProtocol());
             return false;
         }
 
@@ -561,10 +559,6 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         deleteRunProtocolApps();
 
         clearCache();
-
-        // Clear the cache in a commit task, which allows us to do a single clear (which is semi-expensive) if multiple
-        // runs are being deleted in the same transaction, like deleting a container
-        svc.getSchema().getScope().addCommitTask(ExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     @Override
@@ -809,7 +803,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listM.add(m);
                 if (getMaterialInputs().containsKey(m))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -822,7 +816,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 listD.add(d);
                 if (getDataInputs().containsKey(d))
                 {
-                    ExpProtocolApplication runNode = getProtocolApplications().get(0);
+                    ExpProtocolApplication runNode = getProtocolApplications().getFirst();
                     assert runNode.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun;
                     listPA.add(runNode);
                     continue;
@@ -978,12 +972,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         // Warn if the move fails for some reason (file is open / file deleted during archive)
         catch (IOException e)
         {
-            LOG.warn("Unable to archive file:  " + e.getMessage());
+            LOG.warn("Unable to archive file:  {}", e.getMessage());
         }
         // Fail silently if the parent directory does not exist - archiving is a best effort action
         catch (ExperimentException e)
         {
-            LOG.warn("Unable to read parent directory: " + e.getMessage());
+            LOG.warn("Unable to read parent directory: {}", e.getMessage());
         }
     }
 

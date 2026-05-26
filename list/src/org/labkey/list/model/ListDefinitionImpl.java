@@ -54,6 +54,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -521,19 +522,38 @@ public class ListDefinitionImpl implements ListDefinition
         return impl;
     }
 
-    public boolean hasListItemForEntityId(String entityId, User user)
+    public @Nullable Container getListItemContainerForDownload(String entityId, User user, Class<? extends Permission> permissionClass)
     {
-        return hasListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user, getContainer());
-    }
-
-    private boolean hasListItem(SimpleFilter filter, User user, Container c)
-    {
-        TableInfo tbl = getTable(user, c);
+        Container c = getContainer();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EntityId"), entityId);
+        // Use a relax CF to find the list items, permission will be validated later
+        ContainerFilter cf = ContainerFilter.Type.AllInProjectPlusShared.create(c, user);
+        TableInfo tbl = getTable(user, c, cf);
 
         if (null == tbl)
-            return false;
+            return null;
 
-        return new TableSelector(tbl, filter, null).exists();
+        Map<String, Object> row = null;
+
+        try
+        {
+            row = new TableSelector(tbl, filter, null).getMap();
+        }
+        catch (IllegalStateException e)
+        {
+            // More than one row matches the specified EntityId; log for diagnosis and return null as before
+            LOG.warn("Multiple list items match EntityId '{}' when resolving download container. List: '{}', Container: '{}'. Returning null.",
+                    entityId, getName(), getContainer().getPath(), e);
+        }
+
+        if (row == null)
+            return null;
+
+        Container dataContainer = row.get("Container") != null ? ContainerManager.getForId(row.get("Container").toString()) : null;
+        if (dataContainer != null && dataContainer.hasPermission(user, permissionClass))
+            return dataContainer;
+
+        return null;
     }
 
     @Override
@@ -545,36 +565,8 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void delete(User user, @Nullable String auditUserComment) throws DomainNotFoundException
     {
-        TableInfo table = getTable(user);
-        QueryUpdateService qus = null;
-
-        if (null != table)
-            qus = table.getUpdateService();
-
-        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created because
-        // the metadata wasn't valid). Still allow deleting the list
-        try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
-             ExperimentService.get().ensureTransaction())
-        {
-            // remove related attachments, discussions, and indices
-            ListManager.get().deleteIndexedList(this);
-            if (qus instanceof ListQueryUpdateService listQus)
-                listQus.deleteRelatedListData(user, getContainer());
-
-            // then delete the list itself
-            ListManager.get().deleteListDef(getContainer(), getListId());
-            Domain domain = getDomainOrThrow();
-            domain.delete(user, auditUserComment);
-
-            ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
-
-            transaction.commit();
-        }
-
-        SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
-        QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
+        ListManager.get().deleteList(user, this, auditUserComment);
     }
-
 
     @Override
     public int insertListItems(User user, Container container, List<ListItem> listItems)

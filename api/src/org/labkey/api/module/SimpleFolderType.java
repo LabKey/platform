@@ -93,7 +93,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                     }
                 }
                 if (hasError)
-                    LOG.error("Error in " + folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
+                    LOG.error("Error in {}.  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.", folderTypeFile.getName());
             }
             _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray());
         }
@@ -104,8 +104,8 @@ public class SimpleFolderType extends MultiPortalFolderType
 
         if (!_folderTabs.isEmpty())
         {
-            _defaultTab = _folderTabs.get(0);
-            _folderTabs.get(0).setIsDefaultTab(true);
+            _defaultTab = _folderTabs.getFirst();
+            _folderTabs.getFirst().setIsDefaultTab(true);
         }
 
         setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
@@ -141,7 +141,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                     }
                     else
                     {
-                        LOG.warn("Module '" + moduleName + "' not available for folder type '" + name + "'");
+                        LOG.warn("Module '{}' not available for folder type '{}'", moduleName, name);
                     }
                 }
             }
@@ -169,7 +169,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         }
         catch (XmlValidationException e)
         {
-            LOG.error("Unable to load custom folder type from file " + folderTypeFile + ".", e);
+            LOG.error("Unable to load custom folder type from file {}.", folderTypeFile, e);
             return null;
         }
         catch (XmlException | IOException e)
@@ -234,7 +234,7 @@ public class SimpleFolderType extends MultiPortalFolderType
             }
             else
             {
-                LOG.error("Folder type '" + getName() + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
+                LOG.error("Folder type '{}' defines multiple tabs with the name '{}', only the first will be used.", getName(), tab.getName());
             }
         }
 
@@ -258,7 +258,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 //this is to debug intermittent team city failures and probably should not be merged
                 if (perm == null)
                 {
-                    LOG.error("unknown permission class: " + permClass + " from the role: " + role.getName(), new Exception());
+                    LOG.error("unknown permission class: {} from the role: {}", permClass, role.getName(), new Exception());
                     continue;
                 }
 

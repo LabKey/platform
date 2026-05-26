@@ -241,7 +241,7 @@ public class AsyncQueryRequest<T>
         {
             try
             {
-                _log.debug("Aborting async statement on connection " + _statement.getConnection());
+                _log.debug("Aborting async statement on connection {}", _statement.getConnection());
                 _statement.cancel();
             }
             catch (SQLException e)
@@ -262,7 +262,7 @@ public class AsyncQueryRequest<T>
         }
         catch (IOException ioe)
         {
-            _log.debug("ping client: failure: " + ioe.getMessage());
+            _log.debug("ping client: failure: {}", ioe.getMessage());
             cancel();
             return ioe;
         }

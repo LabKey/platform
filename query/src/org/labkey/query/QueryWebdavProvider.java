@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QuerySchema;
@@ -42,7 +41,6 @@ import org.labkey.query.persist.QueryDef;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -126,11 +124,6 @@ public class QueryWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
 		}
 
-		@Override
-        public long getLastModified()
-		{
-            return Long.MIN_VALUE;
-		}
     }
 
 
@@ -180,11 +173,6 @@ public class QueryWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
 		}
 
-		@Override
-        public long getLastModified()
-		{
-            return Long.MIN_VALUE;
-		}
     }
 
 
@@ -266,15 +254,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		{
 			String sql = PageFlowUtil.getStreamContentsAsString(in.openInputStream());
 			_q.setSql(sql);
-			try
-			{
-				_q.save(user, _q.getDefinitionContainer());
-			}
-			catch (SQLException sqlx)
-			{
-				throw new RuntimeSQLException(sqlx);
-			}
-			return getContentLength();
+            _q.save(user, _q.getDefinitionContainer());
+            return getContentLength();
 		}
 
 		@Override

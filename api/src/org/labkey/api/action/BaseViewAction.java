@@ -66,7 +66,6 @@ import org.springframework.validation.Validator;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.ServletRequestParameterPropertyValues;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.beans.PropertyDescriptor;
@@ -185,19 +184,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return ret;
     }
 
-    static final String FORM_DATE_ENCODED_PARAM = "formDataEncoded";
 
-    /**
-     * When a double quote is encountered in a multipart/form-data context, it is encoded as %22 using URL-encoding by browsers.
-     * This process replaces the double quote with its hexadecimal equivalent in a URL-safe format, preventing it from being misinterpreted as the end of a value or a boundary.
-     * The consequence of such encoding is we can't distinguish '"' from the actual '%22' in parameter name.
-     * As a workaround, a client-side util `encodeFormDataQuote` is used to convert %22 to %2522 and " to %22 explicitly, while passing in an additional param formDataEncoded=true.
-     * This class converts those encoded param names back to its decoded form during PropertyValues binding.
-     * See Issue 52827, 52925 and 52119 for more information.
-     */
+    /// Some characters can be mishandled by the browser in multipart/formdata requests (e.g. doublequote and backslask).
+    /// We support an encoding from fields to avoid these characters, see {@link PageFlowUtil#encodeFormName} and {@link PageFlowUtil#decodeFormName}.
     static public class ViewActionParameterPropertyValues extends ServletRequestParameterPropertyValues
     {
-
         public ViewActionParameterPropertyValues(ServletRequest request) {
             this(request, null, null);
         }
@@ -205,31 +196,14 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         public ViewActionParameterPropertyValues(ServletRequest request, @Nullable String prefix, @Nullable String prefixSeparator)
         {
             super(request, prefix, prefixSeparator);
-            if (isFormDataEncoded())
+            for (int i = 0; i < getPropertyValues().length; i++)
             {
-                for (int i = 0; i < getPropertyValues().length; i++)
-                {
-                    PropertyValue formDataPropValue = getPropertyValues()[i];
-                    String propValueName = formDataPropValue.getName();
-                    String decoded = PageFlowUtil.decodeQuoteEncodedFormDataKey(propValueName);
-                    if (!propValueName.equals(decoded))
-                        setPropertyValueAt(new PropertyValue(decoded, formDataPropValue.getValue()), i);
-                }
+                PropertyValue formDataPropValue = getPropertyValues()[i];
+                String propValueName = formDataPropValue.getName();
+                String decoded = PageFlowUtil.decodeFormName(propValueName);
+                if (!propValueName.equals(decoded))
+                    setPropertyValueAt(new PropertyValue(decoded, formDataPropValue.getValue()), i);
             }
-        }
-
-        private boolean isFormDataEncoded()
-        {
-            PropertyValue formDataPropValue = getPropertyValue(FORM_DATE_ENCODED_PARAM);
-            if (formDataPropValue != null)
-            {
-                Object v = formDataPropValue.getValue();
-                String formDataPropValueStr = v == null ? null : String.valueOf(v);
-                if (StringUtils.isNotBlank(formDataPropValueStr))
-                    return (Boolean) ConvertUtils.convert(formDataPropValueStr, Boolean.class);
-            }
-
-            return false;
         }
     }
 
@@ -400,7 +374,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public static @NotNull BindException springBindParameters(Object command, String commandName, PropertyValues params)
     {
-        Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
         ServletRequestDataBinder binder = new ServletRequestDataBinder(command, commandName);
 
         String[] fields = binder.getDisallowedFields();
@@ -415,6 +388,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         try
         {
             // most paths probably called getPropertyValuesForFormBinding() already, but this is a public static method, so call it again
+            Predicate<String> allow = command instanceof HasAllowBindParameter allowBP ? allowBP.allowBindParameter() : HasAllowBindParameter.getDefaultPredicate();
             binder.bind(getPropertyValuesForFormBinding(params, allow));
             BindException errors = new NullSafeBindException(binder.getBindingResult());
             return errors;
@@ -456,13 +430,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return new BindingErrorProcessor()
         {
             @Override
-            public void processMissingFieldError(String missingField, BindingResult bindingResult)
+            public void processMissingFieldError(@NotNull String missingField, @NotNull BindingResult bindingResult)
             {
                 defaultBEP.processMissingFieldError(missingField, bindingResult);
             }
 
             @Override
-            public void processPropertyAccessException(PropertyAccessException ex, BindingResult bindingResult)
+            public void processPropertyAccessException(@NotNull PropertyAccessException ex, @NotNull BindingResult bindingResult)
             {
                 Object newValue = ex.getPropertyChangeEvent().getNewValue();
                 if (newValue instanceof String)
@@ -535,7 +509,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
     @Override
-    public boolean supports(Class clazz)
+    public boolean supports(@NotNull Class clazz)
     {
         return getCommandClass().isAssignableFrom(clazz);
     }
@@ -585,7 +559,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        protected BeanWrapper createBeanWrapper()
+        protected @NotNull BeanWrapper createBeanWrapper()
         {
             return new BeanUtilsWrapperImpl((DynaBean)getTarget());
         }
@@ -609,7 +583,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getPropertyValue(String propertyName) throws BeansException
+        public Object getPropertyValue(@NotNull String propertyName) throws BeansException
         {
             try
             {
@@ -622,7 +596,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public void setPropertyValue(String propertyName, Object value) throws BeansException
+        public void setPropertyValue(@NotNull String propertyName, Object value) throws BeansException
         {
             try
             {
@@ -635,19 +609,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public boolean isReadableProperty(String propertyName)
+        public boolean isReadableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public boolean isWritableProperty(String propertyName)
+        public boolean isWritableProperty(@NotNull String propertyName)
         {
             return true;
         }
 
         @Override
-        public TypeDescriptor getPropertyTypeDescriptor(String s) throws BeansException
+        public TypeDescriptor getPropertyTypeDescriptor(@NotNull String s) throws BeansException
         {
             return null;
         }
@@ -658,25 +632,25 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
 
         @Override
-        public Object getWrappedInstance()
+        public @NotNull Object getWrappedInstance()
         {
             return object;
         }
 
         @Override
-        public Class<?> getWrappedClass()
+        public @NotNull Class<?> getWrappedClass()
         {
             return object.getClass();
         }
 
         @Override
-        public PropertyDescriptor[] getPropertyDescriptors()
+        public PropertyDescriptor @NotNull [] getPropertyDescriptors()
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public PropertyDescriptor getPropertyDescriptor(String propertyName) throws BeansException
+        public @NotNull PropertyDescriptor getPropertyDescriptor(@NotNull String propertyName) throws BeansException
         {
             throw new UnsupportedOperationException();
         }
@@ -725,9 +699,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
      */
     protected Map<String, MultipartFile> getFileMap()
     {
-        if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
-            return ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
-        return Collections.emptyMap();
+        return PageFlowUtil.getFileMap(getViewContext().getRequest());
     }
 
     protected List<AttachmentFile> getAttachmentFileList()

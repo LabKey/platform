@@ -164,7 +164,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
                 String colName = "main";
                 if (!getNamePDs().isEmpty() && getSampleNames().size() > index)
                 {
-                    colName = UploadWizardAction.getInputName(getNamePDs().get(0), getSampleNames().get(index));
+                    colName = UploadWizardAction.getInputName(getNamePDs().getFirst(), getSampleNames().get(index));
                 }
                 throw new DuplicateMaterialException("Duplicate material name: " + name, colName);
             }
@@ -217,7 +217,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         }
         else
         {
-            assert _domainProperties.get(0).getName().equals("Name");
+            assert _domainProperties.getFirst().getName().equals("Name");
             return sampleProperties.get(_nameProperty);
         }
     }
@@ -250,8 +250,8 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         }
         else
         {
-            assert _domainProperties.get(0).getName().equals("Name");
-            return Collections.singletonList(_domainProperties.get(0));
+            assert _domainProperties.getFirst().getName().equals("Name");
+            return Collections.singletonList(_domainProperties.getFirst());
         }
     }
 }

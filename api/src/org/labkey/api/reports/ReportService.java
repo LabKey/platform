@@ -41,12 +41,13 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
 public interface ReportService
 {
+    String R_REPORT_CUSTOM_SHARING = "rReportCustomSharing";
+
     // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
     @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());
@@ -168,7 +169,7 @@ public interface ReportService
      * parameters. Imported reports are always treated as new reports even if they were exported from
      * the same container.
      */
-    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
+    Report importReport(FolderImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException;
 
     /**
      * Runs maintenance on the report service.

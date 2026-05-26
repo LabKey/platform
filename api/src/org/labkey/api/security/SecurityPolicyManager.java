@@ -40,6 +40,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -179,6 +180,19 @@ public class SecurityPolicyManager
             }
         }
 
+        // This is a simple 26.3 fix for GitHub Issue #909. TODO: In 26.4+, change to a first class approach for
+        // validating all admin attempts at assigning admin roles or impersonating admin users, groups, and roles.
+        //
+        // For now, just use AddUserPermission as a proxy for Folder Admin attemping to assign Project Admin role
+        if (c.isProject() && !c.hasPermission(user, AddUserPermission.class))
+        {
+            for (Role changedRole : changedRoles)
+            {
+                if (changedRole.getPermissions().contains(AddUserPermission.class))
+                    throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
+            }
+        }
+
         savePolicyToDBAndValidate(policy);
         writeToAuditLog(c, user, resource, oldPolicy, policy);
 
@@ -224,7 +238,7 @@ public class SecurityPolicyManager
                 UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
                 if (principal == null)
                 {
-                    logger.info("Principal " + assignment.getUserId() + " no longer in database. Removing from policy.");
+                    logger.info("Principal {} no longer in database. Removing from policy.", assignment.getUserId());
                     continue;
                 }
                 Table.insert(null, table, assignment);
@@ -536,7 +550,7 @@ public class SecurityPolicyManager
             Role role = RoleManager.getRole(assignmentXml.getRole().getName());
             if (role == null)
             {
-                ctx.getLogger().warn("Invalid role name ignored: " + assignmentXml.getRole());
+                ctx.getLogger().warn("Invalid role name ignored: {}", assignmentXml.getRole());
                 continue;
             }
             try
@@ -548,7 +562,7 @@ public class SecurityPolicyManager
                         UserPrincipal principal = GroupManager.getGroup(ctx.getContainer(), groupRef.getName(), groupRef.getType());
                         if (principal == null)
                         {
-                            ctx.getLogger().warn("Non-existent group in role assignment for role " + assignmentXml.getRole().getName() + " will be ignored: " + groupRef.getName());
+                            ctx.getLogger().warn("Non-existent group in role assignment for role {} will be ignored: {}", assignmentXml.getRole().getName(), groupRef.getName());
                         }
                         else
                         {
@@ -567,7 +581,7 @@ public class SecurityPolicyManager
 
                             if (principal == null)
                             {
-                                ctx.getLogger().warn("Non-existent user in role assignment for role " + assignmentXml.getRole() + " will be ignored: " + userRef.getName());
+                                ctx.getLogger().warn("Non-existent user in role assignment for role {} will be ignored: {}", assignmentXml.getRole(), userRef.getName());
                             }
                             else
                             {
@@ -576,7 +590,7 @@ public class SecurityPolicyManager
                         }
                         catch (ValidEmail.InvalidEmailException e)
                         {
-                            ctx.getLogger().error("Invalid email in role assignment for role " + assignmentXml.getRole());
+                            ctx.getLogger().error("Invalid email in role assignment for role {}", assignmentXml.getRole());
                         }
                     }
                 }

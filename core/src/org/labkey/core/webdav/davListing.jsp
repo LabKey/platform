@@ -43,21 +43,21 @@
 
     Ext4.onReady(function() {
 
-        var loginAction = new Ext4.Action({
+        const loginAction = new Ext4.Action({
             text : 'Login',
             handler : function () {
                 window.location = LABKEY.ActionURL.buildURL('login', 'login', null, {returnUrl: window.location});
             }
         });
 
-        var logoutAction = new Ext4.Action({
+        const logoutAction = new Ext4.Action({
             text : 'Logout',
             handler : function () {
                 LABKEY.Utils.postToAction(LABKEY.ActionURL.buildURL('login', 'logout', null, {returnUrl: window.location}));
             }
         });
 
-        var htmlViewAction = new Ext4.Action({
+        const htmlViewAction = new Ext4.Action({
             text : 'HTML View',
             handler : function() {
                 window.location = <%=q(h(resource.getLocalHref(getViewContext())+"?listing=html"))%>;
@@ -103,6 +103,16 @@
                 useServerActions: false
             }],
             listeners: {
+                afterrender: function(vp) {
+                    // ExtJS renders a <span role="img"> for the icon slot on every button, even icon-less ones.
+                    // Those empty spans have no accessible name, which is a WCAG violation. Hide them instead.
+                    vp.el.select('.x4-btn-icon-el').each(function(el) {
+                        if (el.dom.hasAttribute('role')) {
+                            el.dom.removeAttribute('role');
+                            el.dom.setAttribute('aria-hidden', 'true');
+                        }
+                    });
+                },
                 resize: function(vp) {
                     if (vp) {
                         var fb = vp.getComponent('browser');

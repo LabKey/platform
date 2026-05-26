@@ -33,7 +33,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.MapDataIterator;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.api.ExpData;
@@ -154,7 +153,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 ColumnInfo keyCol = null;
                 for (ColumnInfo colInfo : getDbTable().getPkColumns())
                 {
-                    if (rows.get(0).containsKey(colInfo.getName()))
+                    if (rows.getFirst().containsKey(colInfo.getName()))
                     {
                         keyCol = colInfo;
                         break;
@@ -254,9 +253,6 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 ColumnInfo col = columnInfoMap.get(entry.getKey());
                 if (col != null && !row.containsKey(entry.getKey()))
                 {
-                    if (DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, row))
-                        continue;
-
                     // use column names for existing row values
                     row.put(col.getName(), entry.getValue());
                 }
@@ -339,7 +335,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         Map<String, Object> oldRowMap,
         @Nullable Map<Enum, Object> configParameters,
         @Nullable Map<String, Object> extraScriptContext
-    ) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    ) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         ExpRun run = getRun(oldRowMap, user, DeletePermission.class);
 
@@ -514,7 +510,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
         }
 
         @Override
-        public void uploadComplete(ExpRun run) throws ExperimentException
+        public void uploadComplete(ExpRun run)
         {
         }
 

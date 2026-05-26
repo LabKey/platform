@@ -211,10 +211,41 @@ public interface QueryChangeListener
         public V getNewValue() { return _newValue; }
     }
 
+    // URL-encoded fragments used when a single filter value containing ";" is stored as a JSON array for MVTC
+    String JSON_ARRAY_FILTER_PREFIX = "%7Bjson%3A%5B%22"; // {json:["
+    String JSON_ARRAY_FILTER_SUFFIX = "%22%5D%7D";         // "]}
+    String ENCODED_SEMICOLON = "%3B";                       // ;
+
     /**
      * Utility to update encoded filter string when a column type changes from Multi_Choice to a non Multi_Choice.
      * This method performs targeted replacements for the given column name (case-insensitive).
      */
+    /**
+     * Resolves the URL-encoded form of {@code columnName} that matches the given filter string.
+     * <p>
+     * Tries first with the single quote left unencoded (Issue 943), then with it encoded as {@code %27}
+     * (Issue 1092 — Chrome and some browsers do encode {@code '} to {@code %27}).
+     *
+     * @return the encoded column name whose lowercase form matches the filter prefix, or {@code null} if neither encoding matches
+     */
+    @Nullable
+    private static String resolveEncodedColumnName(String filterStr, String prefix, String columnName)
+    {
+        String sLower = filterStr.toLowerCase();
+
+        // GitHub Issue 943: single quote should decode to match url filter
+        String encoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName), true);
+        if (sLower.startsWith(prefix + "." + encoded.toLowerCase() + "~"))
+            return encoded;
+
+        // GitHub Issue 1092: some browsers (e.g. Chrome) encode ' to %27
+        encoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName), false);
+        if (sLower.startsWith(prefix + "." + encoded.toLowerCase() + "~"))
+            return encoded;
+
+        return null;
+    }
+
     private static String getUpdatedFilterStrFromMVTC(String filterStr, String prefix, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)
     {
         if (filterStr == null || columnName == null)
@@ -224,31 +255,30 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() != PropertyType.MULTI_CHOICE || newType.getPropertyType() == PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
-
-        String colLower = columnNameEncoded.toLowerCase();
-        String sLower = filterStr.toLowerCase();
-
-        // No action if column doesn't match
-        if (!sLower.startsWith(prefix + "." + colLower + "~"))
+        String columnNameEncoded = resolveEncodedColumnName(filterStr, prefix, columnName);
+        if (columnNameEncoded == null)
             return filterStr;
 
         // drop arraycontainsall since there is no good match
-        if (sLower.startsWith(prefix + "." + colLower + "~arraycontainsall"))
+        if (filterStr.toLowerCase().startsWith(prefix + "." + columnNameEncoded.toLowerCase() + "~arraycontainsall"))
             return "";
 
         String updated = filterStr;
+
+        // GitHub Issue 1096: Filters in saved views break after MVTC → TC conversion if column value contains semicolon
+        // if the single value contains ";", the filter is saved as {json:[]} for MVTC, needs to convert to multi value filter types (for example, 'in' instead of 'eq').
+        boolean isJsonArrayFilterValue = filterStr.indexOf(JSON_ARRAY_FILTER_PREFIX) > 0 && filterStr.endsWith(JSON_ARRAY_FILTER_SUFFIX);
 
         if (TEXT_CHOICE_CONCEPT_URI.equals(newType.getConceptURI()))
         {
             // only keep arraymatches/arraynotmatches when converting to a TEXT_CHOICE since current values are guaranteed to be single value
             if (containsOp(updated, prefix, columnNameEncoded, "arraymatches"))
             {
-                return replaceOp(updated, prefix, columnNameEncoded, "arraymatches", "eq");
+                return replaceOp(updated, prefix, columnNameEncoded, "arraymatches", isJsonArrayFilterValue ? "in" : "eq");
             }
             if (containsOp(updated, prefix, columnNameEncoded, "arraynotmatches"))
             {
-                return replaceOp(updated, prefix, columnNameEncoded, "arraynotmatches", "neqornull");
+                return replaceOp(updated, prefix, columnNameEncoded, "arraynotmatches", isJsonArrayFilterValue ? "notin" : "neqornull");
             }
         }
 
@@ -285,30 +315,13 @@ public interface QueryChangeListener
         if (oldType.getPropertyType() == PropertyType.MULTI_CHOICE || newType.getPropertyType() != PropertyType.MULTI_CHOICE)
             return filterStr;
 
-        String columnNameEncoded = PageFlowUtil.encodeURIComponent(QueryKey.encodePart(columnName));
-
-        String colLower = columnNameEncoded.toLowerCase();
-        String sLower = filterStr.toLowerCase();
-
-        // No action if column doesn't match
-        if (!sLower.startsWith(prefix + "." + colLower + "~"))
+        String columnNameEncoded = resolveEncodedColumnName(filterStr, prefix, columnName);
+        if (columnNameEncoded == null)
             return filterStr;
 
         String updated = filterStr;
 
         // Return on first matching operator for this column
-        if (containsOp(updated, prefix, columnNameEncoded, "eq"))
-        {
-            return replaceOp(updated, prefix, columnNameEncoded, "eq", "arraymatches");
-        }
-        if (containsOp(updated, prefix, columnNameEncoded, "neqornull"))
-        {
-            return replaceOp(updated, prefix, columnNameEncoded, "neqornull", "arraycontainsnone");
-        }
-        if (containsOp(updated, prefix, columnNameEncoded, "neq"))
-        {
-            return replaceOp(updated, prefix, columnNameEncoded, "neq", "arraycontainsnone");
-        }
         if (containsOp(updated, prefix, columnNameEncoded, "isblank"))
         {
             return replaceOp(updated, prefix, columnNameEncoded, "isblank", "arrayisempty");
@@ -326,8 +339,43 @@ public interface QueryChangeListener
             return replaceOp(updated, prefix, columnNameEncoded, "notin", "arraycontainsnone");
         }
 
+        if (containsOp(updated, prefix, columnNameEncoded, "eq"))
+        {
+            updated = replaceOp(updated, prefix, columnNameEncoded, "eq", "arraymatches");
+            return toSafeArrayFilter(updated, "arraymatches");
+        }
+        if (containsOp(updated, prefix, columnNameEncoded, "neqornull"))
+        {
+            updated = replaceOp(updated, prefix, columnNameEncoded, "neqornull", "arraycontainsnone");
+            return toSafeArrayFilter(updated, "arraycontainsnone");
+        }
+        if (containsOp(updated, prefix, columnNameEncoded, "neq"))
+        {
+            updated = replaceOp(updated, prefix, columnNameEncoded, "neq", "arraycontainsnone");
+            return toSafeArrayFilter(updated, "arraycontainsnone");
+        }
+
+
         // No matching operator found for this column, drop the filter
         return "";
+    }
+
+    private static String toSafeArrayFilter(String filterStr, String updatedOp)
+    {
+        // GitHub Issue 1096: Filters in saved views break after TC → MVTC conversion if column value contains semicolon
+        String filter = "~" + updatedOp + "=";
+        String[] parts = filterStr.split(filter);
+        if (parts.length < 2)
+            return filterStr;
+
+        String valuePart = parts[1];
+
+        boolean isJsonArrayFilterValue = valuePart.startsWith(JSON_ARRAY_FILTER_PREFIX) && valuePart.endsWith(JSON_ARRAY_FILTER_SUFFIX);
+        // if the single value filter value contains ";", drop the filter after converting to array type filter since the filter value is no longer valid
+        if (!isJsonArrayFilterValue && valuePart.contains(ENCODED_SEMICOLON))
+            return "";
+
+        return filterStr;
     }
 
     static String getUpdatedFilterStrOnColumnTypeUpdate(String filterStr, String prefix, String columnName, @NotNull PropertyDescriptor oldType, @NotNull PropertyDescriptor newType)

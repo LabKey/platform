@@ -44,6 +44,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -60,6 +61,7 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
@@ -73,6 +75,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
@@ -398,7 +401,7 @@ public class QueryServiceImpl implements QueryService
             .append(negate ? " NOT" : "")
             .append(" IN (")
             .append(" SELECT ")
-            .append(t.getColumns().get(0).getValueSql("_"))
+            .append(t.getColumns().getFirst().getValueSql("_"))
             .append(" FROM ")
             .append(fromSql)
             .append(")");
@@ -490,7 +493,7 @@ public class QueryServiceImpl implements QueryService
                 parseResult = new SqlParser(null, null).parseExpr(expression, errors);
             expr = parseResult;
             if (!errors.isEmpty())
-                throw new ConversionException(errors.get(0));
+                throw new ConversionException(errors.getFirst());
         }
 
         @Override
@@ -526,7 +529,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -569,7 +572,7 @@ public class QueryServiceImpl implements QueryService
             {
                 if (query.getParseErrors().isEmpty())
                     query.getParseErrors().add(new QueryException("Unexpected error parsing where filter"));
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
             }
             return ret;
         }
@@ -605,7 +608,7 @@ public class QueryServiceImpl implements QueryService
             QExpr methodName = null;
             if (expr instanceof QMethodCall)
             {
-                methodName = (QExpr) expr.childList().get(0);
+                methodName = (QExpr) expr.childList().getFirst();
                 if (null == methodName.getFieldKey())
                     methodName = null;
             }
@@ -872,7 +875,7 @@ public class QueryServiceImpl implements QueryService
         // helper function to add a queryDef to the return map if it hasn't already been added
         Consumer<QueryDef> addQueryDefToMap = (queryDef) -> {
             Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-            ret.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, container, queryDef));
+            ret.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, container, queryDef));
         };
 
         // session queries have highest priority
@@ -967,7 +970,7 @@ public class QueryServiceImpl implements QueryService
     private void addCustomQueryDefToMap(User user, Container c, Map<Entry<String, String>, QueryDefinition> map, QueryDef queryDef)
     {
         Entry<String, String> key = new Pair<>(queryDef.getSchema(), queryDef.getName());
-        map.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, c, queryDef));
+        map.computeIfAbsent(key, (_) -> new CustomQueryDefinitionImpl(user, c, queryDef));
     }
 
     @Override
@@ -1295,6 +1298,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(views);
     }
 
+    @Deprecated
     @Override
     public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
@@ -1334,6 +1338,73 @@ public class QueryServiceImpl implements QueryService
         Collection<CustomView> allViews = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
         return allViews.stream().filter(view -> !(view instanceof ModuleCustomView)).collect(Collectors.toList());
     }
+
+    @Override
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, @NotNull Container container, @Nullable String schemaName, @Nullable String queryName)
+    {
+        // GitHub Issue 1058: Sample Finder saved views in subfolder break after MVTC to TC conversion
+        Collection<GUID> containerIds = container.getProductFoldersDataContainerFilter(user).getIds();
+
+        SimpleFilter filter = new SimpleFilter();
+        if (containerIds != null)
+            filter.addInClause(FieldKey.fromParts("Container"), containerIds);
+        else
+            filter = SimpleFilter.createContainerFilter(container, "Container");
+
+        if (schemaName != null)
+            filter.addCondition(FieldKey.fromParts("Schema"), schemaName);
+        if (queryName != null)
+            filter.addCondition(FieldKey.fromParts("QueryName"), queryName);
+
+        List<CstmView> cstmViews = new TableSelector(QueryManager.get().getTableInfoCustomView(), filter, null).getArrayList(CstmView.class);
+
+        List<CustomView> result = new ArrayList<>();
+
+        Map<Container, List<CstmView>> containerViews = new HashMap<>();
+        for (CstmView cstmView : cstmViews)
+        {
+            Container viewContainer = cstmView.lookupContainer();
+            if (viewContainer != null)
+                containerViews.computeIfAbsent(viewContainer, _ -> new ArrayList<>()).add(cstmView);
+        }
+
+        for (Map.Entry<Container, List<CstmView>> containerCstmViews: containerViews.entrySet())
+        {
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
+            Container viewContainer = containerCstmViews.getKey();
+            List<CstmView> views = containerCstmViews.getValue();
+            DefaultSchema defaultSchema = DefaultSchema.get(user, viewContainer);
+
+            for (CstmView cstmView : views)
+            {
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(cstmView.getSchema());
+                    if (schema == null)
+                    {
+                        schema = defaultSchema.getUserSchema(cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+        }
+
+        return result;
+    }
+
 
     @Override
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
@@ -1630,12 +1701,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         ContainerSchemaKey key = new ContainerSchemaKey(container, schemaName);
-        Map<String, SessionQuery> queries = containerQueries.get(key);
-        if (queries == null)
-        {
-            queries = new ConcurrentHashMap<>();
-            containerQueries.put(key, queries);
-        }
+        Map<String, SessionQuery> queries = containerQueries.computeIfAbsent(key, _ -> new ConcurrentHashMap<>());
         return queries;
     }
 
@@ -1902,7 +1968,7 @@ public class QueryServiceImpl implements QueryService
                 continue;
             for (FieldKey fieldKey : set)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                     ret.putIfAbsent(col.getFieldKey(),col);
             }
@@ -1911,11 +1977,29 @@ public class QueryServiceImpl implements QueryService
 
         if (filter != null)
         {
-            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+            if (filter instanceof SimpleFilter simpleFilter)
             {
-                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
-                if (col != null)
-                    ret.putIfAbsent(col.getFieldKey(),col);
+                Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
+                for (SimpleFilter.FilterClause clause : simpleFilter.getClauses())
+                {
+                    for (FieldKey fk : clause.getFieldKeys())
+                        clausesByField.computeIfAbsent(fk, k -> new ArrayList<>()).add(clause);
+                }
+                for (FieldKey fieldKey : simpleFilter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
+            }
+            else
+            {
+                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
+                {
+                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
+                    if (col != null)
+                        ret.putIfAbsent(col.getFieldKey(), col);
+                }
             }
         }
 
@@ -1923,7 +2007,7 @@ public class QueryServiceImpl implements QueryService
         {
             for (Sort.SortField field : sort.getSortList())
             {
-                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager);
+                ColumnInfo col = resolveFieldKey(field.getFieldKey(), table, columnMap, unresolvedColumns, manager, null);
                 if (col != null)
                 {
                     ret.putIfAbsent(col.getFieldKey(),col);
@@ -1939,7 +2023,7 @@ public class QueryServiceImpl implements QueryService
 
         if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
-            LOG.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns);
+            LOG.debug("Unable to resolve the following columns on table {}: {}", table.getName(), unresolvedColumns);
 
             for (FieldKey field : unresolvedColumns)
             {
@@ -1970,7 +2054,7 @@ public class QueryServiceImpl implements QueryService
 
             for (FieldKey key : sortFieldKeys)
             {
-                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager);
+                ColumnInfo sortCol = resolveFieldKey(key, col.getParentTable(), columnMap, null, manager, null);
                 if (sortCol != null)
                 {
                     toAdd.add(sortCol);
@@ -2002,7 +2086,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
+    private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, @Nullable List<SimpleFilter.FilterClause> filterClauses)
     {
         if (fieldKey == null) // TODO: Can this resolve "selectionMethods/selectionMethodId$Sname"?
             return null;
@@ -2010,7 +2094,7 @@ public class QueryServiceImpl implements QueryService
         // This could be made more general, but I don't think there's a need.  To reduce testing
         // just handle expObject() for now, instead of table methods more generally.
         // Also, we could just expose "objectid" column on all of the experiment tables.
-        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable expTable)
+        if (fieldKey.equals(expObjectIdFieldKey) && table instanceof ExpTable<?> expTable)
         {
             ColumnInfo expObjectColumn = expTable.getExpObjectColumn();
             if (null != expObjectColumn)
@@ -2019,7 +2103,8 @@ public class QueryServiceImpl implements QueryService
                 columnMap.put(expObjectIdFieldKey, expObjectColumn);
                 return expObjectColumn;
             }
-            unresolvedColumns.add(new FieldKey(null, "expObject()"));
+            if (unresolvedColumns != null)
+                unresolvedColumns.add(new FieldKey(null, "expObject()"));
             return null;
         }
 
@@ -2029,6 +2114,22 @@ public class QueryServiceImpl implements QueryService
         {
             assert Table.checkColumn(table, column, "ensureRequiredColumns():");
             assert fieldKey.getTable() == null || columnMap.containsKey(fieldKey);
+
+            if (filterClauses != null)
+            {
+                boolean isArrayColumn = column.getJdbcType() == JdbcType.ARRAY;
+                for (SimpleFilter.FilterClause clause : filterClauses)
+                {
+                    boolean isArrayFilter = clause instanceof CompareType.ArrayClause;
+                    boolean invalidArrayFilter = (isArrayFilter && !isArrayColumn) || (!isArrayFilter && isArrayColumn);
+                    if (invalidArrayFilter)
+                    {
+                        if (unresolvedColumns != null)
+                            unresolvedColumns.add(fieldKey);
+                        return column; // return column, but mark as unresolvedColumns to drop filters
+                    }
+                }
+            }
 
             // getColumn() might return a column with a different field key than we asked for!
             if (!column.getFieldKey().equals(fieldKey))
@@ -2062,7 +2163,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2081,7 +2182,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema {} from {}", def.getSourceSchemaName(), def.getDataSource(), e);
             }
         }
 
@@ -2103,7 +2204,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2123,7 +2224,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema {}", def.getUserSchemaName(), e);
             }
         }
 
@@ -2155,7 +2256,7 @@ public class QueryServiceImpl implements QueryService
         }
         catch (Exception e)
         {
-            LOG.error("Error deleting linked schema " + name, e);
+            LOG.error("Error deleting linked schema {}", name, e);
         }
     }
 
@@ -2182,7 +2283,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException | XmlValidationException | IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2219,7 +2320,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (XmlException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + XmlBeansUtil.getErrorMessage(e));
+                            LOG.error("Skipping '{}' schema template file: {}", name, XmlBeansUtil.getErrorMessage(e));
                         }
                         catch (XmlValidationException e)
                         {
@@ -2231,7 +2332,7 @@ public class QueryServiceImpl implements QueryService
                         }
                         catch (IOException e)
                         {
-                            LOG.error("Skipping '" + name + "' schema template file: " + e.getMessage());
+                            LOG.error("Skipping '{}' schema template file: {}", name, e.getMessage());
                         }
                     }
                 }
@@ -2793,12 +2894,12 @@ public class QueryServiceImpl implements QueryService
             this.query = query;
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
 
             this.table = query.getTableInfo();
 
             if (!query.getParseErrors().isEmpty())
-                throw query.getParseErrors().get(0);
+                throw query.getParseErrors().getFirst();
         }
 
         @Override
@@ -2937,7 +3038,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-     /** Compute and set the metadata for this column based on the source expressoin and the xml override */
+     /** Compute and set the metadata for this column based on the source expression and the xml override */
     @Override
     public void bindQueryExpressionColumn(ColumnInfo col, Map<FieldKey,ColumnInfo> columns, boolean validateOnly, @Nullable Set<FieldKey> referencedKeys) throws QueryParseException
     {
@@ -2947,6 +3048,40 @@ public class QueryServiceImpl implements QueryService
             calc.validate(columns, referencedKeys);
         if (!validateOnly)
             calc.computeMetaData(columns);
+    }
+
+    public record CalculatedColumnParseResult(JdbcType jdbcType, Set<FieldKey> requiredColumns) { }
+
+    public CalculatedColumnParseResult parseCalculatedColumn(
+        Container container,
+        User user,
+        String expression,
+        Map<FieldKey, JdbcType> columnMap,
+        @Nullable List<FieldKey> phiColumns
+    ) throws QueryException
+    {
+        var schema = DefaultSchema.get(user, container).getUserSchema("core");
+        var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
+        ColumnInfo calculatedCol = createQueryExpressionColumn(table, new FieldKey(null, "expr"), expression, null);
+        Map<FieldKey, ColumnInfo> columns = new HashMap<>();
+
+        for (var entry : columnMap.entrySet())
+        {
+            BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
+            // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions,
+            // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
+            if (phiColumns != null && phiColumns.contains(entry.getKey()))
+                entryCol.setPHI(PHI.PHI);
+            columns.put(entry.getKey(), entryCol);
+            table.addColumn(entryCol);
+        }
+
+        // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
+        var requiredColumns = new HashSet<FieldKey>();
+        bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
+        var jdbcType = calculatedCol.getJdbcType();
+
+        return new CalculatedColumnParseResult(jdbcType, requiredColumns);
     }
 
     @Override
@@ -3342,7 +3477,7 @@ public class QueryServiceImpl implements QueryService
 
         if (null == descriptor)
         {
-            LOG.warn("OLAP schema descriptor not found: " + configId);
+            LOG.warn("OLAP schema descriptor not found: {}", configId);
         }
         else
         {
@@ -3518,6 +3653,40 @@ public class QueryServiceImpl implements QueryService
 
     @Override
     @Nullable
+    public ContainerFilter getContainerFilterForFolder(Container container, User user)
+    {
+        // Check to see if product folders support is enabled.
+        if (container == null || !container.isProductFoldersEnabled())
+            return null;
+
+        if (isProductFoldersDataListingScopedToProject())
+        {
+            // When requesting data from a top-level folder context the ContainerFilter filters
+            // "down" the folder hierarchy for data.
+            if (container.isProject())
+            {
+                if (isProductFoldersAllFolderScopeEnabled())
+                    return ContainerFilter.Type.AllInProjectPlusShared.create(container, user);
+                return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+            }
+
+            // When listing data in a folder scope return data scoped to the current
+            // folder when the experimental feature is enabled.
+            return ContainerFilter.Type.Current.create(container, user);
+        }
+
+        // When requesting data from a top-level folder context the ContainerFilter filters
+        // "down" the folder hierarchy for data.
+        if (container.isProject())
+            return ContainerFilter.Type.CurrentAndSubfoldersPlusShared.create(container, user);
+
+        // When requesting data from a sub-folder context the ContainerFilter filters
+        // "up" the folder hierarchy for data.
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(container, user);
+    }
+
+    @Override
+    @Nullable
     public ContainerFilter.Type getContainerFilterTypeForLookups(Container container)
     {
         if (container != null && container.isProductFoldersEnabled())
@@ -3541,6 +3710,12 @@ public class QueryServiceImpl implements QueryService
     public boolean isProductFoldersDataListingScopedToProject()
     {
         return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED);
+    }
+
+    @Override
+    public boolean isTriggerManagedColumnsEnabled()
+    {
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
@@ -3703,19 +3878,19 @@ public class QueryServiceImpl implements QueryService
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleCustomViewCount + " custom views defined in all modules");
+            LOG.info("{} custom views defined in all modules", moduleCustomViewCount);
 
             int moduleQueryCount = MODULE_QUERY_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryCount + " module queries defined in all modules");
+            LOG.info("{} module queries defined in all modules", moduleQueryCount);
 
             int moduleQueryMetadataCount = MODULE_QUERY_METADATA_DEF_CACHE.streamAllResourceMaps()
                 .mapToInt(MultiValuedMap::size)
                 .sum();
 
-            LOG.info(moduleQueryMetadataCount + " module query metadata overrides defined in all modules");
+            LOG.info("{} module query metadata overrides defined in all modules", moduleQueryMetadataCount);
 
             // Make sure the cache retrieves the expected number of custom views, queries, and metadata overrides from the simpletest module, if present
 
@@ -3746,6 +3921,102 @@ public class QueryServiceImpl implements QueryService
             catch (Exception e)
             {
                 assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
+            }
+        }
+
+        @Test
+        public void testParseCalculatedColumn() throws QueryException
+        {
+            QueryServiceImpl qs = QueryServiceImpl.get();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+
+            FieldKey rowId = new FieldKey(null, "RowId");
+            FieldKey sortOrder = new FieldKey(null, "SortOrder");
+            FieldKey name = new FieldKey(null, "Name");
+            FieldKey title = new FieldKey(null, "Title");
+
+            // Integer arithmetic over existing core.Containers columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, null);
+                assertEquals(JdbcType.INTEGER, result.jdbcType());
+                assertEquals(Set.of(rowId, sortOrder), result.requiredColumns());
+            }
+
+            // String concatenation; only references a subset of supplied columns
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(name, JdbcType.VARCHAR);
+                columnMap.put(title, JdbcType.VARCHAR);
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "Name || '_' || Title", columnMap, null);
+                assertEquals(JdbcType.VARCHAR, result.jdbcType());
+                assertEquals(Set.of(name, title), result.requiredColumns());
+            }
+
+            // Client-supplied columns that don't exist yet on the domain are honored — the parser
+            // trusts the supplied columnMap rather than the live schema.
+            {
+                FieldKey newColA = new FieldKey(null, "NewColA");
+                FieldKey newColB = new FieldKey(null, "NewColB");
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(newColA, JdbcType.DOUBLE);
+                columnMap.put(newColB, JdbcType.DOUBLE);
+
+                CalculatedColumnParseResult result = qs.parseCalculatedColumn(c, user, "NewColA * NewColB", columnMap, null);
+                assertEquals(JdbcType.DOUBLE, result.jdbcType());
+                assertEquals(Set.of(newColA, newColB), result.requiredColumns());
+            }
+
+            // Referencing a column that the client did not supply is an error
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + Missing", columnMap, null);
+                    fail("Expected QueryException for reference to unknown column");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // Syntactically invalid expressions throw QueryException
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId +", columnMap, null);
+                    fail("Expected QueryException for syntactically invalid expression");
+                }
+                catch (QueryException _)
+                {
+                }
+            }
+
+            // PHI-flagged columns cannot be referenced from calculated column expressions
+            {
+                Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+                columnMap.put(rowId, JdbcType.INTEGER);
+                columnMap.put(sortOrder, JdbcType.INTEGER);
+
+                try
+                {
+                    qs.parseCalculatedColumn(c, user, "RowId + SortOrder", columnMap, List.of(sortOrder));
+                    fail("Expected QueryException when expression references a PHI column");
+                }
+                catch (QueryException _)
+                {
+                }
             }
         }
     }

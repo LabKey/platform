@@ -15,9 +15,9 @@
  */
 package org.labkey.assay;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.data.Container;
@@ -54,12 +54,6 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
             public String getKindName()
             {
                 return null;
-            }
-
-            @Override
-            public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-            {
-                return Collections.emptySet();
             }
         };
     }
@@ -158,7 +152,7 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
 
     @NotNull
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings, @Nullable String auditUserComment)
     {
         JSONObject args = options != null ? options.toJSONObject() : null;
         return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings, auditUserComment);

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -110,7 +110,7 @@ import java.util.stream.Collectors;
 /**
  * Class that wraps a data source and is shared amongst that data source's DbSchemas. Allows "nested" transactions,
  * implemented via a reference-counting style approach. Each (potentially nested) set of code should call
- * {@code ensureTransaction()}. This will either start a new transaction, or join an existing one. Once the outermost
+ * {@code ensureTransaction()}. This will either start a new transaction or join an existing one. Once the outermost
  * caller calls commit(), the WHOLE transaction will be committed at once. The most common usage scenario looks
  * something like:
  * <pre>{@code
@@ -121,8 +121,27 @@ import java.util.stream.Collectors;
  *     transaction.commit();
  * }
  *
- * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically by JDK 7's try {}
- * resource handling.
+ * }
+ * </pre>
+ * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically via try-with-resources.
+ * <p>
+ * All return pathways inside the transaction must commit, or the transaction will be considered abandoned to be rolled
+ * back. There should be no further database work prior to exiting the try block after the commit. Example:
+ * <pre>{@code
+ * DbScope scope = dbSchemaInstance.getScope();
+ * try (DbScope.Transaction transaction = scope.ensureTransaction())
+ * {
+ *     // Do some work
+ *     if (condition) {
+ *         transaction.commit();
+ *         return true;
+ *     }
+ *     // Do some other work
+ *     boolean result = determineResult();
+ *     transaction.commit();
+ *     return result;
+ * }
+ *
  * }
  * </pre>
  */
@@ -588,19 +607,7 @@ public class DbScope
                 _databaseName = (null != _dialect ? _dialect.getDatabaseName(getDataSourceProperties()) : null);
 
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
-                LOG.info(
-                        "Initializing DbScope with the following configuration:" +
-                                "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                                "\n    Server URL:               " + dbmd.getURL() +
-                                "\n    Database Name:            " + _databaseName +
-                                "\n    Database Product Name:    " + _databaseProductName +
-                                "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
-                                "\n    JDBC Driver Name:         " + _driverName +
-                                "\n    JDBC Driver Version:      " + _driverVersion +
-                                (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
-                                (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "") +
-                                (null != additionalLogging ? additionalLogging : "")
-                );
+                LOG.info("Initializing DbScope with the following configuration:\n    DataSource Name:          {}\n    Server URL:               {}\n    Database Name:            {}\n    Database Product Name:    {}\n    Database Product Version: {}\n    JDBC Driver Name:         {}\n    JDBC Driver Version:      {}{}{}{}", getDbScopeLoader().getDsName(), dbmd.getURL(), _databaseName, _databaseProductName, null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion, _driverName, _driverVersion, null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "", null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "", null != additionalLogging ? additionalLogging : "");
             }
 
             _driverLocation = determineDriverLocation(dataSource.getDriverClass());
@@ -869,7 +876,7 @@ public class DbScope
                         int stackDepth;
                         synchronized (_transaction)
                         {
-                            List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), k -> new ArrayList<>());
+                            List<TransactionImpl> transactions = _transaction.computeIfAbsent(getEffectiveThread(), _ -> new ArrayList<>());
                             transactions.add(result);
                             stackDepth = transactions.size();
                         }
@@ -891,7 +898,7 @@ public class DbScope
                             }
                         }
                         if (stackDepth > 2)
-                            LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
+                            LOG.info("Transaction stack for thread '{}' is {}", getEffectiveThread().getName(), stackDepth);
                     }
                     finally
                     {
@@ -1093,7 +1100,7 @@ public class DbScope
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
-            return transactions == null ? null : transactions.get(transactions.size() - 1);
+            return transactions == null ? null : transactions.getLast();
         }
     }
 
@@ -1242,7 +1249,7 @@ public class DbScope
         // Synchronize just long enough to get a ConnectionHolder into the map
         synchronized (_threadConnections)
         {
-            return _threadConnections.computeIfAbsent(thread, t -> new ConnectionHolder());
+            return _threadConnections.computeIfAbsent(thread, _ -> new ConnectionHolder());
         }
     }
 
@@ -1301,7 +1308,7 @@ public class DbScope
                     try
                     {
                         // Test the method to make sure we can access it
-                        Connection test = (Connection) methodGetInnermostDelegate.invoke(conn);
+                        var _ = (Connection) methodGetInnermostDelegate.invoke(conn);
                         isDelegating = true;
                         return;
                     }
@@ -1862,7 +1869,7 @@ public class DbScope
         }
     }
 
-    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException, SQLException
+    private static void detectUnexpectedConnections(Connection conn, LabKeyDataSource ds, String applicationName) throws ServletException
     {
         SqlDialect dialect = ds.getDialect();
         String databaseName = dialect.getDatabaseName(ds.getUrl());
@@ -1933,11 +1940,11 @@ public class DbScope
                     {
                         // Set LabKey's default application name ("LabKey Server") into the connection properties
                         applicationName = ds.setDefaultApplicationName();
-                        LOG.info(message + " (the default name); all subsequent connections will use \"" + applicationName + "\" instead.");
+                        LOG.info("{} (the default name); all subsequent connections will use \"{}\" instead.", message, applicationName);
                     }
                     else
                     {
-                        LOG.info(message + "; this will continue to be used on all subsequent connections.");
+                        LOG.info("{}; this will continue to be used on all subsequent connections.", message);
                     }
                 }
                 else
@@ -1947,7 +1954,7 @@ public class DbScope
             }
             catch (SQLException e)
             {
-                LOG.warn("Attempt to determine application name failed: " + e.getMessage());
+                LOG.warn("Attempt to determine application name failed: {}", e.getMessage());
                 applicationName = ds.setDefaultApplicationName();
             }
         }
@@ -2000,7 +2007,7 @@ public class DbScope
 
         LOG.info("Attempting to create database \"{}\"", dbName);
 
-        String defaultUrl = StringUtils.replace(url, dbName, dialect.getDefaultDatabaseName());
+        String defaultUrl = Strings.CS.replace(url, dbName, dialect.getDefaultDatabaseName());
         String createSql = "(undefined)";
 
         try (Connection conn = getRawConnection(defaultUrl, ds))
@@ -2161,7 +2168,7 @@ public class DbScope
                 if (count++ > 100)
                 {
                     // Avoid getting into an infinite loop if someone's messed up the transaction stack
-                    LOG.error("Aborting trying to close connections after processing " + count + " transaction objects");
+                    LOG.error("Aborting trying to close connections after processing {} transaction objects", count);
                     break;
                 }
                 try
@@ -2175,7 +2182,7 @@ public class DbScope
                 }
                 catch (Exception x)
                 {
-                    LOG.error("Failed to force the still-pending transaction object closed on DB scope " + scope, x);
+                    LOG.error("Failed to force the still-pending transaction object closed on DB scope {}", scope, x);
                 }
 
                 // We may have nested concurrent transactions for a given scope, so be sure we close them all
@@ -2407,7 +2414,7 @@ public class DbScope
             T existing = (T)runnables.putIfAbsent(task, task);
             if (existing != null)
             {
-                LOG.debug("Skipping duplicate runnable: " + task.toString());
+                LOG.debug("Skipping duplicate runnable: {}", task.toString());
             }
             return existing == null ? task : existing;
         }
@@ -2415,8 +2422,8 @@ public class DbScope
 
     public interface Transaction extends AutoCloseable
     {
-        /*
-         * @return  the task that was inserted or the existing object (equal to the runnable passed in) that will be run instead
+        /**
+         * @return the task that was inserted or the existing object (equal to the runnable passed in) that will be run instead
          */
         @NotNull
         <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions);
@@ -2516,7 +2523,7 @@ public class DbScope
         synchronized (_transaction)
         {
             List<TransactionImpl> transactions = _transaction.get(thread);
-            transactions.remove(transactions.size() - 1);
+            transactions.removeLast();
             if (transactions.isEmpty())
             {
                 _transaction.remove(thread);
@@ -2796,7 +2803,7 @@ public class DbScope
         /** Remove current transaction nesting and unlock any locks */
         private void decrement()
         {
-            List<Lock> locks = _locks.remove(_locks.size() - 1);
+            List<Lock> locks = _locks.removeLast();
             for (Lock lock : locks)
             {
                 // Release all the locks
@@ -2853,7 +2860,7 @@ public class DbScope
                 if (!_locks.isEmpty() && releaseOnFinalCommit)
                 {
                     // Add the new locks to the outermost set of locks
-                    _locks.get(0).addAll(extraLocks);
+                    _locks.getFirst().addAll(extraLocks);
                     // Add an empty list to this layer of the transaction
                     _locks.add(new ArrayList<>());
                 }
@@ -3076,7 +3083,7 @@ public class DbScope
                 TableInfo table = schema.getTable(name);
 
                 if (null == table)
-                    LOG.error("Table is null: " + schema.getName() + "." + name);
+                    LOG.error("Table is null: {}.{}", schema.getName(), name);
                 else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
                     return table;
             }
@@ -3328,7 +3335,7 @@ public class DbScope
                     //noinspection EmptyTryBlock
                     try (Transaction ignored = getLabKeyScope().ensureTransaction())
                     {
-                        // Intentionally don't call t2.commit();
+                        // Intentionally, don't call t2.commit();
                     }
                     try
                     {
@@ -3359,14 +3366,8 @@ public class DbScope
                 try (Transaction t2 = getLabKeyScope().ensureTransaction())
                 {
                     assertSame(connection, t2.getConnection());
-                    try (Transaction t3 = getLabKeyScope().ensureTransaction(new TransactionKind()
-                    {
-                        @NotNull
-                        @Override
-                        public String getKind()
-                        {
-                            return "PIPELINESTATUS";  // We can't really see PipelineStatus here, but just need something non-normal to test
-                        }
+                    try (Transaction t3 = getLabKeyScope().ensureTransaction(() -> {
+                        return "PIPELINESTATUS";  // We can't really see PipelineStatus here, but just need something non-normal to test
                     }))
                     {
                         assertTrue(getLabKeyScope().isTransactionActive());
@@ -3392,7 +3393,7 @@ public class DbScope
             Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
-            attemptToDeadlock(lockUser, lockHome, (x) -> {}, PessimisticLockingFailureException.class);
+            attemptToDeadlock(lockUser, lockHome, (_) -> {}, PessimisticLockingFailureException.class);
         }
 
         private void attemptToDeadlock(Lock lock1, Lock lock2, @NotNull Consumer<Transaction> transactionModifier, Class<? extends Throwable> expectedException)

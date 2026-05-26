@@ -199,7 +199,7 @@ public class SavePaths implements DavCrawler.SavePaths
             Integer ident = new SqlSelector(getSearchSchema(),insert).setLogLevel(Level.ERROR).getObject(Integer.class);
             if (null != ident)
             {
-                _log.debug("insertPath(" + path + ", " + valueNextCrawl + ")");
+                _log.debug("insertPath({}, {})", path, valueNextCrawl);
                 return ident;
             }
             return getId(path);
@@ -243,7 +243,7 @@ public class SavePaths implements DavCrawler.SavePaths
             f.append(")");
             int count = new SqlExecutor(getSearchSchema()).execute(f);
             if (count == 1)
-                _log.debug("insertPath(" + path + ", " + nextCrawl + ")");
+                _log.debug("insertPath({}, {})", path, nextCrawl);
             return count==1;
         }
         catch (SQLException x)
@@ -319,7 +319,7 @@ public class SavePaths implements DavCrawler.SavePaths
     @Override
     public void deletePath(Path path)
     {
-        _log.debug("deleting crawler paths that start with '" + path + "'");
+        _log.debug("deleting crawler paths that start with '{}'", path);
         // UNDONE LIKE ESCAPE
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");

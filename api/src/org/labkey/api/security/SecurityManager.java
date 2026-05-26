@@ -28,6 +28,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -67,17 +68,15 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -238,12 +237,12 @@ public class SecurityManager
         if (StringUtils.trimToNull(serviceURL) == null)
         {
             ContentSecurityPolicyFilter.unregisterAllowedSources(key, Directive.Connection);
-            LOG.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
+            LOG.trace("Unregistered [{}] as an allowed connection source", key);
             return;
         }
 
         ContentSecurityPolicyFilter.registerAllowedSources(key, Directive.Connection, serviceURL);
-        LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
+        LOG.trace("Registered [{}] as an allowed connection source", serviceURL);
     }
 
     public enum PermissionTypes
@@ -315,7 +314,7 @@ public class SecurityManager
     public static void addGroupListener(GroupListener listener, boolean meFirst)
     {
         if (meFirst)
-            _listeners.add(0, listener);
+            _listeners.addFirst(listener);
         else
             _listeners.add(listener);
     }
@@ -528,17 +527,17 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
-        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\"");
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"{}\"", request.getRequestURI());
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        AUTH_LOG.debug("   " + (null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password"));
+        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password");
 
         if (null == basicCredentials)
         {
             basicCredentials = getApiKey(request);
-            AUTH_LOG.debug("   " + (null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key"));
+            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key");
         }
 
         // Handle session API key early, if present and valid
@@ -580,7 +579,7 @@ public class SecurityManager
 
             if (null != sessionUser)
             {
-                AUTH_LOG.debug("   Session user present: " + sessionUser);
+                AUTH_LOG.debug("   Session user present: {}", sessionUser);
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
@@ -606,7 +605,7 @@ public class SecurityManager
                         // If impersonating, stop so it gets logged
                         if (sessionUser.isImpersonated())
                         {
-                            stopImpersonating(request, sessionUser.getImpersonationContext().getFactory());
+                            stopImpersonating(request, sessionUser.getPermissionsContext().getFactory());
                             sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                         }
 
@@ -628,7 +627,7 @@ public class SecurityManager
                 u = authenticateBasic(request, basicCredentials);
                 if (null != u)
                 {
-                    AUTH_LOG.debug("   Basic authentication succeeded: " + u);
+                    AUTH_LOG.debug("   Basic authentication succeeded: {}", u);
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     // accept Guest as valid credentials from authenticateBasic()
                     return new Pair<>(u, request);
@@ -649,7 +648,7 @@ public class SecurityManager
         }
         finally
         {
-            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"" + request.getRequestURI() + "\". User: " + u);
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header for request \"{}\". User: {}", request.getRequestURI(), u);
         }
     }
 
@@ -664,6 +663,13 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most
         // LabKey client API implementations
         String apiKey = request.getHeader(API_KEY);
+        
+        if (null == apiKey)
+        {
+            String authorization = request.getHeader("Authorization");
+            if (Strings.CI.startsWith(authorization, "Bearer "))
+                apiKey = StringUtils.trimToNull(authorization.substring("Bearer ".length()));
+        }
 
         if (null == apiKey)
         {
@@ -824,7 +830,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnUrl));
@@ -841,7 +847,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (user.hasRootPermission(ImpersonatePermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnUrl));
@@ -1068,7 +1074,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(x.getSQLState()))
                     {
-                        LOG.debug("createUser: Something failed user: " + email, x);
+                        LOG.debug("createUser: Something failed user: {}", email, x);
                         throw x;
                     }
                 }
@@ -1414,7 +1420,7 @@ public class SecurityManager
     }
 
     // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
-    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = CanImpersonateSiteRolesPermission.class;
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = ImpersonatePermission.class;
 
     public static boolean isRootAdmin(User user)
     {
@@ -1481,7 +1487,7 @@ public class SecurityManager
         catch (DataIntegrityViolationException e)
         {
             // Assume this is a race condition and ignore, see #14795
-            LOG.warn("Member could not be added: " + e.getMessage());
+            LOG.warn("Member could not be added: {}", e.getMessage());
         }
 
         fireAddPrincipalToGroup(group, principal);
@@ -2003,22 +2009,14 @@ public class SecurityManager
     }
 
     /**
-     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
-     */
-    public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
-    {
-        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(includeInactive).stream()
-            .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
-            .toList();
-    }
-
-    /**
      * @return an immutable list of active Users who have been assigned all the requested permissions in the given container
      */
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
-        return getUsersWithPermissions(c, false, perms);
+        // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
+        return UserManager.getUsers(false).stream()
+            .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
+            .toList();
     }
 
     /**
@@ -2606,16 +2604,20 @@ public class SecurityManager
     public static class RegistrationEmailTemplate extends SecurityEmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
-                "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
+            "Welcome to the ^organizationName^ ^siteShortName^ Web Site new user registration";
         protected static final String DEFAULT_BODY =
-                "^optionalMessage^\n\n" +
-                "You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending " +
-                "you this message to verify your email address and to allow you to create a password that will provide secure " +
-                "access to your data on the web site. To complete the registration process, simply click the link below or " +
-                "copy it to your browser's address bar. You will then be asked to choose a password.\n\n" +
-                "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to " +
-                "contact the ^siteShortName^ team at ^systemEmail^.";
+            """
+                ^optionalMessage^
+                
+                You now have an account on the ^organizationName^ ^siteShortName^ web site. We are sending \
+                you this message to verify your email address and to allow you to create a password that will provide secure \
+                access to your data on the web site. To complete the registration process, simply click the link below or \
+                copy it to your browser's address bar. You will then be asked to choose a password.
+                
+                ^verificationURL^
+                
+                The ^siteShortName^ home page is ^homePageURL^. If you have any questions don't hesitate to \
+                contact the ^siteShortName^ team at ^systemEmail^.""";
 
         @SuppressWarnings("UnusedDeclaration") // Constructor called via reflection
         public RegistrationEmailTemplate()
@@ -2649,14 +2651,17 @@ public class SecurityManager
     public static class PasswordResetEmailTemplate extends SecurityEmailTemplate
     {
         protected static final String DEFAULT_SUBJECT =
-                "Reset Password Notification from the ^siteShortName^ Web Site";
+            "Reset Password Notification from the ^siteShortName^ Web Site";
         protected static final String DEFAULT_BODY =
-                "We have reset your password on the ^organizationName^ ^siteShortName^ web site. " +
-                "To sign in to the system you will need " +
-                "to specify a new password. Click the link below or copy it to your browser's address bar. You will then be " +
-                "asked to enter a new password.\n\n" +
-                "^verificationURL^\n\n" +
-                "The ^siteShortName^ home page is ^homePageURL^.";
+            """
+                We have reset your password on the ^organizationName^ ^siteShortName^ web site. \
+                To sign in to the system you will need \
+                to specify a new password. Click the link below or copy it to your browser's address bar. You will then be \
+                asked to enter a new password.
+                
+                ^verificationURL^
+                
+                The ^siteShortName^ home page is ^homePageURL^.""";
 
         public PasswordResetEmailTemplate()
         {
@@ -2894,7 +2899,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                            LOG.error("Invalid role for group specified in startup properties GroupRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(group, role);
@@ -2947,7 +2952,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            LOG.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                            LOG.warn("Invalid role for user specified in startup properties UserRoles: {}", roleName);
                             continue;
                         }
                         policy.addRoleAssignment(user, role);
@@ -3072,7 +3077,7 @@ public class SecurityManager
      */
     public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
-        if (null == resource || null == principal)
+        if (null == resource || null == principal || !principal.isActive())
             return Set.of();
 
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
@@ -3096,7 +3101,7 @@ public class SecurityManager
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
 
         if (principal instanceof User user)
-            permissions = user.getImpersonationContext().filterPermissions(permissions);
+            permissions = user.getPermissionsContext().filterPermissions(permissions);
 
         return permissions.collect(Collectors.toSet());
     }
@@ -3281,7 +3286,7 @@ public class SecurityManager
             for(Object[] groupMemberResponse : groupMemberResponses)
             {
                 addMemberToGroupVerifyResponse((Group) groupMemberResponse[0],
-                        (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
+                    (UserPrincipal) groupMemberResponse[1], (String) groupMemberResponse[2]);
             }
 
             addMember(groupA, groupB);
@@ -3336,6 +3341,30 @@ public class SecurityManager
                 User user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
                 assertNotNull("\"" + rawEmail + "\" failed to authenticate with password \"" + password + "\"; check labkey.log around timestamp " + DateUtil.formatDateTime(new Date(), "HH:mm:ss,SSS") + " for the reason", user2);
                 assertEquals(user, user2);
+
+                // Now test setting that user to inactive
+                Container testContainer = JunitUtil.getTestContainer();
+                if (!testContainer.hasPermission(user, ReadPermission.class))
+                {
+                    addRoleAssignment(new MutableSecurityPolicy(testContainer), user, ReaderRole.class, TestContext.get().getUser());
+                    assertTrue(testContainer.hasPermission(user, ReadPermission.class));
+                }
+                // Set the user to inactive
+                UserManager.setUserActive(TestContext.get().getUser(), user, false);
+                // Refresh the user from the cache
+                user = UserManager.getUser(user.getUserId());
+                assertNotNull(user);
+                assertFalse(user.isActive());
+                try
+                {
+                    user2 = AuthenticationManager.authenticate(ViewServlet.mockRequest("GET", new ActionURL(), null, null, null), rawEmail, password);
+                    fail("Expected authenticate() to throw for inactive user, but it returned " + user2);
+                }
+                catch (UnauthorizedException ue)
+                {
+                    // Expected that inactive user can't authenticate
+                }
+                assertFalse(testContainer.hasPermission(user, ReadPermission.class));
             }
             finally
             {
@@ -3438,7 +3467,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyImpersonatingContext());
+            user.setImpersonationContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 

@@ -29,20 +29,20 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.Transient;
-import org.labkey.api.security.impersonation.ImpersonationContext;
-import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
@@ -85,7 +85,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     private ActionURL _avatarUrl;
     private boolean _system = false;
 
-    private ImpersonationContext _impersonationContext = NotImpersonatingContext.get();
+    private PermissionsContext _permissionsContext = NormalPermissionsContext.get();
 
     public static final User guest = new GuestUser("guest", "guest");
 
@@ -241,7 +241,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public PrincipalArray getGroups()
     {
         if (_groups == null)
-            _groups = _impersonationContext.getGroups(this);
+            _groups = _permissionsContext.getGroups(this);
         return _groups;
     }
 
@@ -313,6 +313,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return hasRootPermissions(TRUSTED_BROWSER_DEV);
     }
 
+    public boolean isTroubleshooter()
+    {
+        return hasRootPermission(TroubleshooterPermission.class);
+    }
+
     public boolean isBrowserDev()
     {
         return hasRootPermission(BrowserDeveloperPermission.class);
@@ -351,7 +356,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     @Override
     public Stream<Role> getAssignedRoles(SecurableResource resource)
     {
-        return _impersonationContext.getAssignedRoles(this, resource);
+        return _permissionsContext.getAssignedRoles(this, resource);
     }
 
     public JSONObject getUserProps()
@@ -404,30 +409,30 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    void setImpersonationContext(ImpersonationContext impersonationContext)
+    void setImpersonationContext(PermissionsContext permissionsContext)
     {
-        _impersonationContext = impersonationContext;
+        _permissionsContext = permissionsContext;
     }
 
-    public @NotNull ImpersonationContext getImpersonationContext()
+    public @NotNull PermissionsContext getPermissionsContext()
     {
-        return _impersonationContext;
+        return _permissionsContext;
     }
 
     public boolean isImpersonated()
     {
-        return _impersonationContext.isImpersonating();
+        return _permissionsContext.isImpersonating();
     }
 
     // @NotNull when isImpersonated() is true... returns the admin user, with all normal roles & groups
     public User getImpersonatingUser()
     {
-        return _impersonationContext.getAdminUser();
+        return _permissionsContext.getAdminUser();
     }
 
     public @Nullable Container getImpersonationProject()
     {
-        return _impersonationContext.getImpersonationProject();
+        return _permissionsContext.getImpersonationProject();
     }
 
     @Override
@@ -594,9 +599,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
             props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
             props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
-            props.put("isRootAdmin", user.hasRootAdminPermission());
-            props.put("isSystemAdmin", user.hasSiteAdminPermission());
-            props.put("canImpersonateSiteRoles", user.hasRootPermission(CanImpersonateSiteRolesPermission.class));
+            props.put("isRootAdmin", user.hasRootAdminPermission()); // Site Admin or App Admin
+            props.put("isSystemAdmin", user.hasSiteAdminPermission()); // @Deprecated, use isSiteAdmin instead. TODO: Eliminate usages and remove
+            props.put("isSiteAdmin", user.hasSiteAdminPermission()); // Just Site Admin
+            props.put("canImpersonateSiteRoles", user.hasRootPermission(ImpersonatePermission.class)); // Site Admin, App Admin, or Impersonating Troubleshooter
+            props.put("canImpersonatePrivilegedRoles", user.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class));
             props.put("isGuest", user.isGuest());
             props.put("isDeveloper", user.isBrowserDev());
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));

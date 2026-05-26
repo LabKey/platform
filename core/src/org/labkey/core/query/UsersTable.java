@@ -300,7 +300,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                             if (!(col instanceof NullColumnInfo))
                             {
                                 if (col.getScale() != pd.getScale())
-                                    LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
+                                    LOG.warn("Scale doesn't match for column {}: {} vs {}", col.getName(), col.getScale(), pd.getScale());
                                 pd.copyTo( (ColumnRenderPropertiesImpl)col );
                                 if (!col.isHidden())
                                     defaultCols.add(FieldKey.fromParts(col.getName()));
@@ -453,9 +453,9 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
+    public void fireRowTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
     {
-        super.fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, existingRecord);
+        super.fireRowTrigger(c, user, type, insertOption, before, rowNumber, newRow, oldRow, extraContext, existingRecord);
         Integer userId = null!=oldRow ? asInteger(oldRow.get("UserId")) : null!=newRow ? asInteger(newRow.get("UserId")) : null;
         if (null != userId && !before)
             UserManager.fireUserPropertiesChanged(userId);
@@ -471,13 +471,13 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
     private static class UsersTableQueryUpdateService extends SimpleQueryUpdateService
     {
-        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable<?> queryTable, TableInfo dbTable, DomainUpdateHelper helper)
         {
             super(queryTable, dbTable, helper);
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
         {
             throw new UnsupportedOperationException("Delete not supported.");
         }

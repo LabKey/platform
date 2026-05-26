@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -827,7 +828,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
         }
 
-        if (StringUtils.endsWithIgnoreCase(name, ".view") || StringUtils.endsWithIgnoreCase(name, ".api") || StringUtils.endsWithIgnoreCase(name, ".post"))
+        if (Strings.CI.endsWith(name, ".view") || Strings.CI.endsWith(name, ".api") || Strings.CI.endsWith(name, ".post"))
         {
             error.append("Folder name should not end with '.view', '.api', or '.post'.");
             return false;
@@ -1249,7 +1250,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
 
         // always put the required modules in the set
-        // note that this will pickup the modules from the folder type's getActiveModules()
+        // note that this will pick up the modules from the folder type's getActiveModules()
         Set<Module> modules = new HashSet<>(getRequiredModules());
 
         // add all modules found in user preferences:
@@ -1457,7 +1458,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         ContainerType type = ContainerTypeRegistry.get().getType(typeString);
         if (type == null)
-            LOG.warn("Unknown container type: " + typeString);
+            LOG.warn("Unknown container type: {}", typeString);
         else
             _containerType = type;
     }
@@ -1799,7 +1800,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 iconFile = dir.getFile();
             if (!NetworkDrive.exists(iconFile))
             {
-                LOG.warn("Could not find specified icon: " + iconPath);
+                LOG.warn("Could not find specified icon: {}", iconPath);
                 iconPath = FolderType.NONE.getFolderIconPath();
             }
             if (!iconPath.startsWith("/"))

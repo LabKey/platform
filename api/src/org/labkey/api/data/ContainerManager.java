@@ -38,6 +38,7 @@ import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -54,7 +55,6 @@ import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
-import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
@@ -422,6 +422,7 @@ public class ContainerManager
 
         // import objects into the target folder
         XmlObject folderXml = vf.getXmlBean("folder.xml");
+
         if (folderXml instanceof FolderDocument folderDoc)
         {
             FolderImportContext importCtx = new FolderImportContext(user, c, folderDoc, null, new StaticLoggerGetter(LogManager.getLogger(FolderImporterImpl.class)), vf);
@@ -1539,7 +1540,7 @@ public class ContainerManager
                     }
 
                     if (!addFolder)
-                        LOG.debug("isNavAccessOpen restriction: \"" + f.getPath() + "\"");
+                        LOG.debug("isNavAccessOpen restriction: \"{}\"", f.getPath());
                 }
 
                 if (addFolder)
@@ -1710,14 +1711,7 @@ public class ContainerManager
 
                 clearCache();
 
-                try
-                {
-                    ExperimentService.get().moveContainer(c, oldParent, newParent);
-                }
-                catch (ExperimentException e)
-                {
-                    throw new RuntimeException(e);
-                }
+                ExperimentService.get().moveContainer(c, oldParent, newParent);
 
                 // Clear after the commit has propagated the state to other threads and transactions
                 // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
@@ -1915,7 +1909,7 @@ public class ContainerManager
             throw new IllegalStateException("Container not flagged as being deleted: " + c.getPath());
         }
 
-        LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+        LOG.debug("Starting container delete for {} {}", c.getContainerNoun(true), c.getPath());
 
         // Tell the search indexer to drop work for the container that's about to be deleted
         SearchService.get().purgeForContainer(c);
@@ -1941,6 +1935,10 @@ public class ContainerManager
                 // Tell parent
                 setContainerTabDeleted(c.getParent(), c.getName(), c.getParent().getFolderType().getName());
             }
+
+            // Log orphaned attachments in this server, but only in dev mode, since this is for our testing
+            if (AppProps.getInstance().isDevMode())
+                AttachmentService.get().logOrphanedAttachments();
 
             fireDeleteContainer(c, user);
 
@@ -1981,11 +1979,11 @@ public class ContainerManager
         boolean success = CORE.getSchema().getScope().executeWithRetry(tryDeleteContainer);
         if (success)
         {
-            LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+            LOG.debug("Completed container delete for {} {}", c.getContainerNoun(true), c.getPath());
         }
         else
         {
-            LOG.warn("Failed to delete container: " + c.getPath());
+            LOG.warn("Failed to delete container: {}", c.getPath());
         }
         return success;
     }
@@ -2025,13 +2023,13 @@ public class ContainerManager
         if (!hasTreePermission(root, user, DeletePermission.class))
             throw new UnauthorizedException("You don't have delete permissions to all folders");
 
-        LOG.debug("Starting container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
+        LOG.debug("Starting container (and children) delete for {} {}", root.getContainerNoun(true), root.getPath());
         Set<Container> depthFirst = getAllChildrenDepthFirst(root);
         depthFirst.add(root);
 
         delete(depthFirst, user, comment);
 
-        LOG.debug("Completed container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
+        LOG.debug("Completed container (and children) delete for {} {}", root.getContainerNoun(true), root.getPath());
     }
 
     public static void deleteAll(Container root, User user) throws UnauthorizedException
@@ -2426,7 +2424,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("fireCreateContainer for " + cl.getClass().getName(), t);
+                LOG.error("fireCreateContainer for {}", cl.getClass().getName(), t);
             }
         }
     }
@@ -2437,14 +2435,14 @@ public class ContainerManager
 
         for (ContainerListener l : list)
         {
-            LOG.debug("Deleting " + c.getPath() + ": fireDeleteContainer for " + l.getClass().getName());
+            LOG.debug("Deleting {}: fireDeleteContainer for {}", c.getPath(), l.getClass().getName());
             try
             {
                 l.containerDeleted(c, user);
             }
             catch (RuntimeException e)
             {
-                LOG.error("fireDeleteContainer for " + l.getClass().getName(), e);
+                LOG.error("fireDeleteContainer for {}", l.getClass().getName(), e);
 
                 // Issue 17560: Fail fast (first Throwable aborts iteration)
                 throw e;
@@ -2490,7 +2488,7 @@ public class ContainerManager
             }
             catch (Throwable t)
             {
-                LOG.error("firePropertyChangeEvent for " + l.getClass().getName(), t);
+                LOG.error("firePropertyChangeEvent for {}", l.getClass().getName(), t);
             }
         }
     }
@@ -2523,8 +2521,8 @@ public class ContainerManager
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.
         return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
-                RoleManager.getRole(AuthorRole.class),
-                RoleManager.getRole(ReaderRole.class)
+            RoleManager.getRole(AuthorRole.class),
+            RoleManager.getRole(ReaderRole.class)
         );
     }
 
@@ -2592,7 +2590,7 @@ public class ContainerManager
         if (aliased == null)
             return null;
 
-        String leafPath = aliased.getPath() + "/" + splits.get(splits.size()-1);
+        String leafPath = aliased.getPath() + "/" + splits.getLast();
         return resolveContainerPathAlias(leafPath, true);
     }
 
@@ -2693,7 +2691,7 @@ public class ContainerManager
 
         if (c == null)
         {
-            LOG.debug("Creating new container for path '" + path + "'");
+            LOG.debug("Creating new container for path '{}'", path);
             newContainer = true;
             c = ensureContainer(path, user);
         }
@@ -2710,7 +2708,7 @@ public class ContainerManager
 
         if (newContainer || 0 == policyCount.intValue())
         {
-            LOG.debug("Setting permissions for '" + path + "'");
+            LOG.debug("Setting permissions for '{}'", path);
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
             if (guestRole != null)
@@ -2881,7 +2879,7 @@ public class ContainerManager
 
         private void testOneFolderType(FolderType folderType)
         {
-            LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
+            LOG.info("testOneFolderType({}): creating container", folderType.getName());
             Container newFolder = createContainer(_testRoot, "folderTypeTest", TestContext.get().getUser());
             FolderType ft = newFolder.getFolderType();
             assertEquals(FolderType.NONE, ft);
@@ -2889,7 +2887,7 @@ public class ContainerManager
             Container newFolderFromCache = getForId(newFolder.getId());
             assertNotNull(newFolderFromCache);
             assertEquals(FolderType.NONE, newFolderFromCache.getFolderType());
-            LOG.info("testOneFolderType(" + folderType.getName() + "): setting folder type");
+            LOG.info("testOneFolderType({}): setting folder type", folderType.getName());
             newFolder.setFolderType(folderType, TestContext.get().getUser());
 
             newFolderFromCache = getForId(newFolder.getId());
@@ -2897,9 +2895,9 @@ public class ContainerManager
             assertEquals(newFolderFromCache.getFolderType().getName(), folderType.getName());
             assertEquals(newFolderFromCache.getFolderType().getDescription(), folderType.getDescription());
 
-            LOG.info("testOneFolderType(" + folderType.getName() + "): deleteAll");
+            LOG.info("testOneFolderType({}): deleteAll", folderType.getName());
             deleteAll(newFolder, TestContext.get().getUser());          // There might be subfolders because of container tabs
-            LOG.info("testOneFolderType(" + folderType.getName() + "): deleteAll complete");
+            LOG.info("testOneFolderType({}): deleteAll complete", folderType.getName());
             Container deletedContainer = getForId(newFolder.getId());
 
             if (deletedContainer != null)
@@ -2946,7 +2944,7 @@ public class ContainerManager
 
             for (String childName : nodes)
             {
-                LOG.debug(StringUtils.repeat("   ", offset) + childName);
+                LOG.debug("{}{}", StringUtils.repeat("   ", offset), childName);
                 logNode(mm, childName, offset + 1);
             }
         }

@@ -276,7 +276,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
-                result = props.get(0);
+                result = props.getFirst();
             }
         }
         return result;
@@ -1000,13 +1000,8 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             return null;
 
         ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
-        ActionURL url = null;
-
-        if (urlProvider != null)
-        {
-            url = urlProvider.getShowSampleTypeURL(this);
-            url.setExtraPath(container.getId());
-        }
+        ActionURL url = urlProvider.getShowSampleTypeURL(this);
+        url.setExtraPath(container.getId());
 
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();

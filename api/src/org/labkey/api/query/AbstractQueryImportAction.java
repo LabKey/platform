@@ -30,6 +30,7 @@ import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -56,6 +57,7 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -67,6 +69,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -76,6 +79,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -545,7 +549,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             }
             else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
             {
-                Map<String, MultipartFile> files = ((MultipartHttpServletRequest)getViewContext().getRequest()).getFileMap();
+                Map<String, MultipartFile> files = getFileMap();
                 MultipartFile multipartfile = null==files ? null : files.get("file");
                 if (null != multipartfile && multipartfile.getSize() > 0)
                 {
@@ -578,7 +582,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     multipartfile.transferTo(dataFile.toNioPathForWrite());
                     if (_useAsync)
                     {
-                        if (!isBackgroundImportSupported())
+                        if (!isBackgroundImportSupported(dataFile.getName()))
                             throw new RuntimeException("Importing in background currently is not supported for this table");
 
                         ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), new ActionURL());
@@ -606,6 +610,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setAllowLineageColumns(allowLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
+                            if (WorkflowService.get() != null)
+                            {
+                                Map<String, Object> workflowParams = WorkflowService.get().getConfigParameters(getViewContext().getRequest());
+                                importContextBuilder.setWorkflowParams(workflowParams);
+                            }
 
                             importContextBuilder.setTransactionDetails(transactionDetails);
                             QueryImportPipelineJob job = new QueryImportPipelineJob(getQueryImportProviderName(), info, root, importContextBuilder);
@@ -748,7 +757,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
-    protected boolean isBackgroundImportSupported()
+    protected boolean isBackgroundImportSupported(@NotNull String fileName)
     {
         return false;
     }
@@ -759,6 +768,14 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         response.put("success", true);
         response.put("rowCount", rowCount);
         return response;
+    }
+
+    public static JSONArray prepareRowsResponse(@NotNull Collection<Map<String, Object>> rows)
+    {
+        return rows.stream()
+                .map(JsonUtil::toMapPreserveNonFinite)
+                .map(JsonUtil::toJsonPreserveNulls)
+                .collect(LabKeyCollectors.toJSONArray());
     }
 
     @Override

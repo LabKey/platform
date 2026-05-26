@@ -70,7 +70,6 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         super(queryTable);
     }
 
-
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
     {
@@ -94,7 +93,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         BatchValidationException errors = new BatchValidationException();
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, null, true, errors, extraScriptContext);
 
         Set<Long> rowIds = new HashSet<>(keys.size());
         for (Map<String, Object> key : keys)
@@ -139,7 +138,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalStateException(e.getMessage());
         }
 
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, null, false, errors, extraScriptContext);
 
         addAuditEvent(user, container, QueryService.AuditAction.DELETE, configParameters, null, null, null);
 
@@ -203,7 +202,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         try
         {
             if (hasTableScript)
-                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, true, errors, extraScriptContext);
+                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, true, errors, extraScriptContext);
         }
         catch (BatchValidationException e)
         {
@@ -263,7 +262,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         try
         {
             if (hasTableScript)
-                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
+                getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, false, errors, extraScriptContext);
         }
         catch (BatchValidationException e)
         {
@@ -332,7 +331,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys + " in length, respectively");
 
         errors.setExtraContext(extraScriptContext);
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, true, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, true, errors, extraScriptContext);
 
         Set<Long> rowIds = new HashSet<>(rows.size());
         Map<Long, Map<String, Object>> uniqueRows = new LongHashMap<>(rows.size());
@@ -397,7 +396,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         }
         catch (ValidationException e)
         {
-            e.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), newRows.get(0), 0);
+            e.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), newRows.getFirst(), 0);
             errors.addRowError(e);
             throw errors;
         }
@@ -406,7 +405,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalStateException(e.getMessage());
         }
 
-        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
+        getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, false, errors, extraScriptContext);
 
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, rows, null, null);
 
@@ -517,7 +516,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new IllegalStateException("Expected one and only one count of rows.");
-        else if (!counts.isEmpty() && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.getFirst() != 0)
             throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
     }
 
@@ -530,7 +529,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
             throw new ValidationException("Expected one and only one count of rows.");
-        else if (!counts.isEmpty() && counts.get(0) != 0)
+        else if (!counts.isEmpty() && counts.getFirst() != 0)
             throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
     }
 

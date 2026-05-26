@@ -95,7 +95,7 @@ public class EmailServiceImpl implements EmailService
             }
             catch (MessagingException e)
             {
-                _log.error("Failed to send message: " + msg.getSubject(), e);
+                _log.error("Failed to send message: {}", msg.getSubject(), e);
             }
         }
 
@@ -256,7 +256,7 @@ public class EmailServiceImpl implements EmailService
         @Override
         public MimeMessage createMessage() throws MessagingException
         {
-            MimeMessage msg = new MimeMessage(MailHelper.getSession());
+            MimeMessage msg = new MimeMessage(MailHelper.getSmtpSession());
             boolean multipart = _contentMap.size() > 1 || (_files != null && !_files.isEmpty());
             MimeMultipart multiPartContent = null;
 

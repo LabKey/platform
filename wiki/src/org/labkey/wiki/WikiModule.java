@@ -189,7 +189,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
             }
             catch (IOException e)
             {
-                _log.error("Failed to insert wiki in " + c.getPath() + " from " + resource, e);
+                _log.error("Failed to insert wiki in {} from {}", c.getPath(), resource, e);
             }
         }
     }

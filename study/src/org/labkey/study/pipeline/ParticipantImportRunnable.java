@@ -69,7 +69,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         catch (Exception x)
         {
-            _logger.error("Unexpected error importing file: " + _fileName, x);
+            _logger.error("Unexpected error importing file: {}", _fileName, x);
         }
     }
 
@@ -106,7 +106,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             String subjectIdCol = StudyService.get().getSubjectColumnName(container);
             if (!columnMap.containsKey(subjectIdCol))
             {
-                _logger.error("Dataset does not contain column " + subjectIdCol + ".");
+                _logger.error("Dataset does not contain column {}.", subjectIdCol);
                 return;
             }
 

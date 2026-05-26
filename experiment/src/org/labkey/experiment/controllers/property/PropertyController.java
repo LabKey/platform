@@ -116,7 +116,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.File;
@@ -762,7 +761,7 @@ public class PropertyController extends SpringActionController
                 }
 
                 if (domains.size() == 1)
-                    _domain = domains.get(0);
+                    _domain = domains.getFirst();
             }
 
             if (_domain == null)
@@ -1364,12 +1363,12 @@ public class PropertyController extends SpringActionController
             _checkCommentLineCount = checkCommentLineCount;
         }
 
-        public Collection<String> getDistinctValueColumns()
+        public @Nullable Collection<String> getDistinctValueColumns()
         {
             return _distinctValueColumns;
         }
 
-        public void setDistinctValueColumns(Collection<String> distinctValueColumns)
+        public void setDistinctValueColumns(@Nullable Collection<String> distinctValueColumns)
         {
             _distinctValueColumns = distinctValueColumns;
         }
@@ -1481,18 +1480,17 @@ public class PropertyController extends SpringActionController
         // Note: caller must close writer
         private String getDataFromFile(Writer writer) throws IOException
         {
-            HttpServletRequest basicRequest = getViewContext().getRequest();
-
-            if (! (basicRequest instanceof MultipartHttpServletRequest request))
+            Map<String, MultipartFile> fileMap = getFileMap();
+            if (fileMap.isEmpty())
             {
                 error(writer, "No file uploaded");
                 return null;
             }
 
             //noinspection unchecked
-            Iterator<String> nameIterator = request.getFileNames();
+            Iterator<String> nameIterator = fileMap.keySet().iterator();
             String formElementName = nameIterator.next();
-            MultipartFile file = request.getFile(formElementName);
+            MultipartFile file = fileMap.get(formElementName);
             String filename = file.getOriginalFilename();
             int dotIndex = filename.lastIndexOf(".");
             if (dotIndex < 0)
@@ -1537,7 +1535,7 @@ public class PropertyController extends SpringActionController
             }
             catch (IOException ioe)
             {
-                ExceptionUtil.logExceptionToMothership(request, ioe);
+                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), ioe);
                 error(writer, ioe.getMessage());
                 return null;
             }
@@ -2108,12 +2106,12 @@ public class PropertyController extends SpringActionController
             this.domainNames = domainNames;
         }
 
-        public String getSearch()
+        public @Nullable String getSearch()
         {
             return search;
         }
 
-        public void setSearch(String search)
+        public void setSearch(@Nullable String search)
         {
             this.search = search;
         }
@@ -2323,20 +2321,20 @@ public class PropertyController extends SpringActionController
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains,"howdy", null, null, null, null);
             assertEquals(1, pds.size());
-            assertEquals("testStringField", pds.get(0).getName());
+            assertEquals("testStringField", pds.getFirst().getName());
 
             // find by domainId and property descriptor feature
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains, null, new SimpleFilter(FieldKey.fromParts("propertyId", "dimension"), true), null, null, null);
             assertEquals(1, pds.size());
-            assertEquals("testIntField", pds.get(0).getName());
+            assertEquals("testIntField", pds.getFirst().getName());
 
             // pagination
             domains = OntologyManager.getDomains(c, user, Set.of(domain.getTypeId()), null, null);
             pds = OntologyManager.getPropertyDescriptors(c, user, domains, null, null, null, 1, 1L);
             assertEquals(1, pds.size());
             // sorted by propertyId, testStringField is after testIntField
-            assertEquals("testStringField", pds.get(0).getName());
+            assertEquals("testStringField", pds.getFirst().getName());
 
             long totalCount = OntologyManager.getPropertyDescriptorsRowCount(c, user, domains, null, null);
             assertEquals(domain.getProperties().size(), totalCount);
@@ -2378,7 +2376,7 @@ public class PropertyController extends SpringActionController
             var intPropUsages = OntologyManager.findPropertyUsages(user, intProp.getPropertyDescriptor(), 1);
             assertEquals(1, intPropUsages.usageCount);
             assertEquals(1, intPropUsages.objects.size());
-            assertEquals(a1Lsid.toString(), intPropUsages.objects.get(0).getLSID());
+            assertEquals(a1Lsid.toString(), intPropUsages.objects.getFirst().getLSID());
         }
     }
 }

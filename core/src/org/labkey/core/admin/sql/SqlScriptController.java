@@ -1311,10 +1311,10 @@ public class SqlScriptController extends SpringActionController
         - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn` is the same as `ALTER TABLE TableName DROP COLUMN IF EXISTS ColumnName`
         
         Please do the following:
-        - Consolidate all iterative changes (column additions, PK changes, and renames) into the initial CREATE TABLE statements.
+        - Consolidate all iterative changes (column additions & renames, PK changes, and FK changes) into the initial CREATE TABLE statements.
         - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
         - Remove all intermediate DROP and ALTER statements that are superseded by later logic.
-        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or and core.fn_dropifexists 'TABLE' call on that same table.
+        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or a core.fn_dropifexists 'TABLE' call on that same table.
         
         Include a summary of the changes you made at the end.
         """;
@@ -1605,6 +1605,7 @@ public class SqlScriptController extends SpringActionController
         {
             LOG.info("Executing {}.{}(ModuleContext moduleContext)", _method.getDeclaringClass().getSimpleName(), _method.getName());
             _method.invoke(_code, _ctx);
+            LOG.info("Finished executing {}.{}(ModuleContext moduleContext)", _method.getDeclaringClass().getSimpleName(), _method.getName());
             return true;
         }
 

@@ -211,7 +211,7 @@ public class ProductRegistry
         if (productIds.isEmpty())
             return null;
         if (productIds.size() == 1)
-            return productIds.get(0);
+            return productIds.getFirst();
         ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
         return provider != null ? provider.getProductId() : null;
     }
@@ -227,7 +227,7 @@ public class ProductRegistry
             return null;
 
         if (providers.size() == 1)
-            return providers.get(0);
+            return providers.getFirst();
 
         // see if there's a provider that matches the folder type (need to check this first so if LabKey LIMS or LKB is the configured product you can still show LKSM folders)
         Optional<ProductMenuProvider> optionalProvider = providers.stream().filter(provider -> provider.getFolderTypeName() != null && provider.getFolderTypeName().equals(container.getFolderType().getName())).findFirst();
@@ -307,7 +307,7 @@ public class ProductRegistry
         }
         else
         {
-            _logger.warn("No product menu provider registered for menu section '" + name + "'.");
+            _logger.warn("No product menu provider registered for menu section '{}'.", name);
             return null;
         }
     }
@@ -321,7 +321,7 @@ public class ProductRegistry
             if (section != null)
                 items.add(section);
             else
-                _logger.warn("No section provided for menu section name '" + name + "'.");
+                _logger.warn("No section provided for menu section name '{}'.", name);
         });
         return items;
     }
@@ -450,7 +450,7 @@ public class ProductRegistry
 
             sections = registry.getMenuSections(context, VALID_PRODUCT_ID_2);
             assertEquals("Number of menu sections not as expected when provider has no sections", 1, sections.size());
-            assertEquals("User section label not as expected", UserInfoMenuSection.NAME,  sections.get(0).getLabel());
+            assertEquals("User section label not as expected", UserInfoMenuSection.NAME,  sections.getFirst().getLabel());
         }
 
         @Test

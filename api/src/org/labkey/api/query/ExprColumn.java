@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -24,7 +24,10 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -70,11 +73,10 @@ public class ExprColumn extends BaseColumnInfo
         this(parent, FieldKey.fromParts(name), sql, type, dependentColumns);
     }
 
-    public static MutableColumnInfo create(TableInfo parent, String name, JdbcType type, SQLFragment sqlf, ColumnInfo ... dependentColumns)
+    public static MutableColumnInfo create(TableInfo parent, String name, JdbcType type, SQLFragment sql, ColumnInfo ... dependentColumns)
     {
-        return new ExprColumn(parent, name, sqlf, type, dependentColumns);
+        return new ExprColumn(parent, name, sql, type, dependentColumns);
     }
-
 
     /*
      * Use this 'constructor' to create an ExprColumn whose SQL is generated on demand.  This is useful if generating
@@ -94,24 +96,21 @@ public class ExprColumn extends BaseColumnInfo
         };
     }
 
-
     @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         if (tableAlias.equals(STR_TABLE_ALIAS))
             return _sql;
         SQLFragment ret = new SQLFragment(_sql);
-        ret.setSqlUnsafe(StringUtils.replace(_sql.getSQL(), STR_TABLE_ALIAS, tableAlias));
+        ret.setSqlUnsafe(Strings.CS.replace(_sql.getSQL(), STR_TABLE_ALIAS, tableAlias));
         return ret;
     }
-
 
     public void setValueSQL(SQLFragment sql)
     {
         _sql = sql;
     }
 
-    
     @Override
     public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
     {
@@ -122,5 +121,18 @@ public class ExprColumn extends BaseColumnInfo
                 col.declareJoins(parentAlias, map);
             }
         }
+    }
+
+    @Override
+    public Set<FieldKey> getReferencedFieldKeys()
+    {
+        if (_dependentColumns == null || _dependentColumns.length == 0)
+            return Collections.emptySet();
+
+        var keys = new HashSet<FieldKey>();
+        for (var c : _dependentColumns)
+            keys.add(c.getFieldKey());
+
+        return Collections.unmodifiableSet(keys);
     }
 }

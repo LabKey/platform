@@ -55,15 +55,12 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * User: matthewb
- * Date: Feb 5, 2009
- */
 public class AuthenticatedRequest extends HttpServletRequestWrapper implements AutoCloseable
 {
     private static final Logger _log = LogManager.getLogger(AuthenticatedRequest.class);
 
     private final User _user;
+
     private boolean _loggedIn;
     private HttpSession _session = null;
 
@@ -76,9 +73,15 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
     private AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
-        super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
+        super(request instanceof AuthenticatedRequest authRequest ? authRequest.getRequest() : request);
         _user = user;
         _loggedIn = !_user.isGuest();
+    }
+
+    @Override
+    public HttpServletRequest getRequest()
+    {
+        return (HttpServletRequest)super.getRequest();
     }
 
     @Override
@@ -216,7 +219,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             }
             if (s.isNew())
             {
-                _log.debug("Created HttpSession: " + s.getId() + " " + _user.getEmail());
+                _log.debug("Created HttpSession: {} {}", s.getId(), _user.getEmail());
             }
             return s;
         }
@@ -334,7 +337,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         public void setAttribute(String s, Object o)
         {
             if (_log.isDebugEnabled())
-                _log.debug("Session.setAttribute(" + s + ", " + o + ")");
+                _log.debug("Session.setAttribute({}, {})", s, o);
             if (null==_real)
                 _attributes.put(s, o);
             else

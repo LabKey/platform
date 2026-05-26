@@ -15,6 +15,8 @@ import {
     generateFieldNameForImport,
     getDataClassRowIdByName,
     initProject,
+    MVTC_FIELD_PROP,
+    TC_FIELD_PROP,
     verifyRequiredLineageInsertUpdate,
 } from './utils';
 import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
@@ -422,9 +424,7 @@ describe('Duplicate IDs', () => {
         }], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
         const data1RowId = caseInsensitive(dataRows[0], 'rowId');
-        const data1Lsid = caseInsensitive(dataRows[0], 'lsid');
         const data2RowId = caseInsensitive(dataRows[1], 'rowId');
-        const data2Lsid = caseInsensitive(dataRows[1], 'lsid');
 
         // update data2 twice using updateRows, using rowId
         await server.post('query', 'updateRows', {
@@ -445,23 +445,42 @@ describe('Duplicate IDs', () => {
             expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2RowId);
         });
 
-        // update data2 twice using updateRows, using lsid (data iterator)
+        // update data twice specifying the name across multiple partitions
         await server.post('query', 'updateRows', {
             schemaName: 'exp.data',
             queryName: dataType,
             rows: [{
                 description: 'update',
-                lsid: data1Lsid
+                name: dataName1
             },{
                 description: 'update',
-                lsid: data2Lsid
+                rowId: data2RowId
             },{
                 description: 'update',
-                lsid: data2Lsid
+                name: dataName1
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data2Lsid);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + dataName1);
+        });
+
+        // update data twice specifying the rowId across multiple partitions
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [{
+                description: 'update',
+                rowId: data1RowId
+            },{
+                description: 'update',
+                name: dataName2
+            },{
+                description: 'update',
+                rowId: data1RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toBe('Duplicate key provided: ' + data1RowId);
         });
 
         errorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n" + dataName1 + "\tupdate\n" + dataName2 + "\tupdate\n" + dataName2 + "\tupdate", dataType, "UPDATE", topFolderOptions, editorUserOptions);
@@ -481,24 +500,6 @@ describe('Duplicate IDs', () => {
 
 describe('Multi Value Text Choice', () => {
 
-    const mvtcFieldProp = {
-        "propertyId": -1,
-        "propertyValidators": [
-            {
-                "type": "TextChoice",
-                "name": "Text Choice Validator",
-                "new": true,
-                "expression": "Abnormal|agent|cDNA|Plasma"
-            }
-        ],
-        "rangeURI": "http://cpas.fhcrc.org/exp/xml#multiChoice",
-    };
-
-    const tcFieldProp = {
-        ...mvtcFieldProp,
-        rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
-        conceptURI: 'http://www.labkey.org/types#textChoice',
-    }
 
 
     it("MVTC CRUD", async () => {
@@ -525,7 +526,7 @@ describe('Multi Value Text Choice', () => {
 
         const fields = [
             {
-                ...mvtcFieldProp,
+                ...MVTC_FIELD_PROP,
                 name: fieldName
             }
         ];
@@ -750,7 +751,7 @@ describe('Multi Value Text Choice', () => {
                 name: dataType,
                 fields: [
                     {
-                        ...mvtcFieldProp,
+                        ...MVTC_FIELD_PROP,
                         name: fieldName,
                         required: true
                     }
@@ -774,7 +775,7 @@ describe('Multi Value Text Choice', () => {
                 name: dataType,
                 fields: [
                     {
-                        ...tcFieldProp,
+                        ...TC_FIELD_PROP,
                         name: fieldName,
                         propertyId,
                         propertyURI
@@ -817,9 +818,90 @@ describe('Multi Value Text Choice', () => {
         result = await getDataClassDataByName(dataNameImported[0], dataType, '*', topFolderOptions, editorUserOptions);
         expect(caseInsensitive(result, fieldName)).toEqual('Abnormal, Plasma'); // convert from ['Abnormal', 'Plasma'] to 'Abnormal, Plasma'
 
+
+        const textChoiceMultiLineOption = {
+            propertyValidators: [
+                {
+                    "type": "TextChoice",
+                    "name": "Text Choice Validator",
+                    "new": true,
+                    "expression": "Abnormal|multi\nline|cDNA|Plasma"
+                }
+            ],
+            rangeURI: 'http://www.w3.org/2001/XMLSchema#string',
+            conceptURI: 'http://www.labkey.org/types#textChoice',
+        }
+
+        const textMultiChoiceMultiLineOption = {
+            propertyValidators: [
+                {
+                    "type": "TextChoice",
+                    "name": "Text Choice Validator",
+                    "new": true,
+                    "expression": "Abnormal|multi\nline|cDNA|Plasma"
+                }
+            ],
+            rangeURI: "http://cpas.fhcrc.org/exp/xml#multiChoice",
+        }
+
+        // GitHub Issue 951: Multi-line values converted to text choices lose multi-line editability
+        // verify cannot convert MultiLine field to MultiValue Text Choice
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...textChoiceMultiLineOption,
+                        name: fieldName,
+                        propertyId,
+                        propertyURI,
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${' + fieldNameInExpression + '}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
+
+        // verify cannot convert MultiLine field to Text Choice field
+        updatePayload = {
+            domainId,
+            domainDesign: {
+                name: dataType,
+                fields: [
+                    {
+                        ...textMultiChoiceMultiLineOption,
+                        name: fieldName,
+                        propertyId,
+                        propertyURI,
+                    }
+                ],
+                domainId,
+                domainURI
+            },
+            options: {
+                rowId: dataClassRowId,
+                name: dataType,
+                nameExpression: 'S-${genId}'
+            }
+        };
+        failedUpdate = await server.post('property', 'saveDomain', updatePayload, {...topFolderOptions, ...adminOptions});
+        expect(failedUpdate?.['body']?.['exception']).toContain('must not be multi-line:');
+
     });
 
 });
+
+const LSID_UPDATE_ERROR = 'LSID is no longer accepted as a key for data update. Specify a RowId or Name instead.';
+const LSID_MERGE_ERROR = 'LSID is no longer accepted as a key for data merge. Specify a RowId or Name instead.';
+const ROWID_MERGE_ERROR = 'RowId is not accepted when merging data. Specify only the data name instead.';
 
 describe('Data CRUD', () => {
 
@@ -838,20 +920,25 @@ describe('Data CRUD', () => {
         // insert 2 rows data, provide explicit names and a rowId = -1
         const dataName1 = 'KeyData1';
         const dataName2 = 'KeyData2';
+        const dataName3 = 'KeyData3';
         const inserted = await insertDataClassData([
             { name: dataName1, description: 'original1', [fieldName]: 'val1', rowId: -1 },
             { name: dataName2, description: 'original2', [fieldName]: 'val2', rowId: -1 },
+            { name: dataName3, description: 'original3', [fieldName]: 'val3', rowId: -1 },
         ], dataType, topFolderOptions);
 
         // verify both rows are inserted with correct name and rowId is not -1 for both rows, record the rowId and lsid for both rows
         expect(inserted[0].name).toBe(dataName1);
         expect(inserted[1].name).toBe(dataName2);
+        expect(inserted[2].name).toBe(dataName3);
         expect(inserted[0].rowId).not.toBe(-1);
         expect(inserted[1].rowId).not.toBe(-1);
+        expect(inserted[2].rowId).not.toBe(-1);
         const row1RowId = inserted[0].rowId;
         const row1Lsid = inserted[0].lsid;
         const row2RowId = inserted[1].rowId;
         const row2Lsid = inserted[1].lsid;
+        const row3RowId = inserted[2].rowId;
 
         const findRow = (rows: any[], rowId: number) => rows.find(r => caseInsensitive(r, 'RowId') === rowId);
 
@@ -869,10 +956,32 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row2, 'description')).toBe('updByRowId2');
         expect(caseInsensitive(row2, fieldName)).toBe('rowIdVal2');
 
-        // update description and fieldName value for both rows using lsid as key, verify update is successful and data are updated correctly
+        // Error when supplying LSID without RowId or Name
+        // query api
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: dataType,
+            rows: [
+                { lsid: row1Lsid, description: 'updByLsid1', [fieldName]: 'lsidVal1' },
+                { lsid: row2Lsid, description: 'updByLsid2', [fieldName]: 'lsidVal2' },
+            ]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain(LSID_UPDATE_ERROR);
+        });
+        // update from import
+        let importUpdateText = 'LSID\tDescription\t' + fieldName + '\n' + row1Lsid + '\timportUpd1\timportLsidVal1\n' + row2Lsid + '\timportUpd2\timportLsidVal2';
+        let errorResp = await ExperimentCRUDUtils.importData(server, importUpdateText, dataType, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf(LSID_UPDATE_ERROR) > -1).toBeTruthy();
+
+        // merge from import
+        errorResp = await ExperimentCRUDUtils.importData(server, importUpdateText, dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text.indexOf(LSID_MERGE_ERROR) > -1).toBeTruthy();
+
+        // update using lsid (correct and incorrect, should both be ignored), as well as rowId, as key, should succeed, verify update is successful and data are updated correctly
         await ExperimentCRUDUtils.updateRows(server, [
-            { lsid: row1Lsid, description: 'updByLsid1', [fieldName]: 'lsidVal1' },
-            { lsid: row2Lsid, description: 'updByLsid2', [fieldName]: 'lsidVal2' },
+            { lsid: row1Lsid, rowId: row1RowId, description: 'updByLsid1', [fieldName]: 'lsidVal1' },
+            { lsid: row1Lsid /*wrong lsid, should be ignored anyways*/, rowId: row2RowId, description: 'updByLsid2', [fieldName]: 'lsidVal2' },
         ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
         rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
@@ -882,27 +991,48 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row1, fieldName)).toBe('lsidVal1');
         expect(caseInsensitive(row2, 'description')).toBe('updByLsid2');
         expect(caseInsensitive(row2, fieldName)).toBe('lsidVal2');
+        expect(caseInsensitive(row2, 'lsid')).toBe(row2Lsid); // lsid should not be updated
 
-        // update description and fieldName value, one of the row use lsid as key, the other use rowId, verify update is successful and data are updated correctly
+        // update with different set of columns
+        // should use partitioned data iterator
         await ExperimentCRUDUtils.updateRows(server, [
-            { lsid: row1Lsid, description: 'updMixed1', [fieldName]: 'mixedVal1' },
-            { rowId: row2RowId, description: 'updMixed2', [fieldName]: 'mixedVal2' },
+            { rowId: row1RowId, description: 'updMixed1', [fieldName]: 'mixedVal1' },
+            { rowId: row2RowId, name: 'mixed_rename2', [fieldName]: 'mixedVal2' },
+            { rowId: row3RowId, description: 'mixedVal3 desc' },
+        ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId, row3RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        var row3 = findRow(rows, row3RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('updMixed1');
+        expect(caseInsensitive(row1, fieldName)).toBe('mixedVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updByLsid2');
+        expect(caseInsensitive(row2, fieldName)).toBe('mixedVal2');
+        expect(caseInsensitive(row2, 'name')).toBe('mixed_rename2');
+        expect(caseInsensitive(row3, 'description')).toBe('mixedVal3 desc');
+        expect(caseInsensitive(row3, fieldName)).toBe('val3'); // fieldName value should not be updated for row3
+
+        // update using name as key, should succeed, verify update is successful and data are updated correctly
+        await ExperimentCRUDUtils.updateRows(server, [
+            { name: dataName1, description: 'updByName1', [fieldName]: 'nameVal1' },
+            { name: 'mixed_rename2', description: 'updByName2', [fieldName]: 'nameVal2' },
         ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
         rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
         row1 = findRow(rows, row1RowId);
         row2 = findRow(rows, row2RowId);
-        expect(caseInsensitive(row1, 'description')).toBe('updMixed1');
-        expect(caseInsensitive(row1, fieldName)).toBe('mixedVal1');
-        expect(caseInsensitive(row2, 'description')).toBe('updMixed2');
-        expect(caseInsensitive(row2, fieldName)).toBe('mixedVal2');
+        expect(caseInsensitive(row1, 'description')).toBe('updByName1');
+        expect(caseInsensitive(row1, fieldName)).toBe('nameVal1');
+        expect(caseInsensitive(row2, 'description')).toBe('updByName2');
+        expect(caseInsensitive(row2, fieldName)).toBe('nameVal2');
 
-        // update names of both rows using lsid as key, verify update is successful and names are updated correctly
+        // update names of both rows using lsid (ignored) an rowId as key, verify update is successful and names are updated correctly
         const newName1 = 'RenamedByLsid1';
         const newName2 = 'RenamedByLsid2';
         await ExperimentCRUDUtils.updateRows(server, [
-            { lsid: row1Lsid, name: newName1 },
-            { lsid: row2Lsid, name: newName2 },
+            { lsid: "BAD", rowId: row1RowId, name: newName1 },
+            { lsid: row1Lsid /*wrong*/, rowId: row2RowId, name: newName2 },
         ], 'exp.data', dataType, topFolderOptions, editorUserOptions);
 
         rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, 'RowId,Name', topFolderOptions, adminOptions);
@@ -911,7 +1041,7 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row1, 'Name')).toBe(newName1);
         expect(caseInsensitive(row2, 'Name')).toBe(newName2);
 
-        // update names of both rows using rowId as key, verify update is successful and names are updated correctly
+        // update names of both rows using just rowId as key, verify update is successful and names are updated correctly
         const newName3 = 'RenamedByRowId1';
         const newName4 = 'RenamedByRowId2';
         await ExperimentCRUDUtils.updateRows(server, [
@@ -926,7 +1056,7 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row2, 'Name')).toBe(newName4);
 
         // update description and fieldName value from Import with update, the import columns contains name field, verify update is successful and data are updated correctly
-        const importUpdateText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\timportUpd1\timportVal1\n' + newName4 + '\timportUpd2\timportVal2';
+        importUpdateText = 'Name\tDescription\t' + fieldName + '\n' + newName3 + '\timportUpd1\timportVal1\n' + newName4 + '\timportUpd2\timportVal2';
         const updateResp = await ExperimentCRUDUtils.importData(server, importUpdateText, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
         expect(updateResp.body.success).toBe(true);
 
@@ -937,6 +1067,12 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(row1, fieldName)).toBe('importVal1');
         expect(caseInsensitive(row2, 'description')).toBe('importUpd2');
         expect(caseInsensitive(row2, fieldName)).toBe('importVal2');
+
+        // Error when supplying RowId during MERGE, verify import fails
+        errorResp = await ExperimentCRUDUtils.importData(server, "RowId\tDescription\n" + row3RowId + "\tupdate\n", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text).toContain(ROWID_MERGE_ERROR);
+        errorResp = await ExperimentCRUDUtils.importData(server, "RowId\tName\tDescription\n" + row3RowId + "\t" + dataName3 + "\tupdate\n", dataType, "MERGE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text).toContain(ROWID_MERGE_ERROR);
 
         // update description and fieldName value from Import with merge. at the same time create a new data. the import columns contain name field, verify update and insert is successful
         const newDataName = 'MergedNewData';
@@ -957,6 +1093,60 @@ describe('Data CRUD', () => {
         expect(caseInsensitive(newDataRow, 'Name')).toBe(newDataName);
         expect(caseInsensitive(newDataRow, 'description')).toBe('mergeNew');
         expect(caseInsensitive(newDataRow, fieldName)).toBe('mergeNewVal');
+
+        // Update from file, using rowId as key, verify update should be successful and data are updated correctly
+        const importUpdateRowIdText = 'RowId\tDescription\t' + fieldName + '\n' + row1RowId + '\timportUpdByRowId1\timportValByRowId1\n' + row2RowId + '\timportUpdByRowId2\timportValByRowId2';
+        const updateByRowIdResp = await ExperimentCRUDUtils.importData(server, importUpdateRowIdText, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(updateByRowIdResp.body.success).toBe(true);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'description')).toBe('importUpdByRowId1');
+        expect(caseInsensitive(row1, fieldName)).toBe('importValByRowId1');
+        expect(caseInsensitive(row2, 'description')).toBe('importUpdByRowId2');
+        expect(caseInsensitive(row2, fieldName)).toBe('importValByRowId2');
+
+        // update from file, provide rowId and an updated name, verify name is successfully updated
+        const newNameByRowId1 = 'RenamedByRowId1Import';
+        const newNameByRowId2 = 'RenamedByRowId2Import';
+        const importUpdateRowIdNameText = 'RowId\tName\tDescription\n' + row1RowId + '\t' + newNameByRowId1 + '\timportUpdByRowId1-2\n' + row2RowId + '\t' + newNameByRowId2 + '\timportUpdByRowId2-2\n';
+        const updateByRowIdNameResp = await ExperimentCRUDUtils.importData(server, importUpdateRowIdNameText, dataType, 'UPDATE', topFolderOptions, editorUserOptions);
+        expect(updateByRowIdNameResp.body.success).toBe(true);
+
+        rows = await ExperimentCRUDUtils.getRows(server, [row1RowId, row2RowId], 'exp.data', dataType, '*', topFolderOptions, adminOptions);
+        row1 = findRow(rows, row1RowId);
+        row2 = findRow(rows, row2RowId);
+        expect(caseInsensitive(row1, 'Name')).toBe(newNameByRowId1);
+        expect(caseInsensitive(row1, 'description')).toBe('importUpdByRowId1-2');
+        expect(caseInsensitive(row2, 'Name')).toBe(newNameByRowId2);
+        expect(caseInsensitive(row2, 'description')).toBe('importUpdByRowId2-2');
+
+        // verify data rowId needs to match provided dataclass type
+        const emptyDataClass = dataType + "Empty";
+        await server.post('property', 'createDomain', {
+            kind: 'DataClass',
+            domainDesign: { name: emptyDataClass, fields: [{ name: fieldName }] },
+            options: { name: dataType }
+        }, { ...topFolderOptions, ...designerReaderOptions }).expect(successfulResponse);
+
+        // using query api, update using rowId for data that doesn't exist on the new dataclass should fail.
+        await server.post('query', 'updateRows', {
+            schemaName: 'exp.data',
+            queryName: emptyDataClass,
+            rows: [{
+                description: 'update',
+                rowId: row3RowId
+            }]
+        }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
+            const errorResp = JSON.parse(result.text);
+            expect(errorResp['exception']).toContain('Data not found for [' + row3RowId + ']');
+        });
+
+        // using update from file, verify update using rowId for data that doesn't exist on this dataclass should fail.
+        errorResp = await ExperimentCRUDUtils.importData(server, "RowId\tDescription\n" + row3RowId + "\tupdate\n", emptyDataClass, "UPDATE", topFolderOptions, editorUserOptions);
+        expect(errorResp.text).toContain('Data not found for [' + row3RowId + ']');
+
     });
 
 });

@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
@@ -134,6 +133,7 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
+        registerRole(new CanSeeAuditLogFolderRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)
@@ -189,9 +189,8 @@ public class RoleManager
 
     public static Set<Role> getSiteRoles()
     {
-        SecurityPolicy policy = ContainerManager.getRoot().getPolicy();
         return _roles.stream().
-            filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
+            filter(r -> r.isAssignable() && r.isApplicable(ContainerManager.getRoot())).
             collect(Collectors.toSet());
     }
 

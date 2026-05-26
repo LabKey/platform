@@ -22,7 +22,7 @@ public class ContainerIdColumnInfoTransformer implements ConceptURIColumnInfoTra
     {
         if (column.getJdbcType() != JdbcType.GUID && column.getJdbcType() != JdbcType.VARCHAR)
         {
-            LogManager.getLogger(UserIdColumnInfoTransformer.class).warn("Column is not of type GUID: " + column.getName());
+            LogManager.getLogger(UserIdColumnInfoTransformer.class).warn("Column is not of type GUID: {}", column.getName());
             return column;
         }
 

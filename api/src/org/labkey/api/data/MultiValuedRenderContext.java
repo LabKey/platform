@@ -15,11 +15,9 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 
 import java.util.HashMap;
@@ -114,12 +112,6 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             if (getFieldMap() != null)
             {
                 ColumnInfo columnInfo = getFieldMap().get(key);
-                if (columnInfo != null && columnInfo.getPropertyType() == PropertyType.MULTI_CHOICE && value instanceof String strVal)
-                {
-                    // Multi-choice values array is converted to string: "{value1,value2,...}", so strip off the braces before converting
-                    if (strVal.startsWith("{") && strVal.endsWith("}"))
-                        return columnInfo.convert(strVal.substring(1, strVal.length() - 1));
-                }
                 // The value was concatenated with others, so it's become a string.
                 // Do conversion to switch it back to the expected type.
                 if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))

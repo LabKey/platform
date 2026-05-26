@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -31,6 +32,7 @@ import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataClassDataIteratorTransformer;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentProtocolHandler;
@@ -73,6 +75,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
@@ -92,7 +95,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -101,6 +103,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -130,6 +134,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
 
+    String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -149,10 +155,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum QueryOptions
     {
-        UseLsidForUpdate,
+        UseProvidedLsidForXarImport,
         GetSampleRecomputeCol,
         SkipBulkRemapCache,
         DeferRequiredLineageValidation,
+        AddLsidColForDataClassUpdate,
+        ShouldCommitRowsBeforeContinuing
     }
 
     enum DataTypeForExclusion
@@ -245,6 +253,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExpData getExpData(ExpDataClass dataClass, long rowId);
+
+    /**
+     * Build an {@link org.labkey.api.attachments.AttachmentParent} that points at an ExpData's
+     * attachment storage. Useful for callers outside the experiment module (for example, module
+     * triggers) that need to move, read, or delete ExpData attachments without referencing
+     * experiment-internal classes.
+     */
+    @NotNull
+    AttachmentParent getDataClassAttachmentParent(@NotNull Container container, @NotNull String dataLsid);
 
     /**
      * Get a Data with name at a specific time.
@@ -644,6 +661,21 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpDataClassDataTable createDataClassDataTable(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClass dataClass);
 
+    /**
+     * Registers a factory that creates a {@link DataClassDataIteratorTransformer}
+     * for the specified DataClass name. The transformer is applied in the pre-trigger DataIterator pipeline,
+     * allowing modules to add computed columns (e.g., transforming flat columns into JSON) that work
+     * uniformly for file imports, API imports, folder imports, and background pipeline jobs.
+     * A fresh instance is created per import via the factory since transformers may be stateful.
+     */
+    void registerDataClassDataIteratorTransformer(String dataClassName, @NotNull Supplier<DataClassDataIteratorTransformer> factory);
+
+    /**
+     * Returns a fresh {@link DataClassDataIteratorTransformer} for the given
+     * DataClass name, or {@code null} if none is registered.
+     */
+    @Nullable DataClassDataIteratorTransformer getDataClassDataIteratorTransformer(String dataClassName);
+
     ExpProtocolTable createProtocolTable(String name, UserSchema schema, ContainerFilter cf);
 
     ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
@@ -804,6 +836,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpRun> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses);
 
+    /** Get derivation run IDs for a data class — runs with SAMPLE_DERIVATION_PROTOCOL that have no material inputs/outputs */
+    List<Long> getDerivationRunIdsForDataClassExport(long dataClassRowId);
+
+    /** Get derivation/aliquot run IDs for sample types — filtered by protocol and optionally excluding runs with data inputs/outputs */
+    List<Long> getDerivationRunIdsForSampleTypesExport(Collection<String> sampleTypeLsids, Container c, boolean includeRunsWithDataIO);
+
     /**
      * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
      */
@@ -827,7 +865,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<ProtocolApplicationParameter> getProtocolApplicationParameters(long rowId);
 
-    void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
+    void moveContainer(Container c, Container cOldParent, Container cNewParent);
 
     LsidType findType(Lsid lsid);
 
@@ -998,7 +1036,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param job Pipeline job.
      * @return the run created from the job's actions.
      */
-    ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
+    ExpRun importRun(PipelineJob job, XarSource source) throws PipelineJobException, ValidationException;
 
     /**
      * Provides access to an object that should be locked before inserting protocols. Locking when doing
@@ -1143,10 +1181,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior) throws ExperimentException;
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Long> dataIds, Container targetContainer);
-
-    Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
-
-    int moveAuditEvents(Container targetContainer, List<String> runLsids);
 
     /**
      * From a list of barcodes, find material lsids

@@ -776,7 +776,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             "DataInputs/" + dataClassName, List.of(dad, son)
         ));
         var rows = insertRows(c, sampleRows, sampleTypeName, QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples")));
-        var gameSample = expSvc.getExpMaterial((Integer) rows.get(0).get("RowId"));
+        var gameSample = expSvc.getExpMaterial((Integer) rows.getFirst().get("RowId"));
 
         var options = new ExpLineageOptions(false, true, 2);
         options.setIncludeProperties(true);

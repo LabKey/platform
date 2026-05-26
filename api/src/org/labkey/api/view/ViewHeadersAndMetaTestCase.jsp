@@ -1,7 +1,5 @@
 <%@ page import="org.jetbrains.annotations.NotNull" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.StringUtilsLabKey" %>
-<%@ page import="org.springframework.mock.web.MockHttpServletRequest" %>
 <%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
 <%@ page import="java.io.ByteArrayOutputStream" %>
 <%@ page import="java.io.IOException" %>
@@ -35,7 +33,7 @@ This tests uses MockRequest to test some expected Headers and Meta tags for vari
         PrintWriter printWriter = new PrintWriter(new ByteArrayOutputStream(), true, StringUtilsLabKey.DEFAULT_CHARSET)
         {
             @Override
-            public void write(@NotNull char[] buf, int off, int len)
+            public void write(@NotNull char @NotNull [] buf, int off, int len)
             {
             }
 

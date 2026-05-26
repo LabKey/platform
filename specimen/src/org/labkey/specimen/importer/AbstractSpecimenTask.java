@@ -132,22 +132,25 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             SpecimenImporter importer = new SpecimenImporter(ctx.getContainer(), ctx.getUser());
             importer.process(specimenDir, merge, ctx, job, syncParticipantVisit);
 
-            // perform any tasks after the transform and import has been completed
-            String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
-            if (null != activeImporter)
+            // if there's an inputFile, perform any tasks after the transform and import has been completed
+            if (inputFile != null)
             {
-                SpecimenTransform activeTransformer = SpecimenService.get().getSpecimenTransform(activeImporter);
-                if (activeTransformer != null && activeTransformer.getFileType().isType(inputFile))
-                    doPostTransform(activeTransformer, inputFile, job);
-            }
-            else
-            {
-                for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
+                String activeImporter = SpecimenService.get().getActiveSpecimenImporter(ctx.getContainer());
+                if (null != activeImporter)
                 {
-                    if (transformer.getFileType().isType(inputFile))
+                    SpecimenTransform activeTransformer = SpecimenService.get().getSpecimenTransform(activeImporter);
+                    if (activeTransformer != null && activeTransformer.getFileType().isType(inputFile))
+                        doPostTransform(activeTransformer, inputFile, job);
+                }
+                else
+                {
+                    for (SpecimenTransform transformer : SpecimenService.get().getSpecimenTransforms(ctx.getContainer()))
                     {
-                        doPostTransform(transformer, inputFile, job);
-                        break;
+                        if (transformer.getFileType().isType(inputFile))
+                        {
+                            doPostTransform(transformer, inputFile, job);
+                            break;
+                        }
                     }
                 }
             }
@@ -220,12 +223,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     if (job != null)
                         job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
 
-                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive);
+                    ctx.getLogger().info("Unzipping specimen archive {}", specimenArchive);
                     String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
                     _unzipDir = specimenArchive.getParent().resolveChild(tempDirName);
                     ZipUtil.unzipToDirectory(specimenArchive, _unzipDir, ctx.getLogger());
 
-                    ctx.getLogger().info("Archive unzipped to " + _unzipDir);
+                    ctx.getLogger().info("Archive unzipped to {}", _unzipDir);
                     return new FileSystemFile(_unzipDir);
                 }
             }

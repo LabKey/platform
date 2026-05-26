@@ -702,7 +702,7 @@ public class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, S
             return _type;
         }
 
-        public HtmlString getValue()
+        public @Nullable HtmlString getValue()
         {
             return _value;
         }
@@ -898,6 +898,10 @@ public class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, S
         {
             return String.valueOf(i);
         }
+        protected final String hname(String name)
+        {
+            return PageFlowUtil.filter(PageFlowUtil.encodeFormName(name));
+        }
 
             protected void doInput(Appendable sb) throws IOException
         {
@@ -911,7 +915,7 @@ public class InputBuilder<T extends InputBuilder<T>> implements HasHtmlString, S
                 sb.append("\"");
             }
 
-            sb.append(" name=\"").append(h(getName())).append("\"");
+            sb.append(" name=\"").append(hname(getName())).append("\"");
 
             var id = generateId("input");
 

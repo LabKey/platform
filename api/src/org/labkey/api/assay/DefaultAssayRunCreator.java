@@ -582,7 +582,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
             }
             if (primaryData == null && !insertedDatas.isEmpty())
-                primaryData = insertedDatas.get(0);
+                primaryData = insertedDatas.getFirst();
 
             if (primaryData != null)
             {
@@ -811,7 +811,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
 
             // pick the most recently created one
-            return existing.get(0);
+            return existing.getFirst();
         }
 
         return null;

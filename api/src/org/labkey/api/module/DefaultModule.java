@@ -137,7 +137,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _vcsRevision = null;
     private String _vcsUrl = null;
     private String _vcsBranch = "Unknown";
-    private String _vcsTag = "Unknown";
     private String _buildUser = null;
     private String _buildTime = null;
     private String _buildOS = null;
@@ -182,7 +181,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 // database. This can be helpful on test and dev machines. See #23730.
                 DbScope scope = DbScope.getLabKeyScope();
 
-                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
+                _log.warn("Module \"{}\" requires a data source called \"{}\". It's not configured, so it will be created against the primary labkey database (\"{}\") instead.", getName(), dsName, scope.getDatabaseName());
                 DbScope.addScope(dsName, scope.getLabKeyDataSource());
                 if (null == DbScope.getDbScope(dsName)) // Force immediate connection to test
                     throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").");
@@ -190,7 +189,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             else
             {
                 // A module data source is missing and we're in production mode, so issue a warning. The data source might be optional, e.g., on staging servers. See #23830
-                _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\" but it's not configured. This module will be loaded, but it might not operate correctly.");
+                _log.warn("Module \"{}\" requires a data source called \"{}\" but it's not configured. This module will be loaded, but it might not operate correctly.", getName(), dsName);
             }
         }
 
@@ -818,19 +817,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _vcsBranch = vcsBranch;
     }
 
-    @Nullable
-    @Override
-    public String getVcsTag()
-    {
-        return _vcsTag;
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setVcsTag(String vcsTag)
-    {
-        _vcsTag = vcsTag;
-    }
-
     public final String getBuildUser()
     {
         return _buildUser;
@@ -974,7 +960,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("VCS URL", getVcsUrl());
         props.put("VCS Revision", getVcsRevision());
         props.put("VCS Branch", getVcsBranch());
-        props.put("VCS Tag", getVcsTag());
         props.put("Build OS", getBuildOS());
 
         props.put("Build Time", getBuildTime());
@@ -1605,7 +1590,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         this.setUrl(from.getUrl());
         this.setVcsBranch(from.getVcsBranch());
         this.setVcsRevision(from.getVcsRevision());
-        this.setVcsTag(from.getVcsTag());
         this.setVcsUrl(from.getVcsUrl());
         this.setZippedPath(from.getZippedPath());
     }

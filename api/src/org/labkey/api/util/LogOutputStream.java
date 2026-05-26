@@ -54,14 +54,14 @@ public class LogOutputStream extends ByteArrayOutputStream
     }
 
     @Override
-    public void write(@NotNull byte[] bytes)
+    public void write(@NotNull byte @NotNull [] bytes)
     {
         for (byte b : bytes)
             write(b);
     }
 
     @Override
-    public synchronized void write(byte[] bytes, int off, int len)
+    public synchronized void write(byte @NotNull [] bytes, int off, int len)
     {
         for (int i = off; i < len; i++)
             write(bytes[i]);

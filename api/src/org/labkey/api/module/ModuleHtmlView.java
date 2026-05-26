@@ -208,7 +208,7 @@ public class ModuleHtmlView extends HtmlView
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(viewCount + " HTML view definitions defined in all modules");
+            LOG.info("{} HTML view definitions defined in all modules", viewCount);
 
             // Make sure the cache retrieves the expected number of HTML view definitions from the simpletest module, if present
 

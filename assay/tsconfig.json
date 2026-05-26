@@ -1,5 +1,13 @@
 {
   "extends": "./node_modules/@labkey/build/webpack/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      // Point to the dist/lib folder where the .d.ts files are output
+      "@labkey/api": ["../../../../clientAPIs/labkey-api-js/dist/index"],
+      "@labkey/components": ["../../../../clientAPIs/labkey-ui-components/packages/components/dist/index"],
+      "@labkey/premium": ["../../../../clientAPIs/labkey-ui-premium/dist/index"],
+    },
+  },
   "include": ["src/client/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
 }

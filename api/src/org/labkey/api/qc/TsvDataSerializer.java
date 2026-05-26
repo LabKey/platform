@@ -91,8 +91,8 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         sep = "\t";
                     }
                     pw.println();
-                    writeRow(row, columns, pw, tsvWriter);
                 }
+                writeRow(row, columns, pw, tsvWriter); // GitHub Issue #875: write the first row regardless of whether we had a header or not
 
                 // write the remaining rows
                 while (iter.next())
@@ -105,7 +105,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
         return columns;
     }
 
-    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException, BatchValidationException
+    private static void writeRow(Map<String, Object> row, List<String> columns, PrintWriter pw, TSVWriter tsvWriter) throws IOException
     {
         String sep;
         sep = "";

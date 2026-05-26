@@ -32,12 +32,12 @@ import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
@@ -388,7 +388,7 @@ public class DavController extends SpringActionController
         {
             Closeable c = e.getKey();
             Throwable t = e.getValue();
-            _log.warn(c.getClass().getName() + " not closed", t);
+            _log.warn("{} not closed", c.getClass().getName(), t);
         }
         return null;
     }
@@ -657,7 +657,7 @@ public class DavController extends SpringActionController
                 }
 
                 @Override
-                public void write(@NotNull char[] cbuf) throws IOException
+                public void write(char @NotNull [] cbuf) throws IOException
                 {
                     super.write(cbuf);
                     sbLogResponse.append(cbuf);
@@ -708,7 +708,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
+        public ModelAndView handleRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response)
         {
             clearLastError();
 
@@ -719,10 +719,10 @@ public class DavController extends SpringActionController
                 boolean isBasicAuthentication = SecurityManager.isBasicAuthentication(getRequest());
                 String username = getUser().getName();
                 String auth = username + (isBasicAuthentication ? ":basic" : !getUser().isGuest() ? ":session" : "");
-                _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + " (" + auth + ") " + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
+                _log.debug(">>>> {} {} ({}) {}", request.getMethod(), getResourcePath(), auth, modified == -1 ? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")");
                 if (1==0) // verbose
                 {
-                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> _log.debug(name + ": " + request.getHeader(name)));
+                    IteratorUtils.asIterator(request.getHeaderNames()).forEachRemaining(name -> _log.debug("{}: {}", name, request.getHeader(name)));
                 }
                 start = System.currentTimeMillis();
             }
@@ -808,9 +808,7 @@ public class DavController extends SpringActionController
                 if (!getResponse().sbLogResponse.isEmpty())
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getWebdavStatus();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
-                        (null != status ? status.message : "") + " " +
-                        DateUtil.formatDuration(System.currentTimeMillis()-start));
+                _log.debug("<<<< {} {} {}", status != null ? status.code : 0, null != status ? status.message : "", DateUtil.formatDuration(System.currentTimeMillis() - start));
             }
 
             return null;
@@ -1231,12 +1229,13 @@ public class DavController extends SpringActionController
                 
                 if (getRequest() instanceof MultipartHttpServletRequest multipartRequest)
                 {
-                    if (multipartRequest.getFileMap().size() > 1)
+                    var fileMap = PageFlowUtil.getFileMap(multipartRequest);
+                    if (fileMap.size() > 1)
                         return WebdavStatus.SC_NOT_IMPLEMENTED;
-                    if (multipartRequest.getFileMap().isEmpty())
+                    if (fileMap.isEmpty())
                         return WebdavStatus.SC_METHOD_NOT_ALLOWED;
 
-                    Map.Entry<String, MultipartFile> entry = multipartRequest.getFileMap().entrySet().iterator().next();
+                    Map.Entry<String, MultipartFile> entry = fileMap.entrySet().iterator().next();
                     MultipartFile file = entry.getValue();
                     if (null == filename)
                     {
@@ -3184,7 +3183,7 @@ public class DavController extends SpringActionController
                 {
                     File f = resource.getFile();
                     if (null != f && f.exists())
-                        _log.debug(f.getName() + " length=" + f.length());
+                        _log.debug("{} length={}", f.getName(), f.length());
                 }
             }
 
@@ -3309,7 +3308,7 @@ public class DavController extends SpringActionController
         if (null != file)
             FileContentService.get().fireFileReplacedEvent(file, getUser(), srcContainer);
 
-        _log.debug("fireFileReplaceEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileReplaceEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void clearWebfilesFileCache(Container srcContainer)
@@ -3328,7 +3327,7 @@ public class DavController extends SpringActionController
         java.nio.file.Path file = resource.getNioPath();
         if (null != file)
             FileContentService.get().fireFileCreateEvent(file, getUser(), srcContainer);
-        _log.debug("fireFileCreatedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileCreatedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void updateIndexAndDataObject(WebdavResource resource)
@@ -3384,7 +3383,7 @@ public class DavController extends SpringActionController
         if (null != file)
             FileContentService.get().fireFileDeletedEvent(file, getUser(), srcContainer);
 
-        _log.debug("fireFileDeletedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileDeletedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     private void removeFromDataObject(WebdavResource resource)
@@ -3413,7 +3412,7 @@ public class DavController extends SpringActionController
         HttpServletRequest request = getRequest();
         Path path = coll.getPath();
 
-        _log.debug("Delete:" + path);
+        _log.debug("Delete:{}", path);
 
         String ifHeader = request.getHeader("If");
         if (ifHeader == null)
@@ -3440,7 +3439,7 @@ public class DavController extends SpringActionController
                 if (!child.canDelete(getUser(),true,outMessage))
                 {
                     child.notify(getViewContext(), "fileDeleteFailed");
-                    setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.get(0), child.getPath()));
+                    setLastError(new DavException(WebdavStatus.SC_FORBIDDEN, outMessage.isEmpty() ? null : outMessage.getFirst(), child.getPath()));
                     errorList.put(childName, WebdavStatus.SC_FORBIDDEN);
                     continue;
                 }
@@ -3656,20 +3655,20 @@ public class DavController extends SpringActionController
                 {
                     if (_inLastModified)
                     {
-                        lastModifieds.get(lastModifieds.size() - 1).append(ch, start, length);
+                        lastModifieds.getLast().append(ch, start, length);
                     }
                 }
             });
             if (lastModifieds.size() == 1)
             {
-                String lastModified = lastModifieds.get(0).toString();
+                String lastModified = lastModifieds.getFirst().toString();
                 try
                 {
                     return FileTime.fromMillis(DateUtil.parseDateTime(lastModified, "EEE, dd MMM yyyy HH:mm:ss zzz").getTime());
                 }
                 catch (ConversionException | ParseException e)
                 {
-                    _log.debug("Bad LastModified value for PROPPATCH: " + lastModified, e);
+                    _log.debug("Bad LastModified value for PROPPATCH: {}", lastModified, e);
                 }
             }
         }
@@ -3866,7 +3865,7 @@ public class DavController extends SpringActionController
         if (dest.isCollection() && dest.list() != null)
             dest.list().forEach(this::addToIndex);
 
-        _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
+        _log.debug("fireFileMovedEvent: {}", DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
@@ -4384,7 +4383,7 @@ public class DavController extends SpringActionController
             close(writer, "lock writer");
 
             if (_log.isDebugEnabled())
-                _log.debug("lock: " + lock);
+                _log.debug("lock: {}", lock);
 
             if (null != resource && resource.exists())
                 return WebdavStatus.SC_OK;
@@ -4423,7 +4422,7 @@ public class DavController extends SpringActionController
             if (lockTokenHeader == null)
                 lockTokenHeader = "";
 
-            _log.debug("lock token: " + lockTokenHeader);
+            _log.debug("lock token: {}", lockTokenHeader);
 
             // Checking resource locks
 
@@ -4538,7 +4537,7 @@ public class DavController extends SpringActionController
         LockResult locked = _isLocked(path,ifHeader);
         if (_log.isDebugEnabled() && (locked!=LockResult.NOT_LOCKED || !StringUtils.isEmpty(ifHeader)))
         {
-            _log.debug(locked.name() + " " + path.toString() + " If:" + ifHeader);
+            _log.debug("{} {} If:{}", locked.name(), path.toString(), ifHeader);
         }
         return locked;
     }
@@ -5028,7 +5027,7 @@ public class DavController extends SpringActionController
                     request.setAttribute("org.apache.tomcat.sendfile.end", Long.valueOf(length));
                     request.setAttribute("org.apache.tomcat.sendfile.token", this);
                     getResponse().setContentLength(length);
-                    _log.debug("sendfile: " + absolutePath);
+                    _log.debug("sendfile: {}", absolutePath);
                 }
                 else
                 {
@@ -5072,7 +5071,7 @@ public class DavController extends SpringActionController
             if (ranges.size() == 1)
             {
 
-                Range range = ranges.get(0);
+                Range range = ranges.getFirst();
                 getResponse().addContentRange(range);
                 long length = range.end - range.start + 1;
                 getResponse().setContentLength(length);
@@ -5856,7 +5855,7 @@ public class DavController extends SpringActionController
         Path destinationPath = getDestinationPath();
         if (destinationPath == null)
             throw new DavException(WebdavStatus.SC_BAD_REQUEST);
-        _log.debug("Dest path :" + destinationPath);
+        _log.debug("Dest path :{}", destinationPath);
 
         WebdavResource resource = resolvePath();
         WebdavResource destination = resolvePath(destinationPath);
@@ -5943,7 +5942,7 @@ public class DavController extends SpringActionController
      */
     private WebdavStatus copyResource(int depth, WebdavResource src, Map<Path,WebdavStatus> errorList, Path destPath) throws DavException
     {
-        _log.debug("Copy: " + src.getPath() + " To: " + destPath);
+        _log.debug("Copy: {} To: {}", src.getPath(), destPath);
 
         WebdavResource dest = resolvePath(destPath);
 
@@ -6233,7 +6232,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte[] b) throws IOException
+        public int read(byte @NotNull [] b) throws IOException
         {
             int r = super.read(b);
             if (null != bos && r > 0)
@@ -6242,7 +6241,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(byte[] b, int off, int len) throws IOException
+        public int read(byte @NotNull [] b, int off, int len) throws IOException
         {
             int r = super.read(b, off, len);
             if (null != bos && r > 0)
@@ -6288,7 +6287,7 @@ public class DavController extends SpringActionController
 
     WebdavStatus unauthorized(WebdavResource resource, List<String> messages) throws DavException
     {
-        String message = null!=messages && !messages.isEmpty() ? messages.get(0) : null;
+        String message = null!=messages && !messages.isEmpty() ? messages.getFirst() : null;
         throw new UnauthorizedException(resource, message);
     }
 
@@ -6455,20 +6454,20 @@ public class DavController extends SpringActionController
 
     private void addToIndex(WebdavResource r)
     {
-        _log.debug("addToIndex: " + r.getPath());
+        _log.debug("addToIndex: {}", r.getPath());
 
         try
         {
             // a lot of tools up load temporary 0 length files, let's not index them
             if (!r.shouldIndex() || r.getContentLength() == 0 || r.getName().startsWith("._"))
             {
-                _log.debug("!shouldIndex(): " + r.getPath());
+                _log.debug("!shouldIndex(): {}", r.getPath());
                 return;
             }
         }
         catch (IOException x)
         {
-            _log.debug("!shouldIndex(): " + r.getPath(), x);
+            _log.debug("!shouldIndex(): {}", r.getPath(), x);
             return;
         }
 
@@ -6498,7 +6497,7 @@ public class DavController extends SpringActionController
 
     private void removeFromIndex(WebdavResource r)
     {
-        _log.debug("removeFromIndex: " + r.getPath());
+        _log.debug("removeFromIndex: {}", r.getPath());
         SearchService.get().deleteResource(r.getDocumentId());
     }
 
@@ -6575,7 +6574,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public int read(@NotNull byte[] bytes) throws IOException
+        public int read(byte @NotNull [] bytes) throws IOException
         {
             access();
             return super.read(bytes, 0, bytes.length);

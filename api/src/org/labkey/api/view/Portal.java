@@ -199,7 +199,7 @@ public class Portal implements ModuleChangeListener
 
     @NotNull static ProjectUrls urlProvider()
     {
-        return Objects.requireNonNull(PageFlowUtil.urlProvider(ProjectUrls.class));
+        return PageFlowUtil.urlProvider(ProjectUrls.class);
     }
 
     /** Issue 51727 - metrics to track web part usage */
@@ -1099,7 +1099,7 @@ public class Portal implements ModuleChangeListener
 
             count = new SqlExecutor(portalTable.getSchema()).execute(updateSQL);
             if (0 == count)
-                LOG.warn((update ? "Update" : "Insert") + " failed for page '" + p.pageId + "' in container '" + ContainerManager.getForId(p.getContainer()).getPath() + "'");
+                LOG.warn("{} failed for page '{}' in container '{}'", update ? "Update" : "Insert", p.pageId, ContainerManager.getForId(p.getContainer()).getPath());
         }
     }
 
@@ -1521,7 +1521,7 @@ public class Portal implements ModuleChangeListener
         SimpleFilter filter = SimpleFilter.createContainerFilter(container).addCondition(FieldKey.fromString("pageId"), pageId);
         ArrayList<PortalPage> pages = new TableSelector(getTableInfoPortalPages(), filter, null).getArrayList(PortalPage.class);
         if (!pages.isEmpty())
-            return pages.get(0);        // In rare cases there could be more than one.
+            return pages.getFirst();        // In rare cases there could be more than one.
         return null;
     }
 
@@ -1674,7 +1674,7 @@ public class Portal implements ModuleChangeListener
 
     public static WebPartView getWebPartViewSafe(@NotNull WebPartFactory factory, @NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
-        WebPartView view;
+        WebPartView<?> view;
 
         try
         {
@@ -2212,7 +2212,7 @@ public class Portal implements ModuleChangeListener
                 .mapToInt(Collection::size)
                 .sum();
 
-            LOG.info(viewCount + " webparts defined in all modules");
+            LOG.info("{} webparts defined in all modules", viewCount);
 
             // Make sure the cache retrieves the expected number of webpart definitions from the simpletest module, if present
 

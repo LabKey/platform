@@ -188,6 +188,42 @@ public class ConditionalFormat extends GWTConditionalFormat
         return sb.toString();
     }
 
+    /**
+     * Converts the XML filter entries for a single conditional format into a URL query string suitable for
+     * use as a {@link GWTConditionalFormat} filter value.
+     */
+    @Nullable
+    public static String buildFilterQueryString(@Nullable ConditionalFormatFiltersType filters)
+    {
+        SimpleFilter simpleFilter = new SimpleFilter();
+        if (null != filters)
+        {
+            ConditionalFormatFilterType[] filterArray = filters.getFilterArray();
+            if (filterArray != null)
+            {
+                for (ConditionalFormatFilterType filter : filterArray)
+                {
+                    CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
+                    if (compareType != null)
+                        simpleFilter.addClause(compareType.createFilterClause(FieldKey.fromParts(COLUMN_NAME), filter.getValue()));
+                    else
+                        LOG.warn("Could not find CompareType for {}, ignoring", filter.getOperator());
+                }
+            }
+        }
+        try
+        {
+            // Process it through a URL to get the query string equivalent
+            URLHelper url = new URLHelper("/test");
+            simpleFilter.applyToURL(url, DATA_REGION_NAME);
+            return url.getQueryString();
+        }
+        catch (URISyntaxException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
     /** Converts from the XMLBean representation to our standard class. Does not save to the database */
     @NotNull
     public static List<ConditionalFormat> convertFromXML(ConditionalFormatsType conditionalFormats)
@@ -200,38 +236,7 @@ public class ConditionalFormat extends GWTConditionalFormat
         for (ConditionalFormatType xmlFormat : conditionalFormats.getConditionalFormatArray())
         {
             ConditionalFormat format = new ConditionalFormat();
-            SimpleFilter simpleFilter = new SimpleFilter();
-            ConditionalFormatFiltersType filters = xmlFormat.getFilters();
-            if (null != filters)
-            {
-                ConditionalFormatFilterType[] filterArray = filters.getFilterArray();
-                if (filterArray != null)
-                {
-                    for (ConditionalFormatFilterType filter : filterArray)
-                    {
-                        CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
-                        if (compareType != null)
-                        {
-                            simpleFilter.addClause(compareType.createFilterClause(FieldKey.fromParts(COLUMN_NAME), filter.getValue()));
-                        }
-                        else
-                        {
-                            LOG.warn("Could not find CompareType for " + filter.getOperator() + ", ignoring");
-                        }
-                    }
-                }
-            }
-            try
-            {
-                // Process it through a URL to get the query string equivalent
-                URLHelper url = new URLHelper("/test");
-                simpleFilter.applyToURL(url, DATA_REGION_NAME);
-                format.setFilter(url.getQueryString());
-            }
-            catch (URISyntaxException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
+            format.setFilter(buildFilterQueryString(xmlFormat.getFilters()));
             if (xmlFormat.isSetBold() && xmlFormat.getBold())
             {
                 format.setBold(true);
@@ -269,7 +274,7 @@ public class ConditionalFormat extends GWTConditionalFormat
             ConditionalFormatsType xmlFormats = xmlColumn.addNewConditionalFormats();
             if (!addToXML(formats, xmlFormats))
             {
-                LOG.warn("One or more invalid conditional formats were discovered on table \"" + tableName + "\", column \"" + xmlColumn.getColumnName() + "\"");
+                LOG.warn("One or more invalid conditional formats were discovered on table \"{}\", column \"{}\"", tableName, xmlColumn.getColumnName());
             }
         }
     }
@@ -286,7 +291,7 @@ public class ConditionalFormat extends GWTConditionalFormat
             ConditionalFormatsType xmlFormats = xmlProp.addNewConditionalFormats();
             if (!addToXML(formats, xmlFormats))
             {
-                LOG.warn("One or more invalid conditional formats were discovered on property \"" + xmlProp.getName() + "\"");
+                LOG.warn("One or more invalid conditional formats were discovered on property \"{}\"", xmlProp.getName());
             }
         }
     }

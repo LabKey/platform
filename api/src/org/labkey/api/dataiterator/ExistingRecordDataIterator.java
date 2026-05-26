@@ -21,6 +21,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -153,6 +154,8 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     @Override
     public Object get(int i)
     {
+        assert(i <= existingColIndex) : "ExistingCol should be the last column.";
+
         if (i<existingColIndex)
             return _delegate.get(i);
         Integer rowNumber = asInteger(_delegate.get(0));
@@ -201,7 +204,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
     protected void checkDuplicateKeys(List<String> pkKeys)
     {
-        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.get(0) : pkKeys;
+        Object pkKeysObj = pkKeys.size() == 1 ? pkKeys.getFirst() : pkKeys;
         if (_pkKeysSeen.contains(pkKeysObj))
             _context.getErrors().addRowError(new ValidationException("Duplicate key provided: " + StringUtils.join(pkKeys, ", ")));
         _pkKeysSeen.add(pkKeysObj);
@@ -238,10 +241,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             QueryUpdateService.InsertOption option = context.getInsertOption();
             if (option.allowUpdate)
             {
+                boolean hasAttachmentProperties = false;
+                QueryUpdateService qus = target.getUpdateService();
+                if (qus instanceof DefaultQueryUpdateService dQus)
+                    hasAttachmentProperties = dQus.hasAttachmentProperties(); // if true, we need to fetch existing records to properly handle old attachment delete
                 AuditBehaviorType auditType = AuditBehaviorType.NONE;
                 if (target.supportsAuditTracking())
                     auditType = target.getEffectiveAuditBehavior((AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior));
-                boolean detailed = auditType == DETAILED;
+                boolean detailed = auditType == DETAILED || hasAttachmentProperties;
                 if (useGetRows)
                     return new ExistingDataIteratorsGetRows(new CachingDataIterator(di), target, keys, sharedKeys, context, detailed);
                 else

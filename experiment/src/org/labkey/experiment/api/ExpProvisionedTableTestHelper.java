@@ -1,15 +1,20 @@
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -17,6 +22,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.TestContext;
 
 import java.io.StringWriter;
@@ -24,8 +30,10 @@ import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 
@@ -55,7 +63,7 @@ public class ExpProvisionedTableTestHelper
         prop3.setRangeURI("string");
         prop3.setName(colorPropertyName);
 
-        GWTDomain domain = new GWTDomain();
+        GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
         domain.setName(domainName);
         domain.setDescription(domainDescription);
         domain.setFields(List.of(prop1, prop2, prop3));
@@ -119,7 +127,22 @@ public class ExpProvisionedTableTestHelper
         return this.updateRows(c, rowsToUpdate, oldKeys, tableName, null);
     }
 
-    static void assertMultiValue(Collection<Object> values, Collection<String> expected) throws Exception
+    public static void requireSimpleTestModule(Container c)
+    {
+        if (!AppProps.getInstance().isDevMode()) // Skip test in production mode if necessary modules are not available
+        {
+            Assume.assumeTrue("List module is required to test domain templates", ModuleLoader.getInstance().getModule("list") != null);
+            Assume.assumeTrue("simpletest module is required to test domain templates", ModuleLoader.getInstance().getModule("simpletest") != null);
+        }
+
+        Module m = ModuleLoader.getInstance().getModule("simpletest");
+        Assert.assertNotNull("This test requires 'simpletest' module to be deployed", m);
+        Set<Module> activeModules = new HashSet<>(c.getActiveModules());
+        activeModules.add(m);
+        c.setActiveModules(activeModules);
+    }
+
+    static void assertMultiValue(Collection<Object> values, Collection<String> expected)
     {
         Assert.assertNotNull(values);
         for (var expect : expected)
@@ -143,5 +166,37 @@ public class ExpProvisionedTableTestHelper
 
         for (String e : expected)
             Assert.assertTrue("Failed to find '" + e + "' in multivalue '" + s + "'", s.contains(e));
+    }
+
+    public void verifyReservedColumnNames(Container c, User user, @NotNull Domain domain)
+    {
+        DomainKind<?> kind = domain.getDomainKind();
+        Assert.assertNotNull(kind);
+
+        // Verify <reservedColumnNames> from the template are honored by the DomainKind
+        Set<String> reservedNames = kind.getReservedPropertyNames(domain, user);
+        Assert.assertTrue("Expected template reserved name 'reservedOne' in: " + reservedNames,
+                reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("reservedOne")));
+        Assert.assertTrue("Expected template reserved name 'ReservedTwo' in: " + reservedNames,
+                reservedNames.stream().anyMatch(n -> n.equalsIgnoreCase("ReservedTwo")));
+
+        // Attempt to add a field whose name collides with a template-reserved name (mixed case)
+        GWTDomain<GWTPropertyDescriptor> origGwt = DomainUtil.getDomainDescriptor(user, domain);
+        GWTDomain<GWTPropertyDescriptor> updateGwt = new GWTDomain<>(origGwt);
+        List<GWTPropertyDescriptor> updatedFields = new ArrayList<>(updateGwt.getFields());
+        updatedFields.add(new GWTPropertyDescriptor("RESERVEDONE", "http://www.w3.org/2001/XMLSchema#string"));
+        updateGwt.setFields(updatedFields);
+        ValidationException ve = DomainUtil.updateDomainDescriptor(origGwt, updateGwt, c, user);
+        Assert.assertTrue("Expected a validation error when adding a reserved-name field", ve.hasErrors());
+        Assert.assertTrue("Expected error message to flag the reserved name: " + ve.getMessage(),
+                ve.getMessage().toLowerCase().contains("reserved"));
+
+        // A non-reserved field name should validate cleanly
+        GWTDomain<GWTPropertyDescriptor> okUpdate = new GWTDomain<>(origGwt);
+        List<GWTPropertyDescriptor> okFields = new ArrayList<>(okUpdate.getFields());
+        okFields.add(new GWTPropertyDescriptor("nonReservedField", "http://www.w3.org/2001/XMLSchema#string"));
+        okUpdate.setFields(okFields);
+        ValidationException okVe = DomainUtil.validateProperties(domain, okUpdate, kind, origGwt, user);
+        Assert.assertFalse("Did not expect validation errors for a non-reserved field: " + okVe.getMessage(), okVe.hasErrors());
     }
 }

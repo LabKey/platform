@@ -838,7 +838,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                             }
                             catch (IOException e)
                             {
-                                log.debug("InterWiki " + extSpace + " not found.");
+                                log.debug("InterWiki {} not found.", extSpace);
                             }
                         }
                         else

@@ -77,6 +77,7 @@ import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -88,6 +89,7 @@ import org.labkey.api.files.FileBrowserConfigImporter;
 import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
 import org.labkey.api.module.FolderType;
@@ -98,7 +100,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SchemaUpdateType;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
@@ -149,7 +150,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
-import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.FolderSettingsCache.FolderSettingsCacheListener;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
 import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
@@ -246,16 +247,17 @@ import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
+import org.labkey.core.attachment.AttachmentContainerListener;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
-import org.labkey.core.mcp.McpServiceImpl;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -265,7 +267,6 @@ import org.labkey.core.notification.NotificationServiceImpl;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
-import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -275,6 +276,7 @@ import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.PostgresTableSizesTable;
 import org.labkey.core.query.PostgresUserSchema;
+import org.labkey.core.query.ReportsTable;
 import org.labkey.core.query.UserAuditProvider;
 import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.reader.DataLoaderServiceImpl;
@@ -441,11 +443,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("core", CoreController.class);
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
-        addController("util", UtilController.class);
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
+
+        WarningService.setInstance(new WarningServiceImpl());
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.setInstance(new AttachmentServiceImpl());
@@ -453,8 +456,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         RhinoService.register();
         CacheManager.addListener(RhinoService::clearCaches);
         NotificationService.setInstance(NotificationServiceImpl.getInstance());
-
-        WarningService.setInstance(new WarningServiceImpl());
 
         ViewService.setInstance(ViewServiceImpl.getInstance());
         OptionalFeatureService.setInstance(new OptionalFeatureServiceImpl());
@@ -527,22 +528,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
-            "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+            "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
             "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
             "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-            "search to find the other select values.", false);
+            "search to find the other select values.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
+            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
+            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
-            false);
+            false,
+            true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.REJECT_CONTROLLER_FIRST_URLS,
             "Reject controller-first URLs",
-            "Require standard path-first URLs. Note: This option will be ignored if the deprecated feature for generating controller-first URLs is enabled.",
+            "Require standard path-first URLs.",
             false
         );
 
@@ -559,11 +561,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         ScriptEngineManagerImpl.registerEncryptionMigrationHandler();
 
-        McpService.get().register(new CoreMcp());
+        PostgreSqlService.setInstance(PostgreSqlDialectFactory::getLatestSupportedDialect);
 
         deleteTempFiles();
     }
-
 
     private void deleteTempFiles()
     {
@@ -870,6 +871,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ContainerManager.getHomeContainer();
              }
         });
+
+        // Install a fallback decryption algorithm if AES migration is pending. This prevents concurrent HTTP requests
+        // from failing to decrypt not-yet-migrated values during the migration window. Called here (afterUpdate) rather
+        // than in startupAfterSpringConfig so the fallback is active before any long-running upgrade steps run.
+        Encryption.prepareMigrationFallback();
     }
 
     private void bootstrap()
@@ -961,13 +967,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         checkForMissingDbViews();
 
         ProductConfiguration.handleStartupProperties();
+
         // This listener deletes all properties; make sure it executes after most of the other listeners
         ContainerManager.addContainerListener(new CoreContainerListener(), ContainerManager.ContainerListener.Order.Last);
-        ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
+        // This listener deletes all attachments in the container; execute it just before CoreContainerListener
+        ContainerManager.addContainerListener(new AttachmentContainerListener(), ContainerManager.ContainerListener.Order.Last);
+        ContainerManager.addContainerListener(new FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AuthenticationManager.registerProvider(new LoginAttemptDisableLoginProvider());
         AnalyticsServiceImpl.get().resetCSP();
 
         if (moduleContext.isNewInstall() && ModuleLoader.getInstance().shouldInsertData())
@@ -1284,7 +1294,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         Encryption.checkMigration();
 
-        McpServiceImpl.get().startMpcServer();
+        McpService.get().register(new CoreMcp());
     }
 
     // Issue 7527: Auto-detect missing SQL views and attempt to recreate
@@ -1319,9 +1329,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
         _webdavServletDynamic.setMultipartConfig(SpringActionController.getMultiPartConfigElement());
         _webdavServletDynamic.addMapping("/_webdav/*");
-
-        McpService.setInstance(new McpServiceImpl());
-        McpServiceImpl.get().registerServlets(servletCtx);
     }
 
     @Override
@@ -1398,6 +1405,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
         json.put("productFeatures", ProductRegistry.getProductFeatureSet());
         json.put("primaryApplicationId", ProductRegistry.get().getPrimaryApplicationId(context.getContainer()));
+        json.put("productKey", new ProductConfiguration().getCurrentProductKey());
         return json;
     }
 
@@ -1459,7 +1467,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
-            UserController.TestCase.class
+            UserController.TestCase.class,
+            ReportsTable.TestCase.class
         );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
@@ -1679,7 +1688,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 // using guest user since the server startup doesn't have a true user (this will be used for audit events)
                 ContainerManager.getHomeContainer().setFolderType(folderType, User.guest);
             else
-                LOG.error("Unable to find folder type for home project during server startup: " + folderTypeEntry.getValue());
+                LOG.error("Unable to find folder type for home project during server startup: {}", folderTypeEntry.getValue());
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);

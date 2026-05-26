@@ -19,10 +19,11 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
- * Configures the fields that are not returned when serializing a GWTDomain.
- * Ideally we would just add the @JsonIgnore annotations to GWTDomain directly,
- * but the GWT compiler would need to have jackson on the classpath which isn't
- * necessary.
+ * Scopes Jackson annotations to the ObjectMapper used by the listDomains action.
+ * The @JsonIgnoreProperties fields are excluded from list responses to reduce payload
+ * size, but are still needed by other callers (e.g. getDomainDetails for the domain
+ * designer). The @JsonFilter must also remain scoped here because only this ObjectMapper
+ * registers the "listDomainsActionFilter" filter.
  */
 @JsonIgnoreProperties({
         "_Ts",
@@ -31,8 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
         "excludeFromExportFieldNames",
         "phiNotAllowedFieldNames",
         "defaultValuesURL",
-        "provisioned",
-        "domainException"
+        "provisioned"
 })
 
 @JsonFilter("listDomainsActionFilter")

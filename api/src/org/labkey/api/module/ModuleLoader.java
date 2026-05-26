@@ -580,19 +580,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
 
-        for (Module module : modules)
-        {
-            module.registerFilters(_servletContext);
-        }
-        for (Module module : modules)
-        {
-            module.registerServlets(_servletContext);
-        }
-        for (Module module : modules)
-        {
-            module.registerFinalServlets(_servletContext);
-        }
-
         // Do this after we've checked to see if we can find the core module. See issue 22797.
         verifyProductionModeMatchesBuild();
 
@@ -790,11 +777,33 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        // Don't accept any requests if we're bootstrapping empty schemas or migrating from SQL Server
+        // Don't accept any requests if we're bootstrapping empty schemas or doing a database migration
         if (!shouldInsertData())
             execution = Execution.Synchronous;
 
         startNonCoreUpgradeAndStartup(execution, lockFile);
+
+        // Register filters and servlets at the last minute, just before Tomcat starts. At this point, the list of
+        // modules is final. We've had one case where the CSP filter was getting initialized before the core module
+        // was initialized, GitHub Issue 1008. We have no idea how that happened, but registering late won't hurt.
+
+        _log.info("Registering filters");
+
+        for (Module module : _modules)
+        {
+            module.registerFilters(_servletContext);
+        }
+
+        _log.info("Registering servlets");
+
+        for (Module module : _modules)
+        {
+            module.registerServlets(_servletContext);
+        }
+        for (Module module : _modules)
+        {
+            module.registerFinalServlets(_servletContext);
+        }
 
         _log.info("LabKey Server startup is complete; {}", execution.getLogMessage());
     }
@@ -2208,7 +2217,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                         {
                             Class<?>[] supr = inter.getInterfaces();
                             if (supr.length == 1 && UrlProvider.class.equals(supr[0]))
-                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>) inter, innerClass);
+                                UrlProviderService.getInstance().registerUrlProvider((Class<UrlProvider>) inter, (Class<? extends UrlProvider>) innerClass);
                         }
                     }
                 }
@@ -2314,7 +2323,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             return;
 
         ResourceFinder finder = new ResourceFinder(name, sourcePath, buildPath);
-        Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
+        Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, _ -> new ArrayList<>());
 
         synchronized (col)
         {
@@ -2325,8 +2334,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public @NotNull Collection<ResourceFinder> getResourceFindersForPath(String path)
     {
         //NOTE: jasper encodes underscores and dashes in JSPs, so decode them here
-        path = path.replaceAll("_005f", "_");
-        path = path.replaceAll("_002d", "-");
+        path = path.replace("_005f", "_");
+        path = path.replace("_002d", "-");
 
         Collection<ResourceFinder> finders = new LinkedList<>();
 

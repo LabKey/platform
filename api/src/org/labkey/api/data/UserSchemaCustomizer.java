@@ -71,7 +71,7 @@ public interface UserSchemaCustomizer
                 Class c = Class.forName(className);
                 if (!(UserSchemaCustomizer.class.isAssignableFrom(c)))
                 {
-                    LogManager.getLogger(UserSchemaCustomizer.class).warn("Class '" + c.getName() + "' is not an implementation of " + UserSchemaCustomizer.class.getName());
+                    LogManager.getLogger(UserSchemaCustomizer.class).warn("Class '{}' is not an implementation of {}", c.getName(), UserSchemaCustomizer.class.getName());
                 }
                 else
                 {

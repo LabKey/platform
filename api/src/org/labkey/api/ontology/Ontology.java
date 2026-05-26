@@ -1,9 +1,9 @@
 package org.labkey.api.ontology;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 
-import jakarta.validation.constraints.NotNull;
 import java.util.Date;
 
 public interface Ontology // extends Entity

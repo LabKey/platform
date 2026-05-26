@@ -236,13 +236,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public boolean canEditDefinition(User user, Domain domain)
-    {
-        return domain.getContainer().hasPermission(user, AdminPermission.class);
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         SimpleUserSchema.SimpleTable table = domain != null ? getTable(domain, user) : null;
         if (table != null)

@@ -239,7 +239,7 @@ public class DbSchema
             _ignoreTemp = ignoreTemp;
         }
 
-        protected abstract void handleTable(String tableName, DatabaseTableType tableType, String description) throws SQLException;
+        protected abstract void handleTable(String tableName, DatabaseTableType tableType, String description);
 
         protected T getReturnValue() {return null;}
 
@@ -289,7 +289,7 @@ public class DbSchema
             }
             catch (IllegalArgumentException e)
             {
-                _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
+                _log.error("Malformed XML in {}.{}", ti.getSchema(), xmlTable.getTableName(), e);
             }
         }
 
@@ -733,7 +733,7 @@ public class DbSchema
 
                     if (pkColumns.size() == 1)
                     {
-                        ColumnInfo pkColumn = pkColumns.get(0);
+                        ColumnInfo pkColumn = pkColumns.getFirst();
                         sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
                         sbSql.append(" AS FirstPKColName, ");
                         sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).append(" AS VARCHAR(100)) AS FirstPKValue, ");

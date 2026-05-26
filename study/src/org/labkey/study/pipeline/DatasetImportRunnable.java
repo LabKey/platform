@@ -98,7 +98,7 @@ public class DatasetImportRunnable implements Runnable
     {
         List<String> errors = new ArrayList<>(5);
         validate(errors);
-        return errors.isEmpty() ? null : errors.get(0);
+        return errors.isEmpty() ? null : errors.getFirst();
     }
 
     public void validate(List<String> errors)
@@ -131,7 +131,7 @@ public class DatasetImportRunnable implements Runnable
         }
         catch (Exception x)
         {
-            _logger.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
+            _logger.error("Exception while importing dataset {} from {}", _datasetDefinition.getName(), _fileName, x);
         }
         return new ColumnDescriptor[0];
     }
@@ -155,7 +155,7 @@ public class DatasetImportRunnable implements Runnable
         if (!validateErrors.isEmpty())
         {
             for (String e : validateErrors)
-                _logger.error(_fileName + " -- " + e);
+                _logger.error("{} -- {}", _fileName, e);
             return;
         }
 
@@ -215,7 +215,7 @@ public class DatasetImportRunnable implements Runnable
             }
 
             assert cpuImport.start();
-            _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
+            _logger.info("{}: Starting import from {}", _datasetDefinition.getLabel(), _fileName);
 
             boolean tryDataDiffing = null != DataIntegrationService.get() &&
                     _datasetDefinition.getKeyManagementType() == Dataset.KeyManagementType.None &&
@@ -284,14 +284,14 @@ public class DatasetImportRunnable implements Runnable
                 if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
                 {
                     assert cpuDelete.start();
-                    _logger.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
+                    _logger.info("{}: Starting delete{}", _datasetDefinition.getLabel(), useCutoff ? " of rows newer than " + _replaceCutoff : "");
                     int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null);
-                    _logger.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                    _logger.info("{}: Deleted {} rows", _datasetDefinition.getLabel(), rows);
                     assert cpuDelete.stop();
                 }
 
                 assert cpuImport.start();
-                _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
+                _logger.info("{}: Starting import from {}", _datasetDefinition.getLabel(), _fileName);
 
                 count = qus.importRows(user, c, loader, batchErrors, config, null);
 
@@ -336,21 +336,21 @@ public class DatasetImportRunnable implements Runnable
         }
         catch (Exception x)
         {
-            _logger.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _fileName, x);
+            _logger.error("Exception while importing dataset {} from {}", _datasetDefinition.getName(), _fileName, x);
         }
         finally
         {
             IOUtils.closeQuietly(is);
             for (ValidationException err : batchErrors.getRowErrors())
-                _logger.error(_fileName + " -- " + err.getMessage());
+                _logger.error("{} -- {}", _fileName, err.getMessage());
 
             if (_deleteAfterImport)
             {
                 boolean success = _root.delete(_fileName);
                 if (success)
-                    _logger.info("Deleted file " + _fileName);
+                    _logger.info("Deleted file {}", _fileName);
                 else
-                    _logger.error("Could not delete file " + _fileName);
+                    _logger.error("Could not delete file {}", _fileName);
             }
 
             if (loader != null)

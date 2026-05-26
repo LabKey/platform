@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.TestContext;
 
@@ -19,7 +18,7 @@ public class LookAndFeelFolderPropertiesTest extends Assert
     private User _testUser;
 
     @Before
-    public void setUp() throws ValidEmail.InvalidEmailException, org.labkey.api.security.SecurityManager.UserManagementException
+    public void setUp()
     {
         _testUser = TestContext.get().getUser();
         _project = ContainerManager.createContainer(ContainerManager.getRoot(), GUID.makeGUID(), _testUser);
@@ -31,7 +30,7 @@ public class LookAndFeelFolderPropertiesTest extends Assert
     }
 
     @After
-    public void cleanup() throws ValidEmail.InvalidEmailException, org.labkey.api.security.SecurityManager.UserManagementException
+    public void cleanup()
     {
         ContainerManager.deleteAll(_project, _testUser);
     }

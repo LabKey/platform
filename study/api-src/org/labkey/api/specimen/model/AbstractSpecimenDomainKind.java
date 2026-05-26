@@ -34,7 +34,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.SimpleValidationError;
@@ -56,7 +55,6 @@ import org.labkey.data.xml.TableType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -141,12 +139,6 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     {
         Lsid lsid = new Lsid(domainURI);
         return lsid.getNamespacePrefix() != null && getNamespacePrefix().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
-    }
-
-    @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-    {
-        return Collections.emptySet();
     }
 
     @Override

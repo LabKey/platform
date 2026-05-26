@@ -17,7 +17,6 @@
 package org.labkey.api.assay.actions;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -61,6 +60,7 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -273,7 +273,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
         if (collectors.size() == 1)
         {
-            return collectors.get(0);
+            return collectors.getFirst();
         }
         return null;
     }
@@ -360,10 +360,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             File assayDirectory = getAssayDirectory(getContainer(), null);
 
             // Hidden values in form containing previously uploaded files if the previous upload resulted in error
+            var fileMap = PageFlowUtil.getFileMap(request);
             for (String fileParam : filePdNames)
             {
                 DomainProperty domainProperty = fileParameters.get(fileParam);
-                MultipartFile multiFile = request.getFileMap().get(fileParam);
+                MultipartFile multiFile = fileMap.get(fileParam);
 
                 // If the file is removed from form after error, override hidden file name with an empty file
                 if (null != multiFile && multiFile.getOriginalFilename().isEmpty())
@@ -506,14 +507,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 List<ColumnInfo> pks = lookupTable.getPkColumns();
                 if (pks.size() == 1)
                 {
-                    ColumnInfo pk = pks.get(0);
+                    ColumnInfo pk = pks.getFirst();
                     try
                     {
                         Object filterValue = pk.convert(value);
                         SimpleFilter filter = new SimpleFilter(pk.getFieldKey(), filterValue);
                         Set<String> cols = new HashSet<>();
                         cols.add(lookupTable.getTitleColumn());
-                        cols.add(pks.get(0).getName());
+                        cols.add(pks.getFirst().getName());
                         Map<String, Object>[] maps = new TableSelector(lookupTable, cols, filter, null).setForDisplay(true).getMapArray();
                         if (maps.length > 0)
                         {

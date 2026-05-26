@@ -1,6 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-dot.exe\\freetype6.dll\\jpeg.dll\\png.dll\\z.dll|{link:Graphviz|http://www.graphviz.org/}|2.2.1|{link:AT&T Research|http://www.graphviz.org/}|{link:Common Public|http://www.graphviz.org/License.php}|jeckels|Renders trees of objects
-zlib1.dll|{link:Zlib|http://www.zlib.net/}|1.2.3.2027|{link:Zlib|http://www.zlib.net/}|{link:Zlib License|http://www.zlib.net/zlib_license.html}|jeckels|Compression library used by Graphviz.
-libexpat.dll\\libexpatw.dll|{link:Expat|http://expat.sourceforge.net/}|N/A|{link:Expat Project|http://sourceforge.net/projects/expat/}|{link:MIT License|http://www.opensource.org/licenses/mit-license.php}|jeckels|Open source XML SAX-parser used by Graphviz.
-{table}

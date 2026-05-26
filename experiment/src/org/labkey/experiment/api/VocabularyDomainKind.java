@@ -79,7 +79,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
+    protected @NotNull Set<String> getKindReservedPropertyNames(Domain domain, User user, boolean forCreate)
     {
         return RESERVED_PROPERTY_NAMES;
     }

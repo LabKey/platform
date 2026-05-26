@@ -20,17 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayResultTable;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.RemappingDisplayColumnFactory;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -38,7 +34,6 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
@@ -53,9 +48,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.writer.HtmlWriter;
 import org.labkey.assay.plate.AssayPlateTriggerFactory;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -66,7 +58,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 
 public class TSVProtocolSchema extends AssayProtocolSchema
@@ -142,14 +133,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         _AssayResultTable(AssayProtocolSchema schema, ContainerFilter cf, boolean includeLinkedToStudyColumns)
         {
             super(schema, cf, includeLinkedToStudyColumns);
-            String flagConceptURI = org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI();
-            for (ColumnInfo col : getColumns())
-            {
-                if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
-                {
-                    ((BaseColumnInfo)col).setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
-                }
-            }
 
             if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
@@ -187,10 +170,10 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     plateHitsColumn.setConceptURI("hit-selection");
                     plateHitsColumn.setLabel("Hit Selection");
                     addColumn(plateHitsColumn);
-                    defaultColumns.add(0, plateHitsColumn.getFieldKey());
+                    defaultColumns.addFirst(plateHitsColumn.getFieldKey());
                 }
 
-                defaultColumns.add(0, FieldKey.fromParts("Well", "SampleId"));
+                defaultColumns.addFirst(FieldKey.fromParts("Well", "SampleId"));
 
                 // join to any replicate roll ups
                 Domain replicateDomain = AssayPlateMetadataService.get().getPlateReplicateStatsDomain(getProtocol());
@@ -306,92 +289,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         public @Nullable QueryUpdateService getUpdateService()
         {
             return new DefaultQueryUpdateService(this, getRealTable());
-        }
-    }
-
-    static class _FlagDisplayColumnFactory implements RemappingDisplayColumnFactory
-    {
-        FieldKey rowId = new FieldKey(null, "RowId");
-        final ExpProtocol protocol;
-        final String dataregion;
-
-        _FlagDisplayColumnFactory(ExpProtocol protocol, String dataregionName)
-        {
-            this.protocol = protocol;
-            this.dataregion = dataregionName;
-        }
-
-        @Override
-        public _FlagDisplayColumnFactory remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
-        {
-            _FlagDisplayColumnFactory remapped = this.clone();
-            var fk = FieldKey.remap(rowId, parent, remap);
-            if (null != fk)
-                remapped.rowId = fk;
-            return remapped;
-        }
-
-        @Override
-        public DisplayColumn createRenderer(ColumnInfo colInfo)
-        {
-            return new _FlagColumnRenderer(colInfo, rowId, protocol);
-        }
-
-        @Override
-        protected _FlagDisplayColumnFactory clone()
-        {
-            try
-            {
-                return (_FlagDisplayColumnFactory)super.clone();
-            }
-            catch (CloneNotSupportedException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * NOTE: The base class FlagColumnRenderer usually wraps an lsid and uses the
-     * display column to find the comment.
-     * This class turns that around.  It wraps a flag/comment column and uses
-     * run/lsid and rowid to generate a fake lsid
-     */
-    private static class _FlagColumnRenderer extends FlagColumnRenderer
-    {
-        private final FieldKey rowId;
-        private final ExpProtocol protocol;
-
-        private _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol)
-        {
-            super(col);
-            this.rowId = rowId;
-            this.protocol = protocol;
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getSetResultFlagURL(protocol.getContainer());
-            url.addParameter("rowId", protocol.getRowId());
-            url.addParameter("columnName", col.getName());
-            this.endpoint = url.getLocalURIString();
-            // I think the column name here does not really matter, see AssayController.getRowList()).
-            this.jsConvertPKToLSID = "function(pk){return " +
-                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getName() + ":") + " + pk}";
-        }
-
-        @Override
-        protected void renderFlag(RenderContext ctx, HtmlWriter out)
-        {
-            renderFlagScript(ctx, out);
-            Integer id = ctx.get(rowId, Integer.class);
-            Object comment = getValue(ctx);
-            // I think the column name here does not really matter, see AssayController.getRowList()).
-            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getName() +  ":" + id;
-            _renderFlag(ctx, out, lsid, null == comment ? null : String.valueOf(comment));
-        }
-
-        @Override
-        public void addQueryFieldKeys(Set<FieldKey> keys)
-        {
-            super.addQueryFieldKeys(keys);
-            keys.add(rowId);
         }
     }
 }

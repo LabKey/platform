@@ -16,7 +16,6 @@
 
 package org.labkey.announcements;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -141,7 +140,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
             // filter out disabled users or users who have never logged in : Issue #33255
             if (!user.isActive() || user.isFirstLogin())
             {
-                _log.warn("The user: " + user.getName() + " is either disabled or has never logged in and has been omitted.");
+                _log.warn("The user: {} is either disabled or has never logged in and has been omitted.", user.getName());
                 return null;
             }
 

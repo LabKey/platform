@@ -16,7 +16,6 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.study.Study;
 
@@ -33,7 +32,7 @@ public class RestrictedReaderRole extends AbstractRole
     }
 
     @Override
-    public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
+    public boolean isApplicable(SecurableResource resource)
     {
         return resource instanceof Study;
     }

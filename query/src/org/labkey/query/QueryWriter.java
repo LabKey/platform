@@ -121,7 +121,7 @@ public class QueryWriter extends BaseFolderWriter
                     }
                     catch (XmlValidationException e)
                     {
-                        _log.error("Invalid meta data set on query " + query.getSchemaName() + "." + query.getName() + ". Meta data will not be exported for this query.", e);
+                        _log.error("Invalid meta data set on query {}.{}. Meta data will not be exported for this query.", query.getSchemaName(), query.getName(), e);
                     }
                 }
 

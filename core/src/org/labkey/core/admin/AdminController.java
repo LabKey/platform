@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -127,7 +128,6 @@ import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -193,11 +193,13 @@ import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Directive;
 import org.labkey.api.security.ElevatedUser;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -212,7 +214,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
@@ -302,7 +303,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
-import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ShortURLRecord;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.TabStripView;
@@ -314,6 +314,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.EmptyView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -411,13 +412,17 @@ import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
+import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
+import static org.labkey.api.util.DOM.B;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.P;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
@@ -886,10 +891,22 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ActionURL getCspReportToURL(@NotNull String cspVersion)
+        public ActionURL getCspReportToURL()
         {
-            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot())
-                .addParameter("cspVersion", cspVersion);
+            return new ActionURL(ContentSecurityPolicyReportToAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
+        public ActionURL getAllowedExternalRedirectHostsURL()
+        {
+            return new ActionURL(AllowListAction.class, ContainerManager.getRoot())
+                .addParameter("type", AllowListType.Redirect.name());
+        }
+
+        @Override
+        public ActionURL getDeleteEncryptedContentURL()
+        {
+            return new ActionURL(DeleteEncryptedContentAction.class, ContainerManager.getRoot());
         }
 
         public static ActionURL getDeprecatedFeaturesURL()
@@ -1651,7 +1668,7 @@ public class AdminController extends SpringActionController
     {
         private List<String> _providers;
         private boolean _includeSubfolders = false;
-        private transient Consumer<String> _logger = s -> {
+        private transient Consumer<String> _logger = _ -> {
         }; // No-op by default
 
         public List<String> getProviders()
@@ -2684,23 +2701,41 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class DumpHeapAction extends SimpleViewAction<Object>
+    public class DumpHeapAction extends ConfirmAction<Object>
     {
+        private File _destination;
+
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
-            File destination = DebugInfoDumper.dumpHeap();
-            return new HtmlView(HtmlString.of("Heap dumped to " + destination.getAbsolutePath()));
+            setTitle("Dump Heap");
+            return HtmlView.of("Are you sure you want to dump the JVM heap to disk? Heap dumps are useful for troubleshooting memory leaks or OutOfMemoryErrors. This may temporarily slow the server and will consume significant disk space.");
         }
 
         @Override
-        public void addNavTrail(NavTree root)
+        public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            setHelpTopic("dumpHeap");
-            addAdminNavTrail(root, "Heap dump", getClass());
+            _destination = DebugInfoDumper.dumpHeap();
+            return true;
+        }
+
+        @Override
+        public ModelAndView getSuccessView(Object o)
+        {
+            return new HtmlView(HtmlString.of("Heap dumped to " + _destination.getAbsolutePath()));
+        }
+
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return getShowAdminURL();
         }
     }
-
 
     public static class ThreadsBean
     {
@@ -3183,31 +3218,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(MemForm form, BindException errors)
         {
-            if (form.isClearCaches())
-            {
-                LOG.info("Clearing Introspector caches");
-                Introspector.flushCaches();
-                LOG.info("Purging all caches");
-                CacheManager.clearAllKnownCaches();
-                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("clearCaches");
-                throw new RedirectException(redirect);
-            }
+            getPageConfig().addClientDependency(ClientDependency.fromPath("admin/caches.js"));
 
             List<TrackingCache<?, ?>> caches = CacheManager.getKnownCaches();
-
-            if (form.getDebugName() != null)
-            {
-                for (TrackingCache<?, ?> cache : caches)
-                {
-                    if (form.getDebugName().equals(cache.getDebugName()))
-                    {
-                        LOG.info("Purging cache: " + cache.getDebugName());
-                        cache.clear();
-                    }
-                }
-                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("debugName");
-                throw new RedirectException(redirect);
-            }
 
             List<CacheStats> cacheStats = new ArrayList<>();
             List<CacheStats> transactionStats = new ArrayList<>();
@@ -3220,13 +3233,19 @@ public class AdminController extends SpringActionController
 
             HtmlStringBuilder html = HtmlStringBuilder.of();
 
-            html.append(LinkBuilder.labkeyLink("Clear Caches and Refresh", getCachesURL(true, false)));
-            html.append(LinkBuilder.labkeyLink("Refresh", getCachesURL(false, false)));
+            html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("clearAllCaches"), "Clear Caches and Refresh")));
+            html.append(createHtmlFragment(A(cl("labkey-text-link").at(href, "#").id("refreshPage"), "Refresh")));
+            html.append(createHtmlFragment(
+                SPAN(at(style, "display:none; margin-left:8px;").id("cacheSpinner"),
+                    SPAN(at(style, "display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#333; border-radius:50%; animation:lk-spin 0.7s linear infinite; vertical-align:middle;"))),
+                STYLE("@keyframes lk-spin { to { transform: rotate(360deg); } }"),
+                DIV(cl("labkey-error").at(style, "display:none;").id("cacheError"))
+            ));
 
-            html.unsafeAppend("<br/><br/>\n");
+            html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Caches", cacheStats, false);
 
-            html.unsafeAppend("<br/><br/>\n");
+            html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
             return new HtmlView(html);
@@ -3236,79 +3255,65 @@ public class AdminController extends SpringActionController
         {
             List<CacheStats> stats = skipUnusedCaches ?
                 allStats.stream()
-                    .filter(stat->stat.getMaxSize() > 0)
+                    .filter(stat -> stat.getMaxSize() > 0)
                     .collect(Collectors.toCollection((Supplier<List<CacheStats>>) ArrayList::new)) :
                 allStats;
 
             Collections.sort(stats);
 
-            html.unsafeAppend("<p><b>");
-            html.append(title);
-            html.append(" (").append(stats.size()).unsafeAppend(")</b></p>\n");
+            long size = stats.stream().mapToLong(CacheStats::getSize).sum();
+            long gets = stats.stream().mapToLong(CacheStats::getGets).sum();
+            long misses = stats.stream().mapToLong(CacheStats::getMisses).sum();
+            long puts = stats.stream().mapToLong(CacheStats::getPuts).sum();
+            long expirations = stats.stream().mapToLong(CacheStats::getExpirations).sum();
+            long evictions = stats.stream().mapToLong(CacheStats::getEvictions).sum();
+            long removes = stats.stream().mapToLong(CacheStats::getRemoves).sum();
+            long clears = stats.stream().mapToLong(CacheStats::getClears).sum();
+            double ratio = gets != 0 ? misses / (double) gets : 0;
 
-            html.unsafeAppend("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
-            html.unsafeAppend("<tr><td class=\"labkey-column-header\">Debug Name</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Limit</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Current&nbsp;Size</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Gets</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Misses</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Puts</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Expirations</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Evictions</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Removes</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Clears</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Miss Percentage</td>");
-            html.unsafeAppend("<td class=\"labkey-column-header\">Clear</td></tr>");
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B(title + " (" + stats.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Debug Name"),
+                        TD(cl("labkey-column-header"), "Limit"),
+                        TD(cl("labkey-column-header"), "Max Size"),
+                        TD(cl("labkey-column-header"), "Current Size"),
+                        TD(cl("labkey-column-header"), "Gets"),
+                        TD(cl("labkey-column-header"), "Misses"),
+                        TD(cl("labkey-column-header"), "Puts"),
+                        TD(cl("labkey-column-header"), "Expirations"),
+                        TD(cl("labkey-column-header"), "Evictions"),
+                        TD(cl("labkey-column-header"), "Removes"),
+                        TD(cl("labkey-column-header"), "Clears"),
+                        TD(cl("labkey-column-header"), "Miss Percentage"),
+                        TD(cl("labkey-column-header"), "Clear")
+                    ),
+                    stats.stream().map(stat -> {
+                        Long limit = stat.getLimit();
+                        long maxSize = stat.getMaxSize();
 
-            long size = 0;
-            long gets = 0;
-            long misses = 0;
-            long puts = 0;
-            long expirations = 0;
-            long evictions = 0;
-            long removes = 0;
-            long clears = 0;
-            int rowCount = 0;
+                        String clearId = "clear_" + UniqueID.getServerSessionScopedUID();
+                        HttpView.currentPageConfig().addHandler(clearId, "click",
+                            "LABKEY.Admin.Caches.clearSingle(" + PageFlowUtil.jsString(stat.getDescription()) + "); return false;");
 
-            for (CacheStats stat : stats)
-            {
-                size += stat.getSize();
-                gets += stat.getGets();
-                misses += stat.getMisses();
-                puts += stat.getPuts();
-                expirations += stat.getExpirations();
-                evictions += stat.getEvictions();
-                removes += stat.getRemoves();
-                clears += stat.getClears();
-
-                html.unsafeAppend("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").unsafeAppend("\">");
-
-                appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
-
-                Long limit = stat.getLimit();
-                long maxSize = stat.getMaxSize();
-
-                appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
-                appendDoubles(html, stat.getMissRatio());
-
-                html.unsafeAppend("<td>").append(LinkBuilder.labkeyLink("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
-
-                if (null != limit && maxSize >= limit)
-                    html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
-
-                html.unsafeAppend("</tr>\n");
-                rowCount++;
-            }
-
-            double ratio = 0 != gets ? misses / (double)gets : 0;
-            html.unsafeAppend("<tr class=\"labkey-row\"><td><b>Total</b></td>");
-
-            appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
-            appendDoubles(html, ratio);
-
-            html.unsafeAppend("</tr>\n");
-            html.unsafeAppend("</table>\n");
+                        return TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                            descriptionCell(stat.getDescription(), stat.getCreationStackTrace()),
+                            longCells(limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears()),
+                            doubleCell(stat.getMissRatio()),
+                            TD(A(cl("labkey-text-link").at(href, "#").id(clearId), "Clear")),
+                            null != limit && maxSize >= limit ? TD(SPAN(cl("labkey-error"), "This cache has been limited")) : null
+                        );
+                    }),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells(null, null, size, gets, misses, puts, expirations, evictions, removes, clears),
+                        doubleCell(ratio)
+                        )
+                    )
+                )
+            );
         }
 
         private static final List<String> PREFIXES_TO_SKIP = List.of(
@@ -3319,7 +3324,7 @@ public class AdminController extends SpringActionController
             "org.labkey.api.module.ModuleResourceCache"
         );
 
-        private void appendDescription(HtmlStringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
+        private Renderable descriptionCell(String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -3331,7 +3336,7 @@ public class AdminController extends SpringActionController
                     // Skip the first few uninteresting stack trace elements to highlight the caller we care about
                     if (trimming)
                     {
-                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix->element.toString().startsWith(prefix)))
+                        if (PREFIXES_TO_SKIP.stream().anyMatch(prefix -> element.toString().startsWith(prefix)))
                             continue;
 
                         trimming = false;
@@ -3341,30 +3346,31 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (!sb.isEmpty())
-            {
-                String message = PageFlowUtil.jsString(sb);
-                String id = "id" + UniqueID.getServerSessionScopedUID();
-                html.append(DOM.createHtmlFragment(TD(A(at(href, "#").id(id), description))));
-                HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
-            }
+            if (sb.isEmpty())
+                return TD(description);
+
+            String message = PageFlowUtil.jsString(sb);
+            String id = "id" + UniqueID.getServerSessionScopedUID();
+            HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
+            return TD(A(at(href, "#").id(id), description));
         }
 
-        private void appendLongs(HtmlStringBuilder html, Long... stats)
+        private List<Renderable> longCells(Long... stats)
         {
+            List<Renderable> cells = new ArrayList<>();
             for (Long stat : stats)
             {
                 if (null == stat)
-                    html.unsafeAppend("<td>&nbsp;</td>");
+                    cells.add(TD(NBSP));
                 else
-                    html.unsafeAppend("<td align=\"right\">").append(commaf0.format(stat)).unsafeAppend("</td>");
+                    cells.add(TD(at(style, "text-align:right"), commaf0.format(stat)));
             }
+            return cells;
         }
 
-        private void appendDoubles(HtmlStringBuilder html, double... stats)
+        private Renderable doubleCell(double stat)
         {
-            for (double stat : stats)
-                html.unsafeAppend("<td align=\"right\">").append(percent.format(stat)).unsafeAppend("</td>");
+            return TD(at(style, "text-align:right"), percent.format(stat));
         }
 
         @Override
@@ -3372,6 +3378,60 @@ public class AdminController extends SpringActionController
         {
             setHelpTopic("cachesDiagnostics");
             addAdminNavTrail(root, "Cache Statistics", this.getClass());
+        }
+    }
+
+    @AdminConsoleAction
+    public static class ClearCachesAction extends MutatingApiAction<MemForm>
+    {
+        @Override
+        public ApiResponse execute(MemForm form, BindException errors)
+        {
+            if (form.getDebugName() != null)
+            {
+                for (TrackingCache<?, ?> cache : CacheManager.getKnownCaches())
+                {
+                    if (form.getDebugName().equals(cache.getDebugName()))
+                    {
+                        LOG.info("Purging cache: " + cache.getDebugName());
+                        cache.clear();
+                    }
+                }
+            }
+            else if (form.isClearCaches() && form.isGc())
+            {
+                long before = doGc();
+                doClearCaches();
+                long cacheMemoryUsed = before - doGc();
+                String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
+                LOG.info("Estimate of cache memory used: " + cacheMemUsed);
+                lastCacheMemUsed = cacheMemUsed;
+            }
+            else if (form.isClearCaches())
+            {
+                doClearCaches();
+            }
+            else if (form.isGc())
+            {
+                doGc();
+            }
+            return new ApiSimpleResponse("success", true);
+        }
+
+        private long doGc()
+        {
+            LOG.info("Garbage collecting");
+            System.gc();
+            return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        }
+
+        private void doClearCaches()
+        {
+            LOG.info("Clearing Introspector caches");
+            Introspector.flushCaches();
+            LOG.info("Purging all caches");
+            CacheManager.clearAllKnownCaches();
+            SearchService.get().purgeQueues();
         }
     }
 
@@ -3671,7 +3731,7 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             String parentType = getViewContext().getActionURL().getParameter("core.ParentType~eq");
-            addAdminNavTrail(root, "Documents Belonging to Parent Type" + (parentType != null ? " \"" + parentType + "\"" : ""), getClass());
+            addAdminNavTrail(root, parentType != null ? "Documents Belonging to Parent Type \"" + parentType + "\"" : "Documents", getClass());
         }
     }
 
@@ -3693,39 +3753,18 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
+    @AdminConsoleAction
+    public static class LogOrphanedAttachmentsAction extends ReadOnlyApiAction<Object>
     {
-        ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getCachesURL(boolean clearCaches, boolean gc)
-    {
-        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
-
-        if (clearCaches)
-            url.addParameter(MemForm.Params.clearCaches, "1");
-
-        if (gc)
-            url.addParameter(MemForm.Params.gc, "1");
-
-        return url;
-    }
-
-    public static ActionURL getCacheURL(String debugName)
-    {
-        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
-
-        url.addParameter(MemForm.Params.debugName, debugName);
-
-        return url;
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            int count = 0;
+            AttachmentService svc = AttachmentService.get();
+            if (svc != null)
+                count = svc.logOrphanedAttachments();
+            return Map.of("count", count);
+        }
     }
 
     private static volatile String lastCacheMemUsed = null;
@@ -3737,58 +3776,7 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(MemForm form, BindException errors)
         {
             Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
-
-            boolean gc = form.isGc();
-            boolean cc = form.isClearCaches();
-
-            if (getUser().hasRootAdminPermission() && (gc || cc))
-            {
-                // If both are requested then try to determine and record cache memory usage
-                if (gc && cc)
-                {
-                    // gc once to get an accurate free memory read
-                    long before = gc();
-                    clearCaches();
-                    // gc again now that we cleared caches
-                    long cacheMemoryUsed = before - gc();
-
-                    // Difference could be < 0 if JVM or other threads have performed gc, in which case we can't guesstimate cache memory usage
-                    String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
-                    LOG.info("Estimate of cache memory used: " + cacheMemUsed);
-                    lastCacheMemUsed = cacheMemUsed;
-                }
-                else if (cc)
-                {
-                    clearCaches();
-                }
-                else
-                {
-                    gc();
-                }
-
-                LOG.info("Cache clearing and garbage collecting complete");
-            }
-
             return new JspView<>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
-        }
-
-        /** @return estimated current memory usage, post-garbage collection */
-        private long gc()
-        {
-            LOG.info("Garbage collecting");
-            System.gc();
-            // This is more reliable than relying on just free memory size, as the VM can grow/shrink the heap at will
-            return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        }
-
-        private void clearCaches()
-        {
-            LOG.info("Clearing Introspector caches");
-            Introspector.flushCaches();
-            LOG.info("Purging all caches");
-            CacheManager.clearAllKnownCaches();
-            LOG.info("Purging SearchService queues");
-            SearchService.get().purgeQueues();
         }
 
         @Override
@@ -3801,8 +3789,6 @@ public class AdminController extends SpringActionController
 
     public static class MemForm
     {
-        private enum Params {clearCaches, debugName, gc}
-
         private boolean _clearCaches = false;
         private boolean _gc = false;
         private String _debugName;
@@ -3855,12 +3841,12 @@ public class AdminController extends SpringActionController
         {
             MemTracker memTracker = MemTracker.getInstance();
             List<HeldReference> all = memTracker.getReferences();
-            long threadId = Thread.currentThread().getId();
+            long threadId = Thread.currentThread().threadId();
 
             // Attempt to detect other threads running labkey code -- mem tracker page will warn if any are found
             for (Thread thread : new ThreadsBean().threads)
             {
-                if (thread.getId() == threadId)
+                if (thread.threadId() == threadId)
                     continue;
 
                 Thread.State state = thread.getState();
@@ -3895,12 +3881,12 @@ public class AdminController extends SpringActionController
             }
 
             // ignore recently allocated
-            long start = ViewServlet.getRequestStartTime(request) - 2000;
+            long start = ViewServlet.getRequestStartTime(request) - 5000;
             references = new ArrayList<>(all.size());
 
             for (HeldReference r : all)
             {
-                if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
+                if (r.getAllocationTime() >= start)
                     continue;
 
                 if (objectsToIgnore.contains(r.getReference()))
@@ -4372,7 +4358,7 @@ public class AdminController extends SpringActionController
                         }
                     }
                 });
-                t.setUncaughtExceptionHandler((t2, e) -> {
+                t.setUncaughtExceptionHandler((_, e) -> {
                     LOG.error("Stress test exception", e);
                     errors.reject(null, "Stress test exception: " + e);
                 });
@@ -4957,7 +4943,7 @@ public class AdminController extends SpringActionController
     public static class RConfigurationAction extends FolderManagementViewPostAction<RConfigForm>
     {
         @Override
-        protected HttpView getTabView(RConfigForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(RConfigForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/rConfiguration.jsp", form, errors);
         }
@@ -5390,7 +5376,7 @@ public class AdminController extends SpringActionController
         private ActionURL _successURL;
 
         @Override
-        protected HttpView getTabView(ImportFolderForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ImportFolderForm form, boolean reshow, BindException errors)
         {
             // default the createSharedDatasets and validateQueries to true if this is not a form error reshow
             if (!errors.hasErrors())
@@ -5421,19 +5407,10 @@ public class AdminController extends SpringActionController
             Container container = getContainer();
             PipeRoot pipelineRoot;
             FileLike pipelineUnzipDir;  // Should be local & writable
-            PipelineUrls pipelineUrlProvider;
 
             if (form.getOrigin() == null)
             {
                 form.setOrigin("Folder");
-            }
-
-            // make sure we have a pipeline url provider to use for the success URL redirect
-            pipelineUrlProvider = urlProvider(PipelineUrls.class);
-            if (pipelineUrlProvider == null)
-            {
-                errors.reject("folderImport", "Pipeline url provider does not exist.");
-                return false;
             }
 
             // make sure that the pipeline root is valid for this container
@@ -5484,7 +5461,7 @@ public class AdminController extends SpringActionController
             options.setActivity(ComplianceService.get().getCurrentActivity(getViewContext()));
 
             // finally, create the study or folder import pipeline job
-            _successURL = pipelineUrlProvider.urlBegin(container);
+            _successURL = urlProvider(PipelineUrls.class).urlBegin(container);
             PipelineService.get().runFolderImportJob(container, user, url, archiveXml, fiConfig.originalFileName, pipelineRoot, options);
 
             return !errors.hasErrors();
@@ -5539,13 +5516,13 @@ public class AdminController extends SpringActionController
             }
             catch (FileNotFoundException e)
             {
-                LOG.debug("Failed to import '" + originalFilename + "'.", e);
+                LOG.debug("Failed to import '{}'.", originalFilename, e);
                 errors.reject("folderImport", "File not found.");
                 return null;
             }
             catch (IOException e)
             {
-                LOG.debug("Failed to import '" + originalFilename + "'.", e);
+                LOG.debug("Failed to import '{}'.", originalFilename, e);
                 errors.reject("folderImport", "Unable to unzip folder archive.");
                 return null;
             }
@@ -6121,7 +6098,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = getFileRootsView(form, errors, getReshow());
+            JspView<?> view = getFileRootsView(form, errors, getReshow());
             view.setFrame(WebPartView.FrameType.NONE);
 
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(getContainer(), getContainer().getParent()));
@@ -6173,7 +6150,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(FileRootsForm form, boolean reShow, BindException errors)
         {
-            JspView view = getFileRootsView(form, errors, getReshow());
+            JspView<?> view = getFileRootsView(form, errors, getReshow());
             getPageConfig().setTitle("Manage File Root");
             return view;
         }
@@ -6213,7 +6190,7 @@ public class AdminController extends SpringActionController
     public class FileRootsAction extends FolderManagementViewPostAction<FileRootsForm>
     {
         @Override
-        protected HttpView getTabView(FileRootsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(FileRootsForm form, boolean reshow, BindException errors)
         {
             return getFileRootsView(form, errors, getReshow());
         }
@@ -6243,9 +6220,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private JspView getFileRootsView(FileRootsForm form, BindException errors, boolean reshow)
+    private JspView<?> getFileRootsView(FileRootsForm form, BindException errors, boolean reshow)
     {
-        JspView view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
+        JspView<?> view = new JspView<>("/org/labkey/core/admin/view/filesProjectSettings.jsp", form, errors);
         String title = "Configure File Root";
         if (CloudStoreService.get() != null)
             title += " And Enable Cloud Stores";
@@ -6352,29 +6329,22 @@ public class AdminController extends SpringActionController
                 {
                     service.setIsUseDefaultRoot(ctx.getContainer(), false);
                     service.setCloudRoot(ctx.getContainer(), cloudRootName);
-                    try
+                    PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
+                    if (form.isFolderSetup() && !sourceInfos.isEmpty())
                     {
-                        PipelineService.get().setPipelineRoot(ctx.getUser(), ctx.getContainer(), PipelineService.PRIMARY_ROOT, false);
-                        if (form.isFolderSetup() && !sourceInfos.isEmpty())
+                        // File root was set to cloud storage, remove folder created
+                        Path fromPath = FileUtil.stringToPath(sourceInfos.getFirst().first, sourceInfos.getFirst().second);    // sourceInfos paths should be encoded
+                        if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
                         {
-                            // File root was set to cloud storage, remove folder created
-                            Path fromPath = FileUtil.stringToPath(sourceInfos.get(0).first, sourceInfos.get(0).second);    // sourceInfos paths should be encoded
-                            if (FileContentService.FILES_LINK.equals(FileUtil.getFileName(fromPath)))
+                            try
                             {
-                                try
-                                {
-                                    Files.deleteIfExists(fromPath.getParent());
-                                }
-                                catch (IOException e)
-                                {
-                                    LOG.warn("Could not delete directory '" + FileUtil.pathToString(fromPath.getParent()) + "'");
-                                }
+                                Files.deleteIfExists(fromPath.getParent());
+                            }
+                            catch (IOException e)
+                            {
+                                LOG.warn("Could not delete directory '{}'", FileUtil.pathToString(fromPath.getParent()));
                             }
                         }
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
                     }
                     changed = true;
                     shouldCopyMove = true;
@@ -6627,7 +6597,7 @@ public class AdminController extends SpringActionController
     public static class ManageFoldersAction extends FolderManagementViewAction
     {
         @Override
-        protected HttpView getTabView()
+        protected HttpView<?> getTabView()
         {
             return new JspView<>("/org/labkey/core/admin/manageFolders.jsp");
         }
@@ -6654,7 +6624,7 @@ public class AdminController extends SpringActionController
     public static class NotificationsAction extends FolderManagementViewPostAction<NotificationsForm>
     {
         @Override
-        protected HttpView getTabView(NotificationsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(NotificationsForm form, boolean reshow, BindException errors)
         {
             final String key = DataRegionSelection.getSelectionKey("core", CoreQuerySchema.USERS_MSG_SETTINGS_TABLE_NAME, null, DATA_REGION_NAME);
             DataRegionSelection.clearAll(getViewContext(), key);
@@ -6801,7 +6771,7 @@ public class AdminController extends SpringActionController
             ConfigTypeProvider provider = form.getProvider();
             if (provider != null)
             {
-                List<Map> options = new ArrayList<>();
+                List<Map<?, ?>> options = new ArrayList<>();
 
                 // if the list of options is not for the folder default, add an option to use the folder default
                 if (getViewContext().get("isDefault") == null)
@@ -6965,7 +6935,7 @@ public class AdminController extends SpringActionController
     public static class ConceptsAction extends FolderManagementViewPostAction<ConceptsForm>
     {
         @Override
-        protected HttpView getTabView(ConceptsForm form, boolean reshow, BindException errors)
+        protected HttpView<?> getTabView(ConceptsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/core/admin/manageConcepts.jsp", form, errors);
         }
@@ -8027,7 +7997,7 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    _successURL = new ActionURL(extraSteps.get(0).getHref());
+                    _successURL = new ActionURL(extraSteps.getFirst().getHref());
                 }
             }
 
@@ -8216,7 +8186,7 @@ public class AdminController extends SpringActionController
             }
             else
             {
-                _successURL = new ActionURL(extraSteps.get(0).getHref());
+                _successURL = new ActionURL(extraSteps.getFirst().getHref());
             }
 
             return true;
@@ -8334,7 +8304,7 @@ public class AdminController extends SpringActionController
         {
             // Note: because in some scenarios we might be deleting children of the current contaner, in those cases we remain in this folder:
             // If we just deleted a project then redirect to the home page, otherwise back to managing the project folders
-            if (_deleted.size() == 1 && _deleted.get(0).equals(getContainer()))
+            if (_deleted.size() == 1 && _deleted.getFirst().equals(getContainer()))
             {
                 Container c = getContainer();
                 if (c.isProject())
@@ -8549,6 +8519,28 @@ public class AdminController extends SpringActionController
         private String _to;
         private String _body;
         private ConfigurationException _exception;
+        private boolean _success;
+        private boolean _attachmentSuccess;
+
+        public boolean isSuccess()
+        {
+            return _success;
+        }
+
+        public void setSuccess(boolean success)
+        {
+            _success = success;
+        }
+
+        public boolean isAttachmentSuccess()
+        {
+            return _attachmentSuccess;
+        }
+
+        public void setAttachmentSuccess(boolean attachmentSuccess)
+        {
+            _attachmentSuccess = attachmentSuccess;
+        }
 
         public String getTo()
         {
@@ -8591,6 +8583,8 @@ public class AdminController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
+        private static final String EMAIL_TEST_SUCCESS_KEY = "EmailTestAction.success";
+
         @Override
         public void validateCommand(EmailTestForm form, Errors errors)
         {
@@ -8615,10 +8609,28 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors)
         {
+            // Check for flash message from previous successful send
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(EMAIL_TEST_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(EMAIL_TEST_SUCCESS_KEY);
+                form.setSuccess(true);
+            }
+            if (Boolean.TRUE.equals(getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY)))
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_SUCCESS_KEY);
+                form.setAttachmentSuccess(true);
+            }
+            String attachmentError = (String) getViewContext().getSession().getAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+            if (attachmentError != null)
+            {
+                getViewContext().getSession().removeAttribute(GraphEmailTestWithAttachmentAction.EMAIL_TEST_ATTACHMENT_ERROR_KEY);
+                form.setException(new ConfigurationException(attachmentError));
+            }
+
             JspView<EmailTestForm> testView = new JspView<>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
-            if(null != MailHelper.getSession() && null != MailHelper.getSession().getProperties())
+            if(MailHelper.hasActiveProvider())
             {
                 JspView<?> emailPropsView = new JspView<>("/org/labkey/core/admin/emailProps.jsp");
                 emailPropsView.setTitle("Current Email Settings");
@@ -8647,6 +8659,7 @@ public class AdminController extends SpringActionController
                     try
                     {
                         MailHelper.send(msg, getUser(), getContainer());
+                        getViewContext().getSession().setAttribute(EMAIL_TEST_SUCCESS_KEY, Boolean.TRUE);
                     }
                     catch (ConfigurationException e)
                     {
@@ -8677,6 +8690,110 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Test Email Configuration", getClass());
+        }
+    }
+
+    /**
+     * Tests the Microsoft Graph API email transport with HTML content and a large attachment.
+     * This action tests the Graph API upload session workflow for attachments over 3MB,
+     * and data URI to CID attachment conversion (embedded base64 images in HTML).
+     * Use {@link EmailTestAction} for general email testing for both SMTP and Graph API.
+     */
+    @AdminConsoleAction
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class GraphEmailTestWithAttachmentAction extends FormHandlerAction<EmailTestForm>
+    {
+        private static final String EMAIL_TEST_ATTACHMENT_SUCCESS_KEY = "GraphEmailTestWithAttachmentAction.success";
+        private static final String EMAIL_TEST_ATTACHMENT_ERROR_KEY = "GraphEmailTestWithAttachmentAction.error";
+
+        @Override
+        public void validateCommand(EmailTestForm form, Errors errors)
+        {
+            if (form.getTo() == null || form.getTo().isEmpty())
+            {
+                errors.reject(ERROR_MSG, "To field cannot be blank.");
+            }
+        }
+
+        @Override
+        public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            if (!MailHelper.hasActiveProvider())
+            {
+                form.setException(new ConfigurationException("No email provider configured"));
+                return false;
+            }
+
+            ValidEmail recipient = new ValidEmail(form.getTo());
+
+            // Create a temp file for attachment, deleting any leftover from previous test
+            File tempFile = FileUtil.appendPath(FileUtil.getTempDirectory(), org.labkey.api.util.Path.parse("email_test_attachment.txt"));
+            FileUtil.deleteTempFile(tempFile);
+
+            // Generate ~4MB of content to test Graph API upload session chunked upload
+            StringBuilder sb = new StringBuilder();
+            sb.append("LabKey Server Email Attachment Test\n");
+            sb.append("Provider: ").append(MailHelper.getActiveProvider().getName()).append("\n");
+            sb.append("Timestamp: ").append(java.time.Instant.now()).append("\n\n");
+            String line = "This is test data for email attachment upload testing. ";
+            while (sb.length() < 4 * 1024 * 1024)
+            {
+                sb.append(line);
+            }
+            java.nio.file.Files.writeString(tempFile.toPath(), sb.toString());//creates the actual file and writes the content
+
+            try
+            {
+                // Use the Graph provider's configured from address
+                String fromAddress = MailHelper.getActiveProvider().getProperties().getProperty("mail.graph.fromAddress");
+                MailHelper.MultipartMessage msg = MailHelper.createMultipartMessage();
+                msg.setFrom(fromAddress);
+                msg.addRecipient(Message.RecipientType.TO, recipient.getAddress());
+                msg.setSubject("Test Email with HTML and Attachment");
+
+                // Test both external URL images and data URI images.
+                // External URLs should be left unchanged, while data URIs should be converted to CID attachments.
+
+                // External image URL served by the running LabKey server (should NOT be converted - left as-is)
+                String logoUrl = "https://www.labkey.org/_webdav/Documentation/%40files/badge.png";
+
+                // Data URI image built from actual webapp image (should be converted to CID attachment by GraphTransportProvider)
+                FileLike imagesDir = ModuleLoader.getInstance().getModule("Core").getStaticFileDirectories().stream()
+                    .map(dir -> dir.resolveChild("_images"))
+                    .filter(FileLike::isDirectory)
+                    .findFirst()
+                    .orElseThrow(() -> new ConfigurationException("Could not find _images directory in core module"));
+                String gifDataUri = "data:image/gif;base64," + java.util.Base64.getEncoder().encodeToString(java.nio.file.Files.readAllBytes(imagesDir.resolveChild("paperclip.gif").toNioPathForRead()));
+
+                msg.setEncodedHtmlContent(createHtmlFragment(
+                    DIV("This is a ", SPAN(at(style, "font-weight:bold"), "test email"), " with HTML content, attachment, and multiple images."),
+                    DIV(SPAN(at(style, "font-weight:bold"), "External URL image"), " (should remain unchanged):"),
+                    IMG(at(src, logoUrl, style, "height:30px")),
+                    DIV(SPAN(at(style, "font-weight:bold"), "Data URI image"), " (should be converted to CID attachment):"),
+                    IMG(at(src, gifDataUri, style, "height:30px")),
+                    DIV("Sent via ", MailHelper.getActiveProvider().getName(), ".")
+                ).toString());
+                msg.addAttachment(tempFile);
+
+                MailHelper.send(msg, getUser(), getContainer());
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_SUCCESS_KEY, Boolean.TRUE);
+            }
+            catch (Exception e)
+            {
+                getViewContext().getSession().setAttribute(EMAIL_TEST_ATTACHMENT_ERROR_KEY, e.getMessage());
+                return true;
+            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EmailTestForm form)
+        {
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
     }
 
@@ -9384,7 +9501,7 @@ public class AdminController extends SpringActionController
                 if (!deleteList.isEmpty())
                 {
                     description.append(" and delete all data in ");
-                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.get(0) + "\" schema");
+                    description.append(deleteList.size() > 1 ? "these schemas: " + StringUtils.join(deleteList, ", ") : "the \"" + deleteList.getFirst() + "\" schema");
                 }
 
                 // For unknown modules, also list the schemas that won't be deleted
@@ -10263,6 +10380,10 @@ public class AdminController extends SpringActionController
             if (isBlank(form.getContainerPath()))
                 throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
+            if (!container.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
             for (String tabName : form.getResurrectFolders())
             {
                 ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
@@ -11634,15 +11755,15 @@ public class AdminController extends SpringActionController
             }
         });
 
-        boolean noErrors = !saveFolderSettings(c, user, props, form, errors);
+        boolean success = saveFolderSettings(c, user, props, form, errors);
 
-        if (noErrors)
+        if (success)
         {
             // Bump the look & feel revision so browsers retrieve the new theme stylesheet
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
 
-        return noErrors;
+        return success;
     }
 
     private static void setProperty(boolean inherited, Runnable clear, Runnable set)
@@ -11883,7 +12004,7 @@ public class AdminController extends SpringActionController
         public final HtmlString customColumnRestrictionHelpLink = new HelpTopic("chartTrouble").getSimpleLinkHtml("more info...");
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(SiteAdminPermission.class)
     public static class AdjustSystemTimestampsAction extends FormViewAction<AdjustTimestampsForm>
     {
         @Override
@@ -11927,10 +12048,10 @@ public class AdminController extends SpringActionController
 
             if (!sql.isEmpty())
             {
-                logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
+                logger.info("Updating {} in table {}.{}", updating, schema.getName(), tInfo.getName());
                 logger.debug(sql.toDebugString());
                 int numRows = new SqlExecutor(schema).execute(sql);
-                logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
+                logger.info("Updated {} rows for table {}.{}", numRows, schema.getName(), tInfo.getName());
             }
         }
 
@@ -11938,12 +12059,12 @@ public class AdminController extends SpringActionController
         public boolean handlePost(AdjustTimestampsForm form, BindException errors) throws Exception
         {
             List<String> toUpdate = Arrays.asList("Created", "Modified", "lastIndexed", "diCreated", "diModified");
-            logger.info("Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            logger.info("Adjusting all {} timestamp fields in all tables by {} hours.", toUpdate, form.getHourDelta());
             DbScope scope = DbScope.getLabKeyScope();
             try (DbScope.Transaction t = scope.ensureTransaction())
             {
                 ModuleLoader.getInstance().getModules().forEach(module -> {
-                    logger.info("==> Beginning update of timestamps for module: " + module.getName());
+                    logger.info("==> Beginning update of timestamps for module: {}", module.getName());
                     module.getSchemaNames().stream().sorted().forEach(schemaName -> {
                         DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
                         scope.invalidateSchema(schema); // Issue 44452: assure we have a fresh set of tables to work from
@@ -11955,11 +12076,11 @@ public class AdminController extends SpringActionController
                             }
                         });
                     });
-                    logger.info("<== DONE updating timestamps for module: " + module.getName());
+                    logger.info("<== DONE updating timestamps for module: {}", module.getName());
                 });
                 t.commit();
             }
-            logger.info("DONE Adjusting all " + toUpdate + " timestamp fields in all tables by " + form.getHourDelta() + " hours.");
+            logger.info("DONE Adjusting all {} timestamp fields in all tables by {} hours.", toUpdate, form.getHourDelta());
             return true;
         }
 
@@ -11986,7 +12107,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(TroubleshooterPermission.class)
-    public class ViewUsageStatistics extends SimpleViewAction<Object>
+    public class ViewUsageStatisticsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -12135,6 +12256,7 @@ public class AdminController extends SpringActionController
                             if (!forwarded)
                             {
                                 jsonObj.put("labkeyVersion", AppProps.getInstance().getReleaseVersion());
+                                jsonObj.put("cspVersion", ContentSecurityPolicyFilter.getCspVersion(cspReport.optString("disposition", null)));
                                 User user = getUser();
                                 String email = null;
                                 // If the user is not logged in, we may still be able to snag the email address from our cookie
@@ -12149,9 +12271,6 @@ public class AdminController extends SpringActionController
                                 jsonObj.put("ip", ipAddress);
                                 if (isNotBlank(userAgent) && !jsonObj.has("user_agent"))
                                     jsonObj.put("user_agent", userAgent);
-                                String cspVersion = request.getParameter("cspVersion");
-                                if (null != cspVersion)
-                                    jsonObj.put("cspVersion", cspVersion);
                             }
 
                             var jsonStr = jsonObj.toString(2);
@@ -12204,6 +12323,39 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @RequiresPermission(AdminOperationsPermission.class) // Must be site administrator
+    public static class DeleteEncryptedContentAction extends ConfirmAction<Object>
+    {
+        @Override
+        public void validateCommand(Object o, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors) throws Exception
+        {
+            getPageConfig().setShowHeader(false);
+            getPageConfig().setTitle("Delete Encrypted Content?");
+            return HtmlView.of("Are you sure you want to delete all encrypted content in the server? This " +
+                "content can include passwords to external systems, authentication configurations, users' TOTP " +
+                "settings, etc. The encrypted content will be cleared and can't be recovered. Restart the server " +
+                "after clearing encrypted content.");
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            Encryption.deleteEncryptedContent(getUser());
+            return true;
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return getShowAdminURL();
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -12214,6 +12366,11 @@ public class AdminController extends SpringActionController
             assertTrue(user.hasSiteAdminPermission());
 
             AdminController controller = new AdminController();
+
+            assertForNoPermission(user,
+                new ContentSecurityPolicyReportAction(),
+                new ContentSecurityPolicyReportToAction()
+            );
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
@@ -12270,7 +12427,8 @@ public class AdminController extends SpringActionController
                 controller.new ValidateDomainsAction(),
                 new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
-                new RecreateViewsAction()
+                new RecreateViewsAction(),
+                new DeleteEncryptedContentAction()
             );
 
             // @AdminConsoleAction
@@ -12312,7 +12470,8 @@ public class AdminController extends SpringActionController
             assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
                 controller.new OptionalFeaturesAction(),
                 controller.new ShowModuleErrorsAction(),
-                new ModuleStatusAction()
+                new ModuleStatusAction(),
+                controller.new ViewUsageStatisticsAction()
             );
         }
     }
@@ -12321,9 +12480,9 @@ public class AdminController extends SpringActionController
     {
         static class TestJob extends PipelineJob
         {
-            ImpersonationContext _impersonationContext;
-            ImpersonationContext _impersonationContext1;
-            ImpersonationContext _impersonationContext2;
+            PermissionsContext _permissionsContext;
+            PermissionsContext _permissionsContext1;
+            PermissionsContext _permissionsContext2;
 
             @Override
             public URLHelper getStatusHref()
@@ -12349,13 +12508,13 @@ public class AdminController extends SpringActionController
             RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(
                 viewContext.getContainer(), viewContext.getUser(),
                 Collections.singleton(RoleManager.getRole(SharedViewEditorRole.class)), Collections.emptySet(), null);
-            job._impersonationContext = factory.getImpersonationContext();
+            job._permissionsContext = factory.getImpersonationContext();
 
             try
             {
                 UserImpersonationContextFactory factory1 = new UserImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                     UserManager.getGuestUser(), null);
-                job._impersonationContext1 = factory1.getImpersonationContext();
+                job._permissionsContext1 = factory1.getImpersonationContext();
             }
             catch (Exception e)
             {
@@ -12364,7 +12523,7 @@ public class AdminController extends SpringActionController
 
             GroupImpersonationContextFactory factory2 = new GroupImpersonationContextFactory(viewContext.getContainer(), viewContext.getUser(),
                 GroupManager.getGroup(ContainerManager.getRoot(), "Users", GroupEnumType.SITE), null);
-            job._impersonationContext2 = factory2.getImpersonationContext();
+            job._permissionsContext2 = factory2.getImpersonationContext();
             testSerialize(job, LOG);
         }
     }

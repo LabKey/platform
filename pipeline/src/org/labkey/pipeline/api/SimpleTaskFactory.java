@@ -315,7 +315,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
     {
         String defaultSuffix = null;
         if (!suffixes.isEmpty())
-            defaultSuffix = suffixes.get(0);
+            defaultSuffix = suffixes.getFirst();
 
         return new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentTypes);
     }

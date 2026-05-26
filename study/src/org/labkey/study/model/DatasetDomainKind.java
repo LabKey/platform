@@ -37,6 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -301,9 +302,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
         return Collections.unmodifiableSet(fields);
     }
-
-    @Override
-    public abstract @NotNull Set<String> getReservedPropertyNames(Domain domain, User user);
 
     @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
@@ -617,6 +615,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (!(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
                 throw new IllegalArgumentException("If Additional Key Column is managed, the column type must be numeric or text-based.");
+        }
+        else if (!isDemographicData && !useTimeKeyField && null != keyPropertyName)
+        {
+            String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
+            if (PropertyType.MULTI_CHOICE.getTypeUri().equals(rangeURI))
+                throw new IllegalArgumentException("Additional Key Column cannot be a multi-choice column.");
         }
 
         // Other exception(s)

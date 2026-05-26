@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
@@ -60,7 +61,6 @@ import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -69,10 +69,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * User: kevink
- * Date: 1/6/16
- */
 public class DomainTemplate
 {
     private final String _moduleName;
@@ -83,6 +79,7 @@ public class DomainTemplate
     private final String _domainKind;
     private final GWTDomain _domain;
     private final Map<String, Object> _options;
+    private final Set<String> _reservedColumnNames;
     private final InitialDataSettings _initialData;
 
     /**
@@ -109,14 +106,14 @@ public class DomainTemplate
         Module module = ModuleLoader.getInstance().getModule(moduleName);
         if (module == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Module '" + moduleName + "' for domain template not found");
+            LogManager.getLogger(DomainTemplate.class).warn("Module '{}' for domain template not found", moduleName);
             return null;
         }
 
         DomainTemplateGroup group = DomainTemplateGroup.get(module, groupName);
         if (group == null)
         {
-            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '" + groupName + "' not found in module '" + moduleName + "'");
+            LogManager.getLogger(DomainTemplate.class).warn("Domain template group '{}' not found in module '{}'", groupName, moduleName);
             return null;
         }
 
@@ -132,7 +129,7 @@ public class DomainTemplate
         }
         catch (IllegalArgumentException ex)
         {
-            return new DomainTemplate(Objects.toString(templateName, "<unknown>"), moduleName, groupName, Arrays.asList(ex.getMessage()));
+            return new DomainTemplate(Objects.toString(templateName, "<unknown>"), moduleName, groupName, List.of(ex.getMessage()));
         }
     }
 
@@ -148,8 +145,9 @@ public class DomainTemplate
             throw new IllegalArgumentException("Unknown template domain kind");
 
         List<GWTIndex> indices = getDomainTemplateUniqueIndices(templateName, template, properties);
-        Set<String> mandatoryFieldNames = getDomainTemplateMandatoryFields(templateName, template, properties);
+        Set<String> mandatoryFieldNames = getDomainTemplateMandatoryFields(template);
         Map<String, Object> options = getDomainTemplateOptions(templateName, template, properties);
+        Set<String> reservedColumnNames = getDomainTemplateReservedColumnNames(template);
 
         GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
         domain.setName(templateName);
@@ -162,9 +160,25 @@ public class DomainTemplate
 
         return new DomainTemplate(
                 templateName, groupName, moduleName,
-                domainKind, domain, options,
+                domainKind, domain, options, reservedColumnNames,
                 importData
         );
+    }
+
+    private static Set<String> getDomainTemplateReservedColumnNames(DomainTemplateType template)
+    {
+        if (!template.isSetReservedColumnNames())
+            return Collections.emptySet();
+
+        CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
+        for (String name : template.getReservedColumnNames().getColumnArray())
+        {
+            String validName = StringUtils.trimToNull(name);
+            if (validName != null)
+                set.add(validName);
+        }
+
+        return Collections.unmodifiableSet(set);
     }
 
     @Nullable
@@ -172,7 +186,7 @@ public class DomainTemplate
     {
         List<DomainKind<?>> domainKinds = PropertyService.get().getDomainKinds();
 
-        for (DomainKind domainKind : domainKinds)
+        for (DomainKind<?> domainKind : domainKinds)
         {
             if (domainKind.matchesTemplateXML(templateName, template, properties))
             {
@@ -198,7 +212,7 @@ public class DomainTemplate
             }
         }
 
-        return Collections.unmodifiableList(new ArrayList<>(properties.values()));
+        return List.copyOf(properties.values());
     }
 
     private static List<GWTIndex> getDomainTemplateUniqueIndices(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
@@ -227,7 +241,7 @@ public class DomainTemplate
         return Collections.unmodifiableList(indices);
     }
 
-    private static Set<String> getDomainTemplateMandatoryFields(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
+    private static Set<String> getDomainTemplateMandatoryFields(DomainTemplateType template)
     {
         CaseInsensitiveHashSet set = new CaseInsensitiveHashSet();
 
@@ -266,9 +280,9 @@ public class DomainTemplate
     {
         Map<String, Object> optionsMap = new HashMap<>();
 
-        if (template instanceof ListTemplateType)
+        if (template instanceof ListTemplateType listTemplate)
         {
-            ListOptionsType options = ((ListTemplateType)template).getOptions();
+            ListOptionsType options = listTemplate.getOptions();
             String keyName = options.getKeyCol();
             optionsMap.put("keyName", keyName);
 
@@ -276,9 +290,9 @@ public class DomainTemplate
             if (options.isSetKeyType())
                 optionsMap.put("keyType", options.getKeyType());
         }
-        else if (template instanceof DataClassTemplateType)
+        else if (template instanceof DataClassTemplateType dataClassTemplate)
         {
-            DataClassOptionsType options = ((DataClassTemplateType)template).getOptions();
+            DataClassOptionsType options = dataClassTemplate.getOptions();
             if (options != null)
             {
                 optionsMap.put("nameExpression", options.getNameExpression());
@@ -288,9 +302,9 @@ public class DomainTemplate
                     optionsMap.put("category", options.getCategory());
             }
         }
-        else if (template instanceof SampleSetTemplateType)
+        else if (template instanceof SampleSetTemplateType sampleTypeTemplate)
         {
-            SampleSetOptionsType options = ((SampleSetTemplateType)template).getOptions();
+            SampleSetOptionsType options = sampleTypeTemplate.getOptions();
             if (options != null)
             {
                 optionsMap.put("nameExpression", options.getNameExpression());
@@ -338,8 +352,9 @@ public class DomainTemplate
     }
 
     private DomainTemplate(@NotNull String name, @NotNull String groupName, @NotNull String moduleName,
-                           @NotNull String domainKind, @NotNull GWTDomain domain,
-                           @NotNull Map<String, Object> options, @Nullable InitialDataSettings initialData)
+                           @NotNull String domainKind, @NotNull GWTDomain<GWTPropertyDescriptor> domain,
+                           @NotNull Map<String, Object> options, @NotNull Set<String> reservedColumnNames,
+                           @Nullable InitialDataSettings initialData)
     {
         _moduleName = moduleName;
         _templateGroup = groupName;
@@ -348,6 +363,7 @@ public class DomainTemplate
         _errors = null;
         _domain = domain;
         _options = options;
+        _reservedColumnNames = reservedColumnNames;
         _initialData = initialData;
     }
 
@@ -361,6 +377,7 @@ public class DomainTemplate
         _domainKind = null;
         _domain = null;
         _options = null;
+        _reservedColumnNames = Collections.emptySet();
         _initialData = null;
     }
 
@@ -377,7 +394,7 @@ public class DomainTemplate
     public void throwErrors() throws BatchValidationException
     {
         if (_errors != null && !_errors.isEmpty())
-            throw new BatchValidationException(new ValidationException(_errors.get(0)));
+            throw new BatchValidationException(new ValidationException(_errors.getFirst()));
     }
 
     public Domain createAndImport(Container c, User u, @Nullable String domainName, boolean createDomain, boolean importData) throws BatchValidationException
@@ -389,7 +406,7 @@ public class DomainTemplate
         {
             try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                DomainTemplateGroup.LOG.debug("creating domain '" + domainName + "'");
+                DomainTemplateGroup.LOG.debug("creating domain '{}'", domainName);
                 d = DomainUtil.createDomain(this, c, u, domainName, true);
                 tx.commit();
             }
@@ -482,7 +499,7 @@ public class DomainTemplate
 
         try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
         {
-            DomainTemplateGroup.LOG.debug("importing data for domain '" + domainName + "' from '" + initialData.file + "'");
+            DomainTemplateGroup.LOG.debug("importing data for domain '{}' from '{}'", domainName, initialData.file);
             int count = updateService.loadRows(u, c, dl, context, new HashMap<>());
             if (errors.hasErrors())
                 return 0;
@@ -568,6 +585,11 @@ public class DomainTemplate
         return _domain.getMandatoryFieldNames();
     }
 
+    @NotNull
+    public Set<String> getReservedColumnNames()
+    {
+        return _reservedColumnNames;
+    }
 
     private static class InitialDataSettings
     {

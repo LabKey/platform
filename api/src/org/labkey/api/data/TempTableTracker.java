@@ -26,6 +26,7 @@ import org.labkey.api.util.logging.LogHelper;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.ref.Cleaner;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -71,7 +72,7 @@ public class TempTableTracker
         {
             if (!deleted)
             {
-                _log.debug("Deleting table " + schema.getName() + "." + tableName);
+                _log.debug("Deleting table {}.{}", schema.getName(), tableName);
                 schema.dropTableIfExists(tableName);
 
                 deleted = true;
@@ -129,7 +130,7 @@ public class TempTableTracker
 
     private static TempTableTracker track(TempTableTracker ttt)
     {
-        _log.debug("track(" + ttt.qualifiedName + ")");
+        _log.debug("track({})", ttt.qualifiedName);
 
         synchronized(createdTableNames)
         {
@@ -149,7 +150,7 @@ public class TempTableTracker
 
     private static void untrack(String qualifiedName, String schemaName, String tableName)
     {
-        _log.debug("untrack(" + qualifiedName + ")");
+        _log.debug("untrack({})", qualifiedName);
 
         synchronized(createdTableNames)
         {
@@ -286,7 +287,8 @@ public class TempTableTracker
         {
             synchronized(createdTableNames)
             {
-                for (TempTableTracker ttt : createdTableNames.values())
+                // Copy createdTableNames.values() to prevent ConcurrentModificationException
+                for (TempTableTracker ttt : new ArrayList<>(createdTableNames.values()))
                 {
                     ttt.state.run();
                 }

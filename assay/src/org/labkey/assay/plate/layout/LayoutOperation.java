@@ -59,7 +59,7 @@ public interface LayoutOperation
         PlateType targetPlateType,
         List<Plate> sourcePlates,
         Plate targetTemplate,
-        List<Plate> targetPlates,
+        List<? extends Plate> targetPlates,
         List<PlateManager.PlateData> targetPlateData,
         Collection<Long> sampleIds,
         WellData.Cache wellDataCache

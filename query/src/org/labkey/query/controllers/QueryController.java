@@ -90,7 +90,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
@@ -118,7 +117,6 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcMetaDataSelector;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -136,12 +134,10 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -156,7 +152,6 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
@@ -267,6 +262,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
@@ -288,12 +284,11 @@ import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
+import org.labkey.query.QueryServiceImpl.CalculatedColumnParseResult;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
-import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.ExternalSchemaDefCache;
 import org.labkey.query.persist.LinkedSchemaDef;
@@ -386,10 +381,11 @@ public class QueryController extends SpringActionController
     );
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(QueryController.class,
-        ValidateQueryAction.class,
-        ValidateQueriesAction.class,
-        GetSchemaQueryTreeAction.class,
+        ExpressionAssistantAgentAction.class,
         GetQueryDetailsAction.class,
+        GetSchemaQueryTreeAction.class,
+        ValidateQueriesAction.class,
+        ValidateQueryAction.class,
         ViewQuerySourceAction.class
     );
 
@@ -1187,22 +1183,7 @@ public class QueryController extends SpringActionController
                     sql = "SELECT * FROM \"" + form.ff_baseTableName + "\"";
                 newDef.setSql(sql);
 
-                try
-                {
-                    newDef.save(getUser(), getContainer());
-                }
-                catch (SQLException x)
-                {
-                    if (RuntimeSQLException.isConstraintException(x))
-                    {
-                        errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
-                        return false;
-                    }
-                    else
-                    {
-                        throw x;
-                    }
-                }
+                newDef.save(getUser(), getContainer());
 
                 _successUrl = newDef.urlFor(form.ff_redirect);
                 return true;
@@ -1547,11 +1528,6 @@ public class QueryController extends SpringActionController
                     }
                     response.put("parseWarnings", errorArray);
                 }
-            }
-            catch (SQLException e)
-            {
-                errors.reject(ERROR_MSG, "An exception occurred: " + e);
-                LOG.error("Error", e);
             }
             catch (RuntimeException e)
             {
@@ -2155,7 +2131,7 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    sheetNames.put(entry.getValue().get(0), name);
+                    sheetNames.put(entry.getValue().getFirst(), name);
                 }
             }
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
@@ -3308,7 +3284,7 @@ public class QueryController extends SpringActionController
         {
             List<Map<String, Object>> list = doInsertUpdate(tableForm, errors, true);
             if (null != list && list.size() == 1)
-                insertedRow = list.get(0);
+                insertedRow = list.getFirst();
             return 0 == errors.getErrorCount();
         }
 
@@ -3587,7 +3563,7 @@ public class QueryController extends SpringActionController
             {
                 List<QueryException> qpes = view.getParseErrors();
                 if (!qpes.isEmpty())
-                    throw qpes.get(0);
+                    throw qpes.getFirst();
                 throw new NotFoundException(form.getQueryName());
             }
 
@@ -3963,10 +3939,10 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            ColumnInfo col = columns.get(settings.getFieldKeys().get(0));
+            ColumnInfo col = columns.get(settings.getFieldKeys().getFirst());
             if (col == null)
             {
-                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().get(0).getName() + "\" is not a valid column.");
+                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().getFirst().getName() + "\" is not a valid column.");
                 return null;
             }
 
@@ -3995,7 +3971,7 @@ public class QueryController extends SpringActionController
 
                 // Regenerate the column since the alias may have changed after call to getSelectSQL()
                 columns = service.getColumns(table, settings.getFieldKeys());
-                var colGetAgain = columns.get(settings.getFieldKeys().get(0));
+                var colGetAgain = columns.get(settings.getFieldKeys().getFirst());
                 // I don't believe the above comment, so here's an assert
                 assert(colGetAgain.getAlias().equals(col.getAlias()));
 
@@ -4064,7 +4040,7 @@ public class QueryController extends SpringActionController
             if (null == fieldKeys || fieldKeys.size() != 1)
                 errors.reject(ERROR_MSG, "GetColumnSummaryStats requires that only one column be requested.");
             else
-                _colFieldKey = fieldKeys.get(0);
+                _colFieldKey = fieldKeys.getFirst();
         }
 
         @Override
@@ -4173,7 +4149,7 @@ public class QueryController extends SpringActionController
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
             if (!qpe.isEmpty())
-                throw qpe.get(0);
+                throw qpe.getFirst();
             if (null != t)
                 setTarget(t);
             _auditBehaviorType = form.getAuditBehavior();
@@ -4388,7 +4364,7 @@ public class QueryController extends SpringActionController
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
-                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
+                DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.getFirst().keySet(), rows);
                 qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
@@ -4652,18 +4628,20 @@ public class QueryController extends SpringActionController
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
-                        addRowAttachments(table, rowMap, idx, commandIndex);
+                        addRowAttachments(rowMap, idx, commandIndex);
 
                     rowsToProcess.add(rowMap);
                     rowsAffected++;
                 }
             }
 
-            Map<String, Object> extraContext = json.has("extraContext") ? json.getJSONObject("extraContext").toMap() : new CaseInsensitiveHashMap<>();
+            Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
+            if (WorkflowService.get() != null)
+                WorkflowService.get().populateConfigParams(extraContext, configParameters);
 
             // Check first if the audit behavior has been defined for the table either in code or through XML.
             // If not defined there, check for the audit behavior defined in the action form (json).
@@ -4735,14 +4713,11 @@ public class QueryController extends SpringActionController
                 if (commandType == CommandType.moveRows)
                 {
                     // moveRows returns a single map of updateCounts
-                    response.put("updateCounts", responseRows.get(0));
+                    response.put("updateCounts", responseRows.getFirst());
                 }
                 else if (commandType != CommandType.importRows)
                 {
-                    response.put("rows", responseRows.stream()
-                        .map(JsonUtil::toMapPreserveNonFinite)
-                        .map(JsonUtil::toJsonPreserveNulls)
-                        .collect(LabKeyCollectors.toJSONArray()));
+                    response.put("rows", AbstractQueryImportAction.prepareRowsResponse(responseRows));
                 }
 
                 // if there is any provenance information, save it here
@@ -4817,7 +4792,7 @@ public class QueryController extends SpringActionController
             return false;
         }
 
-        private void addRowAttachments(TableInfo tableInfo, Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
+        private void addRowAttachments(Map<String, Object> rowMap, int rowIndex, @Nullable Integer commandIndex)
         {
             if (getFileMap() != null)
             {
@@ -4861,9 +4836,6 @@ public class QueryController extends SpringActionController
                     rowMap.put(fieldKey, file.isEmpty() ? null : file);
                 }
             }
-
-            for (ColumnInfo col : tableInfo.getColumns())
-                DataIteratorUtil.MatchType.multiPartFormData.updateRowMap(col, rowMap);
         }
 
         protected boolean isSuccessOnValidationError()
@@ -6329,203 +6301,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class ManageViewsAction extends SimpleViewAction<QueryForm>
-    {
-        @SuppressWarnings("UnusedDeclaration")
-        public ManageViewsAction()
-        {
-        }
-
-        public ManageViewsAction(ViewContext ctx)
-        {
-            setViewContext(ctx);
-        }
-
-        @Override
-        public ModelAndView getView(QueryForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/manageViews.jsp", form, errors);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            new BeginAction(getViewContext()).addNavTrail(root);
-            root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
-        }
-    }
-
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalDeleteView extends ConfirmAction<InternalViewForm>
-    {
-        @Override
-        public ModelAndView getConfirmView(InternalViewForm form, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/internalDeleteView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalViewForm form, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            QueryManager.get().delete(getUser(), view);
-            return true;
-        }
-
-        @Override
-        public void validateCommand(InternalViewForm internalViewForm, Errors errors)
-        {
-        }
-
-        @Override
-        @NotNull
-        public ActionURL getSuccessURL(InternalViewForm internalViewForm)
-        {
-            return new ActionURL(ManageViewsAction.class, getContainer());
-        }
-    }
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalSourceViewAction extends FormViewAction<InternalSourceViewForm>
-    {
-        @Override
-        public void validateCommand(InternalSourceViewForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public ModelAndView getView(InternalSourceViewForm form, boolean reshow, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            form.ff_inherit = QueryManager.get().canInherit(view.getFlags());
-            form.ff_hidden = QueryManager.get().isHidden(view.getFlags());
-            form.ff_columnList = view.getColumns();
-            form.ff_filter = view.getFilter();
-            return new JspView<>("/org/labkey/query/view/internalSourceView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalSourceViewForm form, BindException errors)
-        {
-            CstmView view = form.getViewAndCheckPermission();
-            int flags = view.getFlags();
-            flags = QueryManager.get().setCanInherit(flags, form.ff_inherit);
-            flags = QueryManager.get().setIsHidden(flags, form.ff_hidden);
-            view.setFlags(flags);
-            view.setColumns(form.ff_columnList);
-            view.setFilter(form.ff_filter);
-            QueryManager.get().update(getUser(), view);
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(InternalSourceViewForm form)
-        {
-            return new ActionURL(ManageViewsAction.class, getContainer());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            new ManageViewsAction(getViewContext()).addNavTrail(root);
-            root.addChild("Edit source of Grid View");
-        }
-    }
-
-    /** Minimalist, secret UI to help users recover if they've created a broken view somehow */
-    @RequiresPermission(AdminPermission.class)
-    public class InternalNewViewAction extends FormViewAction<InternalNewViewForm>
-    {
-        int _customViewId = 0;
-
-        @Override
-        public void validateCommand(InternalNewViewForm form, Errors errors)
-        {
-            if (StringUtils.trimToNull(form.ff_schemaName) == null)
-            {
-                errors.reject(ERROR_MSG, "Schema name cannot be blank.");
-            }
-            if (StringUtils.trimToNull(form.ff_queryName) == null)
-            {
-                errors.reject(ERROR_MSG, "Query name cannot be blank");
-            }
-        }
-
-        @Override
-        public ModelAndView getView(InternalNewViewForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/view/internalNewView.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(InternalNewViewForm form, BindException errors)
-        {
-            if (form.ff_share)
-            {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                    throw new UnauthorizedException();
-            }
-            List<CstmView> existing = QueryManager.get().getCstmViews(getContainer(), form.ff_schemaName, form.ff_queryName, form.ff_viewName, form.ff_share ? null : getUser(), false, false);
-            CstmView view;
-            if (!existing.isEmpty())
-            {
-            }
-            else
-            {
-                view = new CstmView();
-                view.setSchema(form.ff_schemaName);
-                view.setQueryName(form.ff_queryName);
-                view.setName(form.ff_viewName);
-                view.setContainerId(getContainer().getId());
-                if (form.ff_share)
-                {
-                    view.setCustomViewOwner(null);
-                }
-                else
-                {
-                    view.setCustomViewOwner(getUser().getUserId());
-                }
-                if (form.ff_inherit)
-                {
-                    view.setFlags(QueryManager.get().setCanInherit(view.getFlags(), form.ff_inherit));
-                }
-                InternalViewForm.checkEdit(getViewContext(), view);
-                try
-                {
-                    view = QueryManager.get().insert(getUser(), view);
-                }
-                catch (Exception e)
-                {
-                    LogManager.getLogger(QueryController.class).error("Error", e);
-                    errors.reject(ERROR_MSG, "An exception occurred: " + e);
-                    return false;
-                }
-                _customViewId = view.getCustomViewId();
-            }
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(InternalNewViewForm form)
-        {
-            ActionURL forward = new ActionURL(InternalSourceViewAction.class, getContainer());
-            forward.addParameter("customViewId", Integer.toString(_customViewId));
-            return forward;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Create New Grid View");
-         }
-    }
-
-
     @ActionNames("clearSelected, selectNone")
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
@@ -7907,9 +7682,7 @@ public class QueryController extends SpringActionController
             PropertyService propertyService = PropertyService.get();
             if (null != propertyService)
             {
-                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
-                return mapper;
+                return JsonUtil.DEFAULT_MAPPER.copy();
             }
             else
             {
@@ -8066,11 +7839,14 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class ParseForm implements ApiJsonForm
+    public static class ParseForm extends PromptForm implements ApiJsonForm
     {
         String expression = "";
-        Map<FieldKey,JdbcType> columnMap = new HashMap<>();
+        Map<FieldKey, JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
+        JSONArray domainFields;
+        String fieldExpression;
+        String fieldError;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -8097,6 +7873,36 @@ public class QueryController extends SpringActionController
             this.phiColumns = phiColumns;
         }
 
+        public JSONArray getDomainFields()
+        {
+            return domainFields;
+        }
+
+        public void setDomainFields(JSONArray domainFields)
+        {
+            this.domainFields = domainFields;
+        }
+
+        public String getFieldExpression()
+        {
+            return fieldExpression;
+        }
+
+        public void setFieldExpression(String fieldExpression)
+        {
+            this.fieldExpression = fieldExpression;
+        }
+
+        public String getFieldError()
+        {
+            return fieldError;
+        }
+
+        public void setFieldError(String fieldError)
+        {
+            this.fieldError = fieldError;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
@@ -8119,9 +7925,18 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
+            if (json.has("prompt"))
+                setPrompt(json.getString("prompt"));
+            if (json.has("conversationId"))
+                setConversationId(json.getString("conversationId"));
+            if (json.has("domainFields"))
+                setDomainFields(json.getJSONArray("domainFields"));
+            if (json.has("fieldExpression"))
+                setFieldExpression(json.getString("fieldExpression"));
+            if (json.has("fieldError"))
+                setFieldError(json.getString("fieldError"));
         }
     }
-
 
     /**
      * Since this api purpose is to return parse errors, it does not generally return success:false.
@@ -8165,27 +7980,10 @@ public class QueryController extends SpringActionController
             if (errors.hasErrors())
                 return errors;
             JSONObject result = new JSONObject(Map.of("success",true));
-            var requiredColumns = new HashSet<FieldKey>();
-            JdbcType jdbcType = JdbcType.OTHER;
+            CalculatedColumnParseResult parsedResult = new CalculatedColumnParseResult(JdbcType.OTHER, Collections.emptySet());
             try
             {
-                var schema = DefaultSchema.get(getViewContext().getUser(), getViewContext().getContainer()).getUserSchema("core");
-                var table = new VirtualTable<>(schema.getDbSchema(), "EXPR", schema){};
-                ColumnInfo calculatedCol = QueryServiceImpl.get().createQueryExpressionColumn(table, new FieldKey(null, "expr"), form.getExpression(), null);
-                Map<FieldKey,ColumnInfo> columns = new HashMap<>();
-                for (var entry : form.getColumnMap().entrySet())
-                {
-                    BaseColumnInfo entryCol = new BaseColumnInfo(entry.getKey(), entry.getValue());
-                    // bindQueryExpressionColumn has a check that restricts PHI columns from being used in expressions
-                    // so we need to set the PHI level to something other than NotPHI on these fake BaseColumnInfo objects
-                    if (form.getPhiColumns().contains(entry.getKey()))
-                        entryCol.setPHI(PHI.PHI);
-                    columns.put(entry.getKey(), entryCol);
-                    table.addColumn(entryCol);
-                }
-                // TODO: calculating jdbcType still uses calculatedCol.getParentTable().getColumns()
-                QueryServiceImpl.get().bindQueryExpressionColumn(calculatedCol, columns, false, requiredColumns);
-                jdbcType = calculatedCol.getJdbcType();
+                parsedResult = QueryServiceImpl.get().parseCalculatedColumn(getViewContext().getContainer(), getViewContext().getUser(), form.getExpression(), form.getColumnMap(), form.getPhiColumns());
             }
             catch (QueryException x)
             {
@@ -8195,10 +7993,10 @@ public class QueryController extends SpringActionController
             }
             finally
             {
-                if (!requiredColumns.isEmpty())
+                if (!parsedResult.requiredColumns().isEmpty())
                 {
                     JSONObject columnMap = new JSONObject();
-                    for (FieldKey fk : requiredColumns)
+                    for (FieldKey fk : parsedResult.requiredColumns())
                     {
                         JdbcType type = Objects.requireNonNullElse(form.getColumnMap().get(fk), JdbcType.OTHER);
                         columnMap.put(fk.toString(), type);
@@ -8206,7 +8004,7 @@ public class QueryController extends SpringActionController
                     result.put("columnMap", columnMap);
                 }
             }
-            result.put("jdbcType", jdbcType.name());
+            result.put("jdbcType", parsedResult.jdbcType().name());
             return result;
         }
     }
@@ -8413,7 +8211,7 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, SQLException, ExperimentException, MetadataUnavailableException
+        public Object execute(QueryImportTemplateForm form, BindException errors) throws ValidationException, QueryUpdateServiceException, ExperimentException, MetadataUnavailableException
         {
             User user = getUser();
             Container container = getContainer();
@@ -8528,7 +8326,34 @@ public class QueryController extends SpringActionController
         }
     }
 
-    
+    enum PromptResource
+    {
+        ExpressionAssistant,
+        LabKeySql;
+
+        String resource()
+        {
+            try
+            {
+                return IOUtils.resourceToString(resourceName(), null, QueryController.class.getClassLoader());
+            }
+            catch (IOException x)
+            {
+                throw new ConfigurationException("error loading resource", x);
+            }
+        }
+
+        String resourceName()
+        {
+            return "org/labkey/query/controllers/prompts/" + name() + ".md";
+        }
+
+        String uri()
+        {
+            return "resource://" + resourceName();
+        }
+    }
+
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -8603,10 +8428,6 @@ public class QueryController extends SpringActionController
                 new ManageRemoteConnectionsAction(),
                 new ReloadExternalSchemaAction(),
                 new ReloadAllUserSchemas(),
-                controller.new ManageViewsAction(),
-                controller.new InternalDeleteView(),
-                controller.new InternalSourceViewAction(),
-                controller.new InternalNewViewAction(),
                 new QueryExportAuditRedirectAction()
             );
 
@@ -8805,7 +8626,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     public static class SqlPromptForm extends PromptForm
     {
         public String schemaName;
@@ -8821,7 +8641,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
     @RequiresPermission(ReadPermission.class)
     @RequiresLogin
     public static class QueryAgentAction extends AbstractAgentAction<SqlPromptForm>
@@ -8831,6 +8650,7 @@ public class QueryController extends SpringActionController
         @Override
         public void validateForm(SqlPromptForm sqlPromptForm, Errors errors)
         {
+            super.validateForm(sqlPromptForm, errors);
             _form = sqlPromptForm;
         }
 
@@ -8844,7 +8664,7 @@ public class QueryController extends SpringActionController
         protected String getServicePrompt()
         {
             StringBuilder serviceMessage = new StringBuilder();
-            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(getSQLHelp()).append("\n\n");
+            serviceMessage.append("Your job is to generate SQL statements.  Here is some reference material formatted as markdown:\n").append(PromptResource.LabKeySql.resource()).append("\n\n");
             serviceMessage.append("NOTE: Prefer using lookup syntax rather than JOIN where possible.\n");
             serviceMessage.append("NOTE: When helping generate SQL please don't use names of tables and columns from documentation examples. Always refer to the available tools for retrieving database metadata.\n");
 
@@ -8861,36 +8681,19 @@ public class QueryController extends SpringActionController
             return serviceMessage.toString();
         }
 
-        String getSQLHelp()
-        {
-            try
-            {
-                return IOUtils.resourceToString("org/labkey/query/controllers/LabKeySql.md", null, QueryController.class.getClassLoader());
-            }
-            catch (IOException x)
-            {
-                throw new ConfigurationException("error loading resource", x);
-            }
-        }
-
         @Override
         public Object execute(SqlPromptForm form, BindException errors) throws Exception
         {
             // save form here for context in getServicePrompt()
             _form = form;
 
-            try (var mcpPush = McpContext.withContext(getViewContext()))
+            try (var _ = McpContext.withContext(getViewContext()))
             {
                 String prompt = form.getPrompt();
 
-                String escapeResponse = handleEscape(prompt);
+                JSONObject escapeResponse = escapeResponse(prompt);
                 if (null != escapeResponse)
-                {
-                    return new JSONObject(Map.of(
-                            "contentType", "text/plain",
-                            "text", escapeResponse,
-                            "success", Boolean.TRUE));
-                }
+                    return escapeResponse;
 
                 // TODO when/how to do we reset or isolate different chat sessions, e.g. if two SQL windows are open concurrently?
                 ChatClient chatSession = getChat(true);
@@ -8961,11 +8764,7 @@ public class QueryController extends SpringActionController
             }
             catch (ClientException ex)
             {
-                var ret = new JSONObject(Map.of(
-                        "text", ex.getMessage(),
-                        "user", getViewContext().getUser().getName(),
-                        "success", Boolean.FALSE));
-                return ret;
+                return errorResponse(ex);
             }
         }
     }
@@ -8996,4 +8795,5 @@ public class QueryController extends SpringActionController
         }
         return new SqlResponse(html.getHtmlString(), sql);
     }
+
 }

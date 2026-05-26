@@ -258,7 +258,7 @@ public class SQLFragment implements Appendable, CharSequence
         StringBuilder ret = new StringBuilder("WITH" + (recursive ? " RECURSIVE" : ""));
 
         // generate final aliases for each CTE */
-        SqlDialect dialect = Objects.requireNonNull(commonTableExpressions.get(0).dialect);
+        SqlDialect dialect = Objects.requireNonNull(commonTableExpressions.getFirst().dialect);
         AliasManager am = new AliasManager(dialect);
         List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
                     .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
@@ -1191,7 +1191,7 @@ public class SQLFragment implements Appendable, CharSequence
                         \tCTE AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
                         SELECT * FROM CTE WHERE p='parameterTWO'""",
                         filterDebugString(b.toDebugString()));
-                assertEquals("parameterONE", b.getParams().get(0));
+                assertEquals("parameterONE", b.getParams().getFirst());
             }
 
             // two-level cte using cteTokens (CTE fragment 'b' contains a CTE of fragment a)

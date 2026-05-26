@@ -107,6 +107,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
     public static final String SHORT_URL_TABLE_NAME = "ShortURL";
     public static final String DOCUMENTS_TABLE_NAME = "Documents";
+    public static final String REPORTS_TABLE_NAME = "Reports";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -142,8 +143,11 @@ public class CoreQuerySchema extends UserSchema
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
             VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
 
-        if (getUser().hasRootPermission(TroubleshooterPermission.class))
+        if (getUser().isTroubleshooter())
             names.add(DOCUMENTS_TABLE_NAME);
+
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+            names.add(REPORTS_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -203,8 +207,10 @@ public class CoreQuerySchema extends UserSchema
             return getMVIndicatorTable(cf);
         if (SHORT_URL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
-        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(TroubleshooterPermission.class))
+        if (DOCUMENTS_TABLE_NAME.equalsIgnoreCase(name) && getUser().isTroubleshooter())
             return new DocumentsTable(this, cf);
+        if (REPORTS_TABLE_NAME.equalsIgnoreCase(name) && getContainer().hasPermission(getUser(), AdminPermission.class))
+            return new ReportsTable(this, cf);
 
         return null;
     }
@@ -481,7 +487,7 @@ public class CoreQuerySchema extends UserSchema
             {
                 Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
                 // Add app admins and site admins (they both have ApplicationAdminPermission)
-                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), true, Set.of(ApplicationAdminPermission.class)).stream()
+                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ApplicationAdminPermission.class)).stream()
                     .map(User::getUserId)
                     .forEach(projectUserIds::add);
                 _projectUserIds = projectUserIds;
@@ -641,7 +647,7 @@ public class CoreQuerySchema extends UserSchema
         TableInfo t;
         t = def.getTable(this, errors, true);
         if (!errors.isEmpty())
-            throw errors.get(0);
+            throw errors.getFirst();
         ((BaseColumnInfo)t.getColumn("UserId")).setDisplayColumnFactory(new DisplayColumnFactory()
         {
             @Override

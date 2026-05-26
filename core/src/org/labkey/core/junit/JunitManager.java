@@ -35,20 +35,20 @@ import java.util.TreeMap;
 */
 public class JunitManager
 {
-    public static synchronized Map<String, List<Class>> getTestCases()
+    public static synchronized Map<String, List<Class<?>>> getTestCases()
     {
-        Map<String, List<Class>> testCases = new TreeMap<>();
+        Map<String, List<Class<?>>> testCases = new TreeMap<>();
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            Set<Class> moduleClazzes = new HashSet<>();
+            Set<Class<?>> moduleClazzes = new HashSet<>();
 
             module.getIntegrationTestFactories().forEach(f -> moduleClazzes.add(f.get()));
             moduleClazzes.addAll(module.getUnitTests());
 
             if (!moduleClazzes.isEmpty())
             {
-                List<Class> moduleClazzList = new ArrayList<>(moduleClazzes);
+                List<Class<?>> moduleClazzList = new ArrayList<>(moduleClazzes);
                 moduleClazzList.sort(Comparator.comparing(Class::getName));
 
                 testCases.put(module.getName(), Collections.unmodifiableList(moduleClazzList));

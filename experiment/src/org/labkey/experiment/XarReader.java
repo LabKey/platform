@@ -26,7 +26,33 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
-import org.fhcrc.cpas.exp.xml.*;
+import org.fhcrc.cpas.exp.xml.ContactType;
+import org.fhcrc.cpas.exp.xml.DataBaseType;
+import org.fhcrc.cpas.exp.xml.DataClassType;
+import org.fhcrc.cpas.exp.xml.DataProtocolInputType;
+import org.fhcrc.cpas.exp.xml.DataType;
+import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveDocument;
+import org.fhcrc.cpas.exp.xml.ExperimentArchiveType;
+import org.fhcrc.cpas.exp.xml.ExperimentLogEntryType;
+import org.fhcrc.cpas.exp.xml.ExperimentRunType;
+import org.fhcrc.cpas.exp.xml.ExperimentType;
+import org.fhcrc.cpas.exp.xml.ImportAlias;
+import org.fhcrc.cpas.exp.xml.InputOutputRefsType;
+import org.fhcrc.cpas.exp.xml.MaterialBaseType;
+import org.fhcrc.cpas.exp.xml.MaterialProtocolInputType;
+import org.fhcrc.cpas.exp.xml.MaterialType;
+import org.fhcrc.cpas.exp.xml.PropertyCollectionType;
+import org.fhcrc.cpas.exp.xml.PropertyObjectDeclarationType;
+import org.fhcrc.cpas.exp.xml.PropertyObjectType;
+import org.fhcrc.cpas.exp.xml.ProtocolActionSetType;
+import org.fhcrc.cpas.exp.xml.ProtocolActionType;
+import org.fhcrc.cpas.exp.xml.ProtocolApplicationBaseType;
+import org.fhcrc.cpas.exp.xml.ProtocolBaseType;
+import org.fhcrc.cpas.exp.xml.SampleSetType;
+import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.fhcrc.cpas.exp.xml.SimpleValueCollectionType;
+import org.fhcrc.cpas.exp.xml.SimpleValueType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
@@ -92,7 +118,30 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.experiment.api.*;
+import org.labkey.experiment.api.AliasInsertHelper;
+import org.labkey.experiment.api.Data;
+import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.DataInput;
+import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpDataImpl;
+import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpProtocolApplicationImpl;
+import org.labkey.experiment.api.ExpProtocolImpl;
+import org.labkey.experiment.api.ExpRunImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.Experiment;
+import org.labkey.experiment.api.ExperimentRun;
+import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.IdentifiableEntity;
+import org.labkey.experiment.api.Material;
+import org.labkey.experiment.api.MaterialInput;
+import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.ProtocolAction;
+import org.labkey.experiment.api.ProtocolActionPredecessor;
+import org.labkey.experiment.api.ProtocolActionStepDetail;
+import org.labkey.experiment.api.ProtocolApplication;
+import org.labkey.experiment.api.RunItem;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AbstractXarImporter;
@@ -127,11 +176,11 @@ import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.SimpleTranslator.getContainerFileRootPath;
 import static org.labkey.api.dataiterator.SimpleTranslator.getFileRootSubstitutedFilePath;
+import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
 import static org.labkey.experiment.XarExporter.GPAT_ASSAY_PROTOCOL_LSID_SUB;
-import static org.labkey.api.exp.api.ColumnExporter.FILE_ROOT_SUBSTITUTION;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -296,7 +345,7 @@ public class XarReader extends AbstractXarImporter
                                 SchemaType swType = xd.schemaType().getTypeSystem().typeForClassname(wType);
                                 if (null != swType)
                                 {
-                                    getLog().warn("Schema validation error: " + error.getMessage());
+                                    getLog().warn("Schema validation error: {}", error.getMessage());
                                     xObjWild = xObj.changeType(swType);
                                     bHasDerivedTypeErrorsOnly = xObjWild.validate();
                                     if (bHasDerivedTypeErrorsOnly)
@@ -449,24 +498,16 @@ public class XarReader extends AbstractXarImporter
             throw new XarFormatException(e);
         }
 
-        ExperimentRunGraph.clearCache(getContainer());
-
-        try
+        for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
         {
-            for (DeferredDataLoad deferredDataLoad : _deferredDataLoads)
+            Path path = deferredDataLoad.getData().getFilePath();
+            if (path != null)
             {
-                Path path = deferredDataLoad.getData().getFilePath();
-                if (path == null)
-                    continue;
-                else if (Files.exists(path))
+                if (Files.exists(path))
                     deferredDataLoad.getData().importDataFile(_job, _xarSource);
                 else
-                    getLog().warn("Data file " + FileUtil.getFileName(path) + " does not exist and could not be loaded.");
+                    getLog().warn("Data file {} does not exist and could not be loaded.", FileUtil.getFileName(path));
             }
-        }
-        catch (SQLException e)
-        {
-            throw new XarFormatException(e);
         }
 
         for (ExpRun loadedRun : _loadedRuns)
@@ -501,7 +542,7 @@ public class XarReader extends AbstractXarImporter
             }
             else
             {
-                getLog().warn("Could not resolve replacement run " + entry.getValue() + " so it will not be referenced.");
+                getLog().warn("Could not resolve replacement run {} so it will not be referenced.", entry.getValue());
             }
         }
     }
@@ -538,7 +579,7 @@ public class XarReader extends AbstractXarImporter
         String sampleSetName = sampleSet.getName();
         ExpSampleTypeImpl existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(getContainer(), sampleSetName);
 
-        getLog().debug("Importing SampleType with name '" + sampleSetName + "'");
+        getLog().debug("Importing SampleType with name '{}'", sampleSetName);
         String lsid = LsidUtils.resolveLsidFromTemplate(sampleSet.getAbout(), getRootContext(), "SampleSet");
         if (existingMaterialSource == null)
             existingMaterialSource = SampleTypeServiceImpl.get().getSampleType(lsid);
@@ -566,7 +607,7 @@ public class XarReader extends AbstractXarImporter
             materialSource.setAliquotNameExpression(sampleSet.getAliquotNameExpression());
         }
 
-        if (keyFields.size() == 1 && keyFields.get(0).equals(ExpMaterialTable.Column.Name.name()))
+        if (keyFields.size() == 1 && keyFields.getFirst().equals(ExpMaterialTable.Column.Name.name()))
         {
             // We can use Name as the idCol1 without requiring it to be a domain property
             materialSource.setIdCol1(ExpMaterialTable.Column.Name.name());
@@ -651,7 +692,7 @@ public class XarReader extends AbstractXarImporter
                 }
                 if (!diffs.isEmpty())
                 {
-                    getLog().error("The SampleSet specified with name '" + sampleSetName + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    getLog().error("The SampleSet specified with name '{}' has {} differences from the one that has already been loaded", sampleSetName, diffs.size());
                     for (IdentifiableEntity.Difference diff : diffs)
                     {
                         getLog().error(diff.toString());
@@ -678,7 +719,7 @@ public class XarReader extends AbstractXarImporter
         if (existingDataClass == null)
             existingDataClass = ExperimentService.get().getDataClass(lsid);
 
-        getLog().debug("Importing DataClass with name '" + dataClassName + "'");
+        getLog().debug("Importing DataClass with name '{}'", dataClassName);
         DataClass bean = new DataClass();
         bean.setContainer(getContainer());
         bean.setName(dataClassType.getName());
@@ -700,7 +741,7 @@ public class XarReader extends AbstractXarImporter
             if (sampleType != null)
                 dataClass.setSampleType(sampleType.getRowId());
             else
-                getLog().warn("DataClass Sample Type : '" + dataClassType.getSampleType() + "' was not found.");
+                getLog().warn("DataClass Sample Type : '{}' was not found.", dataClassType.getSampleType());
         }
 
         DataClassType.ParentImportAlias parentImportAlias = dataClassType.getParentImportAlias();
@@ -726,7 +767,7 @@ public class XarReader extends AbstractXarImporter
 
                 if (!diffs.isEmpty())
                 {
-                    getLog().error("The DataClass specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the one that has already been loaded");
+                    getLog().error("The DataClass specified with LSID '{}' has {} differences from the one that has already been loaded", lsid, diffs.size());
                     for (IdentifiableEntity.Difference diff : diffs)
                     {
                         getLog().error(diff.toString());
@@ -839,7 +880,7 @@ public class XarReader extends AbstractXarImporter
 
             if (!diffs.isEmpty())
             {
-                getLog().error("The domain specified with LSID '" + lsid + "' has " + diffs.size() + " differences from the domain that has already been loaded");
+                getLog().error("The domain specified with LSID '{}' has {} differences from the domain that has already been loaded", lsid, diffs.size());
                 for (IdentifiableEntity.Difference diff : diffs)
                 {
                     getLog().error(diff.toString());
@@ -876,12 +917,12 @@ public class XarReader extends AbstractXarImporter
                 if (ExperimentService.get().getExpProtocolApplicationsForProtocolLSID(protocolLSID).isEmpty() &&
                     ExperimentService.get().getExpRunsForProtocolIds(false, existingProtocol.getRowId()).isEmpty())
                 {
-                    getLog().debug("Deleting existing action set with parent protocol LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
+                    getLog().debug("Deleting existing action set with parent protocol LSID '{}' so that the protocol specified in the file can be uploaded", protocolLSID);
                     existingProtocol.delete(getUser());
                 }
                 else
                 {
-                    getLog().debug("Existing action set with parent protocol LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
+                    getLog().debug("Existing action set with parent protocol LSID '{}' is referenced by other experiment runs, so it cannot be updated", protocolLSID);
                 }
             }
         }
@@ -899,12 +940,12 @@ public class XarReader extends AbstractXarImporter
                 // Delete any protocols from the XAR that are in the database but aren't referenced as part of a ProtocolActionSet
                 if (existingProtocol.getParentProtocols().isEmpty())
                 {
-                    getLog().debug("Deleting existing protocol with LSID '" + protocolLSID + "' so that the protocol specified in the file can be uploaded");
+                    getLog().debug("Deleting existing protocol with LSID '{}' so that the protocol specified in the file can be uploaded", protocolLSID);
                     existingProtocol.delete(getUser());
                 }
                 else
                 {
-                    getLog().debug("Existing protocol with LSID '" + protocolLSID + "' is referenced by other experiment runs, so it cannot be updated");
+                    getLog().debug("Existing protocol with LSID '{}' is referenced by other experiment runs, so it cannot be updated", protocolLSID);
                 }
             }
         }
@@ -924,7 +965,7 @@ public class XarReader extends AbstractXarImporter
                 Path newFilePathRoot = _xarSource.getRootPath() == null ? null : FileUtil.getAbsoluteCaseSensitivePath(getRootContext().getContainer(), _xarSource.getRootPath());
                 if (_reloadExistingRuns || !Objects.equals(existingFilePathRoot, newFilePathRoot))
                 {
-                    getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
+                    getLog().debug("Deleting existing experiment run with LSID'{}' so that the run specified in the file can be uploaded", runLSID);
                     existingRun.delete(getUser());
                 }
             }
@@ -1015,7 +1056,7 @@ public class XarReader extends AbstractXarImporter
         if (null != exp.getContact())
             getRootContext().addSubstitution("ContactId", exp.getContact().getContactId());
 
-        getLog().debug("Finished loading Experiment with LSID '" + experimentLSID + "'");
+        getLog().debug("Finished loading Experiment with LSID '{}'", experimentLSID);
     }
 
     public List<ExpRun> getExperimentRuns()
@@ -1058,13 +1099,13 @@ public class XarReader extends AbstractXarImporter
         ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
         if (existingRun != null)
         {
-            getLog().debug("Experiment run already exists, it will NOT be reimported, LSID '" + runLSID + "'");
+            getLog().debug("Experiment run already exists, it will NOT be reimported, LSID '{}'", runLSID);
             for (ExpData d : existingRun.getAllDataUsedByRun())
             {
                 _deferredDataLoads.add(new DeferredDataLoad(d, existingRun));
             }
-            getLog().info("Experiment run '" + existingRun.getName() + "' complete");
-            getLog().debug("Experiment run import complete, LSID '" + runLSID + "'");
+            getLog().info("Experiment run '{}' complete", existingRun.getName());
+            getLog().debug("Experiment run import complete, LSID '{}'", runLSID);
             return;
         }
 
@@ -1200,7 +1241,7 @@ public class XarReader extends AbstractXarImporter
         assert loadedRun != null;
         XarReaderRegistry.get().postProcessImportedRun(getContainer(), getUser(), loadedRun, getLog());
         _loadedRuns.add(loadedRun);
-        getLog().debug("Finished loading ExperimentRun with LSID '" + runLSID + "'");
+        getLog().debug("Finished loading ExperimentRun with LSID '{}'", runLSID);
     }
 
     public List<String> getProcessedRunsLSIDs()
@@ -1395,7 +1436,7 @@ public class XarReader extends AbstractXarImporter
         {
             loadData(d, experimentRun, protAppId, context);
         }
-        getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
+        getLog().debug("Finished loading ProtocolApplication with LSID '{}'", protocolLSID);
     }
 
     private @Nullable String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
@@ -1525,7 +1566,7 @@ public class XarReader extends AbstractXarImporter
 
         _xarSource.addMaterial(run == null ? null : run.getLSID(), material, null);
 
-        getLog().debug("Finished loading material with LSID '" + materialLSID + "'");
+        getLog().debug("Finished loading material with LSID '{}'", materialLSID);
         return material;
     }
 
@@ -1538,14 +1579,14 @@ public class XarReader extends AbstractXarImporter
         boolean changed = false;
         boolean isAliquot = aliquotedFromLSID != null;
 
-        getLog().debug("Found an existing entry for " + description + " LSID " + lsid + ", not reloading its values from scratch");
+        getLog().debug("Found an existing entry for {} LSID {}, not reloading its values from scratch", description, lsid);
 
         // if the output is an aliquot, we need to allow for changing from a null value to a non-null value.
         if (sourceApplicationId != null)
         {
             if (output.getSourceApplicationId() == null)
             {
-                getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting SourceApplicationId");
+                getLog().debug("Updating {} with LSID '{}', setting SourceApplicationId", description, lsid);
                 output.setSourceApplicationId(sourceApplicationId);
                 changed = true;
             }
@@ -1558,7 +1599,7 @@ public class XarReader extends AbstractXarImporter
         {
             if (output.getRunId() == null)
             {
-                getLog().debug("Updating " + description + " with LSID '" + lsid + "', setting its RunId");
+                getLog().debug("Updating {} with LSID '{}', setting its RunId", description, lsid);
                 output.setRunId(run.getRowId());
                 changed = true;
             }
@@ -1577,7 +1618,7 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterial rootMaterial = null;
                 if (run != null)
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
-                getLog().debug("Updating " + description + " with aliquot root");
+                getLog().debug("Updating {} with aliquot root", description);
 
                 long newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : output.getRowId();
                 long rowId = output.getRowId();
@@ -1586,7 +1627,7 @@ public class XarReader extends AbstractXarImporter
                 // When importing over existing samples, if the root rowId does not match the rowId, we only log an info message here and don't update.
                 if (!Objects.equals(existingRootRowId, rowId))
                 {
-                    getLog().info(description + " with LSID '" + lsid + "' already has root material rowId of " + existingRootRowId + "; not updating to " + newRootRowId + ".");
+                    getLog().info("{} with LSID '{}' already has root material rowId of {}; not updating to {}.", description, lsid, existingRootRowId, newRootRowId);
                 }
                 else if (!Objects.equals(existingRootRowId, newRootRowId))
                 {
@@ -1599,13 +1640,13 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterial aliquotParent = null;
                 if (run != null)
                     aliquotParent = _xarSource.getMaterial(run.getExpObject(), null, aliquotedFromLSID);
-                getLog().debug("Updating " + description + " with aliquot parent LSID");
+                getLog().debug("Updating {} with aliquot parent LSID", description);
 
                 String newParentLsid = aliquotParent != null ? aliquotParent.getLSID() : aliquotedFromLSID;
                 // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
                 if (((Material) output).getAliquotedFromLSID() != null && !((Material) output).getAliquotedFromLSID().equalsIgnoreCase(aliquotedFromLSID))
                 {
-                    getLog().info(description + " with LSID '" + lsid + "' already has aliquot parent LSID of " + ((Material) output).getAliquotedFromLSID() + "; not updating to " + newParentLsid + ".");
+                    getLog().info("{} with LSID '{}' already has aliquot parent LSID of {}; not updating to {}.", description, lsid, ((Material) output).getAliquotedFromLSID(), newParentLsid);
                 }
                 else
                 {
@@ -1690,14 +1731,13 @@ public class XarReader extends AbstractXarImporter
                 boolean newFileExists = !Files.isDirectory(newFile) && Files.exists(newFile);
                 if (!newFileExists)
                 {
-                    getLog().warn("The data file with LSID " + dataLSID + " (referenced as "
-                            + xbData.getAbout() + " in the xar.xml, does not exist.");
+                    getLog().warn("The data file with LSID {} (referenced as {} in the xar.xml, does not exist.", dataLSID, xbData.getAbout());
                 }
 
                 // Issue 37561: if the existing file does not exist, don't try to keep using it or compare its contents
                 if (!Files.exists(existingFile))
                 {
-                    getLog().debug("Updating " + data.getClass().getSimpleName() + " with LSID '" + dataLSID + "', setting dataFileUrl");
+                    getLog().debug("Updating {} with LSID '{}', setting dataFileUrl", data.getClass().getSimpleName(), dataLSID);
                     data.setDataFileUrl(uri);
                 }
                 else if (newFileExists && !newFile.equals(existingFile))
@@ -1804,12 +1844,12 @@ public class XarReader extends AbstractXarImporter
         }
         else
         {
-            getLog().info("No data file found for " + expData.getName() + ". (LSID: " + expData.getLSID() + ", path: " + expData.getDataFileUrl() + ")");
+            getLog().info("No data file found for {}. (LSID: {}, path: {})", expData.getName(), expData.getLSID(), expData.getDataFileUrl());
         }
 
 
         _xarSource.addData(experimentRun == null ? null : experimentRun.getLSID(), expData, null);
-        getLog().debug("Finished loading Data with LSID '" + dataLSID + "'");
+        getLog().debug("Finished loading Data with LSID '{}'", dataLSID);
         return expData.getDataObject();
     }
 
@@ -2110,7 +2150,7 @@ public class XarReader extends AbstractXarImporter
             }
             else if (!diffs.isEmpty())
             {
-                getLog().error("The protocol specified in the file with LSID '" + protocolLSID + "' has " + diffs.size() + " differences from the protocol that has already been loaded");
+                getLog().error("The protocol specified in the file with LSID '{}' has {} differences from the protocol that has already been loaded", protocolLSID, diffs.size());
                 for (IdentifiableEntity.Difference diff : diffs)
                 {
                     getLog().error(diff.toString());
@@ -2118,7 +2158,7 @@ public class XarReader extends AbstractXarImporter
                 throw new XarFormatException("Protocol with LSID '" + protocolLSID + "' does not match existing protocol");
             }
             protocol = existingProtocol.getDataObject();
-            getLog().debug("Protocol with LSID '" + protocolLSID + "' matches a protocol with the same LSID that has already been loaded.");
+            getLog().debug("Protocol with LSID '{}' matches a protocol with the same LSID that has already been loaded.", protocolLSID);
             if (useName)
                 _loadedProtocols.put(protocolLSID, existingProtocol);
         }
@@ -2146,7 +2186,7 @@ public class XarReader extends AbstractXarImporter
             else
                 protocol = ExperimentServiceImpl.get().saveProtocol(getUser(), xarProtocol);
 
-            getLog().debug("Finished loading Protocol with LSID '" + protocolLSID + "'");
+            getLog().debug("Finished loading Protocol with LSID '{}'", protocolLSID);
         }
 
         ExpProtocolImpl protocolImpl = new ExpProtocolImpl(protocol);
@@ -2575,7 +2615,7 @@ public class XarReader extends AbstractXarImporter
             }
             catch (Exception e)
             {
-                getLog().debug("Skipped element " + key + " exception " + e.getMessage(), e);
+                getLog().debug("Skipped element {} exception {}", key, e.getMessage(), e);
             }
 
         }

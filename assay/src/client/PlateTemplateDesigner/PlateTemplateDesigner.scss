@@ -1,0 +1,738 @@
+/*
+ * Copyright (c) 2024 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+// Visually-hidden utility — renders only to assistive technology
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+// Root container
+.plate-template-designer {
+    padding: 12px 16px;
+    font-size: 0.8125rem;
+
+    &__error {
+        color: #c00;
+        padding: 16px;
+    }
+
+    &__loading {
+        padding: 16px;
+        color: #666;
+    }
+
+    &__header {
+        margin: 10px 0;
+    }
+
+    &__name-label {
+        font-weight: bold;
+    }
+
+    &__name-input {
+        margin-left: 8px;
+        padding: 4px 6px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.8125rem;
+        width: 280px;
+    }
+
+    // Horizontal flex: left (group panel + grid) | right (properties / warnings)
+    &__body {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    // Shrinks/grows to fit GroupTypesPanel content; does not flex
+    &__left {
+        flex: 0 0 auto;
+    }
+
+    // Fills remaining width; min-width prevents collapse when the window is narrow
+    &__right {
+        flex: 1;
+        min-width: 200px;
+
+        // Guarantee hidden tabpanels (properties / warnings) take no space even if
+        // the framework's CSS reset omits the [hidden]{display:none} UA rule.
+        [hidden] {
+            display: none;
+        }
+    }
+}
+
+// ── StatusBar ─────────────────────────────────────────────────────────────────
+// Pinned above the plate header; uses flex to space buttons and status text.
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0 10px;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 8px;
+
+    // Unsaved-changes indicator — uses role="status" in JSX for screen reader announcements
+    &__dirty {
+        color: #7a5800;
+        font-style: italic;
+    }
+
+    // Transient save status ("Saving…", "Saved.") — auto-clears after 5 s
+    &__status {
+        color: #555;
+    }
+
+    // Validation error message (e.g., empty plate name) — uses role="alert" in JSX
+    &__error {
+        color: #c00;
+        font-weight: bold;
+        margin-left: 12px;
+    }
+}
+
+// ── GroupTypesPanel ───────────────────────────────────────────────────────────
+// Outer panel with a tab strip and a two-column flex body:
+//   left column: scrollable group list + create controls
+//   right column: TemplateGrid + ShiftPanel (passed as children)
+.group-types-panel {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+
+    &__tabs {
+        display: flex;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ccc;
+        background: #f0f0f0;
+    }
+
+    &__tab {
+        padding: 5px 10px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.75rem;
+        border-right: 1px solid #ddd;
+
+        &:hover {
+            background: #e0e0e0;
+        }
+
+        &--active {
+            background: #fff;
+            font-weight: bold;
+            border-bottom: 2px solid #337ab7;
+        }
+    }
+
+    // Flex row: [group list] [grid area] — keeps the grid visually docked to the panel
+    &__tab-body {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px;
+
+        // Some CSS frameworks omit the UA-stylesheet [hidden]{display:none} rule.
+        // The higher specificity (class + attribute) ensures this wins over display:flex.
+        &[hidden] {
+            display: none;
+        }
+    }
+
+    // Group list column — min-width prevents short lists from collapsing
+    &__groups {
+        flex-shrink: 0;
+        min-width: 280px;
+        min-height: 60px;
+    }
+
+    // Individual group row — clickable to select; keyboard-accessible via tabIndex + onKeyDown
+    &__group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px;
+        margin-bottom: 3px;
+        border-radius: 3px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        min-width: 0;
+
+        &:hover {
+            background: #f0f0f0;
+        }
+
+        &--active {
+            border-color: #337ab7;
+            background: #e8f0fb;
+        }
+
+        // Applied when a well belonging to this group is hovered or keyboard-focused
+        &--highlighted {
+            background: #eef4ff;
+            border-color: #9fbfdf;
+        }
+    }
+
+    // Colour indicator matching the group's colour on the grid.
+    // --pattern-N mirrors the grid cell patterns so the swatch can be cross-referenced
+    // by pattern as well as color (WCAG 1.4.1)
+    &__color-swatch {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 2px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+
+        &--pattern-0  { background-image: none; }
+        &--pattern-1  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-2  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-3  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-4  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-5  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-6  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-7  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-8  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-9  { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-10 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-11 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-12 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-13 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  6px); }
+        &--pattern-14 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+        &--pattern-15 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-16 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  5px, transparent  5px, transparent 16px); }
+        &--pattern-17 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  2px, transparent  2px, transparent  7px); }
+        &--pattern-18 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  4px, transparent  4px, transparent 12px); }
+        &--pattern-19 { background-image: repeating-linear-gradient( 60deg, rgba(0,0,0,0.15) 0, rgba(0,0,0,0.15)  3px, transparent  3px, transparent  9px); }
+    }
+
+    &__group-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    // In-place rename input (replaces group-name span when renaming is active)
+    &__rename-input {
+        flex: 1;
+        padding: 1px 4px;
+        border: 1px solid #337ab7;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        min-width: 0;
+
+        &--error {
+            border-color: #c00;
+        }
+    }
+
+    // Validation error shown below the create row or the rename input
+    &__name-error {
+        color: #c00;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+
+    // Rename + delete buttons; always rendered to keep row height uniform.
+    // Inactive rows get --hidden: visibility:hidden preserves layout space while
+    // pointer-events:none blocks mouse interaction.
+    &__group-actions {
+        display: flex;
+        gap: 2px;
+        margin-left: auto;
+        flex-shrink: 0;
+
+        &--hidden {
+            visibility: hidden;
+            pointer-events: none;
+        }
+    }
+
+    &__action-btn {
+        padding: 5px 7px;
+        min-height: 24px;
+        min-width: 24px;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.6875rem;
+        line-height: 1;
+        color: #555;
+
+        &:hover {
+            background: #e0e0e0;
+        }
+
+        &--delete {
+            color: #c00;
+
+            &:hover {
+                background: #ffe0e0;
+            }
+        }
+    }
+
+    // Inline "Delete?" prompt label shown before the Yes / No confirmation buttons.
+    &__confirm-text {
+        font-size: 0.75rem;
+        color: #333;
+        margin-right: 2px;
+        white-space: nowrap;
+    }
+
+    // Row that holds the new-group name input + Create / Create multiple buttons
+    &__create-row {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    // Shared by both the <select> (predefined defaults) and <input> (free-text) variants
+    &__new-name-input {
+        flex: 1;
+        padding: 3px 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        min-width: 0;
+    }
+
+    &__add-btn {
+        padding: 3px 8px;
+        font-size: 0.75rem;
+        border: 1px solid #aaa;
+        background: #f5f5f5;
+        cursor: pointer;
+        color: #333;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) {
+            background: #e8e8e8;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        &--primary {
+            background: #337ab7;
+            border-color: #2e6da4;
+            color: #fff;
+
+            &:hover:not(:disabled) {
+                background: #286090;
+            }
+        }
+    }
+}
+
+// ── Multi-create dialog ───────────────────────────────────────────────────────
+// Modal dialog for batch-creating N numbered groups.
+// Uses the native <dialog> element with showModal() for top-layer placement.
+// Resets the <dialog> UA defaults (border, padding, background) so only the inner
+// .multi-create-dialog div provides the visual styling. Also hosts ::backdrop since
+// that pseudo-element attaches to the top-layer element, not its children.
+.multi-create-dialog__overlay {
+    border: none;
+    padding: 0;
+    background: transparent;
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.3);
+    }
+}
+
+.multi-create-dialog {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    min-width: 300px;
+
+    &__title {
+        font-weight: bold;
+        font-size: 0.875rem;
+        margin-bottom: 14px;
+    }
+
+    // Flex column container replacing the old layout table
+    &__form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    // Each label + input row
+    &__field {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    // Label cells carry id attributes and are referenced via aria-labelledby on the inputs
+    &__label {
+        padding-top: 5px;
+        white-space: nowrap;
+        font-size: 0.8125rem;
+        min-width: 80px;
+    }
+
+    // Wrapper for count input + error message (stacked vertically)
+    &__count-area {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__input {
+        padding: 3px 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.8125rem;
+        width: 100%;
+        box-sizing: border-box;
+
+        &--count {
+            width: 80px;
+        }
+    }
+
+    &__error {
+        color: #c00;
+        font-size: 0.75rem;
+        margin-top: 2px;
+    }
+
+    &__buttons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+}
+
+// ── Plate grid area ───────────────────────────────────────────────────────────
+// Centres the TemplateGrid and ShiftPanel as a vertical column inside GroupTypesPanel.
+.plate-grid-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+// ── ShiftPanel ────────────────────────────────────────────────────────────────
+// 3×3 CSS grid with arrow buttons at compass positions and a label in the centre.
+// Empty corners use <span /> placeholders to maintain grid alignment.
+.shift-panel {
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(3, 26px);
+        grid-template-rows: repeat(3, 26px);
+        gap: 2px;
+        align-items: center;
+        justify-items: center;
+    }
+
+    &__btn {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border: 1px solid #aaa;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-size: 0.875rem;
+        line-height: 1;
+
+        &:hover {
+            background: #e8e8e8;
+        }
+    }
+
+    &__label {
+        font-size: 0.625rem;
+        color: #666;
+        text-align: center;
+        line-height: 1;
+    }
+}
+
+// ── TemplateGrid ──────────────────────────────────────────────────────────────
+// HTML table where each <td> is a well. The user paints groups by clicking or dragging.
+// Background colour comes from the colorMap for the active tab's groups (inline style).
+// The --active modifier draws an outline around wells belonging to the selected group.
+.template-grid {
+    user-select: none;  // Prevents text selection during drag painting
+
+    &__table {
+        border-collapse: collapse;
+        border: 1px solid #aaa;
+    }
+
+    &__corner {
+        width: 24px;
+        height: 24px;
+    }
+
+    &__col-header {
+        text-align: center;
+        font-size: 0.6875rem;
+        font-weight: bold;
+        width: 28px;
+        height: 22px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+    }
+
+    &__row-header {
+        text-align: center;
+        font-size: 0.6875rem;
+        font-weight: bold;
+        width: 22px;
+        background: #f0f0f0;
+        border: 1px solid #ccc;
+    }
+
+    &__cell {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #ccc;
+        cursor: crosshair;
+        transition: filter 0.1s;
+
+        &:hover {
+            filter: brightness(0.88);
+        }
+
+        // Indicates cells belonging to the highlighted group (selected or hovered in the list).
+        // box-shadow inset is used instead of outline because outline is clipped by adjacent
+        // cells in border-collapse:collapse tables across several browsers.
+        &--active {
+            box-shadow: inset 0 0 0 2px #000;
+        }
+
+        // Semi-transparent stripe patterns overlaid on top of background-color via background-image.
+        // Each color-slot index (0–19) gets a distinct angle + density combination so that groups
+        // are distinguishable by pattern as well as color (WCAG 1.4.1).
+        // background-image and background-color are independent CSS properties and do not conflict.
+        &--pattern-0  { background-image: none; }
+        // 45° diagonal — 4 densities
+        &--pattern-1  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-2  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-3  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-4  { background-image: repeating-linear-gradient( 45deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 135° anti-diagonal — 4 densities
+        &--pattern-5  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-6  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-7  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-8  { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 90° horizontal stripes — 4 densities
+        &--pattern-9  { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-10 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-11 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-12 { background-image: repeating-linear-gradient( 90deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // 0° vertical stripes — 4 densities
+        &--pattern-13 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  6px); }
+        &--pattern-14 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+        &--pattern-15 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-16 { background-image: repeating-linear-gradient(  0deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  5px, transparent  5px, transparent 16px); }
+        // shallow / steep diagonals
+        &--pattern-17 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  2px, transparent  2px, transparent  7px); }
+        &--pattern-18 { background-image: repeating-linear-gradient( 30deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  4px, transparent  4px, transparent 12px); }
+        &--pattern-19 { background-image: repeating-linear-gradient( 60deg, rgba(0,0,0,0.12) 0, rgba(0,0,0,0.12)  3px, transparent  3px, transparent  9px); }
+    }
+}
+
+// ── Right panel tabs ──────────────────────────────────────────────────────────
+// Tab strip shown in the right column when showWarningPanel is true.
+// --warn colours the Warnings tab amber; --active+--warn shifts the indicator colour too.
+.right-panel-tabs {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 8px;
+
+    &__tab {
+        padding: 5px 10px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.75rem;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+
+        &:hover {
+            background: #f0f0f0;
+        }
+
+        &--active {
+            font-weight: bold;
+            border-bottom-color: #337ab7;
+            background: #fff;
+        }
+
+        &--warn {
+            color: #7a5800;
+        }
+
+        &--active#{&}--warn {
+            border-bottom-color: #7a5800;
+        }
+    }
+}
+
+// ── WellGroupProperties ───────────────────────────────────────────────────────
+// Table-based key/value editor for the active group's property bag.
+// The --empty modifier styles the "no group selected" placeholder.
+.well-group-properties {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 10px;
+    min-height: 60px;
+
+    &--empty {
+        color: #626262;
+        font-style: italic;
+    }
+
+    &__title {
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    &__no-props {
+        color: #626262;
+        font-style: italic;
+        font-size: 0.75rem;
+    }
+
+    &__table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    // Key column — fixed at 40% width, non-wrapping
+    &__key {
+        padding: 3px 6px 3px 0;
+        white-space: nowrap;
+        width: 40%;
+    }
+
+    &__value-cell {
+        padding: 2px 4px 2px 0;
+    }
+
+    &__action-cell {
+        padding: 2px 0 2px 6px;
+        white-space: nowrap;
+        width: 1%;  // Shrink-wraps to button content
+    }
+
+    &__value {
+        padding: 3px 4px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    &__delete-btn {
+        padding: 5px 7px;
+        min-height: 24px;
+        min-width: 24px;
+        border: 1px solid #ccc;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.6875rem;
+        line-height: 1;
+        color: #c00;
+
+        &:hover {
+            background: #ffe0e0;
+        }
+    }
+
+    // Footer row — Add new property; separated visually from existing entries
+    &__add-row td {
+        border-top: 1px solid #eee;
+        padding-top: 6px;
+    }
+
+    &__new-key {
+        padding: 3px 5px;
+        border: 1px solid #ccc;
+        font-size: 0.75rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    &__new-value {
+        padding: 3px 5px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    &__add-btn {
+        padding: 3px 8px;
+        border: 1px solid #aaa;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-size: 0.75rem;
+        white-space: nowrap;
+
+        &:hover:not(:disabled) {
+            background: #e8e8e8;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    }
+}
+
+// ── WarningPanel ──────────────────────────────────────────────────────────────
+// Amber-tinted panel listing validation warnings from computeWarnings().
+// Only rendered when plate.showWarningPanel is true (assay-type controlled).
+.warning-panel {
+    border: 1px solid #e8a000;
+    border-radius: 3px;
+    padding: 10px;
+    background: #fffbe6;
+
+    &__none {
+        color: #626262;
+        font-style: italic;
+        font-size: 0.75rem;
+    }
+
+    &__list {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    &__item {
+        color: #7a5800;
+        font-size: 0.75rem;
+        margin-bottom: 3px;
+    }
+}

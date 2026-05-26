@@ -220,14 +220,14 @@ public final class RhinoService
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(scriptCount + " scripts in all modules");
+            LOG.info("{} scripts in all modules", scriptCount);
 
             // Load all the top-level script timestamps to ensure no exceptions and get a count
             int timestampCount = LabKeyModuleSourceProvider.TOP_LEVEL_SCRIPT_CACHE.streamAllResourceMaps()
                 .mapToInt(Map::size)
                 .sum();
 
-            LOG.info(timestampCount + " top-level script timestamps in all modules");
+            LOG.info("{} top-level script timestamps in all modules", timestampCount);
 
             assertEquals("Mismatch in counts for JavaScript scripts vs. script timestamps", scriptCount, timestampCount);
 
@@ -285,7 +285,7 @@ class ScriptReferenceImpl implements ScriptReference
             RhinoEngine engine = RhinoService.RHINO_FACTORY.getScriptEngine();
             Context ctx = Context.enter();
 
-            LOG.debug("Compiling script '" + r.toString() + "'");
+            LOG.debug("Compiling script '{}'", r.toString());
 
             try (Reader reader = Readers.getReader(r.getInputStream()))
             {
@@ -294,7 +294,7 @@ class ScriptReferenceImpl implements ScriptReference
             }
             catch (Throwable t)
             {
-                LOG.error("Failed to compile script '" + r + "': " + t.getMessage());
+                LOG.error("Failed to compile script '{}': {}", r, t.getMessage());
                 return null;
             }
             finally
@@ -412,7 +412,7 @@ class ScriptReferenceImpl implements ScriptReference
             }
             ctxt.getBindings(ScriptContext.ENGINE_SCOPE).put(ScriptEngine.FILENAME, _path.toString());
 
-            LOG.debug("Evaluating script '" + _path + "'");
+            LOG.debug("Evaluating script '{}'", _path);
             Object result = _script.eval(ctxt);
             _evaluated = true;
             return result;
@@ -456,7 +456,7 @@ class ScriptReferenceImpl implements ScriptReference
         Context ctx = Context.enter();
         try
         {
-            LOG.debug("Invoking method '" + name + "' in script '" + _path.toString() + "'");
+            LOG.debug("Invoking method '{}' in script '{}'", name, _path.toString());
             Object result = _engine.invokeMethod(thiz, name, args);
             if (result == null)
                 return null;
@@ -484,7 +484,7 @@ class ScriptReferenceImpl implements ScriptReference
         Context ctx = Context.enter();
         try
         {
-            LOG.debug("Invoking method '" + name + "' in script '" + _path.toString() + "'");
+            LOG.debug("Invoking method '{}' in script '{}'", name, _path.toString());
             ScriptContext ctxt = getContext();
             Scriptable scope = _engine.getRuntimeScope(ctxt);
             Object result = _engine.invokeMethod(scope, name, args);
@@ -586,7 +586,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
             return null;
         }
 
-        LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
+        LOG.debug("Loading require()'ed resource '{}'", path.toString());
 
         RhinoScriptRef ref = new RhinoScriptRef(res);
         try
@@ -807,7 +807,7 @@ class RhinoEngine extends RhinoScriptEngine
                 }
 
                 // Other JS scripts can call require('serverContext') to load this.
-                extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPTNAME, scriptContextScript);
+                extraModules = Map.of(ScriptTrigger.SERVER_CONTEXT_SCRIPT_NAME, scriptContextScript);
             }
 
             Require require = new Require(cx, getTopLevel(), new WrappingModuleScriptProvider(_moduleScriptProvider, extraModules), null, null, true);

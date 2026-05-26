@@ -66,7 +66,7 @@ public class PurgeParticipantsTask extends TimerTask
         {
             // Queue a pipeline job to prevent participant purge from running in parallel with study import, #42641
             PipelineJob job = new PurgeParticipantsJob(vbi, root);
-            LOG.debug("Queuing PurgeParticipantsJob [thread " + Thread.currentThread().getName() + " to " + PipelineService.get().toString() + "]");
+            LOG.debug("Queuing PurgeParticipantsJob [thread {} to {}]", Thread.currentThread().getName(), PipelineService.get().toString());
             PipelineService.get().queueJob(job);
             JOB_QUEUED = true;
         }

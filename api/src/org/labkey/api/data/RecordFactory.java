@@ -52,7 +52,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
             Object value = m.get(p.getName());
-            return ConvertUtils.convert(value, p.getType());
+            return value != null ? ConvertUtils.convert(value, p.getType()) : null;
         }).toArray();
 
         try
@@ -110,7 +110,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
     }
 
     @Override
-    public ArrayList<K> handleArrayList(ResultSet rs) throws SQLException
+    public ArrayList<K> handleArrayList(ResultSet rs)
     {
         Iterable<Map<String, Object>> iterable = () -> new ResultSetIterator(rs);
         return StreamSupport.stream(iterable.spliterator(), false)
@@ -144,7 +144,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
             try (ResultSet rs = selector.getResultSet())
             {
                 rs.next();
-                Assert.assertEquals(users.get(0), factory.handle(rs));
+                Assert.assertEquals(users.getFirst(), factory.handle(rs));
             }
             MiniUser randomUser = users.get((int)(Math.random() * users.size()));
             MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userid), null).getObject(MiniUser.class);

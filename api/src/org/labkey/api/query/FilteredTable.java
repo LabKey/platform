@@ -62,7 +62,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI;
+import static org.labkey.api.exp.PropertyType.PARTICIPANT_CONCEPT_URI;
 
 /**
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example

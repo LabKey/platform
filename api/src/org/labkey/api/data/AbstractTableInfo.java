@@ -27,9 +27,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.DeltaTrackingMap;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.triggers.ScriptTriggerFactory;
 import org.labkey.api.data.triggers.Trigger;
@@ -178,10 +181,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     /* If a subclass generates a non-trivial FROM clause in getFromSQL(), it may need to track dependencies
-     * for calculated columns.  This is where we do that.  This is setup in loadAllButCustomizerFromXML(), and
-     * and used in getFromSQL(String alias, Set<FieldKey> cols)
+     * for calculated columns. Lazily built from each column's getReferencedFieldKeys() and used in
+     * getFromSQL(String alias, Set<FieldKey> cols). Cleared whenever the column shape changes.
      */
-    protected final HashMap<FieldKey, HashSet<FieldKey>> _referencedColumns = new HashMap<>();
+    private volatile Map<FieldKey, Set<FieldKey>> _referencedColumns;
 
     private boolean _initialColumnsAreAdded = false;
 
@@ -322,7 +325,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
-
     protected Map<String, ColumnInfo> constructColumnMap()
     {
         if (isCaseSensitive())
@@ -389,23 +391,54 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
     }
 
+    // Clear the cached resolved/referenced columns so we regenerate them when the shape of the table changes
+    private void clearColumnReferences()
+    {
+        _resolvedColumns.clear();
+        _referencedColumns = null;
+    }
+
     /** When a table a) overrides (String alias, Set<FieldKey> cols) b) has CalculatedColumns we need to make sure that
      * we include the dependent columns in the Set<>.
      */
     protected Set<FieldKey> expandColumns(Set<FieldKey> columns)
     {
-        if (null == columns || columns.isEmpty() || _referencedColumns.isEmpty())
+        if (null == columns || columns.isEmpty())
             return columns;
-        // We're not recursively expanding. However, if expressions can reference each other we'll have to.
+
+        var referenced = getReferencedColumns();
+        if (referenced.isEmpty())
+            return columns;
+
+        // We're not recursively expanding. However, if expressions can reference each other, we'll have to.
         HashSet<FieldKey> expanded = new HashSet<>();
         for (var fk : columns)
         {
             expanded.add(fk);
-            HashSet<FieldKey> refs = _referencedColumns.get(fk);
+            Set<FieldKey> refs = referenced.get(fk);
             if (null != refs)
                 expanded.addAll(refs);
         }
+
         return expanded;
+    }
+
+    private Map<FieldKey, Set<FieldKey>> getReferencedColumns()
+    {
+        if (_referencedColumns == null)
+        {
+            var built = new HashMap<FieldKey, Set<FieldKey>>();
+            for (var col : getColumns())
+            {
+                var deps = col.getReferencedFieldKeys();
+                if (!deps.isEmpty())
+                    built.put(col.getFieldKey(), deps);
+            }
+
+            _referencedColumns = built.isEmpty() ? Map.of() : Collections.unmodifiableMap(built);
+        }
+
+        return _referencedColumns;
     }
 
     @Override
@@ -436,8 +469,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
-            else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
+
+            return getSelectList(pkColumns.getFirst(), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
@@ -457,12 +490,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         final int titleIndex;
         if (!(firstColumn.equals(titleColumn)))
         {
-            cols = Arrays.asList(firstColumn, titleColumn);
+            cols = List.of(firstColumn, titleColumn);
             titleIndex = 2;
         }
         else
         {
-            cols = Arrays.asList(firstColumn);
+            cols = List.of(firstColumn);
             titleIndex = 1;
         }
 
@@ -473,7 +506,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
         catch (Exception e)
         {
-            LOG.warn("Filtered lookup failed for column: " + firstColumn.getName(), e);
+            LOG.warn("Filtered lookup failed for column: {}", firstColumn.getName(), e);
         }
         Sort sort = new Sort();
         sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
@@ -560,7 +593,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 }
             }
             if (null == _titleColumn && !getColumns().isEmpty())
-                _titleColumn = getColumns().get(0).getName();
+                _titleColumn = getColumns().getFirst().getName();
         }
 
         return _titleColumn;
@@ -770,17 +803,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
-        return _columnMap.remove(column.getName()) != null;
+
+        boolean removed = _columnMap.remove(column.getName()) != null;
+        if (removed)
+            clearColumnReferences();
+
+        return removed;
     }
 
     public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
         ensureInitialColumnsAreAdded();
-        // Not true if this is a VirtualTableInfo
-        // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
         {
             String message = "Column " + column.getName() + " already exists for table " + getName() + ". Full set of existing columns: " + _columnMap.keySet();
@@ -789,9 +823,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             assert false : message;
         }
         _columnMap.put(column.getName(), column);
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
+        clearColumnReferences();
         assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
+
         return column;
     }
 
@@ -800,8 +834,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * This is usually only done in TableInfo.afterConstruct() to modify the behavior of a column.
      * Because the ColumnInfo implementation can change in afterConstruct(), TableInfo implementations
      * should hold onto columnInfo references by FieldKey, and not by reference.
-
-     * during construction.
      */
     public ColumnInfo replaceColumn(ColumnInfo updated, ColumnInfo existing)
     {
@@ -816,11 +848,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             throw new IllegalStateException("Column must have the same name");
 
         _columnMap.put(updated.getName(), updated);
-        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
-        _resolvedColumns.clear();
+        clearColumnReferences();
+
         return updated;
     }
-
 
     protected ColumnInfo transformColumn(MutableColumnInfo existing, @Nullable ColumnInfoTransformer t)
     {
@@ -828,10 +859,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         existing.checkLocked();
         if (null == t)
             return existing;
+
         MutableColumnInfo updated = t.apply(existing);
         return replaceColumn(updated, existing);
     }
-
 
     public void addCounterDefinition(@NotNull CounterDefinition counterDef)
     {
@@ -843,7 +874,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (column == null)
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': paired column does not exist: " + columnName);
+                LOG.warn("Error in counter definition '{}': paired column does not exist: {}", counterDef.getCounterName(), columnName);
             }
         }
 
@@ -853,12 +884,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (column == null)
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': attached column does not exist: " + columnName);
+                LOG.warn("Error in counter definition '{}': attached column does not exist: {}", counterDef.getCounterName(), columnName);
             }
             else if (!column.getJdbcType().isInteger())
             {
                 valid = false;
-                LOG.warn("Error in counter definition '" + counterDef.getCounterName() + "': non-integer attached column: " + columnName);
+                LOG.warn("Error in counter definition '{}': non-integer attached column: {}", counterDef.getCounterName(), columnName);
             }
         }
 
@@ -1217,7 +1248,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             if (MultiValuedFkType.junction.name().equals(type))
                 ret = new MultiValuedForeignKey(ret, fk.getFkJunctionLookup());
             else
-                LOG.warn(String.format("Error in FK configuration for schema : \"%s\". The multi value FK type : \"%s\" is not supported.", fromSchema.getSchemaName(), type));
+                LOG.warn("Error in FK configuration for schema : \"{}\". The multi value FK type : \"{}\" is not supported.", fromSchema.getSchemaName(), type);
         }
 
         return ret;
@@ -1340,7 +1371,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
             else
             {
-                LOG.debug("Query name in XML metadata in schema '" + schema.getSchemaName() + "' did not match expected. Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "] in container " + schema.getContainer().getPath());
+                LOG.debug("Query name in XML metadata in schema '{}' did not match expected. Was: [{}], expected: [{}] in container {}", schema.getSchemaName(), xmlTable.getTableName(), getName(), schema.getContainer().getPath());
             }
         }
         if (xmlTable.getTitleColumn() != null)
@@ -1376,7 +1407,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         
         if (xmlTable.isSetTableUrl())
             _detailsURL = DetailsURL.fromXML(xmlTable.getTableUrl(), errors);
-
 
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
@@ -1462,9 +1492,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 try
                 {
                     var wrappedColumn = QueryService.get().createQueryExpressionColumn(this, FieldKey.fromParts(xmlColumn.getColumnName()), sql, xmlColumn);
-                    HashSet<FieldKey> referencedColumns = new HashSet<>();
-                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, referencedColumns);
-                    _referencedColumns.put(wrappedColumn.getFieldKey(), referencedColumns);
+                    QueryService.get().bindQueryExpressionColumn(wrappedColumn, existingColumns, true, null);
                     calculatedFieldKeys.add(wrappedColumn.getFieldKey());
                     addColumn(wrappedColumn);
                 }
@@ -1500,7 +1528,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             {
                 warnings.add(new QueryParseWarning("Invalid AuditLogging: " + auditBehavior,null,0,0));
             }
-
         }
 
         _warnings.addAll(warnings);
@@ -1884,8 +1911,35 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return true;
     }
 
+    @Override
+    public @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c, QueryUpdateService.InsertOption insertOption)
+    {
+        var triggers = getTriggers(c);
+        if (triggers.isEmpty())
+            return null;
+
+        var columns = new CaseInsensitiveHashSet();
+        for (var trigger : triggers)
+        {
+            // Trigger is disabled, do not modify the column set
+            if (!trigger.isManagedColumnsEnabled())
+                continue;
+
+            var managedColumns = trigger.getManagedColumns();
+            if (managedColumns == null)
+                continue;
+
+            if (insertOption.updateOnly)
+                columns.addAll(managedColumns.update());
+            else
+                columns.addAll(managedColumns.insert());
+        }
+
+        return columns.isEmpty() ? null : columns;
+    }
 
     private Collection<Trigger> _triggers = null;
+    private Boolean _isTriggerManagedColumnsEnabled = null;
 
     @NotNull
     public final Collection<Trigger> getTriggers(@Nullable Container c)
@@ -1897,6 +1951,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _triggers;
     }
 
+    private boolean isTriggerManagedColumnsEnabled()
+    {
+        if (_isTriggerManagedColumnsEnabled == null)
+            _isTriggerManagedColumnsEnabled = QueryService.get().isTriggerManagedColumnsEnabled();
+        return _isTriggerManagedColumnsEnabled;
+    }
 
     @NotNull
     private final Collection<Trigger> loadTriggers(@Nullable Container c)
@@ -1912,8 +1972,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (LOG.isDebugEnabled() && !scripts.isEmpty())
         {
-            LOG.debug("Trigger scripts for '" + getPublicSchemaName() + "', '" + getName() + "': " +
-                    scripts.stream().map(Trigger::getName).collect(Collectors.joining(", ")));
+            LOG.debug("Trigger scripts for '{}', '{}': {}", getPublicSchemaName(), getName(), scripts.stream().map(Trigger::getName).collect(Collectors.joining(", ")));
         }
 
         return scripts;
@@ -1926,7 +1985,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public final void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
+    public final void fireBatchTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, BatchValidationException batchErrors, Map<String, Object> extraContext)
             throws BatchValidationException
     {
         assert batchErrors != null;
@@ -1945,9 +2004,18 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
-            throws ValidationException
+    public void fireRowTrigger(
+        Container c,
+        User user,
+        TriggerType type,
+        @Nullable QueryUpdateService.InsertOption insertOption,
+        boolean before,
+        int rowNumber,
+        @Nullable Map<String, Object> newRow,
+        @Nullable Map<String, Object> oldRow,
+        Map<String, Object> extraContext,
+        @Nullable Map<String, Object> existingRecord
+    ) throws ValidationException
     {
         ValidationException errors = new ValidationException();
         errors.setSchemaName(getPublicSchemaName());
@@ -1957,9 +2025,83 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         Collection<Trigger> triggers = getTriggers(c);
 
+        // Wrap the row once before the loop
+        DeltaTrackingMap<Object> trackedRow = null;
+        Map<String, Object> newRowTracked = newRow;
+        boolean manageColumns = before && insertOption != null && isTriggerManagedColumnsEnabled();
+
+        if (newRow != null && manageColumns)
+        {
+            trackedRow = DeltaTrackingMap.wrap(newRow);
+            newRowTracked = trackedRow;
+        }
+
         for (Trigger script : triggers)
         {
-            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext, existingRecord);
+            if (trackedRow != null)
+                trackedRow.resetTracking();
+
+            script.rowTrigger(this, c, user, type, insertOption, before, rowNumber, newRowTracked, oldRow, errors, extraContext, existingRecord);
+            if (errors.hasErrors())
+                break;
+
+            // trackedRow should only be null when not manageColumns
+            if (trackedRow != null && script.isManagedColumnsEnabled())
+            {
+                var managed = script.getManagedColumns();
+                var managedCols = managed != null ? managed.getColumns(type) : null;
+
+                // Verify the trigger did not add or remove columns that are not managed
+                if (trackedRow.hasStructuralChanges())
+                {
+                    var added = Sets.newCaseInsensitiveHashSet(trackedRow.getAddedKeys());
+                    var removed = Sets.newCaseInsensitiveHashSet(trackedRow.getRemovedKeys());
+
+                    if (managedCols != null)
+                    {
+                        added.removeAll(managedCols);
+                        removed.removeAll(managedCols);
+                        if (managed.ignored() != null)
+                        {
+                            added.removeAll(managed.ignored());
+                            removed.removeAll(managed.ignored());
+                        }
+                    }
+
+                    if (!added.isEmpty() || !removed.isEmpty())
+                    {
+                        var diffs = new ArrayList<String>();
+
+                        if (!added.isEmpty())
+                            diffs.add("add: " + added.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
+                        if (!removed.isEmpty())
+                            diffs.add("remove: " + removed.stream().map(col -> "'" + col + "'").collect(Collectors.joining(", ")));
+
+                        String message = "Trigger '" + script.getName() + "' attempted to " + String.join(", ", diffs) + ". Declare managed columns to include them in the column set.";
+                        errors.addGlobalError(message);
+                        break;
+                    }
+                }
+
+                if (errors.hasErrors())
+                    break;
+
+                // Verify the trigger handles all managed columns
+                if (managedCols != null)
+                {
+                    for (var col : managedCols)
+                    {
+                        if (!newRowTracked.containsKey(col))
+                        {
+                            // Not using errors.addFieldError() here as the managed column may not be visible
+                            String message = "Trigger '" + script.getName() + "' declared the managed column '" + col + "' but did not set a value for it. Set null to clear or provide a value.";
+                            errors.addGlobalError(message);
+                            break;
+                        }
+                    }
+                }
+            }
+
             if (errors.hasErrors())
                 break;
         }
@@ -2021,7 +2163,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             List<String> pks = getPkColumnNames();
             if (pks.size() == 1)
-                _auditRowPk = FieldKey.fromParts(pks.get(0));
+                _auditRowPk = FieldKey.fromParts(pks.getFirst());
             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
                 _auditRowPk = FieldKey.fromParts("EntityId");
             else if (getColumn(FieldKey.fromParts("RowId")) != null)
@@ -2195,6 +2337,31 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean allowRobotsIndex()
     {
         return getUserSchema().allowRobotsIndex();
+    }
+
+    @NotNull
+    private final Map<Enum, Object> _customTableConfigs = new HashMap<>();
+
+    public void putCustomTableConfig(Enum key, Object value)
+    {
+        _customTableConfigs.put(key, value);
+    }
+
+    @NotNull
+    public Map<Enum, Object> getCustomTableConfigs()
+    {
+        return _customTableConfigs;
+    }
+
+    @Nullable
+    public Object getCustomTableConfig(Enum key)
+    {
+        return getCustomTableConfigs().get(key);
+    }
+
+    public boolean getCustomTableConfigBoolean(Enum key)
+    {
+        return Boolean.TRUE == getCustomTableConfig(key);
     }
 
     public static class TestCase extends Assert{

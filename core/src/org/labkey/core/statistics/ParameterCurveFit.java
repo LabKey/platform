@@ -160,8 +160,8 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
             values.add(point.getY());
         Collections.sort(values);
 
-        double minValue = values.get(0);
-        double maxValue = values.get(values.size() - 1);
+        double minValue = values.getFirst();
+        double maxValue = values.getLast();
 
         return calculateFitParameters(minValue, maxValue);
     }

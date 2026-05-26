@@ -885,13 +885,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 else
                 {
                     if (overlayMetadataIfExists(_dsd.getLabel(), schema, errors))
-                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
+                        LOG.warn("Rename the file - {}.query.xml to - {}", _dsd.getLabel(), _dsd.getName());
                 }
                 if (!tableName.equalsIgnoreCase(_dsd.getName()) && !tableName.equalsIgnoreCase(_dsd.getLabel()))
                 {
                     // TableName different than both name and label, so overlay it if found
                     if (overlayMetadataIfExists(tableName, schema, errors))
-                        LOG.warn("Rename the file - " + _dsd.getLabel() + ".query.xml to - " + _dsd.getName());
+                        LOG.warn("Rename the file - {}.query.xml to - {}", _dsd.getLabel(), _dsd.getName());
                 }
             }
         }

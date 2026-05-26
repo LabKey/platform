@@ -125,16 +125,6 @@ public interface ComplianceService
         {
             return false;
         }
-        @Override
-        @NotNull public PHI getMaxAllowedPhi(@NotNull Container container, @NotNull User user)
-        {
-            return PHI.Restricted;
-        }
-        @Override
-        public Activity getCurrentActivity(ViewContext viewContext)
-        {
-            return null;
-        }
 
         @Override
         public ComplianceFolderSettings getFolderSettings(@NotNull Container container, @NotNull User user) throws UnauthorizedException

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.collections;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 import java.util.ListIterator;
 
@@ -77,7 +79,7 @@ public abstract class IndexMappingList<L extends IndexMappingList<L, E>, E> exte
     }
 
     @Override
-    public L subList(int fromIndex, int toIndex)
+    public @NotNull L subList(int fromIndex, int toIndex)
     {
         return wrapList(super.subList(mapIndexIn(fromIndex), mapIndexIn(toIndex)));
     }
@@ -86,13 +88,13 @@ public abstract class IndexMappingList<L extends IndexMappingList<L, E>, E> exte
     // to nextIndex() and previousIndex()
 
     @Override
-    public ListIterator<E> listIterator()
+    public @NotNull ListIterator<E> listIterator()
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ListIterator<E> listIterator(int index)
+    public @NotNull ListIterator<E> listIterator(int index)
     {
         throw new UnsupportedOperationException();
     }

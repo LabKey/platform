@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -180,7 +181,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     }
 
     @Override
-    public int compareTo(ExpObject o2)
+    public int compareTo(@NotNull ExpObject o2)
     {
         if (getName() != null)
         {

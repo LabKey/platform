@@ -209,6 +209,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         {
             columns.add(column);
         }
+
+        public String display()
+        {
+            String display = indexType.name().toUpperCase() + " " + name + " " + columns.stream().map(ColumnInfo::getName).toList();
+            return filterCondition == null ? display : display + " + " + filterCondition;
+        }
     }
 
     /** Get a list of columns that specifies a unique key, may return the same result as getPKColumns()
@@ -222,11 +228,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * NOTE: Postgres does not consider rows with NULL values to be "equal" so NULLs may be repeated!
      */
     @NotNull List<ColumnInfo> getAlternateKeyColumns();
-
-    @NotNull default Set<String> getAltKeysForUpdate()
-    {
-       return Collections.emptySet();
-    }
 
     @Nullable default Set<String> getDisabledSystemFields()
     {
@@ -508,7 +509,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /**
      * Executes any trigger scripts for this table.
-     *
+     * <p>
      * The trigger should be called once before and once after an entire set of rows for each of the
      * INSERT, UPDATE, DELETE trigger types.  A trigger script may set up data structures to be used
      * during validation.  In particular, the trigger script might want to do a query to populate a set of
@@ -555,19 +556,20 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param c The current Container.
      * @param user the current user
      * @param type The TriggerType for the event.
+     * @param insertOption The insertOption that invoked this trigger. Will be null when invoked outside a data iterator.
      * @param before true if the trigger is before the event, false if after the event.
      * @param errors Any errors created by the validation script will be added to the errors collection.
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
      * @throws BatchValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
+    void fireBatchTrigger(Container c, User user, TriggerType type, @Nullable QueryUpdateService.InsertOption insertOption, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
 
     default void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+                                @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
             throws ValidationException
     {
-        fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, null);
+        fireRowTrigger(c, user, type, null, before, rowNumber, newRow, oldRow, extraContext, null);
     }
 
     /**
@@ -600,6 +602,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param c The current Container.
      * @param user the current user
      * @param type The TriggerType for the event.
+     * @param insertOption The insertOption that invoked this trigger. Will be null when invoked outside a data iterator.
      * @param before true if the trigger is before the event, false if after the event.
      * @param newRow The new row for INSERT and UPDATE.
      * @param oldRow The previous row for UPDATE and DELETE
@@ -607,9 +610,18 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param existingRecord Optional existing record for the row, used for merge operation to differentiate new vs existing row
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
-    void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
-            throws ValidationException;
+    void fireRowTrigger(
+        Container c,
+        User user,
+        TriggerType type,
+        @Nullable QueryUpdateService.InsertOption insertOption,
+        boolean before,
+        int rowNumber,
+        @Nullable Map<String, Object> newRow,
+        @Nullable Map<String, Object> oldRow,
+        Map<String, Object> extraContext,
+        @Nullable Map<String, Object> existingRecord
+    ) throws ValidationException;
 
     /**
      * Return true if there are trigger scripts associated with this table.
@@ -619,7 +631,18 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Return true if all trigger scripts support streaming.
      */
-    default boolean canStreamTriggers(Container c) { return false; }
+    default boolean canStreamTriggers(Container c)
+    {
+        return false;
+    }
+
+    /**
+     * Returns the full set of columns managed by triggers for this TableInfo.
+     */
+    default @Nullable Set<String> getTriggerManagedColumns(@Nullable Container c, QueryUpdateService.InsertOption insertOption)
+    {
+        return null;
+    }
 
     /**
      * Reset the trigger script context by reloading them. Note there could still be caches that need to be reset
@@ -632,9 +655,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     /**
      * Returns true if the underlying database table has triggers.
      */
-    default boolean hasDbTriggers() { return false; }
+    default boolean hasDbTriggers()
+    {
+        return false;
+    }
 
-    /* for asserting that tableinfo is not changed unexpectedly */
+    /* for asserting that the TableInfo is not changed unexpectedly */
     void setLocked(boolean b);
     boolean isLocked();
 

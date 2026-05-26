@@ -81,9 +81,6 @@ public class DavCrawler implements ShutdownListener
 {
 //    SearchService.SearchCategory folderCategory = new SearchService.SearchCategory("Folder", "Folder");
 
-    long _defaultWait = TimeUnit.SECONDS.toMillis(60);
-    long _defaultBusyWait = TimeUnit.SECONDS.toMillis(1);
-
     // UNDONE: configurable
     // NOTE: we want to use these to control how fast we SUBMIT jobs to the indexer,
     // we don't want to hold up the actual indexer threads if possible
@@ -194,9 +191,7 @@ public class DavCrawler implements ShutdownListener
             {
                 _crawlerThread.join(1000);
             }
-            catch (InterruptedException x)
-            {
-            }
+            catch (InterruptedException _) {}
     }
 
 
@@ -208,7 +203,7 @@ public class DavCrawler implements ShutdownListener
 
     public void startFull(Path path, boolean force)
     {
-        _log.debug("START FULL: " + path);
+        _log.debug("START FULL: {}", path);
 
         if (null == path)
             path = WebdavService.get().getResolver().getRootPath();
@@ -230,7 +225,7 @@ public class DavCrawler implements ShutdownListener
     {
         if (null != start)
         {
-            _log.debug("START CONTINUOUS " + start);
+            _log.debug("START CONTINUOUS {}", start);
             // make sure path exists
             if (null == nextCrawl)
             {
@@ -294,9 +289,12 @@ public class DavCrawler implements ShutdownListener
         {
             boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;
 
-            _listingRateLimiter.add(1, isCrawlerThread);
+            if (isCrawlerThread)
+                _listingRateLimiter.add(1);
+            else
+                _listingRateLimiter.tryAdd(1);
 
-            _log.debug("IndexDirectoryJob.run(" + _path + ")");
+            _log.debug("IndexDirectoryJob.run({})", _path);
 
             _directory = getResolver().lookup(_path);
 
@@ -414,7 +412,10 @@ public class DavCrawler implements ShutdownListener
                     {
                         if (!f.isFile())
                             continue;
-                        _fileIORateLimiter.add(f.length(), isCrawlerThread);
+                        if (isCrawlerThread)
+                            _fileIORateLimiter.add(f.length());
+                        else
+                            _fileIORateLimiter.tryAdd(f.length());
                     }
 
                     _task.getQueue(null, SearchService.PRIORITY.crawl).addResource(child);
@@ -422,7 +423,6 @@ public class DavCrawler implements ShutdownListener
                 }
                 else if (!child.shouldIndex())
                 {
-                    continue;
                 }
                 else if (!skipContainer(child))
                 {
@@ -465,7 +465,7 @@ public class DavCrawler implements ShutdownListener
             while (!_recent.isEmpty() && _recent.getFirst().second.getTime() < d.getTime()-10*60000)
                 _recent.removeFirst();
             String text = r.isCollection() ? r.getName() + "/" : r.getName();
-            _recent.add(new Pair(text,d));
+            _recent.add(new Pair<>(text,d));
         }
     }
 
@@ -479,33 +479,6 @@ public class DavCrawler implements ShutdownListener
             _crawlerEvent.notifyAll();
         }
     }
-
-
-    void _wait(Object event, long wait)
-    {
-        if (wait == 0 || _shuttingDown)
-            return;
-        try
-        {
-            synchronized (event)
-            {
-                event.wait(wait);
-            }
-        }
-        catch (InterruptedException ignored) {}
-    }
-
-
-//    final Runnable pingJob = new Runnable()
-//    {
-//        public void run()
-//        {
-//            synchronized (_crawlerEvent)
-//            {
-//                _crawlerEvent.notifyAll();
-//            }
-//        }
-//    };
 
 
     void waitForIndexerIdle() throws InterruptedException
@@ -526,7 +499,7 @@ public class DavCrawler implements ShutdownListener
         {
             while (!_shuttingDown && null == getSearchService())
             {
-                try { Thread.sleep(1000); } catch (InterruptedException x) {}
+                try { Thread.sleep(1000); } catch (InterruptedException _) {}
             }
 
             int consecutiveConfigExceptionCount = 0;
@@ -544,7 +517,17 @@ public class DavCrawler implements ShutdownListener
                     }
                     else
                     {
-                        _wait(_crawlerEvent, _defaultWait);
+                        if (!_shuttingDown)
+                        {
+                            try
+                            {
+                                synchronized (_crawlerEvent)
+                                {
+                                    _crawlerEvent.wait(TimeUnit.MINUTES.toMillis(1));
+                                }
+                            }
+                            catch (InterruptedException ignored) {}
+                        }
                     }
                     consecutiveConfigExceptionCount = 0;
                 }
@@ -552,11 +535,7 @@ public class DavCrawler implements ShutdownListener
                 catch (ConfigurationException e)
                 {
                     // Issue 49785. Avoid spinning in a tight loop if the DB is unresponsive.
-                    consecutiveConfigExceptionCount++;
-                    _log.error("Unexpected error, delaying next attempt" + (consecutiveConfigExceptionCount > 1 ? (". " + consecutiveConfigExceptionCount + " consecutive ConfigurationExceptions") : ""), e);
-
-                    // Fallback strategy based on the number of consecutive failed attempts
-                    _wait(_crawlerEvent, TimeUnit.MINUTES.toMillis(Math.min(10, consecutiveConfigExceptionCount)));
+                    AbstractSearchService.postFailureDelay(e, "Unexpected error", _log, ++consecutiveConfigExceptionCount, _crawlerEvent);
                 }
                 catch (Throwable t)
                 {
@@ -585,7 +564,7 @@ public class DavCrawler implements ShutdownListener
 
                 if (!Path.rootPath.equals(path))
                 {
-                    _log.debug("findSomeWork():    adding path to in memory queue: " + path.toString() + " (lastCrawl=" + lastCrawl + ", nextCrawl=" + nextCrawl);
+                    _log.debug("findSomeWork():    adding path to in memory queue: {} (lastCrawl={}, nextCrawl={}", path.toString(), lastCrawl, nextCrawl);
                     crawlQueue.add(new IndexDirectoryJob(path, lastCrawl, nextCrawl));
                 }
             }
@@ -599,7 +578,7 @@ public class DavCrawler implements ShutdownListener
         else
         {
             var path = crawlQueue.removeFirst();
-            _log.debug("findSomeWork(): now crawling " + path._directory);
+            _log.debug("findSomeWork(): now crawling {}", path._directory);
             return path;
         }
     }
@@ -728,7 +707,7 @@ public class DavCrawler implements ShutdownListener
             recent = new ArrayList<>(_recent);
         }
 
-        recent.sort(Comparator.comparing(Pair::getValue, Comparator.reverseOrder()));
+        recent.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
 
         StringBuilder activity = new StringBuilder("<table cellpadding=1 cellspacing=0>"); //<tr><td><img width=80 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td><td><img width=300 height=1 src='" + AppProps.getInstance().getContextPath() + "/_.gif'></td></tr>");
         String last = "";

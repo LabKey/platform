@@ -16,9 +16,7 @@
 package org.labkey.api.security.permissions;
 
 /**
- * Describes the ability to delete some sort of object.
- * User: Dave
- * Date: Apr 27, 2009
+ * Provides the ability to delete objects
  */
 public class DeletePermission extends AbstractPermission
 {

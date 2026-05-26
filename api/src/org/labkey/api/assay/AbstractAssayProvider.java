@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -111,6 +112,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.NavTree;
@@ -124,8 +126,8 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.script.ScriptEngine;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -184,6 +186,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     // The result row LSID namespace prefix <code>_resultRowLSIDPrefix</code> should end with this constant.
     public static final String RESULT_LSID_PREFIX_PART = "AssayResultRow";
+
+    private static final Logger LOG = LogHelper.getLogger(AbstractAssayProvider.class, "Base functionality for all assay types");
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
@@ -284,7 +288,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(StudyPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to link, partitioned by the target study
-                    Set<Long> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, k -> new HashSet<>());
+                    Set<Long> rowIds = rowIdsByTargetContainer.computeIfAbsent(targetStudyContainer, _ -> new HashSet<>());
                     rowIds.add(publishKey.getDataId());
 
                     dataMaps.add(dataMap);
@@ -644,7 +648,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     if (inputDatas.size() == 1)
                     {
                         // There's exactly one input, so just use it
-                        addReusableData(reusableFiles, inputDatas.get(0));
+                        addReusableData(reusableFiles, inputDatas.getFirst());
                     }
                     else if (inputDatas.size() > 1)
                     {
@@ -1237,7 +1241,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                         role = st != null ? st.getName() : "Sample";
                     }
 
-                    inputGroups.computeIfAbsent(role, r -> new HashSet<>()).add(newInput.getRowId());
+                    inputGroups.computeIfAbsent(role, _ -> new HashSet<>()).add(newInput.getRowId());
                 }
 
                 for (var entry : inputGroups.entrySet())
@@ -1258,7 +1262,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Pair<ValidationException, Pair<String, String>> setValidationAndAnalysisScripts(ExpProtocol protocol, @NotNull List<AnalysisScript> scripts) throws ExperimentException
     {
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-        String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
+        String propertyURI = createPropertyURI(protocol, TRANSFORM_SCRIPT_PROPERTY_NAME);
         ValidationException validationErrors = new ValidationException();
 
         for (AnalysisScript script : scripts)
@@ -1271,12 +1275,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (engine != null)
                 {
                     // check for deprecated tokens in text scripts
-                    if (!(engine instanceof ExternalScriptEngine && ((ExternalScriptEngine) engine).isBinary(scriptFile)))
+                    if (!(engine instanceof ExternalScriptEngine ese && ese.isBinary(scriptFile)))
                     {
                         String scriptText;
-                        try
+                        try (InputStream is = scriptFile.openInputStream())
                         {
-                            scriptText = IOUtils.toString(scriptFile.openInputStream(), StringUtilsLabKey.DEFAULT_CHARSET);
+                            scriptText = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
                         }
                         catch (IOException e)
                         {
@@ -1319,23 +1323,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return new Pair<>(validationErrors, new Pair<>(oldJson, json == null ? null : json.toString()));
     }
 
-    /** For migrating legacy assay designs that have separate transform and validation script properties */
-    private enum ScriptType
-    {
-        TRANSFORM("TransformScript");
-
-        private final String _uriSuffix;
-
-        ScriptType(String uriSuffix)
-        {
-            _uriSuffix = uriSuffix;
-        }
-
-        public String getPropertyURI(ExpProtocol protocol)
-        {
-            return protocol.getLSID() + "#" + _uriSuffix;
-        }
-    }
+    /** Property name suffix used when storing transform scripts on assay protocol objects */
+    public static final String TRANSFORM_SCRIPT_PROPERTY_NAME = "TransformScript";
 
     @NotNull
     @Override
@@ -1344,7 +1333,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         List<AnalysisScript> result = new ArrayList<>();
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
-            ObjectProperty transformScripts = protocol.getObjectProperties().get(ScriptType.TRANSFORM.getPropertyURI(protocol));
+            ObjectProperty transformScripts = protocol.getObjectProperties().get(createPropertyURI(protocol, TRANSFORM_SCRIPT_PROPERTY_NAME));
             if (transformScripts != null)
             {
                 List<AnalysisScript> scripts = AnalysisScript.fromJson(transformScripts.getStringValue());
@@ -1689,12 +1678,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
-    {
-        return false;
-    }
-
-    @Override
     public Module getDeclaringModule()
     {
         return _declaringModule;
@@ -1790,8 +1773,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (runs.isEmpty())
             return;
 
-        Container sourceContainer = runs.get(0).getContainer();
-        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+        Container sourceContainer = runs.getFirst().getContainer();
+        ExpProtocol assayProtocol = runs.getFirst().getProtocol();
 
         ExperimentService experimentService = ExperimentService.get();
 
@@ -1919,7 +1902,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // move batch files
         // batch property files needs to be moved before updating exp.object for the batch
         // objectpropertiesview joins exp.object for finding properties with matched container, so the old container needs to be used for finding file props
-        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+        ExpProtocol assayProtocol = runs.getFirst().getProtocol();
         List<? extends DomainProperty> fileDomainProps = getBatchDomain(assayProtocol)
                 .getProperties().stream()
                 .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
@@ -2001,7 +1984,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Map<Long, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
 
-        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+        ExpProtocol assayProtocol = runs.getFirst().getProtocol();
 
         List<? extends DomainProperty> fileDomainProps = getRunDomain(assayProtocol)
                 .getProperties().stream()
@@ -2101,8 +2084,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
             try
             {
-                URL url = new URL(oldFileUrl);
-                URI uri = url.toURI();
+                URI uri = URI.create(oldFileUrl);
                 File sourceFile = new File(uri);
                 File updatedFile = fileContentService.getMoveTargetFile(sourceFile.getAbsolutePath(), sourceContainer, targetContainer);
                 if (updatedFile != null)
@@ -2121,7 +2103,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     AuditLogService.get().addEvent(user, event);
                 }
             }
-            catch (Exception ignored) {}
+            catch (Exception e)
+            {
+                LOG.warn("Failed to parse file URI {}", oldFileUrl, e);
+            }
         }
     }
 

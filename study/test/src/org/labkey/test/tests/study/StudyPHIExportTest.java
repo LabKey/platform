@@ -256,13 +256,13 @@ public class StudyPHIExportTest extends StudyExportTest
         waitAndClickAndWait(Locator.linkWithText("Blood (Whole)"));
         DataRegionTable vialsTable = new DataRegionTable("SpecimenDetail", this);
         List<String> procLocs = vialsTable.getColumnDataAsText("Processing Location");
-        procLocs.remove(procLocs.size() - 1); // Skip aggregate row
+        procLocs.removeLast(); // Skip aggregate row
         for (String procLoc : procLocs)
         {
             assertTrue("Processing Locations was not masked", procLoc.equals("Clinic") || nonClinics.contains(procLoc));
         }
         List<String> siteNames = vialsTable.getColumnDataAsText("Site Name");
-        siteNames.remove(siteNames.size() - 1); // Skip aggregate row
+        siteNames.removeLast(); // Skip aggregate row
         for (String siteName : siteNames)
         {
             assertTrue("Site Name was not masked", siteName.equals("Clinic") || siteName.equals("In Transit"));

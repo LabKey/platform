@@ -156,7 +156,7 @@ public interface AuditLogService
                 }
                 catch (Exception ex)
                 {
-                    LOG.warn("Exception while committing: " + ex.getMessage());
+                    LOG.warn("Exception while committing", ex);
                 }
             }
         }

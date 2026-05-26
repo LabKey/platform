@@ -97,6 +97,7 @@ import org.springframework.validation.BindException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,7 +111,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
@@ -138,7 +138,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
     // #42641: Track recently created tables in a cache to limit size and duration
     private static final Cache<@NotNull String, StackTraceElement @NotNull []> RECENTLY_CREATED_TABLES = CacheBuilder.newBuilder()
         .maximumSize(10000)
-        .expireAfterWrite(1, TimeUnit.DAYS)
+        .expireAfterWrite(Duration.ofDays(1))
         .build();
 
     private String _create(DbScope scope, DomainKind<?> kind, Domain domain, boolean useProvidedStorageName)
@@ -193,7 +193,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                     // name as a built-in column. e.g. to allow setting overrides?
                     if (!kind.hasPropertiesIncludeBaseProperties())
-                        log.info("StorageProvisioner ignored property with name of built-in column: " + property.getPropertyURI());
+                        log.info("StorageProvisioner ignored property with name of built-in column: {}", property.getPropertyURI());
                     continue;
                 }
 
@@ -217,7 +217,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             try
             {
-                log.info("Attempting to create " + tableName);
+                log.info("Attempting to create {}", tableName);
                 change.execute();
                 RECENTLY_CREATED_TABLES.put(tableName, Thread.currentThread().getStackTrace());
             }
@@ -226,7 +226,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 StackTraceElement[] previousCreationStack = RECENTLY_CREATED_TABLES.getIfPresent(tableName);
 
                 if (null != previousCreationStack)
-                    log.error(re.getMessage() + " while attempting to create storage table. Previous creation stack trace:" + ExceptionUtil.renderStackTrace(previousCreationStack));
+                    log.error("{} while attempting to create storage table. Previous creation stack trace:{}", re.getMessage(), ExceptionUtil.renderStackTrace(previousCreationStack));
 
                 throw re;
             }
@@ -280,7 +280,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         if (kind == null)
         {
             if (null != domain.getStorageTableName())
-                log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
+                log.warn("Domain {} has no DomainKind, it cannot be dropped. URI: {}", domain.getName(), domain.getTypeURI(), new IllegalStateException());
             return;
         }
 
@@ -304,13 +304,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
             }
             catch (RuntimeSQLException e)
             {
-                log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
+                log.warn("Failed to drop table in schema {} for domain {} - {}", schemaName, domain.getName(), e.getMessage(), e);
                 throw e;
             }
         }
         else
         {
-            log.warn(String.format("Table %s in schema %s for domain %s does not exist. Ignoring drop.", tableName, schemaName, domain.getName()));
+            log.warn("Table {} in schema {} for domain {} does not exist. Ignoring drop.", tableName, schemaName, domain.getName());
         }
         // Issue 44467: Update DbSchema caches
         kind.invalidate(domain);
@@ -340,7 +340,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getName());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getName());
                 continue;
             }
 
@@ -384,12 +384,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
-                log.warn("StorageProvisioner ignored property with name of built-in column: " + prop.getPropertyURI());
+                log.warn("StorageProvisioner ignored property with name of built-in column: {}", prop.getPropertyURI());
                 continue;
             }
 
             if (CoreSchema.getInstance().getSqlDialect().isReserved(prop.getName()))
-                log.warn("Property name '" + prop.getName() + "' is a reserved word in the current SQL dialect.");
+                log.warn("Property name '{}' is a reserved word in the current SQL dialect.", prop.getName());
 
             PropertyStorageSpec spec = kind.getPropertySpec(prop.getPropertyDescriptor(), domain);
             if (null != spec)
@@ -401,7 +401,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 change.addColumn(makeMvColumn(prop));
             }
         }
-        log.debug("addingProperties to " + domain.getName());
+        log.debug("addingProperties to {}", domain.getName());
         change.execute();
     }
 
@@ -601,7 +601,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
                             throw new ChangePropertyDescriptorException("Unable to change property type. There are rows with multiple values stored for '" + prop.getName() + "'.");
                         }
                     }
-                    oldPropTypes.put(prop.getName(), oldPd.getPropertyType());
+                    // GitHub Issue 935: Changing from MVTC to TC wraps all values in curly braces
+                    // This is due to StorageColumnName differ from column name, resulting in column update skipped
+                    oldPropTypes.put(prop.getPropertyDescriptor().getStorageColumnName(), oldPd.getPropertyType());
                 }
 
             }
@@ -615,8 +617,13 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     public String makeTableName(DomainKind<?> kind, Domain domain)
     {
-        String rawTableName = String.format("c%sd%s_%s", domain.getContainer().getRowId(), domain.getTypeId(), domain.getName());
-        SqlDialect dialect = kind.getScope().getSqlDialect();
+        return makeTableName(kind.getScope().getSqlDialect(), domain.getContainer(), domain.getTypeId(), domain.getName());
+    }
+
+    // Needed by ExperimentUpgradeCode.shortenAllStorageNames(). When that code is removed, combine this with above variant.
+    public String makeTableName(SqlDialect dialect, Container c, int typeId, String domainName)
+    {
+        String rawTableName = String.format("c%sd%s_%s", c.getRowId(), typeId, domainName);
         return new StorageNameGenerator(dialect).generateTableName(rawTableName);
     }
 
@@ -943,6 +950,23 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
+    public void dropTableConstraints(Domain domain, Set<String> constraintNames)
+    {
+        DbScope scope = validateDomain(domain);
+
+        if (null == constraintNames)
+            throw new IllegalArgumentException("Constraints cannot be null");
+
+        TableChange change = new TableChange(domain, ChangeType.DropConstraintsByName);
+        change.setConstraintsToBeDroppedByName(constraintNames);
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            change.execute();
+            transaction.commit();
+        }
+    }
+
     @Override
     public void ensureTableIndices(@NotNull Domain domain)
     {
@@ -1075,7 +1099,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             if (null == c)
             {
-                log.info("Column not found in storage table: " + tableName + "." + s.getName());
+                log.info("Column not found in storage table: {}.{}", tableName, s.getName());
                 continue;
             }
 
@@ -1109,11 +1133,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
             {
                 if (p.getPropertyDescriptor().getStorageColumnName() == null)
                 {
-                    log.warn("No storage column name set for property " + p.getName() + " on table " + tableName);
+                    log.warn("No storage column name set for property {} on table {}", p.getName(), tableName);
                 }
                 else
                 {
-                    log.info("Column not found in storage table: " + tableName + "." + p.getPropertyDescriptor().getStorageColumnName());
+                    log.info("Column not found in storage table: {}.{}", tableName, p.getPropertyDescriptor().getStorageColumnName());
                 }
                 continue;
             }
@@ -1472,12 +1496,9 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (!domainReport.getErrors().isEmpty())
             {
                 ExperimentUrls urls = PageFlowUtil.urlProvider(ExperimentUrls.class);
-                if (null != urls)
-                {
-                    ActionURL fix = urls.getRepairTypeURL(domain.getContainer());
-                    fix.addParameter("domainUri", domain.getTypeURI());
-                    domainReport.addError("See this page for more info: " + fix.getURIString());
-                }
+                ActionURL fix = urls.getRepairTypeURL(domain.getContainer());
+                fix.addParameter("domainUri", domain.getTypeURI());
+                domainReport.addError("See this page for more info: " + fix.getURIString());
             }
         }
 
@@ -1745,12 +1766,6 @@ renaming a property AND toggling mvindicator on in the same change.
                 public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
                 {
                     return null;
-                }
-
-                @Override
-                public @NotNull Set<String> getReservedPropertyNames(Domain domain, User user)
-                {
-                    return Collections.emptySet();
                 }
 
                 @Override

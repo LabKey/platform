@@ -15,6 +15,7 @@
  */
 package org.labkey.study.assay;
 
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -30,8 +31,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.view.UnauthorizedException;
@@ -41,8 +44,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Collections.singleton;
+import java.util.Set;
 
 public class ExperimentListenerImpl implements ExperimentListener
 {
@@ -72,41 +74,58 @@ public class ExperimentListenerImpl implements ExperimentListener
 
         // It's likely that we'll have multiple materials from the same sample type, so group them for efficient processing
 
-        Map<ExpSampleType, List<ExpMaterial>> typeToMaterials = new HashMap<>();
+        Map<ExpSampleType, Map<Container, List<ExpMaterial>>> typeToMaterials = new HashMap<>();
 
         for (ExpMaterial material: materials)
         {
             ExpSampleType sampleType = material.getSampleType();
             if (sampleType != null)
             {
-                typeToMaterials.computeIfAbsent(sampleType, x -> new ArrayList<>()).add(material);
+                Container materialContainer = material.getContainer();
+                typeToMaterials.
+                        computeIfAbsent(sampleType, k -> new HashMap<>()).
+                        computeIfAbsent(materialContainer, k -> new ArrayList<>()).
+                        add(material);
             }
         }
 
-        for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry : typeToMaterials.entrySet())
+        for (Map.Entry<ExpSampleType, Map<Container, List<ExpMaterial>>> entry : typeToMaterials.entrySet())
         {
             for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(entry.getKey().getRowId(), Dataset.PublishSource.SampleType))
             {
-                TableInfo t = dataset.getTableInfo(user);
-                if (null == t || !t.hasPermission(user, DeletePermission.class))
-                {
+                Map<Container, List<ExpMaterial>> containerSamples = entry.getValue();
+
+                // Need Read permission to check for linked samples
+                User userWithReadPerm = ElevatedUser.getElevatedUser(user, ReaderRole.class);
+
+                UserSchema schemaWithReadPerm = QueryService.get().getUserSchema(userWithReadPerm, dataset.getContainer(), "study");
+                TableInfo tableInfoForRead = schemaWithReadPerm.getTable(dataset.getName());
+                if (null == tableInfoForRead)
                     throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                }
 
-                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                TableInfo tableInfo = schema.getTable(dataset.getName());
-
-                // Future optimization - query for all the materials at once
-                for (ExpMaterial material : entry.getValue())
+                for (Map.Entry<Container, List<ExpMaterial>> containerEntry : containerSamples.entrySet())
                 {
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), material.getRowId());
-                    String lsid = new TableSelector(tableInfo, singleton("LSID"), filter, null).getObject(String.class);
+                    Container sampleContainer = containerEntry.getKey();
+                    List<ExpMaterial> samples = containerEntry.getValue();
 
-                    if (lsid != null)
+                    // GitHub Issue 1028: Can't delete a sample when any sample in the sample type has been linked to study
+                    // check if samples are linked to the dataset, if not, skip the permission check for DeletePermission since we won't be deleting any rows
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), samples.stream().map(ExpMaterial::getRowId).toList(), CompareType.IN);
+                    Map<String, Object>[] linkedLsidRowIds = new TableSelector(tableInfoForRead, Set.of("LSID", "RowId"), filter, null).getMapArray();
+
+                    Set<String> linkedLsids = Arrays.stream(linkedLsidRowIds).map(m -> (String)m.get("LSID")).collect(java.util.stream.Collectors.toSet());
+                    Set<Long> linkedRowIds = Arrays.stream(linkedLsidRowIds).map(m -> ((Integer)m.get("RowId")).longValue()).collect(java.util.stream.Collectors.toSet());
+                    if (linkedLsids.isEmpty())
+                        continue;
+
+                    TableInfo tableInfo = dataset.getTableInfo(user);
+                    if (null == tableInfo || !tableInfo.hasPermission(user, DeletePermission.class))
                     {
-                        StudyPublishService.get().addRecallAuditEvent(material.getContainer(), user, dataset, 1, null);
-                        dataset.deleteDatasetRows(user, Arrays.asList(lsid));
+                        throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
                     }
+
+                    StudyPublishService.get().addRecallAuditEvent(sampleContainer, user, dataset, linkedLsids.size(), linkedRowIds);
+                    dataset.deleteDatasetRows(user, linkedLsids);
                 }
             }
         }

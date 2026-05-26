@@ -997,7 +997,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 {
                     tempOutputFiles.addAll(runDataUploadedFiles);
                     // Since there could be many input files, we'll use the parent directory of the first file we found as the working directory
-                    setWorkingDirectory(context, new File(runDataUploadedFiles.get(0).getParentFile().getAbsolutePath()));
+                    setWorkingDirectory(context, new File(runDataUploadedFiles.getFirst().getParentFile().getAbsolutePath()));
                 }
 
                 // Loop through all the files that are left after running the transform script
@@ -1006,7 +1006,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     if (!isIgnorableOutput(file) && !runDataUploadedFiles.isEmpty())
                     {
                         // Since there could be many uploaded data files, we'll just use the base name of the first one we found
-                        File firstFile = runDataUploadedFiles.get(0);
+                        File firstFile = runDataUploadedFiles.getFirst();
                         int extensionIndex = firstFile.getName().lastIndexOf(".");
                         String baseName = extensionIndex >= 0 ? firstFile.getName().substring(0, extensionIndex) : firstFile.getName();
 
@@ -1055,7 +1055,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     {
                         File file = entry.getValue();
                         String type = entry.getKey();
-                        log.debug("processing transformed data file: type=" + type + ", file=" + file.getPath());
+                        log.debug("processing transformed data file: type={}, file={}", type, file.getPath());
 
                         FileLike workingDir = getWorkingDirectory(context);
                         if (workingDir == null)
@@ -1071,7 +1071,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                             FileLike tempDirCopy = workingDir.resolveChild(file.getName());
                             if (!file.toPath().equals(tempDirCopy.toNioPathForRead()))
                             {
-                                log.debug("moving to working directory=" + tempDirCopy);
+                                log.debug("moving to working directory={}", tempDirCopy);
                                 FileUtils.moveFile(file, tempDirCopy.toNioPathForWrite().toFile());
                                 file = tempDirCopy.toNioPathForWrite().toFile();
                             }

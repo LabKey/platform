@@ -29,6 +29,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
@@ -534,6 +535,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             dataClassName = dc.getName();
         // why not just data:rowId?
         return "data:" + new Path(getContainer().getId(), dataClassName, Long.toString(getRowId())).encode();
+    }
+
+    @Override
+    protected TableSelector getObjectPropertiesSelector(@NotNull TableInfo table)
+    {
+        return new TableSelector(table, new SimpleFilter(ExpDataTable.Column.RowId.fieldKey(), getRowId()), null);
     }
 
     @Override

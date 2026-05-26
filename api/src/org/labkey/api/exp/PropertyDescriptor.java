@@ -324,7 +324,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         PropertyType type = getPropertyType();
         if (type == null)
         {
-            LOG.warn("Could not determine propertyType from RangeURI " + getRangeURI() + " and ConceptURI " + getConceptURI() + " for PropertyURI " + getPropertyURI() + ", defaulting to string");
+            LOG.warn("Could not determine propertyType from RangeURI {} and ConceptURI {} for PropertyURI {}, defaulting to string", getRangeURI(), getConceptURI(), getPropertyURI());
             type = PropertyType.STRING;
         }
         return type.getJdbcType();
@@ -545,12 +545,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         if (!StringUtils.isEmpty(getLabel()))
             map.put("Label", getLabel());
         if (null != getPropertyType())
-        {
-            if (org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(getConceptURI()))
-                map.put("Type", "Flag");
-            else
-                map.put("Type", getPropertyType().getXarName());
-        }
+            map.put("Type", getPropertyType().getXarName());
         if (getPropertyType().getJdbcType().isText())
             map.put("Scale", getScale());
         if (!StringUtils.isEmpty(getDescription()))

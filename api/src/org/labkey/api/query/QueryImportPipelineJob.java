@@ -16,6 +16,7 @@ import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.vfs.FileLike;
 
 import java.util.HashMap;
@@ -34,6 +35,8 @@ public class QueryImportPipelineJob extends PipelineJob
     private QueryImportAsyncContextBuilder _importContextBuilder;
 
     private long _transactionAuditId;
+
+    private Map<String, Object> _additionalJobResponseInfo;
 
     protected QueryImportPipelineJob()
     {}
@@ -62,6 +65,7 @@ public class QueryImportPipelineJob extends PipelineJob
         boolean _allowLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
         LookupResolutionType _lookupResolutionType = null;
+        Map<String, Object> _workflowParams = null;
 
         String _jobDescription;
 
@@ -212,6 +216,17 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
+        public QueryImportAsyncContextBuilder setWorkflowParams(Map<String, Object> workflowParams)
+        {
+            _workflowParams = workflowParams;
+            return this;
+        }
+
+        public Map<String, Object> getWorkflowParams()
+        {
+            return _workflowParams;
+        }
+
         public LookupResolutionType getLookupResolutionType()
         {
             return _lookupResolutionType;
@@ -266,7 +281,7 @@ public class QueryImportPipelineJob extends PipelineJob
             }
 
             url =  target.getGridURL(getContainer());
-            if (_transactionAuditId > 0)
+            if (url != null && _transactionAuditId > 0)
                 url.addParameter("transactionAuditId", String.valueOf(_transactionAuditId));
 
             return url;
@@ -292,7 +307,7 @@ public class QueryImportPipelineJob extends PipelineJob
         try
         {
             setStatus(TaskStatus.running);
-            getLogger().info("Starting import " + getDescription());
+            getLogger().info("Starting import {}", getDescription());
 
             if (notificationProvider != null)
                 notificationProvider.onJobStart(this);
@@ -311,6 +326,10 @@ public class QueryImportPipelineJob extends PipelineJob
 
             DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
 
+            if (_importContextBuilder.getWorkflowParams() != null && WorkflowService.get() != null)
+            {
+                WorkflowService.get().populateConfigParams(_importContextBuilder.getWorkflowParams(), diContext.getConfigParameters());
+            }
             TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
             if (diContext.isCrossTypeImport() || (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), diContext.getInsertOption().auditAction, _importContextBuilder.getTransactionDetails());
@@ -326,9 +345,6 @@ public class QueryImportPipelineJob extends PipelineJob
             if (auditEvent != null)
                 _transactionAuditId = auditEvent.getRowId();
 
-            setStatus(TaskStatus.complete);
-            getLogger().info("Done importing " + getDescription() + ". " + importedCount + " row(s) imported.");
-
             if (notificationProvider != null)
             {
                 Map<String, Object> results = new HashMap<>();
@@ -342,8 +358,15 @@ public class QueryImportPipelineJob extends PipelineJob
 
                 if (!diContext.getResponseInfo().isEmpty())
                     results.putAll(diContext.getResponseInfo());
-                notificationProvider.onJobSuccess(this, results);
+
+                _additionalJobResponseInfo = results;
             }
+
+            setStatus(TaskStatus.complete);
+            getLogger().info("Done importing {}. {} row(s) imported.", getDescription(), importedCount);
+
+            if (notificationProvider != null)
+                notificationProvider.onJobSuccess(this, getAdditionalJobResponseInfo());
         }
         catch (QueryImportJobCancelledException e)
         {
@@ -396,6 +419,11 @@ public class QueryImportPipelineJob extends PipelineJob
     public long getTransactionAuditId()
     {
         return _transactionAuditId;
+    }
+
+    public Map<String, Object> getAdditionalJobResponseInfo()
+    {
+        return _additionalJobResponseInfo;
     }
 
 }

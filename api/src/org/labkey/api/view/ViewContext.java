@@ -15,8 +15,8 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -224,6 +224,13 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _request;
     }
 
+    public @NotNull HttpServletRequest getRequestOrThrow()
+    {
+        if (null == _request)
+            throw new IllegalStateException("Request is null");
+
+        return _request;
+    }
 
     public void setRequest(HttpServletRequest request)
     {
@@ -399,7 +406,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     public void pushMessageBundle(String path)
     {
-        _messageBundles.add(0,path);
+        _messageBundles.addFirst(path);
         _messageSource = null;
     }
 
@@ -421,19 +428,19 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
     @Override
-    public String getMessage(String code, Object[] args, String defaultMessage, Locale locale)
+    public String getMessage(@NotNull String code, Object[] args, String defaultMessage, Locale locale)
     {
         return getMessageSource().getMessage(code, args, defaultMessage, locale);
     }
 
     @Override
-    public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException
+    public @NotNull String getMessage(@NotNull String code, Object[] args, Locale locale) throws NoSuchMessageException
     {
         return getMessageSource().getMessage(code, args, locale);
     }
 
     @Override
-    public String getMessage(MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException
+    public @NotNull String getMessage(@NotNull MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException
     {
         return getMessageSource().getMessage(resolvable, locale);
     }
@@ -463,7 +470,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext)
+    public void setApplicationContext(@NotNull ApplicationContext applicationContext)
     {
         _applicationContext = applicationContext;
     }

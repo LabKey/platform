@@ -165,7 +165,7 @@ public class LsidUtils
         String result = sb.toString();
 
         if (!template.equals(result))
-            _log.debug("template name " + template + " resolved to " + result);
+            _log.debug("template name {} resolved to {}", template, result);
 
         return result;
     }

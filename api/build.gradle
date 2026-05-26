@@ -74,7 +74,7 @@ configurations {
 sourceSets {
   main {
     java {
-      srcDirs = ["src", "gwtsrc", "${BuildUtils.getBuildDirPath(project)}/xb"]
+      srcDirs = ["src", "${BuildUtils.getBuildDirPath(project)}/xb"]
     }
     // TODO move resources files into resources directory to avoid this overlap
     resources {
@@ -384,6 +384,32 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.graphper:graph-support-core:${graphSupportVersion}",
+            "graph-support-core",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Graphviz Java API",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.graphper:graph-support-dot:${graphSupportVersion}",
+            "graph-support-dot",
+            "graph-support",
+            "https://github.com/jamisonjiang/graph-support",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "DOT parsing support",
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "com.google.guava:guava:${guavaVersion}",
             "Guava: Google Core Libraries for Java",
             "guava-libraries",
@@ -391,19 +417,6 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Collections Library",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.gwtproject:gwt-servlet-jakarta:${gwtServletJakartaVersion}",
-            "Server Support for Google Web Toolkit",
-            "Google",
-            "http://code.google.com/webtoolkit/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Support for rich web apps",
         )
     )
 
@@ -994,19 +1007,6 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Just detection of file content types and extraction of text (no parsers)",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "jakarta.validation:jakarta.validation-api:${validationJakartaApiVersion}",
-            "Bean Validation API (JSR 303)",
-            "JCP",
-            "http://jcp.org/en/jsr/detail?id=303",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Validation of objects, requirement of GWT",
         )
     )
 

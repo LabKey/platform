@@ -431,7 +431,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         if (null == _comments || _comments.isEmpty())
             return null;
 
-        return _comments.get(_comments.size()-1);
+        return _comments.getLast();
     }
 
     public boolean setComments(List<CommentObject> comments)
@@ -656,7 +656,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
     public IssueEvent getMostRecentEvent(User user)
     {
         ArrayList<IssueEvent> arr = getOrderedEventArray(user);
-        return !arr.isEmpty() ? arr.get(0) : null;
+        return !arr.isEmpty() ? arr.getFirst() : null;
     }
 
     public ArrayList<IssueEvent> getOrderedEventArray(User user)

@@ -67,8 +67,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.vfs.FileLike;
 
-import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -297,7 +295,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         List<? extends ExpData> outputDatas = run.getOutputDatas(getDataType());
         if (outputDatas == null || outputDatas.size() != 1)
             throw new IllegalStateException(getResourceName(run) + " runs should have a single data output.");
-        FileLike dataFile = outputDatas.get(0).getFileLike();
+        FileLike dataFile = outputDatas.getFirst().getFileLike();
         if (!dataFile.exists())
             return null;
         return dataFile;
@@ -447,7 +445,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider<?> provider, List<Plate> plates, Map<? extends ExpMaterial, String> sampleInputs)throws ExperimentException
     {
-        Plate plate = plates.get(0);
+        Plate plate = plates.getFirst();
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
         Map<String, ExpMaterial> nameToMaterial = new HashMap<>();
         for (Map.Entry<? extends ExpMaterial,String> e : sampleInputs.entrySet())
@@ -471,7 +469,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
     protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run, List<Plate> plates, User user,
                                                                List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
-    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException, SQLException;
+    public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, long... dataObjectIds) throws ExperimentException;
 
     final protected DilutionDataFileParser getDataFileParser(ExpData data, FileLike dataFile, ViewBackgroundInfo info)
     {

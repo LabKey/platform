@@ -385,8 +385,8 @@ public class IssueManager
                     if (!batchErrors.hasErrors())
                     {
                         assert results.size() == 1;
-                        issue.setIssueId(asInteger(results.get(0).get("IssueId")));
-                        issue.setIssueDefId(asInteger(results.get(0).get("issueDefId")));
+                        issue.setIssueId(asInteger(results.getFirst().get("IssueId")));
+                        issue.setIssueDefId(asInteger(results.getFirst().get("issueDefId")));
                     }
                     else
                         throw batchErrors;
@@ -948,6 +948,11 @@ public class IssueManager
         public void accept(SearchService.TaskIndexingQueue a)
         {
             User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
+            if (IssuesListDefService.get().getRestrictedIssueProvider() != null)
+            {
+                // Pass in an admin user to allow all restricted issues to be indexed by the crawler
+                user = User.getAdminServiceUser();
+            }
             indexIssues(a, user, _ids);
         }
     }
@@ -968,16 +973,9 @@ public class IssueManager
 
         for (Integer id : ids)
         {
-            try
-            {
-                IssueObject issue = IssueManager.getIssue(container, user, id);
-                if (issue != null)
-                    queueIssue(queue, id, issue.getProperties(), issue.getCommentObjects());
-            }
-            catch (UnauthorizedException e)
-            {
-                // Issue 51607 ignore restricted issue failures
-            }
+            IssueObject issue = IssueManager.getIssue(container, user, id, false);
+            if (issue != null)
+                queueIssue(queue, id, issue.getProperties(), issue.getCommentObjects());
         }
     }
 
@@ -1015,6 +1013,8 @@ public class IssueManager
             public HttpView getCustomSearchResult(User user, @NotNull String resourceIdentifier)
             {
                 int issueId;
+                boolean isRestricted = false;       // controls rendering for a restricted issue
+
                 try
                 {
                     issueId = Integer.parseInt(resourceIdentifier);
@@ -1024,23 +1024,34 @@ public class IssueManager
                     return null;
                 }
 
-                final IssueObject issue = getIssue(null, user, issueId, false);
+                IssueObject issue = getIssue(null, user, issueId, false);
                 if (null == issue)
-                    return null;
+                {
+                    if (IssuesListDefService.get().getRestrictedIssueProvider() != null)
+                    {
+                        // allow users to see the summary of a restricted issue, but there will be limited
+                        // information that is rendered.
+                        issue = getIssue(null, User.getAdminServiceUser(), issueId, false);
+                        isRestricted = true;
+                    }
+
+                    if (issue == null)
+                        return null;
+                }
                 Container c = issue.lookupContainer();
                 if (null == c || !c.hasPermission(user, ReadPermission.class))
                     return null;
 
-                return new IssueSummaryView(issue);
+                return new IssueSummaryView(issue, isRestricted);
             }
         };
     }
 
     public static class IssueSummaryView extends JspView
     {
-        IssueSummaryView(IssueObject issue)
+        IssueSummaryView(IssueObject issue, boolean isRestricted)
         {
-            super("/org/labkey/issue/view/searchSummary.jsp", issue);
+            super("/org/labkey/issue/view/searchSummary.jsp", new Pair<>(issue, isRestricted));
         }
     }
 
@@ -1493,7 +1504,7 @@ public class IssueManager
             TestContext context = TestContext.get();
 
             User user = context.getUser();
-            assertTrue("login before running this test", null != user);
+            assertNotNull("login before running this test", user);
             assertFalse("login before running this test", user.isGuest());
 
             Container c = JunitUtil.getTestContainer();
@@ -1529,7 +1540,7 @@ public class IssueManager
                 assertEquals(IssueObject.statusOPEN, issue.getStatus());
                 assertEquals(1, issue.getCommentObjects().size());
                 String comment = (issue.getCommentObjects().iterator().next()).getHtmlComment().toString();
-                assertTrue("new issue".equals(comment));
+                assertEquals("new issue", comment);
             }
 
             //

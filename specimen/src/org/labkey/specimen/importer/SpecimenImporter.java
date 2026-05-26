@@ -2561,15 +2561,15 @@ public class SpecimenImporter extends SpecimenTableManager
             {
                 throw new IllegalStateException("Expected one and only one count of rows.");
             }
-            else if (0 != counts.get(0) && _generateGlobalUniqueIds > 0)
+            else if (0 != counts.getFirst() && _generateGlobalUniqueIds > 0)
             {
                 // We were trying to generate globalUniqueIds
                 throw new OptimisticConflictException("Attempt to generate global unique ids failed.", null, 0);
             }
-            else if (0 != counts.get(0))
+            else if (0 != counts.getFirst())
             {
                 throw new IllegalStateException("With an editable specimen repository, importing may not reference any existing specimen. " +
-                        counts.get(0) + " imported specimen events refer to existing specimens.") ;
+                        counts.getFirst() + " imported specimen events refer to existing specimens.") ;
             }
             info("No conflicting specimens found");
         }
@@ -2724,7 +2724,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
         sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
         columns.add(new BaseColumnInfo("RowId", JdbcType.INTEGER, 0, false));
-        columns.get(0).setAutoIncrement(true);
+        columns.getFirst().setAutoIncrement(true);
 
         sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
         columns.add(new BaseColumnInfo("LSID", JdbcType.VARCHAR, 300, false));
@@ -2837,7 +2837,7 @@ public class SpecimenImporter extends SpecimenTableManager
             columns.add(new BaseColumnInfo("Container", JdbcType.GUID, 0, false));
             columns.add(new BaseColumnInfo("id", JdbcType.VARCHAR, 0, false));
             columns.add(new BaseColumnInfo("s", JdbcType.VARCHAR, 30, true));
-            columns.get(columns.size()-1).setKeyField(true);
+            columns.getLast().setKeyField(true);
             columns.add(new BaseColumnInfo("i", JdbcType.INTEGER, 0, true));
             columns.add(new BaseColumnInfo("entityid", JdbcType.GUID, 0, false));
             _simpleTable = new TempTableInfo(TABLE, (List<ColumnInfo>)(List)columns, Arrays.asList("s"));
@@ -2929,7 +2929,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 sallyGUID = (String)row1.get("entityid");
 //                assertNotNull(sallyGUID);
 
-                assertEquals(null, row2.get("s"));
+                assertNull(row2.get("s"));
                 assertEquals(300, row2.get("i"));
                 assertEquals("3", row2.get("id"));
                 nullGUID = (String)row2.get("entityid");
@@ -2971,7 +2971,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 assertEquals("2", row1.get("id"));
                 assertEquals(sallyGUID, row1.get("entityid"));
 
-                assertEquals(null, row2.get("s"));
+                assertNull(row2.get("s"));
                 assertEquals(305, row2.get("i"));
                 assertEquals("3", row2.get("id"));
                 assertEquals(nullGUID, row2.get("entityid"));

@@ -59,7 +59,7 @@ public class MinFunction implements Function {
             value += Float.parseFloat((String) table.getXY(x, y));
             floating = true;
           } catch (NumberFormatException e1) {
-            log.debug("SumFunction: unable to parse " + table.getXY(x, y));
+              log.debug("SumFunction: unable to parse {}", table.getXY(x, y));
           }
         }
         if (min > value) {

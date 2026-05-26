@@ -114,8 +114,8 @@
                             if (show && null != tab.getText() && !tab.getText().isEmpty())
                             {
                 %>
-                <li role="presentation" class="<%= unsafe(tab.isSelected() ? "active" : "") %>">
-                    <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText().replace(" ", ""))%>Tab">
+                <li class="<%= unsafe(tab.isSelected() ? "active" : "") %>">
+                    <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText().replace(" ", ""))%>Tab"<%= unsafe(tab.isSelected() ? " aria-current=\"page\"" : "") %>>
                         <% if (tab.isDisabled()) { %>
                         <i class="fa fa-eye-slash"></i>
                         <% } %>
@@ -127,7 +127,7 @@
                             <i class="fa fa-caret-down"></i>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-right">
-                            <% PopupMenuView.renderTree(tab.getChildren().get(0), out); %>
+                            <% PopupMenuView.renderTree(tab.getChildren().getFirst(), out); %>
                         </ul>
                     </div>
                     <% } %>
@@ -141,7 +141,7 @@
                     {
                         HtmlString plus = HtmlString.unsafe("<i class=\"fa fa-plus\" style=\"font-size: 12px;\"></i>");
                 %>
-                <li role="presentation">
+                <li>
                     <%=simpleLink(plus).id("addTab").title("Add New Tab").onClick("LABKEY.Portal.addTab();")%>
                 </li>
                 <%
@@ -160,7 +160,7 @@
                                 if (tab.isSelected())
                                 {
                 %>
-                <li role="presentation" class="dropdown active">
+                <li class="dropdown active">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
                         <%=h(tab.getText())%>&nbsp;
                         <span class="fa fa-chevron-down" style="font-size: 12px;"></span>
@@ -181,7 +181,7 @@
                                 {
                         %>
                         <li>
-                            <a href="<%=h(tab.getHref())%>">
+                            <a href="<%=h(tab.getHref())%>"<%= unsafe(tab.isSelected() ? " aria-current=\"page\"" : "") %>>
                                 <% if (tab.isSelected())
                                    {
                                         %><b><%=h(tab.getText())%></b><%

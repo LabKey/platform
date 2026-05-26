@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
@@ -82,6 +81,7 @@ import org.labkey.api.security.LimitActiveUsersService;
 import org.labkey.api.security.LoginManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MemberType;
+import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -96,8 +96,8 @@ import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
+import org.labkey.api.security.impersonation.RoleImpersonationContextFactory.RoleImpersonationContext;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
@@ -105,7 +105,6 @@ import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanAccessLockedProjectsPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -116,7 +115,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.Pair;
@@ -141,7 +139,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.core.CoreModule;
 import org.labkey.core.login.DbLoginConfiguration;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
@@ -896,7 +893,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ShowUserHistoryAction extends SimpleViewAction
+    public class ShowUserHistoryAction extends SimpleViewAction<Object>
     {
         @Override
         public void checkPermissions() throws UnauthorizedException
@@ -1101,8 +1098,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            String userId = form.getPkVal().toString();
-            if (userId == null)
+            if (null == form.getPkVal())
             {
                 errors.reject(SpringActionController.ERROR_MSG, "UserId parameter must be provided.");
             }
@@ -2693,14 +2689,13 @@ public class UserController extends SpringActionController
     }
 
     /**
-     * Retrieves the set of users that have all of a specified set of permissions. A group
-     * may be provided and only users within that group will be returned. A name (prefix) may be
-     * provided and only users whose email or display name starts with the prefix will be returned.
-     * This will not return any deactivated users (since they do not have permissions of any sort).
+     * Retrieves the set of users that have all of a specified set of permissions. A group may be provided and only
+     * users within that group will be returned. A name (prefix) may be provided and only users whose email or display
+     * name starts with the prefix will be returned. This will not return any inactive users (since they do not have
+     * permissions of any sort).
      */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    @ApiVersion(23.10)
     public static class GetUsersWithPermissionsAction extends GetUsersAction
     {
         @Override
@@ -2714,56 +2709,16 @@ public class UserController extends SpringActionController
             {
                 errors.reject(ERROR_GENERIC, "No valid permission classes provided.");
             }
-        }
-
-        /**
-         * The older 23.10 response format does not honor the newer includeInactive flag. It only honors the active
-         * flag when requesting users of a group, and ignores the flag (only ever returning active users) when not
-         * requesting a group.
-         */
-        private ApiResponse response2310(ApiSimpleResponse response, GetUsersForm form)
-        {
-            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, "GetUsersWithPermissionsAction", "OldVersionCalls");
-            Collection<User> users;
-
-            //if requesting users in a specific group...
-            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            // 26.5 changes: stop supporting "active" and "includeInactive" parameters. Return errors for now. We could
+            // remove these checks in 26.11+.
+            else if (form.getActive())
             {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response, !form.getActive()));
+                errors.reject(ERROR_GENERIC, "The active parameter is no longer supported. Inactive users have no permissions.");
             }
-            else
+            else if (form.getIncludeInactive())
             {
-                users = SecurityManager.getUsersWithPermissions(getContainer(), form.getPermissionClasses());
+                errors.reject(ERROR_GENERIC, "The includeInactive parameter is no longer supported. Inactive users have no permissions.");
             }
-
-            this.setUsersList(form, users, response);
-
-            return response;
-        }
-
-        /**
-         * The 23.11 response format does not honor the active flag, instead it honors the includeInactive flag, and
-         * it honors it when requesting users or groups. The flag defaults to false, so by default only active users
-         * will be returned.
-         */
-        private ApiResponse response2311(ApiSimpleResponse response, GetUsersForm form)
-        {
-            boolean includeInactive = form.getIncludeInactive();
-            Collection<User> users;
-
-            //if requesting users in a specific group...
-            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
-            {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response, includeInactive));
-            }
-            else
-            {
-                users = SecurityManager.getUsersWithPermissions(getContainer(), includeInactive, form.getPermissionClasses());
-            }
-
-            this.setUsersList(form, users, response);
-
-            return response;
         }
 
         @Override
@@ -2778,15 +2733,26 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
-            if (getRequestedApiVersion() <= 23.10)
-                return response2310(response, form);
+            Collection<User> users;
 
-            return response2311(response, form);
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, false));
+            }
+            else
+            {
+                // Active users only
+                users = SecurityManager.getUsersWithPermissions(getContainer(), form.getPermissionClasses());
+            }
+
+            setUsersList(form, users, response);
+
+            return response;
         }
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresNoPermission // getValidImpersonationUsers() does all permission checking
     public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
         @Override
@@ -2795,9 +2761,7 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             User currentUser = getUser();
-            Container project = currentUser.hasRootAdminPermission() ? null : getContainer().getProject();
-            Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(project, getUser());
-
+            Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(getContainer().getProject(), currentUser);
             Collection<Map<String, Object>> responseUsers = new LinkedList<>();
 
             for (User user : users)
@@ -2872,9 +2836,8 @@ public class UserController extends SpringActionController
         public abstract @Nullable String impersonate(FORM form);
     }
 
-
-    @RequiresPermission(AdminPermission.class)
-    public class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
+    @RequiresNoPermission
+    public static class ImpersonateUserAction extends ImpersonateApiAction<ImpersonateUserForm>
     {
         @Override
         public @Nullable String impersonate(ImpersonateUserForm form)
@@ -2912,8 +2875,8 @@ public class UserController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(AdminPermission.class)
+    // getValidImpersonationGroups() checks permissions and returns empty for user who can't impersonate
+    @RequiresNoPermission
     public static class GetImpersonationGroupsAction extends MutatingApiAction<Object>
     {
         @Override
@@ -2937,7 +2900,6 @@ public class UserController extends SpringActionController
         }
     }
 
-
     public static class ImpersonateGroupForm extends ReturnUrlForm
     {
         private Integer _groupId = null;
@@ -2954,11 +2916,10 @@ public class UserController extends SpringActionController
         }
     }
 
-
     // TODO: Better instructions
     // TODO: Messages for no groups, no users
-    @RequiresPermission(AdminPermission.class)
-    public class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
+    @RequiresNoPermission
+    public static class ImpersonateGroupAction extends ImpersonateApiAction<ImpersonateGroupForm>
     {
         @Override
         public @Nullable String impersonate(ImpersonateGroupForm form)
@@ -2991,15 +2952,16 @@ public class UserController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
-    public class GetImpersonationRolesAction extends MutatingApiAction<Object>
+    public static class GetImpersonationRolesAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
-            ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
+            PermissionsContext context = getUser().getPermissionsContext();
+            Set<Role> currentRoles = context.isImpersonating() && context instanceof RoleImpersonationContext ?
+                context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) :
+                Collections.emptySet();
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3009,7 +2971,7 @@ public class UserController extends SpringActionController
                     map.put("displayName", role.getDisplayName());
                     map.put("roleName", role.getUniqueName());
                     map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
-                    map.put("selected", impersonationRoles.contains(role));
+                    map.put("selected", currentRoles.contains(role));
                     return map;
                 })
                 .toList();
@@ -3020,25 +2982,6 @@ public class UserController extends SpringActionController
         }
     }
 
-
-    private ImpersonationContext authorizeImpersonateRoles()
-    {
-        User user = getUser();
-        ImpersonationContext context = user.getImpersonationContext();
-
-        if (context.isImpersonating())
-            user = context.getAdminUser();
-
-        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
-            return context;
-
-        if (!getContainer().hasPermission(user, AdminPermission.class))
-            throw new UnauthorizedException();
-
-        return context;
-    }
-
-
     public static class ImpersonateRolesForm extends ReturnUrlForm
     {
         private String[] _roleNames;
@@ -3048,23 +2991,26 @@ public class UserController extends SpringActionController
             return _roleNames;
         }
 
+        @SuppressWarnings("unused")
         public void setRoleNames(String[] roleNames)
         {
             _roleNames = roleNames;
         }
     }
 
-
-    // Permissions are checked in impersonate() to let an admin adjust an existing impersonation
+    // Permissions are checked by the RoleImpersonationFactory. This lets impersonators adjust an existing impersonation
+    // and impersonating troubleshooters impersonate in projects and folders.
     @RequiresNoPermission
-    public class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
+    public static class ImpersonateRolesAction extends ImpersonateApiAction<ImpersonateRolesForm>
     {
         @Nullable
         @Override
         public String impersonate(ImpersonateRolesForm form)
         {
-            ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) : Collections.emptySet();
+            PermissionsContext context = getUser().getPermissionsContext();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() && context instanceof RoleImpersonationContext ?
+                context.getAssignedRoles(getUser(), getContainer()).collect(Collectors.toSet()) :
+                Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 
@@ -3232,6 +3178,15 @@ public class UserController extends SpringActionController
 
             UserController controller = new UserController();
 
+            assertForNoPermission(user,
+                new GetImpersonationUsersAction(),
+                new ImpersonateUserAction(),
+                new GetImpersonationGroupsAction(),
+                new ImpersonateGroupAction(),
+                new GetImpersonationRolesAction(),
+                new ImpersonateRolesAction()
+            );
+
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
                 new BeginAction(),
@@ -3241,15 +3196,9 @@ public class UserController extends SpringActionController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new ShowUsersAction(),
+                controller.new ShowUsersAction()
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
-                new GetImpersonationUsersAction(),
-                controller.new ImpersonateUserAction(),
-                    new GetImpersonationGroupsAction(),
-                controller.new ImpersonateGroupAction()
-//                controller.new GetImpersonationRolesAction()   Annotated as "no permission", to allow impersonation adjustments
-//                controller.new ImpersonateRolesAction()        Annotated as "no permission", to allow impersonation adjustments
             );
 
             // @RequiresPermission(UserManagementPermission.class)

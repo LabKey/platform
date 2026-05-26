@@ -230,16 +230,16 @@ public final class PlateManagerTest
         assertNotNull(savedTemplate.getLSID());
         assertEquals(plateType.getRowId(), savedTemplate.getPlateType().getRowId());
 
-        List<WellGroup> wellGroups = savedTemplate.getWellGroups();
+        List<? extends WellGroup> wellGroups = savedTemplate.getWellGroups();
         assertEquals(3, wellGroups.size());
 
         // TsvPlateTypeHandler creates two CONTROL well groups "Positive" and "Negative"
-        List<WellGroup> controlWellGroups = savedTemplate.getWellGroups(WellGroup.Type.CONTROL);
+        List<? extends WellGroup> controlWellGroups = savedTemplate.getWellGroups(WellGroup.Type.CONTROL);
         assertEquals(2, controlWellGroups.size());
 
-        List<WellGroup> sampleWellGroups = savedTemplate.getWellGroups(WellGroup.Type.SAMPLE);
+        List<? extends WellGroup> sampleWellGroups = savedTemplate.getWellGroups(WellGroup.Type.SAMPLE);
         assertEquals(1, sampleWellGroups.size());
-        WellGroup savedWg1 = sampleWellGroups.get(0);
+        WellGroup savedWg1 = sampleWellGroups.getFirst();
         assertEquals("wg1", savedWg1.getName());
         assertEquals("100", savedWg1.getProperty("score"));
 
@@ -292,11 +292,11 @@ public final class PlateManagerTest
         assertNotNull(updatedWg2);
 
         // verify deleted well group
-        List<WellGroup> updatedControlWellGroups = updatedTemplate.getWellGroups(WellGroup.Type.CONTROL);
+        List<? extends WellGroup> updatedControlWellGroups = updatedTemplate.getWellGroups(WellGroup.Type.CONTROL);
         assertEquals(1, updatedControlWellGroups.size());
 
         // verify added positions
-        assertEquals(2, updatedControlWellGroups.get(0).getPositions().size());
+        assertEquals(2, updatedControlWellGroups.getFirst().getPositions().size());
 
         // verify plate type information
         assertEquals(plateType.getRows().intValue(), updatedTemplate.getRows());
@@ -353,7 +353,7 @@ public final class PlateManagerTest
 
         // Assert
         assertTrue("Expected plateSet to have been persisted and provided with a rowId", plateSet.getRowId() > 0);
-        List<Plate> plates = plateSet.getPlates();
+        List<? extends Plate> plates = plateSet.getPlates();
         assertEquals("Expected plateSet to have 3 plates", 3, plates.size());
 
         // verify access via plate rowId
@@ -394,7 +394,7 @@ public final class PlateManagerTest
         createPlate(PLATE_TYPE_96_WELLS);
 
         // Verify only plate templates are returned
-        List<Plate> templates = PlateManager.get().getPlateTemplates(container);
+        List<? extends Plate> templates = PlateManager.get().getPlateTemplates(container);
         assertFalse("Expected there to be a plate template", templates.isEmpty());
         for (Plate t : templates)
             assertTrue("Expected saved plate to have the template field set to true", t.isTemplate());
@@ -704,7 +704,7 @@ public final class PlateManagerTest
     {
         // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
-        ExpMaterial sample = createSamples(1).get(0);
+        ExpMaterial sample = createSamples(1).getFirst();
 
         List<Map<String, Object>> rows1 = List.of(
             wellWithMetdata(createWellRow("A1", "SAMPLE", sample.getRowId()), 2.25, "B1234"),
@@ -732,7 +732,7 @@ public final class PlateManagerTest
     {
         // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
-        ExpMaterial sample = createSamples(3).get(0);
+        ExpMaterial sample = createSamples(3).getFirst();
 
         List<Map<String, Object>> rows1 = List.of(
             wellWithMetdata(createWellRow("A1", "SAMPLE", sample.getRowId()), 2.25, "B1234"),
@@ -769,7 +769,7 @@ public final class PlateManagerTest
     {
         // Arrange
         ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(container, user);
-        ExpMaterial sample = createSamples(3).get(0);
+        ExpMaterial sample = createSamples(3).getFirst();
 
         List<Map<String, Object>> rows1 = List.of(
             wellWithMetdata(createWellRow("A1", "SAMPLE", sample.getRowId()), 2.25, "B1234")
@@ -927,7 +927,7 @@ public final class PlateManagerTest
         assertNotNull(result.previewData());
         assertEquals("Expected quadrant operation on 3 plates to generate 1 plate.", 1, result.previewData().size());
 
-        var previewPlate = result.previewData().get(0);
+        var previewPlate = result.previewData().getFirst();
         var wellData = previewPlate.data();
         assertEquals("Expected 12 wells to have data", 12, wellData.size());
 
@@ -961,7 +961,7 @@ public final class PlateManagerTest
         assertTrue("Expected a new plate set to be created", result.plateSetRowId() > 0);
         assertEquals(1, result.plateRowIds().size());
 
-        var newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        var newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_384_WELLS, newPlate.getPlateType());
 
@@ -1087,7 +1087,7 @@ public final class PlateManagerTest
         assertNotNull(result.previewData());
         assertEquals("Expected column compress operation on a 384-well plate to generate 1 12-well plates.", 1, result.previewData().size());
 
-        List<Map<String, Object>> plateData = result.previewData().get(0).data();
+        List<Map<String, Object>> plateData = result.previewData().getFirst().data();
         assertEquals("Expected well P12 to be dropped as it does not include a sample.", sourcePlateData.size() - 1, plateData.size());
 
         assertEquals(sampleRowIds.get(0), plateData.get(0).get("sampleId"));
@@ -1111,7 +1111,7 @@ public final class PlateManagerTest
         assertEquals("Expected target plate set to be used", targetPlateSetId, result.plateSetRowId());
         assertEquals(1, result.plateRowIds().size());
 
-        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
 
@@ -1168,7 +1168,7 @@ public final class PlateManagerTest
         assertNotNull(result.previewData());
         assertEquals("Expected row compress operation on a 384-well plate to generate 1 12-well plates.", 1, result.previewData().size());
 
-        List<Map<String, Object>> plateData = result.previewData().get(0).data();
+        List<Map<String, Object>> plateData = result.previewData().getFirst().data();
         assertEquals("Expected well P12 to be dropped as it does not include a sample.", sourcePlateData.size() - 1, plateData.size());
 
         assertEquals(sampleRowIds.get(0), plateData.get(0).get("sampleId"));
@@ -1192,7 +1192,7 @@ public final class PlateManagerTest
         assertEquals("Expected target plate set to be used", targetPlateSetId, result.plateSetRowId());
         assertEquals(1, result.plateRowIds().size());
 
-        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
 
@@ -1302,7 +1302,7 @@ public final class PlateManagerTest
         assertEquals("Expected target plate set to be used", context.targetPlateSetId, result.plateSetRowId());
         assertEquals(2, result.plateRowIds().size());
 
-        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
         List<Long> sampleRowIds = context.sampleRowIds;
@@ -1368,7 +1368,7 @@ public final class PlateManagerTest
         assertEquals("Expected target plate set to be used", context.targetPlateSetId, result.plateSetRowId());
         assertEquals(2, result.plateRowIds().size());
 
-        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
         List<Long> sampleRowIds = context.sampleRowIds;
@@ -1454,7 +1454,7 @@ public final class PlateManagerTest
         assertEquals("Expected target plate set to be used", context.targetPlateSetId, result.plateSetRowId());
         assertEquals(3, result.plateRowIds().size());
 
-        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().get(0));
+        Plate newPlate = PlateManager.get().getPlate(container, result.plateRowIds().getFirst());
         assertNotNull(newPlate);
         assertEquals(PLATE_TYPE_12_WELLS, newPlate.getPlateType());
         List<Long> sampleRowIds = context.sampleRowIds;
@@ -1505,7 +1505,7 @@ public final class PlateManagerTest
 
                 switch (wellPosition)
                 {
-                    case "A1" -> assertEquals(sampleRowIds.get(0).intValue(), sampleId); // Group "S1"
+                    case "A1" -> assertEquals(sampleRowIds.getFirst().intValue(), sampleId); // Group "S1"
                     case "A2" -> assertEquals(sampleRowIds.get(11).intValue(), sampleId);
                     case "A3" -> assertEquals(sampleRowIds.get(12).intValue(), sampleId);
                     case "A4" -> assertEquals(0, sampleId);
@@ -1516,7 +1516,7 @@ public final class PlateManagerTest
                     case "C1" -> assertEquals(0, sampleId); // Control
                     case "C2" -> assertEquals(0, sampleId);
                     case "C3" -> assertEquals(0, sampleId); // Control
-                    case "C4" -> assertEquals(sampleRowIds.get(0).intValue(), sampleId); // Group "S1"
+                    case "C4" -> assertEquals(sampleRowIds.getFirst().intValue(), sampleId); // Group "S1"
                 }
 
                 var barcode = r.getString(FieldKey.fromParts(PlateMetadataFields.barcode.name()));
@@ -1612,7 +1612,7 @@ public final class PlateManagerTest
         assertCreatePlateThrows(expectedMessage, PLATE_TYPE_96_WELLS, plateName, null, sourcePlateData);
 
         // Fixup rows by making all rows the same and resubmit
-        sourcePlateData.forEach(row -> row.put("sampleId", sampleRowIds.get(0)));
+        sourcePlateData.forEach(row -> row.put("sampleId", sampleRowIds.getFirst()));
 
         // Act
         var newPlate = createPlate(PLATE_TYPE_96_WELLS, plateName, null, sourcePlateData);
@@ -1668,8 +1668,8 @@ public final class PlateManagerTest
         List<Long> sampleRowIds = createSamples(2).stream().map(ExpObject::getRowId).sorted().toList();
 
         List<Map<String, Object>> plate1Data = new ArrayList<>();
-        plate1Data.add(createWellRow("A1", "SAMPLE", sampleRowIds.get(0), null, "R1"));
-        plate1Data.add(createWellRow("A2", "SAMPLE", sampleRowIds.get(0), null, "R1"));
+        plate1Data.add(createWellRow("A1", "SAMPLE", sampleRowIds.getFirst(), null, "R1"));
+        plate1Data.add(createWellRow("A2", "SAMPLE", sampleRowIds.getFirst(), null, "R1"));
         plate1Data.add(createWellRow("A3", "SAMPLE", sampleRowIds.get(0), null, "R1"));
 
         List<Map<String, Object>> plate2Data = new ArrayList<>();
@@ -1679,8 +1679,8 @@ public final class PlateManagerTest
 
         List<Map<String, Object>> plate3Data = new ArrayList<>();
         plate2Data.add(createWellRow("C1", "SAMPLE", sampleRowIds.get(0), null, "R2"));
-        plate2Data.add(createWellRow("C2", "SAMPLE", sampleRowIds.get(0), null, "R2"));
-        plate2Data.add(createWellRow("C3", "SAMPLE", sampleRowIds.get(0), null, "R2"));
+        plate2Data.add(createWellRow("C2", "SAMPLE", sampleRowIds.getFirst(), null, "R2"));
+        plate2Data.add(createWellRow("C3", "SAMPLE", sampleRowIds.getFirst(), null, "R2"));
 
         var plateData = List.of(
             new PlateManager.PlateData(null, plateType.getRowId(), null, null, plate1Data),
@@ -1694,7 +1694,7 @@ public final class PlateManagerTest
         assertCreatePlateSetThrows(expectedMessage, plateSetImpl, plateData, null);
 
         // Fixup rows by making all rows the same and resubmit
-        plate2Data.forEach(row -> row.put("sampleId", sampleRowIds.get(0)));
+        plate2Data.forEach(row -> row.put("sampleId", sampleRowIds.getFirst()));
 
         // Assert (expect no errors)
         createPlateSet(plateSetImpl, plateData, null);
@@ -1721,12 +1721,12 @@ public final class PlateManagerTest
         var plateData1 = List.of(new PlateManager.PlateData("PS1", plateType.getRowId(), null, null, PS1Data));
         PlateSet plateSet1 = createPlateSet(plateSetImpl, plateData1, null);
 
-        List<Map<String, Object>> dataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", sampleRowIds.get(0)));
+        List<Map<String, Object>> dataPS2 = Arrays.asList(createWellRow("A1", "POSITIVE_CONTROL", sampleRowIds.getFirst()));
         var plateData2 = List.of(new PlateManager.PlateData("PS2", plateType.getRowId(), null, null, dataPS2));
 
         // Act / Assert
         // Since the sample of index 0 is on PS1's plate, it is not a valid control for PS2's plate
-        String errorMsg = String.format("The sample \"%s\" is not a valid control.", sampleNames.get(0));
+        String errorMsg = String.format("The sample \"%s\" is not a valid control.", sampleNames.getFirst());
         assertCreatePlateSetThrows(errorMsg, plateSetImpl, plateData2, plateSet1.getRowId());
 
         // Assert (expect no errors)
@@ -1758,7 +1758,7 @@ public final class PlateManagerTest
 
         // Assert
         assertEquals(1, PPSPlateFields.size());
-        assertEquals("SampleID", PPSPlateFields.get(0).getName());
+        assertEquals("SampleID", PPSPlateFields.getFirst().getName());
 
         assertEquals(4, APSPlateFields.size());
         assertEquals("Type", APSPlateFields.get(0).getName());
@@ -1808,7 +1808,7 @@ public final class PlateManagerTest
         List<Long> sampleRowIds = samples.stream().map(ExpObject::getRowId).sorted().toList();
 
         List<Map<String, Object>> data = List.of(
-            createWellRow("A1", "CONTROL", sampleRowIds.get(0))
+            createWellRow("A1", "CONTROL", sampleRowIds.getFirst())
         );
 
         // Act
@@ -1919,12 +1919,12 @@ public final class PlateManagerTest
 
         var plateData = List.of(new PlateManager.PlateData(null, PLATE_TYPE_12_WELLS.getRowId(), null, null, wellData));
         var PPS = createPlateSet(pps, plateData, null);
-        var ppsPlateRowId = PPS.getPlates().get(0).getRowId();
+        var ppsPlateRowId = PPS.getPlates().getFirst().getRowId();
 
         var aps = new PlateSetImpl();
         aps.setType(PlateSetType.assay);
         var APS = createPlateSet(aps, plateData, PPS.getRowId());
-        var apsPlateRowId = APS.getPlates().get(0).getRowId();
+        var apsPlateRowId = APS.getPlates().getFirst().getRowId();
 
         // Act
         // Formerly, this would result in a foreign key violation on the assay.well table

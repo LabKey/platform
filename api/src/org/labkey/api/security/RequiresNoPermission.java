@@ -21,12 +21,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Indicates that an action does not require any kind of authentication or permission to invoke. Use with extreme
- * caution. Typically, actions marked with this annotation will handle their own permission checks in their own code path.
- * User: adam
- * Date: Dec 22, 2009
-*/
-public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
+ * Indicates that an action class or an MCP tool method does not require any kind of authentication or permission to
+ * invoke. Use with extreme caution. Typically, actions marked with this annotation will handle their own permission
+ * checks in their own code path. Note that this is the lowest priority permission annotation; all other @Requires*
+ * annotations effectively override this annotation.
+ */
+public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target({ElementType.TYPE, ElementType.METHOD})
 @interface RequiresNoPermission
 {
 }

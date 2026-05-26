@@ -6,6 +6,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
@@ -91,8 +92,6 @@ public interface AuditHandler
             if (col != null && (col.isMultiValued() || col.getFk() instanceof MultiValuedForeignKey))
                 isMultiValued = true;
 
-            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
-
             String nameFromAlias = key;
             if (null != col)
                 nameFromAlias = col.getName();
@@ -104,9 +103,13 @@ public interface AuditHandler
                 {
                     if (aliasColumn.getFk() != null && (aliasColumn.isMultiValued() || aliasColumn.getFk() instanceof MultiValuedForeignKey))
                         isMultiValued = true;
+                    col = aliasColumn; // GitHub Issue 913: Updating a sample details page shows an update to the MVTC field
                     nameFromAlias = aliasColumn.getName();
                 }
             }
+
+            boolean isMultiChoice = col != null && col.getPropertyType() == PropertyType.MULTI_CHOICE;
+
             String lcName = nameFromAlias.toLowerCase();
             // Preserve casing of inputs so we can show the names properly
             boolean isExpInput = false; // TODO: extract lineage handling out of this generic method
@@ -120,11 +123,22 @@ public interface AuditHandler
                 }
             }
 
+            boolean isAliasInput = row.containsKey(ExperimentService.ALIASCOLUMNALIAS) && "Alias".equalsIgnoreCase(lcName);
+
             boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(nameFromAlias);
-            if (!excludedFromDetailDiff.contains(nameFromAlias) && (row.containsKey(nameFromAlias) || isExpInput))
+            if (!excludedFromDetailDiff.contains(nameFromAlias) && (row.containsKey(nameFromAlias) || isExpInput || isAliasInput))
             {
                 Object oldValue = entry.getValue();
                 Object newValue = row.get(nameFromAlias);
+
+                // See ExpDataIterator: step1.addColumn(ExperimentService.ALIASCOLUMNALIAS, colNameMap.get(Alias.name()))
+                if (isAliasInput && newValue == null)
+                {
+                    newValue = row.get(ExperimentService.ALIASCOLUMNALIAS);
+                    if (oldValue instanceof String aliasStr)
+                        oldValue = Arrays.asList(aliasStr.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
+                }
+
                 // compare dates using string values to allow for both Date and Timestamp types
                 if (newValue instanceof Date && oldValue != null)
                 {
@@ -165,7 +179,7 @@ public interface AuditHandler
                     // If multivalued columns change, the value in this table will remain the key to the junction table
                     // but at this point newValue will look like the newly chosen values not that key. So we skip
                     // this in the diff unless the value changes from non-null to null or vice versa.
-                    if (isMultiValued)
+                    if (isMultiValued && !isAliasInput)
                     {
                         if ((oldValue == null && newValue != null) || (newValue == null && oldValue != null))
                         {

@@ -2,21 +2,17 @@ package org.labkey.experiment;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.LimitedUser;
-import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
-import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.MaintenanceTask
+public class FileLinkMetricsMaintenanceTask implements MaintenanceTask
 {
     public static final String NAME = "FileLinkMetricsMaintenanceTask";
-    public static final String STARTUP_SCOPE = "FileLinkMetrics";
 
     @Override
     public String getDescription()
@@ -32,10 +28,7 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
 
     private User getTaskUser()
     {
-        User taskUser = new User("FileLinkMetricsMaintenanceUser", -1);
-        taskUser.setPrincipalType(PrincipalType.SERVICE);
-        taskUser.setDisplayName("FileLinkMetricsMaintenanceUser");
-        return new LimitedUser(taskUser, ProjectAdminRole.class);
+        return User.getAdminServiceUser();
     }
 
     @Override
@@ -77,5 +70,4 @@ public class FileLinkMetricsMaintenanceTask implements SystemMaintenance.Mainten
             log.error("Unable to run missing files check task. {}", e);
         }
     }
-
 }

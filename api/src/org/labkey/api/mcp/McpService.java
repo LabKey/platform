@@ -1,15 +1,19 @@
 package org.labkey.api.mcp;
 
-
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NonNull;
-import org.labkey.api.module.McpProvider;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HtmlString;
-import org.springaicommunity.mcp.provider.resource.SyncMcpResourceProvider;
+import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.mcp.annotation.provider.resource.SyncMcpResourceProvider;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
@@ -19,23 +23,98 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
-/**
- * This service lets you expose functionality over the MCP protocol (only simple http for now).  This allows
- * external chat sessions to pull information from LabKey Server.  These methods are also made available
- * to chat session hosted by LabKey (see AbstractAgentAction).
- * <p></p>
- * These calls are not security checked.  Any tools registered here must check user permissions.  Maybe that
- * will come as we get further along.  Note that the LLM may make callbacks concerning containers other than the
- * current container.  This is an area for investigation.
- */
+///
+/// ### MCP Development Guide
+/// `McpService` lets you expose functionality over the MCP protocol (only simple http for now). This allows external
+/// chat sessions to pull information from LabKey Server. Exposed functionality is also made available to chat sessions
+/// hosted by LabKey (see `AbstractAgentAction`).
+///
+/// ### Adding a new MCP class
+/// 1. Create a new class that implements `McpImpl` (see below) in the appropriate module
+/// 2. Register that class in your module's `startup()` method: `McpService.get().register(new MyMcp())`
+/// 3. Add tools and resources
+///
+/// ### Adding a new MCP tool
+/// 1.  In your MCP class, create a new method that returns a String with the name you want to advertise
+/// 2.  Annotate it with `@Tool` and provide a detailed description. This description is important since it instructs
+///     the LLM client (and the user) in the use of your tool.
+/// 3.  Annotate it with `@RequiredPermission(Class&lt;? extends Permission>)` or `@RequiredNoPermission`. **A
+///     permission annotation is required, otherwise your tool will not be registered.**
+/// 4.  Add `ToolContext` as the first parameter to the method
+/// 5.  Add additional required or optional parameters to the method signature, as needed. Note that "required" is the
+///     default. Again, here, the parameter descriptions are very important. Provide examples of parameter values.
+/// 6.  Use the helper method `getContext(ToolContext)` to retrieve the current `Container` and `User`
+/// 7.  Use the helper method `getUser(ToolContext)` in the rare cases where you need just a `User`
+/// 8.  Perform additional permissions checking (beyond what the annotations offer), where appropriate
+/// 9.  Filter all results to the current container, of course
+/// 10. For any error conditions, throw exceptions with detailed information. These will get translated into appropriate
+///     failure responses, and the LLM client will attempt to correct any problems (hopefully).
+/// 11. For success cases, return a String with a message or JSON content, for example, `JSONObject.toString()`. Spring
+///     has some limited ability to convert other objects into JSON strings, but we haven't experimented with that. See
+///     `DefaultToolCallResultConverter` and the ability to provide a custom result converter via the `@Tool` annotation.
+///
+/// At registration time, the framework will:
+/// - Ensure all tools are annotated for permissions
+/// - Ensure there are not multiple tools with the same name
+///
+/// On every tool request, before invoking any tool code, the framework will:
+/// - Authenticate the user or provide a guest user
+/// - Ensure a container has been set if the tool requires a container
+/// - Verify that the user has whatever permissions are required based on the tool's annotation(s)
+/// - Verify that every required parameter is non-null and every string parameter is non-blank
+/// - Push the container and user into the ToolContext to give the tool access
+/// - Increment a metrics counter for that tool
+///
+/// CoreMcp and QueryMcp have examples of tool declarations.
+///
+/// ### Adding a new MCP resource
+/// 1. In your MCP class, create a new method that returns `ReadResourceResult` with an appropriate name
+/// 2. Annotate it with `@McpResource` and provide a uri, mimeType, name, and description
+/// 3. Call `incrementResourceRequestCount()` with a short but unique name to increment its metrics count
+/// 4. Read the resource, construct a `ReadResourceResult`, and return it.
+///
+/// No permissions checking is performed on resources. All resources are public.
+///
+/// CoreMcp and QueryMcp have examples of resource declarations.
+///
 public interface McpService extends ToolCallbackProvider
 {
-    // marker interface for classes that we will "ingest" using Spring annotations
-    interface McpImpl {}
+    Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
+    String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
+
+    // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
+    interface McpImpl
+    {
+        default ContainerUser getContext(ToolContext toolContext)
+        {
+            User user = getUser(toolContext);
+            Container container = (Container)toolContext.getContext().get("container");
+            if (container == null)
+                throw new McpException("No container path is set. Ask the user which container/folder they want to use (you can call listContainers to show available options), then call setContainer before retrying.");
+            return ContainerUser.create(container, user);
+        }
+
+        default User getUser(ToolContext toolContext)
+        {
+            return (User)toolContext.getContext().get("user");
+        }
+
+        // Every MCP resource should call this on every invocation
+        default void incrementResourceRequestCount(String resource)
+        {
+            if (!get().isEnabled())
+                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
+
+            get().incrementResourceRequestCount(resource);
+        }
+    }
 
     static @NotNull McpService get()
     {
-        return ServiceRegistry.get().getService(McpService.class);
+        McpService svc = ServiceRegistry.get().getService(McpService.class);
+        if (svc == null)
+            svc = NoopMcpService.get();
+        return svc;
     }
 
     static void setInstance(McpService service)
@@ -43,49 +122,57 @@ public interface McpService extends ToolCallbackProvider
         ServiceRegistry.get().registerService(McpService.class, service);
     }
 
+    default boolean isEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
+    }
+
     boolean isReady();
 
-
-    default void register(McpImpl obj)
+    // Register MCPs in Module.startup()
+    default void register(McpImpl mcp)
     {
-        ToolCallback[] tools = ToolCallbacks.from(obj);
-        if (null != tools && tools.length > 0)
-            registerTools(Arrays.asList(tools));
+        try
+        {
+            ToolCallback[] tools = ToolCallbacks.from(mcp);
+            if (tools.length > 0)
+                registerTools(Arrays.asList(tools), mcp);
 
-        var resources = new SyncMcpResourceProvider(List.of(obj)).getResourceSpecifications();
-        if (null != resources && !resources.isEmpty())
-            registerResources(resources);
+            var resources = new SyncMcpResourceProvider(List.of(mcp)).getResourceSpecifications();
+            if (null != resources && !resources.isEmpty())
+                registerResources(resources);
+        }
+        catch (NoSuchMethodError t)
+        {
+            LOG.error("You likely need to do a clean build of API! Exception while registering an MCP implementation.", t);
+        }
     }
 
-
-    default void register(McpProvider mcp)
-    {
-        registerTools(mcp.getMcpTools());
-        registerPrompts(mcp.getMcpPrompts());
-        registerResources(mcp.getMcpResources());
-    }
-
-    void registerTools(@NotNull List<ToolCallback> tools);
+    void registerTools(@NotNull List<ToolCallback> tools, McpImpl mcp);
 
     void registerPrompts(@NotNull List<McpServerFeatures.SyncPromptSpecification> prompts);
 
     void registerResources(@NotNull List<McpServerFeatures.SyncResourceSpecification> resources);
 
     @Override
-    ToolCallback @NonNull [] getToolCallbacks();
+    ToolCallback @NotNull [] getToolCallbacks();
 
-    default ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier)
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier)
     {
-        return getChat(session, agentName, systemPromptSupplier, true);
+        return getChat(session, conversationName, systemPromptSupplier, true);
     }
 
-    ChatClient getChat(HttpSession session, String agentName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
+    void saveSessionContainer(ToolContext context, Container container);
+
+    void incrementResourceRequestCount(String resource);
+
+    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
 
     void close(HttpSession session, ChatClient chat);
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
-    /** get consolidated response (good for many text oriented agents/use-cases) */
+    /** get a consolidated response (good for many text-oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);
 
     /** get individual response parts, useful for agents that generate SQL or programmatic responses */
