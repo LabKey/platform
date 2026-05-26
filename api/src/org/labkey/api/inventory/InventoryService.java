@@ -58,6 +58,7 @@ public interface InventoryService
         StoragePositionNumber,
         StorageStatus,
         StorageUnit,
+        StorageUnitBarcode,
         StorageUnitLabel,
         Stored("Entered Storage");
 
