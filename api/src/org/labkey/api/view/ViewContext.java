@@ -224,6 +224,13 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _request;
     }
 
+    public @NotNull HttpServletRequest getRequestOrThrow()
+    {
+        if (null == _request)
+            throw new IllegalStateException("Request is null");
+
+        return _request;
+    }
 
     public void setRequest(HttpServletRequest request)
     {

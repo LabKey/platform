@@ -558,7 +558,7 @@ public class AuthenticationManager
             }
             else
             {
-                HttpServletRequest request = getViewContext().getRequest();
+                HttpServletRequest request = getViewContext().getRequestOrThrow();
 
                 final PrimaryAuthenticationResult primaryResult;
 
@@ -1620,6 +1620,11 @@ public class AuthenticationManager
 
     public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c)
     {
+        return handleAuthentication(request, c, true);
+    }
+
+    public static @NotNull AuthenticationResult handleAuthentication(HttpServletRequest request, Container c, boolean setSession)
+    {
         HttpSession session = request.getSession(true);
         PrimaryAuthenticationResult primaryAuthResult = AuthenticationManager.getPrimaryAuthenticationResult(session);
         User primaryAuthUser;
@@ -1686,13 +1691,16 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Prep the new session and set the user & authentication-related attributes
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
-
-        if (session.isNew() && !primaryAuthUser.isGuest())
+        if (setSession)
         {
-            // notify the websocket clients a new http session for the user has been started
-            NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            // Prep the new session and set the user & authentication-related attributes
+            session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse(), primaryAuthUser, true);
+
+            if (session.isNew() && !primaryAuthUser.isGuest())
+            {
+                // notify the websocket clients a new http session for the user has been started
+                NotificationService.get().sendServerEvent(primaryAuthUser.getUserId(), AuthNotify.LoggedIn);
+            }
         }
 
         // Set the authentication validators into the new session
@@ -1759,6 +1767,34 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
+    public record Reauth(String token, User user){}
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";
+
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
+    {
+        if (token != null)
+        {
+            HttpSession session = request.getSession(false);
+
+            if (session != null)
+            {
+                Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
+
+                if (reauth != null)
+                {
+                    boolean matches = token.equals(reauth.token());
+
+                    if (matches)
+                    {
+                        session.removeAttribute(REAUTH_TOKEN_NAME);
+                        return reauth.user();
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
 
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
