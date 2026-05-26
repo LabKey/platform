@@ -241,23 +241,9 @@ public class VisualizationSQLGenerator implements HasViewContext
 
                                 newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
                             }
-                            else if (dateOptions.isZeroDayVisitTagSet())
-                            {
-                                VisualizationSourceColumn zeroDayCol = null;
-                                boolean useProtocolDay = dateOptions.isUseProtocolDay();
-
-                                //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
-                                if (null != dateOptions.getZeroDayVisitTag())
-                                {
-                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false, dateOptions);
-                                    ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
-                                }
-
-                                newInterval = new VisualizationIntervalColumn(zeroDayCol, measureCol, interval, true);
-                            }
                             else
                             {
-                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are required.");
+                                throw new IllegalArgumentException("Either 'dateCol' or 'zeroDateCol' must be specified for date-based charts");
                             }
 
                             if (interval != null)

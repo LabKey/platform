@@ -304,9 +304,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     @Override
-    public abstract @NotNull Set<String> getReservedPropertyNames(Domain domain, User user);
-
-    @Override
     public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
     {
         Set<PropertyStorageSpec> specs;
