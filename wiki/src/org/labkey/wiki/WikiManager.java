@@ -870,6 +870,28 @@ public class WikiManager implements WikiService
     }
 
     @Override
+    public WikiMarkdown getWikiMarkdown(Container c, String name)
+    {
+        if (null == c || null == name)
+            return null;
+
+        try
+        {
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
+            if (null == wiki)
+                return null;
+            WikiVersion version = wiki.getLatestVersion();
+            String body = version.getBody();
+            String markdown = version.getRendererTypeEnum().bestAttemptConvertToMarkdown(null == body ? "" : body);
+            return new WikiMarkdown(name, version.getTitle(), markdown, wiki.getEntityId());
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    @Override
     public void insertWiki(User user, Container c, String name, String body, WikiRendererType renderType, String title)
     {
         Wiki wiki = new Wiki(c, name);

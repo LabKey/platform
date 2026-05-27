@@ -50,6 +50,15 @@ public interface WikiService
 
     RenderedWiki getRenderedWiki(Container c, String name);
 
+    record WikiMarkdown(String name, String title, String markdown, String entityId) {}
+
+    /**
+     * Returns a best-effort Markdown rendering of the wiki's raw source, intended for indexing
+     * (search, embedding, vector stores) — NOT for user display. Conversion is lossy and may
+     * drop or mangle markup details that don't have a direct Markdown equivalent.
+     */
+    WikiMarkdown getWikiMarkdown(Container c, String name);
+
     default HtmlString getHtml(Container c, String name)
     {
         var wiki = getRenderedWiki(c, name);

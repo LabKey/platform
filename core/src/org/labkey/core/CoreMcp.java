@@ -4,11 +4,13 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -129,6 +131,27 @@ public class CoreMcp implements McpService.McpImpl
 
         return message;
     }
+
+
+    // TODO replace/augment with available feature list
+    @Tool(description = "List the modules installed on this server, this may be useful in inferring the available funcitonality.  For instance, " +
+            "the presence of the `premium` module implies the availability of premium featues.")
+    @RequiresNoPermission
+    public String listModules(ToolContext context)
+    {
+        JSONArray modules = new JSONArray();
+        ModuleLoader.getInstance().getModules().stream()
+                .map(module -> {
+                    JSONObject obj = new JSONObject();
+                    obj.put("name", module.getName());
+                    if (StringUtils.isNotEmpty(module.getLabel()))
+                        obj.put("label", module.getLabel());
+                    return obj;
+                })
+                .forEach(modules::put);
+        return new JSONObject(Map.of("modules",modules)).toString();
+    }
+
 
     @McpResource(
         uri = "resource://org/labkey/core/FileBasedModules.md",

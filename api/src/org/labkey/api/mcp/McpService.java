@@ -17,6 +17,7 @@ import org.springframework.ai.mcp.annotation.provider.resource.SyncMcpResourcePr
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
@@ -186,4 +187,15 @@ public interface McpService extends ToolCallbackProvider
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */
     VectorStore getVectorStore();
+
+    /**
+     * Adds documents to the vector store, automatically splitting any document whose token
+     * count exceeds the embedding model's input limit. Prefer this over
+     * {@code getVectorStore().add(...)} for indexing — it prevents the
+     * {@code IllegalArgumentException} that {@code TokenCountBatchingStrategy} throws on
+     * oversized inputs.
+     */
+    void addDocuments(List<Document> documents);
+
+    void saveVectorStore();
 }
