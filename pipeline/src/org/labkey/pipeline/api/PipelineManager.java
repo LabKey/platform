@@ -706,7 +706,7 @@ public class PipelineManager
         }
 
         // validate that the config name is unique for this container
-        if (StringUtils.isNoneBlank(name))
+        if (StringUtils.isNotBlank(name))
         {
             if (name.length() > 255)
                 errors.rejectValue("Name", null, "Name must be less than 256 characters");
