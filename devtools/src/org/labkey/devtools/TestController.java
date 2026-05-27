@@ -1382,8 +1382,8 @@ public class TestController extends SpringActionController
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
                 throw new NotFoundException();
-            VectorStore vs = McpService.get().getVectorStore();
-            if (null == vs)
+            McpService mcp = McpService.get();
+            if (null == mcp.getVectorStore())
                 throw new NotFoundException("VectorStore not enabled.");
 
             ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
@@ -1406,7 +1406,7 @@ public class TestController extends SpringActionController
                     .forEach(d -> {
                         try
                         {
-                            vs.accept(List.of(d));
+                            mcp.addDocuments(List.of(d));
                             count.incrementAndGet();
                         }
                         catch (IllegalArgumentException x)

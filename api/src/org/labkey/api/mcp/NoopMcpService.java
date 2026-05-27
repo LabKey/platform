@@ -8,6 +8,7 @@ import org.labkey.api.data.Container;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.List;
@@ -83,6 +84,11 @@ class NoopMcpService implements McpService
     public VectorStore getVectorStore()
     {
         return null;
+    }
+
+    @Override
+    public void addDocuments(List<Document> documents)
+    {
     }
 
     @Override
