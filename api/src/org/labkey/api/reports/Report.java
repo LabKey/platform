@@ -221,4 +221,12 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      * e.g. This report can run code that runs outside labkey's security context
      */
     boolean isSandboxed();
+
+    /* Reports that require a redirect (e.g., Sample Finder saved searches) should return false
+     * to prevent them from causing invalid redirects during web part rendering.
+     */
+    default boolean isShowInReportsWebPart()
+    {
+        return true;
+    }
 }

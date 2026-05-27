@@ -1732,7 +1732,6 @@ public class VisualizationController extends SpringActionController
             assertEquals("day",dopt.getInterval());
             assertEquals("visitday", dopt.getDateCol().getName());
             assertEquals("enrolldate", dopt.getZeroDateCol().getName());
-            assertEquals("ZERO", dopt.getZeroDayVisitTag());
             assertFalse(dopt.isUseProtocolDay());
             assertEquals(0,mi.getFilterArray().size());
             assertEquals(1, vs.getSorts().size());

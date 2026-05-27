@@ -199,14 +199,9 @@ public class AuthFilter implements Filter
         }
 
         if (null == user)
-        {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
-                user = User.nobody;
-            else
-                user = User.guest;
-        }
+            user = getGuestUser();
         else
-            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user); // TODO: Sanity check this with Matt... treat impersonating admin as active, not impersonated user
+            UserManager.updateRecentUser(user.isImpersonated() ? user.getImpersonatingUser() : user);
 
         req = AuthenticatedRequest.create(req, user);
 
@@ -262,7 +257,13 @@ public class AuthFilter implements Filter
         resp.addHeader("X-LK-NONCE", sb.toString());
     }
 
-
+    public static User getGuestUser()
+    {
+        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
+            return User.nobody;
+        else
+            return User.guest;
+    }
 
     private boolean clearRequestAttributes(HttpServletRequest request)
     {
