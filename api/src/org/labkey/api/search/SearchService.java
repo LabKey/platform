@@ -595,9 +595,9 @@ public interface SearchService extends SearchMXBean
         }
 
         /**
-         * Iterates {@code batch}, invoking {@code action} on each item and then calling {@link #advance}
-         * with the item's RowId. {@code advance} is called unconditionally after each action so the
-         * count stays accurate even when the action swallows errors internally.
+         * Iterates {@code batch}, calling {@link #advance} with the item's RowId and then invoking
+         * {@code action} on each item. {@code advance} is called unconditionally before each action so the
+         * count stays accurate even when the action throws.
          */
         public <T> void forEach(List<? extends T> batch, ToLongFunction<T> rowIdOf, Consumer<T> action)
         {
@@ -848,4 +848,5 @@ public interface SearchService extends SearchMXBean
             }
         }
     }
+
 }
