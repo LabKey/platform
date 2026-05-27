@@ -96,9 +96,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -891,29 +893,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        Long sampleTypeId = null;
-        Set<String> sampleNames = new HashSet<>();
-        for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
-        {
-            String name = getMaterialName(keyMap.getValue());
-
-            if (name != null)
-                sampleNames.add(name);
-
-            if (sampleTypeId == null)
-                sampleTypeId = getMaterialSourceId(keyMap.getValue());
-        }
-
-        SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
-        filter.addCondition(Name.fieldKey(), sampleNames, CompareType.IN);
-        filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
-
-        return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
-    }
-
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
@@ -1050,7 +1029,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // Issue 52922: cross-folder merge without Product Folders enabled silently ignores the cross-folder
             // row update. Use a relaxed container filter to find existing data from cross-containers.
-            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            // Use elevated user to avoid data being filtered out due to permission
+            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, ElevatedUser.getElevatedUser(user, ReaderRole.class));
             Set<GUID> containerIds = new HashSet<>(Objects.requireNonNull(cf.getIds()));
             containerIds.remove(container.getEntityId());
 
@@ -1062,7 +1042,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + " (" + row.get(RowId.name()) + ").");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) " + row.get(RowId.name()) + ".");
                 }
 
                 if (!missingNames.isEmpty())
@@ -1073,7 +1053,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + ".");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": " + row.get(Name.name()) + ".");
                 }
             }
         }
@@ -1081,9 +1061,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting)
         {
             if (!missingRowIds.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: (RowId) " + missingRowIds.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) " + missingRowIds.iterator().next() + ".");
             if (!missingNames.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: " + missingNames.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": " + missingNames.iterator().next() + ".");
         }
 
         // if contains domain fields, check for aliquot specific fields
@@ -1270,11 +1250,21 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 
             // drop columns
+            ColumnInfo containerColumn = materialTable.getColumn(materialTable.getContainerFieldKey());
+            String containerFieldLabel = containerColumn.getLabel();
             var drop = new CaseInsensitiveHashSet();
             var keysCheck = new CaseInsensitiveHashSet();
             for (int i = 1; i <= di.getColumnCount(); i++)
             {
                 String name = di.getColumnInfo(i).getName();
+                boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
+                if (!isContainerField)
+                    isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
+                if (isContainerField)
+                {
+                    drop.add(name);
+                    continue;
+                }
                 if (isReservedHeader(name))
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.

@@ -224,12 +224,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        return false;
-    }
-
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
     {
         return createTransactionAuditEvent(container, auditAction, null);

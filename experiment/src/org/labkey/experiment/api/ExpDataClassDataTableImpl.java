@@ -991,6 +991,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 String name = input.getColumnInfo(i).getName();
 
+                boolean isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
+                if (isContainerField)
+                {
+                    drop.add(name);
+                    continue;
+                }
+
                 if (ExpDataTable.Column.Name.name().equalsIgnoreCase(name))
                 {
                     keysCheck.add(ExpDataTable.Column.Name.name());
@@ -1556,32 +1563,5 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             return (entityId, c) -> new ExpDataClassAttachmentParent(c, Lsid.parse(entityId));
         }
 
-        @Override
-        public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-        {
-            Integer dataClassId = null;
-            Set<String> dataNames = new HashSet<>();
-            for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
-            {
-                Object oName = keyMap.getValue().get("Name");
-
-                if (oName != null)
-                    dataNames.add((String) oName);
-
-                if (dataClassId == null)
-                {
-                    Object oClassId = keyMap.getValue().get("ClassId");
-                    if (oClassId != null)
-                        dataClassId = _converter.convert(Integer.class, oClassId);
-                }
-
-            }
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataClassId);
-            filter.addCondition(FieldKey.fromParts("Name"), dataNames, CompareType.IN);
-            filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
-
-            return new TableSelector(ExperimentService.get().getTinfoData(), filter, null).exists();
-        }
     }
 }

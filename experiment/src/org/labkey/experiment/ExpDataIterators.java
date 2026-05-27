@@ -2653,10 +2653,8 @@ public class ExpDataIterators
 
     public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
-        private static final String INVALID_FOLDER_MESSAGE = "Import or update of data in folder %s from folder %s is not allowed. Verify the folder exists, you have proper permissions, and data from that folder is visible here.";
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
-        private static final Set<String> CONTAINER_FIELD_NAMES = Set.of("Container", "Folder");
         private static final int BATCH_SIZE = 1000;
         record TypeData(
                 Container container,
