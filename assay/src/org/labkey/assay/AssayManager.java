@@ -16,7 +16,6 @@
 
 package org.labkey.assay;
 
-import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -721,14 +720,11 @@ public class AssayManager implements AssayService
         List<? extends ExpExperiment> batches = ExperimentService.get().getExpBatches(
                 queue.getContainer(), protocol, modifiedSince, minRowId, SearchService.INDEXING_LIMIT);
 
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
-        batches.forEach(b -> {
-            indexAssayBatch(queue, b);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), b.getRowId()));
-        });
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(batches, ExpExperiment::getRowId, b -> indexAssayBatch(queue, b));
 
-        if (batches.size() == SearchService.INDEXING_LIMIT)
-            queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, maxRowIdProcessed.longValue()));
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexAssayRuns(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
@@ -748,14 +744,11 @@ public class AssayManager implements AssayService
 
         List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(filterSQL, _ -> true, queue.getContainer(), SearchService.INDEXING_LIMIT);
 
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
-        runs.forEach(r -> {
-            indexAssayRun(queue, r);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), r.getRowId()));
-        });
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(runs, ExpRun::getRowId, r -> indexAssayRun(queue, r));
 
-        if (runs.size() == SearchService.INDEXING_LIMIT)
-            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, maxRowIdProcessed.longValue()));
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     @Override
@@ -764,7 +757,7 @@ public class AssayManager implements AssayService
         ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
         if (expRun == null)
             return;
-        
+
         if (shouldIndexRun(expRun))
             indexAssayRun(queue, ExperimentService.get().getExpRun(expRunRowId));
     }

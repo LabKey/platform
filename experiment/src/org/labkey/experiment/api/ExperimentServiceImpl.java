@@ -26,7 +26,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -1096,21 +1096,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Material> materials = selector.getArrayList(Material.class);
-        materials.forEach(m -> {
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             expMaterial.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expMaterial.getRowId()));
         });
 
-        if (materials.size() == SearchService.INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)
@@ -1134,21 +1130,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Data> data = selector.getArrayList(Data.class);
-        data.forEach(d -> {
+        tracker.forEach(selector.getArrayList(Data.class), Data::getRowId, d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             expData.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expData.getRowId()));
         });
 
-        if (data.size() == SearchService.INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexData(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
@@ -7567,13 +7559,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterialRowId); // add self's root to cache
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterialRowId, parent.getLSID(), outputAliquot.getRowId());
-                        
+
                         new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
             }
         }
-        
+
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
         {
             for (ProtocolAppRecord rec : protAppRecords)

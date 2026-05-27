@@ -21,12 +21,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.query.ExprColumn;
@@ -67,6 +70,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
 
 public interface SearchService extends SearchMXBean
 {
@@ -240,7 +244,7 @@ public interface SearchService extends SearchMXBean
     //
     // plug in interfaces
     //
-    
+
     interface ResourceResolver
     {
         default WebdavResource resolve(@NotNull String resourceIdentifier) { return null; }
@@ -289,7 +293,7 @@ public interface SearchService extends SearchMXBean
         {
             return _name;
         }
-        
+
         public String getDescription()
         {
             return _description;
@@ -327,7 +331,7 @@ public interface SearchService extends SearchMXBean
     // search
     //
 
-    
+
     class SearchResult
     {
         public long totalHits;
@@ -426,7 +430,7 @@ public interface SearchService extends SearchMXBean
     @Nullable SearchHit find(String docId) throws IOException;
 
     String escapeTerm(String term);
-    
+
     List<SearchCategory> getSearchCategories();
 
     //
@@ -465,7 +469,7 @@ public interface SearchService extends SearchMXBean
 
     void waitForIdle() throws InterruptedException;
 
-    
+
     /** default implementation saving lastIndexed */
     void setLastIndexedForPath(Path path, long indexed, long modified);
 
@@ -476,9 +480,9 @@ public interface SearchService extends SearchMXBean
     void maintenance();
 
     //
-    // configuration, plugins 
+    // configuration, plugins
     //
-    
+
     void addSearchCategory(SearchCategory category);
     List<SearchCategory> getAllCategories();
     List<SearchCategory> getCategories(String categories);
@@ -497,17 +501,12 @@ public interface SearchService extends SearchMXBean
         /**
          * Enumerate documents for full-text search indexing. Do NOT fetch an unbounded result set into memory.
          *
-         * <p><em>Pattern 1 — recursive requeue</em> (preferred when the underlying table supports keyset pagination).
-         * Fetch at most {@link SearchService#INDEXING_LIMIT} rows, process them, then re-enqueue the next batch
-         * only if the batch was full. This keeps the ResultSet closed between batches and interleaves with other
-         * queue work. See {@code ExperimentServiceImpl.indexMaterials()} and
-         * {@code AssayManager.indexAssayRuns()} for examples.</p>
-         *
-         * <p><em>Pattern 2 — forEachBatch + per-batch runnable</em> (simpler when using {@code TableSelector}).
-         * Stream rows in batches of {@link SearchService#INDEXING_LIMIT} and wrap each batch in a
-         * {@code queue.addRunnable()} so indexing is deferred. See
-         * {@code InventoryManager.indexLocations()} and {@code NotebookManager.indexNotebooks()}
-         * for examples.</p>
+         * <p>Use the <em>recursive-requeue pattern</em>: create an {@link IndexBatchCursor} from {@code minRowId = 0},
+         * call {@link IndexBatchCursor#createSelector} (for {@code TableSelector}-based callers) or build a
+         * raw SQL query with {@code RowId > minRowId ORDER BY RowId LIMIT} {@link SearchService#INDEXING_LIMIT},
+         * process the batch with {@link IndexBatchCursor#forEach}, then call {@link IndexBatchCursor#wasFull()}
+         * and requeue only if it returns {@code true}. This keeps the ResultSet closed between batches and
+         * interleaves indexing with other queue work.</p>
          *
          * @param modifiedSince when null, do a full reindex; otherwise incremental (either modified &gt; modifiedSince, or modified &gt; lastIndexed)
          */
@@ -550,18 +549,81 @@ public interface SearchService extends SearchMXBean
         boolean detect(WebdavResource resource, String contentType, byte[] buf) throws IOException;
         void parse(InputStream stream, ContentHandler handler) throws IOException, SAXException;
     }
-    
+
+
+    /**
+     * Keyset-pagination cursor for the recursive-requeue batch-indexing pattern.
+     * Tracks position (max RowId seen) and batch fullness across one round of indexing.
+     * Intended for use in {@link DocumentProvider#enumerateDocuments} implementations.
+     */
+    class IndexBatchCursor
+    {
+        private long _maxRowId;
+        private int _count;
+
+        public IndexBatchCursor(long minRowId)
+        {
+            _maxRowId = minRowId;
+        }
+
+        /** Records {@code rowId} as processed. Throws if results are not strictly ascending by RowId. */
+        public void advance(long rowId)
+        {
+            if (rowId <= _maxRowId)
+                throw new IllegalStateException("Expected results strictly ordered by RowId but got " + rowId + " after " + _maxRowId);
+            _maxRowId = rowId;
+            _count++;
+        }
+
+        /** Returns the maximum RowId seen so far, suitable for passing as {@code minRowId} to the next batch. */
+        public long getMaxRowId()
+        {
+            return _maxRowId;
+        }
+
+        /**
+         * Adds {@code RowId > current max} to {@code filter} and returns a {@link TableSelector} ordered by RowId
+         * and limited to {@link #INDEXING_LIMIT} rows. Callers should pass the result to {@link #forEach} and
+         * then call {@link #wasFull} to decide whether to requeue.
+         */
+        public TableSelector createSelector(TableInfo tableInfo, SimpleFilter filter)
+        {
+            filter.addCondition(FieldKey.fromParts("RowId"), _maxRowId, CompareType.GT);
+            TableSelector selector = new TableSelector(tableInfo, filter, new Sort("RowId"));
+            selector.setMaxRows(INDEXING_LIMIT);
+            return selector;
+        }
+
+        /**
+         * Iterates {@code batch}, invoking {@code action} on each item and then calling {@link #advance}
+         * with the item's RowId. {@code advance} is called unconditionally after each action so the
+         * count stays accurate even when the action swallows errors internally.
+         */
+        public <T> void forEach(List<? extends T> batch, ToLongFunction<T> rowIdOf, Consumer<T> action)
+        {
+            batch.forEach(item -> {
+                action.accept(item);
+                advance(rowIdOf.applyAsLong(item));
+            });
+        }
+
+        /** Returns {@code true} if the batch was full, meaning more rows may remain and a requeue is needed. */
+        public boolean wasFull()
+        {
+            return _count == INDEXING_LIMIT;
+        }
+    }
 
     // an interface that enumerates documents in a container (not recursive)
     void addDocumentProvider(DocumentProvider provider);
 
     void addDocumentParser(DocumentParser parser);
 
-    
+
     //
     // helpers
     //
-    
+
 
     /**
      * filter for documents modified since the provided date
@@ -602,7 +664,7 @@ public interface SearchService extends SearchMXBean
 
             // Incremental if modifiedSince is set and is more recent than 1967-10-04
             boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
-            
+
             // no filter
             if (!incremental)
                 return;

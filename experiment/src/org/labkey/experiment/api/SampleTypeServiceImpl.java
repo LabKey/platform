@@ -17,7 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.math3.util.Precision;
@@ -367,21 +366,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql = getExpSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getExpSchema().getScope(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Material> materials = selector.getArrayList(Material.class);
-        materials.forEach(m -> {
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
             ExpMaterialImpl impl = new ExpMaterialImpl(m);
             impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), impl.getRowId()));
         });
 
-        if (materials.size() == SearchService.INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
     }
 
 
