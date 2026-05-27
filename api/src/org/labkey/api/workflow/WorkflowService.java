@@ -68,6 +68,7 @@ public interface WorkflowService
     Map<String, Object> getConfigParameters(HttpServletRequest request) throws ValidationException;
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
+    boolean actionWillAddSamples(Long actionId);
 
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
