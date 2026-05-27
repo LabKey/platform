@@ -60,6 +60,7 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationManager.Reauth;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
@@ -92,6 +93,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
@@ -139,6 +141,7 @@ import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_ENABLE
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY;
+import static org.labkey.api.security.AuthenticationManager.REAUTH_TOKEN_NAME;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -242,6 +245,13 @@ public class LoginController extends SpringActionController
                 url.addReturnUrl(returnUrl);
 
             return url;
+        }
+
+        @Override
+        public ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl)
+        {
+            return getLoginURL(c, returnUrl)
+                .addParameter("forceReauth", true);
         }
 
         @Override
@@ -387,7 +397,7 @@ public class LoginController extends SpringActionController
         @Override
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
-            ModelAndView redirectView = redirectIfLoggedIn(form);
+            ModelAndView redirectView = redirectIfLoggedIn(form, false);
             if (redirectView != null) return redirectView;
 
             if (!AuthenticationManager.isRegistrationEnabled())
@@ -581,19 +591,20 @@ public class LoginController extends SpringActionController
      * @return a view that will redirect the user if they're already logged in, or null if they're not logged in already
      */
     @Nullable
-    private ModelAndView redirectIfLoggedIn(AbstractLoginForm form)
+    private ModelAndView redirectIfLoggedIn(AbstractLoginForm form, boolean forceLogin)
     {
-        if (!getUser().isGuest())
+        if (getUser().isGuest() || forceLogin)
         {
-            URLHelper returnUrl = form.getReturnUrlHelper();
-
-            // Create LoginReturnProperties if we have a returnUrl or skipProfile param
-            LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
-                    ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
-
-            throw new ExternalRedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
+            return null;
         }
-        return null;
+
+        URLHelper returnUrl = form.getReturnUrlHelper();
+
+        // Create LoginReturnProperties if we have a returnUrl or skipProfile param
+        LoginReturnProperties properties = null != returnUrl || form.getSkipProfile()
+                ? new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile()) : null;
+
+        throw new ExternalRedirectException(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()));
     }
 
     @RequiresNoPermission
@@ -609,7 +620,7 @@ public class LoginController extends SpringActionController
             var canonicalUrl = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(ContainerManager.getRoot(), null);
             getPageConfig().setCanonicalLink(canonicalUrl.getURIString());
 
-            ModelAndView redirectView = redirectIfLoggedIn(form);
+            ModelAndView redirectView = redirectIfLoggedIn(form, form.isForceReauth());
             if (redirectView != null) return redirectView;
 
             HttpServletRequest request = getViewContext().getRequest();
@@ -675,7 +686,10 @@ public class LoginController extends SpringActionController
 
             if (success)
             {
-                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer());
+                // Don't touch the session in the re-auth case (e.g., CAS renew=true). The CAS spec is silent on
+                // expected behavior when no "ticket-signing ticket" (session, in our case) exists and a "renew" is
+                // requested, but this seems consistent with "ignore the current session" when renew is requested.
+                AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
                 URLHelper redirectUrl = authResult.getRedirectURL();
@@ -689,6 +703,13 @@ public class LoginController extends SpringActionController
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
                         WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
                     response.put("approvedTermsOfUse", true);
+                }
+
+                if (form.isForceReauth())
+                {
+                    String reauthToken = GUID.makeHash();
+                    redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
+                    request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI
@@ -723,7 +744,7 @@ public class LoginController extends SpringActionController
                     response = new ApiSimpleResponse();
                     response.put("success", false);
                     response.put(ActionURL.Param.returnUrl.name(), redirectString);
-                    AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), null);
+                    AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), null);
                 }
             }
 
@@ -1364,28 +1385,31 @@ public class LoginController extends SpringActionController
 
     public static class LoginForm extends AgreeToTermsForm
     {
-        private boolean remember;
         private String email;
         private String password;
         private String provider;
-
-        public void setProvider(String provider)
-        {
-            this.provider = provider;
-        }
-        public void setEmail(String email)
-        {
-            this.email = email;
-        }
+        private boolean forceReauth = false;
 
         public String getProvider()
         {
             return this.provider;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setProvider(String provider)
+        {
+            this.provider = provider;
+        }
+
         public String getEmail()
         {
             return this.email;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setEmail(String email)
+        {
+            this.email = email;
         }
 
         public String getPassword()
@@ -1399,15 +1423,15 @@ public class LoginController extends SpringActionController
             this.password = password;
         }
 
-        public boolean isRemember()
+        public boolean isForceReauth()
         {
-            return this.remember;
+            return forceReauth;
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setRemember(boolean remember)
+        @SuppressWarnings("unused")
+        public void setForceReauth(boolean forceReauth)
         {
-            this.remember = remember;
+            this.forceReauth = forceReauth;
         }
     }
 
@@ -1558,7 +1582,7 @@ public class LoginController extends SpringActionController
             if (null != returnUrl || form.getSkipProfile())
             {
                 LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
-                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), properties);
             }
 
             final URLHelper url;
@@ -1642,7 +1666,7 @@ public class LoginController extends SpringActionController
             if (null != returnUrl || form.getSkipProfile())
             {
                 LoginReturnProperties properties = new LoginReturnProperties(returnUrl, form.getUrlhash(), form.getSkipProfile());
-                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequest(), properties);
+                AuthenticationManager.setLoginReturnProperties(getViewContext().getRequestOrThrow(), properties);
             }
 
             // If we're going to display the form, then set focus on the first input.
@@ -2186,7 +2210,7 @@ public class LoginController extends SpringActionController
 
             if (null == form.getEmail())
             {
-                form.setEmail(getEmailFromCookie(getViewContext().getRequest()));
+                form.setEmail(getEmailFromCookie(getViewContext().getRequestOrThrow()));
             }
 
             return view;
