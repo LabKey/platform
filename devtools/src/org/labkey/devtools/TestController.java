@@ -1351,12 +1351,9 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
-            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
             HtmlStringBuilder message = HtmlStringBuilder.of();
             message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
             message.append("This may take a few minutes.");
-            if (db.exists())
-                message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists. Just FYI.");
             return new HtmlView(message);
         }
 
@@ -1394,23 +1391,23 @@ public class TestController extends SpringActionController
             WikiService service = Objects.requireNonNull(WikiService.get());
             List<String> all = service.getNames(documentsContainer);
             all.stream()
-                    .map(name -> service.getRenderedWiki(documentsContainer, name))
+                    .map(name -> service.getWikiMarkdown(documentsContainer, name))
                     .filter(Objects::nonNull)
                     .map(wiki ->
                     {
-                        count.incrementAndGet();
                         var metadata = Map.of(
-                                "Content-Type", "text/html",
-                                "filename", wiki.name() + ".html",  // CONSIDER add path information
+                                "Content-Type", "text/markdown",
+                                "filename", wiki.name() + ".md",
                                 "title", (Object)wiki.title(),
                                 "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
                         );
-                        return new Document(wiki.entityId(), wiki.html().toString(), metadata);
+                        return new Document(wiki.entityId(), wiki.markdown(), metadata);
                     })
                     .forEach(d -> {
                         try
                         {
                             vs.accept(List.of(d));
+                            count.incrementAndGet();
                         }
                         catch (IllegalArgumentException x)
                         {

@@ -186,6 +186,7 @@ import org.labkey.api.view.RedirectorServlet;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 
@@ -527,6 +528,7 @@ public class ApiModule extends CodeOnlyModule
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,
+            WikiRendererType.TestCase.class,
             WorkbookContainerType.TestCase.class,
             WriteableLookAndFeelProperties.TestCase.class
         );
