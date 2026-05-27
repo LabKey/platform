@@ -40,6 +40,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
-            String composedPrompt = composePrompt(firstTurn, prompt, form.getDomainFields(), form.getFieldExpression(), form.getFieldError());
+            String composedPrompt = composePrompt(firstTurn, prompt, form.getField(), form.getDomainFields(), form.getFieldExpression(), form.getFieldError());
 
             if (isBlank(composedPrompt))
             {
@@ -121,7 +122,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
      * invalid expression). When {@code firstTurn} is false the context fields are ignored, and the
      * user's prompt is returned verbatim.
      */
-    static String composePrompt(boolean firstTurn, String userPrompt, JSONArray domainFields, String fieldExpression, String fieldError)
+    static String composePrompt(boolean firstTurn, String userPrompt, JSONObject field, JSONArray domainFields, String fieldExpression, String fieldError)
     {
         if (!firstTurn)
             return StringUtils.defaultString(userPrompt);
@@ -135,6 +136,12 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             sb.append("The following enumerates the available columns and their types:\n");
             sb.append(fence(domainFields.toString(), "json"));
+        }
+
+        if (field != null)
+        {
+            sb.append("The current column that is having its expression evaluated and the one you are assisting with is:\n");
+            sb.append(fence(field.toString(), "json"));
         }
 
         if (autoEvaluate)
@@ -177,6 +184,10 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
      * Each segment is either a rendered-HTML span or a fenced SQL block. SQL blocks fenced as
      * `expression` are tagged "expression" (the model's assertion that this SQL has been validated
      * and is safe to apply); blocks fenced as `sql` are tagged "sql" (illustrative / unvalidated).
+     * For `expression` blocks the body is expected to be the JSON returned by
+     * validateCalculatedColumnExpression — at minimum {@code {"expression": "..."}}, optionally
+     * with {@code "jdbcType"}. If the body fails to parse as JSON we fall back to treating it as a
+     * raw SQL string so the Apply affordance still works.
      */
     private static JSONArray buildSegments(List<McpService.MessageResponse> responses)
     {
@@ -194,36 +205,27 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             int i = 0;
             while (i < lines.length)
             {
-                String tag = fenceTag(lines[i]);
-                if ("sql".equals(tag) || "expression".equals(tag))
+                Fence f = readFence(lines, i);
+                if (f != null && f.terminated && ("sql".equals(f.tag) || "expression".equals(f.tag)))
                 {
-                    int j = i + 1;
-                    StringBuilder code = new StringBuilder();
-                    while (j < lines.length && !"```".equals(lines[j].trim()))
-                    {
-                        if (!code.isEmpty()) code.append("\n");
-                        code.append(lines[j]);
-                        j++;
-                    }
-                    if (j >= lines.length)
-                    {
-                        // Unterminated fence — fold the body back into prose so we don't drop content,
-                        // but skip the opening fence line itself so the user doesn't see a stray
-                        // "```expression" rendered as a code marker.
-                        if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-                        for (int k = i + 1; k < lines.length; k++)
-                        {
-                            htmlBuf.append(lines[k]);
-                            if (k < lines.length - 1) htmlBuf.append("\n");
-                        }
-                        break;
-                    }
                     flushHtmlSegment(segments, htmlBuf, md);
-                    segments.put(new JSONObject(Map.of("type", tag, "sql", code.toString())));
-                    i = j + 1;
+                    segments.put(buildCodeSegment(f.tag, f.body));
+                    i = f.nextIndex;
+                }
+                else if (f != null && !f.terminated)
+                {
+                    // Unterminated fence — fold the body back into prose so we don't drop content,
+                    // but skip the opening fence line itself so the user doesn't see a stray
+                    // "```expression" rendered as a code marker.
+                    if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
+                    htmlBuf.append(f.body);
+                    break;
                 }
                 else
                 {
+                    // Either not a fence opener or an unknown tag (e.g., python). In the unknown-tag
+                    // case we leave the fence intact in prose so the Markdown renderer turns it into
+                    // a code block.
                     if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
                     htmlBuf.append(lines[i]);
                     i++;
@@ -234,13 +236,59 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         return segments;
     }
 
-    private static String fenceTag(String line)
+    /**
+     * Build a segment JSON object for an `sql` or `expression` fenced block. For `expression`
+     * blocks the body is expected to be the JSON returned by validateCalculatedColumnExpression;
+     * we pull "expression" into "sql" and pass through "jdbcType". If the body isn't JSON we treat
+     * it as raw SQL text so the Apply affordance still works.
+     */
+    private static JSONObject buildCodeSegment(String tag, String body)
     {
-        String trimmed = line.trim();
+        Map<String, Object> segData = new LinkedHashMap<>();
+        segData.put("type", tag);
+
+        if ("expression".equals(tag))
+        {
+            try
+            {
+                JSONObject payload = new JSONObject(body);
+                segData.put("sql", payload.optString("expression", body));
+                if (payload.has("jdbcType"))
+                    segData.put("jdbcType", payload.getString("jdbcType"));
+            }
+            catch (org.json.JSONException x)
+            {
+                segData.put("sql", body);
+            }
+        }
+        else
+            segData.put("sql", body);
+
+        return new JSONObject(segData);
+    }
+
+    private record Fence(String tag, String body, int nextIndex, boolean terminated) {}
+
+    private static Fence readFence(String[] lines, int i)
+    {
+        String trimmed = lines[i].trim();
         if (!trimmed.startsWith("```"))
             return null;
         String rest = trimmed.substring(3).trim();
-        return rest.isEmpty() ? null : rest.toLowerCase();
+        if (rest.isEmpty())
+            return null;
+        String tag = rest.toLowerCase();
+
+        int j = i + 1;
+        StringBuilder body = new StringBuilder();
+        while (j < lines.length && !"```".equals(lines[j].trim()))
+        {
+            if (!body.isEmpty()) body.append("\n");
+            body.append(lines[j]);
+            j++;
+        }
+        boolean terminated = j < lines.length;
+        return new Fence(tag, body.toString(), terminated ? j + 1 : lines.length, terminated);
     }
 
     private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
@@ -279,6 +327,16 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             return segments.getJSONObject(i);
         }
 
+        /** The JSON body the model is expected to echo verbatim from validateCalculatedColumnExpression. */
+        private static String expressionPayload(String sql, String jdbcType)
+        {
+            JSONObject json = new JSONObject();
+            json.put("jdbcType", jdbcType);
+            json.put("expression", sql);
+            json.put("success", true);
+            return json.toString();
+        }
+
         @Test
         public void emptyResponseList()
         {
@@ -305,11 +363,25 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void expressionFenceProducesExpressionSegment()
         {
+            String md = "```expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("expression", segment(segments, 0).getString("type"));
+            assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
+        }
+
+        @Test
+        public void expressionFenceWithRawSqlBodyFallsBackToSqlOnly()
+        {
+            // Legacy / model-misbehavior fallback: if the body isn't JSON, treat it as raw SQL and omit jdbcType.
             String md = "```expression\nSELECT 1\n```";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(1, segments.length());
             assertEquals("expression", segment(segments, 0).getString("type"));
             assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+            assertFalse("jdbcType should be absent when body isn't JSON",
+                    segment(segments, 0).has("jdbcType"));
         }
 
         @Test
@@ -335,7 +407,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 "",
                 "Option B (ready to apply):",
                 "```expression",
-                "SELECT b FROM t",
+                expressionPayload("SELECT b FROM t", "VARCHAR"),
                 "```",
                 "Pick whichever fits."
             );
@@ -347,6 +419,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("html", segment(segments, 2).getString("type"));
             assertEquals("expression", segment(segments, 3).getString("type"));
             assertEquals("SELECT b FROM t", segment(segments, 3).getString("sql"));
+            assertEquals("VARCHAR", segment(segments, 3).getString("jdbcType"));
             assertEquals("html", segment(segments, 4).getString("type"));
         }
 
@@ -355,24 +428,27 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             String md = String.join("\n",
                 "```expression",
-                "SELECT 1",
+                expressionPayload("SELECT 1", "INTEGER"),
                 "```",
                 "```expression",
-                "SELECT 2",
+                expressionPayload("SELECT 2", "BIGINT"),
                 "```"
             );
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(2, segments.length());
             assertEquals("expression", segment(segments, 0).getString("type"));
             assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
             assertEquals("expression", segment(segments, 1).getString("type"));
             assertEquals("SELECT 2", segment(segments, 1).getString("sql"));
+            assertEquals("BIGINT", segment(segments, 1).getString("jdbcType"));
         }
 
         @Test
         public void unterminatedFenceFallsBackToHtml()
         {
-            String md = "Here's an expression:\n```expression\nSELECT 1\n(no closing fence)";
+            String payload = expressionPayload("SELECT 1", "INTEGER");
+            String md = "Here's an expression:\n```expression\n" + payload + "\n(no closing fence)";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(1, segments.length());
             assertEquals("html", segment(segments, 0).getString("type"));
@@ -395,32 +471,36 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void fenceTagIsCaseInsensitive()
         {
-            String md = "```EXPRESSION\nSELECT 1\n```";
+            String md = "```EXPRESSION\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(1, segments.length());
             assertEquals("expression", segment(segments, 0).getString("type"));
             assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
+            assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
         }
 
         @Test
         public void preservesMultilineSqlBody()
         {
-            String md = "```expression\nSELECT a,\n       b\nFROM t\n```";
+            String multiline = "SELECT a,\n       b\nFROM t";
+            String md = "```expression\n" + expressionPayload(multiline, "VARCHAR") + "\n```";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(1, segments.length());
-            assertEquals("SELECT a,\n       b\nFROM t", segment(segments, 0).getString("sql"));
+            assertEquals(multiline, segment(segments, 0).getString("sql"));
+            assertEquals("VARCHAR", segment(segments, 0).getString("jdbcType"));
         }
 
         @Test
         public void multipleMessageResponsesAreConcatenatedInOrder()
         {
             McpService.MessageResponse r1 = markdownResponse("First response prose.");
-            McpService.MessageResponse r2 = markdownResponse("```expression\nSELECT 1\n```");
+            McpService.MessageResponse r2 = markdownResponse("```expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```");
             JSONArray segments = buildSegments(List.of(r1, r2));
             assertEquals(2, segments.length());
             assertEquals("html", segment(segments, 0).getString("type"));
             assertEquals("expression", segment(segments, 1).getString("type"));
             assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
+            assertEquals("INTEGER", segment(segments, 1).getString("jdbcType"));
         }
 
         @Test
@@ -453,15 +533,20 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         public void composePromptFollowUpTurnIgnoresContextAndReturnsUserPromptVerbatim()
         {
             // Once a conversation is underway, the catalog/expression/error are already in chat history.
-            assertEquals("more please", composePrompt(false, "more please", fields("[{\"name\":\"A\"}]"), "SELECT 1", "boom"));
+            assertEquals("more please", composePrompt(false, "more please", null, fields("[{\"name\":\"A\"}]"), "SELECT 1", "boom"));
         }
 
         @Test
         public void composePromptFirstTurnWrapsWithFieldsCatalogAndInstruction()
         {
-            String composed = composePrompt(true, "sum A and B", fields("[{\"name\":\"A\"}]"), null, null);
+            JSONObject field = new JSONObject(Map.of("name", "MyCalc"));
+            String composed = composePrompt(true, "sum A and B", field, fields("[{\"name\":\"A\"}]"), null, null);
             assertTrue(composed.contains("available columns"));
             assertTrue(composed.contains("```json\n[{\"name\":\"A\"}]\n```"));
+            assertTrue("current-column preamble missing: " + composed,
+                    composed.contains("current column that is having its expression evaluated"));
+            assertTrue("current-column JSON missing: " + composed,
+                    composed.contains("```json\n" + field + "\n```"));
             assertTrue(composed.contains("Generate a calculated column expression"));
             assertTrue(composed.endsWith("sum A and B"));
         }
@@ -469,7 +554,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void composePromptAutoEvaluateIncludesExpressionAndError()
         {
-            String composed = composePrompt(true, "", fields("[{\"name\":\"A\"}]"), "SELECT bad", "syntax error");
+            String composed = composePrompt(true, "", null, fields("[{\"name\":\"A\"}]"), "SELECT bad", "syntax error");
             assertTrue(composed.contains("available columns"));
             assertTrue(composed.contains("```\nSELECT bad\n```"));
             assertTrue(composed.contains("```\nsyntax error\n```"));
@@ -481,7 +566,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void composePromptAutoEvaluateWithoutExpressionStillIncludesError()
         {
-            String composed = composePrompt(true, "", null, null, "boom");
+            String composed = composePrompt(true, "", null, null, null, "boom");
             assertTrue(composed.contains("```\nboom\n```"));
             assertFalse(composed.contains("user already has the following"));
         }
@@ -490,15 +575,15 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         public void composePromptEmptyWhenNothingToSay()
         {
             // First turn with no user prompt and no error context — caller renders the no-op shrug response.
-            assertEquals("", composePrompt(true, "", null, null, null));
-            assertEquals("", composePrompt(true, null, fields("[]"), "expr", null));
+            assertEquals("", composePrompt(true, "", null, null, null, null));
+            assertEquals("", composePrompt(true, null, null, fields("[]"), "expr", null));
         }
 
         @Test
         public void composePromptFirstTurnWithoutDomainFieldsSkipsWrapping()
         {
             // No catalog to inject — don't bother prepending the "Generate a calculated column" preamble.
-            assertEquals("just do it", composePrompt(true, "just do it", null, null, null));
+            assertEquals("just do it", composePrompt(true, "just do it", null, null, null, null));
         }
     }
 }
