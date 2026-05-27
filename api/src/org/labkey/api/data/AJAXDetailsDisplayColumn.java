@@ -23,6 +23,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -38,6 +39,7 @@ import java.util.Set;
 
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.id;
+import static org.labkey.api.util.DOM.Attribute.style;
 
 /**
  * Uses LABKEY.Ext.CalloutTip to provide additional details, summoned via AJAX
@@ -106,7 +108,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             props.put("target", divId);
 
             SPAN(
-                id(divId),
+                id(divId).at(style, "display:inline-flex;flex-wrap:nowrap"),
                 (DOM.Renderable) ret -> {
                     super.renderGridCellContents(ctx, out);
                     return ret;

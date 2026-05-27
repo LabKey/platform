@@ -476,8 +476,6 @@ public class VisDataRequest
         String interval;
         Measure dateCol;
         Measure zeroDateCol;
-        String zeroDayVisitTag;
-        boolean isZeroDayVisitTagSet=false;  // for json compatibility
         boolean useProtocolDay=true;
         String altQueryName;
 
@@ -512,23 +510,6 @@ public class VisDataRequest
         {
             this.zeroDateCol = zeroDateCol;
             return this;
-        }
-
-        public String getZeroDayVisitTag()
-        {
-            return zeroDayVisitTag;
-        }
-
-        public DateOptions setZeroDayVisitTag(String zeroDayVisitTag)
-        {
-            this.isZeroDayVisitTagSet = true;
-            this.zeroDayVisitTag = zeroDayVisitTag;
-            return this;
-        }
-
-        public boolean isZeroDayVisitTagSet()
-        {
-            return isZeroDayVisitTagSet;
         }
 
         public boolean isUseProtocolDay()
