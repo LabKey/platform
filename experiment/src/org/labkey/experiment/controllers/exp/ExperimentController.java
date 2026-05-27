@@ -79,6 +79,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
@@ -89,6 +90,7 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVJSONWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
@@ -199,6 +201,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -215,6 +218,7 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JSoupUtil;
@@ -288,6 +292,7 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
@@ -351,15 +356,18 @@ import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.size;
 import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.Attribute.width;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.experiment.ExpDataIterators.setContainerFilterForImport;
@@ -789,7 +797,7 @@ public class ExperimentController extends SpringActionController
             ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
 
             ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone(), protocols);
-            JspView<?> chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean, errors);
+            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean, errors);
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
             runListView.getRunTable().setExperiment(_experiment);
@@ -2509,10 +2517,8 @@ public class ExperimentController extends SpringActionController
                 try
                 {
                     // Try to write the exception back to the caller if we haven't already flushed the buffer
-                    try(ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse()))
-                    {
-                        writer.writeResponse(e);
-                    }
+                    ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+                    writer.writeResponse(e);
                 }
                 catch (IllegalStateException ise)
                 {
@@ -7367,6 +7373,47 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public static class CheckEdgesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            List<Object[]> result;
+            DbSchema schema = ExperimentService.get().getSchema();
+            TableInfo edgeTable = schema.getTable("Edge");
+
+            if (null != edgeTable.getColumn("fromObjectId"))
+            {
+                result = detectCycleEdges(schema).stream().map(e -> new Long[]{e.first, e.second}).collect(toList());
+            }
+            else
+            {
+                var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromLsid, toLsid FROM exp.Edge")
+                        .resultSetStream()
+                        .map(r -> { try { return new Pair<>(r.getString(1), r.getString(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                        .collect(toList());
+                var cycles = (new GraphAlgorithms<String>()).detectCycleInDirectedGraph(edges);
+                result = cycles.stream().map(e -> new String[]{e.first, e.second}).collect(toList());
+            }
+
+            JSONObject ret = new JSONObject();
+            ret.put("result", result);
+            ret.put("success", true);
+            return ret;
+        }
+
+        public static Collection<Pair<Long, Long>> detectCycleEdges(DbSchema schema)
+        {
+            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                    .resultSetStream()
+                    .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                    .collect(toList());
+            return (new GraphAlgorithms<Long>()).detectCycleInDirectedGraph(edges);
+        }
+    }
+
     @RequiresPermission(UpdatePermission.class)
     public static class UpdateMaterialQueryRowAction extends UserSchemaAction
     {
@@ -7402,7 +7449,7 @@ public class ExperimentController extends SpringActionController
             {
                 sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
             }
-            catch (ConversionException e)
+            catch (ConversionException _)
             {
             }
             if (null == sampleId)
@@ -8146,6 +8193,99 @@ public class ExperimentController extends SpringActionController
             }
         }
     }
+
+    /* Also see API CheckEdgesAction */
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class CycleCheckAction extends FormViewAction<Object>
+    {
+        List<Long> cycleObjectIds = null;
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
+        {
+            if (!reshow)
+            {
+                return new HtmlView(
+                        DIV("This operation can use a lot of memory.",
+                        LK.FORM(at(method,"POST"),
+                            PageFlowUtil.button("Continue").submit(true)))
+                );
+            }
+
+            if (null == cycleObjectIds)
+                return new HtmlView(HtmlString.of("No cycles found"));
+
+            var cf = new ContainerFilter.AllFolders(getUser());
+            Map<Long, ExpObject> map = resolveCycleObjects(cf, cycleObjectIds);
+
+            ExperimentUrls urls = ExperimentUrls.get();
+            return new HtmlView(
+                    DIV("Cycle found involving these objects.",
+                            UL(cycleObjectIds.stream().map((objectid) ->
+                            {
+                                ExpObject exp = map.get(objectid);
+                                if (exp instanceof ExpMaterial mat)
+                                    return LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
+                                else if (exp instanceof ExpRun run)
+                                    return LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
+                                else if (exp instanceof ExpData data)
+                                    return LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
+                                else
+                                    return LI(String.valueOf(objectid));
+                            }))
+                    )
+            );
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            cycleObjectIds = detectCycleObjectIds(ExperimentService.get().getSchema());
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Cycle check");
+        }
+
+        public static @Nullable List<Long> detectCycleObjectIds(DbSchema schema)
+        {
+            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                    .resultSetStream()
+                    .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                    .collect(toList());
+            var cyclesEdges = (new GraphAlgorithms<Long>()).detectCycleInDirectedGraph(edges);
+            if (cyclesEdges.isEmpty())
+                return null;
+            var set = new LinkedHashSet<Long>();
+            cyclesEdges.forEach(e -> { set.add(e.first); set.add(e.second); });
+            return set.stream().toList();
+        }
+
+        public static Map<Long, ExpObject> resolveCycleObjects(ContainerFilter cf, List<Long> ids)
+        {
+            Map<Long, ExpObject> map = new LongHashMap<>();
+            ExperimentServiceImpl.get().getExpMaterialsByObjectId(cf, ids).forEach(m -> map.put(m.getObjectId(), m));
+            ExperimentServiceImpl.get().getExpDatasByObjectId(cf, ids).forEach(d -> map.put(d.getObjectId(), d));
+            ExperimentServiceImpl.get().getRunsByObjectId(cf, ids).forEach(r -> map.put(r.getObjectId(), r));
+            return map;
+        }
+
+   }
 
     @RequiresPermission(AdminPermission.class)
     public static class MissingFilesCheckAction extends ReadOnlyApiAction<Object>
