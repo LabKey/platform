@@ -137,7 +137,7 @@ public abstract class Action extends CreatedModified
      *  UPDATE_STATUS_KEY is true
      *  - STATUS_KEY is optional, but when present the value must be a valid status
      *  - REMOVE_FROM_STORAGE_KEY may only be present when STATUS_KEY is also present
-     *  - If REMOVE_STORAGE_KEY is true, then the value for STATUS_KEY must represent a consumed state
+     *  - If REMOVE_FROM_STORAGE_KEY is true, then the value for STATUS_KEY must represent a consumed state
      */
     private @Nullable String validateStatus(Container container, String prefix, boolean updateKeyRequired)
     {
@@ -194,7 +194,7 @@ public abstract class Action extends CreatedModified
             DataState state = SampleStatusService.get().getStateForRowId(container, statusId);
 
             if (state == null)
-                return prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").";
+                return prefix + "Invalid " + STATUS_KEY + " (" + statusId + ") for container " + container.getPath() + ".";
 
             if (removeFromStorage && !ExpSchema.SampleStateType.Consumed.name().equals(state.getStateType()))
                 return prefix + STATUS_KEY + " (" + statusId + ") must represent a " + ExpSchema.SampleStateType.Consumed.name() + " state when " + REMOVE_FROM_STORAGE_KEY + " is true.";
