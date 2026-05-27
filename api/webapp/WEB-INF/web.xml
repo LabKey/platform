@@ -58,6 +58,11 @@
         <url-pattern>*.post</url-pattern>
     </filter-mapping>
 
+    <!-- Ensure that we never use GET parameters for session IDs -->
+    <session-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
+
     <welcome-file-list>
         <welcome-file>/</welcome-file>
     </welcome-file-list>
