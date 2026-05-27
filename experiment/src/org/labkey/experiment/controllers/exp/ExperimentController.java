@@ -8230,14 +8230,16 @@ public class ExperimentController extends SpringActionController
                             UL(cycleObjectIds.stream().map((objectid) ->
                             {
                                 ExpObject exp = map.get(objectid);
-                                if (exp instanceof ExpMaterial mat)
-                                    return LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
-                                else if (exp instanceof ExpRun run)
-                                    return LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
-                                else if (exp instanceof ExpData data)
-                                    return LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
-                                else
-                                    return LI(String.valueOf(objectid));
+                                return switch (exp)
+                                {
+                                    case ExpMaterial mat ->
+                                            LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
+                                    case ExpRun run ->
+                                            LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
+                                    case ExpData data ->
+                                            LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
+                                    case null, default -> LI(objectid + " : unknown object");
+                                };
                             }))
                     )
             );
