@@ -75,7 +75,6 @@ public class ContentSecurityPolicyFilter implements Filter
     private String _stashedTemplate = null;
 
     // We can't set this statically because the class is referenced before URLProviders are available
-    @SuppressWarnings("DataFlowIssue")
     private final String _reportingEndpointsHeaderValue = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     // Initialized on first request and reset when allowed sources change. Don't reference this directly; always use
