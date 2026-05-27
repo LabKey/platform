@@ -1426,6 +1426,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
             }
 
+            if (dataRow == null && allowCrossContainer)
+            {
+                // if data not found from queryTable (perhaps due to user permission), give it another chance to look in exp.data
+                selector = new TableSelector(ExperimentService.get().getTinfoData(), filter, null);
+                try (var results = selector.getResults()) {
+                    if (results.next())
+                    {
+                        return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                    }
+                }
+            }
+
             if (!addInputs)
                 return dataRow;
 
