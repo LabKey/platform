@@ -153,7 +153,7 @@ public interface SearchService extends SearchMXBean
         /** Intended for content that needed indexing or reindexing because it was modified or created */
         modified,
         /** Highest priority. Used for removing documents from the index, which is generally faster than adding */
-        delete;
+        delete
     }
 
 
@@ -602,8 +602,8 @@ public interface SearchService extends SearchMXBean
         public <T> void forEach(List<? extends T> batch, ToLongFunction<T> rowIdOf, Consumer<T> action)
         {
             batch.forEach(item -> {
-                action.accept(item);
                 advance(rowIdOf.applyAsLong(item));
+                action.accept(item);
             });
         }
 
