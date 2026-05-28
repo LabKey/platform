@@ -18,13 +18,12 @@ package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
-import org.junit.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -69,12 +68,11 @@ import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -93,7 +91,6 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -1381,47 +1378,14 @@ public class TestController extends SpringActionController
             Container documentsContainer = ContainerManager.getForPath("/Documentation");
             if (null == documentsContainer)
                 throw new NotFoundException();
-            McpService mcp = McpService.get();
-            if (null == mcp.getVectorStore())
-                throw new NotFoundException("VectorStore not enabled.");
-
-            ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
-
-            WikiService service = Objects.requireNonNull(WikiService.get());
-            List<String> all = service.getNames(documentsContainer);
-            all.stream()
-                    .map(name -> service.getWikiMarkdown(documentsContainer, name))
-                    .filter(Objects::nonNull)
-                    .map(wiki ->
-                    {
-                        var metadata = Map.of(
-                                "Content-Type", "text/markdown",
-                                "filename", wiki.name() + ".md",
-                                "title", (Object)wiki.title(),
-                                "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
-                        );
-                        return new Document(wiki.entityId(), wiki.markdown(), metadata);
-                    })
-                    .forEach(d -> {
-                        try
-                        {
-                            mcp.addDocuments(List.of(d));
-                            count.incrementAndGet();
-                        }
-                        catch (IllegalArgumentException x)
-                        {
-                            LogManager.getLogger(TestController.class).info(d.getMetadata().get("filename"),x);
-                        }
-                    });
-
             try
             {
-                McpService.get().saveVectorStore();
+                count.set(Objects.requireNonNull(WikiService.get()).populateVectorStore(documentsContainer));
                 return true;
             }
             catch (Exception x)
             {
-                errors.addError(new ObjectError("form", "error saving vectordb: " + x.getMessage()));
+                errors.addError(new ObjectError("form", "error populating vector store: " + x.getMessage()));
                 return false;
             }
         }
@@ -1465,7 +1429,8 @@ public class TestController extends SpringActionController
                 for (var row : rows)
                 {
                     CaseInsensitiveHashMap<Object> copy = new CaseInsensitiveHashMap<>(row);
-                    copy.put("id", String.valueOf(copy.get("EntityId")));
+                    // Obviously wiki.EntityId is unique, but a container prefix might be useful
+                    copy.put("id", new Path(documentsContainer.getEntityId().toString(), String.valueOf(copy.get("EntityId"))).toString("",""));
                     copy.remove("EntityId");
                     array.put(new JSONObject(copy));
                 }
@@ -1505,7 +1470,9 @@ public class TestController extends SpringActionController
                 return new JSONObject(Map.of("error","There is not /Documentation project on this server")).toString();
 
             ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
-            var sql = new SQLFragment("SELECT Name FROM ").append(CommSchema.getInstance().getTableInfoPages(), "p").append(" WHERE EntityId = ").appendValue(id);
+            // IDs are "containerEntityId/wikiEntityId"; strip the container prefix if present
+            String wikiEntityId = id.contains("/") ? id.substring(id.lastIndexOf('/') + 1) : id;
+            var sql = new SQLFragment("SELECT Name FROM ").append(CommSchema.getInstance().getTableInfoPages(), "p").append(" WHERE EntityId = ").appendValue(wikiEntityId);
             var name = new SqlSelector(CommSchema.getInstance().getSchema(), sql).getObject(String.class);
             var wiki = service.getRenderedWiki(documentsContainer, name);
             if (null == wiki)
@@ -1514,7 +1481,7 @@ public class TestController extends SpringActionController
             var ret = new JSONObject();
             ret.put("Content-Type", "text/html");
             ret.put("filename",  wiki.name() + ".html");
-            ret.put("id", wiki.entityId());
+            ret.put("id", documentsContainer.getId() + "/" + wiki.entityId());
             ret.put("title", wiki.title());
             ret.put("source", wikiBase.clone().addParameter("name",wiki.name()).getURIString());
             ret.put("contents", wiki.html().toString());

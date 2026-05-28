@@ -42,6 +42,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.VectorDocument;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
@@ -56,6 +58,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -92,6 +95,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -952,6 +956,66 @@ public class WikiManager implements WikiService
     {
         List<String> l = WikiSelectManager.getPageNames(c);
         return new ArrayList<>(l);
+    }
+
+    @Override
+    public int populateVectorStore(Container container)
+    {
+        McpService mcp = McpService.get();
+        if (null == mcp.getVectorStore())
+            throw new NotFoundException("VectorStore not enabled.");
+
+        ActionURL wikiBase = new ActionURL("wiki", "page", container);
+        AtomicInteger count = new AtomicInteger();
+
+        for (String name : getNames(container))
+        {
+            Wiki wiki = WikiSelectManager.getWiki(container, name);
+            if (null == wiki)
+                continue;
+            WikiVersion version = wiki.getLatestVersion();
+            if (null == version)
+                continue;
+
+            String body = version.getBody();
+            String markdown = version.getRendererTypeEnum().bestAttemptConvertToMarkdown(null == body ? "" : body);
+            List<String> path = getAncestorTitles(wiki);
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("Content-Type", "text/markdown");
+            metadata.put("filename", name + ".md");
+            metadata.put("title", version.getTitle());
+            metadata.put("source", wikiBase.clone().addParameter("name", name).getURIString());
+            if (!path.isEmpty())
+                metadata.put("path", path);
+
+            VectorDocument doc = new VectorDocument(container.getId() + "/" + wiki.getEntityId(), markdown, metadata);
+            try
+            {
+                mcp.addDocuments(List.of(doc));
+                count.incrementAndGet();
+            }
+            catch (IllegalArgumentException x)
+            {
+                LogManager.getLogger(WikiManager.class).info(name, x);
+            }
+        }
+
+        mcp.saveVectorStore();
+        return count.get();
+    }
+
+    private List<String> getAncestorTitles(Wiki wiki)
+    {
+        List<String> titles = new ArrayList<>();
+        Wiki current = wiki.getParentWiki();
+        while (current != null)
+        {
+            WikiVersion version = current.getLatestVersion();
+            titles.add(0, version != null ? version.getTitle() : current.getName());
+            current = current.getParentWiki();
+        }
+        return titles;
     }
 
     @Override

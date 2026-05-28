@@ -17,7 +17,6 @@ import org.springframework.ai.mcp.annotation.provider.resource.SyncMcpResourcePr
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
@@ -195,7 +194,7 @@ public interface McpService extends ToolCallbackProvider
      * {@code IllegalArgumentException} that {@code TokenCountBatchingStrategy} throws on
      * oversized inputs.
      */
-    void addDocuments(List<Document> documents);
+    void addDocuments(List<VectorDocument> documents);
 
     void saveVectorStore();
 }

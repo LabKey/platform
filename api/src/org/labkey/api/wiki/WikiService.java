@@ -114,4 +114,18 @@ public interface WikiService
     String updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
 
     AttachmentParentType getAttachmentType();
+
+    /**
+     * Loads all wikis from the given container into the MCP vector store.
+     *
+     * <p>Each {@link org.labkey.api.mcp.VectorDocument} is assigned an ID of the form
+     * {@code "<containerEntityId>/<wikiEntityId>"}, where both components are GUIDs
+     * (as returned by {@link Container#getId()} and the wiki's own entity ID).
+     * Tools that consume vector store results (e.g. {@code listDocuments},
+     * {@code retrieveDocument}) must use this same format when constructing or
+     * interpreting document IDs.</p>
+     *
+     * @return the number of documents added
+     */
+    int populateVectorStore(Container container);
 }
