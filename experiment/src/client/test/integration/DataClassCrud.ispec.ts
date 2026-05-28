@@ -278,8 +278,7 @@ describe('Import with update / merge', () => {
    it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
        const BLANK_KEY_UPDATE_ERROR_NO_EXPRESSION = 'Missing value for required property: Name';
        const BLANK_KEY_UPDATE_ERROR_WITH_EXPRESSION = 'Name value not provided on row ';
-       const BOGUS_KEY_UPDATE_ERROR = 'Data not found for ';
-       const DUPLICATE_KEY_ERROR = 'duplicate key value';
+       const BOGUS_KEY_UPDATE_ERROR = 'Data does not exist in ';
 
        const dataType = "NoExpressionNameRequired52922";
        const createPayload = {
@@ -349,9 +348,9 @@ describe('Import with update / merge', () => {
        successResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
        expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
-       // cross folder update not supported when folder type is "Collaboration"
+       // cross folder update not supported
        let crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
-       expect(crossFolderErrorResp.text.indexOf(DUPLICATE_KEY_ERROR) > -1).toBeTruthy();
+       expect(crossFolderErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
        crossFolderErrorResp = await ExperimentCRUDUtils.importData(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
        expect(crossFolderErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
 
@@ -1140,12 +1139,12 @@ describe('Data CRUD', () => {
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             const errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toContain('Data not found for [' + row3RowId + ']');
+            expect(errorResp['exception']).toContain('Data does not exist in ' + PROJECT_NAME + ': {RowId=' + row3RowId + '}.');
         });
 
         // using update from file, verify update using rowId for data that doesn't exist on this dataclass should fail.
         errorResp = await ExperimentCRUDUtils.importData(server, "RowId\tDescription\n" + row3RowId + "\tupdate\n", emptyDataClass, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(errorResp.text).toContain('Data not found for [' + row3RowId + ']');
+        expect(errorResp.text).toContain('Data does not exist in ' + PROJECT_NAME + ': {RowId=' + row3RowId + '}.');
 
     });
 

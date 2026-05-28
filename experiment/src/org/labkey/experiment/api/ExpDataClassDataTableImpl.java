@@ -1406,7 +1406,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // as expected to match row inserts and other querySchema data
             SimpleFilter filter = new SimpleFilter();
             if (null != rowId)
-                filter.addCondition(Column.RowId.fieldKey(), rowId);
+                filter.addCondition(Column.ClassId.fieldKey(), classId)
+                        .addCondition(Column.RowId.fieldKey(), rowId);
             else if (null != lsid)
                 filter.addCondition(Column.LSID.fieldKey(), lsid);
             else
