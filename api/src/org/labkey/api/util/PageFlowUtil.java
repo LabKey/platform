@@ -449,6 +449,12 @@ public class PageFlowUtil
                 case '\"':
                     js.append("\\\"");
                     break;
+                case '\u2028':
+                    js.append("\\u2028");
+                    break;
+                case '\u2029':
+                    js.append("\\u2029");
+                    break;
                 default:
                     js.append(c);
                     break;
@@ -1403,12 +1409,12 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, boolean bold,
                                                   String id, Map<String, String> properties)
     {
         if (StringUtils.isBlank(id))
             id = HttpView.currentPageConfig().makeId("dropdown_");
-        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
@@ -1419,13 +1425,13 @@ public class PageFlowUtil
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
         var page = HttpView.currentPageConfig();
 
         String anchorId = page.makeId("A_");
-        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         page.addHandler(anchorId, "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
@@ -1434,8 +1440,8 @@ public class PageFlowUtil
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
-                                                       String imageId, Map<String, String> properties)
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String imageCls,
+                                                           String imageId, Map<String, String> properties)
     {
         PageConfig page = HttpView.currentPageConfig();
         String id = page.makeId("a_");
