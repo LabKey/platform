@@ -308,9 +308,9 @@ public class Lsid
         return "urn:lsid:%:" + namespace + ".%:%";
     }
 
-    static public String namespaceFilter(String columnName, String namespace)
+    static public SQLFragment namespaceFilter(Enum<?> column, String namespace)
     {
-        return columnName + " LIKE '" + namespaceLikeString(namespace) + "'";
+        return new SQLFragment().appendIdentifier(column.name()).append(" LIKE ?").add(namespaceLikeString(namespace));
     }
 
     /**
