@@ -2908,6 +2908,10 @@ public class CoreController extends SpringActionController
 
     // Called by various client components to ensure safe redirects, GitHub Issue #1023. This action redirects to
     // local URLs only, never to an external site, even if the host is on the "Allowed External Redirect Hosts" list.
+    // Why is this safe? First, ActionURL is guaranteed to be a local URL (schema, host, and port are always taken
+    // from local AppProps, even if an absolute URL is requested via getURIString() or similar). Second,
+    // SimpleRedirectAction throws RedirectException which also guarantees local redirects (instances of that class
+    // always use getLocalURIString()).
     @SuppressWarnings("unused")
     @RequiresNoPermission
     public static class SafeRedirectAction extends SimpleRedirectAction<ReturnUrlForm>
