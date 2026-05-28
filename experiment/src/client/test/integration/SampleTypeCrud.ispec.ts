@@ -368,7 +368,7 @@ describe('Import with update / merge', () => {
         successResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
         expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
-        // cross folder update not supported when folder type is "Collaboration"
+        // cross folder update not supported
         let crossFolderUpdateErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
         expect(crossFolderUpdateErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         let crossFolderMergeErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);

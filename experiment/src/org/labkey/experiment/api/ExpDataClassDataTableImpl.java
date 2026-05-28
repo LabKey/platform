@@ -1352,7 +1352,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         @Override
         public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys)
-                throws SQLException
+                throws SQLException, InvalidKeyException
         {
             if (!hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("You do not have permission to read data from this table.");
@@ -1389,7 +1389,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             throw new IllegalStateException();
         }
 
-        @Nullable protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException
+        @Nullable protected Map<String, Object> getDataMap(Map<String, Object> keys, User user, Container container, boolean allowCrossContainer, boolean addInputs) throws SQLException, InvalidKeyException
         {
             Long rowId = (Long)JdbcType.BIGINT.convert(keys.get(Column.RowId.name()));
             String lsid = (String)JdbcType.VARCHAR.convert(keys.get(Column.LSID.name()));
@@ -1429,12 +1429,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             if (dataRow == null && allowCrossContainer)
             {
-                // if data not found from queryTable (perhaps due to user permission), give it another chance to look in exp.data
+                // data not found from queryTable but exist in exp.data, which happens when users lack of permission to data's container
                 selector = new TableSelector(ExperimentService.get().getTinfoData(), filter, null);
-                try (var results = selector.getResults()) {
+                try (var results = selector.getResults())
+                {
                     if (results.next())
                     {
-                        return FieldKeyRowMap.toNameMap(results.getFieldKeyRowMap());
+                        String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
                     }
                 }
             }

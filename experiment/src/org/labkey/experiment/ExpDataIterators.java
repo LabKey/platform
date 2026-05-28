@@ -2683,7 +2683,6 @@ public class ExpDataIterators
         private final int _dataIdIndex;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
-        private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
         private final TSVWriter _tsvWriter;
 
         private MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, ExpObject dataType, boolean isSamples)
