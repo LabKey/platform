@@ -991,7 +991,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpMaterials(filter);
     }
 
-    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         if (objectIds.isEmpty())
             return emptyList();
@@ -1871,7 +1871,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
 
-    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
@@ -5711,7 +5711,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
@@ -7550,13 +7550,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterialRowId); // add self's root to cache
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterialRowId, parent.getLSID(), outputAliquot.getRowId());
-                        
+
                         new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
             }
         }
-        
+
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
         {
             for (ProtocolAppRecord rec : protAppRecords)

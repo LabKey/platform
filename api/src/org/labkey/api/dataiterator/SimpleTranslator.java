@@ -485,20 +485,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int derivationDataColInd;
         final int index;
         final boolean isDerivation;
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
 
         final SimpleConvertColumn _convertCol;
 
-        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type, convertCol.defaultUnit);
             _convertCol = convertCol;
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
@@ -506,7 +502,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             Object thisValue =  _convertCol.convert(o);
 
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
 
         }
     }
@@ -519,23 +515,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int index;
         final boolean isDerivation;
 
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
-
-        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation)
         {
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
         public Object get()
         {
             Object thisValue =  _data.get(index);
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
         }
     }
 
@@ -543,23 +534,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param thisValue the original field value
      * @param derivationDataColInd the col index for the field used to determine if a record is child or parent
      * @param isDerivationField if this field is a child only field
-     * @param presentDerivationWarning the warning msg to log if a child field is present for a parent record
-     * @param presentNonDerivationWarning the warning msg to log if a parent field is present for a child record
      */
-    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField)
     {
         Object derivationData = derivationDataColInd < 0 ? null : _data.get(derivationDataColInd);
         if ((isDerivationField && derivationData != null)
                 || (!isDerivationField && derivationData == null))
             return thisValue;
-
-        if (thisValue != null)
-        {
-            if (isDerivationField && presentDerivationWarning != null)
-                LOG.warn(presentDerivationWarning);
-            else if (!isDerivationField && presentNonDerivationWarning != null)
-                LOG.warn(presentNonDerivationWarning);
-        }
 
         return null;
     }

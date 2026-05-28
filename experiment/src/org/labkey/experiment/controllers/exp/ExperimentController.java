@@ -7386,12 +7386,7 @@ public class ExperimentController extends SpringActionController
 
             if (null != edgeTable.getColumn("fromObjectId"))
             {
-                var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromObjectId, toObjectId FROM exp.Edge")
-                        .resultSetStream()
-                        .map(r -> { try { return new Pair<>(r.getInt(1), r.getInt(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
-                        .collect(toList());
-                var cycles = (new GraphAlgorithms<Integer>()).detectCycleInDirectedGraph(edges);
-                result = cycles.stream().map(e -> new Integer[]{e.first, e.second}).collect(toList());
+                result = detectCycleEdges(schema).stream().map(e -> new Long[]{e.first, e.second}).collect(toList());
             }
             else
             {
@@ -7407,6 +7402,15 @@ public class ExperimentController extends SpringActionController
             ret.put("result", result);
             ret.put("success", true);
             return ret;
+        }
+
+        public static Collection<Pair<Long, Long>> detectCycleEdges(DbSchema schema)
+        {
+            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                    .resultSetStream()
+                    .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                    .collect(toList());
+            return (new GraphAlgorithms<Long>()).detectCycleInDirectedGraph(edges);
         }
     }
 
@@ -7445,7 +7449,7 @@ public class ExperimentController extends SpringActionController
             {
                 sampleId = ConvertHelper.convert(tableForm.getPkVal(), Long.class);
             }
-            catch (ConversionException e)
+            catch (ConversionException _)
             {
             }
             if (null == sampleId)
@@ -8194,7 +8198,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(TroubleshooterPermission.class)
     public static class CycleCheckAction extends FormViewAction<Object>
     {
-        List<Integer> cycleObjectIds = null;
+        List<Long> cycleObjectIds = null;
 
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -8217,14 +8221,8 @@ public class ExperimentController extends SpringActionController
             if (null == cycleObjectIds)
                 return new HtmlView(HtmlString.of("No cycles found"));
 
-            Map<Long, ExpObject> map = new LongHashMap<>();
             var cf = new ContainerFilter.AllFolders(getUser());
-            var materials = ExperimentServiceImpl.get().getExpMaterialsByObjectId(cf, cycleObjectIds);
-            materials.forEach( (m) -> map.put(m.getObjectId(), m));
-            var datas = ExperimentServiceImpl.get().getExpDatasByObjectId(cf, cycleObjectIds);
-            datas.forEach( (d) -> map.put(d.getObjectId(), d));
-            var runs = ExperimentServiceImpl.get().getRunsByObjectId(cf, cycleObjectIds);
-            runs.forEach( (r) -> map.put(r.getObjectId(), r));
+            Map<Long, ExpObject> map = resolveCycleObjects(cf, cycleObjectIds);
 
             ExperimentUrls urls = ExperimentUrls.get();
             return new HtmlView(
@@ -8232,14 +8230,16 @@ public class ExperimentController extends SpringActionController
                             UL(cycleObjectIds.stream().map((objectid) ->
                             {
                                 ExpObject exp = map.get(objectid);
-                                if (exp instanceof ExpMaterial mat)
-                                    return LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
-                                else if (exp instanceof ExpRun run)
-                                    return LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
-                                else if (exp instanceof ExpData data)
-                                    return LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
-                                else
-                                    return LI(String.valueOf(objectid));
+                                return switch (exp)
+                                {
+                                    case ExpMaterial mat ->
+                                            LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
+                                    case ExpRun run ->
+                                            LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
+                                    case ExpData data ->
+                                            LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
+                                    case null, default -> LI(objectid + " : unknown object");
+                                };
                             }))
                     )
             );
@@ -8248,18 +8248,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(Object o, BindException errors)
         {
-            var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromObjectId, toObjectId FROM exp.Edge")
-                    .resultSetStream()
-                    .map(r -> { try { return new Pair<>(r.getInt(1), r.getInt(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
-                    .collect(toList());
-            var cyclesEdges = (new GraphAlgorithms<Integer>()).detectCycleInDirectedGraph(edges);
-
-            var set = new LinkedHashSet<Integer>();
-            cyclesEdges.forEach( (edge) -> {
-                set.add(edge.first);
-                set.add(edge.second);
-            });
-            cycleObjectIds = set.stream().toList();
+            cycleObjectIds = detectCycleObjectIds(ExperimentService.get().getSchema());
             return false;
         }
 
@@ -8272,8 +8261,32 @@ public class ExperimentController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-
+            root.addChild("Cycle check");
         }
+
+        public static @Nullable List<Long> detectCycleObjectIds(DbSchema schema)
+        {
+            var edges = new SqlSelector(schema, "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                    .resultSetStream()
+                    .map(r -> { try { return new Pair<>(r.getLong(1), r.getLong(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                    .collect(toList());
+            var cyclesEdges = (new GraphAlgorithms<Long>()).detectCycleInDirectedGraph(edges);
+            if (cyclesEdges.isEmpty())
+                return null;
+            var set = new LinkedHashSet<Long>();
+            cyclesEdges.forEach(e -> { set.add(e.first); set.add(e.second); });
+            return set.stream().toList();
+        }
+
+        public static Map<Long, ExpObject> resolveCycleObjects(ContainerFilter cf, List<Long> ids)
+        {
+            Map<Long, ExpObject> map = new LongHashMap<>();
+            ExperimentServiceImpl.get().getExpMaterialsByObjectId(cf, ids).forEach(m -> map.put(m.getObjectId(), m));
+            ExperimentServiceImpl.get().getExpDatasByObjectId(cf, ids).forEach(d -> map.put(d.getObjectId(), d));
+            ExperimentServiceImpl.get().getRunsByObjectId(cf, ids).forEach(r -> map.put(r.getObjectId(), r));
+            return map;
+        }
+
    }
 
     @RequiresPermission(AdminPermission.class)
