@@ -27,6 +27,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
+import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.domain.DomainFormPanel;
@@ -783,5 +784,23 @@ public class StudyDatasetsTest extends BaseWebDriverTest
 
         waitForElement(link);
         clickAndWait(link);
+    }
+
+    @Test // GitHub Issue #1023
+    public void testNoExternalReturnUrlRedirect() throws Exception
+    {
+        // Navigate to domain designer with an external returnUrl. The safeRedirect action
+        // should prevent external redirects, falling back to the local home page instead.
+        String domainDesignerUrl = WebTestHelper.buildURL("study", getProjectName() + "/" + getFolderName(), "defineDatasetType",
+                Map.of("returnUrl", "https://labkey.com"));
+        beginAt(domainDesignerUrl);
+        DomainDesignerPage domainDesignerPage = new DomainDesignerPage(getDriver());
+        domainDesignerPage.fieldsPanel();
+        domainDesignerPage.clickCancel();
+        String postCancelUrl = getDriver().getCurrentUrl();
+        assertFalse("Cancel with an external returnUrl should not navigate to an external site",
+                postCancelUrl.contains("labkey.com"));
+        assertTrue("Cancel with an external returnUrl should redirect to a local LabKey page instead of: " + postCancelUrl,
+                WebTestHelper.isTestServerUrl(postCancelUrl));
     }
 }
