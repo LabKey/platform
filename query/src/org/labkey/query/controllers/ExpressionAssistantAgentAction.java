@@ -186,8 +186,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
      * and is safe to apply); blocks fenced as `sql` are tagged "sql" (illustrative / unvalidated).
      * For `expression` blocks the body is expected to be the JSON returned by
      * validateCalculatedColumnExpression — at minimum {@code {"expression": "..."}}, optionally
-     * with {@code "jdbcType"}. If the body fails to parse as JSON we fall back to treating it as a
-     * raw SQL string so the Apply affordance still works.
+     * with {@code "jdbcType"}.
      */
     private static JSONArray buildSegments(List<McpService.MessageResponse> responses)
     {
@@ -209,7 +208,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 if (f != null && f.terminated && ("sql".equals(f.tag) || "expression".equals(f.tag)))
                 {
                     flushHtmlSegment(segments, htmlBuf, md);
-                    segments.put(buildCodeSegment(f.tag, f.body));
+                    segments.put(buildSqlSegment(f.tag, f.body));
                     i = f.nextIndex;
                 }
                 else if (f != null && !f.terminated)
@@ -232,6 +231,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 }
             }
         }
+
         flushHtmlSegment(segments, htmlBuf, md);
         return segments;
     }
@@ -239,27 +239,35 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     /**
      * Build a segment JSON object for an `sql` or `expression` fenced block. For `expression`
      * blocks the body is expected to be the JSON returned by validateCalculatedColumnExpression;
-     * we pull "expression" into "sql" and pass through "jdbcType". If the body isn't JSON we treat
-     * it as raw SQL text so the Apply affordance still works.
+     * we pull "expression" into "sql" and pass through "jdbcType".
      */
-    private static JSONObject buildCodeSegment(String tag, String body)
+    private static JSONObject buildSqlSegment(String tag, String body)
     {
         Map<String, Object> segData = new LinkedHashMap<>();
         segData.put("type", tag);
 
         if ("expression".equals(tag))
         {
+            String sql = null;
+            String jdbcType = null;
             try
             {
                 JSONObject payload = new JSONObject(body);
-                segData.put("sql", payload.optString("expression", body));
-                if (payload.has("jdbcType"))
-                    segData.put("jdbcType", payload.getString("jdbcType"));
+                if (payload.has("expression"))
+                {
+                    sql = payload.optString("expression", null);
+                    if (payload.has("jdbcType"))
+                        jdbcType = payload.optString("jdbcType", null);
+                }
             }
             catch (org.json.JSONException x)
             {
-                segData.put("sql", body);
+                LOG.debug("Unable to parse JSON expression: " + body, x);
             }
+
+            segData.put("sql", sql != null ? sql : body);
+            if (sql != null && jdbcType != null)
+                segData.put("jdbcType", jdbcType);
         }
         else
             segData.put("sql", body);
@@ -293,10 +301,14 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
     private static void flushHtmlSegment(JSONArray segments, StringBuilder buf, MarkdownService md)
     {
-        if (buf.isEmpty()) return;
+        if (buf.isEmpty())
+            return;
+
         String raw = buf.toString().strip();
         buf.setLength(0);
-        if (raw.isEmpty()) return;
+        if (raw.isEmpty())
+            return;
+
         String html;
         try
         {
@@ -333,7 +345,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             JSONObject json = new JSONObject();
             json.put("jdbcType", jdbcType);
             json.put("expression", sql);
-            json.put("success", true);
             return json.toString();
         }
 
