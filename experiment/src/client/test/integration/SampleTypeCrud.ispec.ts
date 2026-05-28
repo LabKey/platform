@@ -1,4 +1,11 @@
-import { ExperimentCRUDUtils, hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
+import {
+    ExperimentCRUDUtils,
+    hookServer,
+    RequestOptions,
+    selectRandomN,
+    successfulResponse,
+    testSeed
+} from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -14,6 +21,8 @@ const { importSample, insertRows } = ExperimentCRUDUtils;
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
+
+console.log(`[SampleTypeCrud] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
 
 const SAMPLE_ALIQUOT_IMPORT_TYPE_NAME = "SampleType_Aliquots_Import";
 const SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME = "Aliquot_Import_RequiredProp";

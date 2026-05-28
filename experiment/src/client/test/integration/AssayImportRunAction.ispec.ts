@@ -1,4 +1,4 @@
-import { hookServer, IntegrationTestServer, RequestOptions, successfulResponse } from '@labkey/test';
+import { hookServer, IntegrationTestServer, RequestOptions, successfulResponse, testSeed } from '@labkey/test';
 import mock from 'mock-fs';
 
 import {
@@ -27,6 +27,9 @@ import {
 // @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
 const PROJECT_NAME = 'ArrayImportRunActionTest Project';
+
+console.log(`[ArrayImportRunAction] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
+
 const BATCH_FILE_FIELD_NAME = 'batchFileField';
 const BATCH_FILE_FIELD_TWO_NAME = 'batchFile2Field';
 const RUN_FILE_FIELD_NAME = 'runFileField';

@@ -2,6 +2,7 @@ import {
     ExperimentCRUDUtils,
     generateFieldName,
     IntegrationTestServer,
+    random,
     RequestOptions,
     selectRandomN,
     successfulResponse,
@@ -632,7 +633,7 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     const dataType = "withRequired" + (isParentSample ? 'SampleParent' : 'DataParent');
     let childDomainId = -1, childDomainURI = '';
 
-    const useLowerCase = Math.random() < 0.5;
+    const useLowerCase = random() < 0.5;
     // test both lower case and upper case prefix
     const parentInput = (isParentSample ? (useLowerCase ? 'materialInputs/' : 'MaterialInputs/') : (useLowerCase ? 'dataInputs/' : 'DataInputs/')) + parentDataType;
     await server.post('property', 'createDomain', {

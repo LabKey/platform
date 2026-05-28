@@ -4,7 +4,8 @@ import {
     getEscapedNameExpression,
     hookServer,
     RequestOptions,
-    successfulResponse
+    successfulResponse,
+    testSeed
 } from '@labkey/test';
 import mock from 'mock-fs';
 import {
@@ -22,6 +23,7 @@ import {
 import { caseInsensitive, DATA_CLASS_DESIGNER_ROLE } from '@labkey/components';
 const server = hookServer(process.env);
 const PROJECT_NAME = 'DataClassCrudJestProject';
+console.log(`[DataClassCrud] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
 
 let readerUser, readerUserOptions;
 let editorUser, editorUserOptions;
