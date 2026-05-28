@@ -57,7 +57,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.39.2-fb-chat-asst.0",
+    "@labkey/components": "7.40.0",
     "@labkey/themes": "1.9.3"
   },
   "devDependencies": {
