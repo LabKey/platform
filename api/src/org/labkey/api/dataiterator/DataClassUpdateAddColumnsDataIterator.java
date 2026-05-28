@@ -125,7 +125,7 @@ public class DataClassUpdateAddColumnsDataIterator extends AbstractPrefetchingDa
         }
 
         if (!notFoundKeys.isEmpty())
-            _context.getErrors().addRowError(new ValidationException("Data not found for " + notFoundKeys));
+            _context.getErrors().addRowError(new ValidationException("Data does not exist in " + _targetContainer.getName() + ": " + notFoundKeys + "."));
 
         resetAfterBatch();
     }
