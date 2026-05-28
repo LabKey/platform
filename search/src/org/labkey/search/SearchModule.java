@@ -266,6 +266,12 @@ public class SearchModule extends DefaultModule
     }
 
     @Override
+    public @NotNull Set<Class<?>> getUnitTests()
+    {
+        return Set.of(AbstractSearchService.TestCase.class);
+    }
+
+    @Override
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of

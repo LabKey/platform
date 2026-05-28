@@ -90,6 +90,7 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -558,6 +559,9 @@ public class SecurityManager
                     {
                         Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
                         sessionCookie.setPath("/");
+                        sessionCookie.setHttpOnly(true);
+                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                            sessionCookie.setSecure(true);
                         response.addCookie(sessionCookie);
                         request = new SessionReplacingRequest(request, session);
                     }
