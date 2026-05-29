@@ -1532,8 +1532,7 @@ public class XarExporter
                 zOut.putNextEntry(errorEntry);
 
                 final PrintStream ps = new PrintStream(zOut, true);
-                ps.println("Failed to complete export of the XAR file: ");
-                e.printStackTrace(ps);
+                ps.println("Failed to complete export of the XAR file: " + e);
                 zOut.closeEntry();
                 throw e;
             }

@@ -48,6 +48,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.TransformSession;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
 import org.labkey.vfs.FileLike;
@@ -690,7 +691,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     {
         Map<String, String> replacements = container == null ? Collections.emptyMap() : createReplacements(null, apiKey, container);
 
-        ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this, replacements));
+        LabKeyProcessBuilder pb = new LabKeyProcessBuilder(_factory.toArgs(this, replacements));
         applyEnvironment(pb);
 
         List<String> args = pb.command();
@@ -732,7 +733,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         action.setStartTime(new Date());
         action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
         int timeout = _factory._timeout != null ? _factory._timeout : 0;
-        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false, timeout, TimeUnit.SECONDS);
+        getJob().runSubProcess(pb.processBuilder(), _wd.getDir(), fileOutput, lineInterval, false, timeout, TimeUnit.SECONDS);
         action.setEndTime(new Date());
         return true;
     }
@@ -777,7 +778,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         }
     }
 
-    private void applyEnvironment(ProcessBuilder pb)
+    private void applyEnvironment(LabKeyProcessBuilder pb)
     {
         Map<String, String> originalEnvironment = new HashMap<>(pb.environment());
         for (Map.Entry<String, String> entry : _factory._environment.entrySet())

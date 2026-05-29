@@ -1020,7 +1020,7 @@ public class ExceptionUtil
                     response.getWriter().println();
                     response.getWriter().println();
                     response.getWriter().println("<pre>");
-                    ex.printStackTrace(response.getWriter());
+                    response.getWriter().println(PageFlowUtil.filter(ex.toString()));
                     response.getWriter().println("</pre>");
                 }
                 catch (IOException | IllegalStateException e)
@@ -1232,7 +1232,7 @@ public class ExceptionUtil
             {
                 PrintWriter out = response.getWriter();
                 out.println("\"'>--></script><script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">");
-                out.println("window.location = '" + PageFlowUtil.filter(url) + "';");
+                out.println("window.location = " + PageFlowUtil.jsString(url) + ";");
                 out.println("</script>");
             }
         }

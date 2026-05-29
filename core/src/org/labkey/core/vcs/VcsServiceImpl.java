@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.vcs.Vcs;
 import org.labkey.api.vcs.VcsService;
 
@@ -103,7 +104,7 @@ public class VcsServiceImpl implements VcsService
         {
             String cl = log(_rootDirectory, command);
 
-            ProcessBuilder builder = new ProcessBuilder(command);
+            LabKeyProcessBuilder builder = new LabKeyProcessBuilder(command);
             builder.directory(_rootDirectory);
             try
             {
