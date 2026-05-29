@@ -18,7 +18,6 @@ package org.labkey.devtools;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.AuthenticationManager;
@@ -77,7 +76,6 @@ public class DevtoolsModule extends CodeOnlyModule
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        McpService.get().register(new TestController.DocumentationMCP());
     }
 
     @Override

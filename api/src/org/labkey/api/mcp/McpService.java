@@ -21,6 +21,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 ///
@@ -171,6 +172,8 @@ public interface McpService extends ToolCallbackProvider
     void close(HttpSession session, ChatClient chat);
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
+
+    record VectorDocument(String id, String text, Map<String, Object> metadata) {}
 
     /** get a consolidated response (good for many text-oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);

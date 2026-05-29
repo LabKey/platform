@@ -17,16 +17,11 @@
 package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.JsonInputLimit;
@@ -38,16 +33,7 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.LabKeyCollectors;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.AdminConsoleAction;
@@ -69,9 +55,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -85,33 +69,20 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiService;
-import org.springframework.ai.chat.model.ToolContext;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
 import static org.labkey.api.util.DOM.Attribute.style;
@@ -1335,207 +1306,6 @@ public class TestController extends SpringActionController
         protected String getServicePrompt()
         {
             return "You are the generic LabKey agent.  Good luck.";
-        }
-    }
-
-
-    @RequiresLogin
-    public static class PopulateVectorStoreAction extends ConfirmAction<Object>
-    {
-        AtomicInteger count = new AtomicInteger();
-
-        @Override
-        public ModelAndView getConfirmView(Object o, BindException errors)
-        {
-            HtmlStringBuilder message = HtmlStringBuilder.of();
-            message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
-            message.append("This may take a few minutes.");
-            return new HtmlView(message);
-        }
-
-        @Override
-        public void validateCommand(Object o, Errors errors)
-        {
-        }
-
-        @Override
-        public @NotNull URLHelper getSuccessURL(Object o)
-        {
-            return null;
-        }
-
-
-        // not usually used but some actions return views that close the current window etc...
-        @Override
-        public ModelAndView getSuccessView(Object form)
-        {
-            return HtmlView.of(count.get() + " documents added to vector store");
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors)
-        {
-            Container documentsContainer = ContainerManager.getForPath("/Documentation");
-            if (null == documentsContainer)
-                throw new NotFoundException();
-            try
-            {
-                count.set(Objects.requireNonNull(WikiService.get()).populateVectorStore(documentsContainer));
-                return true;
-            }
-            catch (Exception x)
-            {
-                errors.addError(new ObjectError("form", "error populating vector store: " + x.getMessage()));
-                return false;
-            }
-        }
-    }
-
-    public static class DocumentationMCP implements McpService.McpImpl
-    {
-        static JSONObject full_index = null;
-
-        static
-        {
-            try
-            {
-                full_index = new JSONObject(IOUtils.resourceToString("org/labkey/devtools/FULL_INDEX.json", null, DevtoolsModule.class.getClassLoader()));
-            }
-            catch(Exception x)
-            {
-            }
-        }
-
-
-        @Tool(description = "List of available documents from the LabKey user and administration manuals.")
-        @RequiresNoPermission
-        String listDocuments(ToolContext toolContext,
-                             @ToolParam(description = "Index to start listing for paginatation (staring at 0)") Integer start,
-                             @ToolParam(description = "Count of listings to return for pagination") Integer count)
-        {
-            Container documentsContainer = ContainerManager.getForPath("/Documentation");
-            if (null == documentsContainer)
-                return new JSONObject(Map.of("error","There is no /Documentation project on this server")).toString();
-
-            if (null == full_index)
-            {
-                // CONSIDER include hierarchy or paths
-                // TODO WikiService doesn't expose this, just do a query for now (even though this info is cached)
-                TableInfo currentWikiVersions = CommSchema.getInstance().getSchema().getTable("CurrentWikiVersions");
-                SimpleFilter filter = SimpleFilter.createContainerFilter(documentsContainer);
-                Collection<Map<String, Object>> rows = new TableSelector(currentWikiVersions, Set.of("Name","Title","RowId","Parent","EntityId"), filter, null).getMapCollection();
-
-                JSONArray array = new JSONArray();
-                for (var row : rows)
-                {
-                    CaseInsensitiveHashMap<Object> copy = new CaseInsensitiveHashMap<>(row);
-                    // Obviously wiki.EntityId is unique, but a container prefix might be useful
-                    copy.put("id", new Path(documentsContainer.getEntityId().toString(), String.valueOf(copy.get("EntityId"))).toString("",""));
-                    copy.remove("EntityId");
-                    array.put(new JSONObject(copy));
-                }
-                var j = new JSONObject();
-                j.put("pages", array);
-                full_index = j;
-            }
-
-            int index = start instanceof Integer i && i >= 0 ? i : 0;
-            int num   = count instanceof Integer i && i >= 0 ? i : Integer.MAX_VALUE;
-
-            JSONArray pages = full_index.getJSONArray("pages");
-            int total = pages.length();
-            int end = (int) Math.min((long) index + num, total);
-
-            JSONArray subset = new JSONArray();
-            for (int i = index; i < end; i++)
-                subset.put(pages.get(i));
-
-            var ret = new JSONObject();
-            ret.put("total", total);
-            ret.put("start", index);
-            ret.put("count", subset.length());
-            ret.put("pages", subset);
-            return ret.toString();
-        }
-
-        @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
-        @RequiresNoPermission
-        String retrieveDocument(
-                ToolContext context,
-                @ToolParam(description = "Id of the document to return") String id)
-        {
-            WikiService service = Objects.requireNonNull(WikiService.get());
-            Container documentsContainer = ContainerManager.getForPath("/Documentation");
-            if (null == documentsContainer)
-                return new JSONObject(Map.of("error","There is not /Documentation project on this server")).toString();
-
-            ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
-            // IDs are "containerEntityId/wikiEntityId"; strip the container prefix if present
-            String wikiEntityId = id.contains("/") ? id.substring(id.lastIndexOf('/') + 1) : id;
-            var sql = new SQLFragment("SELECT Name FROM ").append(CommSchema.getInstance().getTableInfoPages(), "p").append(" WHERE EntityId = ").appendValue(wikiEntityId);
-            var name = new SqlSelector(CommSchema.getInstance().getSchema(), sql).getObject(String.class);
-            var wiki = service.getRenderedWiki(documentsContainer, name);
-            if (null == wiki)
-                throw new NotFoundException();
-
-            var ret = new JSONObject();
-            ret.put("Content-Type", "text/html");
-            ret.put("filename",  wiki.name() + ".html");
-            ret.put("id", documentsContainer.getId() + "/" + wiki.entityId());
-            ret.put("title", wiki.title());
-            ret.put("source", wikiBase.clone().addParameter("name",wiki.name()).getURIString());
-            ret.put("contents", wiki.html().toString());
-            return ret.toString();
-        }
-
-        @Tool(description = "Search the LabKey documentation for documents semantically similar to a natural language query. " +
-                "Returns matching documents with their content, metadata (title, source URL, content type), and similarity scores.")
-        @RequiresNoPermission
-        String searchDocumentation(
-                ToolContext context,
-                @ToolParam(description = "Natural language search query describing what you're looking for") String query,
-                @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") String topK)
-        {
-            VectorStore vs = McpService.get().getVectorStore();
-            if (vs == null)
-                throw new IllegalStateException("Vector store is not available. An embedding model may not be configured.");
-
-            int k = 5;
-            if (isNotBlank(topK))
-            {
-                try { k = Math.clamp(Integer.parseInt(topK), 1, 20); }
-                catch (NumberFormatException ignored) {}
-            }
-
-            SearchRequest request = SearchRequest.builder()
-                    .query(query)
-                    .topK(k)
-                    .build();
-
-            List<Document> results = vs.similaritySearch(request);
-
-            var docs = results.stream()
-                    .map(doc -> {
-                        var obj = new JSONObject();
-                        obj.put("id", doc.getId());
-                        String text = doc.getText();
-                        if (text != null && text.length() > 2000)
-                            text = text.substring(0, 2000) + "...";
-                        obj.put("content", text);
-                        obj.put("metadata", new JSONObject(doc.getMetadata()));
-                        if (doc.getScore() != null)
-                            obj.put("score", doc.getScore());
-                        return obj;
-                    })
-                    .collect(LabKeyCollectors.toJSONArray());
-
-            var ret = new JSONObject(Map.of(
-                    "query", query,
-                    "resultCount", results.size(),
-                    "results", docs
-            ));
-//            LogManager.getLogger(TestController.class).info("Search: " + query + "\nResult: " +ret);
-            return ret.toString();
         }
     }
 
