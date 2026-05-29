@@ -1141,6 +1141,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        Set<Integer> changedRowIds = collectChangedRowIds(results, reason);
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
@@ -1163,7 +1164,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
-                    fireSamplesChanged(reason);
+                    fireSamplesChanged(reason, changedRowIds);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1173,7 +1174,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            fireSamplesChanged(reason);
+            fireSamplesChanged(reason, changedRowIds);
         }
     }
 
@@ -1205,10 +1206,30 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason)
+    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason);
+            _sampleType.onSamplesChanged(getUser(), null, reason, changedRowIds);
+    }
+
+    /**
+     * Collect the changed rowIds so an update refresh can do a targeted incremental update instead of a full rebuild.
+     */
+    private @Nullable Set<Integer> collectChangedRowIds(List<Map<String, Object>> results, SampleTypeServiceImpl.SampleChangeType reason)
+    {
+        if (reason != update || results == null || results.isEmpty() || results.size() > ExpMaterialTableImpl.UPDATE_ROWID_THRESHOLD)
+            return null;
+
+        Set<Integer> changedRowIds = new HashSet<>(results.size());
+        for (Map<String, Object> row : results)
+        {
+            Long rowId = getMaterialRowId(row);
+            if (rowId == null)
+                return null; // can't enumerate the full changed set -> fall back to full re-sync
+            changedRowIds.add(rowId.intValue());
+        }
+
+        return changedRowIds;
     }
 
     void audit(QueryService.AuditAction auditAction)

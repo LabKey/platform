@@ -865,9 +865,13 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason)
+    /**
+     * @param changedRowIds RowIds of samples known to have changed (only meaningful for update); null means
+     *                      the caller could not list the changed rows, forcing a full re-sync on the next read.
+     */
+    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
     {
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason);
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason, changedRowIds);
 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length != 0)

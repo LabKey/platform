@@ -2403,9 +2403,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
+        refreshSampleTypeMaterializedView(st, reason, null);
     }
 
+    /**
+     * @param changedRowIds RowIds of samples known to have changed (only meaningful for update); null means
+     *                      the caller could not list the changed rows, forcing a full re-sync on the next read.
+     */
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedRowIds);
+    }
 
     public static class TestCase extends Assert
     {

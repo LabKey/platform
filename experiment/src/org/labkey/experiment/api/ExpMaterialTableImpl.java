@@ -21,6 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.cache.BlockingCache;
@@ -48,8 +53,10 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -61,6 +68,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
@@ -77,6 +85,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.ontology.Quantity;
@@ -89,6 +98,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -105,11 +115,14 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -131,6 +144,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -165,7 +179,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         amountValidator.setName("SampleAmountNonNegative");
         amountValidator.setExpressionValue("~gte=0");
         amountValidator.setErrorMessage("Amounts must be non-negative.");
-        amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + Column.StoredAmount.name());
+        amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + StoredAmount.name());
         AMOUNT_RANGE_VALIDATORS.add(amountValidator);
     }
 
@@ -197,7 +211,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         ColumnInfo result = super.resolveColumn(name);
         if (result == null)
         {
-            if ("CpasType".equalsIgnoreCase(name))
+            if (CpasType.name().equalsIgnoreCase(name))
                 result = createColumn(SampleSet.name(), SampleSet);
             else if (Property.name().equalsIgnoreCase(name))
                 result = createPropertyColumn(Property.name());
@@ -210,7 +224,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public ColumnInfo getExpObjectColumn()
     {
-        var ret = wrapColumn("ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
+        var ret = wrapColumn("ExpMaterialTableImpl_object_", _rootTable.getColumn(ObjectId.name()));
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }
@@ -353,7 +367,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 Unit typeUnit = getSampleTypeUnit();
                 if (typeUnit != null)
                 {
-                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, Column.StoredAmount.name(), Column.Units.name(), label, importAliases, typeUnit);
+                    SampleTypeAmountDisplayColumn columnInfo = new SampleTypeAmountDisplayColumn(this, StoredAmount.name(), Units.name(), label, importAliases, typeUnit);
                     columnInfo.setDisplayColumnFactory(colInfo -> new SampleTypeAmountPrecisionDisplayColumn(colInfo, typeUnit));
                     columnInfo.setDescription("The amount of this sample, in the display unit for the sample type, currently on hand.");
                     columnInfo.setShownInUpdateView(true);
@@ -1212,9 +1226,35 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
+    /**
+     * Once the pending changed-rowid set for a single update grows past this size, a targeted incremental update is no
+     * longer worth it (the changed-rowid IN list grows and the win over a whole-join re-sync shrinks), so we escalate to a
+     * full re-sync instead. Chosen to match the application's bulk-edit cap of 1,000 rows, so a normal single update stays
+     * targeted.
+     * <p>
+     * This value is also bounded by SQL Server's 2,100-bind-parameter limit: the targeted predicate references the changed
+     * set twice ({@code m.rowid IN (...) OR m.rootmaterialrowid IN (...)}), so a targeted statement binds {@code 2*N + 1}
+     * parameters. At 1,000 that is 2,001, safely under the cap. Raising this past ~1,049 would require restructuring the
+     * predicate to avoid using the set twice.
+     */
+    static final int UPDATE_ROWID_THRESHOLD = 1_000;
+
     static class InvalidationCounters
     {
         public final AtomicLong update, insert, delete, rollup;
+
+        /**
+         * The accumulated exp.material rowIds changed by {@code update}s since the last drain, used to drive a targeted
+         * incremental update. Populated by {@link RefreshMaterializedViewRunnable#run()} <b>before</b> the {@code update}
+         * counter is incremented, so any reader that observes the new counter-value is guaranteed to see these rowids.
+         */
+        public final Set<Integer> pendingUpdateRowIds = ConcurrentHashMap.newKeySet();
+        /**
+         * Set when an {@code update} could not supply rowIds (or the pending set crossed {@link #UPDATE_ROWID_THRESHOLD}),
+         * meaning the next read must do a full re-sync rather than a targeted update.
+         */
+        public volatile boolean fullUpdatePending = false;
+
         InvalidationCounters()
         {
             long l = System.currentTimeMillis();
@@ -1222,6 +1262,49 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             insert = new AtomicLong(l);
             delete = new AtomicLong(l);
             rollup = new AtomicLong(l);
+        }
+
+        /** Record the rowIds changed by one update (before its counter-increment). null/empty rowIds force a full re-sync. */
+        void recordPendingUpdate(@Nullable Set<Integer> changedRowIds)
+        {
+            if (changedRowIds == null || changedRowIds.isEmpty())
+            {
+                fullUpdatePending = true;
+                pendingUpdateRowIds.clear();
+            }
+            else if (!fullUpdatePending)
+            {
+                pendingUpdateRowIds.addAll(changedRowIds);
+                if (pendingUpdateRowIds.size() > UPDATE_ROWID_THRESHOLD)
+                {
+                    fullUpdatePending = true;
+                    pendingUpdateRowIds.clear();
+                }
+            }
+            // else: a full re-sync is already pending; the individual rowIds are redundant
+        }
+
+        /** The drained pending update state: either a full re-sync or the specific rowIds to target. */
+        record PendingUpdate(boolean full, Set<Integer> rowIds) {}
+
+        /**
+         * Atomically take and clear the pending update state. Should be called under the {@code _Materialized} loading lock.
+         * A snapshot of the rowIds is removed (not the live set) so any rowIds added concurrently by a POSTCOMMIT runnable
+         * survive for the next drain.
+         */
+        PendingUpdate drainPendingUpdate()
+        {
+            if (fullUpdatePending)
+            {
+                fullUpdatePending = false;
+                pendingUpdateRowIds.clear();
+                return new PendingUpdate(true, Set.of());
+            }
+            if (pendingUpdateRowIds.isEmpty())
+                return new PendingUpdate(false, Set.of());
+            Set<Integer> drained = new HashSet<>(pendingUpdateRowIds);
+            pendingUpdateRowIds.removeAll(drained);
+            return new PendingUpdate(false, drained);
         }
     }
 
@@ -1232,61 +1315,76 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
     {
+        refreshMaterializedView(lsid, reason, null);
+    }
+
+    /**
+     * @param changedRowIds the exp.material rowIds known to have changed (only meaningful for update); null means
+     *                      the caller could not list the changed rows, forcing a full re-sync on the next read.
+     */
+    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
+    {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
-        var runnable = new RefreshMaterializedViewRunnable(lsid, reason);
+        var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedRowIds);
         scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
-    private static class RefreshMaterializedViewRunnable implements Runnable
+    /**
+     * POSTCOMMIT task that turns a committed data change into an invalidation: on a schema change it drops the cached MQH
+     * (the SQL itself must be regenerated); otherwise it bumps the matching per-LSID counter, and for {@code update} also
+     * records the changed rowIds for a targeted incremental update.
+     */
+    private record RefreshMaterializedViewRunnable(
+        String lsid,
+        SampleTypeServiceImpl.SampleChangeType reason,
+        @Nullable Set<Integer> changedRowIds
+    ) implements Runnable
     {
-        private final String _lsid;
-        private final SampleTypeServiceImpl.SampleChangeType _reason;
-
-        public RefreshMaterializedViewRunnable(String lsid, SampleTypeServiceImpl.SampleChangeType reason)
-        {
-            _lsid = lsid;
-            _reason = reason;
-        }
-
         @Override
         public void run()
         {
-            if (_reason == schema)
+            if (reason == schema)
             {
                 /* NOTE: MaterializedQueryHelper can detect data changes and refresh the materialized view using the provided SQL.
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
                  * MQH from the cache to force the SQL to be regenerated.
                  */
-                _materializedQueries.remove(_lsid);
+                _materializedQueries.remove(lsid);
                 return;
             }
-            var counters = getInvalidateCounters(_lsid);
-            switch (_reason)
+
+            var counters = getInvalidateCounters(lsid);
+            switch (reason)
             {
                 case insert -> counters.insert.incrementAndGet();
                 case rollup -> counters.rollup.incrementAndGet();
-                case update -> counters.update.incrementAndGet();
+                case update ->
+                {
+                    // Record the changed rowIds BEFORE bumping the counter: a reader that observes the new counter-value
+                    // is then guaranteed to see the corresponding rowIds when it drains the pending state.
+                    counters.recordPendingUpdate(changedRowIds);
+                    counters.update.incrementAndGet();
+                }
                 case delete -> counters.delete.incrementAndGet();
-                default -> throw new IllegalStateException("Unexpected value: " + _reason);
+                default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
         }
 
         @Override
-        public boolean equals(Object obj)
+        public @NonNull String toString()
         {
-            return obj instanceof RefreshMaterializedViewRunnable other && _lsid.equals(other._lsid) && _reason.equals(other._reason);
+            // Concise: report the rowId count, not the (potentially huge) set, so dedup DEBUG logging stays readable.
+            return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason +
+                    ", changedRowIds=" + (changedRowIds == null ? "null" : changedRowIds.size() + " rows") + "}";
         }
     }
 
     private static InvalidationCounters getInvalidateCounters(String lsid)
     {
         if (!initializedListeners.getAndSet(true))
-        {
             CacheManager.addListener(_invalidationCounters::clear);
-        }
-        return _invalidationCounters.computeIfAbsent(lsid, (unused) ->
-                new InvalidationCounters()
-        );
+
+        return _invalidationCounters.computeIfAbsent(lsid, (_) -> new InvalidationCounters());
     }
 
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
@@ -1304,17 +1402,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
              */
             SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
+            // Capture the column mapping for incremental updates. Safe to cache: a schema change drops this MQH from the
+            // cache (reason == schema), so a changed column set always rebuilds with a fresh mapping.
+            JoinColumns joinColumns = getJoinColumns(null);
             return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
+                .joinColumns(joinColumns)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
                 .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
-                .addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()))
+                // NOTE: no addInvalidCheck for the update counter. Updates are now applied incrementally by
+                // executeIncrementalUpdate() (like insert/delete/rollup) rather than triggering a full drop-and-rebuild.
+                // The MQH is still dropped on schema changes and on incremental-update errors (see incrementalUpdateBeforeSelect).
                 .build();
         });
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
     }
-
 
     /**
      * MaterializedQueryHelper has a built-in mechanism for tracking when a temp table needs to be recomputed.
@@ -1323,11 +1426,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
+        /** Columns that an incremental UPDATE never re-derives */
+        static final Set<String> IMMUTABLE_UPDATE_COLUMNS = new CaseInsensitiveHashSet(RowId.name(), LSID.name(), CpasType.name(), RootMaterialRowId.name());
+
         final String _lsid;
+        /** The column mapping that produced the temp table, used to build the incremental UPDATE SET clauses. */
+        final JoinColumns _joinColumns;
 
         static class Builder extends MaterializedQueryHelper.Builder
         {
             String _lsid;
+            JoinColumns _joinColumns;
 
             public Builder(String lsid, String prefix, DbScope scope, SQLFragment select)
             {
@@ -1335,18 +1444,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 this._lsid = lsid;
             }
 
+            public Builder joinColumns(JoinColumns joinColumns)
+            {
+                this._joinColumns = joinColumns;
+                return this;
+            }
+
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+                return new _MaterializedQueryHelper(_lsid, _joinColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
             }
         }
 
-        _MaterializedQueryHelper(String lsid, String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+        _MaterializedQueryHelper(String lsid, JoinColumns joinColumns, String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
                                         boolean isSelectIntoSql)
         {
             super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql);
             this._lsid = lsid;
+            this._joinColumns = joinColumns;
         }
 
         @Override
@@ -1373,6 +1489,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
                 if (!materialized.incrementalDeleteCheck.stillValid(0))
                     executeIncrementalDelete();
+                if (!materialized.incrementalUpdateCheck.stillValid(0))
+                    executeIncrementalUpdate();
                 if (!materialized.incrementalRollupCheck.stillValid(0))
                     executeIncrementalRollup();
                 if (!materialized.incrementalInsertCheck.stillValid(0))
@@ -1399,7 +1517,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         void upsertWithRetry(SQLFragment sql)
         {
             // not actually read-only, but we don't want to start an explicit transaction
-            _scope.executeWithRetryReadOnly((tx) -> upsert(sql));
+            _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
         void executeIncrementalInsert()
@@ -1457,6 +1575,140 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             upsertWithRetry(incremental);
         }
+
+        /**
+         * Generalized incremental update: re-derive the materialized columns from their source joins for the rows that
+         * changed since the last drain, instead of dropping and fully rebuilding the temp table. Drains the pending state
+         * under the {@code _Materialized} loading lock (held by the caller) and either does a full re-sync or a single
+         * targeted update of the changed rows. On failure the drained work is restored, so nothing is lost before the
+         * caller's handler drops the MQH and rebuilds.
+         */
+        void executeIncrementalUpdate()
+        {
+            InvalidationCounters counters = getInvalidateCounters(_lsid);
+            InvalidationCounters.PendingUpdate pending = counters.drainPendingUpdate();
+            if (!pending.full() && pending.rowIds().isEmpty())
+                return;
+
+            try
+            {
+                // The changed set is capped at UPDATE_ROWID_THRESHOLD, so a targeted update fits in one statement.
+                upsertWithRetry(buildIncrementalUpdateSql(pending.full() ? null : pending.rowIds()));
+            }
+            catch (RuntimeException ex)
+            {
+                // Restore the drained work so nothing is lost; the caller's handler will drop the MQH and rebuild cleanly.
+                if (pending.full())
+                    counters.fullUpdatePending = true;
+                else
+                    counters.pendingUpdateRowIds.addAll(pending.rowIds());
+                throw ex;
+            }
+        }
+
+        /**
+         * Build one incremental UPDATE that re-derives the materialized columns from their source joins. When
+         * {@code changedRowIds} is null this is a full re-sync over the whole sample type; otherwise it targets the given
+         * rows plus the aliquots of any changed root (via {@code rootmaterialrowid}). The {@code IS DISTINCT FROM}
+         * (PostgreSQL) / {@code EXCEPT}-based (SQL Server) guard skips rows whose values already match, so only genuinely
+         * differing rows are rewritten.
+         */
+        SQLFragment buildIncrementalUpdateSql(@Nullable Collection<Integer> changedRowIds)
+        {
+            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            JoinColumns jc = _joinColumns;
+
+            // Re-derive every temp column except the join key and immutable columns
+            List<JoinColumn> setColumns = jc.columns.stream()
+                    .filter(c -> !IMMUTABLE_UPDATE_COLUMNS.contains(c.tempColumnName()))
+                    .toList();
+
+            SQLFragment sql = new SQLFragment();
+            if (d.isPostgreSQL())
+            {
+                sql.append("UPDATE temp.${NAME} AS st\nSET ");
+                appendSetClause(sql, setColumns);
+                sql.append("\nFROM exp.Material m");
+                appendProvisionedJoins(sql, jc);
+                sql.append("\nWHERE st.rowid = m.rowid AND m.cpastype = ").appendValue(_lsid, d);
+                appendChangedRowIdPredicate(sql, d, changedRowIds);
+                sql.append(" AND (");
+                String or = "";
+                for (JoinColumn c : setColumns)
+                {
+                    sql.append(or).append("st.").append(c.tempColumnSql()).append(" IS DISTINCT FROM ").append(c.sourceSql());
+                    or = " OR ";
+                }
+                sql.append(")");
+            }
+            else
+            {
+                sql.append("UPDATE st\nSET ");
+                appendSetClause(sql, setColumns);
+                sql.append("\nFROM temp.${NAME} st INNER JOIN exp.Material m ON st.rowid = m.rowid");
+                appendProvisionedJoins(sql, jc);
+                sql.append("\nWHERE m.cpastype = ").appendValue(_lsid, d);
+                appendChangedRowIdPredicate(sql, d, changedRowIds);
+                // SQL Server before 2022 has no IS DISTINCT FROM; "SELECT <st cols> EXCEPT SELECT <src cols>" is a portable
+                // null-safe tuple comparison that yields a row iff the tuples differ.
+                sql.append(" AND EXISTS (SELECT ");
+                String comma = "";
+                for (JoinColumn c : setColumns)
+                {
+                    sql.append(comma).append("st.").append(c.tempColumnSql());
+                    comma = ", ";
+                }
+                sql.append(" EXCEPT SELECT ");
+                comma = "";
+                for (JoinColumn c : setColumns)
+                {
+                    sql.append(comma).append(c.sourceSql());
+                    comma = ", ";
+                }
+                sql.append(")");
+            }
+            return sql;
+        }
+
+        private static void appendSetClause(SQLFragment sql, List<JoinColumn> setColumns)
+        {
+            String comma = "";
+            for (JoinColumn c : setColumns)
+            {
+                // PostgreSQL and SQL Server both want bare column names on the SET left-hand side.
+                sql.append(comma).append(c.tempColumnSql()).append(" = ").append(c.sourceSql());
+                comma = ", ";
+            }
+        }
+
+        private static void appendProvisionedJoins(SQLFragment sql, JoinColumns jc)
+        {
+            if (jc.hasSampleColumns)
+                sql.append(" INNER JOIN ").append(jc.provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
+            if (jc.hasAliquotColumns)
+                sql.append(" INNER JOIN ").append(jc.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
+        }
+
+        /**
+         * Restrict to the changed rows. The {@code rootmaterialrowid} clause fans a changed root out to all of its aliquots
+         * (whose root-derived columns must be re-derived); it only matters for changed roots, since an aliquot's rowid is
+         * never another row's root. No-op for a full re-sync (null).
+         * <p>
+         * Passing a null large-IN generator to {@code appendInClauseSqlWithCustomInClauseGenerator} forces bind-parameter
+         * markers (never the temp-table generator), which is required because this runs as a single statement via
+         * {@code upsert()}. The set is bound twice; UPDATE_ROWID_THRESHOLD keeps the total parameter count under SQL
+         * Server's cap (see its javadoc).
+         */
+        private static void appendChangedRowIdPredicate(SQLFragment sql, SqlDialect d, @Nullable Collection<Integer> changedRowIds)
+        {
+            if (changedRowIds == null)
+                return;
+            sql.append(" AND (m.rowid");
+            d.appendInClauseSqlWithCustomInClauseGenerator(sql, changedRowIds, null);
+            sql.append(" OR m.rootmaterialrowid");
+            d.appendInClauseSqlWithCustomInClauseGenerator(sql, changedRowIds, null);
+            sql.append(")");
+        }
     }
 
     static class _Materialized extends MaterializedQueryHelper.Materialized
@@ -1464,6 +1716,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         final MaterializedQueryHelper.Invalidator incrementalInsertCheck;
         final MaterializedQueryHelper.Invalidator incrementalRollupCheck;
         final MaterializedQueryHelper.Invalidator incrementalDeleteCheck;
+        final MaterializedQueryHelper.Invalidator incrementalUpdateCheck;
 
         _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
         {
@@ -1472,6 +1725,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             incrementalInsertCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.insert.get()));
             incrementalRollupCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.rollup.get()));
             incrementalDeleteCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.delete.get()));
+            incrementalUpdateCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.update.get()));
         }
 
         @Override
@@ -1482,6 +1736,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             incrementalInsertCheck.stillValid(now);
             incrementalRollupCheck.stillValid(now);
             incrementalDeleteCheck.stillValid(now);
+            incrementalUpdateCheck.stillValid(now);
         }
 
         Lock getLock()
@@ -1490,38 +1745,68 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    /**
+     * Which join alias a materialized-view column is sourced from:
+     * <ul>
+     *   <li>{@code m} &ndash; the row's own {@code exp.material} record</li>
+     *   <li>{@code m_sample} &ndash; the <b>root</b> material's provisioned row (root-derived / {@code ParentOnly} columns)</li>
+     *   <li>{@code m_aliquot} &ndash; the row's <b>own</b> provisioned row (aliquot-scoped columns plus {@code genid} / unique-id fields)</li>
+     * </ul>
+     */
+    enum JoinAlias { m, m_sample, m_aliquot }
 
-    /* SELECT and JOIN, does not include WHERE */
-    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
+    /**
+     * One column of the materialized join: the unencoded temp-table column name, the SQL reference to that column, the SQL
+     * expression that produces its value, and which join alias that expression reads from. This is the single source of
+     * truth shared by {@link #getJoinSQL} (which builds the SELECT that creates the temp table) and the incremental
+     * {@code UPDATE} paths (which build the SET clause). Keeping both consumers on this one mapping guarantees the temp
+     * column references and the SET expressions can never drift. {@code tempColumnSql} is the valid SQL reference (e.g., a
+     * quoted identifier) by which the column is named in the temp table; use it bare as an UPDATE SET target, or prefix it
+     * with a table alias (e.g., {@code st.}) to reference it elsewhere. {@code tempColumnName} is the unencoded name, useful
+     * for identifying a specific column (e.g., the {@code rowid} join key).
+     */
+    record JoinColumn(String tempColumnName, SQLFragment tempColumnSql, SQLFragment sourceSql, JoinAlias alias) {}
+
+    /**
+     * The ordered column mapping for the materialized join plus which provisioned joins are actually needed. Mirrors the
+     * {@code hasSampleColumns} / {@code hasAliquotColumns} bookkeeping that {@link #getJoinSQL} previously tracked inline.
+     */
+    static class JoinColumns
     {
-        TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
-        Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
+        final List<JoinColumn> columns = new ArrayList<>();
+        TableInfo provisioned = null;
+        boolean hasSampleColumns = false;   // m_sample join required
+        boolean hasAliquotColumns = false;  // m_aliquot join required
+    }
+
+    /**
+     * Classify every selected column into its temp-table name, source expression, and join alias, preserving exactly the
+     * rules previously inlined in {@link #getJoinSQL}: material columns &rarr; {@code m}; {@code genid} / unique-id fields
+     * &rarr; {@code m_aliquot}; root-derived ({@code ParentOnly} or empty derivation scope) &rarr; {@code m_sample}; all
+     * other provisioned columns &rarr; {@code m_aliquot}; MV-indicator columns are always included.
+     */
+    private JoinColumns getJoinColumns(Set<FieldKey> selectedColumns)
+    {
+        JoinColumns result = new JoinColumns();
+        result.provisioned = null == _ss ? null : _ss.getTinfo();
+        Set<String> provisionedCols = new CaseInsensitiveHashSet(result.provisioned != null ? result.provisioned.getColumnNameSet() : Collections.emptySet());
         provisionedCols.remove(RowId.name());
         provisionedCols.remove(Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
-        boolean hasSampleColumns = false;
-        boolean hasAliquotColumns = false;
-
         Set<String> materialCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
-        SQLFragment sql = new SQLFragment();
-        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
-        sql.append("SELECT ");
-        String comma = "";
         for (String materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
             if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, materialCol)))
-            {
-                sql.append(comma).append("m.").appendIdentifier(materialCol);
-                comma = ", ";
-            }
+                result.columns.add(new JoinColumn(materialCol, new SQLFragment().appendIdentifier(materialCol), new SQLFragment("m.").appendIdentifier(materialCol), JoinAlias.m));
         }
-        if (null != provisioned && hasProvisionedColumns)
+
+        if (null != result.provisioned && hasProvisionedColumns)
         {
-            for (ColumnInfo propertyColumn : provisioned.getColumns())
+            for (ColumnInfo propertyColumn : result.provisioned.getColumns())
             {
                 // don't select twice
                 if (
@@ -1535,35 +1820,56 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // don't need to generate SQL for columns that aren't selected
                 if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(propertyColumn.getFieldKey()) || propertyColumn.isMvIndicatorColumn())
                 {
-                    sql.append(comma);
                     boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
+                    String tempColumnName = propertyColumn.getSelectIdentifier().getId();
+                    SQLFragment tempColumnSql = propertyColumn.getSelectIdentifier().getSql();
                     if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
-                        hasAliquotColumns = true;
+                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_aliquot"), JoinAlias.m_aliquot));
+                        result.hasAliquotColumns = true;
                     }
                     else if (rootField)
                     {
-                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
-                        hasSampleColumns = true;
+                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_sample"), JoinAlias.m_sample));
+                        result.hasSampleColumns = true;
                     }
                     else
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
-                        hasAliquotColumns = true;
+                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_aliquot"), JoinAlias.m_aliquot));
+                        result.hasAliquotColumns = true;
                     }
-                    comma = ", ";
                 }
             }
         }
 
+        return result;
+    }
+
+    /* SELECT and JOIN, does not include WHERE */
+    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
+    {
+        JoinColumns joinColumns = getJoinColumns(selectedColumns);
+
+        SQLFragment sql = new SQLFragment();
+        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
+        sql.append("SELECT ");
+        String comma = "";
+        for (JoinColumn joinColumn : joinColumns.columns)
+        {
+            sql.append(comma).append(joinColumn.sourceSql());
+            // material columns are selected by name (no alias); provisioned columns are aliased to their temp-table column name
+            if (JoinAlias.m != joinColumn.alias())
+                sql.append(" AS ").append(joinColumn.tempColumnSql());
+            comma = ", ";
+        }
+
         sql.append("\nFROM ");
         sql.append(_rootTable, "m");
-        if (hasSampleColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
-        if (hasAliquotColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
+        if (joinColumns.hasSampleColumns)
+            sql.append(" INNER JOIN ").append(joinColumns.provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
+        if (joinColumns.hasAliquotColumns)
+            sql.append(" INNER JOIN ").append(joinColumns.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
@@ -1830,7 +2136,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     url.addParameter("includeColumn", aliasKey);
             }
         }
-        catch (IOException e)
+        catch (IOException ignored)
         {}
         templates.add(Pair.of("Download Template", url.toString()));
         return templates;
@@ -1872,6 +2178,184 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 value = Precision.round(Double.valueOf(value.toString()), scale);
             }
             return value;
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class IncrementalUpdateTestCase extends Assert
+    {
+        private static User _user;
+        private static Container _c;
+
+        @BeforeClass
+        public static void setup()
+        {
+            JunitUtil.deleteTestContainer();
+
+            _c = JunitUtil.getTestContainer();
+            _user = TestContext.get().getUser();
+        }
+
+        @AfterClass
+        public static void tearDown()
+        {
+            JunitUtil.deleteTestContainer();
+        }
+
+        @Test
+        public void testTargetedSingleRowUpdate() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdTargeted");
+            int root = insertRoots(st, "R1").getFirst();
+            int aliquot = insertAliquots(st, "R1", 1).getFirst();
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID()); // baseline materialization
+
+            // Targeted update of one aliquot's aliquot-scoped property.
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), aliquot, "aliquotProp", "changed")));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // And a targeted update of the root's own (non-derived-onto-aliquot) name-adjacent material column path.
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "rootChanged0")));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testBatchUpdate() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdBatch");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3", "R4", "R5");
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            List<Map<String, Object>> updates = new ArrayList<>();
+            for (int i = 0; i < roots.size(); i++)
+                updates.add(CaseInsensitiveHashMap.of(RowId.name(), roots.get(i), "rootProp", "batch" + i));
+            updateRows(st, updates);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testRootFanoutUpdate() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdFanout");
+            int root = insertRoots(st, "R1").getFirst();
+            insertAliquots(st, "R1", 25);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Editing the root's ParentOnly property must re-derive m_sample.* for every aliquot beneath it.
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "fannedOut")));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testFullResync() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdFull");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Make a real change, then force the full-re-sync branch (as a no-rowId write path would) before reading.
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.getFirst(), "rootProp", "fullResynced")));
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            counters.pendingUpdateRowIds.clear();
+            counters.fullUpdatePending = true;
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        private ExpSampleType createSampleType(String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            GWTPropertyDescriptor rootProp = new GWTPropertyDescriptor("rootProp", "string");
+            rootProp.setDerivationDataScope(ExpSchema.DerivationDataScopeType.ParentOnly.name()); // -> m_sample join
+            props.add(rootProp);
+            GWTPropertyDescriptor aliquotProp = new GWTPropertyDescriptor("aliquotProp", "string");
+            aliquotProp.setDerivationDataScope(ExpSchema.DerivationDataScopeType.ChildOnly.name()); // -> m_aliquot join
+            props.add(aliquotProp);
+            return SampleTypeService.get().createSampleType(_c, _user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+        }
+
+        private ExpMaterialTableImpl getSamplesTable(ExpSampleType st)
+        {
+            return (ExpMaterialTableImpl) QueryService.get().getUserSchema(_user, _c, SamplesSchema.SCHEMA_NAME).getTable(st.getName());
+        }
+
+        private @NotNull QueryUpdateService getUpdateService(ExpSampleType st)
+        {
+            TableInfo table = getSamplesTable(st);
+            QueryUpdateService service = table.getUpdateService();
+            if (service == null)
+                throw new IllegalArgumentException("No QueryUpdateService found for table " + st.getName());
+
+            return service;
+        }
+
+        private List<Integer> insertRoots(ExpSampleType st, String... names) throws Exception
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (int i = 0; i < names.length; i++)
+                rows.add(CaseInsensitiveHashMap.of("name", names[i], "rootProp", "root" + i));
+            return insert(st, rows);
+        }
+
+        private List<Integer> insertAliquots(ExpSampleType st, String rootName, int count) throws Exception
+        {
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (int i = 0; i < count; i++)
+                rows.add(CaseInsensitiveHashMap.of("name", rootName + "-" + i, "AliquotedFrom", rootName, "aliquotProp", "aliquot" + i));
+            return insert(st, rows);
+        }
+
+        private List<Integer> insert(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> inserted = getUpdateService(st).insertRows(_user, _c, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            if (inserted == null || inserted.isEmpty())
+                return Collections.emptyList();
+
+            List<Integer> rowIds = new ArrayList<>();
+            for (Map<String, Object> row : inserted)
+                rowIds.add(((Number) row.get(RowId.name())).intValue());
+            return rowIds;
+        }
+
+        private void updateRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            getUpdateService(st).updateRows(_user, _c, rows, null, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        /**
+         * Trigger materialization (and any pending incremental update) as a side effect of {@link #getMaterializedSQL()},
+         * then assert the cached temp table equals a fresh derivation of the join query in both directions.
+         */
+        private void assertCacheMatchesFreshDerivation(ExpMaterialTableImpl table, String lsid)
+        {
+            SQLFragment cached = table.getMaterializedSQL(); // builds/refreshes the temp table via the normal read path
+            SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
+            DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+            assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
+            assertEquals("Fresh-derivation rows not found in cache", 0, countDiff(scope, fresh, cached));
+        }
+
+        private int countDiff(DbScope scope, SQLFragment a, SQLFragment b)
+        {
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).append("\nEXCEPT\n").append(b).append("\n) diff_");
+            Integer count = new SqlSelector(scope, sql).getObject(Integer.class);
+            return count == null ? 0 : count;
         }
     }
 }
