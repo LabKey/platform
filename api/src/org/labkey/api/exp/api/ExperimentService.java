@@ -188,8 +188,23 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
-    
-    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
+
+    /**
+     * @param filterSQL optional additional WHERE predicates; callers doing keyset pagination should include
+     *                  {@code ER.RowId > minRowId} here
+     * @param limit     max rows to return; pass {@code Table.ALL_ROWS} (-1) for no limit
+     * @return up to {@code limit} ExpRuns in {@code container} matching {@code filterSQL}, ordered by RowId
+     */
+    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit);
+
+    /**
+     * @param modifiedSince optional upper-exclusive Modified cutoff; pass {@code null} to return all batches
+     * @param minRowId      keyset cursor — only batches with RowId &gt; minRowId are returned; pass 0 for the first page
+     * @param limit         max rows to return
+     * @return up to {@code limit} assay batches for {@code batchProtocol} in {@code container} with
+     *         RowId &gt; minRowId (and Modified &gt; modifiedSince when non-null), ordered by RowId
+     */
+    List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol, @Nullable Date modifiedSince, long minRowId, int limit);
 
     List<? extends ExpRun> getExpRunsForJobId(long jobId);
 
