@@ -65,7 +65,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;

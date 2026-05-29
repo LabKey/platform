@@ -1430,14 +1430,10 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (dataRow == null && allowCrossContainer)
             {
                 // data not found from queryTable but exist in exp.data, which happens when users lack of permission to data's container
-                selector = new TableSelector(ExperimentService.get().getTinfoData(), filter, null);
-                try (var results = selector.getResults())
+                if (new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton(ExpDataTable.Column.RowId.name()), filter, null).exists())
                 {
-                    if (results.next())
-                    {
-                        String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
-                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
-                    }
+                    String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
+                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
                 }
             }
 

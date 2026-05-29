@@ -205,8 +205,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         Map<Integer, Map<String, Object>> result = new LinkedHashMap<>();
         for (Map.Entry<Integer, Map<String, Object>> key : keys.entrySet())
         {
-            String keyDisplay = key.getValue().toString();
-
             Map<String, Object> row = getRow(user, container, key.getValue(), verifyNoCrossFolderData);
             if (row != null && !row.isEmpty())
             {
@@ -217,11 +215,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (StringUtils.isEmpty(dataContainer))
                         dataContainer = (String) row.get("folder");
                     if (!container.getId().equals(dataContainer))
-                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + key.getValue().toString() + ".");
                 }
             }
             else if (verifyExisting)
-                throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
+                throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + key.getValue().toString() + ".");
         }
         return result;
     }
