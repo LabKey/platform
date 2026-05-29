@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URIUtil;
@@ -126,7 +127,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     protected Object eval(FileLike scriptFile, ScriptContext context) throws ScriptException
     {
         String[] params = formatCommand(scriptFile, context);
-        ProcessBuilder pb = new ProcessBuilder(params);
+        LabKeyProcessBuilder pb = new LabKeyProcessBuilder(params);
         pb = pb.directory(getWorkingDir(context).toNioPathForRead().toFile());
 
         final long timeout = getTimeout(context);
@@ -318,7 +319,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      * Execute the external script engine in separate process
      * @return the exit code for the invocation - 0 if the process completed successfully.
      */
-    protected int runProcess(ScriptContext context, ProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
+    protected int runProcess(ScriptContext context, LabKeyProcessBuilder pb, StringBuffer output, long timeout, TimeUnit timeoutUnit)
     {
         Process proc;
         try
