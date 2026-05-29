@@ -43,7 +43,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.mcp.McpService;
-import org.labkey.api.mcp.VectorDocument;
+import org.labkey.api.mcp.McpService.VectorDocument;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;

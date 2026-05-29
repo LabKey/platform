@@ -118,7 +118,7 @@ public interface WikiService
     /**
      * Loads all wikis from the given container into the MCP vector store.
      *
-     * <p>Each {@link org.labkey.api.mcp.VectorDocument} is assigned an ID of the form
+     * <p>Each {@link org.labkey.api.mcp.McpService.VectorDocument} is assigned an ID of the form
      * {@code "<containerEntityId>/<wikiEntityId>"}, where both components are GUIDs
      * (as returned by {@link Container#getId()} and the wiki's own entity ID).
      * Tools that consume vector store results (e.g. {@code listDocuments},
