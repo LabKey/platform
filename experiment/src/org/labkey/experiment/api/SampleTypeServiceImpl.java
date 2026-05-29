@@ -346,11 +346,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 impl.index(q, null);
             }
 
-            indexSampleTypeMaterials(sampleType, q);
+            indexSampleTypeMaterials(sampleType, q, 0);
         });
     }
 
-    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue)
+    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue, long minRowId)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
@@ -359,17 +359,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
                 .append(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
+                .append(" AND m.RowId > ?").add(minRowId)
                 .append(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
                 .append(" ORDER BY m.RowId") // Issue 51263: order by RowId to reduce deadlock
                 .add(sampleType.getModified());
+        sql = getExpSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getExpSchema().getScope(), sql);
+        selector.setJdbcCaching(false);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
-        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
-            for (Material m : batch)
-            {
-                ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
-            }
+        // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
+            ExpMaterialImpl impl = new ExpMaterialImpl(m);
+            impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
         });
+
+        if (tracker.wasFull())
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
     }
 
 

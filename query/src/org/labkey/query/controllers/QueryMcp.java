@@ -181,14 +181,18 @@ public class QueryMcp implements McpService.McpImpl
 
         try
         {
-            QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+            QueryServiceImpl.CalculatedColumnParseResult result = QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+
+            JSONObject json = new JSONObject();
+            json.put("jdbcType", result.jdbcType().name());
+            json.put("expression", expression);
+
+            return json.toString();
         }
         catch (QueryException x)
         {
             return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
-
-        return "success";
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
