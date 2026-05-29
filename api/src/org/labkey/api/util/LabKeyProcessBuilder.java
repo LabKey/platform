@@ -100,4 +100,9 @@ public class LabKeyProcessBuilder
         return lc.contains("secret") || lc.contains("password") || lc.contains("apikey") || lc.contains("_key") || lc.contains("token") ||
                 (secrets != null && secrets.isRegisteredSecret(propertyName));
     }
+
+    public void redirectOutput(ProcessBuilder.Redirect redirect)
+    {
+        _pb.redirectOutput(redirect);
+    }
 }
