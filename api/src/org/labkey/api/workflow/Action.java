@@ -2,7 +2,9 @@ package org.labkey.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -10,6 +12,8 @@ import org.labkey.api.data.CreatedModified;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.util.GUID;
 
@@ -26,6 +30,7 @@ public abstract class Action extends CreatedModified
     public static final String ASSAY_TYPES_KEY = "assayTypes";
     public static final String NUM_PER_PARENT_KEY = "numPerParent";
     public static final String UPDATE_STATUS_KEY = "updateStatus";
+    public static final String REMOVE_FROM_STORAGE_KEY = "removeFromStorage";
     public static final String STATUS_KEY = "sampleStatus";
     protected Long _rowId;
     protected int _ordinal;
@@ -126,6 +131,88 @@ public abstract class Action extends CreatedModified
         _inputParameters = inputParameters;
     }
 
+    /**
+     * Validates that the status parameters are valid, according to the following rules:
+     *  - If updateKeyRequired is true, then STATUS_KEY and REMOVE_FROM_STORAGE_KEY may only be present if
+     *  UPDATE_STATUS_KEY is true
+     *  - STATUS_KEY is optional, but when present the value must be a valid status
+     *  - REMOVE_FROM_STORAGE_KEY may only be present when STATUS_KEY is also present
+     *  - If REMOVE_FROM_STORAGE_KEY is true, then the value for STATUS_KEY must represent a consumed state
+     */
+    private @Nullable String validateStatus(Container container, String prefix, boolean updateKeyRequired)
+    {
+        boolean hasStatusKey = _inputParameters.has(STATUS_KEY);
+        boolean hasUpdateStatusKey = _inputParameters.has(UPDATE_STATUS_KEY);
+        boolean hasRemoveFromStorageKey = _inputParameters.has(REMOVE_FROM_STORAGE_KEY);
+
+        boolean updateStatus;
+        try
+        {
+            updateStatus = hasUpdateStatusKey && _inputParameters.getBoolean(UPDATE_STATUS_KEY);
+        }
+        catch (JSONException e)
+        {
+            return prefix + UPDATE_STATUS_KEY + " must be a boolean.";
+        }
+
+        boolean removeFromStorage;
+        try
+        {
+            removeFromStorage = hasRemoveFromStorageKey && _inputParameters.getBoolean(REMOVE_FROM_STORAGE_KEY);
+        }
+        catch (JSONException e)
+        {
+            return prefix + REMOVE_FROM_STORAGE_KEY + " must be a boolean.";
+        }
+
+        // If we're expecting an UPDATE_STATUS_KEY (aliquot / derive / pool actions), then the key must be present and
+        // set to true in order for us to honor the STATUS_KEY and REMOVE_FROM_STORAGE_KEY.
+        if (updateKeyRequired && !updateStatus)
+        {
+            if (hasStatusKey)
+                return prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.";
+
+            if (hasRemoveFromStorageKey)
+                return prefix + REMOVE_FROM_STORAGE_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.";
+        }
+
+        if (removeFromStorage && !hasStatusKey)
+            return prefix + STATUS_KEY + " is required for action of type " + _type + " when " + REMOVE_FROM_STORAGE_KEY + " is true.";
+
+        if (hasStatusKey && container != null)
+        {
+            long statusId;
+            try
+            {
+                statusId = _inputParameters.getLong(STATUS_KEY);
+            }
+            catch (JSONException e)
+            {
+                return prefix + STATUS_KEY + " must be a number.";
+            }
+
+            DataState state = SampleStatusService.get().getStateForRowId(container, statusId);
+
+            if (state == null)
+                return prefix + "Invalid " + STATUS_KEY + " (" + statusId + ") for container " + container.getPath() + ".";
+
+            if (removeFromStorage && !ExpSchema.SampleStateType.Consumed.name().equals(state.getStateType()))
+                return prefix + STATUS_KEY + " (" + statusId + ") must represent a " + ExpSchema.SampleStateType.Consumed.name() + " state when " + REMOVE_FROM_STORAGE_KEY + " is true.";
+        }
+
+        return null;
+    }
+
+    private static boolean isSampleStatusKey(String key)
+    {
+        return key.equals(STATUS_KEY) || key.equals(UPDATE_STATUS_KEY) || key.equals(REMOVE_FROM_STORAGE_KEY);
+    }
+
+    private boolean hasAnySampleStatusKey()
+    {
+        return _inputParameters != null && (_inputParameters.has(UPDATE_STATUS_KEY) || _inputParameters.has(STATUS_KEY) || _inputParameters.has(REMOVE_FROM_STORAGE_KEY));
+    }
+
     @JsonIgnore
     public List<String> validateInputParameters(int ordinal, Container container)
     {
@@ -169,31 +256,57 @@ public abstract class Action extends CreatedModified
         }
         else if (_type == WorkflowService.ActionType.AliquotSamples)
         {
+            List<String> messages = new ArrayList<>();
+
             if (_inputParameters == null || !_inputParameters.has(NUM_PER_PARENT_KEY))
-                return List.of(prefix + NUM_PER_PARENT_KEY + " is required for action of type " + _type + ".");
+                messages.add(prefix + NUM_PER_PARENT_KEY + " is required for action of type " + _type + ".");
             else
             {
                 try {
                     int numPerParent = _inputParameters.getInt(NUM_PER_PARENT_KEY);
                     if (numPerParent < 0)
-                        return List.of(prefix + NUM_PER_PARENT_KEY + " cannot be negative.");
+                        messages.add(prefix + NUM_PER_PARENT_KEY + " cannot be negative.");
                 }
                 catch (Exception e) {
-                    return List.of(prefix + NUM_PER_PARENT_KEY + " must be an integer.");
+                    messages.add(prefix + NUM_PER_PARENT_KEY + " must be an integer.");
                 }
             }
+
+            if (hasAnySampleStatusKey())
+            {
+                String statusMessage = validateStatus(container, prefix, true);
+                if (statusMessage != null) messages.add(statusMessage);
+            }
+
+            return messages;
         }
         else if (_type == WorkflowService.ActionType.DeriveSamples || _type == WorkflowService.ActionType.PoolSamples)
         {
-            if (_inputParameters == null || _inputParameters.isEmpty())
-                return List.of(prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".");
-            if (_type == WorkflowService.ActionType.PoolSamples && _inputParameters.length() > 1)
+            String emptyMessage = prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".";
+
+            if (_inputParameters == null) return List.of(emptyMessage);
+
+            // We can't just check _inputParameters size because it may include sample status keys, so we extract the
+            // sample type IDs and validate against those.
+            List<String> sampleTypeIds = new ArrayList<>();
+            _inputParameters.keys().forEachRemaining(id -> {
+                if (isSampleStatusKey(id)) return;
+                sampleTypeIds.add(id);
+            });
+
+            if (sampleTypeIds.isEmpty())
+                return List.of(emptyMessage);
+
+            if (_type == WorkflowService.ActionType.PoolSamples && sampleTypeIds.size() > 1)
                 return List.of(prefix + "only one sample type can be specified for action of type " + _type + ".");
+
             SampleTypeService sampleTypeService = SampleTypeService.get();
             Set<String> invalidSampleTypeIds = new HashSet<>();
             List<Object> invalidCounts = new ArrayList<>();
+            List<String> messages = new ArrayList<>();
 
-            _inputParameters.keys().forEachRemaining(id -> {
+            for (String id : sampleTypeIds)
+            {
                 try
                 {
                     if (sampleTypeService.getSampleType(Long.valueOf(id)) == null)
@@ -204,55 +317,53 @@ public abstract class Action extends CreatedModified
                     invalidSampleTypeIds.add(id);
                 }
                 Object countObj = _inputParameters.get(id);
-                if ((countObj instanceof String))
+                if (countObj instanceof String countStr)
                     try
                     {
-                        if (Integer.parseInt((String) countObj) < 0)
+                        if (Integer.parseInt(countStr) < 0)
                             invalidCounts.add(countObj);
                     }
                     catch (NumberFormatException e)
                     {
                         invalidCounts.add(countObj);
                     }
-                else if (countObj instanceof Integer)
+                else if (countObj instanceof Integer count)
                 {
-                    if (((Integer) countObj) < 0)
+                    if (count < 0)
                         invalidCounts.add(countObj);
                 }
                 else
                     invalidCounts.add(countObj);
-            });
-            List<String> messages = new ArrayList<>();
+            }
+
             if (!invalidSampleTypeIds.isEmpty())
                 messages.add(prefix + "invalid sample type IDs " + invalidSampleTypeIds + ".");
             if (!invalidCounts.isEmpty())
                 messages.add(prefix + "invalid sample count values " + invalidCounts + ".");
+
+            if (hasAnySampleStatusKey())
+            {
+                String statusMessage = validateStatus(container, prefix, true);
+
+                if (statusMessage != null) messages.add(statusMessage);
+            }
+
             return messages;
         }
-        else if (_type == WorkflowService.ActionType.RemoveFromStorage)
+        else if (_type == WorkflowService.ActionType.RemoveFromStorage || _type == WorkflowService.ActionType.UpdateSampleStatus)
         {
             if (_inputParameters == null || _inputParameters.isEmpty())
                 return Collections.emptyList();
-            boolean updateStatus = _inputParameters.getBoolean(UPDATE_STATUS_KEY);
-            if (updateStatus && !_inputParameters.has(STATUS_KEY))
-                return List.of(prefix + STATUS_KEY + " is required for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is true.");
-            if (!updateStatus && _inputParameters.has(STATUS_KEY))
-                return List.of(prefix + STATUS_KEY + " is not allowed for action of type " + _type + " when " + UPDATE_STATUS_KEY + " is false.");
-            if (updateStatus && container != null)
-            {
-                try
-                {
-                    long statusId = _inputParameters.getLong(STATUS_KEY);
-                    SampleStatusService sampleStatusService = SampleStatusService.get();
-                    if (sampleStatusService.getStateForRowId(container, statusId) == null)
-                        return List.of(prefix + "Invalid " + STATUS_KEY + " (" + statusId + ").");
-                }
-                catch (Exception e)
-                {
-                    return List.of(prefix + "Invalid " + STATUS_KEY + ".");
-                }
-            }
-        } else {
+
+            boolean updateKeyRequired = _type == WorkflowService.ActionType.RemoveFromStorage;
+            String statusMessage = validateStatus(container, prefix, updateKeyRequired);
+
+            if (statusMessage != null) return List.of(statusMessage);
+
+            return Collections.emptyList();
+        }
+        else
+        {
             if (_inputParameters != null && !_inputParameters.isEmpty())
                 return List.of(prefix + "input parameters are not allowed for action of type " + _type + ".");
         }

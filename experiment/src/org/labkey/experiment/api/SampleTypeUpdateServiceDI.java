@@ -420,7 +420,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
                 {
-                    dib = workService.getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    Long actionId = (Long) context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId);
+
+                    if (WorkflowService.get().actionWillAddSamples(actionId))
+                    {
+                        dib = workService.getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    }
+
                     dib = workService.getActionAuditDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
                 }
             }
