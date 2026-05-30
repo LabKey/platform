@@ -2,6 +2,7 @@ package org.labkey.api.workflow;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.query.ValidationException;
@@ -9,7 +10,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
 import java.util.Map;
-import org.jetbrains.annotations.Nullable;
 
 public interface WorkflowService
 {
@@ -29,7 +29,8 @@ public interface WorkflowService
         MoveInStorage("input parameters", "Moved samples in storage"),
         CheckOut("input parameters", "Checked out samples"),
         CheckIn("input parameters", "Checked in samples"),
-        RemoveFromStorage("sample status value", "Removed samples from storage");
+        RemoveFromStorage("sample status value", "Removed samples from storage"),
+        UpdateSampleStatus("sample status value", "Updated sample status");
 
         private final String _inputDescription;
         private final String _auditMessage;
@@ -65,8 +66,9 @@ public interface WorkflowService
 
     void populateConfigParams(HttpServletRequest request, Map<Enum, Object> configParameters) throws ValidationException;
     Map<String, Object> getConfigParameters(HttpServletRequest request) throws ValidationException;
-    void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId);
+    void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId, @Nullable String userAuditComment);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
+    boolean actionWillAddSamples(Long actionId);
 
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 

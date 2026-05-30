@@ -86,7 +86,7 @@ public class ReportsWebPart extends WebPartView<Object>
                 getViewContext().put(Report.renderParam.reportSessionId.name(), properties.get(Report.renderParam.reportSessionId.name()));
         }
 
-        if (_report != null)
+        if (_report != null && _report.isShowInReportsWebPart())
         {
             HttpView view;
 
