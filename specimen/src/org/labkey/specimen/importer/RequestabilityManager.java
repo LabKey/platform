@@ -395,8 +395,6 @@ public class RequestabilityManager
         public int updateRequestability(User user, List<Vial> vials) throws InvalidRuleException
         {
             TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(_container);
-            if (null == tableInfoVial)
-                throw new IllegalStateException("Expected Vial table to exist.");
 
             SQLFragment reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
