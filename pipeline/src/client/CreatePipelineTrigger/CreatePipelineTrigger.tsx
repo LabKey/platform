@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useState, useReducer } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { naturalSort, FormSchema, AutoForm, Alert, cancelEvent } from '@labkey/components';

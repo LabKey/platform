@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2013-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /* Apply patches found for Ext 4.2.1 here */
 
 // Disable the dynamic class loader (docs mention this should be the default)
