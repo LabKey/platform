@@ -573,7 +573,7 @@ public class RequestabilityManager
         @Override
         public SQLFragment getAvailabilityReason()
         {
-            return new SQLFragment("'This vial is ? because it was found in the set called \"?\".'", getMarkType().getLabel().toLowerCase(), _queryName);
+            return new SQLFragment("?", "This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".");
         }
 
         @Override
