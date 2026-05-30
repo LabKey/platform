@@ -751,7 +751,6 @@ public class QueryPivot extends AbstractQueryRelation
         return null;
     }
 
-    
     @Override
     public SQLFragment getSql()
     {
