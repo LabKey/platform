@@ -148,7 +148,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         _source.setAlias(getAlias() + "Wrapped");
     }
 
-    
     @Override
     public void declareFields()
     {
@@ -310,7 +309,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     {
         return _selectedColumns.size();
     }
-    
 
     @Override
     public QLWColumn getColumn(@NotNull String name)
@@ -457,7 +455,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             else
                 sql.append(f);
             sql.append(" AS ");
-            sql.append(col.getAlias());
+            sql.appendIdentifier(col.getAlias());
             comma = ", ";
         }
         sql.append("\nFROM ");
@@ -521,7 +519,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         final String _alias;
         ColumnLogging _columnLogging = null;
         PHI _phi;
-        
+
         QLWColumn(AbstractQueryRelation table, FieldKey key, String alias)
         {
             _table = table;

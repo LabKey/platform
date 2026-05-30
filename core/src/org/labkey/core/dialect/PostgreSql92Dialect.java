@@ -260,12 +260,6 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
-    public boolean supportsSelectConcat()
-    {
-        return true;
-    }
-
-    @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");

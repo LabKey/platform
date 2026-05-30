@@ -124,6 +124,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
@@ -158,7 +159,6 @@ import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
-import org.labkey.api.secrets.SecretService;
 import org.labkey.api.settings.ProductConfiguration;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -254,8 +254,8 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
-import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.DbLoginManager;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
@@ -284,6 +284,7 @@ import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
+import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
@@ -296,8 +297,6 @@ import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
-import org.labkey.core.secrets.SecretServiceImpl;
-
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.TableViewFormTestCase;
@@ -540,8 +539,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
             "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
             "search to find the other select values.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
+            "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
             "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
@@ -1672,7 +1671,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     SiteResourceHandler handler = getResourceHandler(entry.getKey());
                     if (handler != null)
-                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
+                        incrementRevision |= setSiteResource(handler, entry.getValue());
                 }
 
                 // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
@@ -1701,7 +1700,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
-        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        if (null != resetPermissionsEntry && Boolean.parseBoolean(resetPermissionsEntry.getValue()))
         {
             // reset the home project permissions to remove the default assignments given at server install
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
@@ -1743,14 +1742,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return LookAndFeelPropertiesManager.get().getResourceHandler(type);
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)
         {
             try
             {
-                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
+                resourceHandler.accept(resource, ContainerManager.getRoot(), User.guest);
                 return true;
             }
             catch(Exception e)
