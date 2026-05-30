@@ -200,4 +200,7 @@ public interface McpService extends ToolCallbackProvider
     void addDocuments(List<VectorDocument> documents);
 
     void saveVectorStore();
+
+    /** Drop and recreate the vector store table. Use when the embedding model has changed and dimensions no longer match. */
+    void resetVectorStore();
 }

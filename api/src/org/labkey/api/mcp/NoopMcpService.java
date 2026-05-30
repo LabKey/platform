@@ -96,4 +96,9 @@ class NoopMcpService implements McpService
     public void saveVectorStore()
     {
     }
+
+    @Override
+    public void resetVectorStore()
+    {
+    }
 }
