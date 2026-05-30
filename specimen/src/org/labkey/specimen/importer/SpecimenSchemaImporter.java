@@ -185,7 +185,7 @@ public class SpecimenSchemaImporter implements SimpleStudyImporter
                     current.put(pd.getName(), pd);
                 }
 
-                DomainURIFactory factory = name -> new Pair<>(domain.getTypeURI(), container);
+                DomainURIFactory factory = _ -> new Pair<>(domain.getTypeURI(), container);
 
                 ImportPropertyDescriptorsList pds = importHelper.getImportPropertyDescriptors(factory, propErrors, container);
                 if (!propErrors.isEmpty())
