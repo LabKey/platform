@@ -1023,13 +1023,15 @@ public abstract class SqlDialect
     // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
-        // Be defensive: NUL/CR/LF and other non-printable control characters in an identifier
+        // Be defensive: NUL/CR/LF, DEL, and other non-printable control characters in an identifier
         // would either be silently truncated by the driver (SQL Server on NUL) or surface as an
         // opaque JDBC error. Reject them here with a clear message before any bytes leave the JVM.
+        // Character.isISOControl covers the C0 (0x00-0x1F) and C1 (0x7F-0x9F) control ranges; tab is
+        // the one control character we tolerate.
         for (int i = 0, len = id.length(); i < len; i++)
         {
             char c = id.charAt(i);
-            if (c < 0x20 && c != '\t')
+            if (Character.isISOControl(c) && c != '\t')
                 throw new IllegalArgumentException("Identifier contains illegal control character (0x" + Integer.toHexString(c) + "): " + id);
         }
         return "\"" + Strings.CS.replace(id, "\"", "\"\"") + "\"";

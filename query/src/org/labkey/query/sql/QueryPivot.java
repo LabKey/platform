@@ -856,12 +856,11 @@ public class QueryPivot extends AbstractQueryRelation
                     sql.append("=");
                     if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
                     {
-                        LOG.warn("Pivot QString value emitted via legacy LabKey-SQL escape (flag-on, dialect string handler bypassed)");
+                        LOG.debug("Pivot QString value emitted via legacy LabKey-SQL escape (flag-on, dialect string handler bypassed)");
                         sql.append(value.getSourceText());
                     }
                     else
                     {
-                        LOG.warn("Pivot QString value emitted via dialect string handler (flag-off)");
                         sql.appendStringLiteral(qs.getValue(), getSqlDialect());
                     }
                 }

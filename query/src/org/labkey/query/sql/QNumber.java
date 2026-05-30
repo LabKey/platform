@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.sql.antlr.SqlBaseParser;
@@ -38,21 +39,6 @@ public class QNumber extends QExpr implements IConstant
 
 	Number _value = null;
 	JdbcType _sqlType = JdbcType.DOUBLE;
-
-
-	public QNumber(String s)
-	{
-		String substring = s;
-		if (s.startsWith("0x"))
-			setValue(convertInteger(s));
-		else if (s.startsWith("+") || s.startsWith("-"))
-			substring = s.substring(1);
-
-		if (StringUtils.containsOnly(substring,"0123456789"))
-			setValue(convertInteger(s));
-		else
-			setValue(convertDouble(s));
-	}
 
 
     public QNumber(CommonTree n)
@@ -91,7 +77,11 @@ public class QNumber extends QExpr implements IConstant
 			else
 			{
 				LOG.warn("Unparseable numeric literal in LabKey SQL (flag-off, throwing parse error): {}", getTokenText());
-				throw new IllegalArgumentException("Invalid numeric literal: " + getTokenText(), x);
+				// Throw QueryParseException (not IllegalArgumentException) so SqlParser.wrapParseException returns it
+				// as-is: the user sees a precise, located parse error instead of a generic "Unexpected exception" at
+				// line 0:0, and it isn't logged at ERROR/reported to mothership. cause is left null so the
+				// QueryParseException constructor sets SkipMothershipLogging (this is malformed user input, not a fault).
+				throw new QueryParseException("Invalid numeric literal: " + getTokenText(), null, getLine(), getColumn());
 			}
 		}
     }
@@ -259,7 +249,7 @@ public class QNumber extends QExpr implements IConstant
 
         /**
          * Strict mode (default — flag unset): an unparseable numeric token must surface as a
-         * parse-time IllegalArgumentException so SqlParser routes it into _parseErrors as a
+         * parse-time QueryParseException so SqlParser routes it into _parseErrors as a
          * user-facing error rather than silently emitting the raw lexeme.
          */
         @Test
@@ -270,9 +260,9 @@ public class QNumber extends QExpr implements IConstant
             try
             {
                 new QNumber(token(SqlBaseParser.NUM_INT, "1.2.3"));
-                fail("Expected IllegalArgumentException for unparseable NUM_INT token");
+                fail("Expected QueryParseException for unparseable NUM_INT token");
             }
-            catch (IllegalArgumentException expected)
+            catch (QueryParseException expected)
             {
                 assertTrue("error message should include the bad token: " + expected.getMessage(),
                         expected.getMessage().contains("1.2.3"));
@@ -287,9 +277,9 @@ public class QNumber extends QExpr implements IConstant
             try
             {
                 new QNumber(token(SqlBaseParser.NUM_DOUBLE, "1.2.3.4"));
-                fail("Expected IllegalArgumentException for unparseable NUM_DOUBLE token");
+                fail("Expected QueryParseException for unparseable NUM_DOUBLE token");
             }
-            catch (IllegalArgumentException expected)
+            catch (QueryParseException expected)
             {
                 assertTrue(expected.getMessage().contains("1.2.3.4"));
             }
