@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2017-2026 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
- */
 /*! markdown-it 13.0.1 https://github.com/markdown-it/markdown-it @license MIT */
 (function(global, factory) {
   typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, 
