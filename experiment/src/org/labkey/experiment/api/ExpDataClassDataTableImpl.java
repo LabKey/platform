@@ -1433,7 +1433,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 if (new TableSelector(ExperimentService.get().getTinfoData(), Collections.singleton(ExpDataTable.Column.RowId.name()), filter, null).exists())
                 {
                     String keyDisplay = name != null ? name : (rowId != null ? "{RowId=" + rowId + "}" : lsid);
-                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": " + keyDisplay + ".");
+                    throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + keyDisplay + "'.");
                 }
             }
 

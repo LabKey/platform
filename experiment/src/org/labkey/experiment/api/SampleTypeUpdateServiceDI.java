@@ -1048,7 +1048,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) " + row.get(RowId.name()) + ".");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + row.get(RowId.name()) + "'.");
                 }
 
                 if (!missingNames.isEmpty())
@@ -1059,7 +1059,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": " + row.get(Name.name()) + ".");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + row.get(Name.name()) + "'.");
                 }
             }
         }
@@ -1067,9 +1067,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting)
         {
             if (!missingRowIds.isEmpty())
-                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) " + missingRowIds.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + missingRowIds.iterator().next() + "'.");
             if (!missingNames.isEmpty())
-                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": " + missingNames.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + missingNames.iterator().next() + "'.");
         }
 
         // if contains domain fields, check for aliquot specific fields

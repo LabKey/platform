@@ -1141,12 +1141,12 @@ describe('Data CRUD', () => {
             }]
         }, { ...topFolderOptions, ...editorUserOptions }).expect((result) => {
             const errorResp = JSON.parse(result.text);
-            expect(errorResp['exception']).toContain('Data does not exist in ' + PROJECT_NAME + ': {RowId=' + row3RowId + '}.');
+            expect(errorResp['exception']).toContain("Data does not exist in " + PROJECT_NAME + ": '{RowId=" + row3RowId + "}'.");
         });
 
         // using update from file, verify update using rowId for data that doesn't exist on this dataclass should fail.
         errorResp = await ExperimentCRUDUtils.importData(server, "RowId\tDescription\n" + row3RowId + "\tupdate\n", emptyDataClass, "UPDATE", topFolderOptions, editorUserOptions);
-        expect(errorResp.text).toContain('Data does not exist in ' + PROJECT_NAME + ': {RowId=' + row3RowId + '}.');
+        expect(errorResp.text).toContain("Data does not exist in " + PROJECT_NAME + ": '{RowId=" + row3RowId + "}'.");
 
     });
 
