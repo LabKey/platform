@@ -501,7 +501,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    protected String doBuildProcedureCall(String qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         throw new UnsupportedOperationException();
     }

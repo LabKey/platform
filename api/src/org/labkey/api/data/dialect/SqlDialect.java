@@ -2114,16 +2114,16 @@ public abstract class SqlDialect
      *
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
      */
-    public final String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    public final SQLFragment buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
-        return doBuildProcedureCall(getProcedureSelectName(procSchema, procName).getSQL(), paramCount, hasReturn, assignResult, procScope);
+        return doBuildProcedureCall(getProcedureSelectName(procSchema, procName), paramCount, hasReturn, assignResult, procScope);
     }
 
     /**
      * Dialect-specific worker for {@link #buildProcedureCall} that builds the call syntax around the already-quoted,
      * schema-qualified {@code qualifiedProcName}. Always invoke {@code buildProcedureCall()}, never this method.
      */
-    protected abstract String doBuildProcedureCall(String qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
+protected abstract SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
@@ -2391,17 +2391,17 @@ public abstract class SqlDialect
 
             // Plain legal names are emitted bare (no behavior change), through both execute() and buildProcedureCall()
             assertTrue(dialect.execute(core, "fn_dropifexists", new SQLFragment("?, ?, ?, ?")).getSQL().contains("core.fn_dropifexists"));
-            assertTrue(dialect.buildProcedureCall(core.getName(), "fn_dropifexists", 0, false, false, scope).contains("core.fn_dropifexists"));
+            assertTrue(dialect.buildProcedureCall(core.getName(), "fn_dropifexists", 0, false, false, scope).getSQL().contains("core.fn_dropifexists"));
 
             // Names with special characters are quoted and embedded quotes are doubled (cannot break out of the quoted identifier)
             assertTrue(dialect.execute(core, "a\"b", new SQLFragment("?")).getSQL().contains("\"a\"\"b\""));
-            assertTrue(dialect.buildProcedureCall(core.getName(), "weird name", 0, false, false, scope).contains("\"weird name\""));
+            assertTrue(dialect.buildProcedureCall(core.getName(), "weird name", 0, false, false, scope).getSQL().contains("\"weird name\""));
 
             // A reserved word is quoted
-            assertTrue(dialect.buildProcedureCall(core.getName(), "select", 0, false, false, scope).contains("\"select\""));
+            assertTrue(dialect.buildProcedureCall(core.getName(), "select", 0, false, false, scope).getSQL().contains("\"select\""));
 
             // A special-character schema name is quoted
-            assertTrue(dialect.buildProcedureCall("weird schema", "proc", 0, false, false, scope).contains("\"weird schema\""));
+            assertTrue(dialect.buildProcedureCall("weird schema", "proc", 0, false, false, scope).getSQL().contains("\"weird schema\""));
 
             // Control characters are hard failures
             assertThrows(IllegalArgumentException.class, () -> dialect.execute(core, "a\0b", new SQLFragment("?")));

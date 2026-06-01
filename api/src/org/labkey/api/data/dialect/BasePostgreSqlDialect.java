@@ -854,11 +854,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    protected String doBuildProcedureCall(String qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
-        StringBuilder sb = new StringBuilder();
+        SQLFragment sb = new SQLFragment();
         sb.append("{");
         if (assignResult)
             sb.append("? = ");
@@ -871,7 +871,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             comma = ",";
         }
         sb.append(")}");
-        return sb.toString();
+        return sb;
     }
 
     @Override
