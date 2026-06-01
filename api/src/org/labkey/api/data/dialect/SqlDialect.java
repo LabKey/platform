@@ -653,6 +653,10 @@ public abstract class SqlDialect
 
     private String quoteProcedureIdentifier(String id)
     {
+        // The schema and procedure names are separate parameters, so a single component may not itself
+        // contain a '.' -- a dotted name is an ambiguous (possibly smuggled) schema-qualified reference.
+        if (id.indexOf('.') >= 0)
+            throw new IllegalArgumentException("Procedure schema/name may not contain '.': " + id);
         return shouldQuoteIdentifier(id) ? quoteIdentifier(id) : id;
     }
 
@@ -2399,9 +2403,10 @@ public abstract class SqlDialect
             // A special-character schema name is quoted
             assertTrue(dialect.buildProcedureCall("weird schema", "proc", 0, false, false, scope).contains("\"weird schema\""));
 
-            // Control characters and breakout-malformed identifiers (e.g. an embedded dot) are hard failures
+            // Control characters are hard failures
             assertThrows(IllegalArgumentException.class, () -> dialect.execute(core, "a\0b", new SQLFragment("?")));
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a\0b", 0, false, false, scope));
+            // A dotted name is rejected: schema and procedure are separate parameters, so a '.' in a single component is an ambiguous schema-qualified reference
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a.b", 0, false, false, scope));
         }
     }
