@@ -464,28 +464,60 @@ public class SQLFragment implements Appendable, CharSequence
         if (malformed)
             throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted: " + identifier);
 
-        // Tighten pre-quoted path. For any input wrapped in "...", require every interior `"`
-        // to appear as `""` and forbid `.` (dotted refs must use appendDottedIdentifiers).
-        if (quoteWrapped)
+        // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
+        if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
         {
-            String interior = identifier.substring(1, identifier.length() - 1);
-            // Strip valid escaped quotes (""). Any remaining `"` is an unbalanced/breakout quote.
-            String stripped = Strings.CS.replace(interior, "\"\"", "");
-            boolean strictMalformed = stripped.indexOf('"') >= 0 || stripped.indexOf('.') >= 0;
-            if (strictMalformed)
+            if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
+            else
             {
-                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                    LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
-                else
-                {
-                    LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
-                    throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value has unescaped interior quote or dotted form: " + identifier);
-                }
+                LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
+                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
             }
         }
 
         getStringBuilder().append(charseq);
         return this;
+    }
+
+    // True iff the value is one or more double-quote-delimited identifiers joined by single dots,
+    // e.g. "a", "a"."b", "schema"."table". A literal quote within a segment must be escaped as "".
+    // A '.' inside quotes is part of the name; a '.' between segments is a separator. Anything else
+    // outside the quotes -- stray text, a lone (breakout) quote, an unterminated segment -- is rejected.
+    private static boolean isQuotedIdentifierSequence(String s)
+    {
+        int i = 0;
+        int n = s.length();
+        while (i < n)
+        {
+            if (s.charAt(i) != '"')         // each segment must open with a quote
+                return false;
+            i++;
+            boolean closed = false;
+            while (i < n)
+            {
+                if (s.charAt(i) == '"')
+                {
+                    if (i + 1 < n && s.charAt(i + 1) == '"')    // escaped "" -- part of the name
+                    {
+                        i += 2;
+                        continue;
+                    }
+                    i++;                    // closing quote
+                    closed = true;
+                    break;
+                }
+                i++;                        // any other char is legal inside quotes
+            }
+            if (!closed)                    // ran off the end without a closing quote
+                return false;
+            if (i == n)                     // end of a valid final segment
+                return true;
+            if (s.charAt(i) != '.')         // segments must be separated by a single dot
+                return false;
+            i++;                            // consume the separator and require another segment
+        }
+        return false;                       // trailing dot with no following segment
     }
 
     // just to save some typing
@@ -1022,7 +1054,7 @@ public class SQLFragment implements Appendable, CharSequence
             sqlf = newSql;
         }
 
-        CTE cte = commonTableExpressionsMap.get(key);
+        CTE cte = commonTableExpressionsMap == null ? null : commonTableExpressionsMap.get(key);
         if (null == cte)
             throw new IllegalStateException("CTE not found.");
         cte.sqlf = sqlf;
@@ -1374,12 +1406,23 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         @Test
-        public void testAppendIdentifierPreQuotedDottedRejected()
+        public void testAppendIdentifierPreQuotedDottedAccepted()
         {
-            // PR2-G1: "schema"."table" has an even quote count so the legacy check accepted it.
-            // The strict check rejects the embedded `.` so a single appendIdentifier call can't
-            // smuggle a cross-schema reference.
-            shouldFail(() -> new SQLFragment().appendIdentifier("\"schema\".\"table\""));
+            // PR2-G1: a dotted sequence of individually well-formed quoted identifiers is legitimate --
+            // e.g. a fully-qualified "schema"."table" returned by TableInfo.getSelectName(). The strict
+            // check validates each quoted segment rather than blanket-rejecting any interior dot.
+            new SQLFragment().appendIdentifier("\"schema\".\"table\"");
+            new SQLFragment().appendIdentifier("\"a\".\"b\".\"c\"");
+        }
+
+        @Test
+        public void testAppendIdentifierPreQuotedDotInsideQuotesAccepted()
+        {
+            // PR2-G1: a `.` *inside* the quotes is part of a single identifier's name, not a separator.
+            // This is the metadata-name case (e.g. a calculated column's generated class name) that the
+            // earlier strict check wrongly rejected.
+            new SQLFragment().appendIdentifier("\"name.with.dots\"");
+            new SQLFragment().appendIdentifier("\"org.labkey.query.sql.CalculatedExpressionColumn6b8f\"");
         }
 
         @Test
@@ -1388,6 +1431,15 @@ public class SQLFragment implements Appendable, CharSequence
             // PR2-G1: an interior `"` that isn't part of the standard `""` doubling is a breakout.
             // Even quote count alone is insufficient.
             shouldFail(() -> new SQLFragment().appendIdentifier("\"foo\"bar\"baz\""));
+            // A classic breakout: close the identifier early, then inject. The lone interior quote
+            // (after `foo`) is followed by non-separator text, so it must be rejected.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"foo\"; DROP TABLE x; --\""));
+            // Stray text after a valid segment (not a `.` separator).
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\" \"b\""));
+            // Trailing separator with no following segment.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\".\""));
+            // Empty segment between separators.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\"..\"b\""));
         }
 
         @Test
@@ -1398,6 +1450,9 @@ public class SQLFragment implements Appendable, CharSequence
             new SQLFragment().appendIdentifier("\"with a space\"");      // whitespace inside quotes is fine
             new SQLFragment().appendIdentifier("\"foo\"\"bar\"");        // embedded literal " via "" doubling
             new SQLFragment().appendIdentifier("\"contains\"\"more\"\"doubles\"");
+            // Doubled interior quotes around a dot decode to a single identifier named weird"."name --
+            // distinct from the two-segment "weird"."name" -- and cannot break out, so it's accepted.
+            new SQLFragment().appendIdentifier("\"weird\"\".\"\"name\"");
         }
     }
 
