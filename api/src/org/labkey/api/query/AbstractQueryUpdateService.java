@@ -901,7 +901,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows, providedValues);
         WorkflowService service = WorkflowService.get();
         if (service != null && configParameters != null && configParameters.containsKey(WorkflowService.WorkflowConfigs.ActionId))
-            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId));
+            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId), (String) configParameters.get(AuditUserComment));
 
         return result;
     }
