@@ -243,7 +243,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                         "FROM exp.data." + firstDataClassName + " AS dc\n" +
                         "ORDER BY dc.RowId\n";
 
-        try (Results rs = QueryService.get().selectResults(schema, sql, null, null, true, true))
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select())
         {
             RenderContext ctx = new RenderContext(new ViewContext());
             ctx.getViewContext().setRequest(TestContext.get().getRequest());

@@ -257,7 +257,7 @@ public class IssueManager
             if (table != null)
             {
                 var select = QueryService.get().getSelectBuilder(table).filter(filter);
-                try (Results rs = select.select(Map.of(), false))
+                try (Results rs = select.select(false))
                 {
                     Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
                     if (rs.next())

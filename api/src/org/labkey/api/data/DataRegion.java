@@ -2128,7 +2128,7 @@ public class DataRegion extends DisplayElement
         for (Map.Entry<FieldKey, ColumnInfo> entry : selectKeyMap.entrySet())
         {
             ColumnInfo col = entry.getValue();
-            SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+            SQLFragment selectSql = service.getSelectBuilder(table).columns(Collections.singletonList(col)).filter(pkFilter).queryLogging(queryLogging).buildSqlFragment();
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
             sql.append(selectSql);

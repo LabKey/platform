@@ -949,7 +949,7 @@ public class SpecimenRequestManager
                     TableInfo tableInfo = schema.getTable(SpecimenTablesProvider.SPECIMEN_WRAP_TABLE_NAME);
                     Map<FieldKey, ColumnInfo> columnMap = queryService.getColumns(tableInfo, fieldKeys);
 
-                    SQLFragment inner = queryService.getSelectSQL(tableInfo, columnMap.values(), null, null, -1, 0, false);
+                    SQLFragment inner = queryService.getSelectBuilder(tableInfo).columns(columnMap.values()).buildSqlFragment();
 
                     // Insert COUNT
                     String sampleCountName = tableInfo.getSqlDialect().makeLegalIdentifier("SampleCount");

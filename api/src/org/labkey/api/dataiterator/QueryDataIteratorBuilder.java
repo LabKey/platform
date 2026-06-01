@@ -162,7 +162,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         try
         {
             var select = qs.getSelectBuilder(t).columns(selectCols).filter(_filter);
-            ResultSet rs = select.select(_parameters, false);
+            ResultSet rs = select.select(false, _parameters);
             return new ResultSetDataIterator(rs, context);
         }
         catch (QueryParseException x)

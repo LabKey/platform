@@ -779,11 +779,10 @@ public class CoreQuerySchema extends UserSchema
 
                     settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
 
-                    Map<String, Object> params = Collections.emptyMap();
                     TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
 
-                    try (Results results = QueryService.get().select(table, table.getColumns(),
-                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
+                    try (Results results = QueryService.get().getSelectBuilder(table).filter(
+                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId())).select(true))
                     {
                         if (results.next())
                         {

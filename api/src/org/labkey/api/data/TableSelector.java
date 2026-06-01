@@ -618,9 +618,9 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             {
                 Map<FieldKey, ColumnInfo> map = getDisplayColumnsList(_columns);
 
-                // QueryService.getSelectSQL() also calls ensureRequiredColumns, so this call is redundant. However, we
-                // need to know the actual select columns (e.g., if the caller is building a Results) and getSelectSQL()
-                // doesn't return them. TODO: Provide a way to return the selected columns from getSelectSQL()
+                // SelectBuilderImpl.buildSqlFragment() also calls ensureRequiredColumns, so this call is redundant.
+                // However, we need to know the actual select columns (e.g., if the caller is building a Results)
+                // and buildSqlFragment() doesn't return them.
                 Table.ensureRequiredColumns(_table, map, _filter, _sort, null);
                 _columns = map.values();
             }
@@ -646,7 +646,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             }
 
             int selectMaxRows = (Table.ALL_ROWS == _maxRows || Table.NO_ROWS == _maxRows) ? _maxRows : (int)_scrollOffset + _maxRows + _extraRows;
-            SQLFragment sql = QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, selectMaxRows, selectOffset, forceSort, getQueryLogging());
+            SQLFragment sql = QueryService.get().getSelectBuilder(_table).columns(_columns).filter(_filter).sort(_sort).maxRows(selectMaxRows).offset(selectOffset).forceSort(forceSort).queryLogging(getQueryLogging()).buildSqlFragment();
 
             // This is for SAS, which doesn't support a SQL LIMIT syntax, so we must set Statement.maxRows() instead
             _statementMaxRows = _table.getSqlDialect().requiresStatementMaxRows() ? selectMaxRows : null;

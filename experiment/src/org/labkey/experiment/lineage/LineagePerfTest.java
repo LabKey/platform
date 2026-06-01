@@ -422,7 +422,7 @@ public class LineagePerfTest extends Assert
                 "FROM samples.MySamples AS ss\n";
 
         final UserSchema schema = QueryService.get().getUserSchema(_user, _container, "samples");
-        final TableSelector ts = QueryService.get().selector(schema, sql);
+        final SqlSelector ts = QueryService.get().getSelectBuilder(schema, sql).buildSqlSelector();
 
         final ExpLineageOptions opt = new ExpLineageOptions();
         final ViewBackgroundInfo info = new ViewBackgroundInfo(_container, _user, null);

@@ -1126,7 +1126,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             VisualizationSQLGenerator gen = getVSQL(q);
             UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
             String sql = gen.getSQL();
-            return QueryService.get().selectResults(schema, sql, null, null, true, true);
+            return QueryService.get().getSelectBuilder(schema, sql, true).select();
         }
 
 

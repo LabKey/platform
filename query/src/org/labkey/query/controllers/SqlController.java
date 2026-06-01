@@ -212,7 +212,7 @@ public class SqlController extends SpringActionController
                 return null;
             }
 
-            try (Results rs = QueryService.get().selectResults(schema, form.getSql(), null, form.getParameterMap(), true, false))
+            try (Results rs = QueryService.get().getSelectBuilder(schema, form.getSql(), true).select(false, form.getParameterMap()))
             {
                 getViewContext().getResponse().setContentType("text/plain");
                 if (form.compact)
