@@ -98,22 +98,6 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setMaxBLOBSize(Integer.parseInt(value));
         }
     },
-    ext3Required("Require ExtJS v3.4.1 be loaded on each page (DEPRECATED)")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setExt3Required(Boolean.parseBoolean(value));
-        }
-    },
-    ext3APIRequired("Require ExtJS v3.x based Client API be loaded on each page (DEPRECATED)")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setExt3APIRequired(Boolean.parseBoolean(value));
-        }
-    },
     sslRequired("Require SSL connections (users must connect via SSL)")
     {
         @Override

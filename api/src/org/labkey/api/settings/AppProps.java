@@ -174,10 +174,6 @@ public interface AppProps
 
     int getMaxBLOBSize();
 
-    boolean isExt3Required();
-
-    boolean isExt3APIRequired();
-
     ExceptionReportingLevel getExceptionReportingLevel();
 
     /**
