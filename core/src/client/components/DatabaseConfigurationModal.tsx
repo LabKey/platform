@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 import React, { PureComponent } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { Alert, FormButtons, Modal, resolveErrorMessage } from '@labkey/components';

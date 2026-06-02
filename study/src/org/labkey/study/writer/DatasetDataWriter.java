@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public class DatasetDataWriter implements InternalStudyWriter
             if (ctx.isDataspaceProject())
                 DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
             var select = QueryService.get().getSelectBuilder(ti).columns(columns).filter(filter).sort(sort);
-            ResultsFactory factory = ()->select.select(Map.of(),false);
+            ResultsFactory factory = ()->select.select(false);
             writeResultsToTSV(factory, vf, def.getFileName());
         }
     }
