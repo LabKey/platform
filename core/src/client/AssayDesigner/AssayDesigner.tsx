@@ -136,8 +136,9 @@ class AssayDesigner extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-
-        window.location.href = this.state.returnUrl || defaultUrl;
+        const redirectUrl = this.state.returnUrl || defaultUrl;
+        // TODO refactor this and other usages in platform/core/src/client to a helper safeRedirect() function from @labkey/components
+        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
     }
 
     onCancel = (): void => {
