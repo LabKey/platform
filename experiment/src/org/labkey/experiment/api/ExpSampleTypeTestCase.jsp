@@ -1343,7 +1343,7 @@ public void testInsertOptionUpdate() throws Exception
     qus.loadRows(_user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     String msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().getFirst().toString() : "no message";
-    assertTrue(msg.contains("Sample does not exist in") && msg.contains("S-1-absent."));
+    assertTrue(msg.contains("Sample does not exist in") && msg.contains("'S-1-absent'."));
 
     context = new DataIteratorContext();
     context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
@@ -1354,7 +1354,7 @@ public void testInsertOptionUpdate() throws Exception
     qus.loadRows(_user, c, MapDataIterator.of(rowsToUpdate), context, null);
     assertTrue(context.getErrors().hasErrors());
     msg = !context.getErrors().getRowErrors().isEmpty() ? context.getErrors().getRowErrors().getFirst().toString() : "no message";
-    assertTrue(msg.contains("Sample does not exist in") && msg.contains("S-1-absent."));
+    assertTrue(msg.contains("Sample does not exist in") && msg.contains("S-1-absent"));
 
     // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored
     rowsToUpdate = new ArrayList<>();
