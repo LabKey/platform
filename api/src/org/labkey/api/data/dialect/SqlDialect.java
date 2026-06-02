@@ -2123,7 +2123,7 @@ public abstract class SqlDialect
      * Dialect-specific worker for {@link #buildProcedureCall} that builds the call syntax around the already-quoted,
      * schema-qualified {@code qualifiedProcName}. Always invoke {@code buildProcedureCall()}, never this method.
      */
-protected abstract SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
+    protected abstract SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
