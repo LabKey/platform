@@ -57,7 +57,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.40.0",
+    "@labkey/components": "7.40.1-miscAssessibilityFixes.1",
     "@labkey/themes": "1.9.3"
   },
   "devDependencies": {
