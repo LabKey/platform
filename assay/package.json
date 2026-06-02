@@ -55,13 +55,13 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "7.40.1"
+    "@labkey/components": "7.41.1-fb-package-updates-060126.0"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.4",
-    "@labkey/eslint-config": "1.2.1",
+    "@labkey/build": "9.1.5-fb-package-updates-060126.1",
+    "@labkey/eslint-config": "1.2.2-fb-package-updates-060126.0",
     "@types/jest": "30.0.0",
-    "@types/react": "18.3.27",
+    "@types/react": "18.3.30",
     "@types/react-dom": "18.3.7",
     "jest": "30.4.2",
     "jest-cli": "30.4.2",
