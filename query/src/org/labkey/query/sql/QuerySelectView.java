@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.sql;
 
 
@@ -184,8 +199,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
 
     /*
-     * This code used to live in QueryService.getSelectSQL().  That code is still public and supported, but eventually
-     * calls this implementation.
+     * Called from SelectBuilderImpl.buildSqlFragment() via QuerySelectView.create().
      */
     private SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging, boolean distinct)

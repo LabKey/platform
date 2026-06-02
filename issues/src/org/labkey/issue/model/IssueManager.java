@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ public class IssueManager
             if (table != null)
             {
                 var select = QueryService.get().getSelectBuilder(table).filter(filter);
-                try (Results rs = select.select(Map.of(), false))
+                try (Results rs = select.select(false))
                 {
                     Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
                     if (rs.next())

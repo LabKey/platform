@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,9 +308,9 @@ public class Lsid
         return "urn:lsid:%:" + namespace + ".%:%";
     }
 
-    static public String namespaceFilter(String columnName, String namespace)
+    static public SQLFragment namespaceFilter(Enum<?> column, String namespace)
     {
-        return columnName + " LIKE '" + namespaceLikeString(namespace) + "'";
+        return new SQLFragment().appendIdentifier(column.name()).append(" LIKE ?").add(namespaceLikeString(namespace));
     }
 
     /**

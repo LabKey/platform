@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1020,7 +1020,7 @@ public class ExceptionUtil
                     response.getWriter().println();
                     response.getWriter().println();
                     response.getWriter().println("<pre>");
-                    ex.printStackTrace(response.getWriter());
+                    response.getWriter().println(PageFlowUtil.filter(ex.toString()));
                     response.getWriter().println("</pre>");
                 }
                 catch (IOException | IllegalStateException e)
@@ -1232,7 +1232,7 @@ public class ExceptionUtil
             {
                 PrintWriter out = response.getWriter();
                 out.println("\"'>--></script><script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">");
-                out.println("window.location = '" + PageFlowUtil.filter(url) + "';");
+                out.println("window.location = " + PageFlowUtil.jsString(url) + ";");
                 out.println("</script>");
             }
         }

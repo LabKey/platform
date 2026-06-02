@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.controllers;
 
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -181,14 +196,18 @@ public class QueryMcp implements McpService.McpImpl
 
         try
         {
-            QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+            QueryServiceImpl.CalculatedColumnParseResult result = QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+
+            JSONObject json = new JSONObject();
+            json.put("jdbcType", result.jdbcType().name());
+            json.put("expression", expression);
+
+            return json.toString();
         }
         catch (QueryException x)
         {
             return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
-
-        return "success";
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */

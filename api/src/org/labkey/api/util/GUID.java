@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
         try
         {
-            ProcessBuilder cmd = new ProcessBuilder("ipconfig.exe", "/all");
+            LabKeyProcessBuilder cmd = new LabKeyProcessBuilder("ipconfig.exe", "/all");
             cmd.redirectErrorStream(true);
             p = cmd.start();
         }
@@ -135,7 +135,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
         {
             try
             {
-                ProcessBuilder cmd = new ProcessBuilder("ifconfig", "-a");
+                LabKeyProcessBuilder cmd = new LabKeyProcessBuilder("ifconfig", "-a");
                 cmd.redirectErrorStream(true);
                 p = cmd.start();
             }

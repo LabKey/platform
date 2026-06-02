@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -188,6 +189,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
+import org.labkey.api.secrets.SecretStatus;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -265,6 +268,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
@@ -425,8 +429,10 @@ import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.P;
 import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.STYLE;
+import static org.labkey.api.util.DOM.STRONG;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
@@ -505,6 +511,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "secrets", new ActionURL(SecretsAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(ConfigureSiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class, root));
@@ -1403,8 +1410,6 @@ public class AdminController extends SpringActionController
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
-            props.setExt3Required(form.isExt3Required());
-            props.setExt3APIRequired(form.isExt3APIRequired());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
@@ -2341,8 +2346,6 @@ public class AdminController extends SpringActionController
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
         private boolean _showRibbonMessage;
-        private boolean _ext3Required;
-        private boolean _ext3APIRequired;
         private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
         private String _ribbonMessage;
@@ -2392,26 +2395,6 @@ public class AdminController extends SpringActionController
         public void setSslRequired(boolean sslRequired)
         {
             _sslRequired = sslRequired;
-        }
-
-        public boolean isExt3Required()
-        {
-            return _ext3Required;
-        }
-
-        public void setExt3Required(boolean ext3Required)
-        {
-            _ext3Required = ext3Required;
-        }
-
-        public boolean isExt3APIRequired()
-        {
-            return _ext3APIRequired;
-        }
-
-        public void setExt3APIRequired(boolean ext3APIRequired)
-        {
-            _ext3APIRequired = ext3APIRequired;
         }
 
         public int getSslPort()
@@ -3441,7 +3424,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
+            Map<String, String> env = new LinkedHashMap<>(System.getenv());
+            env.replaceAll((name, value) -> LabKeyProcessBuilder.isSecret(name) ? "[REDACTED]" : value);
+            return new JspView<>("/org/labkey/core/admin/properties.jsp", env);
         }
 
         @Override
@@ -3464,6 +3449,48 @@ public class AdminController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "System Properties", this.getClass());
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class SecretsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            List<SecretStatus> statuses = SecretService.get().getSecretStatuses();
+
+            List<Renderable> rows = new ArrayList<>();
+
+            if (statuses.isEmpty())
+            {
+                return new HtmlView(DIV("No secrets have been registered with SecretService."));
+            }
+
+            MutableInt rowIndex = new MutableInt(0);
+
+            Renderable table = DOM.TABLE(cl("table-condensed labkey-data-region table-bordered").at(style, "border:none"),
+                    TR(
+                        TH(at(style, "border:none; width:220px;"), STRONG("Secret Name")),
+                        TH(at(style, "border:none; width:300px;"), STRONG("Description")),
+                        TH(at(style, "border:none;"), STRONG("Source"))
+                    ),
+                    statuses.stream().map(status ->
+                        TR(
+                            cl(rowIndex.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                            TD(status.name()),
+                            TD(status.description()),
+                            status.isSet()
+                                    ? TD(status.source())
+                                    : TD(SPAN(cl("labkey-error"), "Not configured"))
+                        )));
+            return new HtmlView(table);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Secrets", this.getClass());
         }
     }
 
@@ -12460,6 +12487,7 @@ public class AdminController extends SpringActionController
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
+                controller.new SecretsAction(),
                 controller.new SystemMaintenanceAction(),
                 controller.new SystemPropertiesAction(),
                 new GetPendingRequestCountAction(),

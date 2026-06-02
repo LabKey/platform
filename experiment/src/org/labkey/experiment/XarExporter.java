@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1532,8 +1532,7 @@ public class XarExporter
                 zOut.putNextEntry(errorEntry);
 
                 final PrintStream ps = new PrintStream(zOut, true);
-                ps.println("Failed to complete export of the XAR file: ");
-                e.printStackTrace(ps);
+                ps.println("Failed to complete export of the XAR file: " + e);
                 zOut.closeEntry();
                 throw e;
             }

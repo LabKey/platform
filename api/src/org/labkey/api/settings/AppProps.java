@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,10 +173,6 @@ public interface AppProps
     int getReadOnlyHttpRequestTimeout();
 
     int getMaxBLOBSize();
-
-    boolean isExt3Required();
-
-    boolean isExt3APIRequired();
 
     ExceptionReportingLevel getExceptionReportingLevel();
 

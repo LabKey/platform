@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -260,24 +260,15 @@ public interface QueryService
     Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
 
     /** superseded by {@link QueryService#getSelectBuilder}  */
-    Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
     default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return getSelectBuilder(table).columns(columns).filter(filter).sort(sort).select();
     }
 
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cached);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
-
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
+    /** Use when the query must not return extra hidden sort columns (e.g. HTTP endpoints that reflect column names to callers). */
+    SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList);
 
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
@@ -697,13 +688,19 @@ public interface QueryService
         SelectBuilder forceSort(boolean b);
         SelectBuilder queryLogging(QueryLogging queryLogging);
         SelectBuilder distinct(boolean b);
+        /** Enable PostgreSQL JDBC-level result buffering. Rarely needed; defaults to false (streaming). */
+        SelectBuilder jdbcCaching(boolean jdbcCaching);
 
         SQLFragment buildSqlFragment();
-        SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters);
-        Results select(@Nullable Map<String, Object> parameters, boolean cache);
+        SqlSelector buildSqlSelector();
+        Results select(boolean labkeyCachedResultSet, @NotNull Map<String, Object> parameters);
+        default Results select(boolean labkeyCachedResultSet)
+        {
+            return select(labkeyCachedResultSet, Map.of());
+        }
         default Results select()
         {
-            return select(Map.of(), true);
+            return select(true);
         }
 
         QueryLogging getQueryLogging();

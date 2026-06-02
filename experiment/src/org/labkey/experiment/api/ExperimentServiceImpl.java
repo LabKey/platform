@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -564,7 +564,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.add(childProtocol.getLSID());
         }
 
-        return getExpRuns(sql, filterFn, container);
+        return getExpRuns(sql, filterFn, container, Table.ALL_ROWS);
     }
 
     @Override
@@ -582,22 +582,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container)
+    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                + " FROM exp.ExperimentRun ER "
-                + " WHERE ER.Container = ? ");
+        SQLFragment sql = new SQLFragment("SELECT ER.* FROM exp.ExperimentRun ER WHERE ER.Container = ?");
         sql.add(container.getId());
-
         if (null != filterSQL && !filterSQL.isEmpty())
-            sql.append(" AND " ).append(filterSQL);
-
-        sql.append(" ORDER BY ER.RowId ");
+            sql.append(" AND ").append(filterSQL);
+        sql.append(" ORDER BY ER.RowId");
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
 
         try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
         {
             return runs.map(ExpRunImpl::new).filter(filterFn).toList();
         }
+    }
+
+    @Override
+    public List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol,
+                                                       @Nullable Date modifiedSince, long minRowId, int limit)
+    {
+        SQLFragment sql = new SQLFragment("SELECT E.* FROM ").append(getTinfoExperiment(), "E")
+                .append(" WHERE E.Container = ?").add(container.getId())
+                .append(" AND E.BatchProtocolId = ?").add(batchProtocol.getRowId())
+                .append(" AND E.RowId > ?").add(minRowId);
+        if (modifiedSince != null)
+            sql.append(" AND E.Modified > ?").add(modifiedSince);
+        sql.append(" ORDER BY E.RowId");
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
+
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(getSchema(), sql).setJdbcCaching(false).getArray(Experiment.class));
     }
 
     @Override
@@ -745,7 +764,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
         if (name != null)
             filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Name.name()), name);
 
@@ -756,7 +775,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runRowId);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
 
         return getExpDatas(filter);
     }
@@ -1018,8 +1037,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result;
     }
 
-    private static final int INDEXING_LIMIT = 1_000;
-
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
     {
@@ -1076,24 +1093,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Material> materials = selector.getArrayList(Material.class);
-        materials.forEach(m -> {
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             expMaterial.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expMaterial.getRowId()));
         });
 
-        if (materials.size() == INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)
@@ -1114,24 +1127,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
 
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Data> data = selector.getArrayList(Data.class);
-        data.forEach(d -> {
+        tracker.forEach(selector.getArrayList(Data.class), Data::getRowId, d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             expData.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expData.getRowId()));
         });
 
-        if (data.size() == INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexData(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)

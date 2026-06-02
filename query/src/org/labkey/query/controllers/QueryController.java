@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7845,8 +7845,9 @@ public class QueryController extends SpringActionController
         Map<FieldKey, JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
         JSONArray domainFields;
-        String fieldExpression;
+        JSONObject field;
         String fieldError;
+        String fieldExpression;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -7881,6 +7882,16 @@ public class QueryController extends SpringActionController
         public void setDomainFields(JSONArray domainFields)
         {
             this.domainFields = domainFields;
+        }
+
+        public JSONObject getField()
+        {
+            return field;
+        }
+
+        public void setField(JSONObject field)
+        {
+            this.field = field;
         }
 
         public String getFieldExpression()
@@ -7931,6 +7942,8 @@ public class QueryController extends SpringActionController
                 setConversationId(json.getString("conversationId"));
             if (json.has("domainFields"))
                 setDomainFields(json.getJSONArray("domainFields"));
+            if (json.has("field"))
+                setField(json.getJSONObject("field"));
             if (json.has("fieldExpression"))
                 setFieldExpression(json.getString("fieldExpression"));
             if (json.has("fieldError"))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class Constants
      */
     public static String getDocumentationVersion()
     {
-        return "26.3";
+        return "26.7";
     }
 
     /**

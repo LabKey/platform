@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1126,7 +1126,7 @@ public class VisualizationSQLGenerator implements HasViewContext
             VisualizationSQLGenerator gen = getVSQL(q);
             UserSchema schema = new VisTestSchema(context.getUser(), context.getContainer());
             String sql = gen.getSQL();
-            return QueryService.get().selectResults(schema, sql, null, null, true, true);
+            return QueryService.get().getSelectBuilder(schema, sql, true).select();
         }
 
 
