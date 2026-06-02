@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -374,7 +374,7 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull List<ColumnInfo> selectColumns, boolean negate)
+    private static SQLFragment getColumnInSql(@NotNull FieldKey fieldKey, Object value, User user, Container container, Map<FieldKey, ? extends ColumnInfo> columnMap, boolean negate)
     {
         if (user == null || container == null)
             throw new NotFoundException("Invalid context");
@@ -423,7 +423,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, false);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, false);
                 }
             };
         }
@@ -445,7 +445,7 @@ public class QueryServiceImpl implements QueryService
                 @Override
                 public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
                 {
-                    return getColumnInSql(fieldKey, value, user, container, columnMap, _selectColumns, true);
+                    return getColumnInSql(fieldKey, value, user, container, columnMap, true);
                 }
             };
         }
@@ -2733,19 +2733,7 @@ public class QueryServiceImpl implements QueryService
         q.setTableMap(tableMap);
         q.parse(sql);
 
-        return getSelectBuilder(q).select(Map.of(), cached);
-    }
-
-
-    @Override
-    public Results selectResults(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, Map<String, Object> parameters, boolean strictColumnList, boolean cached)
-    {
-        Query q = new Query(schema);
-        q.setStrictColumnList(strictColumnList);
-        q.setTableMap(tableMap);
-        q.parse(sql);
-
-        return getSelectBuilder(q).select(parameters, cached);
+        return getSelectBuilder(q).select(cached);
     }
 
 
@@ -2810,45 +2798,6 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
-    {
-        return getSelectBuilder(table)
-                .columns(columns)
-                .filter(filter)
-                .sort(sort)
-                .select(parameters, cache);
-    }
-
-    @Override
-    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort)
-    {
-        return getSelectBuilder(table)
-                .columns(selectColumns)
-                .filter(filter)
-                .sort(sort)
-                .maxRows(maxRows)
-                .offset(offset)
-                .forceSort(forceSort)
-                .buildSqlFragment();
-    }
-
-    @Override
-    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
-                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
-    {
-        return getSelectBuilder(table)
-                .columns(selectColumns)
-                .filter(filter)
-                .sort(sort)
-                .maxRows(maxRows)
-                .offset(offset)
-                .forceSort(forceSort)
-                .queryLogging(queryLogging)
-                .buildSqlFragment();
-    }
-
-    @Override
     public SelectBuilder getSelectBuilder(TableInfo table)
     {
         return new SelectBuilderImpl(table);
@@ -2862,8 +2811,14 @@ public class QueryServiceImpl implements QueryService
     @Override
     public SelectBuilder getSelectBuilder(QuerySchema schema, String sql)
     {
+        return getSelectBuilder(schema, sql, false);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList)
+    {
         Query q = new Query(schema);
-        q.setStrictColumnList(false);
+        q.setStrictColumnList(strictColumnList);
         q.setTableMap(null);
         q.parse(sql);
         return getSelectBuilder(q);
@@ -2882,6 +2837,7 @@ public class QueryServiceImpl implements QueryService
         boolean forceSort = false;
         QueryLogging queryLogging = new QueryLogging();
         boolean distinct = false;
+        boolean jdbcCaching = false;
 
         SelectBuilderImpl(TableInfo table)
         {
@@ -2959,6 +2915,13 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
+        public SelectBuilder jdbcCaching(boolean jdbcCaching)
+        {
+            this.jdbcCaching = jdbcCaching;
+            return this;
+        }
+
+        @Override
         public SQLFragment buildSqlFragment()
         {
             if (null == queryLogging)
@@ -2973,7 +2936,12 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters)
+        public SqlSelector buildSqlSelector()
+        {
+            return buildSqlSelector(Map.of());
+        }
+
+        private SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters)
         {
             SQLFragment sql = buildSqlFragment();
             bindNamedParameters(sql, parameters);
@@ -2983,10 +2951,10 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public Results select(@Nullable Map<String, Object> parameters, boolean cache)
+        public Results select(boolean labkeyCachedResultSet, @NotNull Map<String, Object> parameters)
         {
-            SqlSelector selector = buildSqlSelector(parameters).setJdbcCaching(cache);
-            ResultSet rs = selector.getResultSet(cache, cache);
+            SqlSelector selector = buildSqlSelector(parameters).setJdbcCaching(jdbcCaching);
+            ResultSet rs = selector.getResultSet(labkeyCachedResultSet, labkeyCachedResultSet);
 
             // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
             // close the underlying ResultSet before returning since it won't be accessible anywhere else
@@ -3034,8 +3002,7 @@ public class QueryServiceImpl implements QueryService
     public MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType)
     {
         // TODO short-circuit parsing/binding in this code path
-        var ret = new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
-        return ret;
+        return new CalculatedExpressionColumn(table, key, LabKeySql.quoteIdentifier(wrapped.getName()), columnType);
     }
 
      /** Compute and set the metadata for this column based on the source expression and the xml override */
@@ -3556,7 +3523,7 @@ public class QueryServiceImpl implements QueryService
             TableInfo target = fk.getLookupTableInfo();
             if (null == target)
                 continue;
-            if (!_includeLookupDependency(source, target))
+            if (!_includeLookupDependency(target))
                 continue;
             var type = target instanceof QueryTableInfo ? DependencyType.Query : DependencyType.Table;
             Container c = fk.getLookupContainer();
@@ -3580,7 +3547,7 @@ public class QueryServiceImpl implements QueryService
 
     final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
 
-    private boolean _includeLookupDependency(TableInfo from, TableInfo to)
+    private boolean _includeLookupDependency(TableInfo to)
     {
         // ignore core schema
         if (to.getUserSchema() == null)

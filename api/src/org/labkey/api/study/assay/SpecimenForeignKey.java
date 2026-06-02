@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -363,7 +363,7 @@ public class SpecimenForeignKey extends LookupForeignKey
             // Select all the assay-side specimen columns that we'll need to do the comparison
 // TODO ContainerFilter make sure all callers of new SpecimenForeignKey() pass in appropriately constructed _assayDataTable
 //            ((ContainerFilterable)_assayDataTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
-            SQLFragment targetStudySQL = QueryService.get().getSelectSQL(_assayDataTable, _assayColumns.values(), null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+            SQLFragment targetStudySQL = QueryService.get().getSelectBuilder(_assayDataTable).columns(_assayColumns.values()).buildSqlFragment();
             sql.append(targetStudySQL);
 
             String baseAlias = getBaseAlias(parentAlias, foreignKey.getAlias());

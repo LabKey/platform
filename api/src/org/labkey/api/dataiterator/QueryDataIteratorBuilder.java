@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,7 +162,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         try
         {
             var select = qs.getSelectBuilder(t).columns(selectCols).filter(_filter);
-            ResultSet rs = select.select(_parameters, false);
+            ResultSet rs = select.select(false, _parameters);
             return new ResultSetDataIterator(rs, context);
         }
         catch (QueryParseException x)

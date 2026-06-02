@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -622,7 +622,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             // Input file location must be determined before creating the process command.
             if (!_factory.getInputPaths().isEmpty())
             {
-                try (WorkDirectory.CopyingResource lock = _wd.ensureCopyingLock())
+                try (WorkDirectory.CopyingResource _ = _wd.ensureCopyingLock())
                 {
                     for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
                     {
@@ -733,7 +733,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         action.setStartTime(new Date());
         action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
         int timeout = _factory._timeout != null ? _factory._timeout : 0;
-        getJob().runSubProcess(pb.processBuilder(), _wd.getDir(), fileOutput, lineInterval, false, timeout, TimeUnit.SECONDS);
+        getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false, timeout, TimeUnit.SECONDS);
         action.setEndTime(new Date());
         return true;
     }
