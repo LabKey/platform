@@ -700,7 +700,7 @@ public interface QueryService
         }
         default Results select()
         {
-            return select(true);
+            return select(false);
         }
 
         QueryLogging getQueryLogging();
