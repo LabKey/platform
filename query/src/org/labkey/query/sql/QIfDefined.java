@@ -48,7 +48,6 @@ public class QIfDefined extends QExpr
     @Override
     public FieldKey getFieldKey()
     {
-        assert null != select;
         return ((QExpr)getFirstChild()).getFieldKey();
     }
 
