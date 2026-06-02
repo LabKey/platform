@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2561,67 +2561,65 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private void loadStartupProps()
     {
         FileLike propsDir = getStartupPropDirectory();
-        if (null == propsDir)
-            return;
 
-        if (!propsDir.isDirectory())
-            return;
-
-        FileLike newinstall = propsDir.resolveChild("newinstall");
-        if (newinstall.isFile())
+        if (null != propsDir && propsDir.isDirectory())
         {
-            _log.debug("'newinstall' file detected: {}", newinstall.toNioPathForRead());
-
-            _newInstall = true;
-
-            // propsDir is readonly, so we need to cheat to get a File
-            var newInstallFile = newinstall.toNioPathForRead().toFile();
-            if (newInstallFile.canWrite())
-                newInstallFile.delete();
-            else
-                throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.toNioPathForRead());
-        }
-        else
-        {
-            _log.debug("no 'newinstall' file detected");
-        }
-
-        List<FileLike> propFiles = propsDir.getChildren().stream().filter(f -> f.getName().endsWith(".properties")).toList();
-
-        if (!propFiles.isEmpty())
-        {
-            List<FileLike> sortedPropFiles = propFiles.stream()
-                .sorted(Comparator.comparing(FileLike::getName).reversed())
-                .toList();
-
-            for (FileLike propFile : sortedPropFiles)
+            FileLike newinstall = propsDir.resolveChild("newinstall");
+            if (newinstall.isFile())
             {
-                _log.debug("loading propsFile: {}", propFile.toNioPathForRead());
+                _log.debug("'newinstall' file detected: {}", newinstall.toNioPathForRead());
 
-                try (InputStream in = propFile.openInputStream())
+                _newInstall = true;
+
+                // propsDir is readonly, so we need to cheat to get a File
+                var newInstallFile = newinstall.toNioPathForRead().toFile();
+                if (newInstallFile.canWrite())
+                    newInstallFile.delete();
+                else
+                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.toNioPathForRead());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
+            }
+
+            List<FileLike> propFiles = propsDir.getChildren().stream().filter(f -> f.getName().endsWith(".properties")).toList();
+
+            if (!propFiles.isEmpty())
+            {
+                List<FileLike> sortedPropFiles = propFiles.stream()
+                        .sorted(Comparator.comparing(FileLike::getName).reversed())
+                        .toList();
+
+                for (FileLike propFile : sortedPropFiles)
                 {
-                    Properties props = new Properties();
-                    props.load(in);
+                    _log.debug("loading propsFile: {}", propFile.toNioPathForRead());
 
-                    for (Map.Entry<Object, Object> entry : props.entrySet())
+                    try (InputStream in = propFile.openInputStream())
                     {
-                        if (entry.getKey() instanceof String && entry.getValue() instanceof String)
-                        {
-                            _log.trace("property '{}' resolved to value: '{}'", entry.getKey(), entry.getValue());
+                        Properties props = new Properties();
+                        props.load(in);
 
-                            addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
+                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
+                            {
+                                _log.trace("property '{}' resolved to value: '{}'", entry.getKey(), entry.getValue());
+
+                                addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
+                            }
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error parsing startup config properties file '{}'", propFile.toNioPathForRead(), e);
+                    catch (Exception e)
+                    {
+                        _log.error("Error parsing startup config properties file '{}'", propFile.toNioPathForRead(), e);
+                    }
                 }
             }
-        }
-        else
-        {
-            _log.debug("no propFiles to load");
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
         }
 
         // load any system properties with the labkey prop prefix

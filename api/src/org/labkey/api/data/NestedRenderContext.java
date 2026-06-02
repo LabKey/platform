@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,8 +111,8 @@ public class NestedRenderContext extends RenderContext
             fromSQL.append(" ) FilterOnly ");
 
             Collection<ColumnInfo> cols = Collections.singletonList(groupColumn);
-            SQLFragment withoutSort = QueryService.get().getSelectSQL(tinfo, cols, new SimpleFilter(), new Sort(), Table.ALL_ROWS, Table.NO_OFFSET, false);
-            SQLFragment withSort = QueryService.get().getSelectSQL(tinfo, cols, new SimpleFilter(), groupingSort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+            SQLFragment withoutSort = QueryService.get().getSelectBuilder(tinfo).columns(cols).buildSqlFragment();
+            SQLFragment withSort = QueryService.get().getSelectBuilder(tinfo).columns(cols).sort(groupingSort).buildSqlFragment();
 
             // Figure out what the ORDER BY is
             String sortSQL = withSort.getSQL().substring(withSort.getSQL().toUpperCase().lastIndexOf("ORDER BY"));
@@ -205,7 +205,7 @@ public class NestedRenderContext extends RenderContext
 
         // We need to stick the GROUP BY before the ORDER BY. QueryService won't help us generate
         // the GROUP BY, so get the query with and without the ORDER BY
-        SQLFragment withoutSort = QueryService.get().getSelectSQL(tinfo, cols, filter, new Sort(), Table.ALL_ROWS, Table.NO_OFFSET, false);
+        SQLFragment withoutSort = QueryService.get().getSelectBuilder(tinfo).columns(cols).filter(filter).buildSqlFragment();
 
         sql.append(withoutSort);
 

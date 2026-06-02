@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
@@ -104,7 +103,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -188,8 +186,23 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
-    
-    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
+
+    /**
+     * @param filterSQL optional additional WHERE predicates; callers doing keyset pagination should include
+     *                  {@code ER.RowId > minRowId} here
+     * @param limit     max rows to return; pass {@code Table.ALL_ROWS} (-1) for no limit
+     * @return up to {@code limit} ExpRuns in {@code container} matching {@code filterSQL}, ordered by RowId
+     */
+    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit);
+
+    /**
+     * @param modifiedSince optional upper-exclusive Modified cutoff; pass {@code null} to return all batches
+     * @param minRowId      keyset cursor — only batches with RowId &gt; minRowId are returned; pass 0 for the first page
+     * @param limit         max rows to return
+     * @return up to {@code limit} assay batches for {@code batchProtocol} in {@code container} with
+     *         RowId &gt; minRowId (and Modified &gt; modifiedSince when non-null), ordered by RowId
+     */
+    List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol, @Nullable Date modifiedSince, long minRowId, int limit);
 
     List<? extends ExpRun> getExpRunsForJobId(long jobId);
 

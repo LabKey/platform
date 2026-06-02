@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2020 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,6 +263,12 @@ public class SearchModule extends DefaultModule
                 ss.indexFull(true, _indexFullReasons.toString());
             }
         }
+    }
+
+    @Override
+    public @NotNull Set<Class<?>> getUnitTests()
+    {
+        return Set.of(AbstractSearchService.TestCase.class);
     }
 
     @Override

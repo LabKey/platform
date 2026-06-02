@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -558,6 +559,9 @@ public class SecurityManager
                     {
                         Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
                         sessionCookie.setPath("/");
+                        sessionCookie.setHttpOnly(true);
+                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                            sessionCookie.setSecure(true);
                         response.addCookie(sessionCookie);
                         request = new SessionReplacingRequest(request, session);
                     }
@@ -1640,11 +1644,6 @@ public class SecurityManager
         }
     }
 
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getProjectUsers(c, false);
-    }
-
     /**
      * Returns a list of Group objects to which the user belongs in the specified container.
      * @param c The container
@@ -1906,11 +1905,9 @@ public class SecurityManager
                                     "WHERE (groups.Container = ?)", c);
     }
 
-    // TODO: Should return a set
-    // TODO: Why is the includeGlobal flag necessary?
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
+    public static @NotNull List<User> getProjectUsers(Container c)
     {
-       return getProjectUsers(c, includeGlobal, true);
+        return getProjectUsers(c, false, true);
     }
 
     public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
@@ -2014,7 +2011,7 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(false).stream()
+        return UserManager.getActiveUsers().stream()
             .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
             .toList();
     }

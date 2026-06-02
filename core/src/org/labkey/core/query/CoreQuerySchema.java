@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -779,11 +779,10 @@ public class CoreQuerySchema extends UserSchema
 
                     settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
 
-                    Map<String, Object> params = Collections.emptyMap();
                     TableInfo table = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
 
-                    try (Results results = QueryService.get().select(table, table.getColumns(),
-                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null, params, true))
+                    try (Results results = QueryService.get().getSelectBuilder(table).filter(
+                            new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId())).select(true))
                     {
                         if (results.next())
                         {

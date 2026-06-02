@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -526,9 +526,7 @@ public class ViewServiceImpl implements ViewService
                         {
                             try
                             {
-                                link.setText(link.getText());  // Huh? Looks like a total no-op to me.
                                 PopupMenu more = new PopupMenu(link, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
-                                more.setOffset("-7");
                                 more.render(out);
                             }
                             catch (Exception e)

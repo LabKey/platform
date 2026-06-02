@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,7 +212,7 @@ public class SqlController extends SpringActionController
                 return null;
             }
 
-            try (Results rs = QueryService.get().selectResults(schema, form.getSql(), null, form.getParameterMap(), true, false))
+            try (Results rs = QueryService.get().getSelectBuilder(schema, form.getSql(), true).select(false, form.getParameterMap()))
             {
                 getViewContext().getResponse().setContentType("text/plain");
                 if (form.compact)

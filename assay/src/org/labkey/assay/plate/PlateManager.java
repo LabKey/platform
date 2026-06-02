@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4248,7 +4248,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             FROM plate.Well WHERE PlateId.PlateSet.RowId = %s AND ReplicateGroup IS NOT NULL
         """, plateSetRowId);
 
-        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector().getRowCount();
     }
 
     private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
@@ -4349,7 +4349,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private long getSampleGroupCount(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
     {
         String labkeySql = getSampleGroupLabKeySql(plateSetRowId, false);
-        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector().getRowCount();
     }
 
     private void validatePlateSetSampleGroups(Container container, User user, @NotNull Long plateSetRowId) throws ValidationException

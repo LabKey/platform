@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.URLHelper;
@@ -81,7 +82,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -101,7 +101,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @JsonIgnoreProperties(value={"_logFilePathName"}, allowGetters = true)  //Property removed. Added here for backwards compatibility
 abstract public class PipelineJob extends Job implements Serializable, ContainerUser
 {
-    public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));
+    public static final FileType FT_LOG = new FileType(List.of(".log"), ".log", List.of("text/plain"));
 
     public static final String PIPELINE_EMAIL_ADDRESS_PARAM = "pipeline, email address";
     public static final String PIPELINE_USERNAME_PARAM = "pipeline, username";
@@ -1259,7 +1259,7 @@ abstract public class PipelineJob extends Job implements Serializable, Container
         }
     }
 
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork) throws PipelineJobException
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork) throws PipelineJobException
     {
         runSubProcess(pb, dirWork, null, 0, false);
     }
@@ -1268,13 +1268,13 @@ abstract public class PipelineJob extends Job implements Serializable, Container
      * If logLineInterval is greater than 1, the first logLineInterval lines of output will be written to the
      * job's main log file.
      */
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append)
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append)
             throws PipelineJobException
     {
         runSubProcess(pb, dirWork, outputFile, logLineInterval, append, 0, null);
     }
 
-    public void runSubProcess(ProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
+    public void runSubProcess(LabKeyProcessBuilder pb, FileLike dirWork, FileLike outputFile, int logLineInterval, boolean append, long timeout, TimeUnit timeoutUnit)
             throws PipelineJobException
     {
         Process proc;
