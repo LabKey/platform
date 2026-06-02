@@ -167,7 +167,7 @@ public class VisualizationSourceColumn
         if (StringUtils.isNotEmpty(measure.getAxisName()))
             _axisName = measure.getAxisName();
 
-        List<Object> values = measure.getValues();
+        List<?> values = measure.getValues();
         _clientAlias = measure.getAlias();
         if (values != null)
         {

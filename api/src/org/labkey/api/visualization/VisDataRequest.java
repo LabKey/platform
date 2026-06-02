@@ -242,7 +242,7 @@ public class VisDataRequest
         String axisName;
         Boolean requireLeftJoin;
         String schemaName;
-        List<Object> values = new ArrayList<>();
+        List<?> values = new ArrayList<>();
 
         public Measure()
         {}
@@ -410,12 +410,12 @@ public class VisDataRequest
             return this;
         }
 
-        public List<Object> getValues()
+        public List<?> getValues()
         {
             return values;
         }
 
-        public Measure setValues(List<Object> values)
+        public Measure setValues(List<?> values)
         {
             this.values = values;
             return this;

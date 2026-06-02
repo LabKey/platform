@@ -442,7 +442,8 @@ public class CoreController extends SpringActionController
                     var select = QueryService.get().getSelectBuilder(table)
                             .columns(col)
                             .filter(filter);
-                    try (Results results = select.select())
+                    // Pass true for a cached result set so getSize() can report the row count without iterating
+                    try (Results results = select.select(true))
                     {
                         if (results.getSize() != 1 || !results.next())
                             throw new NotFoundException("Row not found for primary key");
@@ -859,7 +860,7 @@ public class CoreController extends SpringActionController
     {
         private Container target;
         private Container parent;
-        
+
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
@@ -882,7 +883,7 @@ public class CoreController extends SpringActionController
 
             // Worry about escaping
             Path path = Path.parse(targetIdentifier);
-            target = ContainerManager.getForPath(path);            
+            target = ContainerManager.getForPath(path);
 
             if (null == target)
             {
@@ -958,7 +959,7 @@ public class CoreController extends SpringActionController
 
             List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
-            
+
             // Perform move
             ContainerManager.move(target, parent, getUser());
 
@@ -973,7 +974,7 @@ public class CoreController extends SpringActionController
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
                 response.put("newPath", afterMoveTarget.getPath());
-                return new ApiSimpleResponse(response);                
+                return new ApiSimpleResponse(response);
             }
             return new ApiSimpleResponse();
         }
@@ -1124,7 +1125,7 @@ public class CoreController extends SpringActionController
         {
             _move = move;
         }
-        
+
         public String getRequiredPermission()
         {
             return _requiredPermission;
@@ -1181,7 +1182,7 @@ public class CoreController extends SpringActionController
     {
         protected Class<? extends Permission> _reqPerm = ReadPermission.class;
         protected boolean _move = false;
-        
+
         @Override
         public ApiResponse execute(ExtContainerTreeForm form, BindException errors) throws Exception
         {
@@ -1323,7 +1324,7 @@ public class CoreController extends SpringActionController
                 props.put("children", childrenProps);
                 props.put("expanded", true);
             }
-            
+
             return props;
         }
     }
@@ -1421,7 +1422,7 @@ public class CoreController extends SpringActionController
             return props;
         }
     }
-    
+
     public static class MoveWorkbookForm
     {
         public int _workbookId = -1;
