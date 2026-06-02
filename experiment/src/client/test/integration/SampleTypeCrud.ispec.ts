@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 import { ExperimentCRUDUtils, hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
 import mock from 'mock-fs';
 import {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1457,7 +1457,6 @@ public class AnnouncementsController extends SpringActionController
             Container c = getContainer();
 
             User user = getUser();
-            List<User> projectUsers = SecurityManager.getProjectUsers(c, false);
 
             int emailOption = getEmailOptionIncludingInherited(c, user, form.getSrcIdentifier());
 
@@ -1479,7 +1478,6 @@ public class AnnouncementsController extends SpringActionController
             page.message = _message;
             page.hasMemberList = settings.hasMemberList();
             page.conversationName = settings.getConversationName().toLowerCase();
-            page.isProjectMember = projectUsers.contains(user);
 
             return view;
         }

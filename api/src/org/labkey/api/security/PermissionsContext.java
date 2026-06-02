@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public interface PermissionsContext extends Serializable
 
     /**
      * @return The roles assigned to this user in the provided resource's policy as well as the root. The roles may be
-     * modified and/or filtered by the impersonation context. Note: The returned stream may duplicate some roles; if a
+     * modified and/or filtered by the permission context. Note: The returned stream may duplicate some roles; if a
      * distinct stream of roles is required, callers should invoke {@code distinct()} or collect to a set.
      */
     default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
