@@ -51,7 +51,7 @@ public class AuthenticationProviderReorderTest extends BaseWebDriverTest
 
         signOut();
         assertSsoLinkOrder(config_uncool, config_cool);
-        clickAndWait(Locator.button("Sign In"));
+        clickAndWait(Locator.linkWithText("Sign In"));
         assertSsoLinkOrder(config_uncool, config_cool);
         simpleSignIn();
 
@@ -64,7 +64,7 @@ public class AuthenticationProviderReorderTest extends BaseWebDriverTest
 
         signOut();
         assertSsoLinkOrder(config_cool, config_uncool);
-        clickAndWait(Locator.button("Sign In"));
+        clickAndWait(Locator.linkWithText("Sign In"));
         assertSsoLinkOrder(config_cool, config_uncool);
         simpleSignIn();
     }
