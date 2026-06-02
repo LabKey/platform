@@ -3,7 +3,14 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import { ExperimentCRUDUtils, hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
+import {
+    ExperimentCRUDUtils,
+    hookServer,
+    RequestOptions,
+    selectRandomN,
+    successfulResponse,
+    testSeed
+} from '@labkey/test';
 import mock from 'mock-fs';
 import {
     checkDomainName,
@@ -19,6 +26,8 @@ const { importSample, insertRows } = ExperimentCRUDUtils;
 
 const server = hookServer(process.env);
 const PROJECT_NAME = 'SampleTypeCrudJestProject';
+
+console.log(`[SampleTypeCrud] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
 
 const SAMPLE_ALIQUOT_IMPORT_TYPE_NAME = "SampleType_Aliquots_Import";
 const SAMPLE_ALIQUOT_REQ_IMPORT_TYPE_NAME = "Aliquot_Import_RequiredProp";
@@ -323,8 +332,7 @@ describe('Import with update / merge', () => {
     it ("Issue 52922: Blank sample id in the file are getting ignored in update from file", async () => {
         const BLANK_KEY_UPDATE_ERROR = 'Name value not provided';
         const BLANK_KEY_MERGE_ERROR_NO_EXPRESSION = 'SampleID or Name is required for sample';
-        const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist: bogus.';
-        const CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR = "Sample does not belong to ";
+        const BOGUS_KEY_UPDATE_ERROR = 'Sample does not exist in ';
 
         const dataType = SAMPLE_ALIQUOT_IMPORT_NO_NAME_PATTERN_NAME;
         const dataName = "Data1";
@@ -374,11 +382,11 @@ describe('Import with update / merge', () => {
         successResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
         expect(successResp.text.indexOf('"success" : true') > -1).toBeTruthy();
 
-        // cross folder update not supported when folder type is "Collaboration"
+        // cross folder update not supported
         let crossFolderUpdateErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank", dataTypeWithExpression, "UPDATE", subfolder1Options, editorUserOptions);
-        expect(crossFolderUpdateErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+        expect(crossFolderUpdateErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
         let crossFolderMergeErrorResp = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nData1\tNotblank\n\tisBlank", dataTypeWithExpression, "MERGE", subfolder1Options, editorUserOptions);
-        expect(crossFolderMergeErrorResp.text.indexOf(CROSS_FOLDER_UPDATE_NOT_SUPPORTED_ERROR) > -1).toBeTruthy();
+        expect(crossFolderMergeErrorResp.text.indexOf(BOGUS_KEY_UPDATE_ERROR) > -1).toBeTruthy();
 
         // bogus name
         bogusKeyProvidedError = await ExperimentCRUDUtils.importSample(server, "Name\tDescription\nbogus\tisBogus", dataTypeWithExpression, "UPDATE", topFolderOptions, editorUserOptions);
@@ -492,7 +500,7 @@ describe('Import with update / merge', () => {
         // Assert
         // Verify that these rows are not updated
         expect(resp.body.success).toEqual(false);
-        expect(resp.body.exception).toContain('Sample does not exist: (RowId)');
+        expect(resp.body.exception).toContain('Sample does not exist in ' + PROJECT_NAME + ': (RowId)');
     })
 });
 

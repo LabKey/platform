@@ -96,9 +96,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -398,8 +400,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport() || context.isCrossFolderImport())
-            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType, true);
+        if (context.isCrossTypeImport())
+            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), _sampleType, true);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
@@ -455,7 +457,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         columnDescriptor.name = SAMPLE_ALT_IMPORT_NAME_COLS.get(columnDescriptor.getColumnName());
                     }
                 }
-                configureCrossFolderImport(rows, context);
             }
         }
         catch (IOException e)
@@ -898,29 +899,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        Long sampleTypeId = null;
-        Set<String> sampleNames = new HashSet<>();
-        for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
-        {
-            String name = getMaterialName(keyMap.getValue());
-
-            if (name != null)
-                sampleNames.add(name);
-
-            if (sampleTypeId == null)
-                sampleTypeId = getMaterialSourceId(keyMap.getValue());
-        }
-
-        SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
-        filter.addCondition(Name.fieldKey(), sampleNames, CompareType.IN);
-        filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
-
-        return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
-    }
-
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
@@ -1057,7 +1035,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // Issue 52922: cross-folder merge without Product Folders enabled silently ignores the cross-folder
             // row update. Use a relaxed container filter to find existing data from cross-containers.
-            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            // Use elevated user to avoid data being filtered out due to permission
+            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, ElevatedUser.getElevatedUser(user, ReaderRole.class));
             Set<GUID> containerIds = new HashSet<>(Objects.requireNonNull(cf.getIds()));
             containerIds.remove(container.getEntityId());
 
@@ -1069,7 +1048,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + " (" + row.get(RowId.name()) + ").");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + row.get(RowId.name()) + "'.");
                 }
 
                 if (!missingNames.isEmpty())
@@ -1080,7 +1059,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + ".");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + row.get(Name.name()) + "'.");
                 }
             }
         }
@@ -1088,9 +1067,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting)
         {
             if (!missingRowIds.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: (RowId) " + missingRowIds.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + missingRowIds.iterator().next() + "'.");
             if (!missingNames.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: " + missingNames.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + missingNames.iterator().next() + "'.");
         }
 
         // if contains domain fields, check for aliquot specific fields
@@ -1287,7 +1266,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
                 if (!isContainerField)
                     isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
-                if (isReservedHeader(name) || isContainerField)
+                if (isContainerField)
+                {
+                    drop.add(name);
+                    continue;
+                }
+                if (isReservedHeader(name))
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.
@@ -1311,8 +1295,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isExpMaterialColumn(StoredAmount, name))
                         continue;
                     if (isExpMaterialColumn(Units, name))
-                        continue;
-                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     if (isExpMaterialColumn(RowId, name))
                     {

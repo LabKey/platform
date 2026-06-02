@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-import { hookServer, RequestOptions, selectRandomN, successfulResponse } from '@labkey/test';
+import { hookServer, RequestOptions, selectRandomN, successfulResponse, testSeed } from '@labkey/test';
 
 import {
     deleteAssayDesign,
@@ -17,7 +17,8 @@ import { ASSAY_DESIGNER_ROLE } from '@labkey/components';
 
 // @ts-expect-error process is not available in a browser environment
 const server = hookServer(process.env);
-const PROJECT_NAME = 'DataClassCrudJestProject';
+const PROJECT_NAME = 'AssayDesignCrudJestProject';
+console.log(`[AssayDesignCrud] Random seed: ${testSeed}  (rerun with: TEST_SEED=${testSeed})`);
 
 let readerUser, readerUserOptions;
 let editorUser, editorUserOptions;

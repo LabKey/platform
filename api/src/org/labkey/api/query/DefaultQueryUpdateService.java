@@ -65,7 +65,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.vfs.FileLike;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -913,25 +912,6 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (dp != null)
             return isAttachmentProperty(dp);
         return false;
-    }
-
-    protected void configureCrossFolderImport(DataIteratorBuilder rows, DataIteratorContext context) throws IOException
-    {
-        if (!context.getInsertOption().updateOnly && context.isCrossFolderImport() && rows instanceof DataLoader dataLoader)
-        {
-            boolean hasContainerField = false;
-            for (ColumnDescriptor columnDescriptor : dataLoader.getColumns())
-            {
-                String fieldName = columnDescriptor.getColumnName();
-                if (fieldName.equalsIgnoreCase("Container") || fieldName.equalsIgnoreCase("Folder"))
-                {
-                    hasContainerField = true;
-                    break;
-                }
-            }
-            if (!hasContainerField)
-                context.setCrossFolderImport(false);
-        }
     }
 
     public static @Nullable String getKeyColumnAliasForUpdate(TableInfo tableInfo, @NotNull Map<String, Integer> columnNameMap)

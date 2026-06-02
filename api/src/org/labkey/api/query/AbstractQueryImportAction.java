@@ -311,7 +311,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         crossTypeImport,
         allowCreateStorage,
         importLookupByAlternateKey, // deprecated. Prefer lookupResolutionType
-        crossFolderImport,
         useTransactionAuditCache,
         lookupResolutionType,
         auditDetails,
@@ -331,7 +330,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
             _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
             _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
-            _optionParamsMap.put(Params.crossFolderImport, Boolean.valueOf(getParam(Params.crossFolderImport)));
             _optionParamsMap.put(Params.useTransactionAuditCache, Boolean.valueOf(getParam(Params.useTransactionAuditCache)));
         }
         return _optionParamsMap;
@@ -345,8 +343,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             importParams.add("backgroundImport");
         if (Boolean.valueOf(getParam(Params.crossTypeImport)))
             importParams.add(Params.crossTypeImport.name());
-        if (Boolean.valueOf(getParam(Params.crossFolderImport)))
-            importParams.add(Params.crossFolderImport.name());
         if (Boolean.valueOf(getParam(Params.useTransactionAuditCache)))
             importParams.add(Params.useTransactionAuditCache.name());
         if (Boolean.valueOf(getParam(Params.allowCreateStorage)))
@@ -852,7 +848,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
         boolean allowCreateStorage = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
-        boolean crossFolderImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossFolderImport, false);
         boolean useTransactionAuditCache = optionParamsMap.getOrDefault(Params.useTransactionAuditCache, false);
 
         DataIteratorContext context = new DataIteratorContext(errors);
@@ -874,7 +869,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setSupportAutoIncrementKey(true);
         }
         context.setCrossTypeImport(crossTypeImport);
-        context.setCrossFolderImport(crossFolderImport && container != null && container.hasProductFolders());
         context.setAllowCreateStorage(allowCreateStorage);
         context.setUseTransactionAuditCache(useTransactionAuditCache);
         context.setLogger(logger);
