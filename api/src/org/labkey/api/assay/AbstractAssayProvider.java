@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,7 +240,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ColumnInfo rowIdColumn = columns.get(objectIdFK);
             ColumnInfo runLSIDColumn = columns.get(runLSIDFK);
 
-            SQLFragment sql = QueryService.get().getSelectSQL(dataTable, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+            SQLFragment sql = QueryService.get().getSelectBuilder(dataTable).columns(columns.values()).filter(filter).buildSqlFragment();
 
             List<Map<String, Object>> dataMaps = new ArrayList<>();
             Container sourceContainer = null;

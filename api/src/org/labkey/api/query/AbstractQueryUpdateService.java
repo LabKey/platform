@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,19 +215,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (StringUtils.isEmpty(dataContainer))
                         dataContainer = (String) row.get("folder");
                     if (!container.getId().equals(dataContainer))
-                        throw new InvalidKeyException("Data does not belong to folder '" + container.getName() + "': " + key.getValue().values());
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
                 }
             }
             else if (verifyExisting)
-                throw new InvalidKeyException("Data not found for " + key.getValue().values());
+                throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
         }
         return result;
-    }
-
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        return false;
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
@@ -408,7 +402,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         preImportDIBValidation(in, null);
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -1299,7 +1293,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected void _addSummaryAuditEvent(Container container, User user, DataIteratorContext context, int count)
     {
-        if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
+        if (!context.isCrossTypeImport()) // audit handled at table level
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
             String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -4527,9 +4527,6 @@ public class ExperimentController extends SpringActionController
         protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment)
         {
             _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), getLookupResolutionType(), auditBehaviorType, auditUserComment, errors, null, getContainer());
-
-            if (_context.isCrossFolderImport() && !getContainer().hasProductFolders())
-                _context.setCrossFolderImport(false);
         }
 
         @Override

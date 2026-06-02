@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class GroupTableInfo extends VirtualTable
         sql.append("\nFROM (\n");
         TableInfo source = getSourceTable();
 
-        sql.append(QueryService.get().getSelectSQL(source, getDistinctColumns(), _sourceFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false));
+        sql.append(QueryService.get().getSelectBuilder(source).columns(getDistinctColumns()).filter(_sourceFilter).buildSqlFragment());
         sql.append("\n) AS ");
         sql.append(ALIAS_SOURCE);
 

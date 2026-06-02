@@ -1,4 +1,9 @@
 /*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+/*
     For LabKey 19.2 and earlier, the assayresult schema and the Plate, WellGroup, and Well tables were managed by the
     study module. As of 19.3, the assay module now manages these objects, with the tables moving from the "study" schema
     to the new "assay" schema.

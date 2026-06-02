@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         if (samplesTable != null && samplesTable.getColumn("InitialDilution") != null)
         {
             List<ColumnInfo> columns = Arrays.asList(samplesTable.getColumn("LSID"), samplesTable.getColumn("InitialDilution"));
-            SQLFragment samplesSql = QueryService.get().getSelectSQL(samplesTable, columns, null, null, Table.ALL_ROWS, 0, false);
+            SQLFragment samplesSql = QueryService.get().getSelectBuilder(samplesTable).columns(columns).buildSqlFragment();
             return sql.append(" LEFT JOIN (").append(samplesSql).append(" ) x ON x.LSID = ").append(ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
                     .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
                     .append(" AND dd.Dilution = x.InitialDilution)");

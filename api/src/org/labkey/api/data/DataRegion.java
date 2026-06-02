@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2128,7 +2128,7 @@ public class DataRegion extends DisplayElement
         for (Map.Entry<FieldKey, ColumnInfo> entry : selectKeyMap.entrySet())
         {
             ColumnInfo col = entry.getValue();
-            SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+            SQLFragment selectSql = service.getSelectBuilder(table).columns(Collections.singletonList(col)).filter(pkFilter).queryLogging(queryLogging).buildSqlFragment();
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
             sql.append(selectSql);

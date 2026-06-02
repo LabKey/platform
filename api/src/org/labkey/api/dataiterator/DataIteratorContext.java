@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ public class DataIteratorContext
     LookupResolutionType _lookupResolutionType = LookupResolutionType.primaryKey;
     QueryImportPipelineJob _backgroundJob = null;
     boolean _crossTypeImport = false;
-    boolean _crossFolderImport = false;
     boolean _allowCreateStorage = false;
     boolean _useTransactionAuditCache = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
@@ -200,16 +199,6 @@ public class DataIteratorContext
     public void setCrossTypeImport(boolean crossTypeImport)
     {
         _crossTypeImport = crossTypeImport;
-    }
-
-    public boolean isCrossFolderImport()
-    {
-        return _crossFolderImport;
-    }
-
-    public void setCrossFolderImport(boolean crossFolderImport)
-    {
-        _crossFolderImport = crossFolderImport;
     }
 
     public boolean isAllowCreateStorage()

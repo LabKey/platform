@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,6 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         return _service.getRows(user, container, keys);
-    }
-
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        var ret = _service.hasExistingRowsInOtherContainers(container, keys);
-        clearCache();
-        return ret;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -36,12 +35,10 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
@@ -88,7 +85,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.query.AbstractExpSchema;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
@@ -111,13 +107,9 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -159,7 +151,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.labkey.api.data.CompareType.IN;
@@ -2653,10 +2644,8 @@ public class ExpDataIterators
 
     public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
-        private static final String INVALID_FOLDER_MESSAGE = "Import or update of data in folder %s from folder %s is not allowed. Verify the folder exists, you have proper permissions, and data from that folder is visible here.";
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
-        private static final Set<String> CONTAINER_FIELD_NAMES = Set.of("Container", "Folder");
         private static final int BATCH_SIZE = 1000;
         record TypeData(
                 Container container,
@@ -2673,27 +2662,21 @@ public class ExpDataIterators
 
         private final DataIteratorContext _context;
         private final boolean _isCrossType;
-        private final boolean _isCrossFolder;
         private final boolean _isSamples;
         private final ExpObject _dataType;
         private final Container _container;
         private final User _user;
         private Integer _typeColIndex = null;
         private String _typeColName = null;
-        private Integer _folderColIndex = null;
         // want to process the sample types in the order given in the original file, unless we have dependencies
         private final Map<String, Map<String, TypeData>> _typeFolderDataMap = new TreeMap<>();
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
         private final int _dataIdIndex;
-        private final FieldKey _dataKey;
-        private final boolean _dataKeyIsNumeric;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
-        private final Map<String, Container> _containerMap = new CaseInsensitiveHashMap<>();
-        private final boolean _isCrossFolderUpdate;
         private final TSVWriter _tsvWriter;
 
-        private MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
+        private MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, ExpObject dataType, boolean isSamples)
         {
             super(di);
             _context = context;
@@ -2702,14 +2685,11 @@ public class ExpDataIterators
             _dataType = dataType;
             _user = user;
             _isCrossType = isCrossType;
-            _isCrossFolder = isCrossFolder;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
             // Determine the dataId column
             {
                 int index;
-                FieldKey dataKey;
-                boolean isNumeric;
 
                 var foundId = RowId.namesAndLabels().stream()
                         .filter(map::containsKey)
@@ -2718,19 +2698,13 @@ public class ExpDataIterators
                 if (foundId.isPresent())
                 {
                     index = map.get(foundId.get());
-                    dataKey = RowId.fieldKey();
-                    isNumeric = true;
                 }
                 else
                 {
                     index = map.getOrDefault(Name.name(), -1);
-                    dataKey = Name.fieldKey();
-                    isNumeric = false;
                 }
 
                 _dataIdIndex = index;
-                _dataKey = dataKey;
-                _dataKeyIsNumeric = isNumeric;
             }
 
             _tsvWriter = new TSVWriter() // Used to quote values with newline/tabs/quotes
@@ -2742,8 +2716,6 @@ public class ExpDataIterators
                 }
             };
             _tsvWriter.setAdditionalQuotedChars(TSVWriter.BACKSLASH_CHAR_STRING);
-
-            _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
             if (_isCrossType && _isSamples) //cross type only supported for samples
             {
@@ -2758,51 +2730,6 @@ public class ExpDataIterators
                 });
                 if (_typeColIndex == null)
                     _context.getErrors().addRowError(new ValidationException("Could not determine sample type. Please provide a 'Sample Type' column in the data."));
-            }
-
-            if (_isCrossFolder)
-            {
-                CONTAINER_FIELD_NAMES.forEach(name -> {
-                    if (map.get(name) != null)
-                    {
-                        if (_folderColIndex != null)
-                            _context.getErrors().addRowError(new ValidationException("Only one of [" + CONTAINER_FIELD_NAMES.stream().sorted().collect(Collectors.joining(", ")) + "] allowed for import."));
-                        _folderColIndex = map.get(name);
-                    }
-                });
-
-                if (_folderColIndex != null || _isCrossFolderUpdate)
-                {
-                    ContainerFilter cf;
-                    if (container.isProductFoldersEnabled())
-                    {
-                        // Note that this is slightly different from our treatment of lookups:
-                        //    - when in a project, we allow import or update to all subfolders,
-                        //    - when in a folder, we only allow references to data up the folder tree
-                        if (container.isProject())
-                            cf = new ContainerFilter.AllInProjectPlusShared(container, user);
-                        else
-                            cf = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
-                    }
-                    else
-                        cf = ContainerFilter.current(container, user);
-
-                    Collection<GUID> validContainerIds;
-                    if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
-                        validContainerIds = cfp.generateIds(container, context.getInsertOption().allowUpdate ? UpdatePermission.class : InsertPermission.class, null);
-                    else
-                        validContainerIds = cf.getIds();
-
-                    if (validContainerIds != null)
-                    {
-                        for (GUID containerId : validContainerIds)
-                        {
-                            Container validContainer = ContainerManager.getForId(containerId);
-                            _containerMap.put(validContainer.getId(), validContainer);
-                            _containerMap.put(validContainer.getName(), validContainer); // for multi-type import, container column lookup is not yet resolved
-                        }
-                    }
-                }
             }
         }
 
@@ -2844,32 +2771,6 @@ public class ExpDataIterators
             if (_context.getErrors().hasErrors())
                 return 0;
 
-            int totalRowCount = 0;
-            if (_isCrossFolderUpdate && !typeData.folderFiles.keySet().isEmpty())
-            {
-                boolean hasCrossFolderData = typeData.folderFiles.keySet().stream().anyMatch(id -> id != _container.getRowId());
-
-                if (hasCrossFolderData)
-                {
-                    for (Map.Entry<Integer, File> containerSplitFile : typeData.folderFiles.entrySet())
-                    {
-                        Container splitContainer = ContainerManager.getForRowId(containerSplitFile.getKey());
-                        AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, splitContainer) : new DataClassUserSchema(splitContainer, _user);
-                        QueryDefinition qDef = schema.getQueryDefForTable(typeData.dataType.getName());
-                        setContainerFilterForImport(qDef, splitContainer, _user);
-                        TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
-
-                        if (dataTable == null)
-                        {
-                            _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "' not found."));
-                            return totalRowCount;
-                        }
-                        totalRowCount += _importSplitFile(typeData, containerSplitFile.getValue(), splitContainer, dataTable);
-                    }
-                    return totalRowCount;
-                }
-            }
-
             return _importSplitFile(typeData, typeData.dataFile, typeData.container, typeData.tableInfo);
         }
 
@@ -2887,16 +2788,12 @@ public class ExpDataIterators
                 if (!_context.getErrors().hasErrors())
                 {
                     _context.setCrossTypeImport(false);
-                    _context.setCrossFolderImport(false);
                     _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, true);
-
-                    boolean hasCrossFolderImport = false;
 
                     // process the individual files
                     for (String key : importOrderKeys)
                     {
                         Map<String, TypeData> typeFolderData = _typeFolderDataMap.get(key);
-                        hasCrossFolderImport = hasCrossFolderImport || typeFolderData.keySet().size() > 1;
                         for (TypeData typeData : typeFolderData.values())
                         {
                             writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
@@ -2905,12 +2802,8 @@ public class ExpDataIterators
                         }
                     }
 
-                    if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
-                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
-
                     _context.putConfigParameter(QueryUpdateService.ConfigParameters.ProcessingPartition, false);
                     _context.setCrossTypeImport(_isCrossType);
-                    _context.setCrossFolderImport(_isCrossFolder);
                 }
 
                 return false;
@@ -2935,21 +2828,6 @@ public class ExpDataIterators
                     _context.getErrors().addRowError(new ValidationException("No value provided for '" + _typeColName + "'."));
                 else
                 {
-                    // Issue 52626 and Issue 52609 - don't check folders during update
-                    if (_isCrossFolder && _folderColIndex != null && !_context.getInsertOption().updateOnly)
-                    {
-                        String rowFolderId = StringUtils.trim((String) get(_folderColIndex));
-                        if (!StringUtils.isEmpty(rowFolderId))
-                        {
-                            targetContainer = _containerMap.get(rowFolderId);
-                            if (targetContainer == null)
-                            {
-                                _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, rowFolderId, _container.getName())));
-                                return true;
-                            }
-                        }
-                    }
-
                     Map<String, TypeData> typeFolderMap = _typeFolderDataMap.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
                     typeFolderData = typeFolderMap.get(targetContainer.getId());
                     if (typeFolderData == null)
@@ -3265,23 +3143,6 @@ public class ExpDataIterators
                     {
                         String dataString = data.toString();
                         _idsPerType.computeIfAbsent(typeData.dataType.getName(), k -> new HashSet<>()).add(dataString);
-                        if (_isCrossFolderUpdate)
-                        {
-                            if (_dataKeyIsNumeric)
-                            {
-                                try
-                                {
-                                    typeData.dataIds.add(JdbcType.BIGINT.convert(data));
-                                }
-                                catch (ConversionException e)
-                                {
-                                    _context.getErrors().addRowError(new ValidationException(e.getMessage() + " on row " + get(0), _dataKey.getName()));
-                                    return;
-                                }
-                            }
-                            else
-                                typeData.dataIds.add(dataString);
-                        }
                     }
 
                     // if the data represents a derivation dependency between types, and we're creating ids within the file,
@@ -3296,11 +3157,6 @@ public class ExpDataIterators
                             _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                     }
                 }
-                else if (index == _dataIdIndex && _isCrossFolderUpdate)
-                {
-                    // Issue 52922: Samples with blank sample id in the file are getting ignored
-                    throw new IllegalArgumentException(_dataKey.getName() + " value not provided on row " + get(0));
-                }
             });
             typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
         }
@@ -3309,90 +3165,6 @@ public class ExpDataIterators
         {
             if (typeData.dataRows.isEmpty())
                 return;
-
-            // for cross-folder import, write to further partitions
-            if (_isCrossFolderUpdate)
-            {
-                ExpObject dataType = typeData.dataType;
-                Map<String, List<Integer>> containerRows = new HashMap<>();
-
-                TableInfo tableInfo;
-                SimpleFilter filter;
-
-                if (_isSamples)
-                {
-                    filter = new SimpleFilter(MaterialSourceId.fieldKey(), dataType.getRowId());
-                    filter.addCondition(_dataKey, typeData.dataIds, CompareType.IN);
-                    tableInfo = ExperimentService.get().getTinfoMaterial();
-                }
-                else
-                {
-                    filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataType.getRowId());
-                    filter.addCondition(_dataKey, typeData.dataIds, CompareType.IN);
-                    tableInfo = ExperimentService.get().getTinfoData();
-                }
-
-                Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of(_dataKey.getName(), "container"), filter, null).getMapArray();
-
-                Set<Object> notFoundIds = new HashSet<>(typeData.dataIds);
-                for (Map<String, Object> row : rows)
-                {
-                    Object raw = row.get(_dataKey.getName());
-                    Object identifier = _dataKeyIsNumeric ? asLong(raw) : raw;
-                    notFoundIds.remove(identifier);
-                    String dataContainer = (String) row.get("container");
-                    // could be updating the same data multiple times in a single import, the import will later be rejected
-                    List<Integer> dataRowIds =
-                            IntStream.range(0, typeData.dataIds.size()).boxed()
-                                    .filter(i -> typeData.dataIds.get(i).equals(identifier))
-                                    .toList();
-                    containerRows.computeIfAbsent(dataContainer, k -> new ArrayList<>()).addAll(dataRowIds);
-                }
-                if (!notFoundIds.isEmpty())
-                {
-                    _context.getErrors().addRowError(new ValidationException((_isSamples ? "Samples" : "Data") + " not found for " + StringUtils.join(notFoundIds, ", ")));
-                    return;
-                }
-
-                for (String containerId : containerRows.keySet())
-                {
-                    Container container = _containerMap.get(containerId);
-                    if (container == null)
-                    {
-                        Container folder = ContainerManager.getForId(containerId);
-                        _context.getErrors().addRowError(new ValidationException(String.format(INVALID_FOLDER_MESSAGE, (folder != null ? folder.getName() : containerId), _container.getName())));
-                        return;
-                    }
-
-                    int containerRowId = container.getRowId();
-                    File splitFile = typeData.folderFiles.get(containerRowId);
-
-                    if (splitFile == null)
-                    {
-                        splitFile = writeSplitFile(typeData.dataType.getName(), "~containerSplit~", containerRowId + "-" + typeData.dataFile.getName(), typeData.headerRow);
-                        if (splitFile == null)
-                            return;
-                        typeData.folderFiles.put(containerRowId, splitFile);
-                    }
-
-                    List<String> dataRows = new ArrayList<>();
-                    List<Integer> dataRowIndexes = containerRows.get(containerId);
-                    Collections.sort(dataRowIndexes);
-                    for (Integer dataRowIndex : dataRowIndexes)
-                        dataRows.add(typeData.dataRows.get(dataRowIndex));
-
-                    try (FileWriter writer = new FileWriter(splitFile, true))
-                    {
-                        writer.write(StringUtils.join(dataRows, System.lineSeparator()));
-                        writer.write(System.lineSeparator()); // Issue 48442: add a new line to the end so the next written rows start on a new line
-                    }
-                    catch (IOException e)
-                    {
-                        _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.dataType.getName() + "'."));
-                        return;
-                    }
-                }
-            }
 
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
             {
@@ -3414,17 +3186,15 @@ public class ExpDataIterators
         private final Container _container;
         private final User _user;
         private final boolean _isCrossType;
-        private final boolean _isCrossFolder;
         private final ExpObject _dataType;
         private final boolean _isSamples;
 
-        public MultiDataTypeCrossProjectDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
+        public MultiDataTypeCrossProjectDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, ExpObject dataType, boolean isSamples)
         {
             _in = in;
             _container = container;
             _user = user;
             _isCrossType = isCrossType;
-            _isCrossFolder = isCrossFolder;
             _dataType = dataType;
             _isSamples = isSamples;
         }
@@ -3436,7 +3206,7 @@ public class ExpDataIterators
             if (di == null)
                 return null; // can happen if context has errors
 
-            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(di, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
+            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(di, context, _container, _user, _isCrossType, _dataType, _isSamples));
         }
     }
 
