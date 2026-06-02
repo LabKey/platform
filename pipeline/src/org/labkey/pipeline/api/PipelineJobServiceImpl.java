@@ -70,6 +70,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.NetworkDrive;
@@ -945,7 +946,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
     private String getToolsPath()
     {
         String toolsDir = getAppProperties().getToolsDirectory();
-        CaseInsensitiveHashMap<String> ciEnvMap = new CaseInsensitiveHashMap<>((new ProcessBuilder()).environment());
+        CaseInsensitiveHashMap<String> ciEnvMap = new CaseInsensitiveHashMap<>((new LabKeyProcessBuilder()).environment());
         String path = ciEnvMap.get("PATH");
         return toolsDir + File.pathSeparator + path;
     }
