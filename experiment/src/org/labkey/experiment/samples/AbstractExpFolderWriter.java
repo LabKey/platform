@@ -92,7 +92,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
 
     protected void writeTsv(TableInfo tinfo, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, VirtualFile dir, String baseName) throws IOException
     {
-        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
+        ResultsFactory factory = ()->QueryService.get().getSelectBuilder(tinfo).columns(columns).filter(filter).sort(sort).select();
         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
@@ -253,7 +253,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             for (ColumnInfo col : attachmentCols)
                 uniquifiers.put(col.getName(), new FileNameUniquifier());
 
-            try (ResultSet rs = QueryService.get().select(tinfo, selectColumns, null, null))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(tinfo).columns(selectColumns).select())
             {
                 while (rs.next())
                 {

@@ -239,36 +239,12 @@ public interface QueryService
 
     void saveCalculatedFieldsMetadata(String schemaName, String queryName, @Nullable String updatedQueryName, List<? extends GWTPropertyDescriptor> fields, boolean hasExistingFields, User user, Container container) throws MetadataUnavailableException;
 
-    /**
-     * Create a TableSelector for a LabKey sql query string.
-     * @param schema The query schema context used to parse the sql query in.
-     * @param sql The LabKey query string.
-     * @return a TableSelector
-     *
-     * superseded by {@link QueryService#getSelectBuilder}
-     */
-    @NotNull
-    TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-	default ResultSet select(QuerySchema schema, String sql)
-    {
-        return select(schema, sql, null, false, true);
-    }
-
-    /* strictColumnList requires that query not add any addition columns to the query result */
-    Results select(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached);
-
-    /** superseded by {@link QueryService#getSelectBuilder}  */
-    default Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
-    {
-        return getSelectBuilder(table).columns(columns).filter(filter).sort(sort).select();
-    }
-
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
     /** Use when the query must not return extra hidden sort columns (e.g. HTTP endpoints that reflect column names to callers). */
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList);
+    /** The tableMap binds named table references in the SQL (e.g. "__DATA") to TableInfos. It must be supplied here before the SQL is parsed. */
+    SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList, @Nullable Map<String, TableInfo> tableMap);
 
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, String labKeySql, ColumnType columnType);
     MutableColumnInfo createQueryExpressionColumn(TableInfo table, FieldKey key, FieldKey wrapped, ColumnType columnType);
@@ -279,7 +255,7 @@ public interface QueryService
     Collection<CompareType> getCompareTypes();
 
     /**
-     * Gets all of the custom views from the given relative path defined in the set of active modules for the
+     * Gets all the custom views from the given relative path defined in the set of active modules for the
      * given container.
      * @param container Container to use to figure out the set of active modules
      * @param qd the query for which views should be fetched
@@ -692,7 +668,11 @@ public interface QueryService
         SelectBuilder jdbcCaching(boolean jdbcCaching);
 
         SQLFragment buildSqlFragment();
-        SqlSelector buildSqlSelector();
+        default SqlSelector buildSqlSelector()
+        {
+            return buildSqlSelector(Map.of());
+        }
+        SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters);
         Results select(boolean labkeyCachedResultSet, @NotNull Map<String, Object> parameters);
         default Results select(boolean labkeyCachedResultSet)
         {

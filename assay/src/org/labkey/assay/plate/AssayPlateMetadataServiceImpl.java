@@ -416,7 +416,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         try
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Run"), run.getRowId());
-            try (Results results = QueryService.get().select(resultsTable, columnInfoMap.values(), filter, new Sort(FieldKey.fromParts("RowId"))))
+            try (Results results = QueryService.get().getSelectBuilder(resultsTable).columns(columnInfoMap.values()).filter(filter).sort(new Sort(FieldKey.fromParts("RowId"))).select())
             {
                 while (results.next())
                 {

@@ -2662,7 +2662,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         TableInfo wellTable = getWellTable(plate.getContainer(), user);
         Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
-        try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columnMap.values()).filter(filter).select())
         {
             while (r.next())
             {

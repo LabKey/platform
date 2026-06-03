@@ -341,7 +341,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 colMap.put(col.getFieldKey(), col);
             }
         }
-        return QueryService.get().select(tinfo, colMap.values(), filter, null);
+        return QueryService.get().getSelectBuilder(tinfo).columns(colMap.values()).filter(filter).select();
     }
 
     @Nullable

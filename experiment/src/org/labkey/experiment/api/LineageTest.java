@@ -243,7 +243,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                         "FROM exp.data." + firstDataClassName + " AS dc\n" +
                         "ORDER BY dc.RowId\n";
 
-        try (Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select())
+        try (Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true))
         {
             RenderContext ctx = new RenderContext(new ViewContext());
             ctx.getViewContext().setRequest(TestContext.get().getRequest());
@@ -486,12 +486,12 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             throw errors;
 
         // query
-        TableSelector ts = QueryService.get().selector(listSchema,
+        QueryService.SelectBuilder builder = QueryService.get().getSelectBuilder(listSchema,
                 "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
         RenderContext ctx;
         DisplayColumn dcSampleId;
         DisplayColumn dcMySampleParent;
-        try (Results results = ts.getResults())
+        try (Results results = builder.select(true))
         {
             ctx = new RenderContext(new ViewContext());
             ctx.getViewContext().setRequest(TestContext.get().getRequest());

@@ -1612,7 +1612,7 @@ public class VisualizationController extends SpringActionController
             }
 
             Map<String, Integer> values = new HashMap<>();
-            try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(userSchema, provider.getSourceCountSql(sources, members, colName)).select())
             {
                 while (rs.next())
                 {
