@@ -172,7 +172,7 @@ public class CoreMcp implements McpService.McpImpl
         uri = "resource://org/labkey/core/FileBasedModules.md",
         mimeType = "application/markdown",
         name = "File-Based Module Development Guide",
-        description = "Provide documentation for developing LabKey file-based modules")
+        description = "Required reading before building file-based modules. Covers module.properties, directory structure, web parts, SQL queries, reports, and deployment.")
     public ReadResourceResult getFileBasedModuleDevelopmentGuide() throws IOException
     {
         incrementResourceRequestCount("File-Based Modules");
@@ -190,7 +190,7 @@ public class CoreMcp implements McpService.McpImpl
             uri = "resource://org/labkey/core/DataAnalysis_Python.md",
             mimeType = "application/markdown",
             name = "Python Data Analysis Development Guide",
-            description = "Provide documentation for developers using Python to analyze LabKey data")
+            description = "Required reading before writing Python scripts. Covers APIWrapper setup, .netrc auth, select_rows, execute_sql, QueryFilter, and pandas workflows.")
     public ReadResourceResult getPythonDataAnalysisGuide() throws IOException
     {
         incrementResourceRequestCount("Python Data Analysis");
@@ -208,7 +208,7 @@ public class CoreMcp implements McpService.McpImpl
             uri = "resource://org/labkey/core/DataAnalysis_R.md",
             mimeType = "application/markdown",
             name = "R Data Analysis Development Guide",
-            description = "Provide documentation for developers using R to analyze LabKey data")
+            description = "Required reading before writing R scripts. Covers Rlabkey setup, .netrc auth, labkey.selectRows, labkey.executeSql, makeFilter, and data frame workflows.")
     public ReadResourceResult getRDataAnalysisGuide() throws IOException
     {
         incrementResourceRequestCount("R Data Analysis");
