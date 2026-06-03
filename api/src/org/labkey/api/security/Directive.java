@@ -27,6 +27,7 @@ public enum Directive implements StartupProperty, SafeToRenderEnum
     Connection("connect-src", "Sources for fetch/XHR requests"),
     Font("font-src", "Sources for fonts"),
     Frame("frame-src", "Sources for iframes"),
+    FrameAncestors("frame-ancestors", "Parent hosts allowed to embed this site's resources in an <iframe>, etc."),
     Image("image-src", "Sources for images"),
     Object("object-src", "Sources for objects"), // Issue 53226
     Script("script-src", "Sources for scripts"),

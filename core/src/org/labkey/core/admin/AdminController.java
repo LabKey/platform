@@ -317,8 +317,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -343,6 +343,7 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.vfs.FileLike;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -427,9 +428,10 @@ import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.P;
+import static org.labkey.api.util.DOM.PRE;
 import static org.labkey.api.util.DOM.SPAN;
-import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.STRONG;
+import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TH;
@@ -11587,6 +11589,18 @@ public class AdminController extends SpringActionController
         {
             boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
 
+            String template = formatCsp(ContentSecurityPolicyFilter.getStashedTemplate(ContentSecurityPolicyType.Enforce), "No enforce CSP is present!");
+            String substituted = formatCsp(ContentSecurityPolicyFilter.getSubstitutedCsp(ContentSecurityPolicyType.Enforce, getViewContext().getRequest()), "Enforce CSP is disabled!");
+            HtmlView csps = new HtmlView("Current Enforce CSP",
+                TABLE(
+                    TR(
+                        TH(STRONG("With Substitution Placeholders")), TH(STRONG("With Substituted Values"))
+                    ),
+                    TR(
+                        TD(at(style, "padding-right: 20px;"), PRE(template)), TD(PRE(substituted))
+                    )
+                )
+            );
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
@@ -11594,7 +11608,22 @@ public class AdminController extends SpringActionController
             existingView.setTitle("Existing External Resource Hosts");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
 
-            return new VBox(newView, existingView);
+            return new VBox(csps, newView, existingView);
+        }
+
+        private String formatCsp(@Nullable String csp, String defaultValue)
+        {
+            if (csp != null)
+            {
+                csp = csp.replace("frame-ancestors", "\nframe-ancestors");
+                return Arrays.stream(csp.split(";"))
+                    .map(String::trim)
+                    .collect(Collectors.joining(" ;\n"));
+            }
+            else
+            {
+                return defaultValue;
+            }
         }
 
         private static final Object HOST_LOCK = new Object();
