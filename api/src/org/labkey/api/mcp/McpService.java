@@ -95,6 +95,8 @@ import java.util.function.Supplier;
 ///
 public interface McpService extends ToolCallbackProvider
 {
+    String VECTOR_SCHEMA = "vector_indexes"; // for pgvector extension, see core-26.005-26.006.sql
+
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
 
