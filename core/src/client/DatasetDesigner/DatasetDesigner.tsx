@@ -66,9 +66,8 @@ class DatasetDesigner extends PureComponent<any, State> {
 
     navigate(defaultUrl: string): void {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
+        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
     }
 
     navigateOnComplete(model: DatasetModel): void {

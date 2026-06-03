@@ -30,8 +30,39 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.ExceptionFramework;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -64,8 +95,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 
@@ -1012,12 +1043,12 @@ public class OntologyManager
         try
         {
             DbSchema schema = getExpSchema();
-            String sql = getSqlDialect().execute(getExpSchema(), "deleteObject", "?, ?");
             SqlExecutor executor = new SqlExecutor(schema);
 
             for (String uri : uris)
             {
-                executor.execute(sql, c.getId(), uri);
+                SQLFragment sql = getSqlDialect().execute(getExpSchema(), "deleteObject", new SQLFragment("?, ?", c.getId(), uri));
+                executor.execute(sql);
             }
         }
         finally
@@ -1749,15 +1780,11 @@ public class OntologyManager
 
             // you are allowed to update if you are coming from the project root, or if  you are in the container
             // in which the descriptor was created
-            boolean fUpdateIfExists = false;
-            if (pdIn.getContainer().getId().equals(pd.getContainer().getId())
-                    || pdIn.getContainer().getId().equals(pdIn.getProject().getId()))
-                fUpdateIfExists = true;
+            boolean fUpdateIfExists = pdIn.getContainer().getId().equals(pd.getContainer().getId())
+                    || pdIn.getContainer().getId().equals(pdIn.getProject().getId());
 
 
-            boolean fMajorDifference = false;
-            if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-                fMajorDifference = true;
+            boolean fMajorDifference = colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType");
 
             String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs +
                     "\n\t Descriptor In: " + pdIn +
