@@ -205,6 +205,9 @@ public interface McpService extends ToolCallbackProvider
      */
     VectorStore getVectorStore();
 
+    /** Returns true if the vector store exists and contains at least one document. */
+    boolean isVectorStorePopulated(@NotNull VectorStore vs);
+
     /**
      * Adds documents to the vector store, automatically splitting any document whose token
      * count exceeds the embedding model's input limit. Prefer this over

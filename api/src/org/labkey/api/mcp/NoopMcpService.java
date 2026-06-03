@@ -103,6 +103,12 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public boolean isVectorStorePopulated(@NotNull VectorStore vs)
+    {
+        return false;
+    }
+
+    @Override
     public void addDocuments(List<VectorDocument> documents)
     {
     }
