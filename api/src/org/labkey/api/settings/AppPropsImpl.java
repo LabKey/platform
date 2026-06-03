@@ -328,18 +328,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isExt3Required()
-    {
-        return lookupBooleanValue(ext3Required, false);
-    }
-
-    @Override
-    public boolean isExt3APIRequired()
-    {
-        return lookupBooleanValue(ext3APIRequired, false);
-    }
-
-    @Override
     public boolean isSelfReportExceptions()
     {
         return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(selfReportExceptions, true);

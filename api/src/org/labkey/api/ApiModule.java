@@ -218,6 +218,9 @@ public class ApiModule extends CodeOnlyModule
     private static final String CORS_PREFIX = "cors.";
     private static final String CORS_FILTER_NAME = "CorsFilter";
 
+    public static final String EXTJS_3_REQUIRED = "ExtJs3Required";
+    public static final String EXTJS_3_API_REQUIRED = "ExtJs3ApiRequired";
+
     @Override
     protected void init()
     {
@@ -245,6 +248,22 @@ public class ApiModule extends CodeOnlyModule
             false,
             false,
             OptionalFeatureService.FeatureType.Optional
+        ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            EXTJS_3_REQUIRED,
+            "Require that ExtJS v3.4.1 is loaded on every page",
+            "This option will be removed in LabKey Server 26.11",
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            EXTJS_3_API_REQUIRED,
+            "Require that ExtJS v3.x-based Client API is loaded on every page",
+            "This option will be removed in LabKey Server 26.11",
+            false,
+            false,
+            FeatureType.Deprecated
         ));
     }
 

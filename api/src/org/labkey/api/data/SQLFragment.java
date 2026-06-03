@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -31,6 +32,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -68,7 +70,9 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 /// semicolons in appended text.
 public class SQLFragment implements Appendable, CharSequence
 {
-    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "sqlfragment-disable-strict-checks";
+    private static final Logger LOG = LogHelper.getLogger(SQLFragment.class, "SQL injection safety net diagnostics");
+
+    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "SQLFragmentDisableStrictChecks";
 
     private String sql;
     private StringBuilder sb = null;
@@ -135,11 +139,9 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
             StringUtils.contains(charseq, ';'))
         {
-            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+            throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
 
-        // allow statement separators
         this.sql = charseq.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
@@ -419,8 +421,7 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
             StringUtils.contains(charseq, ';'))
         {
-            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+            throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
 
         getStringBuilder().append(charseq);
@@ -453,17 +454,70 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         boolean malformed;
-        if (identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\""))
+        boolean quoteWrapped = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
+        if (quoteWrapped)
             malformed = (StringUtils.countMatches(identifier, '\"') % 2) != 0;
         else if (identifier.length() >= 2 && identifier.startsWith("`") && identifier.endsWith("`"))
             malformed = (StringUtils.countMatches(identifier, '`') % 2) != 0;
         else
             malformed = StringUtils.containsAny(identifier, "*/\\'\"`?;- \t\n");
-        if (malformed && !AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+        if (malformed)
             throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted: " + identifier);
+
+        // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
+        if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
+        {
+            if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
+            else
+            {
+                LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
+                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
+            }
+        }
 
         getStringBuilder().append(charseq);
         return this;
+    }
+
+    // True iff the value is one or more double-quote-delimited identifiers joined by single dots,
+    // e.g. "a", "a"."b", "schema"."table". A literal quote within a segment must be escaped as "".
+    // A '.' inside quotes is part of the name; a '.' between segments is a separator. Anything else
+    // outside the quotes -- stray text, a lone (breakout) quote, an unterminated segment -- is rejected.
+    private static boolean isQuotedIdentifierSequence(String s)
+    {
+        int i = 0;
+        int n = s.length();
+        while (i < n)
+        {
+            if (s.charAt(i) != '"')         // each segment must open with a quote
+                return false;
+            i++;
+            boolean closed = false;
+            while (i < n)
+            {
+                if (s.charAt(i) == '"')
+                {
+                    if (i + 1 < n && s.charAt(i + 1) == '"')    // escaped "" -- part of the name
+                    {
+                        i += 2;
+                        continue;
+                    }
+                    i++;                    // closing quote
+                    closed = true;
+                    break;
+                }
+                i++;                        // any other char is legal inside quotes
+            }
+            if (!closed)                    // ran off the end without a closing quote
+                return false;
+            if (i == n)                     // end of a valid final segment
+                return true;
+            if (s.charAt(i) != '.')         // segments must be separated by a single dot
+                return false;
+            i++;                            // consume the separator and require another segment
+        }
+        return false;                       // trailing dot with no following segment
     }
 
     // just to save some typing
@@ -680,9 +734,10 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == e)
             return appendNull();
         String name = e.name();
-        // Enum.name() usually returns a simple string (a legal java identifier), this is a paranoia check.
-        if (name.contains("'"))
-            throw new IllegalStateException();
+        // Enum.name() returns a legal Java identifier per JLS, so none of these characters can appear
+        // in practice. Defense in depth: reject anything SQL-active rather than only the apostrophe.
+        if (StringUtils.containsAny(name, "'\"\\;\r\n "))
+            throw new IllegalStateException("Unexpected character in Enum.name(): " + name);
         getStringBuilder().append("'").append(name).append("'");
         return this;
     }
@@ -774,6 +829,9 @@ public class SQLFragment implements Appendable, CharSequence
             boolean truncated = comment.length() > 1000;
             if (truncated)
                 comment = StringUtilsLabKey.leftSurrogatePairFriendly(comment, 1000);
+            // Strip CR/LF so an embedded newline can't terminate the `--` comment and turn the rest
+            // of the payload into live SQL.
+            comment = comment.replace('\r', ' ').replace('\n', ' ');
             sb.append(comment);
             if (StringUtils.countMatches(comment, "'")%2==1)
                 sb.append("'");
@@ -879,8 +937,7 @@ public class SQLFragment implements Appendable, CharSequence
             (StringUtils.countMatches(str, '\"') % 2) != 0 ||
             StringUtils.contains(str, ';'))
         {
-            if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
+            throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
         }
 
         getStringBuilder().insert(index, str);
@@ -915,7 +972,7 @@ public class SQLFragment implements Appendable, CharSequence
             param = param.replaceAll("\\$", "\\\\\\$");
             sql = sql.replaceFirst("\\?", param);
         }
-        return sql.replaceAll("\"", "");
+        return sql.replace("\"", "");
     }
 
 
@@ -997,7 +1054,7 @@ public class SQLFragment implements Appendable, CharSequence
             sqlf = newSql;
         }
 
-        CTE cte = commonTableExpressionsMap.get(key);
+        CTE cte = commonTableExpressionsMap == null ? null : commonTableExpressionsMap.get(key);
         if (null == cte)
             throw new IllegalStateException("CTE not found.");
         cte.sqlf = sqlf;
@@ -1052,7 +1109,7 @@ public class SQLFragment implements Appendable, CharSequence
             if (t.startsWith("-- </"))
                 indent = Math.max(0,indent-1);
 
-            sb.append("\t".repeat(Math.max(0, indent)));
+            sb.repeat("\t", Math.max(0, indent));
 
             sb.append(line);
             sb.append('\n');
@@ -1284,13 +1341,11 @@ public class SQLFragment implements Appendable, CharSequence
             try
             {
                 r.run();
-                if (!AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                    fail("Expected IllegalArgumentException");
+                fail("Expected IllegalArgumentException");
             }
             catch (IllegalArgumentException e)
             {
-                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                    fail("Did not expect IllegalArgumentException");
+                // expected
             }
         }
 
@@ -1313,7 +1368,7 @@ public class SQLFragment implements Appendable, CharSequence
 
         String mysqlQuoteIdentifier(String id)
         {
-            return "`" + id.replaceAll("`", "``") + "`";
+            return "`" + id.replace("`", "``") + "`";
         }
 
         @Test
@@ -1327,6 +1382,77 @@ public class SQLFragment implements Appendable, CharSequence
             // not OK
             shouldFail(() -> new SQLFragment().appendIdentifier("`"));
             shouldFail(() -> new SQLFragment().appendIdentifier("`a`a`"));
+        }
+
+        @Test
+        public void testAppendCommentStripsNewlines()
+        {
+            // PR1-P3: an embedded newline in a comment payload must not terminate the `-- ` comment
+            // line and expose the trailing text as live SQL.
+            if (!dialect.supportsComments())
+                return;
+
+            SQLFragment sqlf = new SQLFragment();
+            sqlf.appendComment("hello\nDROP TABLE x;--", dialect);
+            String sql = sqlf.getSQL();
+
+            assertFalse("appendComment leaked an embedded newline into emitted SQL: " + sql, sql.contains("hello\nDROP"));
+            assertTrue("appendComment should keep the payload on one comment line: " + sql, sql.contains("hello DROP TABLE x;--"));
+
+            // CR is stripped too
+            SQLFragment sqlf2 = new SQLFragment();
+            sqlf2.appendComment("hi\rDROP TABLE x;--", dialect);
+            assertFalse("appendComment leaked an embedded CR: " + sqlf2.getSQL(), sqlf2.getSQL().contains("hi\rDROP"));
+        }
+
+        @Test
+        public void testAppendIdentifierPreQuotedDottedAccepted()
+        {
+            // PR2-G1: a dotted sequence of individually well-formed quoted identifiers is legitimate --
+            // e.g. a fully-qualified "schema"."table" returned by TableInfo.getSelectName(). The strict
+            // check validates each quoted segment rather than blanket-rejecting any interior dot.
+            new SQLFragment().appendIdentifier("\"schema\".\"table\"");
+            new SQLFragment().appendIdentifier("\"a\".\"b\".\"c\"");
+        }
+
+        @Test
+        public void testAppendIdentifierPreQuotedDotInsideQuotesAccepted()
+        {
+            // PR2-G1: a `.` *inside* the quotes is part of a single identifier's name, not a separator.
+            // This is the metadata-name case (e.g. a calculated column's generated class name) that the
+            // earlier strict check wrongly rejected.
+            new SQLFragment().appendIdentifier("\"name.with.dots\"");
+            new SQLFragment().appendIdentifier("\"org.labkey.query.sql.CalculatedExpressionColumn6b8f\"");
+        }
+
+        @Test
+        public void testAppendIdentifierPreQuotedInteriorQuoteRejected()
+        {
+            // PR2-G1: an interior `"` that isn't part of the standard `""` doubling is a breakout.
+            // Even quote count alone is insufficient.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"foo\"bar\"baz\""));
+            // A classic breakout: close the identifier early, then inject. The lone interior quote
+            // (after `foo`) is followed by non-separator text, so it must be rejected.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"foo\"; DROP TABLE x; --\""));
+            // Stray text after a valid segment (not a `.` separator).
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\" \"b\""));
+            // Trailing separator with no following segment.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\".\""));
+            // Empty segment between separators.
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"a\"..\"b\""));
+        }
+
+        @Test
+        public void testAppendIdentifierPreQuotedValidCases()
+        {
+            // PR2-G1: legitimate pre-quoted identifiers still pass.
+            new SQLFragment().appendIdentifier("\"my_table\"");          // simple quoted
+            new SQLFragment().appendIdentifier("\"with a space\"");      // whitespace inside quotes is fine
+            new SQLFragment().appendIdentifier("\"foo\"\"bar\"");        // embedded literal " via "" doubling
+            new SQLFragment().appendIdentifier("\"contains\"\"more\"\"doubles\"");
+            // Doubled interior quotes around a dot decode to a single identifier named weird"."name --
+            // distinct from the two-segment "weird"."name" -- and cannot break out, so it's accepted.
+            new SQLFragment().appendIdentifier("\"weird\"\".\"\"name\"");
         }
     }
 
