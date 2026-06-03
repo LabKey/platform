@@ -212,11 +212,9 @@ public class ContentSecurityPolicyFilter implements Filter
 
             if (csp != null)
             {
-                if ("https".equals(req.getScheme()))
+                if ("https".equals(req.getScheme()) && resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
                 {
-                    if (resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
-                        resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
-                    csp = csp + " report-to csp-report ;";
+                    resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
                 }
 
                 resp.setHeader(getType().getHeaderName(), csp);
@@ -594,6 +592,21 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions("'none'", 0);
                     verifySubstitutionInPolicyExpressions("ObjectSource", 1);
                     verifySubstitutionInPolicyExpressions("BetterObjectStore", 1);
+
+                    unregisterAllowedSources("frameancestors", Directive.FrameAncestors);
+                    registerAllowedSources("frameancestors", Directive.FrameAncestors, "AncestorSource", "AnotherAncestor");
+                    assertEquals(7, ALLOWED_SOURCES.size());
+                    verifySubstitutionMapSize(5);
+                    // frame-ancestors is enforce-only (absent from the report CSP template), so check the substitution map directly
+                    String ancestorKey = Directive.FrameAncestors.getSubstitutionKey();
+                    assertTrue(SUBSTITUTION_MAP.get(ancestorKey).contains("AncestorSource"));
+                    assertTrue(SUBSTITUTION_MAP.get(ancestorKey).contains("AnotherAncestor"));
+                    unregisterAllowedSources("frameancestors", Directive.FrameAncestors);
+                    assertEquals(7, ALLOWED_SOURCES.size()); // Entry still exists but should be empty
+                    assertTrue(ALLOWED_SOURCES.get(Directive.FrameAncestors).isEmpty());
+                    verifySubstitutionMapSize(4); // Back to the way it was
+                    verifySubstitutionInPolicyExpressions("AncestorSource", 0);
+                    verifySubstitutionInPolicyExpressions("AnotherAncestor", 0);
                 }
                 finally
                 {

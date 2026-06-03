@@ -11611,11 +11611,14 @@ public class AdminController extends SpringActionController
             return new VBox(csps, newView, existingView);
         }
 
+        private static final String UPGRADE_INSECURE_REQUESTS = "${UPGRADE.INSECURE.REQUESTS}";
+
         private String formatCsp(@Nullable String csp, String defaultValue)
         {
             if (csp != null)
             {
-                csp = csp.replace("frame-ancestors", "\nframe-ancestors");
+                // There's no semicolon at the end of this substitution, but we want it to show it on its own line
+                csp = csp.replace(UPGRADE_INSECURE_REQUESTS + " ", UPGRADE_INSECURE_REQUESTS + "\n");
                 return Arrays.stream(csp.split(";"))
                     .map(String::trim)
                     .collect(Collectors.joining(" ;\n"));
