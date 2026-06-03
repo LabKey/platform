@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 -- @LongRunningScript('updating all ObjectId columns to BIGINT')
 
 -- Viability no longer supports SQL Server, but its old schema may have been left behind. Ensure it and its FK to ObjectId are dropped.

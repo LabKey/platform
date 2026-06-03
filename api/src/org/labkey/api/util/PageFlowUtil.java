@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.ApiModule;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderOverrideHandler;
 import org.labkey.api.action.UrlProviderService;
@@ -67,6 +68,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -1661,9 +1663,9 @@ public class PageFlowUtil
         if (includeDefaultResources)
         {
             // Respect App Properties regarding Ext3 configuration
-            if (AppProps.getInstance().isExt3APIRequired())
+            if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_API_REQUIRED))
                 resources.add(ClientDependency.fromPath("clientapi/ext3"));
-            else if (AppProps.getInstance().isExt3Required())
+            else if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_REQUIRED))
                 resources.add(ClientDependency.fromPath("Ext3"));
 
             // TODO: Turn this into a lib.xml

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 -- transaction ids where some, but not all, samples had lineage update events prior to the fix for Issue 51210
 WITH MixedTransactions AS
          (

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1410,8 +1410,6 @@ public class AdminController extends SpringActionController
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
-            props.setExt3Required(form.isExt3Required());
-            props.setExt3APIRequired(form.isExt3APIRequired());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
@@ -2348,8 +2346,6 @@ public class AdminController extends SpringActionController
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
         private boolean _showRibbonMessage;
-        private boolean _ext3Required;
-        private boolean _ext3APIRequired;
         private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
         private String _ribbonMessage;
@@ -2399,26 +2395,6 @@ public class AdminController extends SpringActionController
         public void setSslRequired(boolean sslRequired)
         {
             _sslRequired = sslRequired;
-        }
-
-        public boolean isExt3Required()
-        {
-            return _ext3Required;
-        }
-
-        public void setExt3Required(boolean ext3Required)
-        {
-            _ext3Required = ext3Required;
-        }
-
-        public boolean isExt3APIRequired()
-        {
-            return _ext3APIRequired;
-        }
-
-        public void setExt3APIRequired(boolean ext3APIRequired)
-        {
-            _ext3APIRequired = ext3APIRequired;
         }
 
         public int getSslPort()

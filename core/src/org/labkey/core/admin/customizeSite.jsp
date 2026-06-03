@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -308,20 +308,12 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=readOnlyHttpRequestTimeout%>">Timeout for read-only HTTP requests, in seconds<%=helpPopup("Read-only HTTP request timeout",
-            "After the timeout, resources like database connections and spawned processes will be killed to abort processing the request. Set to 0 to disable the timeout.")%></label></td>
+        "After the timeout, resources like database connections and spawned processes will be killed to abort processing the request. Set to 0 to disable the timeout.")%></label></td>
     <td><input type="text" name="<%=readOnlyHttpRequestTimeout%>" id="<%=readOnlyHttpRequestTimeout%>" size="4" value="<%=appProps.getReadOnlyHttpRequestTimeout()%>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>
     <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
-</tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=ext3Required%>">Require ExtJS v3.4.1 be loaded on each page</label></td>
-    <td><input type="checkbox" name="<%=ext3Required%>" id="<%=ext3Required%>"<%=checked(appProps.isExt3Required())%>></td>
-</tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=ext3APIRequired%>">Require ExtJS v3.x based Client API be loaded on each page</label></td>
-    <td><input type="checkbox" name="<%=ext3APIRequired%>" id="<%=ext3APIRequired%>"<%=checked(appProps.isExt3APIRequired())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

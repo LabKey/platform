@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2132,7 +2132,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
-            add(map, "tgz_sample.tgz", 7823, "assertthat is an extension", "Custom failure messages");
+
+
+            add(map, "tgz_sample.tgz", 7682, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);
             add(map, "tsv_sample.tsv", 2986, "1264.5", "10JAN07_plate_1.xls");
             add(map, "vsd_sample.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 export const CAS_MODAL_TYPE = {
     "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
     "saveLink" : "/labkey/casclient-casSaveConfiguration.view?",

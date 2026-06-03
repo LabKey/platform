@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,16 +104,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setSelfReportExceptions(boolean selfReport)
     {
         storeBooleanValue(selfReportExceptions, selfReport);
-    }
-
-    public void setExt3Required(boolean required)
-    {
-        storeBooleanValue(ext3Required, required);
-    }
-
-    public void setExt3APIRequired(boolean required)
-    {
-        storeBooleanValue(ext3APIRequired, required);
     }
 
     public void setBLASTServerBaseURL(String blastServerBaseURL)

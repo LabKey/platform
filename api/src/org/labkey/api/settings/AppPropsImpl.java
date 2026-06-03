@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -325,18 +325,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public int getMaxBLOBSize()
     {
         return lookupIntValue(maxBLOBSize, 50_000_000);
-    }
-
-    @Override
-    public boolean isExt3Required()
-    {
-        return lookupBooleanValue(ext3Required, false);
-    }
-
-    @Override
-    public boolean isExt3APIRequired()
-    {
-        return lookupBooleanValue(ext3APIRequired, false);
     }
 
     @Override
