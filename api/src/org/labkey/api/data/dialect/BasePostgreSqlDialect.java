@@ -292,15 +292,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String execute(DbSchema schema, String procedureName, String parameters)
+    protected SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters)
     {
-        return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
-    }
-
-    @Override
-    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
-    {
-        SQLFragment select = new SQLFragment("SELECT " + schema.getName() + "." + procedureName + "(");
+        SQLFragment select = new SQLFragment("SELECT ");
+        select.append(qualifiedProcName);
+        select.append("(");
         select.append(parameters);
         select.append(")");
         return select;
@@ -858,15 +854,15 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
-        StringBuilder sb = new StringBuilder();
+        SQLFragment sb = new SQLFragment();
         sb.append("{");
         if (assignResult)
             sb.append("? = ");
-        sb.append("CALL ").append(procSchema).append(".").append(procName).append("(");
+        sb.append("CALL ").append(qualifiedProcName).append("(");
         String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
@@ -875,7 +871,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             comma = ",";
         }
         sb.append(")}");
-        return sb.toString();
+        return sb;
     }
 
     @Override

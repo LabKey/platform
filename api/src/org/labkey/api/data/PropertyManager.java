@@ -488,9 +488,9 @@ public class PropertyManager
             if (null == name)
                 return;
 
-            String sql = SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue", "?, ?, ?");
-
-            new SqlExecutor(SCHEMA.getSchema()).execute(sql, getSet(), name, _store.getSaveValue(this, value));
+            new SqlExecutor(SCHEMA.getSchema()).execute(
+                    SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue",
+                            new SQLFragment("?, ?, ?", getSet(), name, _store.getSaveValue(this, value))));
         }
 
         public void save()

@@ -43,7 +43,6 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
@@ -80,8 +79,126 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.query.sql.QNode.*;
-import static org.labkey.query.sql.antlr.SqlBaseParser.*;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AGGREGATE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ALIAS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AND;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ANY;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ASCENDING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AVG;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BETWEEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_AND;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_OR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_XOR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CASE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CASE2;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CAST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CLOSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COLON;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COMMA;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COMMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CONCAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COUNT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CROSS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DATATYPE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DECLARATION;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DELETE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DESCENDING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DISTINCT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DIV;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ELSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.END;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EQ;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ESCAPE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXCEPT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXISTS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPANCESTORSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPDESCENDANTSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPLINEAGEOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPONENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPR_LIST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FLOAT_SUFFIX;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FROM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FULL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GROUP;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GROUP_CONCAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.HAVING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.HEX_DIGIT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IDENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ID_LETTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ID_START_LETTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IFDEFINED;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INNER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INSERT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INTERSECT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INTO;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IN_LIST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.JOIN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LEFT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LIKE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LIMIT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LINE_COMMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MAX;
+import static org.labkey.query.sql.antlr.SqlBaseParser.METHOD_CALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MIN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MINUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MODULO;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_BETWEEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_IN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_LIKE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NULL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_DOUBLE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_FLOAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_INT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_LONG;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ON;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OPEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ORDER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OUTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PARAM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PIVOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PLUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUERY;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUOTED_IDENTIFIER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUOTED_STRING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.RANGE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.RIGHT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ROW_STAR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SELECT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SELECT_FROM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SET;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SOME;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SQL_NE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STAR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STATEMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STDDEV;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SUM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.THEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.TRUE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNARY_MINUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNARY_PLUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNION;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNION_ALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UPDATE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.VALUES;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WHEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WHERE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WITH;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WS;
 
 
 /**
@@ -413,7 +530,7 @@ public class SqlParser
         }
     }
 
-    public QueryKey parseIdentifier(String str)
+    public SchemaKey parseIdentifier(String str)
     {
         _parseErrors = new ArrayList<>();
         try (var parser = getAntlrParser())
@@ -658,7 +775,7 @@ public class SqlParser
         if (re instanceof MissingTokenException mte)
         {
             if (null != mte.inserted)
-            missing = tokenName(((CommonToken)mte.inserted).getType());
+                missing = tokenName(((CommonToken)mte.inserted).getType());
         }
 
         if (null != near)
@@ -873,33 +990,34 @@ public class SqlParser
 
     private QNode convertNode(CommonTree node, LinkedList<QNode> children, boolean constExpr)
     {
+        label:
         switch (node.getType())
         {
-            case ALIAS:
-            case AS:
+            case SqlBaseParser.ALIAS:
+            case SqlBaseParser.AS:
             {
                 // CONSIDER: check type
 //                if (children.size() == 1)
 //                    return first(children);
-                node.getToken().setType(AS);
+                node.getToken().setType(SqlBaseParser.AS);
                 break;
             }
-            case DIV:
+            case SqlBaseParser.DIV:
             {
                 var usesNullIf = false;
                 var nonZeroConstant = false;
                 var divisorType = children.size() > 1 ? children.get(1).getTokenType() : 0;
-                if (divisorType==METHOD_CALL)
+                if (divisorType== SqlBaseParser.METHOD_CALL)
                 {
                     var method = children.get(1).childList().getFirst();
                     if ("NULLIF".equalsIgnoreCase(method.getTokenText()))
                         usesNullIf = true;
                 }
-                else if (divisorType==NUM_DOUBLE || divisorType==NUM_FLOAT || divisorType==NUM_INT || divisorType==NUM_LONG)
+                else if (divisorType== SqlBaseParser.NUM_DOUBLE || divisorType== SqlBaseParser.NUM_FLOAT || divisorType== SqlBaseParser.NUM_INT || divisorType== SqlBaseParser.NUM_LONG)
                 {
                     try
                     {
-                        nonZeroConstant = 0.0 != (Double)JdbcType.DOUBLE.convert(children.get(1).getTokenText());
+                        nonZeroConstant = 0.0 != (Double) JdbcType.DOUBLE.convert(children.get(1).getTokenText());
                     }
                     catch(ConversionException e)
                     {
@@ -910,25 +1028,25 @@ public class SqlParser
                     _parseWarnings.add(new QueryParseWarning("Consider using NULLIF() to prevent division by zero. e.g. dividend / NULLIF(divisor,0))", null, node.getLine(), node.getCharPositionInLine()));
                 break;
             }
-            case ESCAPE:
+            case SqlBaseParser.ESCAPE:
             {
                 if (children.size() != 1)
                 {
                     _parseErrors.add(new QueryParseException("ESCAPE expects simple string specification", null, node.getLine(), node.getCharPositionInLine()));
                     break;
                 }
-                return first(children);
+                return QNode.first(children);
             }
-            case IN:
-            case NOT_IN:
+            case SqlBaseParser.IN:
+            case SqlBaseParser.NOT_IN:
             {
-                var lhs = firstOrThrow(children);
-                var rhs = secondOrThrow(children);
-                if (rhs.getTokenType() == METHOD_CALL)
+                var lhs = QNode.firstOrThrow(children);
+                var rhs = QNode.secondOrThrow(children);
+                if (rhs.getTokenType() == SqlBaseParser.METHOD_CALL)
                 {
                     // rewrite "IN EXPANCESTORS" "IN EXPDESCENDANTS"
                     var method = rhs.getFirstChild();
-                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF && method.getTokenType() != EXPLINEAGEOF)
+                    if (method.getTokenType() != SqlBaseParser.EXPANCESTORSOF && method.getTokenType() != SqlBaseParser.EXPDESCENDANTSOF && method.getTokenType() != SqlBaseParser.EXPLINEAGEOF)
                     {
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
@@ -941,21 +1059,21 @@ public class SqlParser
                         return null;
                     }
 
-                    var qInLineage = new QInLineage(node.getType() == IN, method.getTokenType());
+                    var qInLineage = new QInLineage(node.getType() == SqlBaseParser.IN, method.getTokenType());
                     var qInLineageChildren = new LinkedList<QNode>();
                     qInLineageChildren.add(lhs);
-                    qInLineageChildren.add(secondOrThrow(rhsChildren));
+                    qInLineageChildren.add(QNode.secondOrThrow(rhsChildren));
                     if (rhsChildren.size() > 2)
-                        qInLineageChildren.add(childOrThrow(rhsChildren, 2));
+                        qInLineageChildren.add(QNode.childOrThrow(rhsChildren, 2));
 
                     qInLineage._replaceChildren(qInLineageChildren);
                     return qInLineage;
                 }
             }
-            case METHOD_CALL:
+            case SqlBaseParser.METHOD_CALL:
             {
-                @NotNull QNode id = firstOrThrow(children);
-                @NotNull QNode exprList = secondOrThrow(children);
+                @NotNull QNode id = QNode.firstOrThrow(children);
+                @NotNull QNode exprList = QNode.secondOrThrow(children);
 
                 // check for special case table method "findColumn", this isn't a real method so it's easier if it has its own node type
 
@@ -974,57 +1092,60 @@ public class SqlParser
                         break;
                 String name = ((QIdentifier)id).getIdentifier().toLowerCase();
 
-                if (name.equals("convert") || name.equals("cast"))
+                switch (name)
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
+                    case "convert", "cast" ->
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        var valueExpression = exprList.childList().get(0);
+                        QNode type = createType(exprList.childList().get(1));
+                        if (null == type)
+                        {
+                            assert !_parseErrors.isEmpty();
+                            return null;
+                        }
+                        exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
                     }
-                    var valueExpression = exprList.childList().get(0);
-                    QNode type = createType(exprList.childList().get(1));
-                    if (null == type)
+                    case "timestampadd", "timestampdiff" ->
                     {
-                        assert !_parseErrors.isEmpty();
-                        return null;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        assert exprList.childList().size() == 3;
+                        LinkedList<QNode> args = new LinkedList<>();
+                        args.add(constantToStringNode(exprList.childList().get(0)));
+                        args.add(exprList.childList().get(1));
+                        args.add(exprList.childList().get(2));
+                        exprList._replaceChildren(args);
+                        validateTimestampConstant(args.getFirst());
                     }
-                    exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
-                }
-                else if (name.equals("timestampadd") || name.equals("timestampdiff"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                    case "age" ->
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
+                        LinkedList<QNode> args = new LinkedList<>();
+                        args.add(exprList.childList().get(0));
+                        args.add(exprList.childList().get(1));
+                        if (exprList.childList().size() == 3)
+                            args.add(constantToStringNode(exprList.childList().get(2)));
+                        exprList._replaceChildren(args);
+                        if (args.size() == 3)
+                            validateTimestampConstant(args.get(2));
                     }
-                    assert exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<>();
-                    args.add(constantToStringNode(exprList.childList().get(0)));
-                    args.add(exprList.childList().get(1));
-                    args.add(exprList.childList().get(2));
-                    exprList._replaceChildren(args);
-                    validateTimestampConstant(args.getFirst());
-                }
-                else if (name.equals("age"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
-                    {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
-                    }
-                    assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<>();
-                    args.add(exprList.childList().get(0));
-                    args.add(exprList.childList().get(1));
-                    if (exprList.childList().size() == 3)
-                        args.add(constantToStringNode(exprList.childList().get(2)));
-                    exprList._replaceChildren(args);
-                    if (args.size() == 3)
-                        validateTimestampConstant(args.get(2));
                 }
 
                 // special case for table returning method
-                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF || id.getTokenType() == EXPLINEAGEOF;
+                var isTableResultMethod = id.getTokenType() == SqlBaseParser.EXPANCESTORSOF || id.getTokenType() == SqlBaseParser.EXPDESCENDANTSOF || id.getTokenType() == SqlBaseParser.EXPLINEAGEOF;
                 if (!isTableResultMethod)
                 {
                     try
@@ -1043,7 +1164,7 @@ public class SqlParser
                 }
                 break;
             }
-            case AGGREGATE:
+            case SqlBaseParser.AGGREGATE:
             {
                 if (constExpr)
                     return constError(node);
@@ -1058,7 +1179,7 @@ public class SqlParser
                 {
                     boolean distinct = false;
 
-                    if (children.size() > 1 && first(children) instanceof QDistinct)
+                    if (children.size() > 1 && QNode.first(children) instanceof QDistinct)
                     {
                         children.removeFirst();
                         distinct = true;
@@ -1069,13 +1190,13 @@ public class SqlParser
                 }
                 return qAggregate;
             }
-            case TIMESTAMP_LITERAL:
-            case DATE_LITERAL:
+            case SqlBaseParser.TIMESTAMP_LITERAL:
+            case SqlBaseParser.DATE_LITERAL:
             {
-                String s = LabKeySql.unquoteString(firstOrThrow(children).getTokenText());
+                String s = LabKeySql.unquoteString(QNode.firstOrThrow(children).getTokenText());
                 try
                 {
-                    if (node.getType() == TIMESTAMP_LITERAL)
+                    if (node.getType() == SqlBaseParser.TIMESTAMP_LITERAL)
                         return new QTimestamp(node,new Timestamp(DateUtil.parseDateTime(s)));
                     else
                         return new QDate(node,new java.sql.Date(DateUtil.parseDate(s)));
@@ -1086,7 +1207,7 @@ public class SqlParser
                     return null;
                 }
             }
-            case TABLE_PATH_SUBSTITUTION:
+            case SqlBaseParser.TABLE_PATH_SUBSTITUTION:
             {
                 if (constExpr) return constError(node);
                 if (children.size() != 3)
@@ -1115,7 +1236,7 @@ public class SqlParser
                 }
                 return substituteModuleProperty(((QString) args.get(0)).getValue(), ((QString)args.get(1)).getValue());
             }
-            case QUERY:
+            case SqlBaseParser.QUERY:
             {
                 if (constExpr) return constError(node);
                 QQuery query = (QQuery)qnode(node, children, false);
@@ -1125,7 +1246,7 @@ public class SqlParser
                 }
                 return query;
             }
-            case RANGE:
+            case SqlBaseParser.RANGE:
             {
                 if (constExpr)
                     return constError(node);
@@ -1654,7 +1775,7 @@ public class SqlParser
         }
 
         @Override
-        public void close() throws Exception
+        public void close()
         {
             _errors = null;
             setTokenStream(null);
