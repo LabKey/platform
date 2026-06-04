@@ -1370,12 +1370,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              *
              * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
              */
-            SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            // Capture the column mapping for incremental updates. Safe to cache: a schema change drops this MQH from the
-            // cache (reason == schema), so a changed column set always rebuilds with a fresh mapping.
-            JoinColumns joinColumns = getJoinColumns(null);
+            // Collect the temp-table column identifiers (minus immutable join keys) from the same SELECT that builds the
+            // view, so the incremental UPDATE re-assigns exactly the columns this SELECT produces. Safe to cache: a schema
+            // change drops this MQH from the cache (reason == schema), so a changed column set always rebuilds fresh.
+            List<SQLFragment> updateColumns = new ArrayList<>();
+            SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
-                .joinColumns(joinColumns)
+                .updateColumns(updateColumns)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
@@ -1395,17 +1396,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
-        /** Columns that an incremental UPDATE never re-derives */
-        static final Set<String> IMMUTABLE_UPDATE_COLUMNS = new CaseInsensitiveHashSet(RowId.name(), LSID.name(), CpasType.name(), RootMaterialRowId.name());
-
         final String _lsid;
-        /** The column mapping that produced the temp table, used to build the incremental UPDATE SET clauses. */
-        final JoinColumns _joinColumns;
+        /** The temp-table column identifiers (minus immutable join keys) that an incremental UPDATE re-derives. */
+        final List<SQLFragment> _updateColumns;
 
         static class Builder extends MaterializedQueryHelper.Builder
         {
             String _lsid;
-            JoinColumns _joinColumns;
+            List<SQLFragment> _updateColumns = List.of();
 
             public Builder(String lsid, String prefix, DbScope scope, SQLFragment select)
             {
@@ -1413,25 +1411,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 this._lsid = lsid;
             }
 
-            public Builder joinColumns(JoinColumns joinColumns)
+            public Builder updateColumns(List<SQLFragment> updateColumns)
             {
-                this._joinColumns = joinColumns;
+                this._updateColumns = updateColumns;
                 return this;
             }
 
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _joinColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
             }
         }
 
-        _MaterializedQueryHelper(String lsid, JoinColumns joinColumns, String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+        _MaterializedQueryHelper(String lsid, List<SQLFragment> updateColumns, String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
                                         boolean isSelectIntoSql)
         {
             super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql);
             this._lsid = lsid;
-            this._joinColumns = joinColumns;
+            this._updateColumns = updateColumns;
         }
 
         @Override
@@ -1567,84 +1565,41 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            JoinColumns jc = _joinColumns;
-
-            // Re-derive every temp column except the join key and immutable columns
-            List<JoinColumn> setColumns = jc.columns.stream()
-                    .filter(c -> !IMMUTABLE_UPDATE_COLUMNS.contains(c.tempColumnName()))
-                    .toList();
+            SQLFragment src = appendChangedSincePredicate(getViewSourceSql(), changedSince);
 
             SQLFragment sql = new SQLFragment();
             if (d.isPostgreSQL())
             {
                 sql.append("UPDATE temp.${NAME} AS st\nSET ");
-                appendSetClause(sql, setColumns);
-                sql.append("\nFROM exp.Material m");
-                appendProvisionedJoins(sql, jc);
-                sql.append("\nWHERE st.rowid = m.rowid AND m.cpastype = ").appendValue(_lsid, d);
-                appendModifiedSincePredicate(sql, d, changedSince);
-                sql.append(" AND (");
-                String or = "";
-                for (JoinColumn c : setColumns)
-                {
-                    sql.append(or).append("st.").append(c.tempColumnSql()).append(" IS DISTINCT FROM ").append(c.sourceSql());
-                    or = " OR ";
-                }
-                sql.append(")");
+                appendSetFromSrc(sql);
+                sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
             }
             else
             {
                 sql.append("UPDATE st\nSET ");
-                appendSetClause(sql, setColumns);
-                sql.append("\nFROM temp.${NAME} st INNER JOIN exp.Material m ON st.rowid = m.rowid");
-                appendProvisionedJoins(sql, jc);
-                sql.append("\nWHERE m.cpastype = ").appendValue(_lsid, d);
-                appendModifiedSincePredicate(sql, d, changedSince);
-                // SQL Server before 2022 has no IS DISTINCT FROM; "SELECT <st cols> EXCEPT SELECT <src cols>" is a portable
-                // null-safe tuple comparison that yields a row iff the tuples differ.
-                sql.append(" AND EXISTS (SELECT ");
-                String comma = "";
-                for (JoinColumn c : setColumns)
-                {
-                    sql.append(comma).append("st.").append(c.tempColumnSql());
-                    comma = ", ";
-                }
-                sql.append(" EXCEPT SELECT ");
-                comma = "";
-                for (JoinColumn c : setColumns)
-                {
-                    sql.append(comma).append(c.sourceSql());
-                    comma = ", ";
-                }
-                sql.append(")");
+                appendSetFromSrc(sql);
+                sql.append("\nFROM temp.${NAME} st INNER JOIN (").append(src).append("\n) src ON st.rowid = src.rowid");
             }
             return sql;
         }
 
-        private static void appendSetClause(SQLFragment sql, List<JoinColumn> setColumns)
+        /** {@code col = src.col} for every re-derivable column. Both PostgreSQL and SQL Server want a bare column name on the SET left-hand side. */
+        private void appendSetFromSrc(SQLFragment sql)
         {
             String comma = "";
-            for (JoinColumn c : setColumns)
+            for (SQLFragment col : _updateColumns)
             {
-                // PostgreSQL and SQL Server both want bare column names on the SET left-hand side.
-                sql.append(comma).append(c.tempColumnSql()).append(" = ").append(c.sourceSql());
+                sql.append(comma).append(col).append(" = src.").append(col);
                 comma = ", ";
             }
         }
 
-        private static void appendProvisionedJoins(SQLFragment sql, JoinColumns jc)
+        private SQLFragment appendChangedSincePredicate(SQLFragment viewSource, @NotNull Timestamp changedSince)
         {
-            if (jc.hasSampleColumns)
-                sql.append(" INNER JOIN ").append(jc.provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
-            if (jc.hasAliquotColumns)
-                sql.append(" INNER JOIN ").append(jc.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
-        }
-
-        private void appendModifiedSincePredicate(SQLFragment sql, SqlDialect d, @NotNull Timestamp changedSince)
-        {
-            sql.append(" AND (m.modified >= ?").add(changedSince);
-            sql.append(" OR m.rootmaterialrowid IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid, d)
+            viewSource.append(" AND (m.modified >= ?").add(changedSince);
+            viewSource.append(" OR m.rootmaterialrowid IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid)
                     .append(" AND modified >= ?").add(changedSince).append("))");
+            return viewSource;
         }
     }
 
@@ -1682,68 +1637,47 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    /**
-     * Which join alias a materialized-view column is sourced from:
-     * <ul>
-     *   <li>{@code m} &ndash; the row's own {@code exp.material} record</li>
-     *   <li>{@code m_sample} &ndash; the <b>root</b> material's provisioned row (root-derived / {@code ParentOnly} columns)</li>
-     *   <li>{@code m_aliquot} &ndash; the row's <b>own</b> provisioned row (aliquot-scoped columns plus {@code genid} / unique-id fields)</li>
-     * </ul>
-     */
-    enum JoinAlias { m, m_sample, m_aliquot }
+    /** Immutable join-key columns that an incremental UPDATE never re-derives (excluded from the re-assign list). */
+    static final Set<String> IMMUTABLE_UPDATE_COLUMNS = new CaseInsensitiveHashSet(RowId.name(), LSID.name(), CpasType.name(), RootMaterialRowId.name());
 
-    /**
-     * One column of the materialized join: the unencoded temp-table column name, the SQL reference to that column, the SQL
-     * expression that produces its value, and which join alias that expression reads from. This is the single source of
-     * truth shared by {@link #getJoinSQL} (which builds the SELECT that creates the temp table) and the incremental
-     * {@code UPDATE} paths (which build the SET clause). Keeping both consumers on this one mapping guarantees the temp
-     * column references and the SET expressions can never drift. {@code tempColumnSql} is the valid SQL reference (e.g., a
-     * quoted identifier) by which the column is named in the temp table; use it bare as an UPDATE SET target, or prefix it
-     * with a table alias (e.g., {@code st.}) to reference it elsewhere. {@code tempColumnName} is the unencoded name, useful
-     * for identifying a specific column (e.g., the {@code rowid} join key).
-     */
-    record JoinColumn(String tempColumnName, SQLFragment tempColumnSql, SQLFragment sourceSql, JoinAlias alias) {}
-
-    /**
-     * The ordered column mapping for the materialized join plus which provisioned joins are actually needed. Mirrors the
-     * {@code hasSampleColumns} / {@code hasAliquotColumns} bookkeeping that {@link #getJoinSQL} previously tracked inline.
-     */
-    static class JoinColumns
+    /* SELECT and JOIN, does not include WHERE */
+    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
     {
-        final List<JoinColumn> columns = new ArrayList<>();
-        TableInfo provisioned = null;
-        boolean hasSampleColumns = false;   // m_sample join required
-        boolean hasAliquotColumns = false;  // m_aliquot join required
+        return getJoinSQL(selectedColumns, null);
     }
 
-    /**
-     * Classify every selected column into its temp-table name, source expression, and join alias, preserving exactly the
-     * rules previously inlined in {@link #getJoinSQL}: material columns &rarr; {@code m}; {@code genid} / unique-id fields
-     * &rarr; {@code m_aliquot}; root-derived ({@code ParentOnly} or empty derivation scope) &rarr; {@code m_sample}; all
-     * other provisioned columns &rarr; {@code m_aliquot}; MV-indicator columns are always included.
-     */
-    private JoinColumns getJoinColumns(Set<FieldKey> selectedColumns)
+    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns, @Nullable List<SQLFragment> outUpdateColumns)
     {
-        JoinColumns result = new JoinColumns();
-        result.provisioned = null == _ss ? null : _ss.getTinfo();
-        Set<String> provisionedCols = new CaseInsensitiveHashSet(result.provisioned != null ? result.provisioned.getColumnNameSet() : Collections.emptySet());
+        TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
+        Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
         provisionedCols.remove(RowId.name());
         provisionedCols.remove(Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
+        boolean hasSampleColumns = false;
+        boolean hasAliquotColumns = false;
 
         Set<String> materialCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
+        SQLFragment sql = new SQLFragment();
+        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
+        sql.append("SELECT ");
+        String comma = "";
         for (String materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
             if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, materialCol)))
-                result.columns.add(new JoinColumn(materialCol, new SQLFragment().appendIdentifier(materialCol), new SQLFragment("m.").appendIdentifier(materialCol), JoinAlias.m));
+            {
+                sql.append(comma).append("m.").appendIdentifier(materialCol);
+                comma = ", ";
+                if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol))
+                    outUpdateColumns.add(new SQLFragment().appendIdentifier(materialCol));
+            }
         }
 
-        if (null != result.provisioned && hasProvisionedColumns)
+        if (null != provisioned && hasProvisionedColumns)
         {
-            for (ColumnInfo propertyColumn : result.provisioned.getColumns())
+            for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
                 // don't select twice
                 if (
@@ -1759,54 +1693,38 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
-                    String tempColumnName = propertyColumn.getSelectIdentifier().getId();
                     SQLFragment tempColumnSql = propertyColumn.getSelectIdentifier().getSql();
+                    String alias;
                     if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
-                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_aliquot"), JoinAlias.m_aliquot));
-                        result.hasAliquotColumns = true;
+                        alias = "m_aliquot";
+                        hasAliquotColumns = true;
                     }
                     else if (rootField)
                     {
-                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_sample"), JoinAlias.m_sample));
-                        result.hasSampleColumns = true;
+                        alias = "m_sample";
+                        hasSampleColumns = true;
                     }
                     else
                     {
-                        result.columns.add(new JoinColumn(tempColumnName, tempColumnSql, propertyColumn.getValueSql("m_aliquot"), JoinAlias.m_aliquot));
-                        result.hasAliquotColumns = true;
+                        alias = "m_aliquot";
+                        hasAliquotColumns = true;
                     }
+                    sql.append(comma).append(propertyColumn.getValueSql(alias)).append(" AS ").append(tempColumnSql);
+                    comma = ", ";
+                    // provisioned columns are never immutable join keys, so always re-derivable on update
+                    if (null != outUpdateColumns)
+                        outUpdateColumns.add(tempColumnSql);
                 }
             }
         }
 
-        return result;
-    }
-
-    /* SELECT and JOIN, does not include WHERE */
-    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
-    {
-        JoinColumns joinColumns = getJoinColumns(selectedColumns);
-
-        SQLFragment sql = new SQLFragment();
-        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
-        sql.append("SELECT ");
-        String comma = "";
-        for (JoinColumn joinColumn : joinColumns.columns)
-        {
-            sql.append(comma).append(joinColumn.sourceSql());
-            // material columns are selected by name (no alias); provisioned columns are aliased to their temp-table column name
-            if (JoinAlias.m != joinColumn.alias())
-                sql.append(" AS ").append(joinColumn.tempColumnSql());
-            comma = ", ";
-        }
-
         sql.append("\nFROM ");
         sql.append(_rootTable, "m");
-        if (joinColumns.hasSampleColumns)
-            sql.append(" INNER JOIN ").append(joinColumns.provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
-        if (joinColumns.hasAliquotColumns)
-            sql.append(" INNER JOIN ").append(joinColumns.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
+        if (hasSampleColumns)
+            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
+        if (hasAliquotColumns)
+            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
