@@ -60,6 +60,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -162,6 +163,7 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLU
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
@@ -1232,20 +1234,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public final AtomicLong update, insert, delete, rollup;
 
         /**
-         * The earliest {@code exp.material.Modified} timestamp from which rows must be re-derived by the next targeted
-         * incremental update. Populated by {@link RefreshMaterializedViewRunnable#run()} <b>before</b> the {@code update}
-         * counter is incremented, so any reader that observes the new counter-value is guaranteed to see this watermark
-         * when it drains the pending state. {@code null} means no targeted update is pending. Min-merged so the watermark
-         * always covers the oldest not-yet-applied change. Because {@code Modified} is written with the database clock
-         * (the constant {@code NowTimestamp} is inlined as {@code CURRENT_TIMESTAMP}), this timestamp is comparable to it
-         * directly, with no web-server-vs-database clock skew.
+         * The earliest {@code exp.material.Modified} timestamp from which existing rows must be re-derived by the next
+         * targeted incremental update. Populated by {@link RefreshMaterializedViewRunnable#run()} <b>before</b> the
+         * {@code update} counter is incremented, so any reader that observes the new counter-value is guaranteed to see
+         * this watermark when it drains the pending state. {@code null} means no targeted update is pending. Min-merged so
+         * the watermark always covers the oldest not-yet-applied change.
          */
         public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
-        /**
-         * Set when an {@code update} could not supply a watermark timestamp, meaning the next read must do a full re-sync
-         * rather than a targeted update.
-         */
-        public volatile boolean fullUpdatePending = false;
 
         InvalidationCounters()
         {
@@ -1256,39 +1251,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             rollup = new AtomicLong(l);
         }
 
-        /**
-         * Record the watermark for one update (before its counter-increment). A null timestamp means the caller could
-         * not capture a change time, forcing a full re-sync; otherwise the watermark is min-merged so it covers the
-         * oldest pending change.
-         */
-        void recordPendingUpdate(@Nullable Timestamp changedSince)
+        /** Record the watermark for one update (before its counter-increment), min-merged so it covers the oldest pending change. */
+        void recordPendingUpdate(@NotNull Timestamp changedSince)
         {
-            if (changedSince == null)
-                fullUpdatePending = true;
-            else
-                pendingUpdateSince.accumulateAndGet(changedSince, (cur, next) -> cur == null || next.before(cur) ? next : cur);
+            pendingUpdateSince.accumulateAndGet(changedSince, (cur, next) -> cur == null || next.before(cur) ? next : cur);
         }
 
-        /** The drained pending update state: either a full re-sync or the watermark to target. */
-        record PendingUpdate(boolean full, @Nullable Timestamp since) {}
-
         /**
-         * Atomically take and clear the pending update state. Should be called under the {@code _Materialized} loading
-         * lock. The watermark is read with {@code getAndSet(null)} so a timestamp recorded concurrently by a later
-         * POSTCOMMIT runnable survives for the next drain. A full re-sync clears any pending watermark: the re-sync
-         * already covers every committed row (a recorded watermark only ever corresponds to an already-committed change,
-         * since the POSTCOMMIT runnable runs after commit), so the watermark would be redundant.
+         * Atomically take and clear the pending watermark. Should be called under the {@code _Materialized} loading lock.
+         * Read with {@code getAndSet(null)} so a timestamp recorded concurrently by a later POSTCOMMIT runnable survives
+         * for the next drain. Returns null when no targeted update is pending.
          */
-        PendingUpdate drainPendingUpdate()
+        @Nullable Timestamp drainPendingUpdate()
         {
-            if (fullUpdatePending)
-            {
-                fullUpdatePending = false;
-                pendingUpdateSince.set(null);
-                return new PendingUpdate(true, null);
-            }
-
-            return new PendingUpdate(false, pendingUpdateSince.getAndSet(null));
+            return pendingUpdateSince.getAndSet(null);
         }
     }
 
@@ -1314,9 +1290,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /**
-     * POSTCOMMIT task that turns a committed data change into an invalidation: on a schema change it drops the cached MQH
-     * (the SQL itself must be regenerated); otherwise it bumps the matching per-LSID counter, and for {@code update} also
-     * records the change watermark for a targeted incremental update.
+     * POSTCOMMIT task that turns a committed data change into an invalidation: a schema change (or any update/merge that
+     * could not capture a watermark) drops the cached MQH so the next read rebuilds the whole view; otherwise it bumps the
+     * matching per-LSID counter(s), and for {@code update}/{@code merge} also records the change watermark for a targeted
+     * incremental update.
      */
     private record RefreshMaterializedViewRunnable(
         String lsid,
@@ -1342,14 +1319,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 case insert -> counters.insert.incrementAndGet();
                 case rollup -> counters.rollup.incrementAndGet();
-                case update ->
-                {
-                    // Record the watermark BEFORE bumping the counter: a reader that observes the new counter-value is
-                    // then guaranteed to see the corresponding watermark when it drains the pending state.
+                case delete -> counters.delete.incrementAndGet();
+                case update, merge -> {
+                    // An update or merge did not capture a watermark, so it cannot be targeted incrementally; drop the
+                    // cached MQH so the next read rebuilds the whole view. Clear any pending watermark since the
+                    // rebuild supersedes it.
+                    if (changedSince == null)
+                    {
+                        counters.pendingUpdateSince.set(null);
+                        _materializedQueries.remove(lsid);
+                        return;
+                    }
+
                     counters.recordPendingUpdate(changedSince);
                     counters.update.incrementAndGet();
+
+                    if (reason == merge)
+                        counters.insert.incrementAndGet();
                 }
-                case delete -> counters.delete.incrementAndGet();
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
         }
@@ -1558,43 +1545,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             upsertWithRetry(incremental);
         }
 
-        /**
-         * Generalized incremental update: re-derive the materialized columns from their source joins for the rows that
-         * changed since the last drain, instead of dropping and fully rebuilding the temp table. Drains the pending state
-         * under the {@code _Materialized} loading lock (held by the caller) and either does a full re-sync or a single
-         * targeted update of the changed rows. On failure the drained work is restored, so nothing is lost before the
-         * caller's handler drops the MQH and rebuilds.
-         */
         void executeIncrementalUpdate()
         {
             InvalidationCounters counters = getInvalidateCounters(_lsid);
-            InvalidationCounters.PendingUpdate pending = counters.drainPendingUpdate();
-            if (!pending.full() && pending.since() == null)
+            Timestamp since = counters.drainPendingUpdate();
+            if (since == null)
                 return;
 
             try
             {
-                upsertWithRetry(buildIncrementalUpdateSql(pending.full() ? null : pending.since()));
+                upsertWithRetry(buildIncrementalUpdateSql(since));
             }
             catch (RuntimeException ex)
             {
-                // Restore the drained work so nothing is lost; the caller's handler will drop the MQH and rebuild cleanly.
-                if (pending.full())
-                    counters.fullUpdatePending = true;
-                else
-                    counters.recordPendingUpdate(pending.since());
+                // Restore the drained watermark so nothing is lost; the caller's handler will drop the MQH and rebuild cleanly.
+                counters.recordPendingUpdate(since);
                 throw ex;
             }
         }
 
-        /**
-         * Build one incremental UPDATE that re-derives the materialized columns from their source joins. When
-         * {@code changedSince} is null this is a full re-sync over the whole sample type; otherwise it targets the rows
-         * modified at or after the watermark plus the aliquots of any changed root (via {@code rootmaterialrowid}). The
-         * {@code IS DISTINCT FROM} (PostgreSQL) / {@code EXCEPT}-based (SQL Server) guard skips rows whose values already
-         * match, so only genuinely differing rows are rewritten.
-         */
-        SQLFragment buildIncrementalUpdateSql(@Nullable Timestamp changedSince)
+        SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             JoinColumns jc = _joinColumns;
@@ -1670,10 +1640,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(" INNER JOIN ").append(jc.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
         }
 
-        private void appendModifiedSincePredicate(SQLFragment sql, SqlDialect d, @Nullable Timestamp changedSince)
+        private void appendModifiedSincePredicate(SQLFragment sql, SqlDialect d, @NotNull Timestamp changedSince)
         {
-            if (changedSince == null)
-                return;
             sql.append(" AND (m.modified >= ?").add(changedSince);
             sql.append(" OR m.rootmaterialrowid IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid, d)
                     .append(" AND modified >= ?").add(changedSince).append("))");
@@ -2231,11 +2199,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             ExpMaterialTableImpl table = getSamplesTable(st);
             assertCacheMatchesFreshDerivation(table, st.getLSID());
 
-            // Make a real change, then force the full-re-sync branch (as a no-watermark write path would) before reading.
+            // Make a real change, then force the full rebuild path (as a no-watermark update/merge would: drop the MQH)
+            // before reading. The next read must rebuild the whole view from scratch.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.getFirst(), "rootProp", "fullResynced")));
-            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
-            counters.pendingUpdateSince.set(null);
-            counters.fullUpdatePending = true;
+            _materializedQueries.remove(st.getLSID());
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 
@@ -2254,7 +2221,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             Timestamp rowModified = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(),
                     new SQLFragment("SELECT modified FROM exp.material WHERE rowid = ?").add(root)).getObject(Timestamp.class);
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
-            counters.fullUpdatePending = false;
             counters.pendingUpdateSince.set(rowModified);
             counters.update.incrementAndGet();
             assertCacheMatchesFreshDerivation(table, st.getLSID());
@@ -2275,6 +2241,27 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             assertCacheMatchesFreshDerivation(table, st.getLSID());
 
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "second")));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testMergeInsertAndUpdate() throws Exception
+        {
+            // A single merge that both updates existing rows and inserts new ones must leave the cache consistent: the
+            // merge signals both the update path (existing rows, watermark-targeted) and the insert path (new rows).
+            ExpSampleType st = createSampleType("IncrUpdMerge");
+            insertRoots(st, "R1", "R2");
+            insertAliquots(st, "R1", 2);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // R1/R2 already exist (matched by name -> updated); R3/R4 are new (-> inserted), all in one merge.
+            mergeRows(st, List.of(
+                    CaseInsensitiveHashMap.of("name", "R1", "rootProp", "mergedR1"),
+                    CaseInsensitiveHashMap.of("name", "R2", "rootProp", "mergedR2"),
+                    CaseInsensitiveHashMap.of("name", "R3", "rootProp", "mergedR3"),
+                    CaseInsensitiveHashMap.of("name", "R4", "rootProp", "mergedR4")));
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 
@@ -2342,6 +2329,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             BatchValidationException errors = new BatchValidationException();
             getUpdateService(st).updateRows(_user, _c, rows, null, errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private void mergeRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
+        {
+            BatchValidationException errors = new BatchValidationException();
+            getUpdateService(st).mergeRows(_user, _c, MapDataIterator.of(rows), errors, null, null);
             if (errors.hasErrors())
                 throw errors;
         }

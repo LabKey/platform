@@ -151,6 +151,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
@@ -468,14 +469,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
-        Timestamp changedSince = context.getInsertOption().allowUpdate ? captureChangedSince() : null;
+        InsertOption io = context.getInsertOption();
+        // Capture the watermark BEFORE the writes for any operation that updates existing rows (update or merge), so it is
+        // a lower bound on every exp.material.Modified the operation sets (ignored for a pure insert).
+        Timestamp changedSince = io.allowUpdate ? captureChangedSince() : null;
 
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
-            boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert, changedSince);
-            audit(context.getInsertOption().auditAction);
+            boolean isMediaUpdate = _sampleType.isMedia() && io.updateOnly;
+            // updateOnly -> update; insert+update (MERGE/UPSERT/REPLACE) -> merge; pure insert -> insert.
+            SampleTypeServiceImpl.SampleChangeType reason = io.updateOnly ? update : io.allowUpdate ? merge : insert;
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, reason, changedSince);
+            audit(io.auditAction);
         }
         return ret;
     }
@@ -484,10 +490,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        // Capture the watermark BEFORE the writes so the merge's update portion can be targeted (the insert portion is
+        // handled by the insert path). A null watermark would route the merge to a full rebuild.
+        Timestamp changedSince = captureChangedSince();
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null, configParameters, container, update); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters, container, merge, changedSince); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
