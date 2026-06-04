@@ -46,6 +46,7 @@ import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -116,6 +117,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -466,11 +468,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
+        Timestamp changedSince = context.getInsertOption().allowUpdate ? captureChangedSince() : null;
+
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
             boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert);
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert, changedSince);
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -510,7 +514,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(results, configParameters, container, SampleTypeServiceImpl.SampleChangeType.insert);
+            onSamplesChanged(results, configParameters, container, insert);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -553,6 +557,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> results;
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
         recordDataIteratorUsed(finalConfigParameters);
+        Timestamp changedSince = captureChangedSince();
 
         try
         {
@@ -567,7 +572,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update, changedSince);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -1140,8 +1145,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
+        onSamplesChanged(results, params, container, reason, null);
+    }
+
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
+    {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
-        Set<Integer> changedRowIds = collectChangedRowIds(results, reason);
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
@@ -1164,7 +1173,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
-                    fireSamplesChanged(reason, changedRowIds);
+                    fireSamplesChanged(reason, changedSince);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1174,7 +1183,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            fireSamplesChanged(reason, changedRowIds);
+            fireSamplesChanged(reason, changedSince);
         }
     }
 
@@ -1206,30 +1215,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
+    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason, changedRowIds);
+            _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
     }
 
-    /**
-     * Collect the changed rowIds so an update refresh can do a targeted incremental update instead of a full rebuild.
-     */
-    private @Nullable Set<Integer> collectChangedRowIds(List<Map<String, Object>> results, SampleTypeServiceImpl.SampleChangeType reason)
+    private static @Nullable Timestamp captureChangedSince()
     {
-        if (reason != update || results == null || results.isEmpty() || results.size() > ExpMaterialTableImpl.UPDATE_ROWID_THRESHOLD)
-            return null;
-
-        Set<Integer> changedRowIds = new HashSet<>(results.size());
-        for (Map<String, Object> row : results)
-        {
-            Long rowId = getMaterialRowId(row);
-            if (rowId == null)
-                return null; // can't enumerate the full changed set -> fall back to full re-sync
-            changedRowIds.add(rowId.intValue());
-        }
-
-        return changedRowIds;
+        return new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class);
     }
 
     void audit(QueryService.AuditAction auditAction)

@@ -134,6 +134,7 @@ import org.labkey.experiment.lineage.LineageMethod;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -144,10 +145,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -1226,32 +1227,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    /**
-     * Once the pending changed-rowid set for a single update grows past this size, a targeted incremental update is no
-     * longer worth it (the changed-rowid IN list grows and the win over a whole-join re-sync shrinks), so we escalate to a
-     * full re-sync instead. Chosen to match the application's bulk-edit cap of 1,000 rows, so a normal single update stays
-     * targeted.
-     * <p>
-     * This value is also bounded by SQL Server's 2,100-bind-parameter limit: the targeted predicate references the changed
-     * set twice ({@code m.rowid IN (...) OR m.rootmaterialrowid IN (...)}), so a targeted statement binds {@code 2*N + 1}
-     * parameters. At 1,000 that is 2,001, safely under the cap. Raising this past ~1,049 would require restructuring the
-     * predicate to avoid using the set twice.
-     */
-    static final int UPDATE_ROWID_THRESHOLD = 1_000;
-
     static class InvalidationCounters
     {
         public final AtomicLong update, insert, delete, rollup;
 
         /**
-         * The accumulated exp.material rowIds changed by {@code update}s since the last drain, used to drive a targeted
+         * The earliest {@code exp.material.Modified} timestamp from which rows must be re-derived by the next targeted
          * incremental update. Populated by {@link RefreshMaterializedViewRunnable#run()} <b>before</b> the {@code update}
-         * counter is incremented, so any reader that observes the new counter-value is guaranteed to see these rowids.
+         * counter is incremented, so any reader that observes the new counter-value is guaranteed to see this watermark
+         * when it drains the pending state. {@code null} means no targeted update is pending. Min-merged so the watermark
+         * always covers the oldest not-yet-applied change. Because {@code Modified} is written with the database clock
+         * (the constant {@code NowTimestamp} is inlined as {@code CURRENT_TIMESTAMP}), this timestamp is comparable to it
+         * directly, with no web-server-vs-database clock skew.
          */
-        public final Set<Integer> pendingUpdateRowIds = ConcurrentHashMap.newKeySet();
+        public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
         /**
-         * Set when an {@code update} could not supply rowIds (or the pending set crossed {@link #UPDATE_ROWID_THRESHOLD}),
-         * meaning the next read must do a full re-sync rather than a targeted update.
+         * Set when an {@code update} could not supply a watermark timestamp, meaning the next read must do a full re-sync
+         * rather than a targeted update.
          */
         public volatile boolean fullUpdatePending = false;
 
@@ -1264,47 +1256,39 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             rollup = new AtomicLong(l);
         }
 
-        /** Record the rowIds changed by one update (before its counter-increment). null/empty rowIds force a full re-sync. */
-        void recordPendingUpdate(@Nullable Set<Integer> changedRowIds)
+        /**
+         * Record the watermark for one update (before its counter-increment). A null timestamp means the caller could
+         * not capture a change time, forcing a full re-sync; otherwise the watermark is min-merged so it covers the
+         * oldest pending change.
+         */
+        void recordPendingUpdate(@Nullable Timestamp changedSince)
         {
-            if (changedRowIds == null || changedRowIds.isEmpty())
-            {
+            if (changedSince == null)
                 fullUpdatePending = true;
-                pendingUpdateRowIds.clear();
-            }
-            else if (!fullUpdatePending)
-            {
-                pendingUpdateRowIds.addAll(changedRowIds);
-                if (pendingUpdateRowIds.size() > UPDATE_ROWID_THRESHOLD)
-                {
-                    fullUpdatePending = true;
-                    pendingUpdateRowIds.clear();
-                }
-            }
-            // else: a full re-sync is already pending; the individual rowIds are redundant
+            else
+                pendingUpdateSince.accumulateAndGet(changedSince, (cur, next) -> cur == null || next.before(cur) ? next : cur);
         }
 
-        /** The drained pending update state: either a full re-sync or the specific rowIds to target. */
-        record PendingUpdate(boolean full, Set<Integer> rowIds) {}
+        /** The drained pending update state: either a full re-sync or the watermark to target. */
+        record PendingUpdate(boolean full, @Nullable Timestamp since) {}
 
         /**
-         * Atomically take and clear the pending update state. Should be called under the {@code _Materialized} loading lock.
-         * A snapshot of the rowIds is removed (not the live set) so any rowIds added concurrently by a POSTCOMMIT runnable
-         * survive for the next drain.
+         * Atomically take and clear the pending update state. Should be called under the {@code _Materialized} loading
+         * lock. The watermark is read with {@code getAndSet(null)} so a timestamp recorded concurrently by a later
+         * POSTCOMMIT runnable survives for the next drain. A full re-sync clears any pending watermark: the re-sync
+         * already covers every committed row (a recorded watermark only ever corresponds to an already-committed change,
+         * since the POSTCOMMIT runnable runs after commit), so the watermark would be redundant.
          */
         PendingUpdate drainPendingUpdate()
         {
             if (fullUpdatePending)
             {
                 fullUpdatePending = false;
-                pendingUpdateRowIds.clear();
-                return new PendingUpdate(true, Set.of());
+                pendingUpdateSince.set(null);
+                return new PendingUpdate(true, null);
             }
-            if (pendingUpdateRowIds.isEmpty())
-                return new PendingUpdate(false, Set.of());
-            Set<Integer> drained = new HashSet<>(pendingUpdateRowIds);
-            pendingUpdateRowIds.removeAll(drained);
-            return new PendingUpdate(false, drained);
+
+            return new PendingUpdate(false, pendingUpdateSince.getAndSet(null));
         }
     }
 
@@ -1312,32 +1296,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
-    // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
     {
         refreshMaterializedView(lsid, reason, null);
     }
 
     /**
-     * @param changedRowIds the exp.material rowIds known to have changed (only meaningful for update); null means
-     *                      the caller could not list the changed rows, forcing a full re-sync on the next read.
+     * @param changedSince a watermark (from the database clock, captured before the update's writes) at or after which
+     *                     the changed {@code exp.material} rows were modified; only meaningful for update. null means
+     *                     the caller could not capture a watermark, forcing a full re-sync on the next read.
      */
-    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
+    public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
-        var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedRowIds);
+        var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedSince);
         scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     /**
      * POSTCOMMIT task that turns a committed data change into an invalidation: on a schema change it drops the cached MQH
      * (the SQL itself must be regenerated); otherwise it bumps the matching per-LSID counter, and for {@code update} also
-     * records the changed rowIds for a targeted incremental update.
+     * records the change watermark for a targeted incremental update.
      */
     private record RefreshMaterializedViewRunnable(
         String lsid,
         SampleTypeServiceImpl.SampleChangeType reason,
-        @Nullable Set<Integer> changedRowIds
+        @Nullable Timestamp changedSince
     ) implements Runnable
     {
         @Override
@@ -1360,9 +1344,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 case rollup -> counters.rollup.incrementAndGet();
                 case update ->
                 {
-                    // Record the changed rowIds BEFORE bumping the counter: a reader that observes the new counter-value
-                    // is then guaranteed to see the corresponding rowIds when it drains the pending state.
-                    counters.recordPendingUpdate(changedRowIds);
+                    // Record the watermark BEFORE bumping the counter: a reader that observes the new counter-value is
+                    // then guaranteed to see the corresponding watermark when it drains the pending state.
+                    counters.recordPendingUpdate(changedSince);
                     counters.update.incrementAndGet();
                 }
                 case delete -> counters.delete.incrementAndGet();
@@ -1373,9 +1357,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         @Override
         public @NonNull String toString()
         {
-            // Concise: report the rowId count, not the (potentially huge) set, so dedup DEBUG logging stays readable.
-            return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason +
-                    ", changedRowIds=" + (changedRowIds == null ? "null" : changedRowIds.size() + " rows") + "}";
+            return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason + ", changedSince=" + changedSince + "}";
         }
     }
 
@@ -1587,13 +1569,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             InvalidationCounters counters = getInvalidateCounters(_lsid);
             InvalidationCounters.PendingUpdate pending = counters.drainPendingUpdate();
-            if (!pending.full() && pending.rowIds().isEmpty())
+            if (!pending.full() && pending.since() == null)
                 return;
 
             try
             {
-                // The changed set is capped at UPDATE_ROWID_THRESHOLD, so a targeted update fits in one statement.
-                upsertWithRetry(buildIncrementalUpdateSql(pending.full() ? null : pending.rowIds()));
+                upsertWithRetry(buildIncrementalUpdateSql(pending.full() ? null : pending.since()));
             }
             catch (RuntimeException ex)
             {
@@ -1601,19 +1582,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (pending.full())
                     counters.fullUpdatePending = true;
                 else
-                    counters.pendingUpdateRowIds.addAll(pending.rowIds());
+                    counters.recordPendingUpdate(pending.since());
                 throw ex;
             }
         }
 
         /**
          * Build one incremental UPDATE that re-derives the materialized columns from their source joins. When
-         * {@code changedRowIds} is null this is a full re-sync over the whole sample type; otherwise it targets the given
-         * rows plus the aliquots of any changed root (via {@code rootmaterialrowid}). The {@code IS DISTINCT FROM}
-         * (PostgreSQL) / {@code EXCEPT}-based (SQL Server) guard skips rows whose values already match, so only genuinely
-         * differing rows are rewritten.
+         * {@code changedSince} is null this is a full re-sync over the whole sample type; otherwise it targets the rows
+         * modified at or after the watermark plus the aliquots of any changed root (via {@code rootmaterialrowid}). The
+         * {@code IS DISTINCT FROM} (PostgreSQL) / {@code EXCEPT}-based (SQL Server) guard skips rows whose values already
+         * match, so only genuinely differing rows are rewritten.
          */
-        SQLFragment buildIncrementalUpdateSql(@Nullable Collection<Integer> changedRowIds)
+        SQLFragment buildIncrementalUpdateSql(@Nullable Timestamp changedSince)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             JoinColumns jc = _joinColumns;
@@ -1631,7 +1612,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append("\nFROM exp.Material m");
                 appendProvisionedJoins(sql, jc);
                 sql.append("\nWHERE st.rowid = m.rowid AND m.cpastype = ").appendValue(_lsid, d);
-                appendChangedRowIdPredicate(sql, d, changedRowIds);
+                appendModifiedSincePredicate(sql, d, changedSince);
                 sql.append(" AND (");
                 String or = "";
                 for (JoinColumn c : setColumns)
@@ -1648,7 +1629,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append("\nFROM temp.${NAME} st INNER JOIN exp.Material m ON st.rowid = m.rowid");
                 appendProvisionedJoins(sql, jc);
                 sql.append("\nWHERE m.cpastype = ").appendValue(_lsid, d);
-                appendChangedRowIdPredicate(sql, d, changedRowIds);
+                appendModifiedSincePredicate(sql, d, changedSince);
                 // SQL Server before 2022 has no IS DISTINCT FROM; "SELECT <st cols> EXCEPT SELECT <src cols>" is a portable
                 // null-safe tuple comparison that yields a row iff the tuples differ.
                 sql.append(" AND EXISTS (SELECT ");
@@ -1689,25 +1670,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(" INNER JOIN ").append(jc.provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
         }
 
-        /**
-         * Restrict to the changed rows. The {@code rootmaterialrowid} clause fans a changed root out to all of its aliquots
-         * (whose root-derived columns must be re-derived); it only matters for changed roots, since an aliquot's rowid is
-         * never another row's root. No-op for a full re-sync (null).
-         * <p>
-         * Passing a null large-IN generator to {@code appendInClauseSqlWithCustomInClauseGenerator} forces bind-parameter
-         * markers (never the temp-table generator), which is required because this runs as a single statement via
-         * {@code upsert()}. The set is bound twice; UPDATE_ROWID_THRESHOLD keeps the total parameter count under SQL
-         * Server's cap (see its javadoc).
-         */
-        private static void appendChangedRowIdPredicate(SQLFragment sql, SqlDialect d, @Nullable Collection<Integer> changedRowIds)
+        private void appendModifiedSincePredicate(SQLFragment sql, SqlDialect d, @Nullable Timestamp changedSince)
         {
-            if (changedRowIds == null)
+            if (changedSince == null)
                 return;
-            sql.append(" AND (m.rowid");
-            d.appendInClauseSqlWithCustomInClauseGenerator(sql, changedRowIds, null);
-            sql.append(" OR m.rootmaterialrowid");
-            d.appendInClauseSqlWithCustomInClauseGenerator(sql, changedRowIds, null);
-            sql.append(")");
+            sql.append(" AND (m.modified >= ?").add(changedSince);
+            sql.append(" OR m.rootmaterialrowid IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid, d)
+                    .append(" AND modified >= ?").add(changedSince).append("))");
         }
     }
 
@@ -2262,11 +2231,50 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             ExpMaterialTableImpl table = getSamplesTable(st);
             assertCacheMatchesFreshDerivation(table, st.getLSID());
 
-            // Make a real change, then force the full-re-sync branch (as a no-rowId write path would) before reading.
+            // Make a real change, then force the full-re-sync branch (as a no-watermark write path would) before reading.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.getFirst(), "rootProp", "fullResynced")));
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
-            counters.pendingUpdateRowIds.clear();
+            counters.pendingUpdateSince.set(null);
             counters.fullUpdatePending = true;
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testModifiedBoundaryNotSkipped() throws Exception
+        {
+            // The watermark predicate uses >= so a row modified at exactly the watermark is never skipped.
+            ExpSampleType st = createSampleType("IncrUpdBoundary");
+            int root = insertRoots(st, "R1").getFirst();
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Drive the targeted update with a watermark equal to the row's own Modified, simulating same-tick capture.
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "boundary")));
+            Timestamp rowModified = new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(),
+                    new SQLFragment("SELECT modified FROM exp.material WHERE rowid = ?").add(root)).getObject(Timestamp.class);
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            counters.fullUpdatePending = false;
+            counters.pendingUpdateSince.set(rowModified);
+            counters.update.incrementAndGet();
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testSequentialUpdates() throws Exception
+        {
+            // Two updates in sequence: each read must apply its own watermark and leave the cache consistent.
+            ExpSampleType st = createSampleType("IncrUpdSequential");
+            int root = insertRoots(st, "R1").getFirst();
+            insertAliquots(st, "R1", 2);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "first")));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), root, "rootProp", "second")));
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 

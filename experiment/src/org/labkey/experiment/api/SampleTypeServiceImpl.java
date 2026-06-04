@@ -135,6 +135,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -2407,12 +2408,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     /**
-     * @param changedRowIds RowIds of samples known to have changed (only meaningful for update); null means
-     *                      the caller could not list the changed rows, forcing a full re-sync on the next read.
+     * @param changedSince a database-clock watermark captured before the update's writes, at or after which the changed
+     *                     samples were modified (only meaningful for update); null means the caller could not capture a
+     *                     watermark, forcing a full re-sync on the next read.
      */
-    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Set<Integer> changedRowIds)
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Timestamp changedSince)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedRowIds);
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
     }
 
     public static class TestCase extends Assert
