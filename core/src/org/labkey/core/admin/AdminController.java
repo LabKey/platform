@@ -11587,28 +11587,36 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
         {
-            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
+            VBox vbox = new VBox();
 
-            String template = formatCsp(ContentSecurityPolicyFilter.getStashedTemplate(ContentSecurityPolicyType.Enforce), "No enforce CSP is present!");
-            String substituted = formatCsp(ContentSecurityPolicyFilter.getSubstitutedCsp(ContentSecurityPolicyType.Enforce, getViewContext().getRequest()), "Enforce CSP is disabled!");
-            HtmlView csps = new HtmlView("Current Enforce CSP",
-                TABLE(
-                    TR(
-                        TH(STRONG("With Substitution Placeholders")), TH(STRONG("With Substituted Values"))
-                    ),
-                    TR(
-                        TD(at(style, "padding-right: 20px;"), PRE(template)), TD(PRE(substituted))
+            String template = formatCsp(ContentSecurityPolicyFilter.getStashedTemplate(ContentSecurityPolicyType.Enforce), null);
+            if (template != null)
+            {
+                String substituted = formatCsp(ContentSecurityPolicyFilter.getSubstitutedCsp(ContentSecurityPolicyType.Enforce, getViewContext().getRequest()), "Enforce CSP is disabled!");
+                vbox.addView(new HtmlView("Current Enforce CSP",
+                    TABLE(
+                        TR(
+                            TH(STRONG("With Substitution Placeholders")), TH(STRONG("With Substituted Values"))
+                        ),
+                        TR(
+                            TD(at(style, "padding-right: 20px;"), PRE(template)), TD(PRE(substituted))
+                        )
                     )
-                )
-            );
+                ));
+            }
+
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(newView);
+
             JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
             existingView.setTitle("Existing External Resource Hosts");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(existingView);
 
-            return new VBox(csps, newView, existingView);
+            return vbox;
         }
 
         private static final String UPGRADE_INSECURE_REQUESTS = "${UPGRADE.INSECURE.REQUESTS}";
