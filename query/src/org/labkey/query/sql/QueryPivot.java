@@ -16,11 +16,33 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.jetbrains.annotations.Nullable;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AggregateColumnInfo;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabDimension;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.QueryLogging;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -29,7 +51,9 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.springframework.dao.DataAccessException;
@@ -56,6 +80,8 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
  */
 public class QueryPivot extends AbstractQueryRelation
 {
+    private static final Logger LOG = LogHelper.getLogger(QueryPivot.class, "Pivot value emission diagnostics");
+
     final QuerySelect _from;
     final AliasManager _manager;
     final Map<FieldKey,String> pivotColumnAliases = new HashMap<>();
@@ -573,7 +599,6 @@ public class QueryPivot extends AbstractQueryRelation
     {
         return pivotValue + PIVOT_SEPARATOR + aggName;
     }
-    
 
     @Override
     public RelationColumn getColumn(@NotNull String name)
@@ -726,7 +751,6 @@ public class QueryPivot extends AbstractQueryRelation
         return null;
     }
 
-    
     @Override
     public SQLFragment getSql()
     {
@@ -822,9 +846,28 @@ public class QueryPivot extends AbstractQueryRelation
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
                 sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
+                {
                     sql.append(" IS NULL");
+                }
+                else if (value instanceof QString qs)
+                {
+                    // Route QString pivot values through the dialect's string handler so
+                    // dialect-specific escape rules (e.g. PG non-conforming strings) are honored.
+                    sql.append("=");
+                    if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    {
+                        LOG.debug("Pivot QString value emitted via legacy LabKey-SQL escape (flag-on, dialect string handler bypassed)");
+                        sql.append(value.getSourceText());
+                    }
+                    else
+                    {
+                        sql.appendStringLiteral(qs.getValue(), getSqlDialect());
+                    }
+                }
                 else
+                {
                     sql.append("=").append(value.getSourceText());
+                }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
@@ -1084,7 +1127,7 @@ public class QueryPivot extends AbstractQueryRelation
 
 
     SqlDialect _dialect;
-    
+
     SqlDialect getSqlDialect()
     {
         if (null == _dialect)
@@ -1093,7 +1136,7 @@ public class QueryPivot extends AbstractQueryRelation
     }
 
 
-    
+
     // We could use aliasManager and remember these
     // but its easier if we can generate names we expect to be unique
     String makePivotColumnAlias(String aggAlias, String pivotValueName)
@@ -1121,7 +1164,7 @@ public class QueryPivot extends AbstractQueryRelation
         {
             _agg = agg;
         }
-        
+
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
