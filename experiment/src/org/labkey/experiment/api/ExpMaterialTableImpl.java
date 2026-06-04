@@ -1564,8 +1564,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
-            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            SQLFragment src = appendChangedSincePredicate(getViewSourceSql(), changedSince);
+            SqlDialect d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            SQLFragment src = new SQLFragment()
+                    .append(getViewSourceSql().append(" AND m.modified >= ?").add(changedSince))
+                    .append("\nUNION ALL\n")
+                    .append(getViewSourceSql()
+                            .append(" AND EXISTS (SELECT 1 FROM exp.material r WHERE r.rowid = m.rootmaterialrowid AND r.cpastype = ").appendValue(_lsid, d)
+                            .append(" AND r.modified >= ?").add(changedSince).append(")"));
 
             SQLFragment sql = new SQLFragment();
             if (d.isPostgreSQL())
@@ -1583,7 +1588,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return sql;
         }
 
-        /** {@code col = src.col} for every re-derivable column. Both PostgreSQL and SQL Server want a bare column name on the SET left-hand side. */
         private void appendSetFromSrc(SQLFragment sql)
         {
             String comma = "";
@@ -1592,14 +1596,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 sql.append(comma).append(col).append(" = src.").append(col);
                 comma = ", ";
             }
-        }
-
-        private SQLFragment appendChangedSincePredicate(SQLFragment viewSource, @NotNull Timestamp changedSince)
-        {
-            viewSource.append(" AND (m.modified >= ?").add(changedSince);
-            viewSource.append(" OR m.rootmaterialrowid IN (SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid)
-                    .append(" AND modified >= ?").add(changedSince).append("))");
-            return viewSource;
         }
     }
 
