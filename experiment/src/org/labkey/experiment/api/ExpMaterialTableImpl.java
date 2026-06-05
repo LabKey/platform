@@ -41,6 +41,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ForeignKey;
@@ -1355,7 +1356,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              *
              * Maybe have a callback to generate the SQL dynamically and verify that the SQL is unchanged.
              */
-            List<SQLFragment> updateColumns = new ArrayList<>();
+            List<ColumnInfo> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
@@ -1376,12 +1377,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
         final String _lsid;
-        final List<SQLFragment> _updateColumns;
+        final List<ColumnInfo> _updateColumns;
 
         static class Builder extends MaterializedQueryHelper.Builder
         {
             String _lsid;
-            List<SQLFragment> _updateColumns = List.of();
+            List<ColumnInfo> _updateColumns = List.of();
 
             public Builder(String lsid, String prefix, DbScope scope, SQLFragment select)
             {
@@ -1389,7 +1390,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 this._lsid = lsid;
             }
 
-            public Builder updateColumns(List<SQLFragment> updateColumns)
+            public Builder updateColumns(List<ColumnInfo> updateColumns)
             {
                 this._updateColumns = updateColumns;
                 return this;
@@ -1404,7 +1405,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         _MaterializedQueryHelper(
             String lsid,
-            List<SQLFragment> updateColumns,
+            List<ColumnInfo> updateColumns,
             String prefix,
             DbScope scope,
             SQLFragment select,
@@ -1584,9 +1585,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         private void appendSetFromSrc(SQLFragment sql)
         {
             String comma = "";
-            for (SQLFragment col : _updateColumns)
+            for (ColumnInfo col : _updateColumns)
             {
-                sql.append(comma).append(col).append(" = src.").append(col);
+                DatabaseIdentifier identifier = col.getSelectIdentifier();
+                sql.append(comma).appendIdentifier(identifier).append(" = src.").appendIdentifier(identifier);
                 comma = ", ";
             }
         }
@@ -1627,7 +1629,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /** Immutable join-key columns that an incremental UPDATE never re-derives (excluded from the re-assign list). */
-    static final Set<String> IMMUTABLE_UPDATE_COLUMNS = new CaseInsensitiveHashSet(RowId.name(), LSID.name(), CpasType.name(), RootMaterialRowId.name());
+    static final Set<FieldKey> IMMUTABLE_UPDATE_COLUMNS = Set.of(RowId.fieldKey(), LSID.fieldKey(), CpasType.fieldKey(), RootMaterialRowId.fieldKey());
 
     /* SELECT and JOIN, does not include WHERE */
     private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
@@ -1635,7 +1637,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return getJoinSQL(selectedColumns, null);
     }
 
-    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns, @Nullable List<SQLFragment> outUpdateColumns)
+    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns, @Nullable List<ColumnInfo> outUpdateColumns)
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
@@ -1645,22 +1647,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean hasSampleColumns = false;
         boolean hasAliquotColumns = false;
 
-        Set<String> materialCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+        List<ColumnInfo> materialCols = _rootTable.getColumns();
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
         sql.append("SELECT ");
         String comma = "";
-        for (String materialCol : materialCols)
+        for (ColumnInfo materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
-            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, materialCol)))
+            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(materialCol.getFieldKey()))
             {
-                sql.append(comma).append("m.").appendIdentifier(materialCol);
+                sql.append(comma).append("m.").appendIdentifier(materialCol.getSelectIdentifier());
                 comma = ", ";
-                if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol))
-                    outUpdateColumns.add(new SQLFragment().appendIdentifier(materialCol));
+                if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol.getFieldKey()))
+                    outUpdateColumns.add(materialCol);
             }
         }
 
@@ -1682,7 +1684,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
-                    SQLFragment tempColumnSql = propertyColumn.getSelectIdentifier().getSql();
                     String alias;
                     if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
@@ -1699,11 +1700,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         alias = "m_aliquot";
                         hasAliquotColumns = true;
                     }
-                    sql.append(comma).append(propertyColumn.getValueSql(alias)).append(" AS ").append(tempColumnSql);
+
+                    sql.append(comma).append(propertyColumn.getValueSql(alias)).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                     comma = ", ";
+
                     // provisioned columns are never immutable join keys, so always re-derivable on update
                     if (null != outUpdateColumns)
-                        outUpdateColumns.add(tempColumnSql);
+                        outUpdateColumns.add(propertyColumn);
                 }
             }
         }
