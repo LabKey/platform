@@ -189,15 +189,20 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     private Set<GUID> getIssuedConversationIds(HttpSession session)
     {
-        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), () ->
-                Collections.synchronizedSet(Collections.newSetFromMap(
-                        new LinkedHashMap<>(16, 0.75f, false)
-                        {
-                            @Override
-                            protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
-                            {
-                                return size() > MAX_ISSUED_CONVERSATION_IDS;
-                            }
-                        })));
+        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), AbstractAgentAction::newIssuedConversationIdSet);
+    }
+
+    private static Set<GUID> newIssuedConversationIdSet()
+    {
+        return Collections.synchronizedSet(Collections.newSetFromMap(
+            new LinkedHashMap<>(16, 0.75f, false)
+            {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
+                {
+                    return size() > MAX_ISSUED_CONVERSATION_IDS;
+                }
+            }
+        ));
     }
 }
