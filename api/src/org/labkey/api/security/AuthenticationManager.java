@@ -86,6 +86,7 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -549,7 +550,12 @@ public class AuthenticationManager
         public ModelAndView getView(FORM form, BindException errors) throws Exception
         {
             AuthenticationResponse response = validateAuthentication(form, errors);
+            return response.isReauth() ? getReauthView(response, errors) : getAuthView(response, errors);
+        }
 
+        // Normal primary authentication case
+        private ModelAndView getAuthView(AuthenticationResponse response, BindException errors)
+        {
             // Show validation error(s), if any
             if (errors.hasErrors() || !response.isAuthenticated())
             {
@@ -584,6 +590,44 @@ public class AuthenticationManager
             getPageConfig().setIncludeSearch(false);
 
             return new SimpleErrorView(errors, false);
+        }
+
+        // Reauthentication case for electronic signing and other sensitive operations. Check that reauthentication
+        // was successful and re-auth user matches session user. Not currently verifying that the same authentication
+        // configuration was used to reauthenticate.
+        private ModelAndView getReauthView(AuthenticationResponse response, BindException errors)
+        {
+            @Nullable User reauthUser = UserManager.getUser(response.getValidEmail());
+
+            String errorMessage = null;
+
+            if (!response.isAuthenticated())
+            {
+                errorMessage = errors.hasErrors() ? errors.getMessage() : "Reauthentication failed";
+            }
+            else if (!getUser().equals(reauthUser))
+            {
+                errorMessage = "Reauthentication failed: wrong user reauthenticated";
+            }
+
+            LoginReturnProperties properties = getLoginReturnProperties(getViewContext().getRequestOrThrow());
+
+            // We lost the return URL. Could happen on local session timeout.
+            if (properties == null)
+                throw new NotFoundException("Reauthentication failed");
+
+            URLHelper url = properties.getReturnUrl();
+
+            if (errorMessage != null)
+            {
+                url.addParameter("errorMessage", errorMessage);
+            }
+            else
+            {
+                AuthenticationManager.setReauthUser(reauthUser, getViewContext().getRequestOrThrow(), url);
+            }
+
+            throw new RedirectException(url);
         }
 
         @Override
@@ -1769,6 +1813,13 @@ public class AuthenticationManager
 
     public record Reauth(String token, User user){}
     public static final String REAUTH_TOKEN_NAME = "reauthToken";
+
+    public static void setReauthUser(User user, HttpServletRequest request, URLHelper redirectUrl)
+    {
+        String reauthToken = GUID.makeHash();
+        redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
+        request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
+    }
 
     public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
     {

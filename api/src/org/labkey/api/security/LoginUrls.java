@@ -41,4 +41,5 @@ public interface LoginUrls extends UrlProvider
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnUrl);
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile);
+    ActionURL getSSOReauthURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl);
 }

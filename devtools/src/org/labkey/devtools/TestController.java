@@ -19,6 +19,7 @@ package org.labkey.devtools;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
@@ -1492,4 +1493,39 @@ public class TestController extends SpringActionController
         }
     }
 
+    public record ReauthForm(@Nullable String reauthToken, @Nullable String errorMessage){}
+
+    @RequiresLogin
+    public static class TestReauthAction extends FormViewAction<ReauthForm>
+    {
+        @Override
+        public void validateCommand(ReauthForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ReauthForm form, boolean reshow, BindException errors)
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/devtools/view/testReauth.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ReauthForm form, BindException errors)
+        {
+            // TODO: Validate the reauthToken here - push into errors
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ReauthForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
 }

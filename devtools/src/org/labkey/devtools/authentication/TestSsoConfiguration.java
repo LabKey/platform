@@ -15,6 +15,7 @@
  */
 package org.labkey.devtools.authentication;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
@@ -51,6 +52,12 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
         url.addParameter("configuration", getRowId());
 
         return url;
+    }
+
+    @Override
+    public URLHelper getReauthUrl(ViewContext ctx)
+    {
+        throw new NotImplementedException();
     }
 
     @Override

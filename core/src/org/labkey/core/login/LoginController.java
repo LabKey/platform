@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -52,6 +53,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigurationCache;
@@ -72,6 +74,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -115,6 +118,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnsafeExternalRedirectException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
@@ -301,12 +305,24 @@ public class LoginController extends SpringActionController
         @Override
         public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile)
         {
-            ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
-            url.addParameter("configuration", configuration.getRowId());
+            ActionURL url = getRedirectURL(SsoRedirectAction.class, configuration, returnUrl);
             if (skipProfile)
             {
                 url.addParameter("skipProfile", 1);
             }
+            return url;
+        }
+
+        @Override
+        public ActionURL getSSOReauthURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl)
+        {
+            return getRedirectURL(SsoReauthAction.class, configuration, returnUrl);
+        }
+
+        private ActionURL getRedirectURL(Class<? extends Controller> redirectActionClass, SSOAuthenticationConfiguration<?> configuration, @Nullable URLHelper returnUrl)
+        {
+            ActionURL url = new ActionURL(redirectActionClass, ContainerManager.getRoot());
+            url.addParameter("configuration", configuration.getRowId());
             if (null != returnUrl)
             {
                 String fragment = returnUrl.getFragment();
@@ -707,9 +723,7 @@ public class LoginController extends SpringActionController
 
                 if (form.isForceReauth())
                 {
-                    String reauthToken = GUID.makeHash();
-                    redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-                    request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
+                    AuthenticationManager.setReauthUser(user, request, redirectUrl);
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI
@@ -1539,19 +1553,7 @@ public class LoginController extends SpringActionController
 
     public static class SsoRedirectForm extends AbstractLoginForm
     {
-        private String _provider;
         private int _configuration;
-
-        public String getProvider()
-        {
-            return _provider;
-        }
-
-        @SuppressWarnings("unused")
-        public void setProvider(String provider)
-        {
-            _provider = provider;
-        }
 
         public int getConfiguration()
         {
@@ -1565,18 +1567,13 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    // Always invoked in the root, so no need to ignore locked projects
-    public static class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
+    private static abstract class BaseSsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
+        protected abstract URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context);
+
         @Override
         public ModelAndView getView(SsoRedirectForm form, BindException errors)
         {
-            // If logged in then redirect immediately
-            if (!getUser().isGuest())
-                return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
-
             // If we have a returnUrl or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnUrl = form.getReturnUrlHelper();
             if (null != returnUrl || form.getSkipProfile())
@@ -1592,7 +1589,7 @@ public class LoginController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
 
-            url = configuration.getUrl(getViewContext());
+            url = getUrl(configuration, getViewContext());
 
             // It's safe to bypass checking the external redirect allow list in this case because we are redirecting to
             // the administrator-provided URL from the SSO authentication configuration.
@@ -1602,6 +1599,59 @@ public class LoginController extends SpringActionController
         @Override
         public final void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    // Always invoked in the root, so no need to ignore locked projects
+    public static class SsoRedirectAction extends BaseSsoRedirectAction
+    {
+        @Override
+        public ModelAndView getView(SsoRedirectForm form, BindException errors)
+        {
+            // If logged in then redirect immediately
+            if (!getUser().isGuest())
+                return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
+
+            return super.getView(form, errors);
+        }
+
+        @Override
+        protected URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context)
+        {
+            return configuration.getUrl(context);
+        }
+    }
+
+    // Very similar to SsoRedirectAction, but needs different annotations, so we have two separate classes
+    @RequiresLogin
+    public static class SsoReauthAction extends BaseSsoRedirectAction
+    {
+        @Override
+        protected URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context)
+        {
+            return configuration.getReauthUrl(context);
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from client code
+    @RequiresLogin
+    public static class GetAuthenticationConfigurationAction extends ReadOnlyApiAction<ReturnUrlForm>
+    {
+        @Override
+        public Object execute(ReturnUrlForm form, BindException errors)
+        {
+            PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(getViewContext().getSession());
+            if (configuration == null)
+            {
+                throw new RuntimeException("No configuration found");
+            }
+            JSONObject resp = new JSONObject();
+            resp.put("description", configuration.getDescription());
+            if (configuration instanceof SSOAuthenticationConfiguration<?> sso)
+                resp.put("reauthUrl", urlProvider(LoginUrls.class).getSSOReauthURL(sso, form.getReturnActionURL()));
+            return success(resp);
         }
     }
 
