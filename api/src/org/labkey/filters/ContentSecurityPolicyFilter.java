@@ -86,7 +86,7 @@ public class ContentSecurityPolicyFilter implements Filter
     // Per-filter-instance parameters that are set in init() and never changed
     private ContentSecurityPolicyType _type = ContentSecurityPolicyType.Enforce;
     private @NotNull String _cspVersion = "Unknown";
-    // These two are effectively @NotNull since they are set to non-null values in init() and never changed
+    // This is effectively @NotNull since it's set to non-null values in init() and never changed
     private String _stashedTemplate = null;
 
     // We can't set this statically because the class is referenced before URLProviders are available
@@ -208,24 +208,39 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp)
         {
-            StringExpression expression = ensurePolicyExpression();
+            String csp = getSubstitutedCsp(req);
 
-            if (getType() != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
+            if (csp != null)
             {
-                Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
-                String csp = expression.eval(map);
-
-                if ("https".equals(req.getScheme()))
+                if ("https".equals(req.getScheme()) && resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
                 {
-                    if (resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
-                        resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
-                    csp = csp + " report-to csp-report ;";
+                    resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
                 }
 
                 resp.setHeader(getType().getHeaderName(), csp);
             }
         }
         chain.doFilter(request, response);
+    }
+
+    private String getSubstitutedCsp(HttpServletRequest req)
+    {
+        StringExpression expression = ensurePolicyExpression();
+
+        if (getType() != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
+        {
+            Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
+            String csp = expression.eval(map);
+
+            if ("https".equals(req.getScheme()))
+            {
+                csp = csp + " report-to csp-report ;";
+            }
+
+            return csp;
+        }
+
+        return null;
     }
 
     public ContentSecurityPolicyType getType()
@@ -345,6 +360,18 @@ public class ContentSecurityPolicyFilter implements Filter
     public static boolean hasCsp(ContentSecurityPolicyType type)
     {
         return CSP_FILTERS.get(type) != null;
+    }
+
+    public static @Nullable String getStashedTemplate(ContentSecurityPolicyType type)
+    {
+        var filter = CSP_FILTERS.get(type);
+        return filter != null ? filter._stashedTemplate : null;
+    }
+
+    public static @Nullable String getSubstitutedCsp(ContentSecurityPolicyType type, HttpServletRequest req)
+    {
+        var filter = CSP_FILTERS.get(type);
+        return filter != null ? filter.getSubstitutedCsp(req) : null;
     }
 
     public static @NotNull String getCspVersion(@Nullable String disposition)
@@ -565,6 +592,21 @@ public class ContentSecurityPolicyFilter implements Filter
                     verifySubstitutionInPolicyExpressions("'none'", 0);
                     verifySubstitutionInPolicyExpressions("ObjectSource", 1);
                     verifySubstitutionInPolicyExpressions("BetterObjectStore", 1);
+
+                    unregisterAllowedSources("frameancestors", Directive.FrameAncestors);
+                    registerAllowedSources("frameancestors", Directive.FrameAncestors, "AncestorSource", "AnotherAncestor");
+                    assertEquals(7, ALLOWED_SOURCES.size());
+                    verifySubstitutionMapSize(5);
+                    // frame-ancestors is enforce-only (absent from the report CSP template), so check the substitution map directly
+                    String ancestorKey = Directive.FrameAncestors.getSubstitutionKey();
+                    assertTrue(SUBSTITUTION_MAP.get(ancestorKey).contains("AncestorSource"));
+                    assertTrue(SUBSTITUTION_MAP.get(ancestorKey).contains("AnotherAncestor"));
+                    unregisterAllowedSources("frameancestors", Directive.FrameAncestors);
+                    assertEquals(7, ALLOWED_SOURCES.size()); // Entry still exists but should be empty
+                    assertTrue(ALLOWED_SOURCES.get(Directive.FrameAncestors).isEmpty());
+                    verifySubstitutionMapSize(4); // Back to the way it was
+                    verifySubstitutionInPolicyExpressions("AncestorSource", 0);
+                    verifySubstitutionInPolicyExpressions("AnotherAncestor", 0);
                 }
                 finally
                 {

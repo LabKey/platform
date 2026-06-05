@@ -317,8 +317,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -343,6 +343,7 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.vfs.FileLike;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -427,9 +428,10 @@ import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.P;
+import static org.labkey.api.util.DOM.PRE;
 import static org.labkey.api.util.DOM.SPAN;
-import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.STRONG;
+import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TH;
@@ -11585,16 +11587,54 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
         {
-            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
+            VBox vbox = new VBox();
+
+            String template = formatCsp(ContentSecurityPolicyFilter.getStashedTemplate(ContentSecurityPolicyType.Enforce), null);
+            if (template != null)
+            {
+                String substituted = formatCsp(ContentSecurityPolicyFilter.getSubstitutedCsp(ContentSecurityPolicyType.Enforce, getViewContext().getRequest()), "Enforce CSP is disabled!");
+                vbox.addView(new HtmlView("Current Enforce CSP",
+                    TABLE(
+                        TR(
+                            TH(STRONG("With Substitution Placeholders")), TH(STRONG("With Substituted Values"))
+                        ),
+                        TR(
+                            TD(at(style, "padding-right: 20px;"), PRE(template)), TD(PRE(substituted))
+                        )
+                    )
+                ));
+            }
 
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(newView);
+
             JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
             existingView.setTitle("Existing External Resource Hosts");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(existingView);
 
-            return new VBox(newView, existingView);
+            return vbox;
+        }
+
+        private static final String UPGRADE_INSECURE_REQUESTS = "${UPGRADE.INSECURE.REQUESTS}";
+
+        private String formatCsp(@Nullable String csp, String defaultValue)
+        {
+            if (csp != null)
+            {
+                // There's no semicolon at the end of this substitution, but we want it to show it on its own line
+                csp = csp.replace(UPGRADE_INSECURE_REQUESTS + " ", UPGRADE_INSECURE_REQUESTS + "\n");
+                return Arrays.stream(csp.split(";"))
+                    .map(String::trim)
+                    .collect(Collectors.joining(" ;\n"));
+            }
+            else
+            {
+                return defaultValue;
+            }
         }
 
         private static final Object HOST_LOCK = new Object();
