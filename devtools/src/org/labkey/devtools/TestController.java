@@ -41,12 +41,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -1496,7 +1498,7 @@ public class TestController extends SpringActionController
     public record ReauthForm(@Nullable String reauthToken, @Nullable String errorMessage){}
 
     @RequiresLogin
-    public static class TestReauthAction extends FormViewAction<ReauthForm>
+    public class TestReauthAction extends FormViewAction<ReauthForm>
     {
         @Override
         public void validateCommand(ReauthForm form, Errors errors)
@@ -1513,14 +1515,16 @@ public class TestController extends SpringActionController
         @Override
         public boolean handlePost(ReauthForm form, BindException errors)
         {
-            // TODO: Validate the reauthToken here - push into errors
-            return false;
+            User reauthUser = AuthenticationManager.getAndClearReauthUser(getViewContext().getRequestOrThrow(), form.reauthToken());
+            if (reauthUser == null)
+                throw new NotFoundException("Reauthentication validation failed!");
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ReauthForm form)
         {
-            return null;
+            return actionURL(BeginAction.class);
         }
 
         @Override

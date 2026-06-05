@@ -25,7 +25,6 @@
 <%
     JspView<ReauthForm> me = HttpView.currentView();
     ReauthForm form = me.getModelBean();
-    ActionURL formURL = urlFor(TestReauthAction.class);
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.Utils.onReady(function() {
@@ -57,7 +56,12 @@ You authenticated with: <span id="description"></span><br/>
     if (form.reauthToken() != null)
     {
 %>
-Looks like you successfully re-authenticated and received token: <%=h(form.reauthToken())%>
+Looks like you successfully re-authenticated and received token: <%=h(form.reauthToken())%><br/>
+
+<labkey:form method="POST">
+    <input type="hidden" name="reauthToken" value="<%=h(form.reauthToken())%>">
+    <input class="labkey-button primary" type="submit" value="Sign!">
+</labkey:form>
 <%
     }
     else if (form.errorMessage() != null)
