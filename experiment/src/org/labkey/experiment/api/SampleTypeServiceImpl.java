@@ -2400,7 +2400,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    public enum SampleChangeType { insert, update, merge /* insert + update */, delete, rollup /* aliquot count */, schema }
+    public enum SampleChangeType { insert, update, merge, delete, rollup /* aliquot count */, schema }
 
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {

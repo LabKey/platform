@@ -469,19 +469,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
-        InsertOption io = context.getInsertOption();
-        // Capture the watermark BEFORE the writes for any operation that updates existing rows (update or merge), so it is
-        // a lower bound on every exp.material.Modified the operation sets (ignored for a pure insert).
-        Timestamp changedSince = io.allowUpdate ? captureChangedSince() : null;
+        InsertOption insertOption = context.getInsertOption();
+        Timestamp changedSince = insertOption.allowUpdate ? captureChangedSince() : null;
 
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
-            boolean isMediaUpdate = _sampleType.isMedia() && io.updateOnly;
-            // updateOnly -> update; insert+update (MERGE/UPSERT/REPLACE) -> merge; pure insert -> insert.
-            SampleTypeServiceImpl.SampleChangeType reason = io.updateOnly ? update : io.allowUpdate ? merge : insert;
+            boolean isMediaUpdate = _sampleType.isMedia() && insertOption.updateOnly;
+            SampleTypeServiceImpl.SampleChangeType reason = insertOption.updateOnly ? update : insertOption.allowUpdate ? merge : insert;
             onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, reason, changedSince);
-            audit(io.auditAction);
+            audit(insertOption.auditAction);
         }
         return ret;
     }
@@ -490,8 +487,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        // Capture the watermark BEFORE the writes so the merge's update portion can be targeted (the insert portion is
-        // handled by the insert path). A null watermark would route the merge to a full rebuild.
         Timestamp changedSince = captureChangedSince();
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())

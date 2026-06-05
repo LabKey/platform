@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jspecify.annotations.NonNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1232,14 +1231,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static class InvalidationCounters
     {
         public final AtomicLong update, insert, delete, rollup;
-
-        /**
-         * The earliest {@code exp.material.Modified} timestamp from which existing rows must be re-derived by the next
-         * targeted incremental update. Populated by {@link RefreshMaterializedViewRunnable#run()} <b>before</b> the
-         * {@code update} counter is incremented, so any reader that observes the new counter-value is guaranteed to see
-         * this watermark when it drains the pending state. {@code null} means no targeted update is pending. Min-merged so
-         * the watermark always covers the oldest not-yet-applied change.
-         */
         public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
 
         InvalidationCounters()
@@ -1251,17 +1242,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             rollup = new AtomicLong(l);
         }
 
-        /** Record the watermark for one update (before its counter-increment), min-merged so it covers the oldest pending change. */
         void recordPendingUpdate(@NotNull Timestamp changedSince)
         {
             pendingUpdateSince.accumulateAndGet(changedSince, (cur, next) -> cur == null || next.before(cur) ? next : cur);
         }
 
-        /**
-         * Atomically take and clear the pending watermark. Should be called under the {@code _Materialized} loading lock.
-         * Read with {@code getAndSet(null)} so a timestamp recorded concurrently by a later POSTCOMMIT runnable survives
-         * for the next drain. Returns null when no targeted update is pending.
-         */
         @Nullable Timestamp drainPendingUpdate()
         {
             return pendingUpdateSince.getAndSet(null);
@@ -1342,7 +1327,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Override
-        public @NonNull String toString()
+        public @NotNull String toString()
         {
             return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason + ", changedSince=" + changedSince + "}";
         }
@@ -1368,11 +1353,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
              * even if just to help with race-conditions.
              *
-             * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
+             * Maybe have a callback to generate the SQL dynamically and verify that the SQL is unchanged.
              */
-            // Collect the temp-table column identifiers (minus immutable join keys) from the same SELECT that builds the
-            // view, so the incremental UPDATE re-assigns exactly the columns this SELECT produces. Safe to cache: a schema
-            // change drops this MQH from the cache (reason == schema), so a changed column set always rebuilds fresh.
             List<SQLFragment> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
@@ -1381,9 +1363,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
                 .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
-                // NOTE: no addInvalidCheck for the update counter. Updates are now applied incrementally by
-                // executeIncrementalUpdate() (like insert/delete/rollup) rather than triggering a full drop-and-rebuild.
-                // The MQH is still dropped on schema changes and on incremental-update errors (see incrementalUpdateBeforeSelect).
                 .build();
         });
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
@@ -1397,7 +1376,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
         final String _lsid;
-        /** The temp-table column identifiers (minus immutable join keys) that an incremental UPDATE re-derives. */
         final List<SQLFragment> _updateColumns;
 
         static class Builder extends MaterializedQueryHelper.Builder
@@ -1424,8 +1402,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
-        _MaterializedQueryHelper(String lsid, List<SQLFragment> updateColumns, String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
-                                        boolean isSelectIntoSql)
+        _MaterializedQueryHelper(
+            String lsid,
+            List<SQLFragment> updateColumns,
+            String prefix,
+            DbScope scope,
+            SQLFragment select,
+            @Nullable SQLFragment uptodate,
+            Supplier<String> supplier,
+            @Nullable Collection<String> indexes,
+            long maxTimeToCache,
+            boolean isSelectIntoSql
+        )
         {
             super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql);
             this._lsid = lsid;
@@ -1565,12 +1553,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
             SqlDialect d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            // SQL Server's datetime type lacks microsecond precision
+            Timestamp comparison = d.isSqlServer() ? new Timestamp(changedSince.getTime() - 500) : changedSince;
+
             SQLFragment src = new SQLFragment()
-                    .append(getViewSourceSql().append(" AND m.modified >= ?").add(changedSince))
+                    .append(getViewSourceSql().append(" AND m.modified >= ?").add(comparison))
                     .append("\nUNION ALL\n")
                     .append(getViewSourceSql()
+                            .append(" AND m.rootmaterialrowid <> m.rowid")
                             .append(" AND EXISTS (SELECT 1 FROM exp.material r WHERE r.rowid = m.rootmaterialrowid AND r.cpastype = ").appendValue(_lsid, d)
-                            .append(" AND r.modified >= ?").add(changedSince).append(")"));
+                            .append(" AND r.modified >= ?").add(comparison).append(")"));
 
             SQLFragment sql = new SQLFragment();
             if (d.isPostgreSQL())
@@ -1585,6 +1577,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 appendSetFromSrc(sql);
                 sql.append("\nFROM temp.${NAME} st INNER JOIN (").append(src).append("\n) src ON st.rowid = src.rowid");
             }
+
             return sql;
         }
 
