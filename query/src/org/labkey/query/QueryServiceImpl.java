@@ -1571,22 +1571,9 @@ public class QueryServiceImpl implements QueryService
                 .collect(Collectors.toList());
     }
 
-    private record ContainerSchemaKey(@NotNull Container _container, @NotNull SchemaKey _schema) implements Serializable
-        {
-
-            @Override
-            public boolean equals(Object o)
-            {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-
-                ContainerSchemaKey that = (ContainerSchemaKey) o;
-
-                if (!_container.equals(that._container)) return false;
-                return _schema.equals(that._schema);
-            }
-
-        }
+    private record ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema) implements Serializable
+    {
+    }
 
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
@@ -1627,26 +1614,9 @@ public class QueryServiceImpl implements QueryService
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
 
-    private record SessionQuery(String _sql, String _metadata) implements Serializable
-        {
-
-            @Override
-            public boolean equals(Object obj)
-            {
-                if (obj instanceof SessionQuery(String sql, String metadata))
-                {
-                    if (!_sql.equals(sql))
-                        return false;
-                    if (_metadata == null && metadata != null)
-                        return false;
-                    if (_metadata != null && !_metadata.equals(metadata))
-                        return false;
-
-                    return true;
-                }
-                return false;
-            }
-        }
+    private record SessionQuery(String sql, String metadata) implements Serializable
+    {
+    }
 
     private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, SchemaKey schemaName)
     {
@@ -1708,9 +1678,9 @@ public class QueryServiceImpl implements QueryService
         if (null == query || null == qdef)
             throw new IllegalStateException("Expected a QueryDefinition object.");
 
-        qdef.setSql(query._sql);
-        if (query._metadata != null)
-            qdef.setMetadataXml(query._metadata);
+        qdef.setSql(query.sql);
+        if (query.metadata != null)
+            qdef.setMetadataXml(query.metadata);
         qdef.setIsTemporary(true);
         qdef.setIsHidden(true);
         return qdef;
