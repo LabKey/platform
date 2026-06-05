@@ -1206,7 +1206,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
@@ -1972,6 +1972,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("sampleAuditEvents", 0);
         Map<Long, List<FileFieldRenameData>> fileMovesBySampleId = new LongHashMap<>();
         ExperimentService expService = ExperimentService.get();
+        Timestamp changedSince = SampleTypeUpdateServiceDI.captureChangedSince();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1982,7 +1983,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
+            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry : sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
                 SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
@@ -2056,10 +2057,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                 {
                     // force refresh of materialized view
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update);
+                    refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update, changedSince);
                     // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                     // based on the modified date
-                    SampleTypeServiceImpl.get().indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
+                    indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 

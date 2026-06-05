@@ -1225,7 +1225,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
     }
 
-    private static @Nullable Timestamp captureChangedSince()
+    static @Nullable Timestamp captureChangedSince()
     {
         return new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class);
     }
