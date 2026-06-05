@@ -11722,7 +11722,7 @@ public class AdminController extends SpringActionController
         setProperty(form.isThemeNameInherited(), props::clearThemeName, () -> props.setThemeName(form.getThemeName()));
         setProperty(form.isFolderDisplayModeInherited(), props::clearFolderDisplayMode, () -> props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode())));
         setProperty(form.isApplicationMenuDisplayModeInherited(), props::clearApplicationMenuDisplayMode, () -> props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode())));
-        setProperty(form.isHelpMenuEnabledInherited(), props::clearHelpMenuEnabled, () -> props.setHelpMenuEnabled(form.isHelpMenuEnabled()));
+        setProperty(form.isHelpMenuEnabledInherited(), props::clearDocumentationMenuEnabled, () -> props.setDocumentationMenuEnabled(form.isHelpMenuEnabled()));
 
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
