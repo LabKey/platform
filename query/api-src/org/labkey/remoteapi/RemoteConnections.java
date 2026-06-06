@@ -18,6 +18,8 @@ package org.labkey.remoteapi;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -29,9 +31,13 @@ import org.springframework.validation.BindException;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: gktaylor
@@ -99,13 +105,13 @@ public class RemoteConnections
         catch (SSLException e)
         {
             LOG.warn("TLS error connecting to remote connection URL: {}", url, e);
-            errors.addError(new LabKeyError("A secure (TLS) connection to the entered URL could not be established. This is often caused by an untrusted, self-signed, or expired certificate. " + e));
+            errors.addError(new LabKeyError("A secure (TLS) connection to the entered URL could not be established. This is often caused by an untrusted, self-signed, or expired certificate. " + getBriefMessage(e)));
             return false;
         }
         catch (IOException e)
         {
             LOG.warn("Error connecting to remote connection URL: {}", url, e);
-            errors.addError(new LabKeyError("A connection to the entered URL could not be established. " + e));
+            errors.addError(new LabKeyError("A connection to the entered URL could not be established. " + getBriefMessage(e)));
             return false;
         }
 
@@ -149,6 +155,12 @@ public class RemoteConnections
             singleConnectionMap.put(RemoteConnections.FIELD_CONTAINER, folderPath);
         singleConnectionMap.save();
         return true;
+    }
+
+    /** @return a brief, user-facing description of the failure, suitable for appending to an error message. Full details should be logged separately. */
+    public static String getBriefMessage(Throwable t)
+    {
+        return t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
     }
 
     public static boolean deleteRemoteConnection(RemoteConnectionForm remoteConnectionForm, Container container)
@@ -255,5 +267,78 @@ public class RemoteConnections
     private static String makeRemoteConnectionKey(String connectionCategory, String name)
     {
         return connectionCategory + ":" + name;
+    }
+
+    public static class TestCase extends Assert
+    {
+        /** All URL validation failures return before touching the property store, so no container is needed */
+        private BindException validate(String url)
+        {
+            RemoteConnectionForm form = new RemoteConnectionForm();
+            form.setNewConnectionName("RemoteConnectionsTestCase");
+            form.setUrl(url);
+            form.setUserEmail("remoteconnections_testcase@validation.test");
+            form.setPassword("password");
+            // A file connection doesn't require a folder path
+            form.setConnectionKind(CONNECTION_KIND_FILE);
+
+            BindException errors = new BindException(form, "form");
+            assertFalse("Expected validation to fail for URL: " + url, createOrEditRemoteConnection(form, null, errors));
+            assertEquals("Expected a single validation error for URL: " + url, 1, errors.getErrorCount());
+            return errors;
+        }
+
+        private void assertErrorStartsWith(BindException errors, String expectedPrefix)
+        {
+            String message = errors.getAllErrors().get(0).getDefaultMessage();
+            assertNotNull("Expected an error message", message);
+            assertTrue("Expected error message to start with '" + expectedPrefix + "' but was: " + message, message.startsWith(expectedPrefix));
+        }
+
+        @Test
+        public void testMalformedUrl()
+        {
+            assertErrorStartsWith(validate("hptt://localhost/bogus"), "The entered URL is not valid.");
+        }
+
+        @Test
+        public void testConnectionRefused() throws IOException
+        {
+            // Bind an ephemeral port, then release it so nothing is listening when we connect
+            int port;
+            try (ServerSocket socket = new ServerSocket(0))
+            {
+                port = socket.getLocalPort();
+            }
+            assertErrorStartsWith(validate("http://localhost:" + port + "/"), "A connection to the entered URL could not be established.");
+        }
+
+        @Test
+        public void testTlsFailure() throws Exception
+        {
+            // Answer the TLS handshake with plain text, which fails the https client connection with an SSLException
+            try (ServerSocket socket = new ServerSocket(0))
+            {
+                Thread responder = new Thread(() ->
+                {
+                    try (Socket client = socket.accept())
+                    {
+                        client.getOutputStream().write("This is not a TLS handshake".getBytes(StandardCharsets.UTF_8));
+                    }
+                    catch (IOException ignored) {}
+                }, "RemoteConnections.TestCase non-TLS responder");
+                responder.start();
+
+                assertErrorStartsWith(validate("https://localhost:" + socket.getLocalPort() + "/"), "A secure (TLS) connection to the entered URL could not be established.");
+                responder.join(TimeUnit.SECONDS.toMillis(10));
+            }
+        }
+
+        @Test
+        public void testGetBriefMessage()
+        {
+            assertEquals("boom", getBriefMessage(new IOException("boom")));
+            assertEquals("IOException", getBriefMessage(new IOException()));
+        }
     }
 }
