@@ -16,14 +16,17 @@
 package org.labkey.remoteapi;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.validation.BindException;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -36,6 +39,8 @@ import java.util.Map;
  */
 public class RemoteConnections
 {
+    private static final Logger LOG = LogHelper.getLogger(RemoteConnections.class, "Remote server connection management for ETLs");
+
     public static String REMOTE_QUERY_CONNECTIONS_CATEGORY = "remote-connections";
     public static String REMOTE_FILE_CONNECTIONS_CATEGORY = "remote-file-connections";
     public static String FIELD_URL = "URL";
@@ -91,9 +96,16 @@ public class RemoteConnections
             errors.addError(new LabKeyError("The entered URL is not valid."));
             return false;
         }
+        catch (SSLException e)
+        {
+            LOG.warn("TLS error connecting to remote connection URL: {}", url, e);
+            errors.addError(new LabKeyError("A secure (TLS) connection to the entered URL could not be established. This is often caused by an untrusted, self-signed, or expired certificate. " + e));
+            return false;
+        }
         catch (IOException e)
         {
-            errors.addError(new LabKeyError("A connection to the entered URL could not be established."));
+            LOG.warn("Error connecting to remote connection URL: {}", url, e);
+            errors.addError(new LabKeyError("A connection to the entered URL could not be established. " + e));
             return false;
         }
 
