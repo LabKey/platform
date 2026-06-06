@@ -30,6 +30,7 @@ import org.springframework.validation.BindException;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -324,6 +325,11 @@ public class RemoteConnections
                     try (Socket client = socket.accept())
                     {
                         client.getOutputStream().write("This is not a TLS handshake".getBytes(StandardCharsets.UTF_8));
+                        client.getOutputStream().flush();
+                        // Drain the client's handshake bytes until it disconnects
+                        InputStream in = client.getInputStream();
+                        byte[] buffer = new byte[1024];
+                        while (in.read(buffer) != -1) { /* keep draining */ }
                     }
                     catch (IOException ignored) {}
                 }, "RemoteConnections.TestCase non-TLS responder");
