@@ -1571,38 +1571,8 @@ public class QueryServiceImpl implements QueryService
                 .collect(Collectors.toList());
     }
 
-    private static class ContainerSchemaKey implements Serializable
+    private record ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema) implements Serializable
     {
-        @NotNull
-        private final Container _container;
-        @NotNull
-        private final SchemaKey _schema;
-
-        public ContainerSchemaKey(@NotNull Container container, @NotNull SchemaKey schema)
-        {
-            _container = container;
-            _schema = schema;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ContainerSchemaKey that = (ContainerSchemaKey) o;
-
-            if (!_container.equals(that._container)) return false;
-            return _schema.equals(that._schema);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _container.hashCode();
-            result = 31 * result + _schema.hashCode();
-            return result;
-        }
     }
 
     @Override
@@ -1644,42 +1614,8 @@ public class QueryServiceImpl implements QueryService
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
 
-    private static class SessionQuery implements Serializable
+    private record SessionQuery(String sql, String metadata) implements Serializable
     {
-        private final String _sql;
-        private final String _metadata;
-
-        public SessionQuery(String sql, String metadata)
-        {
-            _sql = sql;
-            _metadata = metadata;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _sql.hashCode();
-            if (_metadata != null)
-                result = 31 * result + _metadata.hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (obj instanceof SessionQuery sq)
-            {
-                if (!_sql.equals(sq._sql))
-                    return false;
-                if (_metadata == null && sq._metadata != null)
-                    return false;
-                if (_metadata != null && !_metadata.equals(sq._metadata))
-                    return false;
-
-                return true;
-            }
-            return false;
-        }
     }
 
     private Map<String, SessionQuery> getSessionQueryMap(@NotNull HttpSession session, Container container, SchemaKey schemaName)
@@ -1742,9 +1678,9 @@ public class QueryServiceImpl implements QueryService
         if (null == query || null == qdef)
             throw new IllegalStateException("Expected a QueryDefinition object.");
 
-        qdef.setSql(query._sql);
-        if (query._metadata != null)
-            qdef.setMetadataXml(query._metadata);
+        qdef.setSql(query.sql);
+        if (query.metadata != null)
+            qdef.setMetadataXml(query.metadata);
         qdef.setIsTemporary(true);
         qdef.setIsHidden(true);
         return qdef;
@@ -2460,46 +2396,35 @@ public class QueryServiceImpl implements QueryService
     // that the scope of the cache is very limited, and this is a very conservative cache.
     private final Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<>());
 
-    /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
-    private static class ObjectIdentityCacheKey
-    {
-        private final Object _object;
-        private final boolean _customQuery;
-        private final boolean _allModules;
-        private final Path _dir;
-
-        private ObjectIdentityCacheKey(UserSchema object, boolean customQuery, boolean allModules, @Nullable Path dir)
+    /**
+     * Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality
+     */
+        private record ObjectIdentityCacheKey(Object _object, boolean _customQuery, boolean _allModules, Path _dir)
         {
-            _object = object;
-            _customQuery = customQuery;
-            _allModules = allModules;
-            _dir = dir;
+            @Override
+            public boolean equals(Object o)
+            {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                ObjectIdentityCacheKey that = (ObjectIdentityCacheKey) o;
+
+                if (_allModules != that._allModules) return false;
+                if (_customQuery != that._customQuery) return false;
+                if (!Objects.equals(_dir, that._dir)) return false;
+                return that._object == _object;
+            }
+
+            @Override
+            public int hashCode()
+            {
+                int result = System.identityHashCode(_object);
+                result = 31 * result + (_customQuery ? 1 : 0);
+                result = 31 * result + (_allModules ? 1 : 0);
+                result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
+                return result;
+            }
         }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ObjectIdentityCacheKey that = (ObjectIdentityCacheKey) o;
-
-            if (_allModules != that._allModules) return false;
-            if (_customQuery != that._customQuery) return false;
-            if (_dir != null ? !_dir.equals(that._dir) : that._dir != null) return false;
-            return that._object == _object;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = System.identityHashCode(_object);
-            result = 31 * result + (_customQuery ? 1 : 0);
-            result = 31 * result + (_allModules ? 1 : 0);
-            result = 31 * result + (_dir != null ? _dir.hashCode() : 0);
-            return result;
-        }
-    }
 
     /**
      * Finds metadata overrides for the given schema and table and returns them in application order.
@@ -2693,27 +2618,6 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    @NotNull
-    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql)
-    {
-        return new LabKeyQuerySelector(schema, sql);
-    }
-
-    private static class LabKeyQuerySelector extends TableSelector
-    {
-        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
-        {
-            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo());
-        }
-
-        public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
-        {
-            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo(), columnNames, filter, sort);
-        }
-    }
-
-
-    @Override
     public TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
     {
         Query q = new Query(schema);
@@ -2723,19 +2627,6 @@ public class QueryServiceImpl implements QueryService
 
         return getSelectBuilder(q).getTableInfo();
     }
-
-
-    @Override
-    public Results select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
-    {
-        Query q = new Query(schema);
-        q.setStrictColumnList(strictColumnList);
-        q.setTableMap(tableMap);
-        q.parse(sql);
-
-        return getSelectBuilder(q).select(cached);
-    }
-
 
     @Override
     public void bindNamedParameters(SQLFragment frag, @Nullable Map<String, Object> in)
@@ -2817,9 +2708,15 @@ public class QueryServiceImpl implements QueryService
     @Override
     public SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList)
     {
+        return getSelectBuilder(schema, sql, strictColumnList, null);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql, boolean strictColumnList, @Nullable Map<String, TableInfo> tableMap)
+    {
         Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
-        q.setTableMap(null);
+        q.setTableMap(tableMap);
         q.parse(sql);
         return getSelectBuilder(q);
     }
@@ -2936,12 +2833,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SqlSelector buildSqlSelector()
-        {
-            return buildSqlSelector(Map.of());
-        }
-
-        private SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters)
+        public SqlSelector buildSqlSelector(@NotNull Map<String, Object> parameters)
         {
             SQLFragment sql = buildSqlFragment();
             bindNamedParameters(sql, parameters);

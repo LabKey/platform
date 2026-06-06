@@ -1699,7 +1699,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         return _plateLayoutHandlers.get(plateTypeName);
     }
-    
+
     public UserSchema getPlateUserSchema(Container container, User user)
     {
         return QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
@@ -1837,7 +1837,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return false;
         }
     }
-    
+
     public void registerLsidHandlers()
     {
         if (_lsidHandlersRegistered)
@@ -2662,7 +2662,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         TableInfo wellTable = getWellTable(plate.getContainer(), user);
         Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
-        try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columnMap.values()).filter(filter).select())
         {
             while (r.next())
             {
@@ -4296,7 +4296,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         var sql = getReplicateGroupLabKeySql(plateSchema, plateSetRowId);
-        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select())
+        // Pass true for a cached result set so getSize() can report the row count without iterating
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select(true))
         {
             if (replicateWellGroupCount == results.getSize())
                 return;
@@ -4361,7 +4362,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         var sampleGroupLabKeySql = getSampleGroupLabKeySql(plateSetRowId, true);
-        try (var results = QueryService.get().getSelectBuilder(plateSchema, sampleGroupLabKeySql).select())
+        // Pass true for a cached result set so getSize() can report the row count without iterating
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sampleGroupLabKeySql).select(true))
         {
             if (sampleGroupCount == results.getSize())
                 return;

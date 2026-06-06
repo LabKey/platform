@@ -165,7 +165,7 @@ public class RolapCachedCubeFactory
         CaseInsensitiveHashMap<CachedCube._Member> uniqueNameMap = new CaseInsensitiveHashMap<>();
 
         String hierarchySql = rolap.getMembersSQL(hdef);
-        try (ResultSet rs = QueryService.get().select(schema, hierarchySql, null, true, false))
+        try (ResultSet rs = QueryService.get().getSelectBuilder(schema, hierarchySql, true).select())
         {
             // compute jdbcType for all key columns
             for (int l = 1; l < levelCount; l++)

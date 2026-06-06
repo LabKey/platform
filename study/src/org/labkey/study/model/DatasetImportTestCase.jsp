@@ -876,7 +876,7 @@ private void  _testDatasetTransformExport(Study study) throws Throwable
 
     String alternateId = null;
 
-    try (ResultSet rs = QueryService.get().select(participantTableInfo, cols, SimpleFilter.createContainerFilter(study.getContainer()), null))
+    try (ResultSet rs = QueryService.get().getSelectBuilder(participantTableInfo).columns(cols).filter(SimpleFilter.createContainerFilter(study.getContainer())).select())
     {
         // store the ptid date offset and alternate ID for verification later
         int dateOffset = -1;
