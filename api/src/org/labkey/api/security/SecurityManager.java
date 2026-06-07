@@ -55,8 +55,9 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -1885,31 +1886,25 @@ public class SecurityManager
         return sb.toString();
     }    
 
-    // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
-    // TODO: Also redundant with getFolderUserids()
-    // TODO: Cache this set
-    public static Set<Integer> getProjectUsersIds(Container c)
+    public static boolean isProjectUser(Container project, User testUser)
     {
-        SQLFragment sql = getProjectUsersSQL(c.getProject());
-        sql.insert(0, "SELECT DISTINCT members.UserId ");
-
-        Selector selector = new SqlSelector(core.getSchema(), sql);
-        return new HashSet<>(selector.getCollection(Integer.class));
+        return project.hasPermission(testUser, ReadPermission.class);
     }
 
-    // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
-    public static SQLFragment getProjectUsersSQL(Container c)
+    public static FilterClause getProjectUsersClause(Container c, FieldKey fieldKey)
     {
-        return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
-                                    "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
-                                    "WHERE (groups.Container = ?)", c);
+        return new InClause(fieldKey, getUsersWithPermissions(c, Set.of(ReadPermission.class)));
     }
 
+    // TODO: Migrate all deprecated getProjectUsers*() methods below to getUsersWithPermissions() or similar, GitHub Issue 1151
+
+    @Deprecated
     public static @NotNull List<User> getProjectUsers(Container c)
     {
         return getProjectUsers(c, false, true);
     }
 
+    @Deprecated
     public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
     {
         if (c != null && !c.isProject())
@@ -1946,6 +1941,7 @@ public class SecurityManager
         return projectUsers;
     }
 
+    @Deprecated
     public static Collection<Integer> getFolderUserids(Container c)
     {
         Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
@@ -2004,6 +2000,8 @@ public class SecurityManager
 
         return userIds;
     }
+
+    // End of @Deprecated methods to remove
 
     /**
      * @return an immutable list of active Users who have been assigned all the requested permissions in the given container

@@ -28,10 +28,8 @@ import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NullColumnInfo;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -92,10 +90,6 @@ import java.util.Set;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
-/**
-* User: klum
-* Date: 9/19/12
-*/
 public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     private Set<String> _illegalColumns;
@@ -425,29 +419,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
         else
         {
-            SQLFragment sql = SecurityManager.getProjectUsersSQL(c.getProject());
-
             final FieldKey userIdColumnFieldKey = new FieldKey(null, userIdColumnName);
-            filter.addClause(new SimpleFilter.SQLClause(sql.getSQL(), sql.getParamsArray(), userIdColumnFieldKey)
-            {
-                @Override
-                public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
-                {
-                    ColumnInfo col = columnMap.get(userIdColumnFieldKey);
-
-                    // NOTE: Ideally we would use col.getValueSql() here instead
-                    SQLFragment sql = new SQLFragment();
-
-                    if (col != null)
-                        sql.appendIdentifier(col.getAlias());
-                    else
-                        sql.append(userIdColumnFieldKey);
-                    sql.append(" IN (SELECT members.UserId ");
-                    sql.append(super.toSQLFragment(columnMap, dialect));
-                    sql.append(")");
-                    return sql;
-                }
-            });
+            filter.addClause(SecurityManager.getProjectUsersClause(c.getProject(), userIdColumnFieldKey));
         }
         return filter;
     }

@@ -843,7 +843,7 @@ public class UserController extends SpringActionController
 
     // Site admins and Application admins can act on any user
     // Project admins can only act on users who are project users
-    private void authorizeUserAction(Integer targetUserId, String action, boolean allowFolderAdmins) throws UnauthorizedException
+    private void authorizeUserAction(User targetUser, String action, boolean allowFolderAdmins) throws UnauthorizedException
     {
         User user = getUser();
 
@@ -864,7 +864,7 @@ public class UserController extends SpringActionController
                 requiresProjectAdminOrBetter();
 
             // ...and user must be a project user
-            if (!SecurityManager.getProjectUsersIds(c.getProject()).contains(targetUserId))
+            if (!SecurityManager.isProjectUser(c.getProject(), targetUser))
                 throw new UnauthorizedException("You can only " + action + " project users");
         }
     }
@@ -1584,7 +1584,7 @@ public class UserController extends SpringActionController
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
-                authorizeUserAction(_detailsUserId, "view details of", true);
+                authorizeUserAction(detailsUser, "view details of", true);
 
             Container c = getContainer();
             ActionURL currentUrl = getViewContext().getActionURL();
@@ -2596,11 +2596,11 @@ public class UserController extends SpringActionController
                     users = SecurityManager.getProjectUsers(container, form.isAllMembers(), !form.getActive());
             }
 
-            this.setUsersList(form, filterForPermissions(form, users), response);
+            setUsersList(form, filterForPermissions(form, users), response);
             return response;
         }
 
-        // Filter the collection of users to those that have all of the permissions provided in the form.
+        // Filter the collection of users to those that have all the permissions provided in the form.
         // If no permissions are provided, no filtering will occur.
         protected Set<User> filterForPermissions(GetUsersForm form, Collection<User> users)
         {
