@@ -7357,7 +7357,7 @@ public class StudyController extends BaseStudyController
                 cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
-                ResultsFactory factory = ()->QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+                ResultsFactory factory = ()->QueryService.get().getSelectBuilder(ti).columns(cols).filter(filter).sort(new Sort("participantid")).select();
 
                 // NOTE: TSVGridWriter closes PrintWriter and ResultSet
                 try (TSVGridWriter writer = new TSVGridWriter(factory))

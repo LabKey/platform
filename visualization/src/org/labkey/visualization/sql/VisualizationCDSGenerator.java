@@ -537,7 +537,8 @@ public class VisualizationCDSGenerator
             BindException errors = new NullSafeBindException(q,"query");
             String sql = gen.getSQL(errors);
             assertFalse(errors.hasErrors());
-            return QueryService.get().getSelectBuilder(schema, sql, true).select();
+            // Pass true for a cached, scrollable result set so callers can use getSize() and beforeFirst()
+            return QueryService.get().getSelectBuilder(schema, sql, true).select(true);
         }
 
         List<Map<String,String>> getColumnAliases(VisDataRequest q) throws SQLGenerationException, SQLException
