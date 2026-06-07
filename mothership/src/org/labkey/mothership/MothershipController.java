@@ -1471,7 +1471,7 @@ public class MothershipController extends SpringActionController
             if (form.getUserId() != null)
             {
                 user = UserManager.getUser(form.getUserId());
-                if (!MothershipManager.get().getAssignedToList(getContainer()).contains(user))
+                if (!MothershipManager.get().canAssignTo(getContainer(), user))
                 {
                     throw new NotFoundException("User not available to assign to: " + form.getUserId());
                 }

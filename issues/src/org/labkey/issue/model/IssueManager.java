@@ -324,8 +324,7 @@ public class IssueManager
     }
 
     /**
-     * Determine if the parameter issue has related issues.  Returns true if the issue has related
-     * issues and false otherwise.
+     * Determine if the parameter issue has related issues. Returns true if the issue has related issues and false otherwise.
      *
      * @param issue The issue to query
      * @return boolean return value
@@ -510,8 +509,8 @@ public class IssueManager
             return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
     });
 
-    // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
-    // across requests.  The collection is unmodifiable.
+    // Returns the assigned to list that is used for every new issue in this container. We can cache it and share it
+    // across requests. The collection is unmodifiable.
     private static @NotNull Collection<User> getInitialAssignedToList(final Container c, @Nullable String issueDefName)
     {
         issueDefName = issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME;

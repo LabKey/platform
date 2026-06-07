@@ -1893,6 +1893,7 @@ public class SecurityManager
 
     public static FilterClause getProjectUsersClause(Container c, FieldKey fieldKey)
     {
+        // Consider: short-circuit optimize if guests or all site users have read permissions
         return new InClause(fieldKey, getUsersWithPermissions(c, Set.of(ReadPermission.class)));
     }
 
