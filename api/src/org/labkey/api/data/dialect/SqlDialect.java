@@ -104,7 +104,7 @@ public abstract class SqlDialect
 {
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
-    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1000;
+    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1001; // 1001 so that lists up to the App UI selection limit of 1000 use the consistent inline path; temp tables are used only for larger lists.
 
     protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
