@@ -597,17 +597,11 @@ public class AuthenticationManager
         // configuration was used to reauthenticate.
         private ModelAndView getReauthView(AuthenticationResponse response, BindException errors)
         {
-            @Nullable User reauthUser = UserManager.getUser(response.getValidEmail());
-
             String errorMessage = null;
 
             if (!response.isAuthenticated())
             {
                 errorMessage = errors.hasErrors() ? errors.getMessage() : "Reauthentication failed";
-            }
-            else if (!getUser().equals(reauthUser))
-            {
-                errorMessage = "Reauthentication failed: wrong user reauthenticated";
             }
 
             LoginReturnProperties properties = getLoginReturnProperties(getViewContext().getRequestOrThrow());
@@ -617,15 +611,9 @@ public class AuthenticationManager
                 throw new NotFoundException("Reauthentication failed");
 
             URLHelper url = properties.getReturnUrl();
+            @Nullable User reauthUser = UserManager.getUser(response.getValidEmail());
 
-            if (errorMessage != null)
-            {
-                url.addParameter("errorMessage", errorMessage);
-            }
-            else
-            {
-                AuthenticationManager.setReauthUser(reauthUser, getViewContext().getRequestOrThrow(), url);
-            }
+            AuthenticationManager.setReauthUser(reauthUser, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
 
             throw new RedirectException(url);
         }
@@ -1813,15 +1801,35 @@ public class AuthenticationManager
 
     public record Reauth(String token, User user){}
     public static final String REAUTH_TOKEN_NAME = "reauthToken";
+    public static final String ERROR_MESSAGE = "errorMessage";
 
-    public static void setReauthUser(User user, HttpServletRequest request, URLHelper redirectUrl)
+    /**
+     * @param reauthUser   Re-auth user to stash in session with the re-auth token
+     * @param sessionUser  If not null, validate that this user and reauthUser are the same
+     * @param request      Request from which to retrieve the session
+     * @param errorMessage Pre-existing error message to add to the URL
+     * @param redirectUrl  URL to which the token (on success) or error message (on failure) gets added
+     */
+    public static void setReauthUser(User reauthUser, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
     {
-        String reauthToken = GUID.makeHash();
-        redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-        request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
+        if (errorMessage == null && sessionUser != null && !sessionUser.equals(reauthUser))
+        {
+            errorMessage = "Reauthentication failed: wrong user reauthenticated";
+        }
+
+        if (errorMessage != null)
+        {
+            redirectUrl.addParameter(ERROR_MESSAGE, errorMessage);
+        }
+        else
+        {
+            String reauthToken = GUID.makeHash();
+            redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
+            request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, reauthUser));
+        }
     }
 
-    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
         if (token != null)
         {
@@ -1838,7 +1846,10 @@ public class AuthenticationManager
                     if (matches)
                     {
                         session.removeAttribute(REAUTH_TOKEN_NAME);
-                        return reauth.user();
+                        User reauthUser = reauth.user();
+
+                        if (sessionUser == null || sessionUser.equals(reauthUser))
+                            return reauthUser;
                     }
                 }
             }

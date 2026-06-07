@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2014-2026 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.devtools.TestController.ReauthForm" %>
-<%@ page import="org.labkey.devtools.TestController.TestReauthAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -31,16 +29,14 @@
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('login', 'getAuthenticationConfiguration.api'),
             params: {
-                returnUrl: window.location.href,
+                returnUrl: LABKEY.ActionURL.buildURL('test', 'testReauth.view'),
             },
             success: function(response) {
                 const needReauth = <%=form.reauthToken() == null%>;
                 const data = JSON.parse(response.responseText).data;
                 document.getElementById("description").textContent = data.description;
-                if (needReauth && data.reauthUrl) {
-                    const link = document.getElementById("link");
-                    link.href = data.reauthUrl;
-                    link.style.display = "inline";
+                if (needReauth) {
+                    document.getElementById("link").href = data.reauthUrl;
                 }
             },
             failure: function() {
@@ -58,23 +54,28 @@ You authenticated with: <span id="description"></span><br/>
 %>
 Looks like you successfully re-authenticated and received token: <%=h(form.reauthToken())%><br/>
 
-<labkey:form method="POST">
+<labkey:form method="post">
     <input type="hidden" name="reauthToken" value="<%=h(form.reauthToken())%>">
     <input class="labkey-button primary" type="submit" value="Sign!">
 </labkey:form>
 <%
     }
-    else if (form.errorMessage() != null)
+    else
     {
+        if (form.errorMessage() != null)
+        {
 %>
 Looks like your reauthentication failed: <%=h(form.errorMessage())%>. Try again?
 <%
-    }
-    else
-    {
+        }
+        else
+        {
 %>
-Looks like you need to re-authenticate.
+You need to re-authenticate.
+<%
+        }
+%>
+        <a id="link" href="">Click here</a>
 <%
     }
 %>
-<a style="display: none;" id="link" href="">Click here</a>

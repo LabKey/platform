@@ -44,7 +44,8 @@
                 returnUrl: returnUrlElement && returnUrlElement.value ? returnUrlElement.value : LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 urlhash: document.getElementById('urlhash').value,
-                forceReauth: LABKEY.ActionURL.getParameter("forceReauth") || false
+                forceReauth: LABKEY.ActionURL.getParameter("forceReauth") || false,
+                local: LABKEY.ActionURL.getParameter("local") || false
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
                 setSubmitting(false, [{msg: ''}]);

@@ -62,7 +62,6 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationManager.Reauth;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
@@ -96,7 +95,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
@@ -145,7 +143,6 @@ import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_ENABLE
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY;
-import static org.labkey.api.security.AuthenticationManager.REAUTH_TOKEN_NAME;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -252,10 +249,16 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl)
+        public ActionURL getForceReauthURL(Container c, boolean local, @Nullable URLHelper returnUrl)
         {
-            return getLoginURL(c, returnUrl)
+            ActionURL url = getLoginURL(c, returnUrl)
                 .addParameter("forceReauth", true);
+
+            // Customizes re-auth behavior for the local login page case (vs. CAS IdP case)
+            if (local)
+                url.addParameter("local", true);
+
+            return url;
         }
 
         @Override
@@ -666,7 +669,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(LoginForm form, BindException errors)
         {
-            HttpServletRequest request = getViewContext().getRequest();
+            HttpServletRequest request = getViewContext().getRequestOrThrow();
 
             // Store passed in returnUrl and skipProfile param at the start of the login so we can redirect to it after
             // any password resets, secondary logins, profile updates, etc. have finished
@@ -723,7 +726,7 @@ public class LoginController extends SpringActionController
 
                 if (form.isForceReauth())
                 {
-                    AuthenticationManager.setReauthUser(user, request, redirectUrl);
+                    AuthenticationManager.setReauthUser(user, form.isLocal() ? getUser() : null, request, null, redirectUrl);
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI
@@ -1402,7 +1405,8 @@ public class LoginController extends SpringActionController
         private String email;
         private String password;
         private String provider;
-        private boolean forceReauth = false;
+        private boolean forceReauth = false;     // If true, require valid credentials even if logged in
+        private boolean local = false;           // If true, require on re-auth that current session user matches re-auth user
 
         public String getProvider()
         {
@@ -1446,6 +1450,17 @@ public class LoginController extends SpringActionController
         public void setForceReauth(boolean forceReauth)
         {
             this.forceReauth = forceReauth;
+        }
+
+        public boolean isLocal()
+        {
+            return local;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLocal(boolean local)
+        {
+            this.local = local;
         }
     }
 
@@ -1649,8 +1664,11 @@ public class LoginController extends SpringActionController
             }
             JSONObject resp = new JSONObject();
             resp.put("description", configuration.getDescription());
-            if (configuration instanceof SSOAuthenticationConfiguration<?> sso)
-                resp.put("reauthUrl", urlProvider(LoginUrls.class).getSSOReauthURL(sso, form.getReturnActionURL()));
+            LoginUrls urls = urlProvider(LoginUrls.class);
+            ActionURL reauthUrl = configuration instanceof SSOAuthenticationConfiguration<?> sso ?
+                urls.getSSOReauthURL(sso, form.getReturnActionURL()) :
+                urls.getForceReauthURL(getContainer(), true, form.getReturnActionURL());
+            resp.put("reauthUrl", reauthUrl.getLocalURIString());
             return success(resp);
         }
     }

@@ -35,7 +35,7 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLoginURL(URLHelper returnUrl);
     ActionURL getRegisterURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getLoginURL(Container c, @Nullable URLHelper returnUrl);
-    ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl);
+    ActionURL getForceReauthURL(Container c, boolean local, @Nullable URLHelper returnUrl);
     ActionURL getLogoutURL(Container c);
     ActionURL getLogoutURL(Container c, URLHelper returnUrl);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl);

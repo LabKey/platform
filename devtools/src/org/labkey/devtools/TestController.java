@@ -1515,7 +1515,7 @@ public class TestController extends SpringActionController
         @Override
         public boolean handlePost(ReauthForm form, BindException errors)
         {
-            User reauthUser = AuthenticationManager.getAndClearReauthUser(getViewContext().getRequestOrThrow(), form.reauthToken());
+            User reauthUser = AuthenticationManager.getAndClearReauthUser(getViewContext().getRequestOrThrow(), form.reauthToken(), getUser());
             if (reauthUser == null)
                 throw new NotFoundException("Reauthentication validation failed!");
             return true;
