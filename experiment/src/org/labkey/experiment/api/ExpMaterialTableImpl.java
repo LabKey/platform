@@ -19,6 +19,8 @@ package org.labkey.experiment.api;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -136,6 +138,8 @@ import org.labkey.experiment.lineage.LineageMethod;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,6 +172,7 @@ import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.s
 
 public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
+    private static final Logger _log = LogManager.getLogger(ExpMaterialTableImpl.class);
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
     boolean _supportTableRules = true;
@@ -185,6 +190,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         amountValidator.setColumnNameProvidedData(PROVIDED_DATA_PREFIX + StoredAmount.name());
         AMOUNT_RANGE_VALIDATORS.add(amountValidator);
     }
+
+    private static Boolean _incrementalUpdateDisabled = null;
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
@@ -1358,15 +1365,43 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              */
             List<ColumnInfo> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            return (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
+            MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
-                .build();
+                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
+
+            if (isIncrementalUpdateDisabled())
+                builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
+
+            return (_MaterializedQueryHelper) builder.build();
         });
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+    }
+
+    /**
+     * Incremental update is dependent upon the web server and database server time being consistent.
+     * If they differ, then it can lead to stale materialized results which can lead to data integrity issues.
+     */
+    private static boolean isIncrementalUpdateDisabled()
+    {
+        if (_incrementalUpdateDisabled == null)
+        {
+            // borrowed from core/admin.jsp
+            LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+            LocalDateTime serverTime = LocalDateTime.now();
+
+            // Disable if greater than this many seconds
+            long thresholdSeconds = 10;
+            long deltaSeconds = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
+            _incrementalUpdateDisabled = deltaSeconds > thresholdSeconds;
+
+            if (_incrementalUpdateDisabled)
+                _log.warn("Incremental update disabled for samples. Web and database server time differ by {} seconds which exceeds the threshold of {} seconds. You may experience degraded sample query performance.", deltaSeconds, thresholdSeconds);
+        }
+
+        return _incrementalUpdateDisabled;
     }
 
     /**
@@ -1536,7 +1571,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             InvalidationCounters counters = getInvalidateCounters(_lsid);
             Timestamp since = counters.drainPendingUpdate();
-            if (since == null)
+            if (since == null || isIncrementalUpdateDisabled())
                 return;
 
             try
