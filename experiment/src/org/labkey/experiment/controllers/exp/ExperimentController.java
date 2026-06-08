@@ -286,6 +286,7 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -7334,6 +7335,19 @@ public class ExperimentController extends SpringActionController
         {
             ClosureQueryHelper.truncateAndRecreate();
             return success();
+        }
+    }
+
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public static class ClearMaterializedSamplesViewAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            ExpMaterialTableImpl.clearAllMaterializedViews();
+            return success("Materialized sample views cleared. They will be rebuilt asynchronously on next access.");
         }
     }
 

@@ -1187,10 +1187,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean onlyMaterialColums = false;
         if (null != selectedColumns && !selectedColumns.isEmpty())
             onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
-        if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+        if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo()
+                && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
-            sql.append(getMaterializedSQL());
-            usedMaterialized = true;
+            _MaterializedQueryHelper mqh = getOrCreateMQH();
+            if (mqh != null && mqh.isReadyToUse())
+            {
+                // Fast path: view is LOADED and no synchronous work pending
+                sql.append(getMaterializedSQL(mqh));
+                usedMaterialized = true;
+            }
+            else
+            {
+                // View not built yet, or stale (incremental updates or full rebuild pending):
+                // trigger background work and fall back to direct JOINs immediately.
+                if (mqh != null)
+                    mqh.materializeAsync();
+                sql.append(getJoinSQL(selectedColumns));
+                usedMaterialized = false;
+            }
         }
         else
         {
@@ -1349,13 +1364,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _invalidationCounters.computeIfAbsent(lsid, (_) -> new InvalidationCounters());
     }
 
-    /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
-    private SQLFragment getMaterializedSQL()
+    /**
+     * Gets or creates the {@code _MaterializedQueryHelper} for the current sample type from the blocking cache.
+     * This is cheap: it creates the MQH configuration but does NOT trigger a SELECT INTO or any incremental SQL.
+     * Returns null if there is no sample type ({@code _ss} is null).
+     */
+    private _MaterializedQueryHelper getOrCreateMQH()
     {
         if (null == _ss)
-            return getJoinSQL(null);
+            return null;
 
-        var mqh = _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
+        return _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
         {
             /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
              * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
@@ -1377,6 +1396,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             return (_MaterializedQueryHelper) builder.build();
         });
+    }
+
+    /**
+     * Calls {@code mqh.getFromSql()} (which runs any pending incremental updates synchronously) and returns
+     * the SQL fragment referencing the temp table. Should only be called when the view is ready to use.
+     */
+    private SQLFragment getMaterializedSQL(_MaterializedQueryHelper mqh)
+    {
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
     }
 
@@ -1402,6 +1429,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         return _incrementalUpdateDisabled;
+    }
+
+    /**
+     * Clears all cached {@code _MaterializedQueryHelper} instances. On the next request per sample type,
+     * {@code getOrCreateMQH()} recreates a fresh MQH, {@code isReadyToUse()} returns false, and
+     * {@code materializeAsync()} triggers a background rebuild.
+     * <p>
+     * Intended for admin maintenance (e.g. {@code ClearMaterializedSamplesViewAction}).
+     */
+    public static void clearAllMaterializedViews()
+    {
+        _materializedQueries.clear();
     }
 
     /**
@@ -1631,10 +1670,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class _Materialized extends MaterializedQueryHelper.Materialized
     {
-        final MaterializedQueryHelper.Invalidator incrementalInsertCheck;
-        final MaterializedQueryHelper.Invalidator incrementalRollupCheck;
-        final MaterializedQueryHelper.Invalidator incrementalDeleteCheck;
-        final MaterializedQueryHelper.Invalidator incrementalUpdateCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalInsertCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalRollupCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalDeleteCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalUpdateCheck;
 
         _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
         {
@@ -1655,6 +1694,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             incrementalRollupCheck.stillValid(now);
             incrementalDeleteCheck.stillValid(now);
             incrementalUpdateCheck.stillValid(now);
+        }
+
+        /**
+         * Returns true if any incremental counter has changed since the last reset, indicating that
+         * {@code incrementalUpdateBeforeSelect()} would perform synchronous DB work.
+         * Uses non-destructive {@code peekValid()} so the background task can still apply the updates.
+         */
+        @Override
+        public boolean needsSynchronousWork()
+        {
+            if (super.needsSynchronousWork()) return true;
+            return !incrementalInsertCheck.peekValid()
+                || !incrementalDeleteCheck.peekValid()
+                || !incrementalUpdateCheck.peekValid()
+                || !incrementalRollupCheck.peekValid();
         }
 
         Lock getLock()
@@ -2287,12 +2341,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         /**
-         * Trigger materialization (and any pending incremental update) as a side effect of {@link #getMaterializedSQL()},
-         * then assert the cached temp table equals a fresh derivation of the join query in both directions.
+         * Trigger materialization (and any pending incremental update) synchronously, then assert the cached
+         * temp table equals a fresh derivation of the join query in both directions.
          */
         private void assertCacheMatchesFreshDerivation(ExpMaterialTableImpl table, String lsid)
         {
-            SQLFragment cached = table.getMaterializedSQL(); // builds/refreshes the temp table via the normal read path
+            _MaterializedQueryHelper mqh = table.getOrCreateMQH();
+            assertNotNull("MQH should not be null for a sample type table", mqh);
+            SQLFragment cached = table.getMaterializedSQL(mqh); // builds/refreshes the temp table via the normal read path
             SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
