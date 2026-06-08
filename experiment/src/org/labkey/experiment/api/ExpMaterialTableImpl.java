@@ -1557,15 +1557,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // SQL Server's datetime type lacks microsecond precision
             Timestamp comparison = d.isSqlServer() ? new Timestamp(changedSince.getTime() - 500) : changedSince;
 
-            SQLFragment src = new SQLFragment()
-                    .append(getViewSourceSql().append(" AND m.modified >= ?").add(comparison))
-                    .append("\nUNION ALL\n")
-                    .append(getViewSourceSql()
-                            .append(" AND m.rootmaterialrowid <> m.rowid")
-                            .append(" AND EXISTS (SELECT 1 FROM exp.material r WHERE r.rowid = m.rootmaterialrowid AND r.cpastype = ").appendValue(_lsid, d)
-                            .append(" AND r.modified >= ?").add(comparison).append(")"));
+            SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
+                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(comparison)
+                    .append(")\n");
 
-            SQLFragment sql = new SQLFragment();
+            SQLFragment src = new SQLFragment()
+                    .append(getViewSourceSql()).append(" AND m.rowId IN (SELECT rowId FROM wModified)\n")
+                    .append("UNION\n")
+                    .append(getViewSourceSql()).append(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
+
             if (d.isPostgreSQL())
             {
                 sql.append("UPDATE temp.${NAME} AS st\nSET ");
