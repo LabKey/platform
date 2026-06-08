@@ -67,6 +67,89 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         verifyResultSet(sqlSelector.getResultSet(false, false), expectedRowCount, expectedComplete);
         verifyResultSet(sqlSelector.getResultSet(false, true), expectedRowCount, expectedComplete);
         verifyResultSet(sqlSelector.getResultSet(true, true), expectedRowCount, expectedComplete);
+
+        // Verify getSize() and backward-scrolling behavior for each caching/scrollable combination. These behaviors
+        // differ between a cached result set (CachedResultSet, cache == true) and a non-cached result set
+        // (ResultSetImpl, cache == false), and silently switching a caller from cached to non-cached has caused
+        // regressions (getSize() called before iteration, or beforeFirst() used to re-iterate).
+        verifyCachedResultSet(sqlSelector, expectedRowCount);
+        verifyForwardOnlyResultSet(sqlSelector, expectedRowCount);
+        verifyScrollableUncachedResultSet(sqlSelector, expectedRowCount);
+    }
+
+    // A cached result set (getResultSet(true, true) -> CachedResultSet) knows its size without iterating and supports
+    // backward scrolling, so it can be re-iterated after beforeFirst().
+    private void verifyCachedResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        try (TableResultSet rs = selector.getResultSet(true, true))
+        {
+            // getSize() must work before any iteration
+            assertEquals("Cached ResultSet should report its size before iteration", expectedRowCount, rs.getSize());
+
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+
+            // Scroll back to the start and re-iterate
+            rs.beforeFirst();
+            int recount = 0;
+            while (rs.next())
+                recount++;
+            assertEquals("Cached ResultSet should be re-iterable after beforeFirst()", expectedRowCount, recount);
+        }
+    }
+
+    // A non-cached, forward-only result set (getResultSet(false, false) -> ResultSetImpl) cannot report its size until
+    // it has been completely iterated, and cannot scroll backward.
+    private void verifyForwardOnlyResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        // getSize() throws until the result set has been completely iterated
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            assertThrows("getSize() should throw before a non-cached ResultSet is fully iterated", IllegalStateException.class, rs::getSize);
+        }
+
+        // Backward scrolling is not supported on a forward-only result set
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            assertThrows("beforeFirst() should throw on a forward-only ResultSet", SQLException.class, rs::beforeFirst);
+        }
+
+        // After complete iteration getSize() reports the row count
+        try (TableResultSet rs = selector.getResultSet(false, false))
+        {
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+            assertEquals("getSize() should report the row count after complete iteration", expectedRowCount, rs.getSize());
+        }
+    }
+
+    // A non-cached but scrollable result set (getResultSet(false, true) -> ResultSetImpl over a scrollable JDBC
+    // ResultSet) supports backward scrolling, but still cannot report its size until completely iterated because
+    // getSize() depends on caching, not scrollability.
+    private void verifyScrollableUncachedResultSet(SqlSelector selector, int expectedRowCount) throws SQLException
+    {
+        try (TableResultSet rs = selector.getResultSet(false, true))
+        {
+            int count = 0;
+            while (rs.next())
+                count++;
+            assertEquals(expectedRowCount, count);
+
+            rs.beforeFirst();
+            int recount = 0;
+            while (rs.next())
+                recount++;
+            assertEquals("Scrollable ResultSet should be re-iterable after beforeFirst()", expectedRowCount, recount);
+        }
+
+        try (TableResultSet rs = selector.getResultSet(false, true))
+        {
+            assertThrows("getSize() should throw before a non-cached ResultSet is fully iterated", IllegalStateException.class, rs::getSize);
+        }
     }
 
     public static class TestClass

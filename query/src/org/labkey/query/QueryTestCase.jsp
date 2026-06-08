@@ -1313,7 +1313,7 @@ d,seven,twelve,day,month,date,duration,guid
 
         try
         {
-            Results rs = QueryService.get().select(schema, sql, null, true, true);
+            Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true);
             assertNotNull(sql, rs);
             return rs;
         }
@@ -1434,7 +1434,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -1471,7 +1471,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -2002,7 +2002,7 @@ d,seven,twelve,day,month,date,duration,guid
         Container container = JunitUtil.getTestContainer();
         User user = TestContext.get().getUser();
         var schema = DefaultSchema.get(user, container).getSchema("core");
-        try (var rs =QueryService.get().select(schema, testSql))
+        try (var rs = QueryService.get().getSelectBuilder(schema, testSql).select())
         {
             while (rs.next())
             {
