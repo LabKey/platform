@@ -420,7 +420,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         else
         {
             final FieldKey userIdColumnFieldKey = new FieldKey(null, userIdColumnName);
-            filter.addClause(SecurityManager.getProjectUsersClause(c.getProject(), userIdColumnFieldKey));
+            filter.addClause(SecurityManager.getProjectUsersClause(c, userIdColumnFieldKey));
         }
         return filter;
     }

@@ -864,7 +864,7 @@ public class UserController extends SpringActionController
                 requiresProjectAdminOrBetter();
 
             // ...and user must be a project user
-            if (!SecurityManager.isProjectUser(c.getProject(), targetUser))
+            if (!SecurityManager.isProjectUser(c, targetUser))
                 throw new UnauthorizedException("You can only " + action + " project users");
         }
     }

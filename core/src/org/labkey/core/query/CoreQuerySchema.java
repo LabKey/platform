@@ -76,9 +76,9 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CoreQuerySchema extends UserSchema
 {
@@ -484,12 +484,9 @@ public class CoreQuerySchema extends UserSchema
         {
             if (_projectUserIds == null)
             {
-                Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-                // Add app admins and site admins (they both have ApplicationAdminPermission)
-                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ApplicationAdminPermission.class)).stream()
-                    .map(User::getUserId)
-                    .forEach(projectUserIds::add);
-                _projectUserIds = projectUserIds;
+                _projectUserIds = SecurityManager.getProjectUsers(getContainer()).stream()
+                    .map(UserPrincipal::getUserId)
+                    .collect(Collectors.toSet());
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

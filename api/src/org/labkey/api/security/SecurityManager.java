@@ -1884,26 +1884,31 @@ public class SecurityManager
             sb.append("<BR/>");
         }
         return sb.toString();
-    }    
+    }
 
-    public static boolean isProjectUser(Container project, User testUser)
+    /**
+     * Determine if the passed in user has read permission in the container's project
+     * @param c Any container except the root
+     * @param testUser User to test
+     * @return true if the user has read permissions in the container's project
+     */
+    public static boolean isProjectUser(Container c, User testUser)
     {
-        return project.hasPermission(testUser, ReadPermission.class);
+        return c.getProject().hasPermission(testUser, ReadPermission.class);
     }
 
     public static FilterClause getProjectUsersClause(Container c, FieldKey fieldKey)
     {
         // Consider: short-circuit optimize if guests or all site users have read permissions
-        return new InClause(fieldKey, getUsersWithPermissions(c, Set.of(ReadPermission.class)));
+        return new InClause(fieldKey, getUsersWithPermissions(c.getProject(), Set.of(ReadPermission.class)));
+    }
+
+    public static @NotNull List<User> getProjectUsers(Container c)
+    {
+        return getUsersWithPermissions(c.getProject(), Set.of(ReadPermission.class));
     }
 
     // TODO: Migrate all deprecated getProjectUsers*() methods below to getUsersWithPermissions() or similar, GitHub Issue 1151
-
-    @Deprecated
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getProjectUsers(c, false, true);
-    }
 
     @Deprecated
     public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
@@ -1940,66 +1945,6 @@ public class SecurityManager
         }
 
         return projectUsers;
-    }
-
-    @Deprecated
-    public static Collection<Integer> getFolderUserids(Container c)
-    {
-        Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
-        SecurityPolicy policy = c.getPolicy();
-
-        //don't filter if all site users is playing a role
-        Group allSiteUsers = getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).findAny().isPresent())
-        {
-            // Just select all users
-            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-            sql.append(core.getTableInfoPrincipals(), "u");
-            sql.append(" WHERE u.type='u'");
-
-            return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
-        }
-
-        //users "in the project" consists of:
-        // - users who are members of a project group
-        // - users who belong to a site group that has a role assignment in the policy for the specified folder
-        // - users who have a direct role assignment in the policy for the specified folder
-
-        Set<Integer> userIds = new HashSet<>();
-
-        // Add all project groups
-        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
-
-        // Look for users and site groups that have direct assignment to the container
-        for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
-        {
-            User user = UserManager.getUser(roleAssignment.getUserId());
-            if (user != null)
-            {
-                userIds.add(user.getUserId());
-            }
-            else
-            {
-                Group assignedGroup = getGroup(roleAssignment.getUserId());
-                if (assignedGroup != null && !assignedGroup.isProjectGroup())
-                {
-                    // Add all site groups
-                    groupsToExpand.add(assignedGroup);
-                }
-            }
-        }
-
-        // Find the users who are members of all the relevant site groups
-        for (Group group : groupsToExpand)
-        {
-            Set<User> groupMembers = getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-            for (User groupMember : groupMembers)
-            {
-                userIds.add(groupMember.getUserId());
-            }
-        }
-
-        return userIds;
     }
 
     // End of @Deprecated methods to remove
