@@ -1908,47 +1908,6 @@ public class SecurityManager
         return getUsersWithPermissions(c.getProject(), Set.of(ReadPermission.class));
     }
 
-    // TODO: Migrate all deprecated getProjectUsers*() methods below to getUsersWithPermissions() or similar, GitHub Issue 1151
-
-    @Deprecated
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
-    {
-        if (c != null && !c.isProject())
-            c = c.getProject();
-
-        List<Group> groups = getGroups(c, includeGlobal);
-        Set<String> emails = new HashSet<>();
-
-        //get members for each group
-        ArrayList<User> projectUsers = new ArrayList<>();
-        Set<User> members;
-
-        for (Group g : groups)
-        {
-            if (g.isGuests() || g.isUsers())
-                continue;
-
-            // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, includeInactive ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
-
-            //add this group's members to hashset
-            if (!members.isEmpty())
-            {
-                //get list of users from email
-                for (UserPrincipal member : members)
-                {
-                    User user = UserManager.getUser(member.getUserId());
-                    if (null != user && emails.add(user.getEmail()))
-                        projectUsers.add(user);
-                }
-            }
-        }
-
-        return projectUsers;
-    }
-
-    // End of @Deprecated methods to remove
-
     /**
      * @return an immutable list of active Users who have been assigned all the requested permissions in the given container
      */
