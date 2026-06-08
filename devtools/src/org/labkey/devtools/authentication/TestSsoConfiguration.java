@@ -46,7 +46,7 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getUrl(ViewContext ctx)
+    public ActionURL getUrl(ViewContext ctx)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
         url.addParameter("configuration", getRowId());
@@ -55,9 +55,9 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getReauthUrl(ViewContext ctx)
+    public ActionURL getReauthUrl(ViewContext ctx)
     {
-        throw new NotImplementedException();
+        return getUrl(ctx).addParameter("reauth", true);
     }
 
     @Override
