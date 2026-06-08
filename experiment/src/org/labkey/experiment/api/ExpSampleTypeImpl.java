@@ -75,6 +75,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -865,9 +866,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return ret;
     }
 
-    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason)
+    public void onSamplesChanged(User user, List<Material> materials, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason);
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, reason, changedSince);
 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length != 0)
@@ -891,7 +892,6 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
         }
     }
-
 
     @Override
     public void setContainer(Container container)
