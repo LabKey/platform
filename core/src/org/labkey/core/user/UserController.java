@@ -863,8 +863,8 @@ public class UserController extends SpringActionController
             if (!allowFolderAdmins)
                 requiresProjectAdminOrBetter();
 
-            // ...and user must be a project user
-            if (!SecurityManager.isProjectUser(c, targetUser))
+            // ...and user have read permission in this folder
+            if (!c.hasPermission(user, ReadPermission.class))
                 throw new UnauthorizedException("You can only " + action + " project users");
         }
     }

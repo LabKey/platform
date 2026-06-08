@@ -56,8 +56,6 @@ import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SimpleFilter.FilterClause;
-import org.labkey.api.data.SimpleFilter.InClause;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -1884,28 +1882,6 @@ public class SecurityManager
             sb.append("<BR/>");
         }
         return sb.toString();
-    }
-
-    /**
-     * Determine if the passed in user has read permission in the container's project
-     * @param c Any container except the root
-     * @param testUser User to test
-     * @return true if the user has read permissions in the container's project
-     */
-    public static boolean isProjectUser(Container c, User testUser)
-    {
-        return c.getProject().hasPermission(testUser, ReadPermission.class);
-    }
-
-    public static FilterClause getProjectUsersClause(Container c, FieldKey fieldKey)
-    {
-        // Consider: short-circuit optimize if guests or all site users have read permissions
-        return new InClause(fieldKey, getUsersWithPermissions(c.getProject(), Set.of(ReadPermission.class)));
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getUsersWithPermissions(c.getProject(), Set.of(ReadPermission.class));
     }
 
     /**

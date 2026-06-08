@@ -62,6 +62,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -82,7 +83,7 @@ import java.util.stream.Collectors;
 
 public class CoreQuerySchema extends UserSchema
 {
-    private Set<Integer> _projectUserIds;
+    private Set<Integer> _folderUserIds;
     private final boolean _mustCheckPermissions;
 
     public static final String NAME = "core";
@@ -482,14 +483,15 @@ public class CoreQuerySchema extends UserSchema
         }
         else
         {
-            if (_projectUserIds == null)
+            // All users with read permissions in this folder
+            if (_folderUserIds == null)
             {
-                _projectUserIds = SecurityManager.getProjectUsers(getContainer()).stream()
+                _folderUserIds = SecurityManager.getUsersWithPermissions(getContainer(), Set.of(ReadPermission.class)).stream()
                     .map(UserPrincipal::getUserId)
                     .collect(Collectors.toSet());
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
-            users.addInClause(userid, _projectUserIds);
+            users.addInClause(userid, _folderUserIds);
 
             addGroupsColumn(users);
             addAvatarColumn(users);
