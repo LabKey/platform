@@ -24,13 +24,16 @@
 <%
     JspView<TestSsoForm> me = HttpView.currentView();
     TestSsoForm form = me.getModelBean();
+    boolean reauth = form.isReauth();
+    String label = "SSO Test " + (reauth ? "Reauthentication" : "Authentication");
+    String contextContent = "Type an email address below to \"" + (reauth ? "re" : "") + "authenticate\" as that user.";
 %>
 <labkey:form action="<%=urlFor(ValidateAction.class)%>" method="post" layout="horizontal">
     <input type="hidden" name="configuration" value="<%=form.getConfiguration()%>">
     <input type="hidden" name="reauth" value="<%=form.isReauth()%>">
     <labkey:input type="text" name="email" value="" size="50"
-        label="SSO Test Authentication"
-        contextContent="Type an email address below to \"authenticate\" as that user."
+        label="<%=label%>"
+        contextContent="<%=contextContent%>"
     />
     <%= button(form.isReauth() ? "Reauthenticate" : "Authenticate").submit(true) %>
 </labkey:form>
