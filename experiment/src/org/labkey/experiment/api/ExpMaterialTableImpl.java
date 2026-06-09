@@ -1215,9 +1215,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 if (ready)
                 {
-                    // Fast path: view is LOADED and no synchronous work pending
-                    sql.append(getMaterializedSQL(mqh));
-                    usedMaterialized = true;
+                    // Fast path: snapshot said LOADED with no pending work.
+                    // Re-check non-blockingly to close the TOCTOU window: the view may have been
+                    // invalidated between the snapshot decision and now.
+                    SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
+                    if (tempRef != null)
+                    {
+                        sql.append(new SQLFragment("SELECT * FROM ").append(tempRef));
+                        usedMaterialized = true;
+                    }
+                    else
+                    {
+                        // Became stale after the snapshot; trigger a rebuild and fall back immediately.
+                        mqh.materializeAsync();
+                        sql.append(getJoinSQL(selectedColumns));
+                        usedMaterialized = false;
+                    }
                 }
                 else
                 {

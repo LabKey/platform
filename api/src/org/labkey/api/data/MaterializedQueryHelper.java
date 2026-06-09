@@ -434,6 +434,32 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
     /**
+     * Non-blocking variant of {@link #getFromSql(String)}: returns a SQL fragment referencing the cached materialized
+     * temp table only if the view is currently LOADED with no pending synchronous work, without triggering any rebuild
+     * or incremental-update SQL. Returns {@code null} if the view is not available (not yet built, still loading, or
+     * stale), so the caller can fall back immediately without blocking.
+     *
+     * <p>This is the safe way to use the materialized path in contexts where blocking is unacceptable and the caller
+     * has already decided to use the materialized view based on an earlier {@link #isReadyToUse()} check. By re-checking
+     * the ready condition at use time, it closes the TOCTOU window between the snapshot decision and the actual SQL
+     * construction.
+     */
+    public @Nullable SQLFragment tryGetFromSqlIfLoaded(String tableAlias)
+    {
+        Materialized m = _map.get(makeKey(null));
+        if (m == null || m._loadingState.get() != Materialized.LoadingState.LOADED)
+            return null;
+        if (m.needsSynchronousWork())
+            return null;
+        _lastUsed.set(HeartBeat.currentTimeMillis());
+        SQLFragment sqlf = new SQLFragment(m._fromSql);
+        if (!StringUtils.isBlank(tableAlias))
+            sqlf.append(" ").append(tableAlias);
+        sqlf.addTempToken(m);
+        return sqlf;
+    }
+
+    /**
      * NOTE: invalidating within a transaction, may NOT force re-materialize for subsequent call within the transaction
      * because it could re-use the global cached result.
      *
