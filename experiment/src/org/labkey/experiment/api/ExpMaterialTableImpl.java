@@ -176,6 +176,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     ExpSampleTypeImpl _ss;
     Set<String> _uniqueIdFields;
     boolean _supportTableRules = true;
+    /**
+     * Snapshots the {@link MaterializedQueryHelper#isReadyToUse()} decision on the first call to
+     * {@link #getFromSQLExpanded} and reuses it for all subsequent calls on this instance.
+     * This ensures that every SQL fragment built during a single query construction uses the same
+     * form (materialized temp table vs. direct JOIN), preventing inconsistent SQL when a background
+     * materialization completes between two calls to {@code getFromSQL} on the same lookup target.
+     * Null means the decision has not yet been made for this instance.
+     */
+    private volatile Boolean _mqhReadySnapshot = null;
 
     private static final Set<String> MATERIAL_ALT_KEYS;
     private static final List<IPropertyValidator> AMOUNT_RANGE_VALIDATORS = new ArrayList<>();
@@ -1191,18 +1200,36 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
             _MaterializedQueryHelper mqh = getOrCreateMQH();
-            if (mqh != null && mqh.isReadyToUse())
+            if (mqh != null)
             {
-                // Fast path: view is LOADED and no synchronous work pending
-                sql.append(getMaterializedSQL(mqh));
-                usedMaterialized = true;
+                // Snapshot the materialization decision on first call; reuse on all subsequent calls
+                // within the same TableInfo instance (i.e., the same query-construction scope).
+                // This prevents a race where a background build completes between two getFromSQL
+                // calls for the same lookup target, which would otherwise produce inconsistent SQL
+                // fragments (one materialized, one not) for the same table alias.
+                Boolean ready = _mqhReadySnapshot;
+                if (ready == null)
+                {
+                    ready = mqh.isReadyToUse();
+                    _mqhReadySnapshot = ready;
+                }
+                if (ready)
+                {
+                    // Fast path: view is LOADED and no synchronous work pending
+                    sql.append(getMaterializedSQL(mqh));
+                    usedMaterialized = true;
+                }
+                else
+                {
+                    // View not built yet, or stale (incremental updates or full rebuild pending):
+                    // trigger background work and fall back to direct JOINs immediately.
+                    mqh.materializeAsync();
+                    sql.append(getJoinSQL(selectedColumns));
+                    usedMaterialized = false;
+                }
             }
             else
             {
-                // View not built yet, or stale (incremental updates or full rebuild pending):
-                // trigger background work and fall back to direct JOINs immediately.
-                if (mqh != null)
-                    mqh.materializeAsync();
                 sql.append(getJoinSQL(selectedColumns));
                 usedMaterialized = false;
             }

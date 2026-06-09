@@ -416,12 +416,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         if (_backgroundTaskRunning.compareAndSet(false, true))
         {
-            LOG.info("Starting background materialization: " + _prefix);
             JobRunner.getDefault().execute(() -> {
                 try
                 {
                     getFromSql("_bg_");
-                    LOG.info("Background materialization complete: " + _prefix);
                 }
                 catch (Exception e)
                 {
