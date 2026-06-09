@@ -15,13 +15,11 @@
  */
 package org.labkey.devtools.authentication;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 

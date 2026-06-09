@@ -1660,7 +1660,7 @@ public class LoginController extends SpringActionController
             PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(getViewContext().getSession());
             if (configuration == null)
             {
-                throw new RuntimeException("No configuration found");
+                throw new NotFoundException("No configuration found");
             }
             JSONObject resp = new JSONObject();
             resp.put("description", configuration.getDescription());

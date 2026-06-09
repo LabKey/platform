@@ -611,7 +611,11 @@ public class AuthenticationManager
                 throw new NotFoundException("Reauthentication failed");
 
             URLHelper url = properties.getReturnUrl();
-            @Nullable User reauthUser = UserManager.getUser(response.getValidEmail());
+
+            if (null == url)
+                throw new NotFoundException("Reauthentication failed: no return URL");
+
+            @Nullable User reauthUser = response.isAuthenticated() ? UserManager.getUser(response.getValidEmail()) : null;
 
             AuthenticationManager.setReauthUser(reauthUser, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
 
