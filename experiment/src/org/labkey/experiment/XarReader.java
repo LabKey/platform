@@ -1988,6 +1988,27 @@ public class XarReader extends AbstractXarImporter
             ObjectProperty objectProp = new ObjectProperty(parentLSID, getContainer(), ontologyEntryURI, value, propType, simpleProp.getName());
             setPropertyId(objectProp);
 
+            if (ExternalDocsURLCustomPropertyRenderer.URI.equals(trimString(objectProp.getPropertyURI())))
+            {
+                String relativePath = trimString(objectProp.getStringValue());
+                if (relativePath != null)
+                {
+                    try
+                    {
+                        String fullPath = _xarSource.getCanonicalDataFileURL(relativePath);
+                        Path file = FileUtil.stringToPath(getContainer(), fullPath);
+                        if (Files.exists(file))
+                        {
+                            objectProp.setStringValue(fullPath);
+                        }
+                    }
+                    catch (XarFormatException ignored)
+                    {
+                        // That's OK, don't treat the value as a relative path to the file
+                    }
+                }
+            }
+
             if (checkForDuplicates && existingProps.containsKey(ontologyEntryURI))
             {
                 ObjectProperty existingProp = existingProps.get(ontologyEntryURI);

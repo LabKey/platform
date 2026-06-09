@@ -32,7 +32,7 @@
 <%
     final JspWriter fout = out;
 
-    CustomProperties.iterate(getContainer(), form.getCustomProperties().values(), (indent, description, value) ->
+    CustomProperties.iterate(getContainer(), form.getCustomProperties().values(), form.getRenderers(), (indent, description, value) ->
     {
         try
         {
