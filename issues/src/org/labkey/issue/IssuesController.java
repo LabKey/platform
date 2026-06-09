@@ -108,6 +108,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.CSRFUtil;
@@ -1646,6 +1647,9 @@ public class IssuesController extends SpringActionController
             if (dest == null)
                 throw new NotFoundException("Target container not found");
 
+            if (!dest.hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException();
+
             List<Integer> issueIds = Arrays.asList(form.getIssueIds());
             for (Integer issueId : issueIds)
             {
@@ -2380,9 +2384,30 @@ public class IssuesController extends SpringActionController
         @Test
         public void testMoveRequiresSourceAdmin() throws Exception
         {
+            // Admin in the destination only
+            // Positive control is in IssuesTest.moveIssueTest().
+            assertCrossContainerMoveRejected(MoverScope.DESTINATION);
+        }
+
+        @Test
+        public void testMoveRequiresDestinationAdmin() throws Exception
+        {
+            // Admin in the source only: driving the action through the source folder gets past @RequiresPermission and
+            // the source-admin guard, so the move's outcome turns solely on the destination-admin guard -> 403.
+            assertCrossContainerMoveRejected(MoverScope.SOURCE);
+        }
+
+        private enum MoverScope { SOURCE, DESTINATION }
+
+        /**
+         * Create a source and destination folder, put an issue in the source (owned by the site admin), then attempt to
+         * move it as a caller who is a folder admin in exactly one of the two folders ({@code moverScope}).
+         */
+        private void assertCrossContainerMoveRejected(MoverScope moverScope) throws Exception
+        {
             User admin = getAdmin();
-            Container dest = createContainer("Dest");     // the limited user is admin here
-            Container source = createContainer("Source"); // the issue lives here; the limited user has no rights
+            Container source = createContainer("Source"); // the issue lives here
+            Container dest = createContainer("Dest");
 
             ensureIssuesEnabled(source);
 
@@ -2397,19 +2422,19 @@ public class IssuesController extends SpringActionController
             IssueManager.saveIssue(admin, source, issue);
             int issueId = issue.getIssueId();
 
-            // A user who is a folder admin in the destination only (no rights in the source)
-            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+            // A folder admin in exactly one of the two folders; drive the action through that folder
+            Container moverFolder = moverScope == MoverScope.SOURCE ? source : dest;
+            User mover = createUserInRole(moverFolder, FolderAdminRole.class);
+            // Make them a reader in the other folder
+            grantRole(mover, moverScope == MoverScope.SOURCE ? dest : source, ReaderRole.class);
 
-            ActionURL url = new ActionURL(MoveAction.class, dest)
+            ActionURL url = new ActionURL(MoveAction.class, moverFolder)
                     .addParameter("issueIds", String.valueOf(issueId))
                     .addParameter("targetContainerId", dest.getId());
-            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, destAdminOnly));
+            assertStatus(HttpServletResponse.SC_UNAUTHORIZED, post(url, mover));
 
             // The issue must remain in its source container
-            IssueObject reloaded = IssueManager.getIssue(source, admin, issueId);
-            assertNotNull("Issue should still exist in its source folder", reloaded);
-
-            // Positive control is in IssuesTest.moveIssueTest()
+            assertNotNull("Issue should still exist in its source folder", IssueManager.getIssue(source, admin, issueId));
         }
 
         private static void ensureIssuesEnabled(Container c)
