@@ -409,7 +409,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             return super.hasPermission(user, perm);
     }
 
-    // Used on by ShowUserHistoryAction
+    // Used by ShowUserHistoryAction only (is not applied to UsersTable)
     public static SimpleFilter authorizeAndGetProjectMemberFilter(@NotNull Container c, @NotNull User u, String userIdColumnName) throws UnauthorizedException
     {
         SimpleFilter filter = new SimpleFilter();

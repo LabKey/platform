@@ -842,7 +842,7 @@ public class UserController extends SpringActionController
     }
 
     // Site admins and Application admins can act on any user
-    // Project admins can only act on users who are project users
+    // Project admins can only act on users who have read permissions in the current container
     private void authorizeUserAction(User targetUser, String action, boolean allowFolderAdmins) throws UnauthorizedException
     {
         User user = getUser();
@@ -863,8 +863,8 @@ public class UserController extends SpringActionController
             if (!allowFolderAdmins)
                 requiresProjectAdminOrBetter();
 
-            // ...and user have read permission in this folder
-            if (!c.hasPermission(user, ReadPermission.class))
+            // ...and target user has read permission in this folder
+            if (!c.hasPermission(targetUser, ReadPermission.class))
                 throw new UnauthorizedException("You can only " + action + " project users");
         }
     }
