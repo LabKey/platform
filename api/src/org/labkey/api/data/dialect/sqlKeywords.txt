@@ -253,6 +253,7 @@ des_key_file
 desc
 describe
 descriptor
+destination
 destroy
 destructor
 detach
@@ -294,6 +295,7 @@ dynamic
 dynamic_function
 dynamic_function_code
 each
+edge
 element
 else
 elseif
@@ -400,6 +402,8 @@ goto
 grant
 granted
 grants
+graph
+graph_table
 greatest
 group
 group_replication
@@ -560,6 +564,7 @@ longtext
 loop
 low_priority
 lower
+lsn
 m
 map
 mapping
@@ -672,6 +677,7 @@ nocompress
 nocreatedb
 nocreaterole
 nocreateuser
+node
 nodegroup
 noholdlock
 noinherit
@@ -793,6 +799,7 @@ point
 policy
 polygon
 port
+portion
 position
 position_regex
 postfix
@@ -819,6 +826,8 @@ processlist
 profile
 profiles
 program
+properties
+property
 proxy
 public
 publication
@@ -866,6 +875,7 @@ regr_sxx
 regr_sxy
 regr_syy
 reindex
+relationship
 relative
 relay
 relay_log_file
@@ -877,6 +887,7 @@ reload
 remove
 rename
 reorganize
+repack
 repair
 repeat
 repeatable
@@ -1216,6 +1227,7 @@ varying
 vector
 verbose
 version
+vertex
 view
 views
 virtual
