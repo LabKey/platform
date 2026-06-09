@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -79,6 +80,7 @@ import org.labkey.api.issues.IssuesDomainKindProperties;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -99,10 +101,12 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ButtonBuilder;
@@ -113,6 +117,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.InputBuilder;
 import org.labkey.api.view.ActionURL;
@@ -1633,9 +1638,38 @@ public class IssuesController extends SpringActionController
         @Override
         public ApiResponse execute(MoveIssueForm form, BindException errors)
         {
+            if (form.getIssueIds() == null || form.getIssueIds().length == 0)
+                throw new NotFoundException("No issues specified to move");
+
+            // The client supplies the destination; resolve it and validate it per issue below
+            Container dest = form.getTargetContainerId() != null ? ContainerManager.getForId(form.getTargetContainerId()) : null;
+            if (dest == null)
+                throw new NotFoundException("Target container not found");
+
+            List<Integer> issueIds = Arrays.asList(form.getIssueIds());
+            for (Integer issueId : issueIds)
+            {
+                // getIssue(null, ...) resolves by global id, so each issue and the chosen destination must be
+                // authorized explicitly rather than relying on the current container's Admin grant.
+                IssueObject issue = IssueManager.getIssue(null, getUser(), issueId);
+                if (issue == null)
+                    throw new NotFoundException("Issue not found: " + issueId);
+
+                Container source = issue.getContainerFromId();
+                // Moving an issue removes it from its source folder, so require Admin there.
+                if (source == null || !source.hasPermission(getUser(), AdminPermission.class))
+                    throw new UnauthorizedException();
+
+                // The destination must be a legitimate move target for this issue's list definition. This also
+                // confirms the user can access the matching issue list in the destination.
+                IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
+                if (issueListDef == null || !IssueManager.getMoveDestinationContainers(source, getUser(), issueListDef.getName()).contains(dest))
+                    throw new UnauthorizedException();
+            }
+
             try
             {
-                IssueManager.moveIssues(getUser(), Arrays.asList(form.getIssueIds()), ContainerManager.getForId(form.getTargetContainerId()));
+                IssueManager.moveIssues(getUser(), issueIds, dest);
             }
             catch (IOException x)
             {
@@ -2338,6 +2372,65 @@ public class IssuesController extends SpringActionController
         public void setIssueId(int issueId)
         {
             this.issueId = issueId;
+        }
+    }
+
+    public static class MoveActionContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testMoveRequiresSourceAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container dest = createContainer("Dest");     // the limited user is admin here
+            Container source = createContainer("Source"); // the issue lives here; the limited user has no rights
+
+            ensureIssuesEnabled(source);
+
+            // Create an issue in the source folder (as the site admin)
+            IssueObject issue = new IssueObject();
+            issue.open(source, admin);
+            issue.setAssignedTo(admin.getUserId());
+            issue.setTitle("Scoping test issue");
+            issue.setPriority("3");
+            issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            ObjectFactory.Registry.getFactory(IssueObject.class).toMap(issue, issue.getProperties());
+            IssueManager.saveIssue(admin, source, issue);
+            int issueId = issue.getIssueId();
+
+            // A user who is a folder admin in the destination only (no rights in the source)
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            ActionURL url = new ActionURL(MoveAction.class, dest)
+                    .addParameter("issueIds", String.valueOf(issueId))
+                    .addParameter("targetContainerId", dest.getId());
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, destAdminOnly));
+
+            // The issue must remain in its source container
+            IssueObject reloaded = IssueManager.getIssue(source, admin, issueId);
+            assertNotNull("Issue should still exist in its source folder", reloaded);
+
+            // Positive control is in IssuesTest.moveIssueTest()
+        }
+
+        private static void ensureIssuesEnabled(Container c)
+        {
+            Module issueModule = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
+            Set<Module> activeModules = c.getActiveModules();
+            if (!activeModules.contains(issueModule))
+            {
+                Set<Module> newActiveModules = new HashSet<>(activeModules);
+                newActiveModules.add(issueModule);
+                c.setActiveModules(newActiveModules);
+            }
+            if (IssueManager.getIssueListDef(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME) == null)
+            {
+                IssueListDef def = new IssueListDef();
+                def.setName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setLabel(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setKind(IssueDefDomainKind.NAME);
+                def.beforeInsert(TestContext.get().getUser(), c.getId());
+                def.save(TestContext.get().getUser());
+            }
         }
     }
 }

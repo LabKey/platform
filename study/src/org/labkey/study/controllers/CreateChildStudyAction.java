@@ -15,7 +15,9 @@
  */
 package org.labkey.study.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -31,19 +33,25 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.importer.ImportTemplate;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.model.ChildStudyDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -101,27 +109,54 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
     @Override
     public void validateForm(ChildStudyDefinition form, Errors errors)
     {
-        Container c = ContainerManager.getForPath(form.getDstPath());
-        _destFolderCreated = c == null;
-
-        // make sure the folder, if already existing doesn't already contain a study
-        _dstContainer = ContainerManager.ensureContainer(Path.parse(form.getDstPath()), getUser());
-        if (_dstContainer != null)
+        // Verify the user can read the source study and can administer the destination (or its parent, if the
+        // folder must be created) before we create any folder or queue the copy job.
+        Container sourceContainer = form.getSrcPath() != null ? ContainerManager.getForPath(form.getSrcPath()) : null;
+        if (sourceContainer == null || !sourceContainer.hasPermission(getUser(), ReadPermission.class))
         {
-            Study study = StudyManager.getInstance().getStudy(_dstContainer);
-            if (study != null)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, "A study already exists in the destination folder.");
-            }
+            errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
         }
         else
+        {
+            _sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
+            if (_sourceStudy == null)
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
+        }
+
+        Container existingDst = form.getDstPath() != null ? ContainerManager.getForPath(form.getDstPath()) : null;
+        _destFolderCreated = existingDst == null;
+
+        boolean dstAuthorized;
+        if (existingDst != null)
+        {
+            // Existing destination folder: require Admin on it.
+            dstAuthorized = existingDst.hasPermission(getUser(), AdminPermission.class);
+        }
+        else if (form.getDstPath() != null)
+        {
+            // Folder will be created: require Admin on the parent so an arbitrary folder can't be grafted in.
+            Container dstParent = ContainerManager.getForPath(Path.parse(form.getDstPath()).getParent());
+            dstAuthorized = dstParent != null && dstParent.hasPermission(getUser(), AdminPermission.class);
+        }
+        else
+        {
+            dstAuthorized = false;
+        }
+
+        if (!dstAuthorized)
+        {
             errors.reject(SpringActionController.ERROR_MSG, "Invalid destination folder.");
-
-        Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        _sourceStudy = StudyManager.getInstance().getStudy(sourceContainer);
-
-        if (_sourceStudy == null)
-            errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
+        }
+        // Only create the destination folder once the rest of the form (including the source-read check above) has
+        // validated, so a rejected publish doesn't leave a stray empty folder behind.
+        else if (!errors.hasErrors())
+        {
+            // make sure the folder, if already existing doesn't already contain a study
+            _dstContainer = ContainerManager.ensureContainer(Path.parse(form.getDstPath()), getUser());
+            Study study = StudyManager.getInstance().getStudy(_dstContainer);
+            if (study != null)
+                errors.reject(SpringActionController.ERROR_MSG, "A study already exists in the destination folder.");
+        }
 
         if (form.getMode() == null)
             errors.reject(SpringActionController.ERROR_MSG, "Unable to locate a study snapshot type from specified mode");
@@ -177,5 +212,40 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         _dstContainer.setFolderType(folderType, User.getSearchUser(), errors);
 
         return study;
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testPublishRequiresSourceRead() throws Exception
+        {
+            User admin = getAdmin();
+            Container dest = createContainer("Dest");      // the limited user is admin here
+            Container source = createContainer("Source");  // holds a real study; the limited user has no rights
+
+            // A real study in the source, so the only reason validateForm can reject is the missing source-read grant.
+            // createStudy() defaults the required subject noun/column fields, so we only set what this test cares about.
+            StudyImpl study = new StudyImpl(source, "Source Study");
+            study.setTimepointType(TimepointType.VISIT);
+            StudyManager.getInstance().createTestStudy(admin, study);
+
+            // A user who is a folder admin in the destination only (no rights in the source)
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            ActionURL url = new ActionURL(CreateChildStudyAction.class, dest)
+                    .addParameter("srcPath", source.getPath())
+                    .addParameter("dstPath", dest.getPath())
+                    .addParameter("mode", StudySnapshotType.publish.name());
+            MockHttpServletResponse resp = post(url, destAdminOnly);
+
+            // The publish must not succeed because the user can't read the source study
+            assertNotEquals("Publish from an unreadable source study must not succeed", HttpServletResponse.SC_OK, resp.getStatus());
+
+            // No study should have been published into the destination, and the source study must be untouched
+            assertNull("No study should have been created in the destination", StudyManager.getInstance().getStudy(dest));
+            assertNotNull("The source study must be untouched", StudyManager.getInstance().getStudy(source));
+
+            // Positive scenario covered by StudyPublishTest
+        }
     }
 }

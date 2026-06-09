@@ -1113,12 +1113,9 @@ public class DatasetUpdateService extends DefaultQueryUpdateService
             MvUtil.assignMvIndicators(c, new String[] {"NA","QA"}, new String[] {"NA","QA"});
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.VISIT);
-            s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));
-            s.setSubjectColumnName(SUBJECT_COLUMN_NAME);
-            s.setSubjectNounPlural("Subjects");
-            s.setSubjectNounSingular("Subject");
+            s.setStartDate(new Date(DateUtil.parseDateTime("2014-01-01")));
             s.setSecurityType(SecurityType.BASIC_WRITE);
-            _junitStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+            _junitStudy = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
             _user = _context.getUser();
             _container = _junitStudy.getContainer();
         }

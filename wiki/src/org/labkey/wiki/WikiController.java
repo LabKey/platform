@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -56,8 +58,10 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -988,6 +992,9 @@ public class WikiController extends SpringActionController
 
             if (errors.hasErrors())
                 return false;
+
+            if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
 
             if (cSrc.equals(_cDest))
             {
@@ -2921,5 +2928,33 @@ public class WikiController extends SpringActionController
     private WikiManager getWikiManager()
     {
         return WikiManager.get();
+    }
+
+    public static class CopyWikiContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testCopyWikiRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+
+            // A user who is a folder admin in the destination only (no rights in the source)
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            // A wiki page that lives in the source folder
+            WikiManager.get().insertWiki(getAdmin(), source, "secretPage", "secret body", WikiRendererType.HTML, "Secret Page");
+
+            ActionURL url = new ActionURL(CopyWikiAction.class, dest)
+                    .addParameter("sourceContainer", source.getPath())
+                    .addParameter("destContainer", dest.getPath());
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, destAdminOnly));
+            assertTrue("No pages should have been copied into the destination", WikiSelectManager.getPageNames(dest).isEmpty());
+
+            // Positive control: the same copy by a user who is admin on BOTH folders is accepted (redirect to the
+            // destination) and actually copies the page, proving the guard rejects only the cross-container case
+            // rather than every copy.
+            assertStatus(HttpServletResponse.SC_FOUND, post(url, getAdmin()));
+            assertFalse("Admin copy from a readable source should have copied the wiki page", WikiSelectManager.getPageNames(dest).isEmpty());
+        }
     }
 }

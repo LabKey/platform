@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -59,6 +60,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -187,6 +189,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -198,6 +201,7 @@ import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.sql.LabKeySql;
@@ -298,6 +302,7 @@ import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -316,6 +321,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -386,6 +392,10 @@ public class ExperimentController extends SpringActionController
         Container objectContainer = object.getContainer();
         if (!requestContainer.equals(objectContainer))
         {
+            // Only redirect if the user can read the object's container; otherwise don't reveal that it exists
+            if (objectContainer == null || !objectContainer.hasPermission(viewContext.getUser(), ReadPermission.class))
+                throw new NotFoundException();
+
             ActionURL url = viewContext.cloneActionURL();
             url.setContainer(objectContainer);
             throw new RedirectException(url);
@@ -1797,6 +1807,8 @@ public class ExperimentController extends SpringActionController
             ExpData data = ExperimentServiceImpl.get().getExpData(lsid.toString());
             if (data == null)
                 throw new NotFoundException("Error: Data object not found for the given LSID: " + lsid);
+            // The LSID could be from another container. If so, redirect there
+            ensureCorrectContainer(getContainer(), data, getViewContext());
             AttachmentParent parent = new ExpDataClassAttachmentParent(data.getContainer(), lsid);
 
             return new Pair<>(parent, form.getName());
@@ -8332,6 +8344,49 @@ public class ExperimentController extends SpringActionController
             response.put("success", true);
             response.put("result", results);
             return response;
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testDataClassAttachmentContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            // A data object that lives in folder B, with a real attachment so the legitimate download path can be exercised
+            String attachmentName = "attachment.txt";
+            String lsid = ExperimentService.get().generateLSID(folderB, ExpData.class, "exp1-scope-test");
+            ExpData data = ExperimentService.get().createData(folderB, "exp1-scope-test", lsid);
+            data.save(admin);
+            AttachmentParent parent = new ExpDataClassAttachmentParent(folderB, new Lsid(lsid));
+            AttachmentService.get().addAttachments(parent, List.of(new ByteArrayAttachmentFile(attachmentName, "scope test".getBytes(StandardCharsets.UTF_8), "text/plain")), admin);
+
+            ActionURL foreignUrl = new ActionURL(DataClassAttachmentDownloadAction.class, folderA)
+                    .addParameter("lsid", lsid)
+                    .addParameter("name", attachmentName);
+
+            // Deny branch: a caller who can read folder A but NOT folder B must not learn that B's data exists -> 404,
+            // rather than being redirected (which would leak B's existence and path).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+
+            // Redirect branch: a caller who CAN read folder B is redirected to its own container (where Read is
+            // re-enforced) rather than served from folder A. Fails without the ensureCorrectContainer call.
+            MockHttpServletResponse resp = get(foreignUrl, admin);
+            assertStatus(HttpServletResponse.SC_FOUND, resp);
+            String location = resp.getRedirectedUrl();
+            assertNotNull("Redirect must have a Location", location);
+            assertTrue("Redirect should target the data's own container, was: " + location, location.contains(folderB.getPath()));
+
+            // Positive control: addressing the attachment through its own container serves the file (200), proving the
+            // action isn't simply rejecting every request.
+            ActionURL ownUrl = new ActionURL(DataClassAttachmentDownloadAction.class, folderB)
+                    .addParameter("lsid", lsid)
+                    .addParameter("name", attachmentName);
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
         }
     }
 

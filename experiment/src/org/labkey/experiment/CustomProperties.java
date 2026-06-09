@@ -17,18 +17,28 @@ package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.PageFlowUtil;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by adam on 9/4/2016.
  */
 public class CustomProperties
 {
-    public static void iterate(Container c, Collection<ObjectProperty> properties, Map<String, CustomPropertyRenderer> rendererMap, PropertyHandler handler)
+    public static void iterate(Container c, Collection<ObjectProperty> properties, PropertyHandler handler)
     {
         List<List<ObjectProperty>> stack = new ArrayList<>();
         stack.add(new ArrayList<>(properties));
@@ -49,11 +59,7 @@ public class CustomProperties
             else
             {
                 ObjectProperty value = values.get(currentIndex);
-                CustomPropertyRenderer renderer = rendererMap.get(value.getPropertyURI());
-                if (renderer.shouldRender(value, values))
-                {
-                    handler.handle(stack.size() - 1, renderer.getDescription(value, values), renderer.getValue(value, values, c));
-                }
+                handler.handle(stack.size() - 1, getDescription(value), getValue(value, c));
                 if (!value.retrieveChildProperties().isEmpty())
                 {
                     stack.add(new ArrayList<>(value.retrieveChildProperties().values()));
@@ -62,6 +68,50 @@ public class CustomProperties
             }
         }
     }
+
+    private static String getValue(ObjectProperty prop, Container c)
+    {
+        Object o = prop.value();
+        if (o == null)
+        {
+            return "";
+        }
+        if (prop.getPropertyType() == PropertyType.FILE_LINK)
+        {
+            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(o.toString()));
+            o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.files));
+            if (o == null)
+            {
+                o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.pipeline));
+            }
+            if (o == null)
+            {
+                o = f.toString();
+            }
+        }
+
+        String value;
+
+        // TODO: Should have a standard method that does this
+        if (o instanceof Date d)
+            value = DateUtil.formatDateInfer(c, d);
+        else if (o instanceof Number n)
+            value = Formats.formatNumber(c, n);
+        else
+            value = o.toString();
+
+        return PageFlowUtil.filter(value);
+    }
+
+    private static String getDescription(ObjectProperty prop)
+    {
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());
+        String name = prop.getName();
+        if (pd != null)
+            name = pd.getLabel() != null ? pd.getLabel() : pd.getName();
+        return PageFlowUtil.filter(name);
+    }
+
 
     public interface PropertyHandler
     {

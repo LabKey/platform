@@ -1387,27 +1387,9 @@ public class XarExporter
                     case MULTI_LINE:
                     case XML_TEXT:
                         simpleValue.setValueType(SimpleTypeNames.STRING);
-                        if (ExternalDocsURLCustomPropertyRenderer.URI.equals(value.getPropertyURI()))
-                        {
-                            String link = value.getStringValue();
-                            try
-                            {
-                                URI uri = new URI(link);
-                                if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
-                                {
-                                    Path path = FileUtil.getPath(parentContainer, uri);
-                                    if (Files.exists(path))
-                                    {
-                                        link = _urlRewriter.rewriteURL(path, null, null, null, _user, _fileRootPath);
-                                    }
-                                }
-                            }
-                            catch (URISyntaxException ignored) {}
-                            simpleValue.setStringValue(link);
-                        }
                         // This property stores rowIds of assay designs; we need to translate them to LSIDs for export
                         // TODO perhaps this property should hold protocol strings instead of rowIds
-                        else if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
+                        if (value.getPropertyURI().endsWith(":WorkflowTask#AssayTypes"))
                         {
                             String assayIdsString = value.getStringValue();
                             if (!StringUtils.isEmpty(assayIdsString))
