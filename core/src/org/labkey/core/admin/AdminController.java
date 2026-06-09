@@ -130,6 +130,7 @@ import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -3013,6 +3014,7 @@ public class AdminController extends SpringActionController
             String buttonHTML = "";
             if (getUser().hasRootAdminPermission())
                 buttonHTML += PageFlowUtil.button("Reset All Statistics").href(getResetQueryStatisticsURL()).usePost() + "&nbsp;";
+            buttonHTML += PageFlowUtil.button("Clear Materialized Views").href(getClearMaterializedViewsURL()).usePost() + "&nbsp;";
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
@@ -3183,6 +3185,35 @@ public class AdminController extends SpringActionController
         public boolean handlePost(QueriesForm form, BindException errors) throws Exception
         {
             QueryProfiler.getInstance().resetAllStatistics();
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(QueriesForm form)
+        {
+            return getQueriesURL(form.getStat());
+        }
+    }
+
+
+    private static ActionURL getClearMaterializedViewsURL()
+    {
+        return new ActionURL(ClearMaterializedViewsAction.class, ContainerManager.getRoot());
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ClearMaterializedViewsAction extends FormHandlerAction<QueriesForm>
+    {
+        @Override
+        public void validateCommand(QueriesForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueriesForm form, BindException errors)
+        {
+            MaterializedQueryHelper.clearAllMaterialized();
             return true;
         }
 
@@ -12518,6 +12549,7 @@ public class AdminController extends SpringActionController
                 controller.new ShowPrimaryLogAction(),
                 controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
+                new ClearMaterializedViewsAction(),
                 new ExportActionsAction(),
                 new ExportQueriesAction(),
                 new MemoryChartAction(),

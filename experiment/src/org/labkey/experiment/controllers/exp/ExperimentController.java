@@ -7341,19 +7341,6 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public static class ClearMaterializedSamplesViewAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public Object execute(Object form, BindException errors)
-        {
-            ExpMaterialTableImpl.clearAllMaterializedViews();
-            return success("Materialized sample views cleared. They will be rebuilt asynchronously on next access.");
-        }
-    }
-
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
     public static class CheckDataClassesIndexedAction extends ReadOnlyApiAction<Object>
     {
         @Override

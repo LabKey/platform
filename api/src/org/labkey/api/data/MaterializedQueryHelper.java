@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,6 +62,26 @@ import static org.labkey.api.test.TestWhen.When.BVT;
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
     private static final Logger LOG = LogHelper.getLogger(MaterializedQueryHelper.class, "Materialized query helper");
+
+    // Global registry of callbacks invoked by clearAllMaterialized(). Modules that own a materialized-query
+    // cache register a Runnable here (typically from a static initializer) so the admin "Clear Materialized Views"
+    // action can flush all caches without depending on each module directly.
+    private static final List<Runnable> _globalClearCallbacks = new CopyOnWriteArrayList<>();
+
+    public static void registerClearCallback(Runnable callback)
+    {
+        _globalClearCallbacks.add(callback);
+    }
+
+    /**
+     * Invokes every registered clear callback, discarding all cached materialized views across all modules.
+     * Views are rebuilt asynchronously on next access.
+     * Called from the admin console "Clear Materialized Views" action.
+     */
+    public static void clearAllMaterialized()
+    {
+        _globalClearCallbacks.forEach(Runnable::run);
+    }
 
     public static class Materialized
     {

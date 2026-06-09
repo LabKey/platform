@@ -179,9 +179,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /**
      * Snapshots the {@link MaterializedQueryHelper#isReadyToUse()} decision on the first call to
      * {@link #getFromSQLExpanded} and reuses it for all subsequent calls on this instance.
-     * This ensures that every SQL fragment built during a single query construction uses the same
-     * form (materialized temp table vs. direct JOIN), preventing inconsistent SQL when a background
-     * materialization completes between two calls to {@code getFromSQL} on the same lookup target.
+     * This prevents a race where a background build completes between two {@code getFromSQL} calls
+     * for the same lookup target, which would otherwise produce inconsistent SQL fragments
+     * (one materialized, one not) for the same table alias.
      * Null means the decision has not yet been made for this instance.
      */
     private volatile Boolean _mqhReadySnapshot = null;
@@ -1202,7 +1202,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _MaterializedQueryHelper mqh = getOrCreateMQH();
             if (mqh != null)
             {
-                // Snapshot the materialization decision on first call; reuse on all subsequent calls
+                // Snapshot the isReadyToUse() decision on first call; reuse on all subsequent calls
                 // within the same TableInfo instance (i.e., the same query-construction scope).
                 // This prevents a race where a background build completes between two getFromSQL
                 // calls for the same lookup target, which would otherwise produce inconsistent SQL
@@ -1216,8 +1216,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (ready)
                 {
                     // Fast path: snapshot said LOADED with no pending work.
-                    // Re-check non-blockingly to close the TOCTOU window: the view may have been
-                    // invalidated between the snapshot decision and now.
+                    // Re-check non-blockingly on every call to close the TOCTOU window: the view may
+                    // have been invalidated between the snapshot decision and now.
                     SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
                     if (tempRef != null)
                     {
@@ -1234,8 +1234,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 else
                 {
-                    // View not built yet, or stale (incremental updates or full rebuild pending):
-                    // trigger background work and fall back to direct JOINs immediately.
+                    // View not built yet, or stale: trigger background work and fall back.
                     mqh.materializeAsync();
                     sql.append(getJoinSQL(selectedColumns));
                     usedMaterialized = false;
@@ -1319,6 +1318,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
+
+    static
+    {
+        MaterializedQueryHelper.registerClearCallback(_materializedQueries::clear);
+    }
 
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
     {
@@ -1469,18 +1473,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         return _incrementalUpdateDisabled;
-    }
-
-    /**
-     * Clears all cached {@code _MaterializedQueryHelper} instances. On the next request per sample type,
-     * {@code getOrCreateMQH()} recreates a fresh MQH, {@code isReadyToUse()} returns false, and
-     * {@code materializeAsync()} triggers a background rebuild.
-     * <p>
-     * Intended for admin maintenance (e.g. {@code ClearMaterializedSamplesViewAction}).
-     */
-    public static void clearAllMaterializedViews()
-    {
-        _materializedQueries.clear();
     }
 
     /**
