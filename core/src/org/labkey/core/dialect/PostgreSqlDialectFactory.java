@@ -148,7 +148,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static BasePostgreSqlDialect getLatestSupportedDialect()
     {
-        return new PostgreSql_18_Dialect();
+        return new PostgreSql_19_Dialect();
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
