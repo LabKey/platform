@@ -2697,6 +2697,16 @@ public class PageFlowUtil
         return StringUtils.containsAny(value,",\"");
     }
 
+    /// Generate one row of tab-delimited output using RFC 4180 quoting rules.
+    /// Fields containing tabs, newlines, or double quotes are enclosed in double quotes,
+    /// with embedded double quotes escaped by doubling.
+    public static String joinValuesWithTabs4180(@NotNull List<String> values)
+    {
+        return values.stream()
+                .map(value -> null == value ? "" : StringUtils.containsAny(value, "\t\n\r\"") ? "\"" + Strings.CS.replace(value, "\"", "\"\"") + "\"" : value)
+                .collect(Collectors.joining("\t"));
+    }
+
 
     static final String FIELD_ENCODED_PREFIX = "%_";
 
