@@ -2021,8 +2021,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // For sequential jitters, keep track of the current count for a given x value
         var jitters = {};
 
-        if (geom.xScale.scaleType === scaleType.discrete && (geom.position === position.jitter || geom.position === position.sequential)) {
-            xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        const jitterPosition = geom.position === position.jitter || geom.position === position.sequential;
+        if (jitterPosition && (geom.xScale.scaleType === scaleType.discrete || geom.xScale.scaleType === scaleType.continuous)) {
+            if (geom.xScale.scaleType === scaleType.discrete) {
+                xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+            }
+            else {
+                // Continuous (time-based) x-axis: jitter band is half a day's pixel width (matches the
+                // per-date half-slot for consecutive dates; safe for gaps since the spread is < 1 day).
+                const pixelsPerUnit = Math.abs(geom.xScale.scale(1) - geom.xScale.scale(0));
+                xBinWidth = pixelsPerUnit / 2;
+            }
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
                 var value = geom.getX(row);

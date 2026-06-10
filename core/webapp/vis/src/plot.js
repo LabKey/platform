@@ -1691,6 +1691,16 @@ boxPlot.render();
         TrailingCV: 'TrailingCV'
     };
 
+    // Whole-day number (days since epoch) for a date string, or null if unparseable. Shared so overlay
+    // code positions calendar-mode points using the same day offsets as this plot.
+    LABKEY.vis.dateToDayNumber = function(dateStr) {
+        if (!dateStr) {
+            return null;
+        }
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : Math.round(d.getTime() / 86400000);
+    };
+
     LABKEY.vis.TrendingLinePlot = function(config){
         if (!config.qcPlotType)
             config.qcPlotType = LABKEY.vis.TrendingLinePlotType.LeveyJennings;
@@ -1773,6 +1783,34 @@ boxPlot.render();
             }
         }
         uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
+
+        // Calendar (time-based) x-axis: position each day by its offset from the earliest day so spacing
+        // reflects elapsed time. Offsets are keyed by xTickLabel (the date) so same-day rows share a position.
+        const timeBasedXTick = config.properties.timeBasedXTick === true;
+        const dayOffsetMap = {}, dayOffsetLabelMap = {};
+        let uniqueDayOffsets = [], maxDayOffset = 0;
+        if (timeBasedXTick) {
+            let minDayNumber = null;
+            for (let i = 0; i < config.data.length; i++) {
+                const dn = LABKEY.vis.dateToDayNumber(config.data[i][config.properties.xTickLabel]);
+                if (dn !== null && (minDayNumber === null || dn < minDayNumber)) {
+                    minDayNumber = dn;
+                }
+            }
+            for (let i = 0; i < config.data.length; i++) {
+                const label = config.data[i][config.properties.xTickLabel];
+                const dn = LABKEY.vis.dateToDayNumber(label);
+                if (dn !== null && dayOffsetMap[label] === undefined) {
+                    const offset = dn - minDayNumber;
+                    dayOffsetMap[label] = offset;
+                    dayOffsetLabelMap[offset] = label;
+                    if (offset > maxDayOffset) {
+                        maxDayOffset = offset;
+                    }
+                }
+            }
+            uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
+        }
 
         // create a sequential index to use for the x-axis value and keep a map from that index to the tick label
         // also, pull out the meanStdDev data for the unique x-axis values and calculate average values for the (LJ) trend line data
@@ -2161,7 +2199,12 @@ boxPlot.render();
                     }
                 };
 
-                if (config.properties.groupMatchingXTick) {
+                if (timeBasedXTick) {
+                    index = dayOffsetMap[row[config.properties.xTickLabel]];
+                    if (index === undefined) {
+                        index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
+                    }
+                } else if (config.properties.groupMatchingXTick) {
                     index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
                 } else {
                     index++; // Issue 54018
@@ -2192,6 +2235,21 @@ boxPlot.render();
             }
         }
 
+        // Time-based arrays are keyed by day offset; compact out the gaps so layers never bind undefined rows.
+        if (timeBasedXTick) {
+            const compactArray = function(arr) {
+                const compacted = [];
+                for (let k = 0; k < arr.length; k++) {
+                    if (arr[k] !== undefined && arr[k] !== null) {
+                        compacted.push(arr[k]);
+                    }
+                }
+                return compacted;
+            };
+            meanStdDevData = compactArray(meanStdDevData);
+            groupedTrendlineData = compactArray(groupedTrendlineData);
+        }
+
         // Issue 51887: Log scale extends much lower than needed for some Panorama QC plots
         // If the yAxisDomain min value is less than 0, then the scale is extended way-below the smallest value
         // during the log conversion at getLogScale L810, the below code ensures that the minimum scale of the y-axis
@@ -2202,9 +2260,10 @@ boxPlot.render();
             }
         }
 
-        // min x-axis tick length is 10 by default
-        var maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
-        for (var i = maxSeqValue; i < 10; i++) {
+        // min x-axis tick length is 10 by default (not applied for a time-based axis, where the
+        // spacing is driven by real dates and padding would add empty days at the end)
+        const maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
+        for (let i = maxSeqValue; i < 10 && !timeBasedXTick; i++) {
             var temp = {type: 'empty', seqValue: i};
             temp[config.properties.xTickLabel] = "";
             if (config.properties.color && config.data[0]) {
@@ -2260,6 +2319,22 @@ boxPlot.render();
                 }
             }
         };
+
+        // Calendar mode: continuous linear scale over day offsets, ticks only on data days.
+        if (timeBasedXTick) {
+            config.scales.x.scaleType = 'continuous';
+            config.scales.x.trans = 'linear';
+            // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.
+            // pos(0)=1/(slots+1), pos(maxOffset)=numDates/(slots+1).
+            const numDates = uniqueDayOffsets.length;
+            const avgStep = numDates > 1 ? maxDayOffset / (numDates - 1) : 1;
+            const slots = Math.max(numDates, 10);
+            config.scales.x.domain = [-avgStep, avgStep * slots];
+            config.scales.x.tickValues = uniqueDayOffsets;
+            config.scales.x.tickFormat = function(offset) {
+                return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
+            };
+        }
 
         if (hasYRightMetric) {
             config.scales.yRight = {
@@ -2349,7 +2424,9 @@ boxPlot.render();
             config.layers = [];
         }
         else {
-            var barWidth = Math.max(config.width / config.data[config.data.length-1].seqValue / 4, 3);
+            // Size bars by distinct-day count (per-date slot count, floored at 9), not the day span.
+            const barWidthDenom = timeBasedXTick ? Math.max(uniqueDayOffsets.length - 1, 9) : config.data[config.data.length-1].seqValue;
+            const barWidth = Math.max(config.width / barWidthDenom / 4, 3);
             // the below if-else sections add the mean/SD/error bars to the plots
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
                 config.layers = [];
