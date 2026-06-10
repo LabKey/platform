@@ -454,7 +454,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 }
                 catch (Exception e)
                 {
-                    LOG.warn("Background materialization failed: " + _prefix, e);
+                    LOG.warn("Background materialization failed.", e);
                 }
                 finally
                 {
