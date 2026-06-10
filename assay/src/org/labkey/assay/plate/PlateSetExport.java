@@ -121,7 +121,9 @@ public class PlateSetExport
     private Map<String, List<Object[]>> getSampleIdToRows(TableInfo wellTable, List<FieldKey> includedMetadataCols, long plateSetId, String plateSetExport)
     {
         Map<String, List<Object[]>> sampleIdToRow = new LinkedHashMap<>();
-        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
+        // select(true): getDataRow() relies on the cached result set's column-type coercion (e.g. a numeric metadata
+        // value rendered as "1.0" rather than "1"); a streaming result set would change the exported value formatting
+        try (Results rs = QueryService.get().getSelectBuilder(wellTable).columns(getWellColumns(wellTable, includedMetadataCols)).filter(new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId)).sort(new Sort(ROW_ID_COL)).select(true))
         {
             while (rs.next())
             {
@@ -195,7 +197,9 @@ public class PlateSetExport
     public List<Object[]> getInstrumentInstructions(TableInfo wellTable, long plateSetId, List<FieldKey> includedMetadataCols)
     {
         List<Object[]> plateDataRows = new ArrayList<>();
-        try (Results rs = QueryService.get().select(wellTable, getWellColumns(wellTable, includedMetadataCols), new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId), new Sort(ROW_ID_COL)))
+        // select(true): getDataRow() relies on the cached result set's column-type coercion (e.g. a numeric metadata
+        // value rendered as "1.0" rather than "1"); a streaming result set would change the exported value formatting
+        try (Results rs = QueryService.get().getSelectBuilder(wellTable).columns(getWellColumns(wellTable, includedMetadataCols)).filter(new SimpleFilter(FKMap.get(PLATE_SET_ID_COL), plateSetId)).sort(new Sort(ROW_ID_COL)).select(true))
         {
             while (rs.next())
             {

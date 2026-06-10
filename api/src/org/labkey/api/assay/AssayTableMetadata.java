@@ -223,7 +223,7 @@ public class AssayTableMetadata
             tableMap.put("__TARGET_STUDY_TABLE", targetStudyTable);
             tableMap.put("__DATA", assayDataTable);
 
-            try (ResultSet rs = QueryService.get().select(schema, sqlf.getSQL(), tableMap, false, true))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(schema, sqlf.getSQL(), false, tableMap).select(true))
             {
                 ArrayList<String> ids = new ArrayList<>();
                 while (rs.next())

@@ -215,7 +215,9 @@ public class QueryHelper
                 .columns(cols)
                 .filter(filter)
                 .sort(sort);
-        return select.select();
+        // select(true): legacy callers (especially EHR modules) rely on the cached result set's full API,
+        // e.g. getRowMap(), which a streaming result set does not support
+        return select.select(true);
     }
 
     public Results select(SimpleFilter filter)

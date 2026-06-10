@@ -28,6 +28,9 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 {
     boolean isComplete();
 
+    /**
+     * Only supported by CachedResultSet. Other implementations will throw UnsupportedOperationException
+     */
     Map<String, Object> getRowMap() throws SQLException;
 
     @Override

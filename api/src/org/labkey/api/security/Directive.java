@@ -19,14 +19,16 @@ import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.util.SafeToRenderEnum;
 
 /**
- * All CSP directives that support substitutions. These constant names are persisted to the database, so be careful with
- * any changes. If adding a Directive, make sure to add the corresponding substitutions in LabKeyServer baseCsp.
+ * All CSP directives that support substitutions. These constant names are persisted to the database, so be careful
+ * with any changes. If adding a Directive, make sure to add the corresponding substitutions to the appropriate CSP
+ * template(s) in LabKeyServer.
  */
 public enum Directive implements StartupProperty, SafeToRenderEnum
 {
     Connection("connect-src", "Sources for fetch/XHR requests"),
     Font("font-src", "Sources for fonts"),
     Frame("frame-src", "Sources for iframes"),
+    FrameAncestors("frame-ancestors", "Parent hosts allowed to embed this site's resources in an <iframe>, etc."),
     Image("image-src", "Sources for images"),
     Object("object-src", "Sources for objects"), // Issue 53226
     Script("script-src", "Sources for scripts"),
