@@ -123,6 +123,7 @@ import org.labkey.experiment.api.ExpDataClassTableImpl;
 import org.labkey.experiment.api.ExpDataClassType;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
@@ -207,7 +208,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.006;
+        return 26.007;
     }
 
     @Nullable
@@ -1119,6 +1120,7 @@ public class ExperimentModule extends SpringModule
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
+            ExpMaterialTableImpl.IncrementalUpdateTestCase.class,
             ExperimentServiceImpl.AuditDomainUriTest.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
