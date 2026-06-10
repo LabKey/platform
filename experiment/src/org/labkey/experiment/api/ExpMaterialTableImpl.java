@@ -1331,11 +1331,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
-    static
-    {
-        MaterializedQueryHelper.registerClearCallback(_materializedQueries::clear);
-    }
-
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason)
     {
         refreshMaterializedView(lsid, reason, null);

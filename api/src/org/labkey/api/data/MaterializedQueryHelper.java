@@ -63,36 +63,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
     private static final Logger LOG = LogHelper.getLogger(MaterializedQueryHelper.class, "Materialized query helper");
 
-    // Global registry of callbacks invoked by clearAllMaterialized(). Modules that own a materialized-query
-    // cache register a Runnable here (typically from a static initializer) so the admin "Clear Materialized Views"
-    // action can flush all caches without depending on each module directly.
-    private static final List<Runnable> _globalClearCallbacks = new CopyOnWriteArrayList<>();
-
-    public static void registerClearCallback(Runnable callback)
-    {
-        _globalClearCallbacks.add(callback);
-    }
-
-    /**
-     * Invokes every registered clear callback, discarding all cached materialized views across all modules.
-     * Views are rebuilt asynchronously on next access.
-     * Called from the admin console "Clear Materialized Views" action.
-     */
-    public static void clearAllMaterialized()
-    {
-        for (Runnable r : _globalClearCallbacks)
-        {
-            try
-            {
-                r.run();
-            }
-            catch (Exception e)
-            {
-                LOG.warn("clearAllMaterialized callback failed", e);
-            }
-        }
-    }
-
     public static class Materialized
     {
         MaterializedQueryHelper _mqh;
