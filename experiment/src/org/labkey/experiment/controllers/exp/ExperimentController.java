@@ -8357,9 +8357,9 @@ public class ExperimentController extends SpringActionController
             Container folderB = createContainer("B");
             User readerA = createUserInRole(folderA, ReaderRole.class);
 
-            // A data object that lives in folder B, with a real attachment so the legitimate download path can be exercised
+            // A data object that lives in folder B, with a real attachment so the legitimate download path can be exercised.
             String attachmentName = "attachment.txt";
-            String lsid = ExperimentService.get().generateLSID(folderB, ExpData.class, "exp1-scope-test");
+            String lsid = ExperimentService.get().generateGuidLSID(folderB, ExpData.class);
             ExpData data = ExperimentService.get().createData(folderB, "exp1-scope-test", lsid);
             data.save(admin);
             AttachmentParent parent = new ExpDataClassAttachmentParent(folderB, new Lsid(lsid));

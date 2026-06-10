@@ -2431,7 +2431,7 @@ public class IssuesController extends SpringActionController
             ActionURL url = new ActionURL(MoveAction.class, moverFolder)
                     .addParameter("issueIds", String.valueOf(issueId))
                     .addParameter("targetContainerId", dest.getId());
-            assertStatus(HttpServletResponse.SC_UNAUTHORIZED, post(url, mover));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, mover));
 
             // The issue must remain in its source container
             assertNotNull("Issue should still exist in its source folder", IssueManager.getIssue(source, admin, issueId));
