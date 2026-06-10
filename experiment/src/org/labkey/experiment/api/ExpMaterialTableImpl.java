@@ -183,6 +183,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      * for the same lookup target, which would otherwise produce inconsistent SQL fragments
      * (one materialized, one not) for the same table alias.
      * Null means the decision has not yet been made for this instance.
+     *
+     * <p><b>Known limitation (debug builds only):</b> {@code LookupColumn.declareJoins} re-executes
+     * {@code getFromSQLExpanded} for the same alias in assertion-enabled builds to verify that the
+     * SQL is deterministic. If the materialized view is invalidated in the nanoseconds between the
+     * two calls, {@code tryGetFromSqlIfLoaded} may return {@code null} on the second call even though
+     * it returned a temp-table reference on the first, causing {@code debugCompareSQL} to fail.
+     * This window is so narrow it is not expected to occur in practice, and it only affects debug
+     * builds, so it is accepted rather than closed with a blocking synchronization strategy.</p>
      */
     private volatile Boolean _mqhReadySnapshot = null;
 
@@ -1212,12 +1220,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 {
                     ready = mqh.isReadyToUse();
                     _mqhReadySnapshot = ready;
+                    if (!ready)
+                        mqh.materializeAsync();
+
                 }
                 if (ready)
                 {
-                    // Fast path: snapshot said LOADED with no pending work.
-                    // Re-check non-blockingly on every call to close the TOCTOU window: the view may
-                    // have been invalidated between the snapshot decision and now.
+                    // The view may have been invalidated between the snapshot decision and now.
+                    // tryGetFromSqlIfLoaded re-checks LoadingState and needsSynchronousWork without
+                    // blocking; returns null if the view is no longer usable. In debug builds,
+                    // LookupColumn.declareJoins may call this path twice for the same alias — if the
+                    // view is invalidated between the two calls the second will return null and
+                    // debugCompareSQL will fail. This is accepted; see the _mqhReadySnapshot javadoc.
                     SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
                     if (tempRef != null)
                     {
@@ -1226,7 +1240,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     }
                     else
                     {
-                        // Became stale after the snapshot; trigger a rebuild and fall back immediately.
+                        // view became stale after the snapshot was taken, trigger a rebuild and fall back
                         mqh.materializeAsync();
                         sql.append(getJoinSQL(selectedColumns));
                         usedMaterialized = false;
@@ -1234,8 +1248,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 else
                 {
-                    // View not built yet, or stale: trigger background work and fall back.
-                    mqh.materializeAsync();
                     sql.append(getJoinSQL(selectedColumns));
                     usedMaterialized = false;
                 }

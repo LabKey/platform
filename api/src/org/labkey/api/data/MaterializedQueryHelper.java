@@ -80,7 +80,17 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      */
     public static void clearAllMaterialized()
     {
-        _globalClearCallbacks.forEach(Runnable::run);
+        for (Runnable r : _globalClearCallbacks)
+        {
+            try
+            {
+                r.run();
+            }
+            catch (Exception e)
+            {
+                LOG.warn("clearAllMaterialized callback failed", e);
+            }
+        }
     }
 
     public static class Materialized
@@ -473,6 +483,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (m.needsSynchronousWork())
             return null;
         _lastUsed.set(HeartBeat.currentTimeMillis());
+        _countGetFromSql.incrementAndGet();
         SQLFragment sqlf = new SQLFragment(m._fromSql);
         if (!StringUtils.isBlank(tableAlias))
             sqlf.append(" ").append(tableAlias);
