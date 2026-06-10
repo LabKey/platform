@@ -1193,7 +1193,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         SQLFragment sql = new SQLFragment("(");
-        boolean usedMaterialized;
+        boolean usedMaterialized = false;
 
 
         // SELECT FROM
@@ -1242,27 +1242,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     {
                         // view became stale after the snapshot was taken, trigger a rebuild and fall back
                         mqh.materializeAsync();
-                        sql.append(getJoinSQL(selectedColumns));
-                        usedMaterialized = false;
                     }
                 }
-                else
-                {
-                    sql.append(getJoinSQL(selectedColumns));
-                    usedMaterialized = false;
-                }
-            }
-            else
-            {
-                sql.append(getJoinSQL(selectedColumns));
-                usedMaterialized = false;
             }
         }
-        else
-        {
+
+        if (!usedMaterialized)
             sql.append(getJoinSQL(selectedColumns));
-            usedMaterialized = false;
-        }
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
@@ -1420,7 +1406,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      * This is cheap: it creates the MQH configuration but does NOT trigger a SELECT INTO or any incremental SQL.
      * Returns null if there is no sample type ({@code _ss} is null).
      */
-    private _MaterializedQueryHelper getOrCreateMQH()
+    @Nullable private _MaterializedQueryHelper getOrCreateMQH()
     {
         if (null == _ss)
             return null;
