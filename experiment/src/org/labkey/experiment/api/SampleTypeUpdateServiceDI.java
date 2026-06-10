@@ -46,6 +46,7 @@ import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -116,6 +117,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -149,6 +151,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
@@ -466,12 +469,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
+        InsertOption insertOption = context.getInsertOption();
+        Timestamp changedSince = insertOption.allowUpdate ? captureChangedSince() : null;
+
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
-            boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert);
-            audit(context.getInsertOption().auditAction);
+            boolean isMediaUpdate = _sampleType.isMedia() && insertOption.updateOnly;
+            SampleTypeServiceImpl.SampleChangeType reason = insertOption.updateOnly ? update : insertOption.allowUpdate ? merge : insert;
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, reason, changedSince);
+            audit(insertOption.auditAction);
         }
         return ret;
     }
@@ -480,10 +487,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        Timestamp changedSince = captureChangedSince();
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null, configParameters, container, update); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters, container, merge, changedSince); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -510,7 +518,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(results, configParameters, container, SampleTypeServiceImpl.SampleChangeType.insert);
+            onSamplesChanged(results, configParameters, container, insert);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -553,6 +561,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> results;
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
         recordDataIteratorUsed(finalConfigParameters);
+        Timestamp changedSince = captureChangedSince();
 
         try
         {
@@ -567,7 +576,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update, changedSince);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -1140,6 +1149,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
+        onSamplesChanged(results, params, container, reason, null);
+    }
+
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
+    {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
@@ -1163,7 +1177,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
-                    fireSamplesChanged(reason);
+                    fireSamplesChanged(reason, changedSince);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1173,7 +1187,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            fireSamplesChanged(reason);
+            fireSamplesChanged(reason, changedSince);
         }
     }
 
@@ -1205,10 +1219,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason)
+    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason);
+            _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
+    }
+
+    static @Nullable Timestamp captureChangedSince()
+    {
+        return new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class);
     }
 
     void audit(QueryService.AuditAction auditAction)
