@@ -16,10 +16,18 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.math.BigDecimal;
@@ -27,25 +35,12 @@ import java.math.BigInteger;
 
 public class QNumber extends QExpr implements IConstant
 {
+	private static final Logger LOG = LogHelper.getLogger(QNumber.class, "Numeric literal parse diagnostics");
+
 	Number _value = null;
 	JdbcType _sqlType = JdbcType.DOUBLE;
-	
 
-	public QNumber(String s)
-	{
-		String substring = s;
-		if (s.startsWith("0x"))
-			setValue(convertInteger(s));
-		else if (s.startsWith("+") || s.startsWith("-"))
-			substring = s.substring(1);
 
-		if (StringUtils.containsOnly(substring,"0123456789"))
-			setValue(convertInteger(s));
-		else
-			setValue(convertDouble(s));
-	}
-
-	
     public QNumber(CommonTree n)
     {
 		super(false);
@@ -69,11 +64,29 @@ public class QNumber extends QExpr implements IConstant
 		}
 		catch (NumberFormatException x)
 		{
-			//
+			// Lexer produced a numeric token Java couldn't parse. Strict mode (default) treats this
+			// as a parse error rather than silently emitting the raw lexeme (a SQL-injection
+			// surface). Gated by FEATUREFLAG_DISABLE_STRICT_CHECKS while we collect telemetry;
+			// when the flag is set, fall back to the previous silent behavior so existing
+			// deployments that hit this path keep working.
+			if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
+			{
+				LOG.warn("Unparseable numeric literal in LabKey SQL (flag-on, falling back to raw lexeme): {}", getTokenText());
+				// leave _value null; getValueString() falls back to getTokenText()
+			}
+			else
+			{
+				LOG.warn("Unparseable numeric literal in LabKey SQL (flag-off, throwing parse error): {}", getTokenText());
+				// Throw QueryParseException (not IllegalArgumentException) so SqlParser.wrapParseException returns it
+				// as-is: the user sees a precise, located parse error instead of a generic "Unexpected exception" at
+				// line 0:0, and it isn't logged at ERROR/reported to mothership. cause is left null so the
+				// QueryParseException constructor sets SkipMothershipLogging (this is malformed user input, not a fault).
+				throw new QueryParseException("Invalid numeric literal: " + getTokenText(), null, getLine(), getColumn());
+			}
 		}
     }
 
-		
+
 	public QNumber(Number value)
     {
 		setValue(value);
@@ -144,7 +157,7 @@ public class QNumber extends QExpr implements IConstant
 			return new BigInteger(s, base);
 		}
 	}
-	
+
 
 	Number convertDouble(String s)
 	{
@@ -192,5 +205,99 @@ public class QNumber extends QExpr implements IConstant
     public boolean isConstant()
     {
         return true;
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        private static CommonTree token(int type, String text)
+        {
+            return new CommonTree(new CommonToken(type, text));
+        }
+
+        @Test
+        public void testValidIntegerToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_INT, "42"));
+            assertEquals(42L, n.getValue());
+            assertEquals("42", n.getValueString());
+            assertEquals(JdbcType.INTEGER, n.getJdbcType());
+        }
+
+        @Test
+        public void testValidLongToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_LONG, "9999999999"));
+            assertEquals(9999999999L, n.getValue());
+        }
+
+        @Test
+        public void testValidDoubleToken()
+        {
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_DOUBLE, "1.5"));
+            assertEquals(new BigDecimal("1.5"), n.getValue());
+            assertEquals(JdbcType.DECIMAL, n.getJdbcType());
+        }
+
+        @Test
+        public void testValidFloatScientificToken()
+        {
+            // 'e' in the token text triggers the floatish branch -> Double.parseDouble
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_FLOAT, "1.5e2"));
+            assertEquals(150.0, ((Number) n.getValue()).doubleValue(), 0.0);
+        }
+
+        /**
+         * Strict mode (default — flag unset): an unparseable numeric token must surface as a
+         * parse-time QueryParseException so SqlParser routes it into _parseErrors as a
+         * user-facing error rather than silently emitting the raw lexeme.
+         */
+        @Test
+        public void testInvalidIntegerStrictThrows()
+        {
+            if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                return; // flag set in this environment; strict-mode assertion does not apply
+            try
+            {
+                new QNumber(token(SqlBaseParser.NUM_INT, "1.2.3"));
+                fail("Expected QueryParseException for unparseable NUM_INT token");
+            }
+            catch (QueryParseException expected)
+            {
+                assertTrue("error message should include the bad token: " + expected.getMessage(),
+                        expected.getMessage().contains("1.2.3"));
+            }
+        }
+
+        @Test
+        public void testInvalidDoubleStrictThrows()
+        {
+            if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                return;
+            try
+            {
+                new QNumber(token(SqlBaseParser.NUM_DOUBLE, "1.2.3.4"));
+                fail("Expected QueryParseException for unparseable NUM_DOUBLE token");
+            }
+            catch (QueryParseException expected)
+            {
+                assertTrue(expected.getMessage().contains("1.2.3.4"));
+            }
+        }
+
+        /**
+         * Lenient mode (flag set): the previous silent-fallback behavior is preserved so existing
+         * deployments that somehow reach this path keep working. _value stays null and
+         * getValueString() returns the raw token text.
+         */
+        @Test
+        public void testInvalidIntegerLenientFallback()
+        {
+            if (!AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                return; // flag not set; lenient-mode assertion does not apply
+            QNumber n = new QNumber(token(SqlBaseParser.NUM_INT, "1.2.3"));
+            assertNull(n.getValue());
+            assertEquals("1.2.3", n.getValueString());
+        }
     }
 }

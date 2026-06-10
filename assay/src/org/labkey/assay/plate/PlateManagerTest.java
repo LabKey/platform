@@ -484,7 +484,7 @@ public final class PlateManagerTest
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
         // verify plate metadata property updates
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -531,7 +531,7 @@ public final class PlateManagerTest
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
         filter.addCondition(FieldKey.fromParts("Row"), 0);
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -2098,7 +2098,7 @@ public final class PlateManagerTest
         filter.addCondition(FieldKey.fromParts("PlateId"), plateRowId);
 
         var wellTable = getWellTable();
-        return QueryService.get().select(wellTable, getWellTableColumns(wellTable).values(), filter, new Sort("RowId"));
+        return QueryService.get().getSelectBuilder(wellTable).columns(getWellTableColumns(wellTable).values()).filter(filter).sort(new Sort("RowId")).select();
     }
 
     private Map<String, Object> getWellRow(long plateRowId, @NotNull String position)

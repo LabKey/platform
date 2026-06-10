@@ -139,12 +139,12 @@ public class WriteableLookAndFeelProperties extends WriteableFolderLookAndFeelPr
         remove(applicationMenuDisplayMode);
     }
 
-    public void setHelpMenuEnabled(boolean enabled)
+    public void setDocumentationMenuEnabled(boolean enabled)
     {
         storeBooleanValue(helpMenuEnabled, enabled);
     }
 
-    public void clearHelpMenuEnabled()
+    public void clearDocumentationMenuEnabled()
     {
         remove(helpMenuEnabled);
     }

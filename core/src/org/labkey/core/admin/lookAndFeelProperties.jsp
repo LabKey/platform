@@ -198,10 +198,10 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Help menu item</label></td>
-    <% inherited = isInherited(laf.isHelpMenuEnabledStored()); %>
+    <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Documentation menu item</label></td>
+    <% inherited = isInherited(laf.isDocumentationMenuEnabledStored()); %>
     <%=inheritCheckbox(inherited, helpMenuEnabled)%>
-    <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isHelpMenuEnabled())%><%=disabled(inherited)%>></td>
+    <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="<%=standardInputWidth%>"<%=checked(laf.isDocumentationMenuEnabled())%><%=disabled(inherited)%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>

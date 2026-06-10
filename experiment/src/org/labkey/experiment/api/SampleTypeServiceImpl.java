@@ -135,6 +135,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -1205,7 +1206,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
@@ -1971,6 +1972,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("sampleAuditEvents", 0);
         Map<Long, List<FileFieldRenameData>> fileMovesBySampleId = new LongHashMap<>();
         ExperimentService expService = ExperimentService.get();
+        Timestamp changedSince = SampleTypeUpdateServiceDI.captureChangedSince();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1981,7 +1983,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
+            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry : sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
                 SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
@@ -2055,10 +2057,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                 {
                     // force refresh of materialized view
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update);
+                    refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update, changedSince);
                     // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                     // based on the modified date
-                    SampleTypeServiceImpl.get().indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
+                    indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
@@ -2399,13 +2401,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    public enum SampleChangeType { insert, update, delete, rollup /* aliquot count */, schema }
+    public enum SampleChangeType { insert, update, merge, delete, rollup /* aliquot count */, schema }
 
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
+        refreshSampleTypeMaterializedView(st, reason, null);
     }
 
+    /**
+     * @param changedSince a database-clock watermark captured before the update's writes, at or after which the changed
+     *                     samples were modified (only meaningful for update); null means the caller could not capture a
+     *                     watermark, forcing a full re-sync on the next read.
+     */
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Timestamp changedSince)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
+    }
 
     public static class TestCase extends Assert
     {

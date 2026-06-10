@@ -35,11 +35,13 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.data.DbSchema" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
 <%@ page import="org.labkey.api.data.Results" %>
 <%@ page import="org.labkey.api.data.RuntimeSQLException" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
 <%@ page import="org.labkey.api.data.TableSelector" %>
 <%@ page import="org.labkey.api.data.dialect.BasePostgreSqlDialect" %>
@@ -54,6 +56,7 @@
 <%@ page import="org.labkey.api.iterator.CloseableIterator" %>
 <%@ page import="org.labkey.api.query.AliasManager" %>
 <%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page import="org.labkey.api.query.QueryException" %>
 <%@ page import="org.labkey.api.query.QueryParam" %>
@@ -79,13 +82,11 @@
 <%@ page import="org.springframework.mock.web.MockHttpServletResponse" %>
 <%@ page import="java.io.InputStream" %>
 <%@ page import="java.sql.ResultSet" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="java.sql.ResultSetMetaData" %>
 <%@ page import="java.sql.SQLException" %>
 <%@ page import="java.sql.Timestamp" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
@@ -94,10 +95,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.concurrent.Callable" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
-<%@ page import="static java.util.Objects.requireNonNull" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -574,6 +571,16 @@ d,seven,twelve,day,month,date,duration,guid
             FROM R
             GROUP BY seven, month
             PIVOT C BY month IN('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')"""),
+        // Regression test for escaping of string pivot values. The CASE expression QueryPivot generates compares the
+        // pivot column against each pivot value as an inline literal, so a value containing a single quote (or a
+        // backslash) must be escaped per the target dialect's string rules. If that escaping regresses, the generated
+        // SQL is malformed and the query throws against the database, failing this test on both PostgreSQL and SQL
+        // Server. 'O''Brien' and 'back\\slash' don't match any month data, so those pivot columns are simply all-NULL.
+        new SqlTest("""
+            SELECT seven, month, count(*) C
+            FROM R
+            GROUP BY seven, month
+            PIVOT C BY month IN ('January' AS jan, 'O''Brien' AS oBrien, 'back\\slash' AS bs)"""),
         // Regression tests for Issue 27910: pivot query summary columns not aggregated correctly
         new SqlTest("SELECT day, month, count(*) as total, " +
             "SUM(CASE WHEN month = 'April' THEN 1 ELSE 0 END) AS A, " +
@@ -1306,7 +1313,7 @@ d,seven,twelve,day,month,date,duration,guid
 
         try
         {
-            Results rs = QueryService.get().select(schema, sql, null, true, true);
+            Results rs = QueryService.get().getSelectBuilder(schema, sql, true).select(true);
             assertNotNull(sql, rs);
             return rs;
         }
@@ -1427,7 +1434,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -1464,7 +1471,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
             else
             {
-                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                try (Results rs = QueryService.get().getSelectBuilder(t).select(true))
                 {
                     assertNotNull(sql, rs);
                     assertEquals(sql, Rsize, rs.getSize());
@@ -1987,7 +1994,7 @@ d,seven,twelve,day,month,date,duration,guid
                 UNION ALL
                 SELECT 'g' as test, false as expected, array_contains_element( ARRAY['A','B'], 'X') as result
                 UNION ALL
-                SELECT 'h' as test, true as expected, array_contains_any(    ARRAY['\"A','X'], ARRAY['\"A','B'] ) as result
+                SELECT 'h' as test, true as expected, array_contains_any(    ARRAY['"A','X'], ARRAY['"A','B'] ) as result
                 UNION ALL
                 SELECT 'i' as test, true as expected, array_is_same(          ARRAY['A;','X'], ARRAY['A;','X'] ) as result
                 """;
@@ -1995,7 +2002,7 @@ d,seven,twelve,day,month,date,duration,guid
         Container container = JunitUtil.getTestContainer();
         User user = TestContext.get().getUser();
         var schema = DefaultSchema.get(user, container).getSchema("core");
-        try (var rs =QueryService.get().select(schema, testSql))
+        try (var rs = QueryService.get().getSelectBuilder(schema, testSql).select())
         {
             while (rs.next())
             {
