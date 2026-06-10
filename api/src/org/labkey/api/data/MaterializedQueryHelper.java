@@ -62,6 +62,7 @@ import static org.labkey.api.test.TestWhen.When.BVT;
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
     private static final Logger LOG = LogHelper.getLogger(MaterializedQueryHelper.class, "Materialized query helper");
+    private static final JobRunner _materializationRunner = new JobRunner("Materialization", 1);
 
     public static class Materialized
     {
@@ -417,7 +418,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         if (_backgroundTaskRunning.compareAndSet(false, true))
         {
-            JobRunner.getDefault().execute(() -> {
+            _materializationRunner.execute(() -> {
                 try
                 {
                     getFromSql("_bg_");
