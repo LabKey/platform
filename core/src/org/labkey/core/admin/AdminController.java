@@ -3205,7 +3205,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public static class ClearMaterializedViewsAction extends FormHandlerAction<QueriesForm>
     {
         @Override
