@@ -222,7 +222,7 @@ public class QueryMcp implements McpService.McpImpl
                     "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
                     "On SQL error, the error message is returned as plain text rather than throwing. " +
                     "For data analysis or bulk retrieval, use the LabKey Python or R client APIs instead of this tool. " +
-                    "**Important** This tools does not yet support queries with named parameters.")
+                    "**Important** This tool does not yet support queries with named parameters.")
     @RequiresPermission(ReadPermission.class)
     String executeSQL(
             ToolContext toolContext,

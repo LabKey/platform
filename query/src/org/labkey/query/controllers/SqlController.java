@@ -640,7 +640,7 @@ public class SqlController extends SpringActionController
         }
 
         @Test
-        public void testExecute_mssql() throws Exception
+        public void testExecute_basic() throws Exception
         {
             MockHttpServletResponse response = executeSql("lists",
                     "SELECT Name, Age, Score FROM " + LIST_NAME + " ORDER BY Name", Format.split);
@@ -685,7 +685,7 @@ public class SqlController extends SpringActionController
         {
             if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
             {
-                testExecute_mssql();
+                testExecute_basic();
                 return;
             }
 
