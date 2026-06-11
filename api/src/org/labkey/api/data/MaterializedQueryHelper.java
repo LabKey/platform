@@ -162,7 +162,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 }
                 else
                 {
-                    selectInto = new SQLFragment("SELECT * INTO ").appendIdentifier("\"" + temp.getName() + "\"").append(".").appendIdentifier("\"" + _tableName + "\"").append("\nFROM (\n");
+                    // UNLOGGED skips WAL when populating and indexing the table; only supported in PostgreSQL.
+                    selectInto = new SQLFragment("SELECT * INTO ")
+                            .append(_mqh._unlogged && _mqh._scope.getSqlDialect().isPostgreSQL() ? "UNLOGGED " : "")
+                            .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");
                 }
@@ -354,6 +357,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     protected final DbScope _scope;
     private final SQLFragment _selectQuery;
     private final boolean _isSelectIntoSql;
+    private final boolean _unlogged;
     protected final SQLFragment _uptodateQuery;
     protected final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
@@ -379,7 +383,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private boolean _closed = false;
 
     protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
-                                    boolean isSelectIntoSql)
+                                    boolean isSelectIntoSql, boolean unlogged)
     {
         _prefix = Objects.toString(prefix,"mat");
         _scope = scope;
@@ -390,6 +394,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (null != indexes)
             _indexes.addAll(indexes);
         _isSelectIntoSql = isSelectIntoSql;
+        _unlogged = unlogged;
         assert MemTracker.get().put(this);
     }
 
@@ -675,14 +680,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false);
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false, false);
     }
 
 
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false);
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false, false);
     }
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
@@ -692,6 +697,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         protected final SQLFragment _select;
 
         protected boolean _isSelectInto = false;
+        protected boolean _unlogged = false;
         protected long _max = CacheManager.UNLIMITED;
         protected SQLFragment _uptodate = null;
         protected Supplier<String> _supplier = null;
@@ -708,6 +714,16 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public Builder setIsSelectInto(boolean b)
         {
             _isSelectInto = b;
+            return this;
+        }
+
+        /**
+         * Request that the materialized table be created UNLOGGED, skipping WAL when populating and indexing it.
+         * Honored only on PostgreSQL and only for the helper-generated SELECT INTO (not setIsSelectInto).
+         */
+        public Builder unlogged(boolean b)
+        {
+            _unlogged = b;
             return this;
         }
 
@@ -738,7 +754,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
         }
     }
 
