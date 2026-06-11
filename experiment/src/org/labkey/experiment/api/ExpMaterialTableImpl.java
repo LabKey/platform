@@ -19,7 +19,6 @@ package org.labkey.experiment.api;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Precision;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,7 +111,6 @@ import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
@@ -1325,16 +1323,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      * matching per-LSID counter(s), and for {@code update}/{@code merge} also records the change watermark for a targeted
      * incremental update.
      */
-    private record RefreshMaterializedViewRunnable(
-        String lsid,
-        SampleTypeServiceImpl.SampleChangeType reason,
-        @Nullable Timestamp changedSince
-    ) implements Runnable
+    private record RefreshMaterializedViewRunnable(String lsid, SampleChangeType reason, @Nullable Timestamp changedSince) implements Runnable
     {
         @Override
         public void run()
         {
-            if (reason == schema)
+            if (reason == SampleChangeType.schema)
             {
                 /* NOTE: MaterializedQueryHelper can detect data changes and refresh the materialized view using the provided SQL.
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
@@ -1370,7 +1364,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     counters.recordPendingUpdate(changedSince);
                     counters.update.incrementAndGet();
 
-                    if (reason == merge)
+                    if (reason == SampleChangeType.merge)
                         counters.insert.incrementAndGet();
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
@@ -1486,7 +1480,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _incrementalUpdateDisabled = deltaSeconds > thresholdSeconds;
 
             if (_incrementalUpdateDisabled)
-                _log.warn("Incremental update disabled for samples. Web and database server time differ by {} seconds which exceeds the threshold of {} seconds. You may experience degraded sample query performance.", deltaSeconds, thresholdSeconds);
+                LOG.warn("Incremental update disabled for samples. Web and database server time differ by {} seconds which exceeds the threshold of {} seconds. You may experience degraded sample query performance.", deltaSeconds, thresholdSeconds);
         }
 
         return _incrementalUpdateDisabled;
