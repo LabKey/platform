@@ -863,36 +863,11 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getJsonObject();
-            String targetIdentifier = object.optString("container", null);
+            JSONObject json = form.getJsonObject();
+            target = validateContainer(json, "container", "Target", errors);
 
-            if (null == targetIdentifier)
-            {
-                errors.reject(ERROR_MSG, "A target container must be specified for move operation.");
+            if (target == null)
                 return;
-            }
-
-            String parentIdentifier = object.optString("parent", null);
-
-            if (null == parentIdentifier)
-            {
-                errors.reject(ERROR_MSG, "A parent container must be specified for move operation.");
-                return;
-            }
-
-            // Worry about escaping
-            Path path = Path.parse(targetIdentifier);
-            target = ContainerManager.getForPath(path);            
-
-            if (null == target)
-            {
-                target = ContainerManager.getForId(targetIdentifier);
-                if (null == target)
-                {
-                    errors.reject(ERROR_MSG, "Container '" + targetIdentifier + "' does not exist.");
-                    return;
-                }
-            }
 
             // This covers /home and /shared
             if (target.isProject() || target.isRoot())
@@ -901,18 +876,13 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            Path parentPath = Path.parse(parentIdentifier);
-            parent = ContainerManager.getForPath(parentPath);
+            if (!target.getParent().hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException("Insufficient permissions in target's current parent.");
 
-            if (null == parent)
-            {
-                parent = ContainerManager.getForId(parentIdentifier);
-                if (null == parent)
-                {
-                    errors.reject(ERROR_MSG, "Parent container '" + parentIdentifier + "' does not exist.");
-                    return;
-                }
-            }
+            parent = validateContainer(json, "parent", "Parent", errors);
+
+            if (parent == null)
+                return;
 
             // Check children
             if (parent.hasChildren())
@@ -933,9 +903,37 @@ public class CoreController extends SpringActionController
             List<Container> children = ContainerManager.getAllChildren(target, getUser()); // assumes read permission
             if (children.contains(parent))
             {
-                errors.reject(ERROR_MSG, "The container '" + parentIdentifier + "' is not a valid parent folder.");
-                return;
+                errors.reject(ERROR_MSG, "The container '" + json.get("parent") + "' is not a valid parent folder.");
             }
+        }
+
+        private @Nullable Container validateContainer(JSONObject json, String key, String description, Errors errors)
+        {
+            String identifier = json.optString(key, null);
+
+            if (null == identifier)
+            {
+                errors.reject(ERROR_MSG, description + " container must be specified for move operation.");
+                return null;
+            }
+
+            Path path = Path.parse(identifier);
+            Container c = ContainerManager.getForPath(path);
+
+            if (null == c)
+            {
+                c = ContainerManager.getForId(identifier);
+                if (null == c)
+                {
+                    errors.reject(ERROR_MSG, "Container '" + identifier + "' does not exist.");
+                    return null;
+                }
+            }
+
+            if (!c.hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException("Insufficient permissions in " + description.toLowerCase() + ".");
+
+            return c;
         }
 
         @Override
@@ -949,7 +947,7 @@ public class CoreController extends SpringActionController
 
             // Prepare aliases
             JSONObject object = form.getJsonObject();
-            Boolean addAlias = (Boolean) object.get("addAlias");
+            boolean addAlias = object.optBoolean("addAlias"); // optional, false by default
 
             List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
