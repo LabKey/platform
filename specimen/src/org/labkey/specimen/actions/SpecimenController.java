@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExportAction;
@@ -82,6 +83,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -4611,7 +4613,8 @@ public class SpecimenController extends SpringActionController
         {
             SpecimenRequestRequirement requirement =
                     SpecimenRequestRequirementProvider.get().getRequirement(getContainer(), form.getRequirementId());
-            if (requirement.getRequestId() == form.getId())
+            // getRequirement is container-scoped; null means the requirementId doesn't belong to this folder
+            if (requirement != null && requirement.getRequestId() == form.getId())
             {
                 SpecimenRequestManager.get().deleteRequestRequirement(getUser(), requirement);
                 return true;
@@ -5177,6 +5180,9 @@ public class SpecimenController extends SpringActionController
                         ids[i] = Integer.parseInt(idStrs[i]);
                     LocationImpl originatingOrProvidingLocation = LocationManager.get().getLocation(getContainer(), ids[0]);
                     SpecimenRequestActor notifyActor = SpecimenRequestRequirementProvider.get().getActor(getContainer(), ids[1]);
+                    // getActor is container-scoped; null means the actorId doesn't belong to this folder
+                    if (notifyActor == null)
+                        throw new NotFoundException("No notification actor found for id " + ids[1] + " in this folder");
                     LocationImpl notifyLocation = null;
                     if (notifyActor.isPerSite() && ids[2] >= 0)
                         notifyLocation = LocationManager.get().getLocation(getContainer(), ids[2]);
@@ -5755,6 +5761,91 @@ public class SpecimenController extends SpringActionController
         {
             super.addNavTrail(root);
             root.addChild("Insert " + _form.getQueryName());
+        }
+    }
+
+    /**
+     * Verifies that actions resolving a specimen object by its global rowId reject ids that belong to a different
+     * container, even when the caller has the action's required permission in the current folder. These exercise the
+     * action-level guards that depend on the container scoping enforced by {@link SpecimenRequestRequirementProvider}.
+     */
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        // Actors are required by requirements through a NOT NULL foreign key, so several fixtures need one
+        private SpecimenRequestActor createActor(Container c, String label)
+        {
+            SpecimenRequestActor actor = new SpecimenRequestActor();
+            actor.setContainer(c);
+            actor.setLabel(label);
+            return actor.create(getAdmin());
+        }
+
+        @Test
+        public void testShowGroupMembersActionRejectsForeignActor() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // An actor that lives in folder A
+            SpecimenRequestActor actor = createActor(folderA, "Group members scoping actor");
+            int actorId = actor.getRowId();
+
+            // Addressing the action through folder B, where the actor does not live, must 404 rather than expose it
+            ActionURL foreignUrl = new ActionURL(ShowGroupMembersAction.class, folderB).addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, getAdmin()));
+
+            // Positive control: the same request through the actor's own folder is accepted (redirect on success),
+            // proving the guard rejects only the cross-container case rather than every request
+            ActionURL ownUrl = new ActionURL(ShowGroupMembersAction.class, folderA).addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, getAdmin()));
+        }
+
+        @Test
+        public void testDeleteRequirementActionRejectsForeignRequirement() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            SpecimenRequestRequirementProvider provider = SpecimenRequestRequirementProvider.get();
+
+            // Build a real request chain in folder A: status -> request -> requirement. Deleting a requirement logs a
+            // request event whose RequestId is a foreign key into SampleRequest, so the request row must actually
+            // exist (a fake id would fail the FK and mask what this test is checking). Capture each insert's return so
+            // we have the generated rowId.
+            SpecimenRequestStatus status = new SpecimenRequestStatus();
+            status.setContainer(folderA);
+            status.setLabel("Delete requirement scoping status");
+            status.setSortOrder(1);     // non-null and >= 0 so the bean isn't treated as a system status
+            status = Table.insert(getAdmin(), SpecimenSchema.get().getTableInfoSampleRequestStatus(), status);
+
+            SpecimenRequest request = new SpecimenRequest();
+            request.setContainer(folderA);
+            request.setStatusId(status.getRowId());
+            request = SpecimenRequestManager.get().createRequest(getAdmin(), request, false);
+            int requestId = request.getRowId();
+
+            SpecimenRequestActor actor = createActor(folderA, "Delete requirement scoping actor");
+            SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
+            requirement.setContainer(folderA);
+            requirement.setRequestId(requestId);
+            requirement.setActorId(actor.getRowId());
+            requirement.setDescription("Delete requirement scoping test");
+            requirement = requirement.persist(getAdmin(), GUID.makeGUID());
+            int requirementId = requirement.getRowId();
+
+            // Deleting through folder B, where the requirement does not live, must be a no-op: the row survives
+            ActionURL foreignUrl = new ActionURL(DeleteRequirementAction.class, folderB)
+                    .addParameter("id", String.valueOf(requestId))
+                    .addParameter("requirementId", String.valueOf(requirementId));
+            post(foreignUrl, getAdmin());
+            assertNotNull("Cross-container delete must not remove the requirement", provider.getRequirement(folderA, requirementId));
+
+            // Positive control: deleting through the requirement's own folder removes it, proving the guard rejects
+            // only the cross-container case rather than every delete
+            ActionURL ownUrl = new ActionURL(DeleteRequirementAction.class, folderA)
+                    .addParameter("id", String.valueOf(requestId))
+                    .addParameter("requirementId", String.valueOf(requirementId));
+            post(ownUrl, getAdmin());
+            assertNull("Same-container delete should remove the requirement", provider.getRequirement(folderA, requirementId));
         }
     }
 }
