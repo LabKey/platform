@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,7 +60,7 @@ import static org.labkey.api.test.TestWhen.When.BVT;
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
     private static final Logger LOG = LogHelper.getLogger(MaterializedQueryHelper.class, "Materialized query helper");
-    private static final JobRunner _materializationRunner = new JobRunner("Materialization", 1);
+    private static final JobRunner _materializationRunner = new JobRunner("MaterializedQueryHelper", 1);
 
     public static class Materialized
     {
@@ -115,9 +113,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
 
         /**
-         * Returns true if calling getFromSql() would perform synchronous DB work (full rebuild via SELECT INTO,
-         * or incremental update SQL). This check is non-destructive: it does not consume invalidation state.
-         * Subclasses may override to check additional invalidation state (also non-destructively).
+         * Returns true if calling getFromSql() performs synchronous DB work (full rebuild via SELECT INTO,
+         * or incremental update SQL). This check is non-destructive: it does not consume the invalidation state.
          */
         public boolean needsSynchronousWork()
         {
@@ -232,10 +229,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
          * Non-destructive validity check. Returns false if the entry should be considered stale without updating
          * any stored state. Use this in read-only probes (e.g. {@link Materialized#needsSynchronousWork()}) to avoid
          * consuming invalidation state before the actual update logic has run.
-         *
-         * <p>The default returns {@code true} (assume valid). Subclasses that can cheaply determine staleness without
-         * side effects should override this. {@link SqlInvalidator} intentionally keeps the default because a true
-         * non-destructive check would still require a DB round-trip and is not worth the extra query.
          */
         public boolean peekValid(long createdTime)
         {
@@ -316,7 +309,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
         /**
          * Non-destructive validity check: returns false if the supplier value has changed since the last
-         * {@link #stillValid} or {@link #reset} call, without updating the stored snapshot.
+         * {@link #stillValid} call, without updating the stored snapshot.
          * Use this in read-only staleness checks (e.g. {@code needsSynchronousWork()}) to avoid consuming
          * the invalidation before the incremental-update logic has had a chance to run.
          */
@@ -332,12 +325,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     private String makeKey(DbScope.Transaction t)
     {
         return (null == t ? "-" : t.getId());
     }
-
 
     protected final String _prefix;
     protected final DbScope _scope;
@@ -485,9 +476,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
-    private final Set<Integer> _pending = null;
-
     // this is a method so you can subclass MaterializedQueryHelper
     protected String getUpToDateKey()
     {
@@ -532,13 +520,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     /* used by FLow directly for some reason */
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias)
     {
         return getFromSql(selectQuery, false, tableAlias);
     }
-
 
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
@@ -554,11 +540,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return sqlf;
     }
 
-
     protected void incrementalUpdateBeforeSelect(Materialized m)
     {
     }
-
 
     /**
      * A Materialized represents a particular instance of materialized view (stored in a temp table).
@@ -640,7 +624,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     private Materialized getMaterializedAndLoad(SQLFragment selectQuery, boolean isSelectIntoSql)
     {
         Materialized materialized = getMaterialized(false);
@@ -699,7 +682,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false);
     }
 
-
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
     {
         protected final String _prefix;
@@ -756,7 +738,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
         }
     }
-
 
     @TestWhen(BVT)
     public static class TestCase extends Assert

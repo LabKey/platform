@@ -177,20 +177,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     Set<String> _uniqueIdFields;
     boolean _supportTableRules = true;
     /**
-     * Snapshots the {@link MaterializedQueryHelper#isReadyToUse()} decision on the first call to
-     * {@link #getFromSQLExpanded} and reuses it for all subsequent calls on this instance.
-     * This prevents a race where a background build completes between two {@code getFromSQL} calls
-     * for the same lookup target, which would otherwise produce inconsistent SQL fragments
-     * (one materialized, one not) for the same table alias.
-     * Null means the decision has not yet been made for this instance.
-     *
-     * <p><b>Known limitation (debug builds only):</b> {@code LookupColumn.declareJoins} re-executes
-     * {@code getFromSQLExpanded} for the same alias in assertion-enabled builds to verify that the
-     * SQL is deterministic. If the materialized view is invalidated in the nanoseconds between the
-     * two calls, {@code tryGetFromSqlIfLoaded} may return {@code null} on the second call even though
-     * it returned a temp-table reference on the first, causing {@code debugCompareSQL} to fail.
-     * This window is so narrow it is not expected to occur in practice, and it only affects debug
-     * builds, so it is accepted rather than closed with a blocking synchronization strategy.</p>
+     * Caches the {@link MaterializedQueryHelper#isReadyToUse()} decision per instance so repeated
+     * {@link #getFromSQLExpanded} calls for the same alias produce consistent SQL; null until first set.
      */
     private volatile Boolean _mqhReadySnapshot = null;
 
@@ -924,7 +912,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment sql;
         UserSchema plateUserSchema;
-        // Issue 53194 : this would be the case for linked to study samples. The contextual role is set up from the study dataset
+        // Issue 53194: this would be the case for linked to study samples. The contextual role is set up from the study dataset
         // for the source sample, we want to allow the plate schema to inherit any contextual roles to allow querying
         // against tables in that schema.
         if (_userSchema instanceof UserSchema.HasContextualRoles samplesSchema && !samplesSchema.getContextualRoles().isEmpty())
@@ -1005,7 +993,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private ContainerFilter getSampleStatusLookupContainerFilter()
     {
-        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // The default lookup container filter is Current. However, we want to have the default be CurrentPlusProjectAndShared
         // for the sample status lookup since in the app project context we want to share status definitions across
         // a given project instead of creating duplicate statuses in each subfolder project.
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
@@ -1075,7 +1063,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
-            // Don't include PHI columns in full text search index
+            // Don't include PHI columns in the full-text search index
             // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
@@ -1128,7 +1116,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (propColumn.isMvEnabled())
                 {
                     // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
-                    // it with a "MVIndicator" suffix (no underscore)
+                    // it with an "MVIndicator" suffix (no underscore)
                     var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                             StorageProvisioner.get().getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
                     mvColumn.setLabel(dp.getLabel() != null ? dp.getLabel() : dp.getName() + " MV Indicator");
@@ -1195,12 +1183,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment sql = new SQLFragment("(");
         boolean usedMaterialized = false;
 
-
         // SELECT FROM
-        /* NOTE We want to avoid caching in paths where the table is actively being updated (e.g. loadRows)
-         * Unfortunately, we don't _really_ know when this is, but if we in a transaction that's a good guess.
-         * Also, we may use RemapCache for material lookup outside a transaction
-         */
+        // NOTE: We want to avoid caching in paths where the table is actively being updated (e.g., loadRows).
+        // Unfortunately, we don't _really_ know when this is, but if we are in a transaction, that's a good guess.
+        // Also, we may use RemapCache for material lookup outside a transaction.
         boolean onlyMaterialColums = false;
         if (null != selectedColumns && !selectedColumns.isEmpty())
             onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
@@ -1210,11 +1196,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _MaterializedQueryHelper mqh = getOrCreateMQH();
             if (mqh != null)
             {
-                // Snapshot the isReadyToUse() decision on first call; reuse on all subsequent calls
-                // within the same TableInfo instance (i.e., the same query-construction scope).
-                // This prevents a race where a background build completes between two getFromSQL
-                // calls for the same lookup target, which would otherwise produce inconsistent SQL
-                // fragments (one materialized, one not) for the same table alias.
+                // Snapshot isReadyToUse() on the first call and reuse it, so a background build
+                // completing mid-query can't yield inconsistent SQL for the same table alias.
                 Boolean ready = _mqhReadySnapshot;
                 if (ready == null)
                 {
@@ -1226,12 +1209,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 if (ready)
                 {
-                    // The view may have been invalidated between the snapshot decision and now.
-                    // tryGetFromSqlIfLoaded re-checks LoadingState and needsSynchronousWork without
-                    // blocking; returns null if the view is no longer usable. In debug builds,
-                    // LookupColumn.declareJoins may call this path twice for the same alias — if the
-                    // view is invalidated between the two calls the second will return null and
-                    // debugCompareSQL will fail. This is accepted; see the _mqhReadySnapshot javadoc.
+                    // tryGetFromSqlIfLoaded re-checks usability without blocking, returning null if the
+                    // view was invalidated since the snapshot (an accepted debug-build edge case; see _mqhReadySnapshot).
                     SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
                     if (tempRef != null)
                     {
@@ -1273,7 +1252,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public boolean supportTableRules() // intentional override
+    public boolean supportTableRules()
     {
         return _supportTableRules;
     }
@@ -1286,7 +1265,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             definitionContainer = _ss.getContainer();
         return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
-
 
     static class InvalidationCounters
     {
@@ -1403,7 +1381,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     /**
      * Gets or creates the {@code _MaterializedQueryHelper} for the current sample type from the blocking cache.
-     * This is cheap: it creates the MQH configuration but does NOT trigger a SELECT INTO or any incremental SQL.
+     * This is inexpensive: it creates the MQH configuration but does NOT trigger a SELECT INTO or any incremental SQL.
      * Returns null if there is no sample type ({@code _ss} is null).
      */
     @Nullable private _MaterializedQueryHelper getOrCreateMQH()
