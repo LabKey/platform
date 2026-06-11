@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -405,18 +406,25 @@ public class MothershipSchema extends UserSchema
         FilteredTable<MothershipSchema> result = new FilteredTable<>(MothershipManager.get().getTableInfoExceptionReport(), this, cf);
         result.setDetailsURL(AbstractTableInfo.LINK_DISABLER);
         result.wrapAllColumns(true);
+        // Reports are submitted by anonymous users, so untrusted. Don't render these two URLs as links.
         result.getMutableColumnOrThrow("URL").setDisplayColumnFactory(colInfo ->
-        {
-            DataColumn result1 = new DataColumn(colInfo);
-            result1.setURLExpression(StringExpressionFactory.create("${URL}", false));
-            return result1;
-        });
+            new DataColumn(colInfo)
+            {
+                @Override
+                protected String renderURLorValueURL(RenderContext ctx)
+                {
+                    return null;
+                }
+            });
         result.getMutableColumnOrThrow("ReferrerURL").setDisplayColumnFactory(colInfo ->
-        {
-            DataColumn result12 = new DataColumn(colInfo);
-            result12.setURLExpression(StringExpressionFactory.create("${ReferrerURL}", false));
-            return result12;
-        });
+            new DataColumn(colInfo)
+            {
+                @Override
+                protected String renderURLorValueURL(RenderContext ctx)
+                {
+                    return null;
+                }
+            });
 
         // Container column is on another table so join to it to filter appropriately
         SQLFragment containerSQL = new SQLFragment("ExceptionStackTraceId IN (SELECT ExceptionStackTraceId FROM ");
