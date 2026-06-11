@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
@@ -112,7 +113,7 @@
                 PtidVisit ptidVisit = it.next();
                 builder.append(ptidVisit.ptid())
                     .append("/")
-                    .append(ptidVisit.visit());
+                    .append(StringUtils.trimToEmpty(ptidVisit.visit()));
                 if (it.hasNext())
                     builder.append(", ");
             }
