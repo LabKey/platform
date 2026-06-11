@@ -69,6 +69,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -243,6 +244,8 @@ public class SqlController extends SpringActionController
         String sep, eol;
         Integer offset;
         Integer limit;
+        Integer maxStringLength = -1;
+        String truncationSuffix = "";
         Map<String,Object> parameterMap = Map.of();
 
         JdbcType[] types;
@@ -261,15 +264,17 @@ public class SqlController extends SpringActionController
             this.format = Format.tsv;
         }
 
-        SqlExecute offset(Integer offset)
+        SqlExecute page(Integer offset, Integer limit)
         {
             this.offset = offset;
+            this.limit = limit;
             return this;
         }
 
-        SqlExecute limit(Integer limit)
+        SqlExecute truncation(int max, String suffix)
         {
-            this.limit = limit;
+            maxStringLength = max;
+            truncationSuffix = suffix;
             return this;
         }
 
@@ -320,7 +325,14 @@ public class SqlController extends SpringActionController
             out.clear();
             renderCtx.setRow(rowMapFactory.getRowMap(rs));
             for (DisplayColumn dc : dcs)
-                out.add(dc.getTsvFormattedValue(renderCtx));
+            {
+                String string = dc.getTsvFormattedValue(renderCtx);
+                if (maxStringLength > 0 && null != string && string.length() > maxStringLength)
+                {
+                    string = string.substring(0,maxStringLength) + truncationSuffix;
+                }
+                out.add(string);
+            }
         }
 
         void writeResults_text(Writer out, Results rs, String sep, String eol) throws IOException, SQLException
@@ -526,6 +538,7 @@ public class SqlController extends SpringActionController
             {
                 new SqlExecute(getViewContext(), userSchema, form.getSql())
                         .format(format, form.getSep(), form.getEol())
+                        .parameters(form.getParameterMap())
                         .execute(getViewContext().getResponse().getWriter());
             }
             catch (QueryParseException x)
@@ -802,5 +815,25 @@ public class SqlController extends SpringActionController
                 response.getContentAsString().contains("Schema not found"));
         }
 
+        @Test
+        public void testTruncation() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            UserSchema listsSchema = (UserSchema) DefaultSchema.get(user, _folder).getSchema("lists");
+            ContainerUser cu = ContainerUser.create(_folder, user);
+
+            // Truncate at 3 chars. Alice/Carol (5 chars) should be truncated; Bob (3 chars == limit, not >) should not.
+            var execute = new SqlExecute(cu, listsSchema, "SELECT Name FROM " + LIST_NAME + " ORDER BY Name")
+                    .truncation(3, "…[truncated]");
+
+            StringWriter sw = new StringWriter();
+            execute.execute(sw);
+            String[] lines = sw.toString().split("\n");
+
+            assertEquals("Name", lines[0]);
+            assertEquals("Ali…[truncated]", lines[1]);  // 5 > 3: truncated
+            assertEquals("Bob", lines[2]);                   // 3 == 3: not truncated (boundary)
+            assertEquals("Car…[truncated]", lines[3]);  // 5 > 3: truncated
+        }
     }
 }

@@ -220,7 +220,8 @@ public class QueryMcp implements McpService.McpImpl
                     "Response format: a header row of column names, then one data row per newline, fields tab-separated. " +
                     "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
                     "On SQL error, the error message is returned as plain text rather than throwing. " +
-                    "For data analysis or bulk retrieval, use the LabKey Python or R client APIs instead of this tool.")
+                    "For data analysis or bulk retrieval, use the LabKey Python or R client APIs instead of this tool. " +
+                    "**Important** This tools does not yet support queries with named parameters.")
     @RequiresPermission(ReadPermission.class)
     String executeSQL(
             ToolContext toolContext,
@@ -238,7 +239,8 @@ public class QueryMcp implements McpService.McpImpl
         offset = null==offset ? 0 : offset < 0 ? 0 : offset;
         limit = (limit == null || limit < 0) ? 100 : Math.min(100, limit);
         var execute = new SqlController.SqlExecute(cu, userSchema, sql)
-                .offset(offset).limit(limit);
+                .page(offset, limit)
+                .truncation(500, "…[truncated]");
 
         try
         {
@@ -251,7 +253,6 @@ public class QueryMcp implements McpService.McpImpl
             return x.getMessage() != null ? x.getMessage() : x.getClass().getSimpleName();
         }
     }
-
 
     /* For now, list all schemas. CONSIDER support incremental querying. */
     public static Map<SchemaKey, UserSchema> _listAllSchemas(DefaultSchema root)
