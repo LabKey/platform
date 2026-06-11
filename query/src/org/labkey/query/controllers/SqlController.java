@@ -264,7 +264,7 @@ public class SqlController extends SpringActionController
             this.format = Format.tsv;
         }
 
-        SqlExecute page(Integer offset, Integer limit)
+        SqlExecute page(Integer offset, int limit)
         {
             this.offset = offset;
             this.limit = limit;
@@ -335,41 +335,44 @@ public class SqlController extends SpringActionController
             }
         }
 
-        void writeResults_text(Writer out, Results rs, String sep, String eol) throws IOException, SQLException
+        int writeResults_text(Writer out, Results rs, int limit, String sep, String eol) throws IOException, SQLException
         {
             initWriter(rs);
-            final int count = rs.getMetaData().getColumnCount();
+            final int columnCount = rs.getMetaData().getColumnCount();
 
             // meta-meta-data
             out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
 
-            for (int column = 1; column <= count; column++)
+            for (int column = 1; column <= columnCount; column++)
             {
                 out.write(rs.getColumn(column).getName());
-                out.write(column == count ? eol : sep);
+                out.write(column == columnCount ? eol : sep);
             }
 
-            for (int column = 1; column <= count; column++)
+            for (int column = 1; column <= columnCount; column++)
             {
                 int index = column-1;
                 out.write(types[index].name());
-                out.write(column == count ? eol : sep);
+                out.write(column == columnCount ? eol : sep);
             }
 
-            ArrayList<String> values = new ArrayList<>(count);
+            ArrayList<String> values = new ArrayList<>(columnCount);
 
-            while (rs.next())
+            int count = 0;
+            while (--limit >= 0 && rs.next())
             {
                 getStringData(rs, values);
-                for (int index = 0; index < count; index++)
+                for (int index = 0; index < columnCount; index++)
                 {
                     String s = values.get(index);
                     if (null != s)
                         out.write(s);
-                    out.write(index == count - 1 ? eol : sep);
+                    out.write(index == columnCount - 1 ? eol : sep);
                 }
+                count++;
             }
             out.flush();
+            return count;
         }
 
         /**
@@ -387,35 +390,36 @@ public class SqlController extends SpringActionController
          * implementation is generating strings inside out.write().  So this is probably not much different from a GC
          * perspective.
          */
-        void writeResults_compact(Writer out, Results rs, String sep, String eol) throws IOException, SQLException
+        int writeResults_compact(Writer out, Results rs, int limit, String sep, String eol) throws IOException, SQLException
         {
             initWriter(rs);
-            final int count = rs.getMetaData().getColumnCount();
+            final int columnCount = rs.getMetaData().getColumnCount();
 
             // meta-meta-data
             out.write("18.2"+sep+"name"+sep+"jdbcType"+eol);
 
-            for (int column = 1; column <= count; column++)
+            for (int column = 1; column <= columnCount; column++)
             {
                 out.write(rs.getColumn(column).getName());
-                out.write(column == count ? eol : sep);
+                out.write(column == columnCount ? eol : sep);
             }
 
-            for (int index = 0; index < count; index++)
+            for (int index = 0; index < columnCount; index++)
             {
                 out.write(types[index].name());
-                out.write(index == count-1 ? eol : sep);
+                out.write(index == columnCount-1 ? eol : sep);
             }
 
             String DITTO = String.valueOf(BS);
-            ArrayList<String> prev = new ArrayList<>(count);
-            ArrayList<String> row = new ArrayList<>(count);
+            ArrayList<String> prev = new ArrayList<>(columnCount);
+            ArrayList<String> row = new ArrayList<>(columnCount);
 
-            while (rs.next())
+            int count = 0;
+            while (--limit >= 0 && rs.next())
             {
                 getStringData(rs, row);
 
-                for (int index = 0; index < count; index++)
+                for (int index = 0; index < columnCount; index++)
                 {
                     String s = row.get(index);
                     if (null != s && !s.isEmpty())
@@ -425,63 +429,80 @@ public class SqlController extends SpringActionController
                         else
                             out.write(s);
                     }
-                    out.write(index == count - 1 ? eol : sep);
+                    out.write(index == columnCount - 1 ? eol : sep);
                 }
                 ArrayList<String> t = prev;
                 prev = row;
                 row = t;
+                count++;
             }
             out.flush();
+            return count;
         }
 
         /// export a Result set using RFC4180 formatting
         ///  use PageFlowUtil.joinValuesWithTabs4180
-        void writeResults_tsv(Writer out, Results rs) throws IOException, SQLException
+        int writeResults_tsv(Writer out, Results rs, int limit) throws IOException, SQLException
         {
             initWriter(rs);
-            final int count = rs.getMetaData().getColumnCount();
+            final int columnCount = rs.getMetaData().getColumnCount();
 
-            List<String> names = new ArrayList<>(count);
-            for (int column = 1; column <= count; column++)
+            List<String> names = new ArrayList<>(columnCount);
+            for (int column = 1; column <= columnCount; column++)
                 names.add(rs.getColumn(column).getName());
             out.write(PageFlowUtil.joinValuesWithTabs4180(names));
             out.write('\n');
 
-            ArrayList<String> values = new ArrayList<>(count);
+            ArrayList<String> values = new ArrayList<>(columnCount);
 
-            while (rs.next())
+            int count = 0;
+            while (--limit >= 0 && rs.next())
             {
                 getStringData(rs, values);
                 out.write(PageFlowUtil.joinValuesWithTabs4180(values));
                 out.write('\n');
+                count++;
             }
             out.flush();
+            return count;
         }
 
+        public record ExecuteResult(int rows, boolean complete) {}
 
-        public void execute(Writer out) throws SQLException, IOException
+        public ExecuteResult execute(Writer out) throws SQLException, IOException
         {
             schema.checkCanReadSchema();
             var builder = QueryService.get().getSelectBuilder(schema, sql, true);
             if (null != offset)
                 builder.offset(offset);
-            if (null != limit)
-                builder.maxRows(limit);
+            int maxPrint = Integer.MAX_VALUE;
+            if (null != limit && limit < Integer.MAX_VALUE)
+            {
+                builder.maxRows(limit + 1);
+                maxPrint = limit;
+            }
 
             try (Results rs = builder.select(false, parameterMap))
             {
+                int count;
+                boolean complete = true;
                 switch (format)
                 {
                     case tsv:
-                        writeResults_tsv(out, rs);
+                        count = writeResults_tsv(out, rs, maxPrint);
                         break;
                     case split:
-                        writeResults_text(out, rs, sep, eol);
+                        count = writeResults_text(out, rs, maxPrint, sep, eol);
                         break;
                     case compact:
-                        writeResults_compact(out, rs, sep, eol);
+                        count = writeResults_compact(out, rs, maxPrint, sep, eol);
                         break;
+                    default:
+                        throw new IllegalArgumentException("Unknown format: " + format);
                 }
+                while (rs.next())
+                    complete = false;
+                return new ExecuteResult(count, complete);
             }
         }
     }
@@ -834,6 +855,43 @@ public class SqlController extends SpringActionController
             assertEquals("Ali…[truncated]", lines[1]);  // 5 > 3: truncated
             assertEquals("Bob", lines[2]);                   // 3 == 3: not truncated (boundary)
             assertEquals("Car…[truncated]", lines[3]);  // 5 > 3: truncated
+        }
+
+        private SqlExecute.ExecuteResult executeWithLimit(int limit) throws Exception
+        {
+            User user = TestContext.get().getUser();
+            UserSchema listsSchema = (UserSchema) DefaultSchema.get(user, _folder).getSchema("lists");
+            ContainerUser cu = ContainerUser.create(_folder, user);
+            var execute = new SqlExecute(cu, listsSchema, "SELECT Name FROM " + LIST_NAME + " ORDER BY Name")
+                    .page(0, limit);
+            return execute.execute(new StringWriter());
+        }
+
+        @Test
+        public void testLimit_lessThanRowCount() throws Exception
+        {
+            // 3 rows in table, limit=2 → incomplete result
+            var result = executeWithLimit(2);
+            assertEquals(2, result.rows());
+            assertFalse("Expected more rows to be available", result.complete());
+        }
+
+        @Test
+        public void testLimit_equalToRowCount() throws Exception
+        {
+            // 3 rows in table, limit=3 → complete result
+            var result = executeWithLimit(3);
+            assertEquals(3, result.rows());
+            assertTrue("Expected result to be complete", result.complete());
+        }
+
+        @Test
+        public void testLimit_greaterThanRowCount() throws Exception
+        {
+            // 3 rows in table, limit=10 → complete result
+            var result = executeWithLimit(10);
+            assertEquals(3, result.rows());
+            assertTrue("Expected result to be complete", result.complete());
         }
     }
 }

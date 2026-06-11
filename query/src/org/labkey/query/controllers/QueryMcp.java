@@ -61,6 +61,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.util.StringUtilsLabKey.pluralize;
 
 public class QueryMcp implements McpService.McpImpl
 {
@@ -216,7 +217,7 @@ public class QueryMcp implements McpService.McpImpl
             "Execute a LabKey SQL query and return results as tab-separated values (RFC 4180 TSV). " +
                     "Use this to inspect actual query results while writing or debugging SQL. " +
                     "Prefer validateSQL when you only need to check syntax without running the query. " +
-                    "Returns at most 100 rows (default); use offset and limit to page through larger result sets. " +
+                    "Returns at most 100 rows; use offset and limit to page through larger result sets. " +
                     "Response format: a header row of column names, then one data row per newline, fields tab-separated. " +
                     "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
                     "On SQL error, the error message is returned as plain text rather than throwing. " +
@@ -245,8 +246,13 @@ public class QueryMcp implements McpService.McpImpl
         try
         {
             StringWriter sw = new StringWriter(2000);
-            execute.execute(sw);
-            return sw.toString();
+            SqlController.SqlExecute.ExecuteResult result = execute.execute(sw);
+            String message = "\n-- " + pluralize(result.rows(), "row", "rows") + " returned";
+            if (result.complete())
+                message += ".";
+            else
+                message += ", more may be available (use offset and limit to page).";
+             return sw + message;
         }
         catch (Exception x)
         {
