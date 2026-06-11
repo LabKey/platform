@@ -633,13 +633,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 .filter(ctx -> ctx.getSchemaVersion() != null)
                 .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
 
+            record ModuleAndModuleContext(Module module, ModuleContext context)
+            {
+                boolean isTooOld()
+                {
+                    return context.getInstalledVersion() < module.getEarliestUpgradeVersion();
+                }
+            }
+
             // List of "<name> (<installedSchemaVersion>)" of LabKey-managed modules with schemas where the installed
-            // version is less than "earliest upgrade version"
+            // version is less than the module's earliest upgrade version
             var tooOld = labkeyModules.stream()
-                .map(m -> moduleContextMap.get(m.getName()))
-                .filter(Objects::nonNull)
-                .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                .map(UpgradeInfo::new)
+                .map(m -> new ModuleAndModuleContext(m, moduleContextMap.get(m.getName())))
+                .filter(mmc -> mmc.context() != null)
+                .filter(ModuleAndModuleContext::isTooOld)
+                .map(mmc -> new UpgradeInfo(mmc.context()))
                 .toList();
 
             if (!tooOld.isEmpty())
@@ -655,7 +663,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // Now that we know if this is a new install...
         setDatabaseMigrationConfiguration(labkeyRoot);
-        boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
+        upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
