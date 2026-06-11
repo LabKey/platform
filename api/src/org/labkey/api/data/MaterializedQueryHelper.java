@@ -323,6 +323,26 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             return peekValid();
         }
+
+        /**
+         * Current supplier value, with no change to the stored snapshot. Capture this before doing work,
+         * then pass it to {@link #markValidAs} once the work has committed.
+         */
+        public String current()
+        {
+            return _supplier.get();
+        }
+
+        /**
+         * Accept a previously {@link #current() captured} supplier value as the new snapshot, marking the
+         * entry valid up to that point. Call this only after the work the invalidation represents has actually
+         * committed, so that a concurrent {@link #peekValid()} reports stale (not valid) for the entire duration
+         * of the work.
+         */
+        public void markValidAs(String token)
+        {
+            _result.set(token);
+        }
     }
 
     private String makeKey(DbScope.Transaction t)
@@ -390,18 +410,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
     /**
-     * Returns true if the global (non-transactional) materialized view is LOADED and has no pending synchronous work.
-     * Use this to decide whether to use the fast materialized path or fall back to direct JOINs.
-     */
-    public boolean isReadyToUse()
-    {
-        Materialized m = _map.get(makeKey(null));
-        if (m == null || m._loadingState.get() != Materialized.LoadingState.LOADED)
-            return false;
-        return !m.needsSynchronousWork();
-    }
-
-    /**
      * Submits a background task to build or incrementally update the materialized view.
      * Only one background task runs at a time per MQH instance (guarded by CAS on _backgroundTaskRunning).
      */
@@ -431,11 +439,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      * temp table only if the view is currently LOADED with no pending synchronous work, without triggering any rebuild
      * or incremental-update SQL. Returns {@code null} if the view is not available (not yet built, still loading, or
      * stale), so the caller can fall back immediately without blocking.
-     *
-     * <p>This is the safe way to use the materialized path in contexts where blocking is unacceptable and the caller
-     * has already decided to use the materialized view based on an earlier {@link #isReadyToUse()} check. By re-checking
-     * the ready condition at use time, it closes the TOCTOU window between the snapshot decision and the actual SQL
-     * construction.
      */
     public @Nullable SQLFragment tryGetFromSqlIfLoaded(String tableAlias)
     {
@@ -898,31 +901,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 Materialized m2 = mqh._map.get(mqh.makeKey(null));
                 assertNotNull(m2);
                 assertFalse("no synchronous work needed after rebuild", m2.needsSynchronousWork());
-            }
-        }
-
-        @Test
-        public void testIsReadyToUse()
-        {
-            DbSchema temp = DbSchema.getTemp();
-            DbScope s = temp.getScope();
-            AtomicReference<String> supplierValue = new AtomicReference<>("v1");
-            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
-
-            try (MaterializedQueryHelper mqh = new Builder("test", s, select)
-                    .addInvalidCheck(supplierValue::get)
-                    .build())
-            {
-                // Before any materialization: not ready
-                assertFalse("isReadyToUse must return false before first materialization", mqh.isReadyToUse());
-
-                // After materialization: ready
-                mqh.getFromSql("_");
-                assertTrue("isReadyToUse must return true after materialization", mqh.isReadyToUse());
-
-                // After invalidation: not ready (needs synchronous work)
-                supplierValue.set("v2");
-                assertFalse("isReadyToUse must return false when supplier has changed", mqh.isReadyToUse());
             }
         }
     }
