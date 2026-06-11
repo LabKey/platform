@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -995,6 +996,8 @@ public class WikiController extends SpringActionController
 
             if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
                 throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
+            if (_cDest == null || !_cDest.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No destination container found, or you do not have permission to copy to it.");
 
             if (cSrc.equals(_cDest))
             {
@@ -1014,36 +1017,33 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
-            if (_cDest != null && _cDest.hasPermission(getUser(), AdminPermission.class))
+            //get source wiki pages
+            List<String> srcPageNames;
+
+            if (parentPage != null)
+                // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
+                // something like WikiSelectManager.getDescendents(cSrc, name)
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+            else
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+
+            //get existing destination wiki page names
+            List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
+
+            //map source page row ids to new page row ids
+            Map<Integer, Integer> pageIdMap = new HashMap<>();
+            //shortcut for root topics
+            pageIdMap.put(null, null);
+
+            //copy each page in the list
+            for (String name : srcPageNames)
             {
-                //get source wiki pages
-                List<String> srcPageNames;
-
-                if (parentPage != null)
-                    // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
-                    // something like WikiSelectManager.getDescendents(cSrc, name)
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-                else
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-
-                //get existing destination wiki page names
-                List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
-
-                //map source page row ids to new page row ids
-                Map<Integer, Integer> pageIdMap = new HashMap<>();
-                //shortcut for root topics
-                pageIdMap.put(null, null);
-
-                //copy each page in the list
-                for (String name : srcPageNames)
-                {
-                    Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
-                }
-
-                //display the wiki module in the destination container
-                displayWikiModuleInDestContainer(_cDest);
+                Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
+                getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
             }
+
+            //display the wiki module in the destination container
+            displayWikiModuleInDestContainer(_cDest);
 
             return true;
         }

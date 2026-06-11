@@ -17,6 +17,7 @@ package org.labkey.study.controllers;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -216,36 +217,69 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
     public static class ContainerScopingTestCase extends AbstractContainerScopingTest
     {
+        private Container _source;
+
+        @Before
+        public void createSourceStudy()
+        {
+            // A real study in the source folder, owned by the site admin
+            _source = createContainer("Source");
+            StudyImpl study = new StudyImpl(_source, "Source Study");
+            study.setTimepointType(TimepointType.VISIT);
+            StudyManager.getInstance().createTestStudy(getAdmin(), study);
+        }
+
         @Test
         public void testPublishRequiresSourceRead() throws Exception
         {
-            User admin = getAdmin();
-            Container dest = createContainer("Dest");      // the limited user is admin here
-            Container source = createContainer("Source");  // holds a real study; the limited user has no rights
-
-            // A real study in the source, so the only reason validateForm can reject is the missing source-read grant.
-            // createStudy() defaults the required subject noun/column fields, so we only set what this test cares about.
-            StudyImpl study = new StudyImpl(source, "Source Study");
-            study.setTimepointType(TimepointType.VISIT);
-            StudyManager.getInstance().createTestStudy(admin, study);
-
             // A user who is a folder admin in the destination only (no rights in the source)
+            Container dest = createContainer("Dest");
             User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
 
-            ActionURL url = new ActionURL(CreateChildStudyAction.class, dest)
-                    .addParameter("srcPath", source.getPath())
-                    .addParameter("dstPath", dest.getPath())
-                    .addParameter("mode", StudySnapshotType.publish.name());
-            MockHttpServletResponse resp = post(url, destAdminOnly);
+            MockHttpServletResponse resp = publish(dest, dest.getPath(), destAdminOnly);
 
             // The publish must not succeed because the user can't read the source study
             assertNotEquals("Publish from an unreadable source study must not succeed", HttpServletResponse.SC_OK, resp.getStatus());
-
-            // No study should have been published into the destination, and the source study must be untouched
             assertNull("No study should have been created in the destination", StudyManager.getInstance().getStudy(dest));
-            assertNotNull("The source study must be untouched", StudyManager.getInstance().getStudy(source));
+            assertSourceUntouched();
 
             // Positive scenario covered by StudyPublishTest
+        }
+
+        @Test
+        public void testPublishToNewFolderRequiresParentAdmin() throws Exception
+        {
+            // A user who is a folder admin in the source only
+            Container parent = createContainer("Parent");
+            User sourceAdminOnly = createUserInRole(_source, FolderAdminRole.class);
+
+            // The destination folder does not exist yet, so authorization falls to the dstParent branch
+            String newDstPath = parent.getPath() + "/PublishedChild";
+            MockHttpServletResponse resp = publish(_source, newDstPath, sourceAdminOnly);
+
+            // The publish must not succeed because the user can't administer the destination's parent
+            assertNotEquals("Publishing into a new folder under an unadministered parent must not succeed", HttpServletResponse.SC_OK, resp.getStatus());
+            // The guard runs before ensureContainer(), so no destination folder must have been grafted in
+            assertNull("No destination folder should have been created under the parent", ContainerManager.getForPath(Path.parse(newDstPath)));
+            assertSourceUntouched();
+
+            // Positive scenario (a parent admin creating the child folder) covered by StudyPublishTest
+        }
+
+        // Posts a publish of _source into dstPath, dispatched through requestContainer (which is the container the
+        // action's @RequiresPermission is evaluated against).
+        private MockHttpServletResponse publish(Container requestContainer, String dstPath, User user) throws Exception
+        {
+            ActionURL url = new ActionURL(CreateChildStudyAction.class, requestContainer)
+                    .addParameter("srcPath", _source.getPath())
+                    .addParameter("dstPath", dstPath)
+                    .addParameter("mode", StudySnapshotType.publish.name());
+            return post(url, user);
+        }
+
+        private void assertSourceUntouched()
+        {
+            assertNotNull("The source study must be untouched", StudyManager.getInstance().getStudy(_source));
         }
     }
 }
