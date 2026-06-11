@@ -107,11 +107,11 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.OptionBuilder;
 import org.labkey.api.util.SelectBuilder;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -137,7 +137,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -218,7 +217,6 @@ public class AnnouncementsController extends SpringActionController
 
     public static AnnouncementModel copyEditableProps(AnnouncementModel target, AnnouncementModel source, boolean isInsert)
     {
-        if (source.getApproved() != null) target.setApproved(source.getApproved());
         if (source.getAssignedTo() != null) target.setAssignedTo(source.getAssignedTo());
         if (source.getBody() != null) target.setBody(source.getBody());
         if (source.getExpires() != null) target.setExpires(source.getExpires());

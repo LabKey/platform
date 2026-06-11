@@ -49,7 +49,6 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -533,7 +532,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresNoPermission
+    @RequiresPermission(ReadPermission.class)
     public class CreateCrosstabReportAction extends SimpleViewAction<Object>
     {
         @Override
