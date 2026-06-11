@@ -1369,17 +1369,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
-
-            // update: when the async materialization feature is enabled, never serve stale; mark the existing temp
-            // table DIRTY and schedule a debounced background rebuild. Readers will fall back to the unmaterialized
-            // join until the rebuild lands. When disabled, the counter bump above is sufficient — the registered
-            // invalidator drives a synchronous rebuild on the next read.
-            if (SampleChangeType.update == reason && isAsyncMaterializationEnabled())
-            {
-                _MaterializedQueryHelper mqh = _activeHelpers.get(lsid);
-                if (mqh != null)
-                    mqh.requestRebuild();
-            }
         }
 
         @Override
@@ -1428,16 +1417,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              */
             List<ColumnInfo> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            _MaterializedQueryHelper helper = (_MaterializedQueryHelper) new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
+            var builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
-                // Drives the synchronous-rebuild path when the async materialization feature is off. When on, the async
-                // path also observes this invalidator (it agrees with the explicit DIRTY transition); redundant but harmless.
-                .addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()))
-                .build();
+                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
+
+            if (isIncrementalUpdateDisabled())
+                builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
+
+            var helper = (_MaterializedQueryHelper) builder.build();
             _activeHelpers.put(_ss.getLSID(), helper);
             return helper;
         });
