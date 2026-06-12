@@ -78,7 +78,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         createDataset("D5", Arrays.asList("F11", "F24"), null);
 
         log("Execute the script to send the email");
-        new SimplePostCommand("reports", "sendDailyDigest").execute(WebTestHelper.getRemoteApiConnection(), getContextPath());
+        new SimplePostCommand("reports", "sendDailyDigest").execute(WebTestHelper.getRemoteApiConnection(), "home");
     }
 
     @Before
