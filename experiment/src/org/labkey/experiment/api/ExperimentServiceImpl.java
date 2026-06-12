@@ -375,9 +375,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpRunImpl getExpRun(int rowId)
     {
+        return getExpRun(rowId, null);
+    }
+
+    @Override
+    public @Nullable ExpRunImpl getExpRun(int rowId, @Nullable Container container)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
         ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        return run == null ? null : new ExpRunImpl(run);
+        if (run == null)
+            return null;
+
+        // GitHub Kanban #1892: if container provided, ensure the run belongs to the container
+        if (container != null && !run.getContainer().equals(container))
+            return null;
+
+        return new ExpRunImpl(run);
     }
 
     private List<ExpRunImpl> getExpRuns(SimpleFilter filter)
