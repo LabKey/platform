@@ -269,4 +269,12 @@ public class SurveyModule extends DefaultModule
             SurveyManager.TestCase.class
         );
     }
+
+    @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return Set.of(
+            SurveyManager.ContainerScopingTestCase.class
+        );
+    }
 }

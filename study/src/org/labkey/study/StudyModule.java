@@ -757,15 +757,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-            ParticipantGroupManager.ParticipantGroupTestCase.class,
-            StudyImpl.ProtocolDocumentTestCase.class,
-            StudyManager.StudySnapshotTestCase.class,
-            StudyManager.VisitCreationTestCase.class,
-            StudyModule.TestCase.class,
-            VisitImpl.TestCase.class,
-            DatasetUpdateService.TestCase.class,
-            DatasetLsidImportHelper.TestCase.class
+                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                ParticipantGroupManager.ParticipantGroupTestCase.class,
+                StudyImpl.ProtocolDocumentTestCase.class,
+                StudyManager.StudySnapshotTestCase.class,
+                StudyManager.VisitCreationTestCase.class,
+                StudyModule.TestCase.class,
+                VisitImpl.TestCase.class,
+                DatasetUpdateService.TestCase.class,
+                DatasetLsidImportHelper.TestCase.class,
+                org.labkey.study.controllers.CreateChildStudyAction.ContainerScopingTestCase.class
         );
     }
 

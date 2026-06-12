@@ -1074,6 +1074,7 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            ExperimentController.ContainerScopingTestCase.class,
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
