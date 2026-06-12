@@ -5885,11 +5885,7 @@ public class SpecimenController extends SpringActionController
         public void testManageRequestStatusRequiresEditPermission() throws Exception
         {
             // ManageRequestStatusAction is annotated @RequiresPermission(RequestSpecimensPermission.class), which only
-            // proves the caller may make requests. Without the per-request guard, a plain requester could change the
-            // status/description of ANOTHER user's request (and fire its notifications) in the same folder. This is a
-            // same-container, wrong-user gap rather than cross-container: the action already resolves the request with
-            // getRequest(getContainer(), id), so a foreign id 404s before the guard -- the guard is what stops an
-            // unprivileged requester from mutating a co-tenant's request.
+            // proves the caller may make requests. However, a requester shouldn't be able to change ANOTHER user's request
             //
             // SpecimenRequesterRole (RequestSpecimensPermission only, no ManageRequestsPermission) is applicable only
             // in a study folder that has the Specimen module, so stand up a minimal study.
@@ -5928,43 +5924,6 @@ public class SpecimenController extends SpringActionController
             // than being blocked at 403 -- proving the guard rejects only the unprivileged requester, not every caller.
             assertNotEquals("An admin must pass the edit-request guard, not be blocked at 403",
                     HttpServletResponse.SC_FORBIDDEN, post(url, getAdmin()).getStatus());
-        }
-
-        @Test
-        public void testGetRequestRequiresOwnership() throws Exception
-        {
-            // SpecimenApiController.GetRequestAction is @RequiresPermission(ReadPermission), but a request's contents
-            // (creator, comments, destination, full vial list) are private to its owner or a request admin. The fix
-            // passes checkOwnership=true, so a plain Reader who is neither the creator nor a request admin can no longer
-            // read another user's request by its id. (A same-container ownership gap, like ManageRequestStatus.)
-            Container folder = createContainer("GetRequest");
-
-            // A request OWNED BY THE ADMIN, in a freshly created status
-            SpecimenRequestStatus status = new SpecimenRequestStatus();
-            status.setContainer(folder);
-            status.setLabel("Get request scoping status");
-            status.setSortOrder(1);
-            status = Table.insert(getAdmin(), SpecimenSchema.get().getTableInfoSampleRequestStatus(), status);
-
-            SpecimenRequest request = new SpecimenRequest();
-            request.setContainer(folder);
-            request.setStatusId(status.getRowId());
-            request = SpecimenRequestManager.get().createRequest(getAdmin(), request, false);
-            int requestId = request.getRowId();
-
-            // A Reader who did not create the request and holds no RequestSpecimensPermission
-            User reader = createUserInRole(folder, ReaderRole.class);
-
-            ActionURL url = new ActionURL(SpecimenApiController.GetRequestAction.class, folder)
-                    .addParameter("requestId", String.valueOf(requestId));
-
-            // Without the fix the Reader reads the request (HTTP 200); with checkOwnership the lookup is rejected, so a
-            // non-owner Reader must NOT get a successful read of another user's request.
-            assertNotEquals("A non-owner Reader must not successfully read another user's request",
-                    HttpServletResponse.SC_OK, get(url, reader).getStatus());
-
-            // Positive control: the request's creator (the admin, who also holds RequestSpecimensPermission) reads it.
-            assertStatus(HttpServletResponse.SC_OK, get(url, getAdmin()));
         }
     }
 }

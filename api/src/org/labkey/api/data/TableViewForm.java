@@ -227,28 +227,31 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         FieldKey containerFK = FieldKey.fromParts("Container");
         boolean scopeToContainer = null != _tinfo.getColumn(containerFK);
 
-        if (null != _selectedRows && _selectedRows.length > 0)
+        try (DbScope.Transaction t = _tinfo.getSchema().getScope().ensureTransaction())
         {
-            for (String selectedRow : _selectedRows)
+            if (null != _selectedRows && _selectedRows.length > 0)
             {
-                if (scopeToContainer)
-                    deleteInContainer(selectedRow, containerFK);
-                else
-                    Table.delete(_tinfo, selectedRow);
+                for (String selectedRow : _selectedRows)
+                {
+                    if (scopeToContainer)
+                        deleteInContainer(selectedRow, containerFK);
+                    else
+                        Table.delete(_tinfo, selectedRow);
+                }
             }
-        }
-        else
-        {
-            Object[] pkVal = getPkVals();
-            if (null != pkVal && null != pkVal[0])
+            else
             {
-                if (scopeToContainer)
-                    deleteInContainer(pkVal, containerFK);
-                else
-                    Table.delete(_tinfo, pkVal);
+                Object[] pkVal = getPkVals();
+                if (null != pkVal && null != pkVal[0])
+                {
+                    if (scopeToContainer)
+                        deleteInContainer(pkVal, containerFK);
+                    else
+                        Table.delete(_tinfo, pkVal);
+                }
+                else //Hmm, throw an exception here????
+                    _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
             }
-            else //Hmm, throw an exception here????
-                _log.warn("Nothing to delete for table " + _tinfo.getName() + " on request " + _request.getRequestURI());
         }
     }
 

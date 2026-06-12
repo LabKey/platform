@@ -229,7 +229,10 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
             else
             {
                 User owner = UserManager.getUser(getCreatedBy());
-                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
+                boolean allowed =
+                        container.hasPermission(user, SharedParticipantGroupPermission.class) ||
+                        container.hasPermission(user, AdminPermission.class) ||
+                        (owner != null && !owner.isGuest() && owner.equals(user));
 
                 if (!allowed)
                     errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));

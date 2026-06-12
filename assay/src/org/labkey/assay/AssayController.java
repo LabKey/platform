@@ -1439,7 +1439,7 @@ public class AssayController extends SpringActionController
             if (!org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(flagCol.getConceptURI()))
                 throw new NotFoundException();
 
-            // Confirm every requested result row actually belongs to the request container by reading its run's
+            // Confirm every requested result row actually belongs to the request container by reading its run's container
             Set<Integer> requestedIds = new HashSet<>(form.getRowList());
             if (!requestedIds.isEmpty())
             {

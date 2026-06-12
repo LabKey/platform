@@ -941,7 +941,7 @@ public class StatusController extends SpringActionController
             for (Integer rowId : rowIds)
             {
                 var sf = getStatusFile(rowId);
-                // Resolved by global rowId; reject a job that belongs to another container even though the caller has
+                // Resolved by global rowId; reject a job that belongs to another container
                 if (sf == null)
                     throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
                 Container sfContainer = sf.lookupContainer();

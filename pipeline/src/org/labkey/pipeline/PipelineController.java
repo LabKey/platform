@@ -1560,7 +1560,7 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
-            // Confirm the configuration belongs to this container, like the
+            // Confirm the configuration belongs to this container
             if (form.getRowId() != null)
             {
                 SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
