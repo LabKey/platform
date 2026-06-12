@@ -20,8 +20,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.SimplePostCommand;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.dumbster.EmailRecordTable;
@@ -30,6 +33,7 @@ import org.labkey.test.pages.study.ManageStudyNotificationPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PortalHelper;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,7 +44,7 @@ import static org.labkey.test.WebTestHelper.getContextPath;
 public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
 {
     @BeforeClass
-    public static void doSetup()
+    public static void doSetup() throws IOException, CommandException
     {
         StudyDatasetChangeEmailNotificationTest init = getCurrentTest();
         init.doCreateSteps();
@@ -58,7 +62,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         return null;
     }
 
-    private void doCreateSteps()
+    private void doCreateSteps() throws IOException, CommandException
     {
         _containerHelper.createProject(getProjectName(), "Study");
         _studyHelper.startCreateStudy().createStudy();
@@ -74,7 +78,8 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         createDataset("D5", Arrays.asList("F11", "F24"), null);
 
         log("Execute the script to send the email");
-        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
+//        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
+        new SimplePostCommand("reports", "sendDailyDigest").execute(WebTestHelper.getRemoteApiConnection(), null);
     }
 
     @Before
