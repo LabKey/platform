@@ -63,6 +63,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -87,6 +88,7 @@ import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -151,8 +153,10 @@ import org.labkey.specimen.RequestEventType;
 import org.labkey.specimen.RequestedSpecimens;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestException;
+import org.labkey.specimen.SpecimenModule;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
+import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
 import org.labkey.specimen.model.ExtendedSpecimenRequestView;
@@ -3801,6 +3805,8 @@ public class SpecimenController extends SpringActionController
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
+            requiresEditRequestPermissions(_specimenRequest);
+
             boolean statusChanged = form.getStatus() != _specimenRequest.getStatusId();
             boolean detailsChanged = !nullSafeEqual(form.getRequestDescription(), _specimenRequest.getComments());
 
@@ -5846,6 +5852,119 @@ public class SpecimenController extends SpringActionController
                     .addParameter("requirementId", String.valueOf(requirementId));
             post(ownUrl, getAdmin());
             assertNull("Same-container delete should remove the requirement", provider.getRequirement(folderA, requirementId));
+        }
+
+        @Test
+        public void testDeleteActorActionRejectsForeignActor() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            SpecimenRequestRequirementProvider provider = SpecimenRequestRequirementProvider.get();
+
+            // An actor that lives in folder A
+            SpecimenRequestActor actor = createActor(folderA, "Delete actor scoping actor");
+            int actorId = actor.getRowId();
+
+            // Deleting through folder B, where the actor does not live, must be a graceful no-op rather than a 500:
+            // the fix makes getActor container-scoped, so handlePost sees null and skips actor.delete() instead of
+            // NPEing. The action still redirects (302) and the actor must survive in its own folder.
+            ActionURL foreignUrl = new ActionURL(DeleteActorAction.class, folderB)
+                    .addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(foreignUrl, getAdmin()));
+            assertNotNull("Cross-container delete must not remove the actor", provider.getActor(folderA, actorId));
+
+            // Positive control: deleting through the actor's own folder removes it, proving the guard rejects only the
+            // cross-container case rather than every delete
+            ActionURL ownUrl = new ActionURL(DeleteActorAction.class, folderA)
+                    .addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, getAdmin()));
+            assertNull("Same-container delete should remove the actor", provider.getActor(folderA, actorId));
+        }
+
+        @Test
+        public void testManageRequestStatusRequiresEditPermission() throws Exception
+        {
+            // ManageRequestStatusAction is annotated @RequiresPermission(RequestSpecimensPermission.class), which only
+            // proves the caller may make requests. Without the per-request guard, a plain requester could change the
+            // status/description of ANOTHER user's request (and fire its notifications) in the same folder. This is a
+            // same-container, wrong-user gap rather than cross-container: the action already resolves the request with
+            // getRequest(getContainer(), id), so a foreign id 404s before the guard -- the guard is what stops an
+            // unprivileged requester from mutating a co-tenant's request.
+            //
+            // SpecimenRequesterRole (RequestSpecimensPermission only, no ManageRequestsPermission) is applicable only
+            // in a study folder that has the Specimen module, so stand up a minimal study.
+            Container folder = createContainer("ManageStatus");
+            Set<Module> modules = new HashSet<>(folder.getActiveModules());
+            modules.add(ModuleLoader.getInstance().getModule("study"));
+            modules.add(ModuleLoader.getInstance().getModule(SpecimenModule.NAME));
+            folder.setActiveModules(modules, getAdmin());
+            StudyService.get().createStudy(folder, getAdmin(), "Specimen scoping study", TimepointType.VISIT, true);
+
+            // A request OWNED BY THE ADMIN (not the attacker), in a freshly created status
+            SpecimenRequestStatus status = new SpecimenRequestStatus();
+            status.setContainer(folder);
+            status.setLabel("Manage status scoping status");
+            status.setSortOrder(1);     // non-null and >= 0 so the bean isn't treated as a system status
+            status = Table.insert(getAdmin(), SpecimenSchema.get().getTableInfoSampleRequestStatus(), status);
+
+            SpecimenRequest request = new SpecimenRequest();
+            request.setContainer(folder);
+            request.setStatusId(status.getRowId());
+            request = SpecimenRequestManager.get().createRequest(getAdmin(), request, false);
+            int requestId = request.getRowId();
+
+            // A plain requester: holds RequestSpecimensPermission (so the action's annotation passes) but is neither a
+            // coordinator nor the request's owner, so hasEditRequestPermissions() is false.
+            User requester = createUserInRole(folder, SpecimenRequesterRole.class);
+
+            // Mutating another user's request must be rejected at the per-request guard (403) rather than applied. The
+            // request id and a no-op status keep the form valid, so without the fix the action proceeds and does NOT 403.
+            ActionURL url = new ActionURL(ManageRequestStatusAction.class, folder)
+                    .addParameter("id", String.valueOf(requestId))
+                    .addParameter("status", String.valueOf(status.getRowId()));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, requester));
+
+            // Positive control: an admin holds ManageRequestsPermission, so the same request passes the guard rather
+            // than being blocked at 403 -- proving the guard rejects only the unprivileged requester, not every caller.
+            assertNotEquals("An admin must pass the edit-request guard, not be blocked at 403",
+                    HttpServletResponse.SC_FORBIDDEN, post(url, getAdmin()).getStatus());
+        }
+
+        @Test
+        public void testGetRequestRequiresOwnership() throws Exception
+        {
+            // SpecimenApiController.GetRequestAction is @RequiresPermission(ReadPermission), but a request's contents
+            // (creator, comments, destination, full vial list) are private to its owner or a request admin. The fix
+            // passes checkOwnership=true, so a plain Reader who is neither the creator nor a request admin can no longer
+            // read another user's request by its id. (A same-container ownership gap, like ManageRequestStatus.)
+            Container folder = createContainer("GetRequest");
+
+            // A request OWNED BY THE ADMIN, in a freshly created status
+            SpecimenRequestStatus status = new SpecimenRequestStatus();
+            status.setContainer(folder);
+            status.setLabel("Get request scoping status");
+            status.setSortOrder(1);
+            status = Table.insert(getAdmin(), SpecimenSchema.get().getTableInfoSampleRequestStatus(), status);
+
+            SpecimenRequest request = new SpecimenRequest();
+            request.setContainer(folder);
+            request.setStatusId(status.getRowId());
+            request = SpecimenRequestManager.get().createRequest(getAdmin(), request, false);
+            int requestId = request.getRowId();
+
+            // A Reader who did not create the request and holds no RequestSpecimensPermission
+            User reader = createUserInRole(folder, ReaderRole.class);
+
+            ActionURL url = new ActionURL(SpecimenApiController.GetRequestAction.class, folder)
+                    .addParameter("requestId", String.valueOf(requestId));
+
+            // Without the fix the Reader reads the request (HTTP 200); with checkOwnership the lookup is rejected, so a
+            // non-owner Reader must NOT get a successful read of another user's request.
+            assertNotEquals("A non-owner Reader must not successfully read another user's request",
+                    HttpServletResponse.SC_OK, get(url, reader).getStatus());
+
+            // Positive control: the request's creator (the admin, who also holds RequestSpecimensPermission) reads it.
+            assertStatus(HttpServletResponse.SC_OK, get(url, getAdmin()));
         }
     }
 }

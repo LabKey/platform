@@ -74,7 +74,17 @@ public abstract class AbstractContainerScopingTest extends Assert
     protected Container createContainer(String name)
     {
         Container junit = JunitUtil.getTestContainer();
-        Container c = ContainerManager.ensureContainer(junit.getParsedPath().append(getClass().getSimpleName() + "-" + name, true), getAdmin());
+        // Use the fully-qualified class name, not getSimpleName(): the nested test class is named
+        // "ContainerScopingTestCase" in nearly every controller, so getSimpleName() would give them all the SAME
+        // /_junit child path and they would share fixtures (and collide on unique constraints across runs). Sanitize
+        // to a valid folder name, and force-delete any fixture an interrupted prior run left behind so each run starts
+        // from a clean container even when a previous @After could not complete.
+        String prefix = getClass().getName().replaceAll("[^A-Za-z0-9]", "_");
+        var path = junit.getParsedPath().append(prefix + "-" + name, true);
+        Container existing = ContainerManager.getForPath(path);
+        if (existing != null)
+            ContainerManager.deleteAll(existing, getAdmin());
+        Container c = ContainerManager.ensureContainer(path, getAdmin());
         _containers.add(c);
         return c;
     }

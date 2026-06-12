@@ -42,6 +42,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.writer.DefaultContainerUser;
+import jakarta.servlet.http.HttpServletResponse;
+import org.junit.Test;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -71,6 +77,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -314,6 +321,11 @@ public class ReportsController extends BaseStudyController
                 String message = "Report " + (form.getReportId() != -1 ? form.getReportId() : form.getReportView()) + " not found";
                 throw new NotFoundException(message);
             }
+
+            // getReport(container, rowId) is container-scoped but does no owner/SecurityPolicy filtering. Enforce the
+            // per-report read check
+            if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
+                throw new UnauthorizedException("You do not have permission to view this report.");
 
             return report.renderReport(getViewContext());
         }
@@ -1215,6 +1227,35 @@ public class ReportsController extends BaseStudyController
             {
                 _groups = ja.toString();
             }
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testShowReportRequiresReadPermission() throws Exception
+        {
+            // ShowReportAction resolves a report by global rowId with getReport(container, rowId) -- container-scoped,
+            // but with no owner/policy check. Without the fix a plain container Reader could render another user's
+            // PRIVATE report by guessing its rowId. The fix adds the per-report canReadReport() check.
+            Container folder = createContainer("A");
+
+            // A PRIVATE report: owned by the admin (descriptor owner set), so only the owner / a site admin may read it.
+            Report report = ReportService.get().createReportInstance(QueryReport.TYPE);
+            report.getDescriptor().setReportName("scoping-private-report");
+            report.getDescriptor().setOwner(getAdmin().getUserId());
+            int reportId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), "scoping-report-key", report).getRowId();
+
+            ActionURL url = new ActionURL(ShowReportAction.class, folder).addParameter("reportId", String.valueOf(reportId));
+
+            // A Reader who does not own the report must be rejected (403) rather than shown another user's private report.
+            User reader = createUserInRole(folder, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, get(url, reader));
+
+            // Positive control: the report's owner passes the per-report read check rather than being blocked at 403,
+            // proving the guard rejects only the unauthorized reader.
+            assertNotEquals("The report owner must pass the read check, not be blocked at 403",
+                    HttpServletResponse.SC_FORBIDDEN, get(url, getAdmin()).getStatus());
         }
     }
 }

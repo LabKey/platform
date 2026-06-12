@@ -150,6 +150,7 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -201,7 +202,10 @@ import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.sql.LabKeySql;
@@ -3752,6 +3756,10 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
+                // Re-check here - cannot delete a run-less assay design owned by another container via a forged rowId.
+                if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                 protocol.delete(getUser(), form.getUserComment());
             }
         }
@@ -4713,6 +4721,12 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExperimentForm form, BindException errors) throws Exception
         {
+            // Confirm the run group actually lives in this container before updating, like the GET sibling ShowUpdateAction.
+            Experiment bean = form.getBean();
+            ExpExperiment exp = bean == null ? null : ExperimentService.get().getExpExperiment(bean.getRowId());
+            if (exp == null || !getContainer().equals(exp.getContainer()))
+                throw new NotFoundException("Run group not found in this folder");
+
             form.doUpdate();
             form.refreshFromDb();
             _exp = form.getBean();
@@ -5279,7 +5293,19 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExperimentRunListForm form, BindException errors)
         {
-            addSelectedRunsToExperiment(form.lookupExperiment(), form.getDataRegionSelectionKey());
+            ExpExperiment exp = form.lookupExperiment();
+            if (exp == null || !exp.getContainer().hasPermission(getUser(), InsertPermission.class))
+                throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
+
+            List<ExpRun> runs = new ArrayList<>();
+            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true))
+            {
+                ExpRun run = ExperimentService.get().getExpRun(runId);
+                if (run == null || !run.getContainer().hasPermission(getUser(), InsertPermission.class))
+                    throw new NotFoundException("Could not find run with RowId " + runId);
+                runs.add(run);
+            }
+            exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
             return true;
         }
 
@@ -6583,10 +6609,11 @@ public class ExperimentController extends SpringActionController
             for (Integer runId : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (run != null)
+                if (run == null || !run.getContainer().equals(getContainer()))
                 {
-                    runs.add(run);
+                    throw new NotFoundException("Could not find run with RowId " + runId + " in this folder");
                 }
+                runs.add(run);
             }
 
             ViewBackgroundInfo info = getViewBackgroundInfo();
@@ -8014,6 +8041,9 @@ public class ExperimentController extends SpringActionController
                         ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                         if (sampleType != null)
                         {
+                            if (!sampleType.getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                                throw new UnauthorizedException("Insufficient permissions.");
+
                             sampleType.ensureMinGenId(form.getNewValue());
                             domain = sampleType.getDomain();
                         }
@@ -8387,6 +8417,188 @@ public class ExperimentController extends SpringActionController
                     .addParameter("lsid", lsid)
                     .addParameter("name", attachmentName);
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testUpdateRunGroupContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run group (Experiment) that lives in folder B
+            ExpExperiment runGroup = ExperimentService.get().createExpExperiment(folderB, "scoping-test-run-group");
+            runGroup.save(admin);
+            int rowId = runGroup.getRowId();
+
+            // A caller who can Update folder A (Editor) but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Updating B's run group through folder A must 404 rather than overwrite/re-home it. The action's
+            // @RequiresPermission(UpdatePermission.class) passes in folder A, so without the handlePost guard the
+            // unscoped doUpdate() would edit B's row and rewrite its container to A.
+            ActionURL foreignUrl = new ActionURL(UpdateAction.class, folderA)
+                    .addParameter("RowId", String.valueOf(rowId))
+                    .addParameter("Name", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+            // A site admin, who CAN update folder B, still gets 404 through folder A (no cross-container write).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, admin));
+
+            // The run group must be untouched in its own container
+            ExpExperiment after = ExperimentService.get().getExpExperiment(rowId);
+            assertNotNull("Run group must still exist", after);
+            assertEquals("Name must be unchanged after a cross-container update", "scoping-test-run-group", after.getName());
+            assertEquals("Container must be unchanged after a cross-container update", folderB, after.getContainer());
+
+            // Positive control: updating through its own container succeeds (302 redirect to the success URL) and applies.
+            ActionURL ownUrl = new ActionURL(UpdateAction.class, folderB)
+                    .addParameter("RowId", String.valueOf(rowId))
+                    .addParameter("Name", "renamed");
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertEquals("Name should be updated by a same-container request", "renamed",
+                    ExperimentService.get().getExpExperiment(rowId).getName());
+        }
+
+        @Test
+        public void testAddRunsToExperimentContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run group (Experiment) that lives in folder B
+            ExpExperiment runGroup = ExperimentService.get().createExpExperiment(folderB, "scoping-test-add-runs");
+            runGroup.save(admin);
+            int expRowId = runGroup.getRowId();
+
+            // A caller who can Insert in folder A but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Adding runs to B's run group through folder A must 404: the run group is resolved by a global RowId and
+            // ExpExperimentImpl.addRuns does a raw INSERT with no authorization, so without the handlePost guard a
+            // forged expRowId would let a folder-A user mutate a foreign run group.
+            ActionURL foreignUrl = new ActionURL(AddRunsToExperimentAction.class, folderA)
+                    .addParameter("expRowId", String.valueOf(expRowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // Positive control: addressing the run group through its own container passes the guard. No runs are
+            // selected, so the action makes no change and redirects to the group's details page (302).
+            ActionURL ownUrl = new ActionURL(AddRunsToExperimentAction.class, folderB)
+                    .addParameter("expRowId", String.valueOf(expRowId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+        }
+
+        @Test
+        public void testMoveRunsContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run that lives in folder B
+            ExpRun run = createRun(folderB, "scoping-test-move-run");
+            int runId = run.getRowId();
+
+            // A caller with Insert+Delete in folder A (Editor) but no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // MoveRuns is scoped to getContainer() as the source and only checks Insert on the target; runs are resolved
+            // from the client-supplied selection by global RowId. Moving B's run via folder A (as both source and
+            // target) must 404 because the run does not live in the source container the caller is operating in.
+            ActionURL foreignUrl = new ActionURL(MoveRunsAction.class, folderA)
+                    .addParameter("targetContainerId", folderA.getId())
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // The run must remain in folder B
+            ExpRun after = ExperimentService.get().getExpRun(runId);
+            assertNotNull("Run must still exist", after);
+            assertEquals("Run must not have been moved out of its container", folderB, after.getContainer());
+
+            // Positive control: a successful move queues a MoveRunsPipelineJob, which is exercised by existing run-move
+            // tests; this case verifies only that the cross-container request is rejected before any job is queued.
+        }
+
+        @Test
+        public void testDeleteProtocolByRowIdsContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run-less protocol (assay design) that lives in folder B. Run-less so deleteProtocolByRowIds skips its
+            // AdminPermission check, leaving the per-protocol DesignAssay guard in deleteObjects as the only gate.
+            ExpProtocol protocol = ExperimentService.get().createExpProtocol(folderB, ExpProtocol.ApplicationType.ExperimentRun, "scoping-test-protocol");
+            protocol.save(getAdmin());
+            int rowId = protocol.getRowId();
+
+            // A caller who can design assays in folder A only. DesignAssayPermission's role lives in the assay module,
+            // resolved by name here to avoid a compile-time dependency from the experiment module.
+            @SuppressWarnings("unchecked")
+            Class<? extends Role> assayDesigner = (Class<? extends Role>) Class.forName("org.labkey.assay.security.AssayDesignerRole");
+            User designerA = createUserInRole(folderA, assayDesigner);
+
+            // Force-deleting B's protocol through folder A must be rejected. The forceDelete POST path runs handlePost
+            // -> deleteObjects directly, bypassing the getView container check, so the deleteObjects guard is what stops
+            // it (403 for an authenticated caller lacking DesignAssay on the protocol's own container).
+            ActionURL foreignUrl = new ActionURL(DeleteProtocolByRowIdsAction.class, folderA)
+                    .addParameter("forceDelete", "true")
+                    .addParameter("singleObjectRowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, designerA));
+
+            // The protocol must still exist in folder B
+            assertNotNull("Protocol must not have been deleted cross-container", ExperimentService.get().getExpProtocol(rowId));
+
+            // Positive control: once the caller is granted design rights in folder B, the same forceDelete through
+            // folder B succeeds (302) and removes the protocol -- proving the guard rejects only the cross-container case.
+            grantRole(designerA, folderB, assayDesigner);
+            ActionURL ownUrl = new ActionURL(DeleteProtocolByRowIdsAction.class, folderB)
+                    .addParameter("forceDelete", "true")
+                    .addParameter("singleObjectRowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, designerA));
+            assertNull("Protocol should be deleted by a same-container request", ExperimentService.get().getExpProtocol(rowId));
+        }
+
+        @Test
+        public void testSetEntitySequenceContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A sample type that lives in folder B
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleType sampleType = SampleTypeService.get().createSampleType(folderB, getAdmin(), "scoping-test-st", null,
+                    props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            int rowId = sampleType.getRowId();
+
+            // A folder admin in A only (has DesignSampleType in A via FolderAdminRole, no rights in B)
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            // Advancing the genId of B's sample type through folder A must 403. The request-container DesignSampleType
+            // check passes in A, but ensureMinGenId operates on the type's OWN container, so the per-object check rejects it.
+            ActionURL foreignUrl = new ActionURL(SetEntitySequenceAction.class, folderA)
+                    .addParameter("kindName", SampleTypeDomainKind.NAME)
+                    .addParameter("seqType", NameGenerator.EntityCounter.genId.name())
+                    .addParameter("rowId", String.valueOf(rowId))
+                    .addParameter("newValue", "100");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a folder admin in B can advance the sequence through folder B (success, 200).
+            User adminB = createUserInRole(folderB, FolderAdminRole.class);
+            ActionURL ownUrl = new ActionURL(SetEntitySequenceAction.class, folderB)
+                    .addParameter("kindName", SampleTypeDomainKind.NAME)
+                    .addParameter("seqType", NameGenerator.EntityCounter.genId.name())
+                    .addParameter("rowId", String.valueOf(rowId))
+                    .addParameter("newValue", "100");
+            assertStatus(HttpServletResponse.SC_OK, post(ownUrl, adminB));
+        }
+
+        // Create a minimal saved experiment run in the given container, mirroring the run-creation idiom in LineageTest.
+        private ExpRun createRun(Container c, String name) throws Exception
+        {
+            ExpRun run = ExperimentService.get().createExperimentRun(c, name);
+            run.setFilePathRoot(PipelineService.get().findPipelineRoot(c).getRootPath());
+            run.setProtocol(ExperimentService.get().ensureSampleDerivationProtocol(getAdmin()));
+            return ExperimentService.get().saveSimpleExperimentRun(run, Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+                    new ViewBackgroundInfo(c, getAdmin(), null), null, false);
         }
     }
 

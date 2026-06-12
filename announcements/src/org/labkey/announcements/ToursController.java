@@ -15,7 +15,9 @@
  */
 package org.labkey.announcements;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.announcements.model.TourManager;
 import org.labkey.announcements.model.TourModel;
 import org.labkey.announcements.query.AnnouncementSchema;
@@ -30,13 +32,23 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewServlet;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.util.Map;
 
 /**
  * Created by Marty on 1/19/2015.
@@ -123,6 +135,12 @@ public class ToursController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
+            // The "//will check below" gate on the annotation was never implemented: this action inserts/updates tour
+            // content (a folder-level configuration asset) but performed no insert/update/admin check, so a Read user
+            // could create or overwrite tours. Require folder admin to manage tours.
+            if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException("You do not have permission to modify tours in this folder.");
+
             TourModel model;
             JSONObject json = form.getJsonObject();
             int rowId = json.getInt("rowId");
@@ -201,6 +219,34 @@ public class ToursController extends SpringActionController
         public void setRowid(String rowid)
         {
             _rowid = rowid;
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testSaveTourRequiresAdmin() throws Exception
+        {
+            Container folder = createContainer("A");
+            ActionURL url = new ActionURL(SaveTourAction.class, folder);
+            Map<String, Object> jsonHeaders = Map.of("Content-Type", "application/json");
+
+            // A Reader must not be able to create/modify tours
+            User reader = createUserInRole(folder, ReaderRole.class);
+            String body = new JSONObject().put("rowId", -1).toString();
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, ViewServlet.POST(url, reader, jsonHeaders, body));
+
+            // Positive control: a folder admin passes the permission gate and the tour is created (success, 200).
+            User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
+            String adminBody = new JSONObject()
+                    .put("rowId", -1)
+                    .put("title", "scoping-test-tour")
+                    .put("description", "d")
+                    .put("mode", "0")
+                    .put("tour", new JSONObject())
+                    .toString();
+            MockHttpServletResponse resp = ViewServlet.POST(url, folderAdmin, jsonHeaders, adminBody);
+            assertStatus(HttpServletResponse.SC_OK, resp);
         }
     }
 }

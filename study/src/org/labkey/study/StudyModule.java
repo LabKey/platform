@@ -125,6 +125,7 @@ import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
@@ -711,6 +712,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return Set.of(
                 DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
                 ParticipantGroupManager.ParticipantGroupTestCase.class,
+                ParticipantGroupManager.ContainerScopingTestCase.class,
                 StudyImpl.ProtocolDocumentTestCase.class,
                 StudyManager.StudySnapshotTestCase.class,
                 StudyManager.VisitCreationTestCase.class,
@@ -718,7 +720,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 VisitImpl.TestCase.class,
                 DatasetUpdateService.TestCase.class,
                 DatasetLsidImportHelper.TestCase.class,
-                org.labkey.study.controllers.CreateChildStudyAction.ContainerScopingTestCase.class);
+                CreateChildStudyAction.ContainerScopingTestCase.class,
+                StudyController.ContainerScopingTestCase.class,
+                ReportsController.ContainerScopingTestCase.class);
     }
 
     @Override

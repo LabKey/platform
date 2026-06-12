@@ -286,7 +286,8 @@ public class SpecimenApiController extends SpringActionController
         @Override
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
-            SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
+            // checkOwnership=true: a request is readable only by an admin (RequestSpecimensPermission) or its creator
+            SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), true, false);
             final Map<String, Object> response = new HashMap<>();
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
             return new ApiSimpleResponse(response);

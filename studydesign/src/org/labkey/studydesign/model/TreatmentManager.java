@@ -33,6 +33,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -362,8 +363,14 @@ public class TreatmentManager
     {
         if (doseAndRoute.isNew())
             return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
-        else
-            return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
+
+        // Confirm the existing row belongs to this container before updating.
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), doseAndRoute.getRowId());
+        if (!new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).exists())
+            throw new NotFoundException("Dose and route not found in this folder");
+
+        return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
     }
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)

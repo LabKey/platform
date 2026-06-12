@@ -17,6 +17,7 @@ package org.labkey.studydesign;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
@@ -31,11 +32,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Cohort;
@@ -51,6 +54,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.studydesign.model.AssaySpecimenConfigImpl;
@@ -944,6 +948,54 @@ public class StudyDesignController extends SpringActionController
         if (study != null)
         {
             StudyService.get().updateAssayPlan(user, study, assayPlan);
+        }
+    }
+
+    /**
+     * Verifies the cross-container guard on the DoseAndRoute save path reached by UpdateStudyProductsAction. That
+     * action's DoseAndRoute branch alone writes through the raw storage table keyed by a client-supplied RowId, so the
+     * guard lives in TreatmentManager.saveStudyProductDoseAndRoute and is exercised directly here (building a full study
+     * + product + JSON product payload to drive the action end-to-end would add a large fixture for the same assertion).
+     */
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testSaveDoseAndRouteContainerScoping()
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A DoseAndRoute row that lives in folder B
+            DoseAndRoute existing = Table.insert(admin, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(),
+                    new DoseAndRoute("1 mg", "IV", 1, folderB));
+            int rowId = existing.getRowId();
+
+            // Deny: an update keyed by B's RowId while operating in folder A must be rejected, not silently
+            // overwrite/re-home the foreign row. This is the path an Editor in folder A reaches via
+            // UpdateStudyProductsAction by submitting a products[].DoseAndRoute[].RowId owned by folder B.
+            DoseAndRoute attack = new DoseAndRoute("HACKED", "HACKED", 1, folderA);
+            attack.setRowId(rowId);
+            try
+            {
+                TreatmentManager.getInstance().saveStudyProductDoseAndRoute(folderA, admin, attack);
+                fail("Expected NotFoundException updating a DoseAndRoute owned by another container");
+            }
+            catch (NotFoundException ignored) {}
+
+            // The row in folder B must be untouched
+            DoseAndRoute reloaded = new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute())
+                    .getObject(rowId, DoseAndRoute.class);
+            assertNotNull("DoseAndRoute must still exist", reloaded);
+            assertEquals("Dose must be unchanged after a cross-container update", "1 mg", reloaded.getDose());
+
+            // Positive control: updating through the row's own container succeeds and persists the change
+            DoseAndRoute ok = new DoseAndRoute("2 mg", "IM", 1, folderB);
+            ok.setRowId(rowId);
+            TreatmentManager.getInstance().saveStudyProductDoseAndRoute(folderB, admin, ok);
+            DoseAndRoute afterOk = new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute())
+                    .getObject(rowId, DoseAndRoute.class);
+            assertEquals("Dose should be updated by a same-container request", "2 mg", afterOk.getDose());
         }
     }
 }

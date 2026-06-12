@@ -566,22 +566,6 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(ServerInstallationForm form, BindException errors) throws Exception
         {
-            // Confirm the row belongs to the current container
-            Object pk = form.getPkVal();
-            if (pk == null)
-                throw new NotFoundException("No server installation specified");
-            int installationId;
-            try
-            {
-                installationId = Integer.parseInt(String.valueOf(pk));
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException("Invalid server installation id: " + pk);
-            }
-            if (MothershipManager.get().getServerInstallation(installationId, getContainer()) == null)
-                throw new NotFoundException("Server installation not found in this folder");
-
             form.doUpdate();
             return true;
         }
@@ -2031,6 +2015,43 @@ public class MothershipController extends SpringActionController
                     .addParameter("Note", "updated");
             assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
             assertEquals("Note should have been updated through the row's own container", "updated", MothershipManager.get().getServerInstallation(id, folderB).getNote());
+        }
+
+        @Test
+        public void testUpdateStackTraceContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // An exception stack trace that lives in folder B (StackTraceHash is derived from the stack trace text)
+            ExceptionStackTrace st = new ExceptionStackTrace();
+            st.setContainer(folderB.getId());
+            st.setStackTrace("java.lang.NullPointerException\n\tat org.labkey.scoping.Test.run(Test.java:1)\n");
+            st.setComments("original");
+            st = Table.insert(admin, MothershipManager.get().getTableInfoExceptionStackTrace(), st);
+            int id = st.getExceptionStackTraceId();
+
+            // Updating it through folder A must 404 rather than overwrite/re-home it. doUpdate() keys Table.update on
+            // the id alone and rewrites the container, so without the handlePost guard a site admin (who CAN update
+            // folder B) would edit B's row through folder A and re-home it.
+            ActionURL url = new ActionURL(UpdateStackTraceAction.class, folderA)
+                    .addParameter("ExceptionStackTraceId", String.valueOf(id))
+                    .addParameter("Comments", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, admin));
+
+            // The row in folder B must be untouched
+            ExceptionStackTrace reloaded = MothershipManager.get().getExceptionStackTrace(id, folderB);
+            assertNotNull("Stack trace should still exist in its own container", reloaded);
+            assertEquals("Comments must not have been overwritten", "original", reloaded.getComments());
+
+            // Positive control: updating through the row's own container (folder B) succeeds and persists the change,
+            // proving the guard rejects only the cross-container case, not every update.
+            ActionURL ownUrl = new ActionURL(UpdateStackTraceAction.class, folderB)
+                    .addParameter("ExceptionStackTraceId", String.valueOf(id))
+                    .addParameter("Comments", "updated");
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertEquals("Comments should have been updated through the row's own container", "updated", MothershipManager.get().getExceptionStackTrace(id, folderB).getComments());
         }
     }
 }
