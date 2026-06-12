@@ -149,7 +149,7 @@ public class CoreMcp implements McpService.McpImpl
 
 
     // TODO replace/augment with available feature list
-    @Tool(description = "List the modules installed on this server, this may be useful in inferring the available funcitonality.  For instance, " +
+    @Tool(description = "List the modules installed on this server, this may be useful in inferring the available functionality. For instance, " +
             "the presence of the `premium` module implies the availability of premium featues.")
     @RequiresNoPermission
     public String listModules(ToolContext context)
