@@ -107,8 +107,6 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.AdminConsoleAction;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
@@ -116,7 +114,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityManager.NewUserStatus;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -130,7 +127,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
@@ -183,7 +179,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
-import org.labkey.core.admin.AdminController;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -2957,7 +2952,7 @@ public class CoreController extends SpringActionController
             // Create and save a new, non-empty policy for the folder so it doesn't inherit permissions
             MutableSecurityPolicy policy = new MutableSecurityPolicy(folder.getPolicy());
             policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
 
             // Admin permissions nowhere... should fail
             moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
@@ -2965,19 +2960,19 @@ public class CoreController extends SpringActionController
             // Give nonAdminUser admin permission in just the folder being moved and try again (should fail)
             policy = new MutableSecurityPolicy(folder.getPolicy());
             policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
             moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
 
             // Give nonAdminUser admin permission in the home project (new parent) as well and try again (should still fail)
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(home);
             homePolicy.addRoleAssignment(nonAdminUser, ProjectAdminRole.class);
-            SecurityPolicyManager.savePolicyForTests(homePolicy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(homePolicy, adminUser);
             moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
 
             // Give nonAdminUser admin permission in the folder's current parent and try again (should now succeed)
             policy = new MutableSecurityPolicy(folder.getParent().getPolicy());
             policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
-            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
             moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_OK);
             folder = ContainerManager.getForId(folder.getId()); // Refresh its path
             assertNotNull(folder);

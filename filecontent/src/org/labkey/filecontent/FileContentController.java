@@ -16,10 +16,13 @@
 
 package org.labkey.filecontent;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
@@ -79,19 +82,27 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.NewUserStatus;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -108,6 +119,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.webdav.WebdavResource;
@@ -115,10 +127,13 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -1610,6 +1625,36 @@ public class FileContentController extends SpringActionController
             assertForRequiresSiteAdmin(user,
                     new SendShortDigestAction()
             );
+        }
+
+        @Test
+        public void testSummaryActions() throws Exception
+        {
+            Container folder = JunitUtil.getTestContainer();
+            User adminUser = TestContext.get().getUser();
+
+            // Happy path -- admin should be able to invoke summary actions in root
+            testAction(FileContentSummaryAction.class, folder, adminUser, HttpServletResponse.SC_OK);
+            testAction(FileContentProjectSummaryAction.class, folder, adminUser, HttpServletResponse.SC_OK);
+
+            NewUserStatus newUserStatus = SecurityManager.addUser(new ValidEmail("testSummaryActions@myDomain.com"), null);
+            User nonAdminUser = newUserStatus.getUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
+
+            // Non-admin user should be forbidden
+            testAction(FileContentSummaryAction.class, folder, nonAdminUser, HttpServletResponse.SC_FORBIDDEN);
+            testAction(FileContentProjectSummaryAction.class, folder, nonAdminUser, HttpServletResponse.SC_FORBIDDEN);
+
+            UserManager.deleteUser(nonAdminUser.getUserId());
+        }
+
+        private void testAction(Class<? extends Controller> actionClass, Container folder, User user, int expectedResponseCode) throws Exception
+        {
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(actionClass, folder), user, Map.of("Content-Type", "application/json"), null);
+            MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
+            assertEquals("Unexpected response code", expectedResponseCode, response.getStatus());
         }
     }
 }
