@@ -2415,7 +2415,8 @@ public class ExperimentController extends SpringActionController
         public void validateForm(DataFileForm form, Errors errors)
         {
             _data = form.lookupData();
-            if (_data == null)
+            // Not using ensureCorrectContainer() because we don't redirect API actions
+            if (_data == null || !getContainer().equals(_data.getContainer()))
             {
                 errors.reject(ERROR_MSG, "No ExpData found for id: " + form.getRowId());
             }
@@ -8387,7 +8388,17 @@ public class ExperimentController extends SpringActionController
                     .addParameter("lsid", lsid)
                     .addParameter("name", attachmentName);
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+
+            ActionURL checkDataFileUrl = new ActionURL(CheckDataFileAction.class, folderB)
+                .addParameter("rowId", data.getRowId());
+            assertStatus(HttpServletResponse.SC_OK, post(checkDataFileUrl, admin));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(checkDataFileUrl, readerA)); // No perms
+            checkDataFileUrl.setContainer(folderA);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(checkDataFileUrl, readerA)); // Has read in folder A, but not admin
+            resp = post(checkDataFileUrl, admin); // Wrong container. Not found.
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            JSONObject json = new JSONObject(resp.getContentAsString());
+            assertEquals("No ExpData found for id: " + data.getRowId(), json.get("exception"));
         }
     }
-
 }
