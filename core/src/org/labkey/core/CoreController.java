@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -106,11 +107,20 @@ import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.NewUserStatus;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -119,6 +129,10 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -135,6 +149,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -156,6 +171,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
@@ -167,6 +183,7 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.core.admin.AdminController;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.qc.CoreQCStateHandler;
@@ -176,8 +193,10 @@ import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.folder.xml.FolderDocument;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -2906,4 +2925,106 @@ public class CoreController extends SpringActionController
 
     }
 
+    public static class MoveContainerTestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "MoveContainerFolder";
+        private static final ValidEmail TEST_EMAIL;
+
+        static
+        {
+            try
+            {
+                TEST_EMAIL = new ValidEmail("testMove@myDomain.com");
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Test
+        public void testMoveContainer() throws Exception
+        {
+            doCleanup();
+
+            User adminUser = TestContext.get().getUser();
+            Container junit = JunitUtil.getTestContainer();
+            Container folder = ContainerManager.createContainer(junit, FOLDER_NAME, adminUser);
+            Container home = ContainerManager.getHomeContainer();
+
+            NewUserStatus newUserStatus = SecurityManager.addUser(TEST_EMAIL, null);
+            User nonAdminUser = newUserStatus.getUser();
+            // Create and save a new, non-empty policy for the folder so it doesn't inherit permissions
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+
+            // Admin permissions nowhere... should fail
+            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in just the folder being moved and try again (should fail)
+            policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in the home project (new parent) as well and try again (should still fail)
+            MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(home);
+            homePolicy.addRoleAssignment(nonAdminUser, ProjectAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(homePolicy, TestContext.get().getUser());
+            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in the folder's current parent and try again (should now succeed)
+            policy = new MutableSecurityPolicy(folder.getParent().getPolicy());
+            policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, TestContext.get().getUser());
+            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals("/home/" + FOLDER_NAME, folder.getPath());
+            // Should be able to move it back
+            moveFolder(nonAdminUser, folder, junit, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + FOLDER_NAME, folder.getPath());
+
+            // Happy path -- admin user should be able to move folder from /Shared/_junit to /home, and back
+            moveFolder(adminUser, folder, home, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals("/home/" + FOLDER_NAME, folder.getPath());
+            moveFolder(adminUser, folder, junit, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + FOLDER_NAME, folder.getPath());
+        }
+
+        private void moveFolder(User user, Container folder, Container newParent, int expectedResponseCode) throws Exception
+        {
+            JSONObject json = new JSONObject().put("container", folder.getId()).put("parent", newParent.getId());
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(MoveContainerAction.class, folder), user, Map.of("Content-Type", "application/json"), json.toString());
+            MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
+            assertEquals("Unexpected response code", expectedResponseCode, response.getStatus());
+        }
+
+        private static void doCleanup() throws Exception
+        {
+            Container folder = ContainerManager.getForPath(JunitUtil.getTestContainer().getPath() + "/" + FOLDER_NAME);
+            if (folder != null)
+            {
+                ContainerManager.deleteAll(folder, TestContext.get().getUser());
+            }
+
+            // A previous failed test could leave the folder in the /home project
+            folder = ContainerManager.getForPath(ContainerManager.getHomeContainer().getPath() + "/" + FOLDER_NAME);
+            if (folder != null)
+            {
+                ContainerManager.deleteAll(folder, TestContext.get().getUser());
+            }
+
+            User u = UserManager.getUser(TEST_EMAIL);
+            if (u != null)
+                UserManager.deleteUser(u.getUserId());
+        }
+    }
 }

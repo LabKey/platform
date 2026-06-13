@@ -720,6 +720,9 @@ public class FileContentController extends SpringActionController
             if (c == null)
                 c = ContainerManager.getRoot();
 
+            if (!c.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to read this summary.");
+
             ActionURL browse = new ActionURL(BeginAction.class, c);
             Set<Map<String, Object>> children = FileContentServiceImpl.getInstance().getNodes(form.isShowOverridesOnly(), browse.getEncodedLocalURIString(), c);
 
@@ -755,6 +758,9 @@ public class FileContentController extends SpringActionController
                 c = ContainerManager.getForId(form.getRootContainer());
             if (c == null)
                 c = ContainerManager.getRoot();
+
+            if (!c.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to read this project summary.");
 
             Set<Map<String, Object>> children = new LinkedHashSet<>();
             FileContentService svc = FileContentService.get();
