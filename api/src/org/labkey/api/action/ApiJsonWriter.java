@@ -477,6 +477,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             assertEquals("throwing up", json.getString("exception"));
             assertFalse(json.getBoolean("success"));
             assertEquals("java.lang.IllegalStateException", json.get("exceptionClass"));
+            assertFalse(json.has("stackTrace"));
             assertFalse(json.has("schemaName"));
         }
 
