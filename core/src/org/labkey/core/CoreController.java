@@ -205,10 +205,6 @@ import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
-/**
- * User: jeckels
- * Date: Jan 4, 2007
- */
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
@@ -876,6 +872,7 @@ public class CoreController extends SpringActionController
                 return;
             }
 
+            // User has admin in target, but not in target's parent. It's okay to provide details here.
             if (!target.getParent().hasPermission(getUser(), AdminPermission.class))
                 throw new UnauthorizedException("Insufficient permissions in target's current parent.");
 
@@ -923,15 +920,12 @@ public class CoreController extends SpringActionController
             if (null == c)
             {
                 c = ContainerManager.getForId(identifier);
-                if (null == c)
+                // Treat non-existent and bad permissions equivalently to not leak any info
+                if (null == c || !c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    errors.reject(ERROR_MSG, "Container '" + identifier + "' does not exist.");
-                    return null;
+                    throw new NotFoundException(description + " not found");
                 }
             }
-
-            if (!c.hasPermission(getUser(), AdminPermission.class))
-                throw new UnauthorizedException("Insufficient permissions in " + description.toLowerCase() + ".");
 
             return c;
         }

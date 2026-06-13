@@ -37,7 +37,7 @@ public abstract class DefaultValuesAction<FormType extends DomainIdForm> extends
     protected Domain getDomain(FormType domainIdForm)
     {
         Domain domain = PropertyService.get().getDomain(domainIdForm.getDomainId());
-        if (domain == null)
+        if (domain == null || !domain.getContainer().equals(getContainer()))
         {
             throw new NotFoundException();
         }
