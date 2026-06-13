@@ -934,11 +934,12 @@ public class CoreController extends SpringActionController
             if (null == c)
             {
                 c = ContainerManager.getForId(identifier);
-                // Treat non-existent and bad permissions equivalently to not leak any info
-                if (null == c || !c.hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new NotFoundException(description + " not found");
-                }
+            }
+
+            // Treat non-existent and bad permissions equivalently to not leak any info
+            if (null == c || !c.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new NotFoundException(description + " not found");
             }
 
             return c;
@@ -2923,6 +2924,7 @@ public class CoreController extends SpringActionController
     public static class MoveContainerTestCase extends Assert
     {
         private static final String FOLDER_NAME = "MoveContainerFolder";
+        private static final String NEW_PARENT = "NewParent";
         private static final ValidEmail TEST_EMAIL;
 
         static
@@ -2945,7 +2947,7 @@ public class CoreController extends SpringActionController
             User adminUser = TestContext.get().getUser();
             Container junit = JunitUtil.getTestContainer();
             Container folder = ContainerManager.createContainer(junit, FOLDER_NAME, adminUser);
-            Container home = ContainerManager.getHomeContainer();
+            Container newParent = ContainerManager.createContainer(junit, NEW_PARENT, adminUser);
 
             NewUserStatus newUserStatus = SecurityManager.addUser(TEST_EMAIL, null);
             User nonAdminUser = newUserStatus.getUser();
@@ -2955,39 +2957,39 @@ public class CoreController extends SpringActionController
             SecurityPolicyManager.savePolicyForTests(policy, adminUser);
 
             // Admin permissions nowhere... should fail
-            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
 
             // Give nonAdminUser admin permission in just the folder being moved and try again (should fail)
             policy = new MutableSecurityPolicy(folder.getPolicy());
             policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
             SecurityPolicyManager.savePolicyForTests(policy, adminUser);
-            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
 
-            // Give nonAdminUser admin permission in the home project (new parent) as well and try again (should still fail)
-            MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(home);
-            homePolicy.addRoleAssignment(nonAdminUser, ProjectAdminRole.class);
-            SecurityPolicyManager.savePolicyForTests(homePolicy, adminUser);
-            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_FORBIDDEN);
+            // Give nonAdminUser admin permission in the new parent as well and try again (should still fail)
+            MutableSecurityPolicy newParentPolicy = new MutableSecurityPolicy(newParent);
+            newParentPolicy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(newParentPolicy, adminUser);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
 
             // Give nonAdminUser admin permission in the folder's current parent and try again (should now succeed)
             policy = new MutableSecurityPolicy(folder.getParent().getPolicy());
             policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
             SecurityPolicyManager.savePolicyForTests(policy, adminUser);
-            moveFolder(nonAdminUser, folder, home, HttpServletResponse.SC_OK);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_OK);
             folder = ContainerManager.getForId(folder.getId()); // Refresh its path
             assertNotNull(folder);
-            assertEquals("/home/" + FOLDER_NAME, folder.getPath());
+            assertEquals(junit.getPath() + "/" + NEW_PARENT + "/" + FOLDER_NAME, folder.getPath());
             // Should be able to move it back
             moveFolder(nonAdminUser, folder, junit, HttpServletResponse.SC_OK);
             folder = ContainerManager.getForId(folder.getId()); // Refresh its path
             assertNotNull(folder);
             assertEquals(junit.getPath() + "/" + FOLDER_NAME, folder.getPath());
 
-            // Happy path -- admin user should be able to move folder from /Shared/_junit to /home, and back
-            moveFolder(adminUser, folder, home, HttpServletResponse.SC_OK);
+            // Happy path -- admin user should be able to move folder to new parent and back
+            moveFolder(adminUser, folder, newParent, HttpServletResponse.SC_OK);
             folder = ContainerManager.getForId(folder.getId()); // Refresh its path
             assertNotNull(folder);
-            assertEquals("/home/" + FOLDER_NAME, folder.getPath());
+            assertEquals(junit.getPath() + "/" + NEW_PARENT + "/" + FOLDER_NAME, folder.getPath());
             moveFolder(adminUser, folder, junit, HttpServletResponse.SC_OK);
             folder = ContainerManager.getForId(folder.getId()); // Refresh its path
             assertNotNull(folder);
@@ -3010,11 +3012,10 @@ public class CoreController extends SpringActionController
                 ContainerManager.deleteAll(folder, TestContext.get().getUser());
             }
 
-            // A previous failed test could leave the folder in the /home project
-            folder = ContainerManager.getForPath(ContainerManager.getHomeContainer().getPath() + "/" + FOLDER_NAME);
-            if (folder != null)
+            Container newParent = ContainerManager.getForPath(JunitUtil.getTestContainer().getPath() + "/" + NEW_PARENT);
+            if (newParent != null)
             {
-                ContainerManager.deleteAll(folder, TestContext.get().getUser());
+                ContainerManager.deleteAll(newParent, TestContext.get().getUser());
             }
 
             User u = UserManager.getUser(TEST_EMAIL);
