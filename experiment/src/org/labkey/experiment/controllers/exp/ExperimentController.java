@@ -6046,9 +6046,9 @@ public class ExperimentController extends SpringActionController
                             errors.reject(ERROR_MSG, "Can't resolve sample '" + in.rowId + "'");
                     }
 
-                    if (m == null)
+                    if (m == null || !m.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
-                        errors.reject(ERROR_MSG, "Material input lsid or rowId required");
+                        errors.reject(ERROR_MSG, "Material input couldn't be resolved");
                         continue;
                     }
 
@@ -6088,9 +6088,9 @@ public class ExperimentController extends SpringActionController
                             errors.reject(ERROR_MSG, "Can't resolve data '" + in.rowId + "'");
                     }
 
-                    if (d == null)
+                    if (d == null || !d.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
-                        errors.reject(ERROR_MSG, "Data input lsid or rowId required");
+                        errors.reject(ERROR_MSG, "Data input couldn't be resolved");
                         continue;
                     }
 
@@ -6113,9 +6113,8 @@ public class ExperimentController extends SpringActionController
             ExpSampleType outSampleType;
             if (form.targetSampleType != null)
             {
-                // TODO: check in scope and has permission
                 outSampleType = SampleTypeService.get().getSampleType(form.targetSampleType.toString());
-                if (outSampleType == null)
+                if (outSampleType == null || !outSampleType.getContainer().hasPermission(getUser(), ReadPermission.class))
                     errors.reject(ERROR_MSG, "Sample type not found: " + form.targetSampleType.toString());
             }
             else
@@ -6126,9 +6125,8 @@ public class ExperimentController extends SpringActionController
             ExpDataClass outDataClass;
             if (form.targetDataClass != null)
             {
-                // TODO: check in scope and has permission
                 outDataClass = ExperimentServiceImpl.get().getDataClass(form.targetDataClass.toString());
-                if (outDataClass == null)
+                if (outDataClass == null || !outDataClass.getContainer().hasPermission(getUser(), ReadPermission.class))
                     errors.reject(ERROR_MSG, "DataClass not found: " + form.targetDataClass.toString());
             }
             else
@@ -8589,6 +8587,153 @@ public class ExperimentController extends SpringActionController
                     .addParameter("rowId", String.valueOf(rowId))
                     .addParameter("newValue", "100");
             assertStatus(HttpServletResponse.SC_OK, post(ownUrl, adminB));
+        }
+
+        @Test
+        public void testDeriveActionMaterialContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // Editor in folder A only: holds the InsertPermission the action requires in A, but has no rights in folder B.
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // A sample type with one sample in each folder. The editor can read its own folder A but not folder B.
+            ExpSampleType stA = createSampleType(folderA, "DeriveScopeStA");
+            ExpSampleType stB = createSampleType(folderB, "DeriveScopeStB");
+            ExpMaterial sampleA = createSample(folderA, stA, "srcA");
+            ExpMaterial sampleB = createSample(folderB, stB, "srcB");
+
+            ActionURL url = new ActionURL(DeriveAction.class, folderA);
+
+            // Negative (input): a material input resolved by global rowId that lives in folder B must not be usable as a
+            // derivation parent by a caller who cannot read B. Without the per-input Read check the foreign sample would
+            // be silently consumed (an IDOR). The output target is in folder A, so only the foreign input can be at fault.
+            JSONObject foreignInput = new JSONObject()
+                    .put("materialInputs", new JSONArray().put(new JSONObject().put("rowId", sampleB.getRowId())))
+                    .put("targetSampleType", stA.getLSID())
+                    .put("materialOutputCount", 1);
+            MockHttpServletResponse resp = postJson(url, editorA, foreignInput);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a material-input scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Material input couldn't be resolved"));
+
+            // Negative (target): deriving INTO a sample type the caller cannot read must be rejected as "not found", so
+            // the caller can't probe which foreign sample types exist by their LSID.
+            JSONObject foreignTarget = new JSONObject()
+                    .put("targetSampleType", stB.getLSID())
+                    .put("materialOutputCount", 1);
+            resp = postJson(url, editorA, foreignTarget);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a target sample type scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Sample type not found"));
+
+            // Positive control: the same request shape with the input and target both in folder A -- which the editor
+            // can read and insert into -- succeeds and actually derives a new sample, proving the checks reject only the
+            // cross-container case rather than every request.
+            JSONObject ok = new JSONObject()
+                    .put("materialInputs", new JSONArray().put(new JSONObject().put("rowId", sampleA.getRowId())))
+                    .put("targetSampleType", stA.getLSID())
+                    .put("materialOutputs", new JSONArray().put(new JSONObject().put("values", new JSONObject().put("name", "derivedA"))));
+            resp = postJson(url, editorA, ok);
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Derivation should report success, was: " + resp.getContentAsString(),
+                    new JSONObject(resp.getContentAsString()).getBoolean("success"));
+            assertNotNull("A new sample should have been derived in folder A", stA.getSample(folderA, "derivedA"));
+        }
+
+        @Test
+        public void testDeriveActionDataContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // Editor in folder A only: holds the InsertPermission the action requires in A, but has no rights in folder B.
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // A data class with one data object in each folder. The editor can read its own folder A but not folder B.
+            ExpDataClass dcA = createDataClass(folderA, "DeriveScopeDcA");
+            ExpDataClass dcB = createDataClass(folderB, "DeriveScopeDcB");
+            ExpData dataA = createData(folderA, dcA, "srcDataA");
+            ExpData dataB = createData(folderB, dcB, "srcDataB");
+
+            ActionURL url = new ActionURL(DeriveAction.class, folderA);
+
+            // Negative (input): a data input resolved by global rowId that lives in folder B must not be usable as a
+            // derivation parent by a caller who cannot read B. The Read check fires before the data-class membership
+            // check, so a foreign data object is rejected as unresolvable rather than silently consumed (an IDOR).
+            JSONObject foreignInput = new JSONObject()
+                    .put("dataInputs", new JSONArray().put(new JSONObject().put("rowId", dataB.getRowId())))
+                    .put("targetDataClass", dcA.getLSID())
+                    .put("dataOutputCount", 1);
+            MockHttpServletResponse resp = postJson(url, editorA, foreignInput);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a data-input scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Data input couldn't be resolved"));
+
+            // Negative (target): deriving INTO a data class the caller cannot read must be rejected as "not found", so
+            // the caller can't probe which foreign data classes exist by their LSID.
+            JSONObject foreignTarget = new JSONObject()
+                    .put("targetDataClass", dcB.getLSID())
+                    .put("dataOutputCount", 1);
+            resp = postJson(url, editorA, foreignTarget);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a target data class scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("DataClass not found"));
+
+            // Positive control: the same request shape with the input and target both in folder A -- which the editor
+            // can read and insert into -- succeeds and actually derives a new data object, proving the checks reject
+            // only the cross-container case rather than every request.
+            JSONObject ok = new JSONObject()
+                    .put("dataInputs", new JSONArray().put(new JSONObject().put("rowId", dataA.getRowId())))
+                    .put("targetDataClass", dcA.getLSID())
+                    .put("dataOutputs", new JSONArray().put(new JSONObject().put("values", new JSONObject().put("name", "derivedDataA"))));
+            resp = postJson(url, editorA, ok);
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Derivation should report success, was: " + resp.getContentAsString(),
+                    new JSONObject(resp.getContentAsString()).getBoolean("success"));
+            assertNotNull("A new data object should have been derived in folder A", ExperimentService.get().getExpData(dcA, "derivedDataA"));
+        }
+
+        // Create a sample type with a single string "name" property, mirroring the idiom in testSetEntitySequenceContainerScoping.
+        private ExpSampleType createSampleType(Container c, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            return SampleTypeService.get().createSampleType(c, getAdmin(), name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+        }
+
+        // Create a saved sample in the given sample type, mirroring the sample-creation idiom in LineageTest.
+        private ExpMaterial createSample(Container c, ExpSampleType st, String name) throws Exception
+        {
+            ExpMaterial m = ExperimentService.get().createExpMaterial(c, st.generateSampleLSID().setObjectId(name).toString(), name);
+            m.setCpasType(st.getLSID());
+            m.save(getAdmin());
+            return m;
+        }
+
+        // Create a data class with a single string "name" property, mirroring the idiom in LineageTest.
+        private ExpDataClass createDataClass(Container c, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            return ExperimentServiceImpl.get().createDataClass(c, getAdmin(), name, null, props, Collections.emptyList(), null, null);
+        }
+
+        // Insert a single named row into the data class and return the resulting ExpData.
+        private ExpData createData(Container c, ExpDataClass dc, String name) throws Exception
+        {
+            UserSchema dataSchema = new ExpSchema(getAdmin(), c).getUserSchema(ExpSchema.NestedSchemas.data.name());
+            BatchValidationException errors = new BatchValidationException();
+            dataSchema.getTable(dc.getName()).getUpdateService()
+                    .insertRows(getAdmin(), c, List.of(CaseInsensitiveHashMap.of("name", name)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            return ExperimentService.get().getExpData(dc, name);
+        }
+
+        // Dispatch a JSON POST to a @Marshal(Jackson) API action, with the form supplied as a JSON request body.
+        private MockHttpServletResponse postJson(ActionURL url, User user, JSONObject body) throws Exception
+        {
+            return ViewServlet.POST(url, user, Map.of("Content-Type", "application/json"), body.toString());
         }
 
         // Create a minimal saved experiment run in the given container, mirroring the run-creation idiom in LineageTest.
