@@ -8355,8 +8355,6 @@ public class QueryController extends SpringActionController
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
-                new SaveNamedSetAction(),
-                new DeleteNamedSetAction(),
                 new ApiTestAction(),
                 new GetDefaultVisibleColumnsAction()
             );
