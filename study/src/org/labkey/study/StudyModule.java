@@ -134,6 +134,7 @@ import org.labkey.study.controllers.StudyPropertiesController;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DataStatesTest;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -710,6 +711,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         return Set.of(
                 DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                DataStatesTest.class,
                 ParticipantGroupManager.ParticipantGroupTestCase.class,
                 StudyImpl.ProtocolDocumentTestCase.class,
                 StudyManager.StudySnapshotTestCase.class,
