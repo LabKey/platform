@@ -465,6 +465,11 @@ public class QubeQuery
                     }
                     e.membersSet = set;
                 }
+                else
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Could not parse members property");
+                    throw errors;
+                }
             }
             else if (null != json.opt("membersQuery"))
             {
