@@ -44,7 +44,7 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
     {
         if (form.getRowId() == -1)
             throw new NotFoundException("Run ID not specified.");
-        // GitHub Kanban #1892: Resolve the run scoped to the current container
+        // GitHub Issue #1892: Resolve the run scoped to the current container
         ExpRun run = ExperimentService.get().getExpRun(form.getRowId(), getContainer());
         if (run == null)
             throw new NotFoundException("Run " + form.getRowId() + " does not exist.");

@@ -386,7 +386,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (run == null)
             return null;
 
-        // GitHub Kanban #1892: if container provided, ensure the run belongs to the container
+        // GitHub Issue #1892: if container provided, ensure the run belongs to the container
         if (container != null && !run.getContainer().equals(container))
             return null;
 
