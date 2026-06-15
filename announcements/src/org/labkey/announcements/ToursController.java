@@ -42,13 +42,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Map;
 
 /**
  * Created by Marty on 1/19/2015.
@@ -229,23 +226,21 @@ public class ToursController extends SpringActionController
         {
             Container folder = createContainer("A");
             ActionURL url = new ActionURL(SaveTourAction.class, folder);
-            Map<String, Object> jsonHeaders = Map.of("Content-Type", "application/json");
 
             // A Reader must not be able to create/modify tours
             User reader = createUserInRole(folder, ReaderRole.class);
-            String body = new JSONObject().put("rowId", -1).toString();
-            assertStatus(HttpServletResponse.SC_FORBIDDEN, ViewServlet.POST(url, reader, jsonHeaders, body));
+            JSONObject body = new JSONObject().put("rowId", -1);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, postJson(url, reader, body));
 
             // Positive control: a folder admin passes the permission gate and the tour is created (success, 200).
             User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
-            String adminBody = new JSONObject()
+            JSONObject adminBody = new JSONObject()
                     .put("rowId", -1)
                     .put("title", "scoping-test-tour")
                     .put("description", "d")
                     .put("mode", "0")
-                    .put("tour", new JSONObject())
-                    .toString();
-            MockHttpServletResponse resp = ViewServlet.POST(url, folderAdmin, jsonHeaders, adminBody);
+                    .put("tour", new JSONObject());
+            MockHttpServletResponse resp = postJson(url, folderAdmin, adminBody);
             assertStatus(HttpServletResponse.SC_OK, resp);
         }
     }

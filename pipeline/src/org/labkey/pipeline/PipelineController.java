@@ -111,7 +111,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -1840,11 +1839,6 @@ public class PipelineController extends SpringActionController
 
     public static class ContainerScopingTestCase extends AbstractContainerScopingTest
     {
-        private MockHttpServletResponse postJson(ActionURL url, User user, JSONObject body) throws Exception
-        {
-            return ViewServlet.POST(url, user, Map.of("Content-Type", "application/json"), body.toString());
-        }
-
         @Test
         public void testSavePipelineTriggerContainerScoping() throws Exception
         {

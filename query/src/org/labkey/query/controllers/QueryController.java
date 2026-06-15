@@ -7739,10 +7739,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    // Named sets are stored in a process-global cache keyed only by name (no container component) and are consumed
-    // server-wide by LabKey SQL IN-clauses, filters, and OLAP member resolution. Mutating one therefore affects every
-    // folder, so require admin rather than letting any container Reader create/overwrite a global named set.
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
         @Override
@@ -7787,9 +7784,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    // Same global-cache surface as SaveNamedSetAction: deleting a named set affects every folder's queries, so require
-    // admin rather than ReadPermission.
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
 
@@ -8530,6 +8525,8 @@ public class QueryController extends SpringActionController
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
+                new SaveNamedSetAction(),
+                new DeleteNamedSetAction(),
                 new ApiTestAction(),
                 new GetDefaultVisibleColumnsAction()
             );
@@ -8559,9 +8556,7 @@ public class QueryController extends SpringActionController
                 controller.new InternalDeleteView(),
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
-                new QueryExportAuditRedirectAction(),
-                new SaveNamedSetAction(),
-                new DeleteNamedSetAction()
+                new QueryExportAuditRedirectAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)

@@ -8730,12 +8730,6 @@ public class ExperimentController extends SpringActionController
             return ExperimentService.get().getExpData(dc, name);
         }
 
-        // Dispatch a JSON POST to a @Marshal(Jackson) API action, with the form supplied as a JSON request body.
-        private MockHttpServletResponse postJson(ActionURL url, User user, JSONObject body) throws Exception
-        {
-            return ViewServlet.POST(url, user, Map.of("Content-Type", "application/json"), body.toString());
-        }
-
         // Create a minimal saved experiment run in the given container, mirroring the run-creation idiom in LineageTest.
         private ExpRun createRun(Container c, String name) throws Exception
         {
