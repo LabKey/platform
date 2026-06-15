@@ -20,14 +20,14 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.42.1-fb-package-updates-060126.0",
+    "@labkey/components": "7.42.1-fb-package-updates-060126.4",
     "@labkey/themes": "1.9.4-fb-package-updates-060126.1"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.5-fb-package-updates-060126.4",
+    "@labkey/build": "9.1.5-fb-package-updates-060126.6",
     "@labkey/eslint-config": "1.2.2-fb-package-updates-060126.1",
     "@types/jest": "30.0.0",
-    "@types/react": "18.3.30",
+    "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
     "execa": "9.6.1",
     "fs-extra": "11.3.5",
