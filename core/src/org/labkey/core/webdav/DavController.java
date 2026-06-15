@@ -3544,7 +3544,7 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_NOT_FOUND);
             }
 
-            if (resource.canWrite(getUser(), true))
+            if (!resource.canWrite(getUser(), true))
             {
                 throw new DavException(WebdavStatus.SC_FORBIDDEN);
             }
