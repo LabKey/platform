@@ -216,6 +216,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
@@ -5413,6 +5414,10 @@ public class AdminController extends SpringActionController
             if (!StringUtils.isEmpty(form.getSourceTemplateFolder()))
             {
                 fiConfig = getFolderImportConfigFromTemplateFolder(form, pipelineUnzipDir, errors);
+                if (fiConfig == null || errors.hasErrors())
+                {
+                    return false;
+                }
             }
             else
             {
@@ -5507,10 +5512,16 @@ public class AdminController extends SpringActionController
 
         private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final FileLike pipelineUnzipDir, final BindException errors) throws Exception
         {
-            // user choose to import from a template source folder
+            // user chose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
 
-            // In order to support the Advanced import options to import into multiple target folders we need to zip
+            if (sourceContainer == null || !sourceContainer.hasPermission(getUser(), AdminPermission.class))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to import from the specified source folder.");
+                return null;
+            }
+
+            // To support the Advanced import options to import into multiple target folders we need to zip
             // the source template folder so that the zip file can be passed to the pipeline processes.
             FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                     getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
@@ -12384,6 +12395,30 @@ public class AdminController extends SpringActionController
                 User u = UserManager.getUser(new ValidEmail(TEST_EMAIL));
                 UserManager.deleteUser(u.getUserId());
             }
+        }
+    }
+
+    public static class ImportFolderSourceScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testImportFromTemplateRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            ActionURL url = new ActionURL(ImportFolderAction.class, dest)
+                    .addParameter("sourceTemplateFolder", source.getPath())
+                    .addParameter("sourceTemplateFolderId", source.getId());
+            MockHttpServletResponse resp = post(url, destAdminOnly);
+
+            // The fix rejects the import and reshows the form (200) rather than redirecting to success (302), with a
+            // source-permission error message in the rendered content.
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Expected a source-permission rejection message, content was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("permission to import from the specified source folder"));
+
+            // Positive control performed in S3ImportTest.testS3Import(). Difficult to mock here due to pipeline job
         }
     }
 }
