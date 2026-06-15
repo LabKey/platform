@@ -19,43 +19,6 @@
     "lint-branch": "node lint.diff.mjs --currentBranch",
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
-  "jest": {
-    "globals": {
-      "LABKEY": {
-        "container": {
-          "formats": {
-            "dateFormat": "yyyy-MM-dd"
-          }
-        },
-        "user": {
-          "id": 1004
-        },
-        "project": {},
-        "moduleContext": {}
-      }
-    },
-    "moduleFileExtensions": [
-      "tsx",
-      "ts",
-      "js"
-    ],
-    "preset": "ts-jest",
-    "setupFilesAfterEnv": [
-      "<rootDir>/test/js/setup.ts"
-    ],
-    "testEnvironment": "jsdom",
-    "testMatch": null,
-    "testRegex": "(\\.(test))\\.(ts|tsx)$",
-    "testResultsProcessor": "jest-teamcity-reporter",
-    "transform": {
-      "^.+\\.tsx?$": [
-        "ts-jest",
-        {
-          "tsconfig": "node_modules/@labkey/build/webpack/tsconfig.test.json"
-        }
-      ]
-    }
-  },
   "dependencies": {
     "@labkey/components": "7.42.1-fb-package-updates-060126.0",
     "@labkey/themes": "1.9.4-fb-package-updates-060126.1"
