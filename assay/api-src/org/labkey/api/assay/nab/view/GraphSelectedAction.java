@@ -71,6 +71,8 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
                 objectIds[idx++] = Integer.parseInt(objectIdString);
         }
 
+        // GitHub Issue #1892: (NAB-9) The object ids come straight from the request and getDilutionSummaries() resolves them to runs
+        verifyObjectIdsReadable(objectIds);
         Set<Integer> cutoffSet = new HashSet<>();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(_protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), objectIds);
@@ -90,6 +92,13 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         JspView<GraphSelectedBean> multiGraphView = new JspView<>("/org/labkey/api/assay/nab/view/multiRunGraph.jsp", bean);
 
         return new VBox(new AssayHeaderView(_protocol, provider, false, true, null), multiGraphView);
+    }
+
+    /**
+     * Verify that the current user may view each of the requested object ids before any run data is loaded.
+     */
+    protected void verifyObjectIdsReadable(int[] ids) throws Exception
+    {
     }
 
     protected abstract GraphSelectedBean createSelectionBean(ViewContext context, ExpProtocol protocol, int[] cutoffs,

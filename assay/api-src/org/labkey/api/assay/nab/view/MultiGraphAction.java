@@ -16,13 +16,13 @@
 package org.labkey.api.assay.nab.view;
 
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionAssayProvider;
 import org.labkey.api.assay.dilution.DilutionAssayRun;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.NavTree;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -35,12 +35,13 @@ import java.util.Set;
  * User: klum
  * Date: 6/11/13
  */
-public class MultiGraphAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
+public abstract class MultiGraphAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
     @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
         int[] ids = form.getId();
+        verifyObjectIdsReadable(ids);
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), ids);
@@ -61,6 +62,13 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         config.setCutoffs(cutoffs);
         NabGraph.renderChartPNG(getContainer(), getViewContext().getResponse(), summaries, config);
         return null;
+    }
+
+    /**
+     * Verify that the current user may view each of the requested object ids before any run data is loaded.
+     */
+    protected void verifyObjectIdsReadable(int[] ids) throws Exception
+    {
     }
 
     protected NabGraph.Config getGraphConfig(FormType form)
