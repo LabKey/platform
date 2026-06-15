@@ -173,12 +173,6 @@ public class VisualizationSourceColumn
         {
             _values.addAll(values);
         }
-        String namedSetValue = measure.getNsvalues();
-        if (namedSetValue != null)
-        {
-            List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);
-            _values.addAll(namedSet);
-        }
     }
 
     private static UserSchema getUserSchema(ViewContext context, String schemaName)
