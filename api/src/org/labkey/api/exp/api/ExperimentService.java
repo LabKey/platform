@@ -163,6 +163,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpRun getExpRun(int rowId);
 
+    @Nullable
+    ExpRun getExpRun(int rowId, @Nullable Container container);
+
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
 
     @Nullable
