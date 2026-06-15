@@ -3545,7 +3545,7 @@ public class DavController extends SpringActionController
                 try
                 {
                     WebdavResource resource = resolvePath();
-                    if (resource != null)
+                    if (resource != null && resource.canWrite(getUser(), true))
                     {
                         resource.setLastModified(lastModified.toMillis());
                     }
