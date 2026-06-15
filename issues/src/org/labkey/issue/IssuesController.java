@@ -93,7 +93,6 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -102,7 +101,6 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ButtonBuilder;
@@ -1739,43 +1737,19 @@ public class IssuesController extends SpringActionController
         @Override
         public Object execute(UserGroupForm form, BindException errors)
         {
-            List<UserGroupForm> users = new ArrayList<>();
-
-            if (null != form.getGroupId())
-            {
-                Group group = SecurityManager.getGroup(form.getGroupId());
-                if (group != null)
-                {
-                    for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
-                    {
-                        if (getContainer().hasPermission(user, UpdatePermission.class))
-                        {
-                            UserGroupForm usergrp = new UserGroupForm();
-                            usergrp.setGroupId(form.groupId);
-                            usergrp.setUserId(user.getUserId());
-                            usergrp.setDisplayName(user.getDisplayName(getUser()));
-                            users.add(usergrp);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // all project users
-                for (User user : SecurityManager.getProjectUsers(getContainer()))
-                {
-                    if (getContainer().hasPermission(user, UpdatePermission.class))
-                    {
-                        UserGroupForm projectUsers = new UserGroupForm();
-                        projectUsers.setUserId(user.getUserId());
-                        projectUsers.setDisplayName(user.getDisplayName(getUser()));
-                        users.add(projectUsers);
-                    }
-                }
-            }
-
-            users.sort(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER));
-            return users;
+            Integer groupId = form.getGroupId();
+            Group group = null != groupId ? SecurityManager.getGroup(groupId) : null;
+            return IssueManager.getUsersForGroup(getContainer(), group)
+                .map(user -> {
+                    UserGroupForm userGroupForm = new UserGroupForm();
+                    if (groupId != null)
+                        userGroupForm.setGroupId(groupId);
+                    userGroupForm.setUserId(user.getUserId());
+                    userGroupForm.setDisplayName(user.getDisplayName(getUser()));
+                    return userGroupForm;
+                })
+                .sorted(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
         }
     }
 
