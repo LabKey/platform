@@ -1,5 +1,6 @@
 package org.labkey.study.dataset;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.qc.DataState;
@@ -31,16 +32,17 @@ public class DataStatesTest extends AbstractContainerScopingTest
         assertEquals(1, statesInA.size());
         assertTrue(statesInA.contains(state1));
 
-        // Attempt to update that data state from the wrong folder. Admin should *not* be able to update it in Folder B.
+        // Attempt to update that data state from the wrong folder, Folder B. Admin should *not* be able to update it.
         ActionURL url = new ActionURL(StudyController.ManageQCStatesAction.class, folderB)
             .addParameter("ids", state1.getRowId())
             .addParameter("labels", "Here's my new label");
-        assertStatus(MockHttpServletResponse.SC_INTERNAL_SERVER_ERROR, post(url, getAdmin())); // Error response
+        HttpServletResponse response = post(url, getAdmin());
         List<DataState> statesInB = DataStateManager.getInstance().getStates(folderB);
         assertTrue(statesInB.isEmpty());
         statesInA = DataStateManager.getInstance().getStates(folderA);
         assertEquals(1, statesInA.size());
         assertTrue(statesInA.contains(state1));
+        assertStatus(MockHttpServletResponse.SC_INTERNAL_SERVER_ERROR, response); // Error response
 
         // Admin should be able to update the data state in Folder A
         url.setContainer(folderA);
