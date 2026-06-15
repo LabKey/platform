@@ -83,7 +83,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DefaultModelAndView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
