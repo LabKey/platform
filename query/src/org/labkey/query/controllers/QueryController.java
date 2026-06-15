@@ -96,7 +96,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSetBuilder;
 import org.labkey.api.data.ColumnHeaderType;
@@ -7561,64 +7560,6 @@ public class QueryController extends SpringActionController
             }
 
             return errors;
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class NamedSetForm
-    {
-        String setName;
-        String[] setList;
-
-        public String getSetName()
-        {
-            return setName;
-        }
-
-        public void setSetName(String setName)
-        {
-            this.setName = setName;
-        }
-
-        public String[] getSetList()
-        {
-            return setList;
-        }
-
-        public void setSetList(String[] setList)
-        {
-            this.setList = setList;
-        }
-
-        public List<String> parseSetList()
-        {
-            return Arrays.asList(setList);
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().deleteNamedSet(namedSetForm.getSetName());
-            return new ApiSimpleResponse("success", true);
         }
     }
 
