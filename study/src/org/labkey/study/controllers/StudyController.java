@@ -6741,7 +6741,7 @@ public class StudyController extends BaseStudyController
                 if (group != null)
                 {
                     ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
-                    if (category != null && category.canRead(getContainer(), getUser()))
+                    if (category != null)
                     {
                         form.setLabel(group.getLabel());
                         return new JspView<>("/org/labkey/study/view/sendParticipantGroup.jsp", form, errors);

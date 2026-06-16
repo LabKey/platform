@@ -16,7 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -31,7 +31,6 @@ import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -42,9 +41,9 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.ParticipantCategory;
@@ -78,17 +77,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: klum
- * Date: Jun 1, 2011
- * Time: 2:26:02 PM
- */
 public class ParticipantGroupManager
 {
     private static final ParticipantGroupManager _instance = new ParticipantGroupManager();
@@ -119,17 +112,13 @@ public class ParticipantGroupManager
         return StudySchema.getInstance().getTableInfoParticipantCategory();
     }
 
-    public ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
+    public @Nullable ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
     {
         ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
-        if (category != null)
+        if (category != null && category.canRead(user))
             return category;
 
-        ParticipantCategoryImpl def = new ParticipantCategoryImpl();
-        def.setContainer(c.getId());
-        def.setLabel(label);
-
-        return def;
+        return null;
     }
 
     public boolean categoryExists(Container c, User user, String label, boolean shared)
@@ -137,14 +126,14 @@ public class ParticipantGroupManager
         assert label != null : "Label cannot be null";
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        Set<String> exsitingCategories = new HashSet<>();
+        Set<String> existingCategories = new HashSet<>();
         filter.addCondition(FieldKey.fromString("OwnerId"), shared ? ParticipantCategory.OWNER_SHARED : user.getUserId());
 
         TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), Collections.singleton("Label"), filter, null);
         for (String name : selector.getArrayList(String.class))
-            exsitingCategories.add(name.toLowerCase());
+            existingCategories.add(name.toLowerCase());
 
-        return exsitingCategories.contains(label.toLowerCase());
+        return existingCategories.contains(label.toLowerCase());
     }
 
     public List<ParticipantCategoryImpl> getParticipantCategoriesByType(final Container c, final User user, @Nullable String type)
@@ -152,12 +141,11 @@ public class ParticipantGroupManager
         if (type == null)
             return _getParticipantCategories(c, user);
 
-        List<ParticipantCategoryImpl> categories = new ArrayList<>();
         Collection<ParticipantCategoryImpl> types = ParticipantGroupCache.getParticipantCategoryForType(c, type);
-        if (types != null)
-            categories.addAll(types);
+        if (types == null)
+            return Collections.emptyList();
 
-        return categories;
+        return types.stream().filter(category -> category != null && category.canRead(user)).toList();
     }
 
     public List<ParticipantCategoryImpl> getParticipantCategoriesByLabel(final Container c, final User user, @Nullable String label)
@@ -165,12 +153,11 @@ public class ParticipantGroupManager
         if (label == null)
             return _getParticipantCategories(c, user);
 
-        List<ParticipantCategoryImpl> categories = new ArrayList<>();
-        ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategoryForLabel(c, label);
+        ParticipantCategoryImpl category = getParticipantCategory(c, user, label);
         if (category != null)
-            categories.add(category);
+            return List.of(category);
 
-        return categories;
+        return Collections.emptyList();
     }
 
     public ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, CohortFilter cohortFilter,
@@ -406,31 +393,26 @@ public class ParticipantGroupManager
     }
 
     /**
-     * Returns the list participant categories that the specified user is allowed to see
+     * Returns the list of participant categories that the specified user is allowed to see.
      *
-     * @param distinctCategories if true returns the unique (by label) set of categories. A private category will
+     * @param distinctCategories if true, returns the unique (by label) set of categories. A private category will
      *                           supersede a public category.
      */
     public List<ParticipantCategoryImpl> getParticipantCategories(Container c, User user, boolean distinctCategories)
     {
-        if (distinctCategories)
-        {
-            Map<String, ParticipantCategoryImpl> categoryMap = new HashMap<>();
-            for (ParticipantCategoryImpl category : _getParticipantCategories(c, user))
-            {
-                if (categoryMap.containsKey(category.getLabel()))
-                {
-                    if (!category.isShared())
-                        categoryMap.put(category.getLabel(), category);
-                }
-                else
-                    categoryMap.put(category.getLabel(), category);
-            }
-            return new LinkedList<>(categoryMap.values());
+        List<ParticipantCategoryImpl> categories = _getParticipantCategories(c, user);
 
+        if (!distinctCategories)
+            return categories;
+
+        Map<String, ParticipantCategoryImpl> categoryMap = new HashMap<>();
+        for (ParticipantCategoryImpl category : categories)
+        {
+            if (!categoryMap.containsKey(category.getLabel()) || !category.isShared())
+                categoryMap.put(category.getLabel(), category);
         }
-        else
-            return _getParticipantCategories(c, user);
+
+        return new ArrayList<>(categoryMap.values());
     }
 
     public List<ParticipantCategoryImpl> getParticipantCategories(Container c, User user)
@@ -440,14 +422,10 @@ public class ParticipantGroupManager
 
     private List<ParticipantCategoryImpl> _getParticipantCategories(Container c, User user)
     {
-        Collection<ParticipantCategoryImpl> categories = ParticipantGroupCache.getParticipantCategories(c);
-        List<ParticipantCategoryImpl> filtered = new ArrayList<>();
-
-        // TODO: Switch ParticipantCategoryImpl internals from arrays to lists... but not right now
-        categories.stream().filter(category -> category.canRead(c, user)).forEach(category -> {
-            filtered.add(category);
-        });
-        return filtered;
+        return ParticipantGroupCache.getParticipantCategories(c)
+                .stream()
+                .filter(category -> category.canRead(user))
+                .toList();
     }
 
     @Deprecated // create participant categories and groups separately
@@ -559,7 +537,7 @@ public class ParticipantGroupManager
         }
         else
         {
-            ParticipantCategoryImpl prev = getParticipantCategory(c, user, def.getRowId());
+            ParticipantCategoryImpl prev = getParticipantCategory(c, def.getRowId());
             ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
             event = ParticipantGroupAuditProvider.EventFactory.categoryChange(c, user, prev, ret);
         }
@@ -848,7 +826,6 @@ public class ParticipantGroupManager
         }
     }
 
-
     private void removeGroupParticipants(Container c, User user, ParticipantGroup group, String[] participantsToRemove)
     {
         // remove the mapping from group to participants
@@ -861,7 +838,6 @@ public class ParticipantGroupManager
         ParticipantGroupCache.uncache(c);
     }
 
-
     private void deleteGroupParticipants(Container c, User user, ParticipantGroup group)
     {
         // remove the mapping from group to participants
@@ -873,10 +849,18 @@ public class ParticipantGroupManager
         ParticipantGroupCache.uncache(c);
     }
 
-    @Nullable
-    public ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
+    public @Nullable ParticipantCategoryImpl getParticipantCategory(Container c, int rowId)
     {
         return ParticipantGroupCache.getParticipantCategory(c, rowId);
+    }
+
+    public @Nullable ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
+    {
+        ParticipantCategoryImpl category = getParticipantCategory(c, rowId);
+        if (category != null && category.canRead(user))
+            return category;
+
+        return null;
     }
 
     public ParticipantGroup getParticipantGroup(Container container, User user, int rowId)
@@ -893,21 +877,11 @@ public class ParticipantGroupManager
         return selector.getObject(ParticipantGroup.class);
     }
 
-    public List<String> getAllGroupedParticipants(Container container)
-    {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT ParticipantId FROM ");
-        sql.append(getTableInfoParticipantGroupMap(), "GroupMap");
-        sql.append(" WHERE Container = ? ORDER BY ParticipantId");
-        sql.add(container);
-
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(String.class);
-    }
-
     public List<ParticipantGroup> getParticipantGroups(final Container c, User user, ParticipantCategoryImpl def)
     {
         if (!def.isNew())
         {
-            ParticipantCategoryImpl category = ParticipantGroupCache.getParticipantCategory(c, def.getRowId());
+            ParticipantCategoryImpl category = getParticipantCategory(c, def.getRowId());
             if (category != null)
                 return Arrays.stream(category.getGroups()).toList();
         }
@@ -1028,8 +1002,10 @@ public class ParticipantGroupManager
     public void deleteParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
     {
         ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
-        List<ValidationError> errors = new ArrayList<>();
+        if (cat == null)
+            return;
 
+        List<ValidationError> errors = new ArrayList<>();
         if (!cat.canDelete(c, user, errors))
             throw new ValidationException(errors);
 
@@ -1168,14 +1144,123 @@ public class ParticipantGroupManager
         ParticipantGroupCache.uncache(c);
     }
 
-    public static class ParticipantGroupTestCase extends Assert
+    public static class ParticipantGroupTestCase extends AbstractContainerScopingTest
     {
+        private static final ParticipantGroupManager MANAGER = ParticipantGroupManager.getInstance();
+        private Container _container;
+        private User _owner;
+        private User _otherUser;
+
+        @Before
+        public void setupParticipantGroupFixtures() throws Exception
+        {
+            _container = createContainer("study");
+            _owner = createUserInRole(_container, ReaderRole.class);
+            _otherUser = createUserInRole(_container, ReaderRole.class);
+        }
+
         @Test
         public void test()
         {
             ParticipantGroupManager p = new ParticipantGroupManager();
             ParticipantCategoryImpl def = new ParticipantCategoryImpl();
             p.getParticipantGroups(null, null, def);
+        }
+
+        /** The by-label getter must apply canRead(), so by-label does not disclose a private category to a non-owner. */
+        @Test
+        public void byLabelGetterHidesAnotherUsersPrivateCategory() throws Exception
+        {
+            ParticipantCategoryImpl owned = createPrivateCategory(_owner, "Private-by-label");
+
+            ParticipantCategoryImpl asOwner = MANAGER.getParticipantCategory(_container, _owner, "Private-by-label");
+            assertNotNull("Owner should resolve their own private category", asOwner);
+            assertEquals("Owner should resolve the real (persisted) category", owned.getRowId(), asOwner.getRowId());
+            assertFalse("Resolved category should be private", asOwner.isShared());
+            assertEquals(_owner.getUserId(), asOwner.getOwnerId());
+
+            ParticipantCategoryImpl asOther = MANAGER.getParticipantCategory(_container, _otherUser, "Private-by-label");
+            assertNull("Another user must not resolve the owner's private category by label", asOther);
+        }
+
+        /** A shared category is readable by any user, so the by-label getter must still return it for a non-owner. */
+        @Test
+        public void byLabelGetterReturnsSharedCategoryForAnyUser() throws Exception
+        {
+            ParticipantCategoryImpl shared = createSharedCategory("Shared-by-label");
+
+            ParticipantCategoryImpl asOther = MANAGER.getParticipantCategory(_container, _otherUser, "Shared-by-label");
+            assertNotNull("A shared category must be readable by any user", asOther);
+            assertEquals(shared.getRowId(), asOther.getRowId());
+            assertTrue(asOther.isShared());
+        }
+
+        /** getParticipantCategoriesByLabel delegates to the by-label getter and must inherit the same canRead() check. */
+        @Test
+        public void byLabelListGetterHidesAnotherUsersPrivateCategory() throws Exception
+        {
+            createPrivateCategory(_owner, "Private-by-label-list");
+
+            assertEquals("Owner should see their private category by label",
+                    1, MANAGER.getParticipantCategoriesByLabel(_container, _owner, "Private-by-label-list").size());
+            assertTrue("Another user must not see the owner's private category by label",
+                    MANAGER.getParticipantCategoriesByLabel(_container, _otherUser, "Private-by-label-list").isEmpty());
+        }
+
+        /** getParticipantCategoriesByType must also filter by canRead(), so a private category isn't leaked by type. */
+        @Test
+        public void byTypeGetterHidesAnotherUsersPrivateCategory() throws Exception
+        {
+            ParticipantCategoryImpl owned = createPrivateCategory(_owner, "Private-by-type");
+            String type = ParticipantCategory.Type.list.name();
+
+            assertTrue("Owner should see their private category among the typed categories",
+                    containsRowId(MANAGER.getParticipantCategoriesByType(_container, _owner, type), owned.getRowId()));
+            assertFalse("Another user must not see the owner's private category among the typed categories",
+                    containsRowId(MANAGER.getParticipantCategoriesByType(_container, _otherUser, type), owned.getRowId()));
+        }
+
+        /** The collection getter must hide another user's private category while still surfacing shared categories. */
+        @Test
+        public void collectionGetterHidesPrivateButReturnsShared() throws Exception
+        {
+            ParticipantCategoryImpl owned = createPrivateCategory(_owner, "Private-collection");
+            ParticipantCategoryImpl shared = createSharedCategory("Shared-collection");
+
+            List<ParticipantCategoryImpl> asOwner = MANAGER.getParticipantCategories(_container, _owner);
+            assertTrue("Owner should see their own private category", containsRowId(asOwner, owned.getRowId()));
+            assertTrue("Owner should see the shared category", containsRowId(asOwner, shared.getRowId()));
+
+            List<ParticipantCategoryImpl> asOther = MANAGER.getParticipantCategories(_container, _otherUser);
+            assertFalse("Another user must not see the owner's private category", containsRowId(asOther, owned.getRowId()));
+            assertTrue("Shared categories remain visible to everyone", containsRowId(asOther, shared.getRowId()));
+        }
+
+        private static boolean containsRowId(Collection<ParticipantCategoryImpl> categories, int rowId)
+        {
+            return categories.stream().anyMatch(category -> category.getRowId() == rowId);
+        }
+
+        /** Create a private (owner-scoped) participant category, persisted and owned by {@code owner}. */
+        private ParticipantCategoryImpl createPrivateCategory(User owner, String label) throws ValidationException
+        {
+            ParticipantCategoryImpl def = new ParticipantCategoryImpl();
+            def.setContainer(_container.getId());
+            def.setLabel(label);
+            def.setType(ParticipantCategory.Type.list.name());
+            def.setOwnerId(owner.getUserId());
+            return MANAGER.setParticipantCategory(_container, owner, def);
+        }
+
+        /** Create a shared participant category. Created as the site admin, who may create shared categories. */
+        private ParticipantCategoryImpl createSharedCategory(String label) throws ValidationException
+        {
+            ParticipantCategoryImpl def = new ParticipantCategoryImpl();
+            def.setContainer(_container.getId());
+            def.setLabel(label);
+            def.setType(ParticipantCategory.Type.list.name());
+            // OwnerId defaults to OWNER_SHARED
+            return MANAGER.setParticipantCategory(_container, getAdmin(), def);
         }
     }
 
