@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -78,13 +79,19 @@ public abstract class AbstractContainerScopingTest extends Assert
     {
         Container junit = JunitUtil.getTestContainer();
         Container c = ContainerManager.ensureContainer(junit.getParsedPath().append(getClass().getSimpleName() + "-" + name, true), getAdmin());
+        activateModules(c, enabledModules);
+        _containers.add(c);
+        return c;
+    }
+
+    protected Container activateModules(Container c, Module... enabledModules)
+    {
         if (enabledModules.length > 0)
         {
             Set<org.labkey.api.module.Module> m = new HashSet<>(c.getActiveModules());
             Collections.addAll(m, enabledModules);
             c.setActiveModules(m, getAdmin());
         }
-        _containers.add(c);
         return c;
     }
 
