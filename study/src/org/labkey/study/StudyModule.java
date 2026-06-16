@@ -720,6 +720,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 StudyManager.VisitCreationTestCase.class,
                 StudyModule.TestCase.class,
                 VisitImpl.TestCase.class,
+                DatasetController.DatasetAuditHistoryScopingTestCase.class,
                 DatasetUpdateService.TestCase.class,
                 DatasetLsidImportHelper.TestCase.class,
                 CreateChildStudyAction.ContainerScopingTestCase.class,
