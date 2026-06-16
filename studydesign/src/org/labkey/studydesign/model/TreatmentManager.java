@@ -54,6 +54,7 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.NotFoundException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -366,7 +367,15 @@ public class TreatmentManager
         if (doseAndRoute.isNew())
             return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
         else
+        {
+            // GitHub Kanban #1929: verify the existing row is in this container before updating
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            filter.addCondition(FieldKey.fromParts("RowId"), doseAndRoute.getRowId());
+            if (!new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).exists())
+                throw new NotFoundException("No dose and route found for rowId: " + doseAndRoute.getRowId());
+
             return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
+        }
     }
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
@@ -1033,6 +1042,61 @@ public class TreatmentManager
                 _manager.deleteStudyProduct(containerB, user, productIdB);
                 assertEquals("deleteStudyProduct should remove the dose/route within its own container", 0,
                         _manager.getStudyProductsDoseAndRoute(containerB, user, productIdB).size());
+            }
+            finally
+            {
+                if (null != containerB)
+                    ContainerManager.delete(containerB, user);
+                if (null != containerA)
+                    ContainerManager.delete(containerA, user);
+            }
+        }
+
+        // GitHub Kanban #1929: saveStudyProductDoseAndRoute rejects updating a dose/route row from another container
+        @Test
+        public void testCrossContainerDoseAndRouteUpdateDenied()
+        {
+            TestContext context = TestContext.get();
+            User user = context.getUser();
+            Container containerA = null;
+            Container containerB = null;
+            try
+            {
+                containerA = createStudyContainer(context, GUID.makeHash());
+                containerB = createStudyContainer(context, GUID.makeHash());
+
+                int productIdA = insertStudyProduct(containerA, user, "Immunogen A", "Immunogen");
+                int productIdB = insertStudyProduct(containerB, user, "Immunogen B", "Immunogen");
+
+                // a dose/route owned by container B
+                DoseAndRoute savedB = _manager.saveStudyProductDoseAndRoute(containerB, user, new DoseAndRoute("Dose B", "Route B", productIdB, containerB));
+                int rowIdB = savedB.getRowId();
+
+                // an editor in container A submits an update carrying container B's RowId
+                DoseAndRoute foreign = new DoseAndRoute("Rejected", "Rejected", productIdA, containerA);
+                foreign.setRowId(rowIdB);
+                try
+                {
+                    _manager.saveStudyProductDoseAndRoute(containerA, user, foreign);
+                    fail("Expected NotFoundException updating a dose/route row from another container");
+                }
+                catch (NotFoundException expected)
+                {
+                    // expected
+                }
+
+                // container B's row must be untouched (neither overwritten nor repointed into container A)
+                assertNotNull("Cross-container update must not modify container B's dose/route",
+                        _manager.getDoseAndRoute(containerB, "Dose B", "Route B", productIdB));
+                assertNull("Cross-container update must not have repointed the row into container A",
+                        _manager.getDoseAndRoute(containerA, "Hacked", "Hacked", productIdA));
+
+                // positive control: updating the row from within its own container succeeds
+                DoseAndRoute updateB = new DoseAndRoute("Dose B2", "Route B2", productIdB, containerB);
+                updateB.setRowId(rowIdB);
+                _manager.saveStudyProductDoseAndRoute(containerB, user, updateB);
+                assertNotNull("In-container update should succeed",
+                        _manager.getDoseAndRoute(containerB, "Dose B2", "Route B2", productIdB));
             }
             finally
             {
