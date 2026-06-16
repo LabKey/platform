@@ -286,7 +286,7 @@
                 forgot[0].style = "display: none";
             }
             document.getElementById("header").textContent = "Reauthenticate"
-            document.getElementById("button").textContent = "Reauthenticate";
+            document.getElementById("sign-in-button").textContent = "Reauthenticate";
         }
         else {
             remember.checked = remember && LABKEY.Utils.getCookie("email");
