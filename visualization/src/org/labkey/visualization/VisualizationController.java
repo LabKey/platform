@@ -1660,7 +1660,7 @@ public class VisualizationController extends SpringActionController
             ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class)
                     .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             String measure1 = "{\"allowNullResults\":true, \"aggregate\":\"MAX\", \"alias\":\"table_column\", " +
-                    "\"inNotNullSet\":true, \"name\":\"column\", \"nsvalues\":\"whatisthis\"," +
+                    "\"inNotNullSet\":true, \"name\":\"column\", " +
                     "\"queryName\":\"table\", \"requireLeftJoin\":true, \"schemaName\":\"schema\", \"values\":[1,2,3]}";
             String measure2 = "{\"allowNullResults\":false, \"aggregate\":\"MAX\", \"alias\":\"table_column2\", " +
                     "\"inNotNullSet\":false, \"name\":\"column2\"," +
@@ -1707,7 +1707,6 @@ public class VisualizationController extends SpringActionController
                 assertEquals("table_column", m.getAlias());
                 assertTrue(m.getInNotNullSet());
                 assertEquals("column", m.getName());
-                assertEquals("whatisthis", m.getNsvalues());
                 assertEquals("table", m.getQueryName());
                 assertTrue(m.getRequireLeftJoin());
                 assertEquals("schema", m.getSchemaName());
