@@ -945,7 +945,15 @@ public class FileContentController extends SpringActionController
                     {
                         FileContentServiceImpl fileContentService = FileContentServiceImpl.getInstance();
                         WebdavResource resource = fileContentService.getResource(String.valueOf(fileProps.get("id")));
-                        if (resource != null && !resource.getActions(getUser()).isEmpty())
+
+                        // GitHub Issue 1243: check resource container
+                        if (resource == null || !getContainer().getEntityId().equals(resource.getContainerId()))
+                        {
+                            errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, "Invalid file", fileProps.get("id")));
+                            return;
+                        }
+
+                        if (!resource.getActions(getUser()).isEmpty())
                         {
                             errors.reject(ERROR_MSG, String.format(FILE_PROP_ERROR, resource.getName(), "has been previously processed, properties cannot be edited"));
                             return;
