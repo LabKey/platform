@@ -64,6 +64,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
@@ -812,7 +813,7 @@ public class SurveyManager
         }
 
         @Test
-        public void testSurveyDesignContainerScoping()
+        public void testSurveyDesignContainerScoping() throws Exception
         {
             SurveyManager sm = SurveyManager.get();
 
@@ -821,9 +822,21 @@ public class SurveyManager
             design = sm.saveSurveyDesign(_projectA, _user, design);
             int designId = design.getRowId();
 
-            // Same-container lookup succeeds; cross-container lookup must return null
-            assertNotNull("Design should be visible from its own container", sm.getSurveyDesign(_projectA, _user, designId));
-            assertNull("Design must NOT be visible from another container", sm.getSurveyDesign(_projectB, _user, designId));
+            // 1. Same container: a user with read access in the design's container sees it.
+            User readerA = createUserInRole(_projectA, ReaderRole.class);
+            assertNotNull("Design should be visible from its own container to a user with read access",
+                    sm.getSurveyDesign(_projectA, readerA, designId));
+
+            // 2. Different container, caller can read the design's container: tolerated, design is returned.
+            User readerAB = createUserInRole(_projectA, ReaderRole.class);
+            grantRole(readerAB, _projectB, ReaderRole.class);
+            assertNotNull("Design should be visible from another container when the caller can read the design's container",
+                    sm.getSurveyDesign(_projectB, readerAB, designId));
+
+            // 3. Different container, caller cannot read the design's container: must return null.
+            User readerB = createUserInRole(_projectB, ReaderRole.class);
+            assertNull("Design must NOT be visible to a caller without read access to the design's container",
+                    sm.getSurveyDesign(_projectB, readerB, designId));
 
             // A delete issued from the wrong container must not remove the design
             sm.deleteSurveyDesign(_projectB, _user, designId, true);
