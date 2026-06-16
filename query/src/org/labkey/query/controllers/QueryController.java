@@ -318,6 +318,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -555,8 +556,18 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.addError(new LabKeyError("The listed credentials for this remote connection failed to connect."));
-                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm);
+                LOG.warn("Failed to connect for remote connection '{}' to {}", name, url, e);
+                // SelectRowsStreamHack wraps the underlying failure in a RuntimeException; unwrap to categorize it
+                Throwable cause = ExceptionUtil.unwrapException(e);
+                String message;
+                if (cause instanceof SSLException)
+                    message = "A secure (TLS) connection to the remote server could not be established. This is often caused by an untrusted, self-signed, or expired certificate. ";
+                else if (cause instanceof IOException)
+                    message = "A connection to the remote server could not be established. ";
+                else
+                    message = "The listed credentials for this remote connection failed to connect. ";
+                errors.addError(new LabKeyError(message + RemoteConnections.getBriefMessage(cause)));
+                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm, errors);
             }
 
             return new JspView<>("/org/labkey/query/view/testRemoteConnectionsSuccess.jsp", remoteConnectionForm);

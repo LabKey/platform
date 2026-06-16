@@ -103,7 +103,7 @@ public interface McpService extends ToolCallbackProvider
         default void incrementResourceRequestCount(String resource)
         {
             if (!get().isEnabled())
-                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the experimental feature flag.");
+                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the optional feature flag.");
 
             get().incrementResourceRequestCount(resource);
         }

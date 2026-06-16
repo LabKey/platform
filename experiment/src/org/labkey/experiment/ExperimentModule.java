@@ -1116,6 +1116,7 @@ public class ExperimentModule extends SpringModule
     {
         return Set.of(
             EdgeDiagnosticsTestCase.class,
+            ExperimentController.ContainerScopingTestCase.class,
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,

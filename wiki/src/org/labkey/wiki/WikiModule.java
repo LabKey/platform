@@ -198,7 +198,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            WikiManager.TestCase.class
+            WikiManager.TestCase.class,
+            WikiController.CopyWikiContainerScopingTestCase.class
         );
     }
 

@@ -24,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.Constants;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -443,5 +444,11 @@ public interface Module
      */
     default void registerMigrationHandlers(@NotNull DatabaseMigrationService service)
     {
+    }
+
+    // Override in cases such as a module transitioning from unmanaged to managed
+    default double getEarliestUpgradeVersion()
+    {
+        return Constants.getEarliestUpgradeVersion();
     }
 }

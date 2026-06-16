@@ -395,8 +395,6 @@ public class RequestabilityManager
         public int updateRequestability(User user, List<Vial> vials) throws InvalidRuleException
         {
             TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(_container);
-            if (null == tableInfoVial)
-                throw new IllegalStateException("Expected Vial table to exist.");
 
             SQLFragment reason = getAvailabilityReason();
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
@@ -573,7 +571,7 @@ public class RequestabilityManager
         @Override
         public SQLFragment getAvailabilityReason()
         {
-            return new SQLFragment("'This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".'");
+            return new SQLFragment("?", "This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".");
         }
 
         @Override
@@ -695,8 +693,6 @@ public class RequestabilityManager
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(_container);
-            if (null == tableInfoVial)
-                throw new IllegalStateException("Expected Vial table to exist.");
 
             SQLFragment sql = new SQLFragment();
             if (vials != null && !vials.isEmpty())
@@ -792,8 +788,6 @@ public class RequestabilityManager
         if (resetToAvailable)
         {
             TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
-            if (null == tableInfoVial)
-                throw new IllegalStateException("Expected Vial table to exist.");
 
             if (logger != null)
                 logger.info("\tResetting vials to default available state.");
@@ -847,10 +841,9 @@ public class RequestabilityManager
 
     public static String makeSpecimenUnavailableMessage(Vial vial, @Nullable String additionalText)
     {
-        String message = String.format("Specimen %s%s%s",
+        return String.format("Specimen %s%s%s",
                 vial.getGlobalUniqueId(),
                 null != vial.getAvailabilityReason() ? vial.getAvailabilityReason().replaceFirst("This vial", "") : " is not available.",
                 null != additionalText ? " " + additionalText : "");
-        return message;
     }
 }
