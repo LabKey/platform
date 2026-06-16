@@ -5552,6 +5552,8 @@ public class SpecimenController extends SpringActionController
         }
     }
 
+    public record PtidVisit(String ptid, String visit){}
+
     @RequiresPermission(ReadPermission.class)
     public class SelectedSpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
     {
@@ -5567,26 +5569,26 @@ public class SpecimenController extends SpringActionController
         protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull();
-            Set<Pair<String, String>> ptidVisits = new HashSet<>();
+            Set<PtidVisit> ptidVisits = new HashSet<>();
             for (ParticipantDataset pd : getFilterPds())
             {
                 if (pd.getSequenceNum() == null)
                 {
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), null));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), null));
                 }
                 else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                 {
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
                 }
                 else
                 {
                     Visit visit = pd.getSequenceNum() != null ? StudyInternalService.get().getVisitForSequence(study, pd.getSequenceNum()) : null;
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), visit != null ? visit.getLabel() : StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
             JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp",
-                    new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
+                new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
             return new VBox(header, view);
         }
 

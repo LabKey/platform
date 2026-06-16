@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -107,10 +108,16 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityManager.NewUserStatus;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -119,6 +126,9 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -135,6 +145,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -156,6 +167,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
@@ -176,8 +188,10 @@ import org.labkey.core.workbook.CreateWorkbookBean;
 import org.labkey.core.workbook.MoveWorkbooksBean;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.folder.xml.FolderDocument;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -205,10 +219,6 @@ import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
-/**
- * User: jeckels
- * Date: Jan 4, 2007
- */
 public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
@@ -403,6 +413,9 @@ public class CoreController extends SpringActionController
 
                 if (!obj.getContainer().equals(getContainer()))
                 {
+                    // Kanban #1924: Assure permission in the object's container
+                    if (!obj.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        throw new UnauthorizedException();
                     ActionURL correctedURL = getViewContext().getActionURL().clone();
                     Container objectContainer = obj.getContainer();
                     if (objectContainer == null)
@@ -863,36 +876,11 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getJsonObject();
-            String targetIdentifier = object.optString("container", null);
+            JSONObject json = form.getJsonObject();
+            target = validateContainer(json, "container", "Target", errors);
 
-            if (null == targetIdentifier)
-            {
-                errors.reject(ERROR_MSG, "A target container must be specified for move operation.");
+            if (target == null)
                 return;
-            }
-
-            String parentIdentifier = object.optString("parent", null);
-
-            if (null == parentIdentifier)
-            {
-                errors.reject(ERROR_MSG, "A parent container must be specified for move operation.");
-                return;
-            }
-
-            // Worry about escaping
-            Path path = Path.parse(targetIdentifier);
-            target = ContainerManager.getForPath(path);            
-
-            if (null == target)
-            {
-                target = ContainerManager.getForId(targetIdentifier);
-                if (null == target)
-                {
-                    errors.reject(ERROR_MSG, "Container '" + targetIdentifier + "' does not exist.");
-                    return;
-                }
-            }
 
             // This covers /home and /shared
             if (target.isProject() || target.isRoot())
@@ -901,18 +889,14 @@ public class CoreController extends SpringActionController
                 return;
             }
 
-            Path parentPath = Path.parse(parentIdentifier);
-            parent = ContainerManager.getForPath(parentPath);
+            // User has admin in target, but not in target's parent. It's okay to provide details here.
+            if (!target.getParent().hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException("Insufficient permissions in target's current parent.");
 
-            if (null == parent)
-            {
-                parent = ContainerManager.getForId(parentIdentifier);
-                if (null == parent)
-                {
-                    errors.reject(ERROR_MSG, "Parent container '" + parentIdentifier + "' does not exist.");
-                    return;
-                }
-            }
+            parent = validateContainer(json, "parent", "Parent", errors);
+
+            if (parent == null)
+                return;
 
             // Check children
             if (parent.hasChildren())
@@ -933,9 +917,35 @@ public class CoreController extends SpringActionController
             List<Container> children = ContainerManager.getAllChildren(target, getUser()); // assumes read permission
             if (children.contains(parent))
             {
-                errors.reject(ERROR_MSG, "The container '" + parentIdentifier + "' is not a valid parent folder.");
-                return;
+                errors.reject(ERROR_MSG, "The container '" + json.get("parent") + "' is not a valid parent folder.");
             }
+        }
+
+        private @Nullable Container validateContainer(JSONObject json, String key, String description, Errors errors)
+        {
+            String identifier = json.optString(key, null);
+
+            if (null == identifier)
+            {
+                errors.reject(ERROR_MSG, description + " container must be specified for move operation.");
+                return null;
+            }
+
+            Path path = Path.parse(identifier);
+            Container c = ContainerManager.getForPath(path);
+
+            if (null == c)
+            {
+                c = ContainerManager.getForId(identifier);
+            }
+
+            // Treat non-existent and bad permissions equivalently to not leak any info
+            if (null == c || !c.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new NotFoundException(description + " not found");
+            }
+
+            return c;
         }
 
         @Override
@@ -949,7 +959,7 @@ public class CoreController extends SpringActionController
 
             // Prepare aliases
             JSONObject object = form.getJsonObject();
-            Boolean addAlias = (Boolean) object.get("addAlias");
+            boolean addAlias = object.optBoolean("addAlias"); // optional, false by default
 
             List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
             aliasList.add(target.getPath());
@@ -1768,6 +1778,11 @@ public class CoreController extends SpringActionController
         {
             // Provide information about container, specifically an array of child tab folders that were deleted
             Container container = form.getContainerPath() != null ? ContainerManager.getForPath(form.getContainerPath()) : getContainer();
+            if (container == null)
+                throw new NotFoundException("No container found for path: " + form.getContainerPath());
+            // Kanban #1924: Assure permission to the container
+            if (!container.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to view the container information.");
             JSONArray deletedFolders = new JSONArray();
             for (FolderTab folderTab : container.getDeletedTabFolders(form.getNewFolderType()))
             {
@@ -2914,4 +2929,106 @@ public class CoreController extends SpringActionController
 
     }
 
+    public static class MoveContainerTestCase extends Assert
+    {
+        private static final String FOLDER_NAME = "MoveContainerFolder";
+        private static final String NEW_PARENT = "NewParent";
+        private static final ValidEmail TEST_EMAIL;
+
+        static
+        {
+            try
+            {
+                TEST_EMAIL = new ValidEmail("testMove@myDomain.com");
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Test
+        public void testMoveContainer() throws Exception
+        {
+            doCleanup();
+
+            User adminUser = TestContext.get().getUser();
+            Container junit = JunitUtil.getTestContainer();
+            Container folder = ContainerManager.createContainer(junit, FOLDER_NAME, adminUser);
+            Container newParent = ContainerManager.createContainer(junit, NEW_PARENT, adminUser);
+
+            NewUserStatus newUserStatus = SecurityManager.addUser(TEST_EMAIL, null);
+            User nonAdminUser = newUserStatus.getUser();
+            // Create and save a new, non-empty policy for the folder so it doesn't inherit permissions
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
+
+            // Admin permissions nowhere... should fail
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in just the folder being moved and try again (should fail)
+            policy = new MutableSecurityPolicy(folder.getPolicy());
+            policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in the new parent as well and try again (should still fail)
+            MutableSecurityPolicy newParentPolicy = new MutableSecurityPolicy(newParent);
+            newParentPolicy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(newParentPolicy, adminUser);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_FORBIDDEN);
+
+            // Give nonAdminUser admin permission in the folder's current parent and try again (should now succeed)
+            policy = new MutableSecurityPolicy(folder.getParent().getPolicy());
+            policy.addRoleAssignment(nonAdminUser, FolderAdminRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, adminUser);
+            moveFolder(nonAdminUser, folder, newParent, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + NEW_PARENT + "/" + FOLDER_NAME, folder.getPath());
+            // Should be able to move it back
+            moveFolder(nonAdminUser, folder, junit, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + FOLDER_NAME, folder.getPath());
+
+            // Happy path -- admin user should be able to move folder to new parent and back
+            moveFolder(adminUser, folder, newParent, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + NEW_PARENT + "/" + FOLDER_NAME, folder.getPath());
+            moveFolder(adminUser, folder, junit, HttpServletResponse.SC_OK);
+            folder = ContainerManager.getForId(folder.getId()); // Refresh its path
+            assertNotNull(folder);
+            assertEquals(junit.getPath() + "/" + FOLDER_NAME, folder.getPath());
+        }
+
+        private void moveFolder(User user, Container folder, Container newParent, int expectedResponseCode) throws Exception
+        {
+            JSONObject json = new JSONObject().put("container", folder.getId()).put("parent", newParent.getId());
+            HttpServletRequest request = ViewServlet.mockRequest(RequestMethod.POST.name(), new ActionURL(MoveContainerAction.class, folder), user, Map.of("Content-Type", "application/json"), json.toString());
+            MockHttpServletResponse response = ViewServlet.mockDispatch(request, null);
+            assertEquals("Unexpected response code", expectedResponseCode, response.getStatus());
+        }
+
+        private static void doCleanup() throws Exception
+        {
+            Container folder = ContainerManager.getForPath(JunitUtil.getTestContainer().getPath() + "/" + FOLDER_NAME);
+            if (folder != null)
+            {
+                ContainerManager.deleteAll(folder, TestContext.get().getUser());
+            }
+
+            Container newParent = ContainerManager.getForPath(JunitUtil.getTestContainer().getPath() + "/" + NEW_PARENT);
+            if (newParent != null)
+            {
+                ContainerManager.deleteAll(newParent, TestContext.get().getUser());
+            }
+
+            User u = UserManager.getUser(TEST_EMAIL);
+            if (u != null)
+                UserManager.deleteUser(u.getUserId());
+        }
+    }
 }
