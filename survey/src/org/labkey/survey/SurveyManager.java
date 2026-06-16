@@ -63,6 +63,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
@@ -266,13 +267,16 @@ public class SurveyManager
         }
     }
 
+    /** Checks that the user has read permission to the container that owns the design, but we accept cross-container references */
     @Nullable
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
-        // Scope by container
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), surveyId);
-        filter.addCondition(FieldKey.fromParts("Container"), container);
-        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
+        SurveyDesign result = new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
+        if (result == null)
+            return null;
+        Container actualContainer = ContainerManager.getForId(result.getContainerId());
+        return actualContainer == null || !actualContainer.hasPermission(user, ReadPermission.class) ? null : result;
     }
 
     /**
