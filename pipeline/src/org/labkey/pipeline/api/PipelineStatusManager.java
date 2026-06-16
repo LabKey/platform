@@ -690,10 +690,13 @@ public class PipelineStatusManager
 
                 if (!statusSet)
                 {
-                    // Fall back to updating the simple bean in the case where can can't deserialize the job itself
+                    // Fall back to updating the simple bean in the case where we can't deserialize the job itself
                     PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
                     if (sf != null)
                     {
+                        Container c = sf.lookupContainer();
+                        if (c == null || !c.hasPermission(user, UpdatePermission.class))
+                            throw new UnauthorizedException();
                         LOG.info("Job " + sf.getFilePath() + " was marked as complete by " + user);
                         sf.setStatus(PipelineJob.TaskStatus.complete.toString());
                         sf.setInfo(null);

@@ -33,6 +33,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
@@ -54,7 +55,6 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.NotFoundException;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -366,16 +366,14 @@ public class TreatmentManager
     {
         if (doseAndRoute.isNew())
             return Table.insert(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute);
-        else
-        {
-            // GitHub Kanban #1929: verify the existing row is in this container before updating
-            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            filter.addCondition(FieldKey.fromParts("RowId"), doseAndRoute.getRowId());
-            if (!new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).exists())
-                throw new NotFoundException("No dose and route found for rowId: " + doseAndRoute.getRowId());
 
-            return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
-        }
+        // GitHub Kanban #1929: verify the existing row is in this container before updating
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), doseAndRoute.getRowId());
+        if (!new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).exists())
+            throw new NotFoundException("No dose and route found for rowId: " + doseAndRoute.getRowId());
+
+        return Table.update(user, StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRoute, doseAndRoute.getRowId());
     }
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
