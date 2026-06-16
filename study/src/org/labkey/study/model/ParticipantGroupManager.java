@@ -1195,6 +1195,34 @@ public class ParticipantGroupManager
             assertTrue(asOther.isShared());
         }
 
+        /** The by-rowId getter must apply canRead(), so listing a categoryId does not disclose a private category to a non-owner. */
+        @Test
+        public void byRowIdGetterHidesAnotherUsersPrivateCategory() throws Exception
+        {
+            ParticipantCategoryImpl owned = createPrivateCategory(_owner, "Private-by-rowId");
+
+            ParticipantCategoryImpl asOwner = MANAGER.getParticipantCategory(_container, _owner, owned.getRowId());
+            assertNotNull("Owner should resolve their own private category by rowId", asOwner);
+            assertEquals(owned.getRowId(), asOwner.getRowId());
+            assertFalse("Resolved category should be private", asOwner.isShared());
+            assertEquals(_owner.getUserId(), asOwner.getOwnerId());
+
+            ParticipantCategoryImpl asOther = MANAGER.getParticipantCategory(_container, _otherUser, owned.getRowId());
+            assertNull("Another user must not resolve the owner's private category by rowId", asOther);
+        }
+
+        /** A shared category is readable by any user, so the by-rowId getter must still return it for a non-owner. */
+        @Test
+        public void byRowIdGetterReturnsSharedCategoryForAnyUser() throws Exception
+        {
+            ParticipantCategoryImpl shared = createSharedCategory("Shared-by-rowId");
+
+            ParticipantCategoryImpl asOther = MANAGER.getParticipantCategory(_container, _otherUser, shared.getRowId());
+            assertNotNull("A shared category must be readable by any user", asOther);
+            assertEquals(shared.getRowId(), asOther.getRowId());
+            assertTrue(asOther.isShared());
+        }
+
         /** getParticipantCategoriesByLabel delegates to the by-label getter and must inherit the same canRead() check. */
         @Test
         public void byLabelListGetterHidesAnotherUsersPrivateCategory() throws Exception
