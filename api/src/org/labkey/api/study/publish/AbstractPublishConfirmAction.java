@@ -111,6 +111,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (_targetStudy != null)
         {
+            if (!_targetStudy.hasPermission(getUser(), InsertPermission.class))
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to link data to the study in " + _targetStudy.getPath() + ".");
+
             Study study = StudyService.get().getStudy(_targetStudy);
             if (study == null)
             {
@@ -331,6 +334,7 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
         boolean missingStudy = false;
         boolean badVisitIds = false;
         boolean badDates = false;
+        boolean noPermissionStudy = false;
         int index = 0;
         for (int objectId : allObjects)
         {
@@ -375,6 +379,9 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             }
             else
             {
+                if (selected && !rowLevelTargetStudy.hasPermission(getUser(), InsertPermission.class))
+                    noPermissionStudy = true;
+
                 postedTargetStudies.put(objectId, rowLevelTargetStudy.getId());
 
                 if (StudyPublishService.get().getTimepointType(rowLevelTargetStudy) == TimepointType.VISIT)
@@ -437,6 +444,8 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
 
         if (missingStudy)
             errors.reject(null, "You must specify a Target Study for all selected rows.");
+        if (noPermissionStudy)
+            errors.reject(null, "You do not have permission to link data to one or more of the selected target studies.");
         if (missingPtid)
             errors.reject(null, "You must specify a Participant ID for all selected rows.");
         if (missingVisitId)

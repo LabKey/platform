@@ -718,7 +718,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 VisitImpl.TestCase.class,
                 DatasetUpdateService.TestCase.class,
                 DatasetLsidImportHelper.TestCase.class,
-                org.labkey.study.controllers.CreateChildStudyAction.ContainerScopingTestCase.class);
+                org.labkey.study.controllers.CreateChildStudyAction.ContainerScopingTestCase.class,
+                org.labkey.study.controllers.publish.PublishConfirmContainerScopingTest.class);
     }
 
     @Override
