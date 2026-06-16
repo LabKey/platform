@@ -318,7 +318,10 @@ public class TreatmentManager
             deleteProductAntigens(container, user, rowId);
 
             // delete the associated doses and routes for this product
-            Table.delete(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), new SimpleFilter(FieldKey.fromParts("ProductId"), rowId));
+            // GitHub Kanban #1929: scope to the container in addition to ProductId
+            SimpleFilter doseAndRouteFilter = SimpleFilter.createContainerFilter(container);
+            doseAndRouteFilter.addCondition(FieldKey.fromParts("ProductId"), rowId);
+            Table.delete(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), doseAndRouteFilter);
 
             // delete the associated treatment study product mappings (provision table)
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -368,14 +371,18 @@ public class TreatmentManager
 
     public Collection<DoseAndRoute> getStudyProductsDoseAndRoute(Container container, User user, int productId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProductId"), productId);
+        // GitHub Kanban #1929: scope to the container in addition to ProductId
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
         return new TableSelector(StudyDesignSchema.getInstance().getTableInfoDoseAndRoute(), filter, null).getCollection(DoseAndRoute.class);
     }
 
     @Nullable
     public DoseAndRoute getDoseAndRoute(Container container, String dose, String route, int productId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProductId"), productId);
+        // GitHub Kanban #1929: scope to the container in addition to ProductId
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ProductId"), productId);
         if (dose != null)
             filter.addCondition(FieldKey.fromParts("Dose"), dose);
         else
@@ -988,6 +995,70 @@ public class TreatmentManager
             {
                 assertTrue(ContainerManager.delete(_junitStudy.getContainer(), _context.getUser()));
             }
+        }
+
+        // GitHub Kanban #1929: getStudyProductsDoseAndRoute / getDoseAndRoute / deleteStudyProduct container scoping checks
+        @Test
+        public void testDoseAndRouteContainerScoping() throws Exception
+        {
+            TestContext context = TestContext.get();
+            User user = context.getUser();
+            Container containerA = null;
+            Container containerB = null;
+            try
+            {
+                containerA = createStudyContainer(context, GUID.makeHash());
+                containerB = createStudyContainer(context, GUID.makeHash());
+
+                int productIdA = insertStudyProduct(containerA, user, "Immunogen A", "Immunogen");
+                int productIdB = insertStudyProduct(containerB, user, "Immunogen B", "Immunogen");
+
+                _manager.saveStudyProductDoseAndRoute(containerA, user, new DoseAndRoute("Dose A", "Route A", productIdA, containerA));
+                _manager.saveStudyProductDoseAndRoute(containerB, user, new DoseAndRoute("Dose B", "Route B", productIdB, containerB));
+
+                // getStudyProductsDoseAndRoute: scoped by container, not ProductId alone
+                assertEquals("Dose/route should be returned within its own container", 1,
+                        _manager.getStudyProductsDoseAndRoute(containerB, user, productIdB).size());
+                assertEquals("Dose/route must not be returned from another container", 0,
+                        _manager.getStudyProductsDoseAndRoute(containerA, user, productIdB).size());
+
+                // getDoseAndRoute: same scoping
+                assertNotNull("getDoseAndRoute should find the row within its own container",
+                        _manager.getDoseAndRoute(containerB, "Dose B", "Route B", productIdB));
+                assertNull("getDoseAndRoute must not find the row from another container",
+                        _manager.getDoseAndRoute(containerA, "Dose B", "Route B", productIdB));
+
+                // deleteStudyProduct's dose/route delete is now container scoped; deleting the product in its own
+                // container removes its dose/route (the cross-container case is unreachable since ProductId is unique).
+                _manager.deleteStudyProduct(containerB, user, productIdB);
+                assertEquals("deleteStudyProduct should remove the dose/route within its own container", 0,
+                        _manager.getStudyProductsDoseAndRoute(containerB, user, productIdB).size());
+            }
+            finally
+            {
+                if (null != containerB)
+                    ContainerManager.delete(containerB, user);
+                if (null != containerA)
+                    ContainerManager.delete(containerA, user);
+            }
+        }
+
+        private Container createStudyContainer(TestContext context, String name)
+        {
+            Container junit = JunitUtil.getTestContainer();
+            Container c = ContainerManager.createContainer(junit, name, context.getUser());
+            Set<Module> modules = new HashSet<>(c.getActiveModules());
+            modules.add(ModuleLoader.getInstance().getModule("studydesign"));
+            c.setActiveModules(modules);
+            StudyService.get().createStudy(c, context.getUser(), "Junit Study " + name, TimepointType.VISIT, true);
+            return c;
+        }
+
+        private int insertStudyProduct(Container c, User user, String label, String role)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, c, StudyDesignQuerySchema.STUDY_SCHEMA_NAME);
+            TableInfo ti = ((FilteredTable) schema.getTable(StudyDesignQuerySchema.PRODUCT_TABLE_NAME)).getRealTable();
+            return Table.insert(user, ti, new ProductImpl(c, label, role)).getRowId();
         }
     }
 
