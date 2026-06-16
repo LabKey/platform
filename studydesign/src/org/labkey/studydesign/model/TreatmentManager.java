@@ -1089,7 +1089,7 @@ public class TreatmentManager
                 assertNotNull("Cross-container update must not modify container B's dose/route",
                         _manager.getDoseAndRoute(containerB, "Dose B", "Route B", productIdB));
                 assertNull("Cross-container update must not have repointed the row into container A",
-                        _manager.getDoseAndRoute(containerA, "Hacked", "Hacked", productIdA));
+                        _manager.getDoseAndRoute(containerA, "Rejected", "Rejected", productIdA));
 
                 // positive control: updating the row from within its own container succeeds
                 DoseAndRoute updateB = new DoseAndRoute("Dose B2", "Route B2", productIdB, containerB);
