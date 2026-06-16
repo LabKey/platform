@@ -1578,8 +1578,7 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot())
             {
-                List<User> projectUsers = SecurityManager.getProjectUsers(c);
-                if (!projectUsers.contains(user))
+                if (!c.hasPermission(user, ReadPermission.class))
                     throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
             }
 

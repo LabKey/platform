@@ -130,9 +130,9 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
         // PostgreSQL dialects are nearly identical, so just test the oldest supported one
-        PostgreSql_13_Dialect conforming = getOldestSupportedDialect();
+        PostgreSql_14_Dialect conforming = getOldestSupportedDialect();
         conforming.setStandardConformingStrings(true);
-        PostgreSql_13_Dialect nonconforming = getOldestSupportedDialect();
+        PostgreSql_14_Dialect nonconforming = getOldestSupportedDialect();
         nonconforming.setStandardConformingStrings(false);
 
         return PageFlowUtil.set(
@@ -141,14 +141,14 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         );
     }
 
-    public static PostgreSql_13_Dialect getOldestSupportedDialect()
+    public static PostgreSql_14_Dialect getOldestSupportedDialect()
     {
-        return new PostgreSql_13_Dialect();
+        return new PostgreSql_14_Dialect();
     }
 
     public static BasePostgreSqlDialect getLatestSupportedDialect()
     {
-        return new PostgreSql_18_Dialect();
+        return new PostgreSql_19_Dialect();
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -158,17 +158,17 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 13.0 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 13.0, null, connectionUrl);
+            // < 14.0 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 14.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
             good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
             good("PostgreSQL", 15.0, 16.0, "", connectionUrl, null, PostgreSql_15_Dialect.class);
             good("PostgreSQL", 16.0, 17.0, "", connectionUrl, null, PostgreSql_16_Dialect.class);
             good("PostgreSQL", 17.0, 18.0, "", connectionUrl, null, PostgreSql_17_Dialect.class);
             good("PostgreSQL", 18.0, 19.0, "", connectionUrl, null, PostgreSql_18_Dialect.class);
-            good("PostgreSQL", 19.0, 20.0, "", connectionUrl, null, PostgreSql_18_Dialect.class);
+            good("PostgreSQL", 19.0, 20.0, "", connectionUrl, null, PostgreSql_19_Dialect.class);
+            good("PostgreSQL", 20.0, 21.0, "", connectionUrl, null, PostgreSql_19_Dialect.class);
         }
     }
 
