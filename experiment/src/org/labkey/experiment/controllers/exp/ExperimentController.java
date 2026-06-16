@@ -205,6 +205,7 @@ import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
@@ -1107,7 +1108,8 @@ public class ExperimentController extends SpringActionController
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
-                    bar.add(SampleTypeContentsView.getDeriveSamplesButton(getContainer(),null));
+                    if (OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
+                        bar.add(SampleTypeContentsView.getDeriveSamplesButton(getContainer(),null));
                 }
             };
             view.setShowDetailsColumn(false);
@@ -1247,7 +1249,7 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            if (getContainer().hasPermission(getUser(), InsertPermission.class))
+            if (getContainer().hasPermission(getUser(), InsertPermission.class) && OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
             {
                 ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
                 deriveURL.addParameter("rowIds", _material.getRowId());

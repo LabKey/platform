@@ -96,6 +96,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.GUID;
@@ -264,6 +265,13 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+                AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
+                "Show Derive Samples button in LabKey Server UI",
+                "Shows the Derive Samples button in samples grids in the LabKey Server UI. This option will be removed in LabKey Server 26.11",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
             "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
