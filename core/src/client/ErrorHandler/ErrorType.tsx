@@ -176,7 +176,6 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
 const CONFIGURATION_HEADING = () => 'Oops! A server configuration error has occurred.';
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
-        {'The requested page cannot be found. '}
         {errorMessage !== undefined
             ? errorMessage.endsWith('.')
                 ? errorMessage
