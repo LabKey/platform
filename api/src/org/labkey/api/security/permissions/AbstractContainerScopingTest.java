@@ -33,6 +33,7 @@ import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,8 +81,8 @@ public abstract class AbstractContainerScopingTest extends Assert
         if (enabledModules.length > 0)
         {
             Set<org.labkey.api.module.Module> m = new HashSet<>(c.getActiveModules());
-            m.addAll(Set.of(enabledModules));
-            c.setActiveModules(m);
+            Collections.addAll(m, enabledModules);
+            c.setActiveModules(m, getAdmin());
         }
         _containers.add(c);
         return c;
