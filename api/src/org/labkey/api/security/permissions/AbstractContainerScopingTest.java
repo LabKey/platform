@@ -33,8 +33,10 @@ import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Base class for "container scoping" (a.k.a. broken-object-level-authorization / BOLA / IDOR) integration tests. These
@@ -71,10 +73,16 @@ public abstract class AbstractContainerScopingTest extends Assert
      * automatic cleanup. Callers pass a short local name (e.g. "A"/"B"/"Source"); the class name is prepended so two
      * test classes can both ask for "A" without colliding.
      */
-    protected Container createContainer(String name)
+    protected Container createContainer(String name, org.labkey.api.module.Module... enabledModules)
     {
         Container junit = JunitUtil.getTestContainer();
         Container c = ContainerManager.ensureContainer(junit.getParsedPath().append(getClass().getSimpleName() + "-" + name, true), getAdmin());
+        if (enabledModules.length > 0)
+        {
+            Set<org.labkey.api.module.Module> m = new HashSet<>(c.getActiveModules());
+            m.addAll(Set.of(enabledModules));
+            c.setActiveModules(m);
+        }
         _containers.add(c);
         return c;
     }
