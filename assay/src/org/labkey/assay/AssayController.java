@@ -1767,12 +1767,12 @@ public class AssayController extends SpringActionController
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
             if (protocol == null)
                 throw new NotFoundException("Protocol with id " + form.getProtocolId() + " not found.");
-            AssayProvider provider = AssayService.get().getProvider(protocol);
-            if (provider == null)
-                throw new NotFoundException("No provider found for protocol " + form.getProtocolId());
             // Kanban #1924: Assure permission in the protocol's container, which may be different than the current container
             if (!protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
                 throw new UnauthorizedException("User does not have permission to read protocol " + protocol.getName());
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider == null)
+                throw new NotFoundException("No provider found for protocol " + form.getProtocolId());
             AssaySchema schema = provider.createProtocolSchema(getUser(), getContainer(), protocol, null);
             TableInfo tableInfo = schema.getTableOrThrow(AssayProtocolSchema.DATA_TABLE_NAME, ContainerFilter.getUnsafeEverythingFilter());
 
