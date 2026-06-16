@@ -737,7 +737,8 @@ public class ExperimentController extends SpringActionController
                 JSONArray runIds = json.getJSONArray("runIds");
                 for (int i = 0; i < runIds.length(); i++)
                 {
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i));
+                    // Kanban #1924: Make sure the run belongs to the current container.
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i), getContainer());
                     if (run != null)
                     {
                         runs.add(run);
@@ -7962,7 +7963,13 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                     if (sampleType != null)
+                    {
+                        // Kanban #1924: Assure permission in the sample type's container
+                        if (!sampleType.getContainer().hasPermission(getUser(), ReadPermission.class))
+                            throw new UnauthorizedException("You do not have permission to read this sample type.");
                         value = sampleType.getCurrentGenId();
+                    }
+
                 }
                 else
                 {
@@ -7974,7 +7981,12 @@ public class ExperimentController extends SpringActionController
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                 if (dataClass != null)
+                {
+                    // Kanban #1924: assure permission in the data class's container
+                    if (!dataClass.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        throw new UnauthorizedException("You do not have permission to read this data class.");
                     value = dataClass.getCurrentGenId();
+                }
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
