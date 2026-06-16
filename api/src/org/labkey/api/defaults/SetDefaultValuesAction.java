@@ -180,52 +180,6 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     return app;
                 }
             ).appendTo(out);
-//                oldWriter.write("<table class=\"lk-fields-table\">");
-
-
-//                    renderer.renderDetailsCaptionCell(ctx, out, "control-label lk-form-row-label");
-//
-//                    if (isFile)
-//                        TD().appendTo(out); // No input for file
-//                    else
-//                        renderer.renderInputCell(ctx, out);
-//
-//                    TD(
-//                        (Renderable) ret -> {
-//                            if (isFile)
-//                            {
-//                                out.write("Defaults cannot be set for file fields.");
-//                            }
-//                            else
-//                            {
-//                                DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
-//                                if (defaultType == null)
-//                                    defaultType = DefaultValueType.FIXED_EDITABLE;
-//                                out.write(defaultType.getLabel());
-//                                out.write(PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()));
-//                            }
-//                            return ret;
-//                        }
-//                    ).appendTo(out);
-//                    oldWriter.write("<td>");
-//                    if (isFile)
-//                    {
-//                        out.write("Defaults cannot be set for file fields.");
-//                    }
-//                    else
-//                    {
-//                        DefaultValueType defaultType = ((DefaultableDisplayColumn) renderer).getDefaultValueType();
-//                        if (defaultType == null)
-//                            defaultType = DefaultValueType.FIXED_EDITABLE;
-//                        out.write(defaultType.getLabel());
-//                        out.write(PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()));
-//                    }
-//                    oldWriter.write("</td>");
-
-//                    oldWriter.write("</tr>");
-//                }
-//                oldWriter.write("</table>");
-
 
             ButtonBar bbar = getButtonBar(MODE_INSERT);
             bbar.setStyle(ButtonBar.Style.separateButtons);
