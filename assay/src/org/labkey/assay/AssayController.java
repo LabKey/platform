@@ -1645,8 +1645,9 @@ public class AssayController extends SpringActionController
             {
                 for (int id : form.getRuns())
                 {
-                    ExpRun run = ExperimentService.get().getExpRun(id, getContainer());
-                    if (run == null)
+                    // Support cross-container operations but confirm permission
+                    ExpRun run = ExperimentService.get().getExpRun(id);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), QCAnalystPermission.class))
                         throw new NotFoundException("Run " + id + " not found in this folder");
                 }
 
