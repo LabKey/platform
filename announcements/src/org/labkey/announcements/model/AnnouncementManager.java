@@ -124,20 +124,20 @@ public class AnnouncementManager
     {
     }
 
-    private static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, @NotNull SimpleFilter filter)
+    private static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, @NotNull SimpleFilter filter)
     {
         if (c != null)
             filter.addCondition(FieldKey.fromParts("Container"), c);
 
-        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementModel.class);
+        return new TableSelector(_comm.getTableInfoAnnouncements(), filter, null).getObject(AnnouncementFullModel.class);
     }
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, int rowId)
+    public static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, int rowId)
     {
         return getAnnouncement(c, new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
-    public static @Nullable AnnouncementModel getAnnouncement(@Nullable Container c, String entityId)
+    public static @Nullable AnnouncementFullModel getAnnouncement(@Nullable Container c, String entityId)
     {
         try
         {
@@ -531,7 +531,7 @@ public class AnnouncementManager
     }
 
     // Magic date value used to mark an announcement that a moderator has reviewed and marked as spam
-    private static final Date SPAM_MAGIC_DATE = new Date(0);
+    static final Date SPAM_MAGIC_DATE = new Date(0);
 
     // Standard filters for retrieving specific classes of messages (approved, spam, needs review)
     public static final SimpleFilter IS_APPROVED_FILTER = new SimpleFilter(FieldKey.fromParts("Approved"), AnnouncementManager.SPAM_MAGIC_DATE, CompareType.GT);
@@ -541,11 +541,6 @@ public class AnnouncementManager
     public static void markAsSpam(Container c, AnnouncementModel ann)
     {
         updateApproved(c, ann, SPAM_MAGIC_DATE);
-    }
-
-    public static boolean isSpam(AnnouncementModel ann)
-    {
-        return SPAM_MAGIC_DATE.equals(ann.getApproved());
     }
 
     // Execute direct SQL (not Table.update())... I don't think we want to change Modified or ModifiedBy. Could consider adding column for Moderator, though.

@@ -81,7 +81,6 @@ public class AnnouncementModel extends Entity implements Serializable
 
     private Collection<AnnouncementModel> _responses = null;
     private Set<User> _authors;
-    private Date _approved = null;
 
     /**
      * Standard constructor.
@@ -428,22 +427,6 @@ public class AnnouncementModel extends Entity implements Serializable
     public AttachmentParent getAttachmentParent()
     {
         return new AnnouncementAttachmentParent(this);
-    }
-
-    public Date getApproved()
-    {
-        return _approved;
-    }
-
-    public void setApproved(Date approved)
-    {
-        _approved = approved;
-    }
-
-    @JsonIgnore
-    public boolean isSpam()
-    {
-        return AnnouncementManager.isSpam(this);
     }
 }
 

@@ -15,6 +15,8 @@
  */
 package org.labkey.api.qc;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -25,6 +27,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.User;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +37,7 @@ import java.util.Map;
 
 public class DataStateManager
 {
+    private static final Logger LOG = LogHelper.getLogger(DataStateManager.class, "Data state persistence issues");
     private static final DataStateManager _instance = new DataStateManager();
     private static final Map<String, DataStateHandler<AbstractManageDataStatesForm>> _DataStateHandlers = new HashMap<>();
     private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
@@ -124,7 +128,8 @@ public class DataStateManager
     public DataState updateState(User user, DataState state)
     {
         DATA_STATE_DB_CACHE.remove(state.getContainer());
-        return Table.update(user, CoreSchema.getInstance().getTableInfoDataStates(), state, state.getRowId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(state.getContainer());
+        return Table.update(user, CoreSchema.getInstance().getTableInfoDataStates(), state, state.getRowId(), filter, Level.WARN);
     }
 
     public boolean deleteState(DataState state)

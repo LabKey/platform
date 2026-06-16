@@ -446,7 +446,6 @@ public abstract class ApiResponseWriter implements AutoCloseable
         JSONObject json = new JSONObject();
         json.put("exception", e.getMessage() != null ? e.getMessage() : e.getClass().getName());
         json.put("exceptionClass", e.getClass().getName());
-        json.put("stackTrace", e.getStackTrace());
         return json;
     }
 

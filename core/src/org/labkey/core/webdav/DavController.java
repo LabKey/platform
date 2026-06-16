@@ -3538,17 +3538,24 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
+            WebdavResource resource = resolvePath();
+            if (null == resource)
+            {
+                throw new DavException(WebdavStatus.SC_NOT_FOUND);
+            }
+
+            if (!resource.canWrite(getUser(), true))
+            {
+                throw new DavException(WebdavStatus.SC_FORBIDDEN);
+            }
+
             FileTime lastModified = getLastModified(getRequest().getInputStream());
 
             if (lastModified != null)
             {
                 try
                 {
-                    WebdavResource resource = resolvePath();
-                    if (resource != null)
-                    {
-                        resource.setLastModified(lastModified.toMillis());
-                    }
+                    resource.setLastModified(lastModified.toMillis());
                 }
                 catch (ConversionException ignored) {}
             }
@@ -3558,12 +3565,6 @@ public class DavController extends SpringActionController
             assert track(writer);
             try
             {
-                WebdavResource resource = resolvePath();
-                if (resource == null)
-                {
-                    throw new DavException(WebdavStatus.SC_NOT_FOUND);
-                }
-
                 XMLResourceWriter resourceWriter = new XMLResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
