@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.permissions;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.After;
 import org.junit.Assert;
 import org.labkey.api.data.Container;
@@ -124,7 +125,7 @@ public abstract class AbstractContainerScopingTest extends Assert
     }
 
     /** Assert that a dispatched response has the expected HTTP status code. */
-    protected void assertStatus(int expected, MockHttpServletResponse response)
+    protected void assertStatus(int expected, HttpServletResponse response)
     {
         assertEquals("Unexpected HTTP status", expected, response.getStatus());
     }

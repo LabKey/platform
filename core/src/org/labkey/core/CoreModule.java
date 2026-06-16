@@ -1398,6 +1398,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
+            CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
             DavController.MoveActionContainerScopingTestCase.class,

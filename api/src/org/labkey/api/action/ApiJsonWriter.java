@@ -475,7 +475,9 @@ public class ApiJsonWriter extends ApiResponseWriter
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
             assertEquals("throwing up", json.getString("exception"));
-            assertTrue(json.has("stackTrace"));
+            assertFalse(json.getBoolean("success"));
+            assertEquals("java.lang.IllegalStateException", json.get("exceptionClass"));
+            assertFalse(json.has("stackTrace"));
             assertFalse(json.has("schemaName"));
         }
 

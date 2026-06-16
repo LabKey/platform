@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementFullModel" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
@@ -40,7 +41,7 @@
     Container c = getContainer();
     User user = getUser();
     ThreadViewBean bean = me.getModelBean();
-    AnnouncementModel announcementModel = bean.announcementModel;
+    AnnouncementFullModel announcementModel = bean.announcementModel;
     DiscussionService.Settings settings = bean.settings;
 
     if (null == announcementModel)

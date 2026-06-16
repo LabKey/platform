@@ -363,12 +363,21 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(ServerSessionForm form, BindException errors)
         {
-            ServerSession session = form.getBean();
+            Integer serverSessionId = form.getServerSessionId();
+
+            if (serverSessionId == null)
+            {
+                throw new NotFoundException();
+            }
+
+            ServerSession session = MothershipManager.get().getServerSession(serverSessionId, getContainer());
+
             if (session == null)
             {
                 throw new NotFoundException();
             }
-            ServerSessionDetailView detailView = new ServerSessionDetailView(form);
+
+            ServerSessionDetailView detailView = new ServerSessionDetailView(session);
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
@@ -1691,9 +1700,9 @@ public class MothershipController extends SpringActionController
 
     public static class ServerSessionDetailView extends DetailsView
     {
-        public ServerSessionDetailView(final ServerSessionForm form)
+        public ServerSessionDetailView(final ServerSession session)
         {
-            super(new DataRegion(), form);
+            super(new DataRegion(), session.getServerSessionId());
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
             final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
@@ -1827,39 +1836,28 @@ public class MothershipController extends SpringActionController
         {
             super(ExceptionStackTrace.class, MothershipManager.get().getTableInfoExceptionStackTrace());
         }
-
-        public ExceptionStackTraceForm(ExceptionStackTrace stackTrace)
-        {
-            this();
-            setBean(stackTrace);
-        }
     }
 
     public static class ServerInstallationForm extends BeanViewForm<ServerInstallation>
     {
-        public ServerInstallationForm(ServerInstallation installation)
-        {
-            this();
-            setBean(installation);
-        }
-
         public ServerInstallationForm()
         {
             super(ServerInstallation.class, MothershipManager.get().getTableInfoServerInstallation());
         }
     }
 
-    public static class ServerSessionForm extends BeanViewForm<ServerSession>
+    public static class ServerSessionForm
     {
-        public ServerSessionForm(ServerSession session)
+        private Integer _serverSessionId = null;
+
+        public Integer getServerSessionId()
         {
-            this();
-            setBean(session);
+            return _serverSessionId;
         }
 
-        public ServerSessionForm()
+        public void setServerSessionId(Integer serverSessionId)
         {
-            super(ServerSession.class, MothershipManager.get().getTableInfoServerSession());
+            _serverSessionId = serverSessionId;
         }
     }
 
