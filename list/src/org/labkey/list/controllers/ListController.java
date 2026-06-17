@@ -845,7 +845,14 @@ public class ListController extends SpringActionController
             String oldRecord = null;
             String newRecord = null;
 
-            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, id);
+            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(
+                getUser(), ListManager.LIST_AUDIT_EVENT, id, ContainerFilter.current(_list.getContainer(), getUser()));
+
+            // Tie the loaded event to the URL-requested listId — rowId is user-controlled (CWE-639).
+            if (!ListAuditProvider.auditEventMatchesList(event, listId, _list.getContainer()))
+            {
+                event = null;
+            }
 
             if (event != null)
             {
