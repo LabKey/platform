@@ -1106,7 +1106,9 @@ public class QueryManager
 
                 new SqlSelector(dbSchema, sql)
                         .getMapCollection().forEach(row -> {
-                            String comment = ((String) row.get("Comment"));
+                            String comment = (String) row.get("Comment");
+                            if (comment == null)
+                                return;
                             if (comment.startsWith("Exported to "))
                                 comment = comment.substring("Exported to ".length());
                             if (comment.startsWith("Exported "))
@@ -1114,10 +1116,12 @@ public class QueryManager
                             counts.put(comment, row.get("ExportCount"));
                         });
 
-
+                // This is an approximation of the multi-tab export count. We record an audit log for each tab, and
+                // they are all likely to have the same timestamp. Not exact, but perhaps good enough for current purposes.
                 sql = new SQLFragment("SELECT COUNT(*) FROM (SELECT *\n" +
                         "                      FROM (SELECT COUNT(*) as count, DATE_TRUNC('second', Created) as created\n" +
                         "                            FROM ").append(table, "t").append("\n" +
+                        "                            WHERE comment = 'Exported to Excel'\n" +
                         "                            GROUP BY DATE_TRUNC('second', created)\n" +
                         "                            ) AS subquery\n" +
                         "                      WHERE subquery.count > 1)");
