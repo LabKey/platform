@@ -484,7 +484,7 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile psf = getStatusFile(form.getRowId());
-            if (psf == null || !getContainer().equals(psf.lookupContainer()))
+            if (psf == null || psf.lookupContainer() == null || !psf.lookupContainer().hasPermission(getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             var status = StatusDetailsBean.create(c, psf, form.getOffset(), form.getCount());
@@ -1120,15 +1120,16 @@ public class StatusController extends SpringActionController
 
             ActionURL foreignUrl = new ActionURL(StatusDetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
 
-            // The API is scoped to its own container: addressing B's job through folder A is 404, regardless of the
-            // caller's rights in B. This is the case that fails without the fix (the unscoped action would serve B's
-            // job through folder A).
-            // A caller who can read folder A but NOT folder B:
+            // This API authorizes against the job's OWN container (folder B), not the container in the URL, so it
+            // intentionally supports referencing a job from another container -- but only for a caller who can read the
+            // container the job actually lives in.
+            // A caller who can read folder A but NOT folder B must still get 404: the job must not be revealed to
+            // someone without rights to its container. This is the case that fails without the fix.
             assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
-            // ...and a site admin, who CAN read folder B, still gets 404 through folder A (no cross-container redirect).
-            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, admin));
+            // A site admin, who CAN read folder B, is served B's job through folder A -- the supported cross-container reference.
+            assertStatus(HttpServletResponse.SC_OK, get(foreignUrl, admin));
 
-            // Positive control: addressing the job through its own container still succeeds.
+            // Positive control: addressing the job through its own container also succeeds for a caller who can read it.
             ActionURL ownUrl = new ActionURL(StatusDetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
         }
