@@ -95,6 +95,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -109,7 +110,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -1804,11 +1806,11 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
-    public record ReauthContext(User user, LocalDateTime expiration)
+    public record ReauthContext(User user, Instant expiration)
     {
-        public boolean isValid()
+        public boolean isExpired()
         {
-            return LocalDateTime.now().isBefore(expiration());
+            return Instant.now().isAfter(expiration());
         }
     }
 
@@ -1838,10 +1840,26 @@ public class AuthenticationManager
         {
             String reauthToken = GUID.makeHash();
             redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-            // Very unlikely to have contention or even multiple elements, and synchronized map is lightweight
-            Map<String, ReauthContext> tokenMap = SessionHelper.getAttribute(request, REAUTH_TOKEN_MAP_NAME, () -> Collections.synchronizedMap(new HashMap<>(5)));
-            tokenMap.put(reauthToken, new ReauthContext(reauthUser, LocalDateTime.now().plusMinutes(5)));
+            // The setReauthUser() and getAndClearReauthUser() should be invoked within a second of each other
+            // (browser redirects with no user interaction). Five minute expiration should be more than ample.
+            addToken(request, reauthUser, reauthToken, Instant.now().plus(5, ChronoUnit.MINUTES));
         }
+    }
+
+    // Separate method to allow unit testing
+    private static void addToken(HttpServletRequest request, User reauthUser, String reauthToken, Instant expiration)
+    {
+        // Very unlikely to have contention or even multiple elements, and synchronized map is lightweight
+        Map<String, ReauthContext> tokenMap = getTokenMap(request);
+        if (!tokenMap.isEmpty())
+            clearExpiredTokens(tokenMap);
+        tokenMap.put(reauthToken, new ReauthContext(reauthUser, expiration));
+    }
+
+    // Separate method to allow unit testing
+    private static Map<String, ReauthContext> getTokenMap(HttpServletRequest request)
+    {
+        return SessionHelper.getAttribute(request, REAUTH_TOKEN_MAP_NAME, () -> Collections.synchronizedMap(new HashMap<>(5)));
     }
 
     /**
@@ -1865,9 +1883,10 @@ public class AuthenticationManager
 
                 if (tokenMap != null)
                 {
+                    clearExpiredTokens(tokenMap);
                     ReauthContext context = tokenMap.remove(token);
 
-                    if (context != null && context.isValid())
+                    if (context != null)
                     {
                         User reauthUser = context.user();
 
@@ -1881,11 +1900,80 @@ public class AuthenticationManager
         return null;
     }
 
+    // Clear any abandoned tokens
+    private static void clearExpiredTokens(@NotNull Map<String, ReauthContext> tokenMap)
+    {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (tokenMap)
+        {
+            tokenMap.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
+    }
+
+    public static class ReauthTokenTest extends Assert
+    {
+        @Test
+        public void testReauthTokens() throws InterruptedException
+        {
+            HttpServletRequest request = TestContext.get().getRequest();
+            User admin = TestContext.get().getUser();
+            Map<String, ReauthContext> map = getTokenMap(request);
+            clearExpiredTokens(map);
+            // Might have some unexpired tokens stashed away. Assume they won't expired during this test run.
+            int initialCount = map.size();
+            ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
+
+            ActionURL clone = url.clone();
+            setReauthUser(admin, admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            String token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ReauthContext ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertEquals(admin, getAndClearReauthUser(request, token, admin));
+            assertEquals(initialCount, map.size());
+
+            // Try same token again
+            assertNull(getAndClearReauthUser(request, token, admin));
+            // Try a bogus token
+            assertNull(getAndClearReauthUser(request, "xyz", admin));
+
+            // Wrong user on set case
+            clone = url.clone();
+            setReauthUser(admin, new User(), request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals("Reauthentication failed: wrong user reauthenticated", clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Wrong user on get case
+            url.clone();
+            setReauthUser(admin, admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertNull(getAndClearReauthUser(request, token, new User()));
+            assertEquals(initialCount, map.size());
+
+            addToken(request, admin, "abc", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "xyz", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "123", Instant.now().plus(1, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 3, map.size());
+
+            // Wait a second that then add -- tokens above should all get removed
+            Thread.sleep(1000);
+            addToken(request, admin, "foo", Instant.now().plus(10, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 1, map.size());
+            assertEquals(admin, getAndClearReauthUser(request, "foo", admin));
+            assertEquals(initialCount, map.size());
+        }
+    }
+
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
     {
     }
-
 
     public static class LinkFactory
     {
