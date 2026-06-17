@@ -713,7 +713,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         return Set.of(
                 DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
                 DataStatesTest.class,
-                ParticipantGroupManager.ParticipantGroupTestCase.class,
                 ParticipantGroupManager.ContainerScopingTestCase.class,
                 StudyImpl.ProtocolDocumentTestCase.class,
                 StudyManager.StudySnapshotTestCase.class,

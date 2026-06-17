@@ -1144,7 +1144,7 @@ public class ParticipantGroupManager
         ParticipantGroupCache.uncache(c);
     }
 
-    public static class ParticipantGroupTestCase extends AbstractContainerScopingTest
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
     {
         private static final ParticipantGroupManager MANAGER = ParticipantGroupManager.getInstance();
         private Container _container;
@@ -1160,11 +1160,42 @@ public class ParticipantGroupManager
         }
 
         @Test
-        public void test()
+        public void testSetParticipantGroupRequiresOwnership() throws Exception
         {
-            ParticipantGroupManager p = new ParticipantGroupManager();
-            ParticipantCategoryImpl def = new ParticipantCategoryImpl();
-            p.getParticipantGroups(null, null, def);
+            // setParticipantGroup() saves a group keyed by a global rowId. For a PRIVATE category, canEdit() allows only
+            // the category's creator -- but the manager previously enforced only the shared-category case, so a Read
+            // user could overwrite another user's private group via a guessable rowId. The fix gates _setParticipantGroup
+            // on canEdit() for the private case too.
+            Container folder = createContainer("A");
+            StudyService.get().createStudy(folder, getAdmin(), "Study", TimepointType.VISIT, true);
+            insertParticipant(folder, "P1");
+
+            // A PRIVATE participant category + group owned by the admin (ownerId != OWNER_SHARED makes it private; the
+            // admin is its creator, so only the admin may edit it).
+            ParticipantCategoryImpl cat = new ParticipantCategoryImpl();
+            cat.setContainer(folder.getId());
+            cat.setLabel("private-category");
+            cat.setType("list");
+            cat.setOwnerId(getAdmin().getUserId());
+            cat = MANAGER.setParticipantCategory(folder, getAdmin(), cat, new String[]{"P1"}, null, "private");
+            ParticipantGroup group = MANAGER.getParticipantGroups(folder, getAdmin(), cat).get(0);
+
+            // A different user with only Read access (not the owner, not an admin)
+            User attacker = createUserInRole(folder, ReaderRole.class);
+
+            // Saving (overwriting) the admin's private group as the attacker must be rejected.
+            try
+            {
+                MANAGER.setParticipantGroup(folder, attacker, group);
+                fail("A non-owner must not be able to modify another user's private participant group");
+            }
+            catch (ValidationException ignored)
+            {
+            }
+
+            // Positive control: the owner (admin) can still save their own private group -- the guard rejects only the
+            // non-owner, not every caller.
+            MANAGER.setParticipantGroup(folder, getAdmin(), group);
         }
 
         /** The by-label getter must apply canRead(), so by-label does not disclose a private category to a non-owner. */
@@ -1289,50 +1320,6 @@ public class ParticipantGroupManager
             def.setType(ParticipantCategory.Type.list.name());
             // OwnerId defaults to OWNER_SHARED
             return MANAGER.setParticipantCategory(_container, getAdmin(), def);
-        }
-    }
-
-    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
-    {
-        @Test
-        public void testSetParticipantGroupRequiresOwnership() throws Exception
-        {
-            // setParticipantGroup() saves a group keyed by a global rowId. For a PRIVATE category, canEdit() allows only
-            // the category's creator -- but the manager previously enforced only the shared-category case, so a Read
-            // user could overwrite another user's private group via a guessable rowId. The fix gates _setParticipantGroup
-            // on canEdit() for the private case too.
-            Container folder = createContainer("A");
-            StudyService.get().createStudy(folder, getAdmin(), "Study", TimepointType.VISIT, true);
-            insertParticipant(folder, "P1");
-
-            ParticipantGroupManager mgr = ParticipantGroupManager.getInstance();
-
-            // A PRIVATE participant category + group owned by the admin (ownerId != OWNER_SHARED makes it private; the
-            // admin is its creator, so only the admin may edit it).
-            ParticipantCategoryImpl cat = new ParticipantCategoryImpl();
-            cat.setContainer(folder.getId());
-            cat.setLabel("private-category");
-            cat.setType("list");
-            cat.setOwnerId(getAdmin().getUserId());
-            cat = mgr.setParticipantCategory(folder, getAdmin(), cat, new String[]{"P1"}, null, "private");
-            ParticipantGroup group = mgr.getParticipantGroups(folder, getAdmin(), cat).get(0);
-
-            // A different user with only Read access (not the owner, not an admin)
-            User attacker = createUserInRole(folder, ReaderRole.class);
-
-            // Saving (overwriting) the admin's private group as the attacker must be rejected.
-            try
-            {
-                mgr.setParticipantGroup(folder, attacker, group);
-                fail("A non-owner must not be able to modify another user's private participant group");
-            }
-            catch (ValidationException expected)
-            {
-            }
-
-            // Positive control: the owner (admin) can still save their own private group -- the guard rejects only the
-            // non-owner, not every caller.
-            mgr.setParticipantGroup(folder, getAdmin(), group);
         }
 
         private void insertParticipant(Container c, String ptid)
