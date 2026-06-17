@@ -22,8 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponseWriter.Format;
@@ -109,6 +109,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -1803,9 +1804,17 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
-    public record Reauth(String token, User user){}
-    public static final String REAUTH_TOKEN_NAME = "reauthToken";
-    public static final String ERROR_MESSAGE = "errorMessage";
+    public record ReauthContext(User user, LocalDateTime expiration)
+    {
+        public boolean isValid()
+        {
+            return LocalDateTime.now().isBefore(expiration());
+        }
+    }
+
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";           // URL parameter name for re-auth token
+    public static final String ERROR_MESSAGE = "errorMessage";              // URL parameter name for error message
+    public static final String REAUTH_TOKEN_MAP_NAME = "reauthTokenSet";    // Session attribute name for token map
 
     /**
      * @param reauthUser   Re-auth user to stash in session with the re-auth token
@@ -1829,10 +1838,20 @@ public class AuthenticationManager
         {
             String reauthToken = GUID.makeHash();
             redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-            request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, reauthUser));
+            // Very unlikely to have contention or even multiple elements, and synchronized map is lightweight
+            Map<String, ReauthContext> tokenMap = SessionHelper.getAttribute(request, REAUTH_TOKEN_MAP_NAME, () -> Collections.synchronizedMap(new HashMap<>(5)));
+            tokenMap.put(reauthToken, new ReauthContext(reauthUser, LocalDateTime.now().plusMinutes(5)));
         }
     }
 
+    /**
+     * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
+     * context that's not expired and (if requested) the context user matches the provided user, then return the user.
+     * @param request      Request from which to retrieve the session
+     * @param token        The reauth token to validate
+     * @param sessionUser  If non-null, causes validation that this user matches the reauth user
+     * @return             The re-auth user, if token is valid and session user check passes. Otherwise, null.
+     */
     public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
         if (token != null)
@@ -1841,16 +1860,16 @@ public class AuthenticationManager
 
             if (session != null)
             {
-                Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
+                @SuppressWarnings("unchecked")
+                Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
 
-                if (reauth != null)
+                if (tokenMap != null)
                 {
-                    boolean matches = token.equals(reauth.token());
+                    ReauthContext context = tokenMap.remove(token);
 
-                    if (matches)
+                    if (context != null && context.isValid())
                     {
-                        session.removeAttribute(REAUTH_TOKEN_NAME);
-                        User reauthUser = reauth.user();
+                        User reauthUser = context.user();
 
                         if (sessionUser == null || sessionUser.equals(reauthUser))
                             return reauthUser;
