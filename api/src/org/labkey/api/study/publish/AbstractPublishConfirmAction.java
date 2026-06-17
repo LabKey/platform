@@ -42,6 +42,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
@@ -106,6 +107,10 @@ public abstract class AbstractPublishConfirmAction<FORM extends PublishConfirmFo
             if (_targetStudy == null)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Could not find target study");
+            }
+            else if (!_targetStudy.hasPermission(getUser(), InsertPermission.class))
+            {
+                throw new UnauthorizedException("You do not have permission to insert into the target study");
             }
         }
 

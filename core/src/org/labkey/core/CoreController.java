@@ -413,6 +413,9 @@ public class CoreController extends SpringActionController
 
                 if (!obj.getContainer().equals(getContainer()))
                 {
+                    // Kanban #1924: Assure permission in the object's container
+                    if (!obj.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        throw new UnauthorizedException();
                     ActionURL correctedURL = getViewContext().getActionURL().clone();
                     Container objectContainer = obj.getContainer();
                     if (objectContainer == null)
@@ -1775,6 +1778,11 @@ public class CoreController extends SpringActionController
         {
             // Provide information about container, specifically an array of child tab folders that were deleted
             Container container = form.getContainerPath() != null ? ContainerManager.getForPath(form.getContainerPath()) : getContainer();
+            if (container == null)
+                throw new NotFoundException("No container found for path: " + form.getContainerPath());
+            // Kanban #1924: Assure permission to the container
+            if (!container.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to view the container information.");
             JSONArray deletedFolders = new JSONArray();
             for (FolderTab folderTab : container.getDeletedTabFolders(form.getNewFolderType()))
             {

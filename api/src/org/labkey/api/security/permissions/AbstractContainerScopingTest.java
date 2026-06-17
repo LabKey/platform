@@ -16,6 +16,7 @@
 package org.labkey.api.security.permissions;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.labkey.api.data.Container;
@@ -57,6 +58,7 @@ import java.util.Map;
 public abstract class AbstractContainerScopingTest extends Assert
 {
     private static final Map<String, Object> FORM_HEADERS = Map.of("Content-Type", "application/x-www-form-urlencoded");
+    private static final Map<String, Object> JSON_HEADERS = Map.of("Content-Type", "application/json");
 
     private final List<Container> _containers = new ArrayList<>();
     private final List<User> _users = new ArrayList<>();
@@ -75,7 +77,17 @@ public abstract class AbstractContainerScopingTest extends Assert
     protected Container createContainer(String name)
     {
         Container junit = JunitUtil.getTestContainer();
-        Container c = ContainerManager.ensureContainer(junit.getParsedPath().append(getClass().getSimpleName() + "-" + name, true), getAdmin());
+        // Use the fully-qualified class name, not getSimpleName(): the nested test class is named
+        // "ContainerScopingTestCase" in nearly every controller, so getSimpleName() would give them all the SAME
+        // /_junit child path and they would share fixtures (and collide on unique constraints across runs). Sanitize
+        // to a valid folder name, and force-delete any fixture an interrupted prior run left behind so each run starts
+        // from a clean container even when a previous @After could not complete.
+        String prefix = getClass().getName().replaceAll("[^A-Za-z0-9]", "_");
+        var path = junit.getParsedPath().append(prefix + "-" + name, true);
+        Container existing = ContainerManager.getForPath(path);
+        if (existing != null)
+            ContainerManager.deleteAll(existing, getAdmin());
+        Container c = ContainerManager.ensureContainer(path, getAdmin());
         _containers.add(c);
         return c;
     }
@@ -122,6 +134,12 @@ public abstract class AbstractContainerScopingTest extends Assert
     protected MockHttpServletResponse post(ActionURL url, User user) throws Exception
     {
         return ViewServlet.POST(url, user, FORM_HEADERS, null);
+    }
+
+    /** Dispatch a JSON POST to a {@code @Marshal(Jackson)} API action, with {@code body} supplied as the request body. */
+    protected MockHttpServletResponse postJson(ActionURL url, User user, JSONObject body) throws Exception
+    {
+        return ViewServlet.POST(url, user, JSON_HEADERS, body.toString());
     }
 
     /** Assert that a dispatched response has the expected HTTP status code. */

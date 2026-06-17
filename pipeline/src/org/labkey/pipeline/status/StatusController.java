@@ -60,9 +60,11 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -97,6 +99,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -397,8 +400,12 @@ public class StatusController extends SpringActionController
 
             if (!getContainer().equals(_statusFile.lookupContainer()))
             {
+                Container target = _statusFile.lookupContainer();
+                // Only redirect if the user can read the job's container; otherwise don't reveal that it exists
+                if (target == null || !target.hasPermission(getUser(), ReadPermission.class))
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
                 ActionURL url = getViewContext().cloneActionURL();
-                url.setContainer(_statusFile.lookupContainer());
+                url.setContainer(target);
                 throw new RedirectException(url);
             }
 
@@ -494,7 +501,12 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
+
             if (sf == null)
+                throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+            Container sfContainer = sf.lookupContainer();
+            // Only navigate to the job's container if the user can read it
+            if (sfContainer == null || !sfContainer.hasPermission(getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             if (sf.getDataUrl() != null)
@@ -502,7 +514,7 @@ public class StatusController extends SpringActionController
                 throw new RedirectException(sf.getDataUrl());
             }
 
-            return urlDetails(c, form.getRowId());
+            return urlDetails(sfContainer, form.getRowId());
         }
     }
 
@@ -517,8 +529,12 @@ public class StatusController extends SpringActionController
             if (c == null || c.isRoot())
             {
                 PipelineStatusFileImpl sf = getStatusFile(form.getRowId());
-                if (sf.getContainerId() != null)
-                    c = ContainerManager.getForId(sf.getContainerId());
+                if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+                Container sfContainer = sf.lookupContainer();
+                // Only navigate to the job's container if the user can read it; otherwise don't reveal it exists
+                if (sfContainer != null && sfContainer.hasPermission(getUser(), ReadPermission.class))
+                    c = sfContainer;
             }
 
             if (c != null)
@@ -550,7 +566,8 @@ public class StatusController extends SpringActionController
             String fileName;
 
             PipelineStatusFile sf = getStatusFile(form.getRowId());
-            if (sf != null)
+            // Resolved by global rowId; only serve files for a job that belongs to the current container
+            if (sf != null && getContainer().equals(sf.lookupContainer()))
             {
                 fileName = form.getFilename();
 
@@ -924,7 +941,11 @@ public class StatusController extends SpringActionController
             for (Integer rowId : rowIds)
             {
                 var sf = getStatusFile(rowId);
+                // Resolved by global rowId; reject a job that belongs to another container
                 if (sf == null)
+                    throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
+                Container sfContainer = sf.lookupContainer();
+                if (sfContainer == null || !sfContainer.hasPermission(getUser(), UpdatePermission.class))
                     throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
                 if (firstDetailsURL == null)
@@ -1094,13 +1115,7 @@ public class StatusController extends SpringActionController
             Container folderB = createContainer("B");
             User readerA = createUserInRole(folderA, ReaderRole.class);
 
-            // A status file that lives in folder B. FilePath is a required column; point it at a non-existent log so
-            // StatusDetailsBean skips reading it (it only reads when the file exists) without affecting the scoping check.
-            PipelineStatusFileImpl sf = new PipelineStatusFileImpl();
-            sf.beforeInsert(admin, folderB.getId());
-            sf.setStatus(PipelineJob.TaskStatus.complete.toString());
-            sf.setFilePath(FileUtil.appendName(FileUtil.getTempDirectory(), "pipeline-scoping-test-" + folderB.getRowId() + ".log").getAbsolutePath());
-            sf = Table.insert(admin, PipelineSchema.getInstance().getTableInfoStatusFiles(), sf);
+            PipelineStatusFileImpl sf = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString());
             long rowId = sf.getRowId();
 
             ActionURL foreignUrl = new ActionURL(StatusDetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
@@ -1116,6 +1131,116 @@ public class StatusController extends SpringActionController
             // Positive control: addressing the job through its own container still succeeds.
             ActionURL ownUrl = new ActionURL(StatusDetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testRetryStatusContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A job that lives in folder B
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.error.toString()).getRowId();
+
+            // A caller who can Update folder A (Editor) but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Retrying B's job through folder A must 404 rather than re-queue a job in a container the caller can't touch.
+            ActionURL foreignUrl = new ActionURL(RetryStatusAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // The job must be untouched in its own container
+            assertEquals("Job status must be unchanged after a cross-container retry",
+                    PipelineJob.TaskStatus.error.toString(), getStatusFile((int) rowId).getStatus());
+
+            // Positive control (a real successful retry needs a serialized job) is covered by existing pipeline retry tests.
+        }
+
+        @Test
+        public void testShowDataContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            // Addressing B's job through folder A must 404 rather than redirect to / expose it
+            ActionURL foreignUrl = new ActionURL(ShowDataAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // A site admin who CAN read folder B gets a redirect
+            assertStatus(HttpServletResponse.SC_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container the action redirects (302) rather than 404
+            ActionURL ownUrl = new ActionURL(ShowDataAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FOUND, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testCompleteStatusContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            // A job in folder B with no serialized job store, so completeStatus() takes its fallback (bean update) path
+            int rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.error.toString()).getRowId();
+
+            // A caller with no rights in folder B must not be able to mark B's job complete via the fallback path
+            try
+            {
+                completeStatus(readerA, List.of(rowId));
+                fail("Expected UnauthorizedException marking a job complete in a container the caller can't update");
+            }
+            catch (UnauthorizedException ignored) {}
+            assertEquals("Status must be unchanged after an unauthorized complete",
+                    PipelineJob.TaskStatus.error.toString(), getStatusFile(rowId).getStatus());
+
+            // Positive control: a site admin (Update in B) can complete it through the same fallback path
+            completeStatus(admin, List.of(rowId));
+            assertEquals("Admin should be able to mark the job complete",
+                    PipelineJob.TaskStatus.complete.toString(), getStatusFile(rowId).getStatus());
+        }
+
+        @Test
+        public void testDetailsContainerScoping() throws Exception
+        {
+            // DetailsAction is the HTML job-details page (distinct from the StatusDetailsAction API). It resolves the
+            // job by global rowId; without the guard a caller could view another folder's job details through their own
+            // folder. The guard 404s when the caller cannot read the job's container, and otherwise redirects to it.
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            ActionURL foreignUrl = new ActionURL(DetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+            // A caller who can read folder A but NOT folder B must get 404 -- the page must not reveal B's job exists.
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // A site admin who CAN read folder B is redirected (302) to B rather than rendering B's job through A.
+            assertStatus(HttpServletResponse.SC_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container the details page renders (200), proving the guard rejects
+            // only the cross-container case rather than every request.
+            ActionURL ownUrl = new ActionURL(DetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        // Insert a bare status file in the given container. FilePath is a required column; point it at a non-existent
+        // log so nothing tries to read it, and so getJobStore().getJob() returns null (exercising the bean-only paths).
+        private PipelineStatusFileImpl insertStatusFile(Container c, String status)
+        {
+            User admin = getAdmin();
+            PipelineStatusFileImpl sf = new PipelineStatusFileImpl();
+            sf.beforeInsert(admin, c.getId());
+            sf.setStatus(status);
+            // uq_statusfiles_filepath is a global unique constraint, so the path must be unique per run -- a GUID keeps
+            // a leftover row from an interrupted prior run from colliding with this insert.
+            sf.setFilePath(FileUtil.appendName(FileUtil.getTempDirectory(), "pipeline-scoping-test-" + c.getRowId() + "-" + status + "-" + GUID.makeGUID() + ".log").getAbsolutePath());
+            return Table.insert(admin, PipelineSchema.getInstance().getTableInfoStatusFiles(), sf);
         }
     }
 }
