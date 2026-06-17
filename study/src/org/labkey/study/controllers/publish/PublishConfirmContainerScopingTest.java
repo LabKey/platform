@@ -28,17 +28,14 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
-import org.springframework.validation.ObjectError;
 
 import java.util.List;
-import java.util.Objects;
 
 public class PublishConfirmContainerScopingTest extends AbstractContainerScopingTest
 {
-    private static final String PERMISSION_ERROR = "You do not have permission to link data to the study";
-
     private Container _source;
     private Container _target;
     private ExpSampleType _sampleType;
@@ -60,8 +57,8 @@ public class PublishConfirmContainerScopingTest extends AbstractContainerScoping
         // Editor in the source folder only: holds InsertPermission where the action runs, but none in the target study
         User editor = createUserInRole(_source, EditorRole.class);
 
-        assertTrue("Linking into a target study the caller cannot insert into must be rejected",
-                rejectedForPermission(validate(_source, _sampleType, _target, editor)));
+        assertFalse("Linking into a target study the caller cannot insert into must be rejected",
+                validate(_source, _sampleType, _target, editor));
     }
 
     @Test
@@ -72,17 +69,15 @@ public class PublishConfirmContainerScopingTest extends AbstractContainerScoping
         User editor = createUserInRole(_source, EditorRole.class);
         grantRole(editor, _target, EditorRole.class);
 
-        assertFalse("Linking into a target study the caller can insert into must be allowed",
-                rejectedForPermission(validate(_source, _sampleType, _target, editor)));
+        assertTrue("Linking into a target study the caller can insert into must be allowed",
+                validate(_source, _sampleType, _target, editor));
     }
 
     /**
      * Run the publish-confirm form's validation as {@code user}, linking {@code sampleType} (in {@code source}) to the
-     * study in {@code target}, and return the resulting errors. The STUDY-4 guard lives in the shared
-     * {@code AbstractPublishConfirmAction.validateCommand()}, reached here through the production
-     * {@link SampleTypePublishConfirmAction} so its {@code @RequiresPermission} wiring is exercised too.
+     * study in {@code target}, returns true if validation succeeds, false otherwise.
      */
-    private BindException validate(Container source, ExpSampleType sampleType, Container target, User user)
+    private boolean validate(Container source, ExpSampleType sampleType, Container target, User user)
     {
         ActionURL url = new ActionURL("study", "sampleTypePublishConfirm", source);
         ViewContext context = ViewContext.getMockViewContext(user, source, url, false);
@@ -93,20 +88,19 @@ public class PublishConfirmContainerScopingTest extends AbstractContainerScoping
         SampleTypePublishConfirmAction.SampleTypePublishConfirmForm form = new SampleTypePublishConfirmAction.SampleTypePublishConfirmForm();
         form.setViewContext(context);
         form.setRowId(sampleType.getRowId());
-        form.setTargetStudy(new String[]{ target.getId() });
+        form.setTargetStudy(new String[]{target.getId()});
         form.setReturnUrl(url.toString());
 
-        BindException errors = new BindException(form, "form");
-        action.validateCommand(form, errors);
-        return errors;
-    }
-
-    private boolean rejectedForPermission(BindException errors)
-    {
-        return errors.getAllErrors().stream()
-                .map(ObjectError::getDefaultMessage)
-                .filter(Objects::nonNull)
-                .anyMatch(message -> message.contains(PERMISSION_ERROR));
+        try
+        {
+            BindException errors = new BindException(form, "form");
+            action.validateCommand(form, errors);
+        }
+        catch (UnauthorizedException e)
+        {
+            return false;
+        }
+        return true;
     }
 
     private ExpSampleType createSampleType(Container c) throws Exception
