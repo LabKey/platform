@@ -227,16 +227,9 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         {
             if (isNew())
                 return true;
-            else
-            {
-                boolean allowed =
-                        container.hasPermission(user, SharedParticipantGroupPermission.class) ||
-                        container.hasPermission(user, AdminPermission.class) ||
-                        isOwner(user);
 
-                if (!allowed)
-                    errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));
-            }
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));
         }
 
         return errors.isEmpty();
