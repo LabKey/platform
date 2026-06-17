@@ -1886,7 +1886,7 @@ public class AuthenticationManager
                     clearExpiredTokens(tokenMap);
                     ReauthContext context = tokenMap.remove(token);
 
-                    if (context != null)
+                    if (context != null && !context.isExpired())
                     {
                         User reauthUser = context.user();
 
@@ -1946,7 +1946,7 @@ public class AuthenticationManager
             assertEquals(initialCount, map.size());
 
             // Wrong user on get case
-            url.clone();
+            clone = url.clone();
             setReauthUser(admin, admin, request, null, clone);
             assertEquals(initialCount + 1, map.size());
             token = clone.getParameter(REAUTH_TOKEN_NAME);
