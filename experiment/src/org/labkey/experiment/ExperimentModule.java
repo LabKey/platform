@@ -267,8 +267,8 @@ public class ExperimentModule extends SpringModule
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
                 AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
-                "Show Derive Sample buttons and links in LabKey Server UI",
-                "Shows the Derive Samples button in samples grids and a link from the sample lineage page in the LabKey Server UI. This option will be removed in LabKey Server 26.11",
+                "Derive Samples in LabKey Server UI",
+                "Enables the UI for deriving samples in LabKey Server UI from either the samples grids or a sample lineage page. This option will be removed in LabKey Server 26.11",
                 false,
                 false,
                 OptionalFeatureService.FeatureType.Deprecated));
