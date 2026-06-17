@@ -2953,12 +2953,16 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(SourceLsidForm form, BindException errors)
         {
-            ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
-            if (url == null)
+            // getDisplayURL() resolves LSIDs globally with no permission check,
+            // so re-check permissions on the object's container before redirecting
+            if (LsidManager.get().hasPermission(form.getSourceLsid(), getUser(), ReadPermission.class))
             {
-                return HtmlView.of("The assay run that produced the data has been deleted.");
+                ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
+                if (url != null)
+                    return HttpView.redirect(url);
             }
-            return HttpView.redirect(url);
+
+            return HtmlView.of("The assay run that produced the data has been deleted.");
         }
 
         @Override
@@ -6741,7 +6745,7 @@ public class StudyController extends BaseStudyController
                 if (group != null)
                 {
                     ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
-                    if (category != null && category.canRead(getContainer(), getUser()))
+                    if (category != null)
                     {
                         form.setLabel(group.getLabel());
                         return new JspView<>("/org/labkey/study/view/sendParticipantGroup.jsp", form, errors);

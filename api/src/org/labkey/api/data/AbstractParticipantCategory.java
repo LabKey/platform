@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.SimpleValidationError;
@@ -226,18 +227,11 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         {
             if (isNew())
                 return true;
-            else
-            {
-                User owner = UserManager.getUser(getCreatedBy());
-                boolean allowed =
-                        container.hasPermission(user, SharedParticipantGroupPermission.class) ||
-                        container.hasPermission(user, AdminPermission.class) ||
-                        (owner != null && !owner.isGuest() && owner.equals(user));
 
-                if (!allowed)
-                    errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));
-            }
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner to unshare this participant category"));
         }
+
         return errors.isEmpty();
     }
 
@@ -257,44 +251,28 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         {
             if (isNew())
                 return true;
-            else
-            {
-                User owner = UserManager.getUser(getCreatedBy());
-                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
 
-                if (!allowed)
-                    errors.add(new SimpleValidationError("You must be the owner to delete this participant category"));
-            }
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner to delete this participant category"));
         }
+
         return errors.isEmpty();
     }
 
-    public boolean canRead(Container c, User user)
+    public boolean canRead(@NotNull User user)
     {
-        return canRead(c, user, new ArrayList<>());
+        if (isShared() || isNew())
+            return true;
+
+        // Issue 16645: Do not show participant groups that may have been created by guests, which was possible
+        // before this bug was fixed. When admins can update and delete private groups, we can make
+        // guest-created groups visible again.
+        return isOwner(user);
     }
 
-    public boolean canRead(Container c, User user, List<ValidationError> errors)
+    private boolean isOwner(@NotNull User user)
     {
-        if (!isShared())
-        {
-            if (isNew())
-                return true;
-            else
-            {
-                // issue 16645 : don't show participant groups that may have been created by guests, which was possible
-                // before this bug was fixed. When admins have the ability to update and delete private groups we can
-                // make guest created groups visible again.
-                User owner = UserManager.getUser(getCreatedBy());
-                boolean allowed = (owner != null && !owner.isGuest()) ? owner.equals(user) : false;
-
-                if (!allowed)
-                {
-                    errors.add(new SimpleValidationError("You don't have permission to read this private participant category"));
-                    return false;
-                }
-            }
-        }
-        return true;
+        User owner = UserManager.getUser(getCreatedBy());
+        return owner != null && !owner.isGuest() && owner.equals(user);
     }
 }
