@@ -42,7 +42,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -62,7 +61,6 @@ import org.labkey.data.xml.TableType;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -503,10 +501,6 @@ public interface QueryService
      * @return A Collection of Hierarchy objects containing basic information about each hierarchy
      */
     Collection<Hierarchy> getOlapHierarchies(String configId, Container c, String cubeName, String dimension);
-
-    void saveNamedSet(String setName, List<String> setList);
-    void deleteNamedSet(String setName);
-    List<String> getNamedSet(String setName);
 
     /**
      * Add a pass-through method to the allow list for the primary LabKey database type. This enables modules to create

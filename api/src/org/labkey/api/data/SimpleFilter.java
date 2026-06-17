@@ -719,11 +719,6 @@ public class SimpleFilter implements Filter
             _needsTypeConversion = urlClause;
         }
 
-        public InClause(FieldKey fieldKey, String namedSet, boolean urlClause)
-        {
-            this(fieldKey, QueryService.get().getNamedSet(namedSet), urlClause, false);
-        }
-
         @Override
         public void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {

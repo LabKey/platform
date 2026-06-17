@@ -131,7 +131,7 @@ public class NestedRenderContext extends RenderContext
             fullSQL.append(" ) Limited )");
 
             // Apply a filter that restricts the group ids to the right "page" of data
-            result.addClause(new SimpleFilter.SQLClause(fullSQL.getSQL(), fullSQL.getParamsArray()));
+            result.addClause(new SimpleFilter.SQLClause(fullSQL));
         }
         return result;
     }
