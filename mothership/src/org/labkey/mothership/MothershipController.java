@@ -1586,8 +1586,8 @@ public class MothershipController extends SpringActionController
                         {
                             exceptionStackTrace.setBugNumber(-1);
                         }
+                        MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
                     }
-                    MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
                 }
                 catch (NumberFormatException e)
                 {
