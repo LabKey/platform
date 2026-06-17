@@ -1961,7 +1961,7 @@ public class AuthenticationManager
             addToken(request, admin, "123", Instant.now().plus(1, ChronoUnit.SECONDS));
             assertEquals(initialCount + 3, map.size());
 
-            // Wait a second that then add another one -- tokens above should all get removed
+            // Wait a second then add another one -- tokens above should all get removed
             Thread.sleep(1000);
             addToken(request, admin, "foo", Instant.now().plus(10, ChronoUnit.SECONDS));
             assertEquals(initialCount + 1, map.size());
