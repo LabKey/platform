@@ -234,6 +234,13 @@ public class MothershipManager
         return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
+    public ServerSession getServerSession(int serverSessionId, Container c)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromString("ServerSessionId"), serverSessionId);
+        return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
+    }
+
     public ExceptionStackTrace getExceptionStackTrace(String stackTraceHash, String containerId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);

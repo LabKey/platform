@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -56,8 +59,12 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -989,6 +996,11 @@ public class WikiController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
+            if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
+            if (_cDest == null || !_cDest.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No destination container found, or you do not have permission to copy to it.");
+
             if (cSrc.equals(_cDest))
             {
                 throw new NotFoundException("Cannot copy a wiki into the folder it is being copied from.");
@@ -1007,36 +1019,33 @@ public class WikiController extends SpringActionController
                     throw new NotFoundException("No page named '" + pageName + "' exists in the source container.");
             }
 
-            if (_cDest != null && _cDest.hasPermission(getUser(), AdminPermission.class))
+            //get source wiki pages
+            List<String> srcPageNames;
+
+            if (parentPage != null)
+                // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
+                // something like WikiSelectManager.getDescendents(cSrc, name)
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+            else
+                srcPageNames = WikiSelectManager.getPageNames(cSrc);
+
+            //get existing destination wiki page names
+            List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
+
+            //map source page row ids to new page row ids
+            Map<Integer, Integer> pageIdMap = new HashMap<>();
+            //shortcut for root topics
+            pageIdMap.put(null, null);
+
+            //copy each page in the list
+            for (String name : srcPageNames)
             {
-                //get source wiki pages
-                List<String> srcPageNames;
-
-                if (parentPage != null)
-                    // TODO: make subtrees work; previously getWikiManager().getSubTreePageList(cSrc, parentPage), now
-                    // something like WikiSelectManager.getDescendents(cSrc, name)
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-                else
-                    srcPageNames = WikiSelectManager.getPageNames(cSrc);
-
-                //get existing destination wiki page names
-                List<String> destPageNames = WikiSelectManager.getPageNames(_cDest);
-
-                //map source page row ids to new page row ids
-                Map<Integer, Integer> pageIdMap = new HashMap<>();
-                //shortcut for root topics
-                pageIdMap.put(null, null);
-
-                //copy each page in the list
-                for (String name : srcPageNames)
-                {
-                    Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
-                    getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
-                }
-
-                //display the wiki module in the destination container
-                displayWikiModuleInDestContainer(_cDest);
+                Wiki srcWikiPage = WikiSelectManager.getWiki(cSrc, name);
+                getWikiManager().copyPage(getUser(), cSrc, srcWikiPage, _cDest, destPageNames, pageIdMap, form.getIsCopyingHistory());
             }
+
+            //display the wiki module in the destination container
+            displayWikiModuleInDestContainer(_cDest);
 
             return true;
         }
@@ -2495,6 +2504,10 @@ public class WikiController extends SpringActionController
             if (null == wiki)
                 throw new IllegalArgumentException("Could not find the wiki with entity id '" + form.getEntityId() + "'!");
 
+            // Mutating a page's attachments requires UpdatePermission on the page
+            if (!getPermissions().allowUpdate(wiki))
+                throw new UnauthorizedException("You do not have permission to modify this wiki page's attachments.");
+
             if (!(getViewContext().getRequest() instanceof MultipartHttpServletRequest))
                 throw new IllegalArgumentException("You must use the 'multipart/form-data' mimetype when posting to attachFiles.api");
 
@@ -2921,5 +2934,70 @@ public class WikiController extends SpringActionController
     private WikiManager getWikiManager()
     {
         return WikiManager.get();
+    }
+
+    public static class CopyWikiContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _source;
+        private Container _dest;
+
+        @Before
+        public void createWikiToCopy()
+        {
+            // Two folders and a wiki page that lives in the source. Each test makes a limited user an admin on exactly
+            // one of the folders to exercise a different side of CopyWikiAction's cross-container authorization.
+            _source = createContainer("Source");
+            _dest = createContainer("Dest");
+            WikiManager.get().insertWiki(getAdmin(), _source, "page", "body", WikiRendererType.HTML, "Page");
+        }
+
+        @Test
+        public void testCopyWikiRequiresSourceAdmin() throws Exception
+        {
+            // Caller administers the destination only
+            assertCrossContainerCopyRejected(_dest);
+        }
+
+        @Test
+        public void testCopyWikiRequiresDestAdmin() throws Exception
+        {
+            // Caller administers the source only
+            assertCrossContainerCopyRejected(_source);
+        }
+
+        // Drives a source->dest copy posted through callerAdminContainer an admin on BOTH folders must be
+        // accepted (redirect) and actually copy the page
+        private void assertCrossContainerCopyRejected(Container callerAdminContainer) throws Exception
+        {
+            User limitedAdmin = createUserInRole(callerAdminContainer, FolderAdminRole.class);
+            ActionURL url = new ActionURL(CopyWikiAction.class, callerAdminContainer)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", _dest.getPath());
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, limitedAdmin));
+            assertTrue("No pages should have been copied into the destination", WikiSelectManager.getPageNames(_dest).isEmpty());
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(url, getAdmin()));
+            assertFalse("An admin copy across both folders should have copied the wiki page", WikiSelectManager.getPageNames(_dest).isEmpty());
+        }
+
+        @Test
+        public void testAttachFilesRequiresUpdate() throws Exception
+        {
+            Container folder = createContainer("AttachFolder");
+            WikiManager.get().insertWiki(getAdmin(), folder, "attachPage", "body", WikiRendererType.HTML, "Attach Page");
+            String entityId = WikiSelectManager.getWiki(folder, "attachPage").getEntityId();
+
+            ActionURL url = new ActionURL(AttachFilesAction.class, folder).addParameter("entityId", entityId);
+
+            // A Reader must not be able to delete/replace the page's attachments
+            User reader = createUserInRole(folder, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, reader));
+
+            // Positive control: an Editor passes the UpdatePermission guard.
+            User editor = createUserInRole(folder, EditorRole.class);
+            assertNotEquals("An editor must pass the attachment UpdatePermission guard, not be blocked at 403",
+                    HttpServletResponse.SC_FORBIDDEN, post(url, editor).getStatus());
+        }
     }
 }

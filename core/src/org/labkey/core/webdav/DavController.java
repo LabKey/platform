@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.BaseViewAction;
@@ -66,8 +67,12 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.OptionalFeatureService;
@@ -99,6 +104,8 @@ import org.labkey.core.webdav.apache.XMLWriter;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -122,10 +129,8 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -135,6 +140,7 @@ import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.FilterWriter;
 import java.io.IOException;
@@ -3532,17 +3538,24 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
+            WebdavResource resource = resolvePath();
+            if (null == resource)
+            {
+                throw new DavException(WebdavStatus.SC_NOT_FOUND);
+            }
+
+            if (!resource.canWrite(getUser(), true))
+            {
+                throw new DavException(WebdavStatus.SC_FORBIDDEN);
+            }
+
             FileTime lastModified = getLastModified(getRequest().getInputStream());
 
             if (lastModified != null)
             {
                 try
                 {
-                    WebdavResource resource = resolvePath();
-                    if (resource != null)
-                    {
-                        resource.setLastModified(lastModified.toMillis());
-                    }
+                    resource.setLastModified(lastModified.toMillis());
                 }
                 catch (ConversionException ignored) {}
             }
@@ -3552,12 +3565,6 @@ public class DavController extends SpringActionController
             assert track(writer);
             try
             {
-                WebdavResource resource = resolvePath();
-                if (resource == null)
-                {
-                    throw new DavException(WebdavStatus.SC_NOT_FOUND);
-                }
-
                 XMLResourceWriter resourceWriter = new XMLResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
@@ -3719,6 +3726,9 @@ public class DavController extends SpringActionController
             boolean exists = dest.exists();
 
             if (!src.canRead(getUser(), true))
+                return unauthorized(src);
+            // MOVE is effectively a delete operation from the source's perspective so confirm access
+            if (!src.canDelete(getUser(), true))
                 return unauthorized(src);
             if (exists && !dest.canWrite(getUser(),true) || !exists && !dest.canCreate(getUser(),true))
                 return unauthorized(dest);
@@ -6629,5 +6639,135 @@ public class DavController extends SpringActionController
             assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
+    }
+
+    public static class MoveActionContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _folder;
+        private User _mover;
+
+        @Before
+        public void setUp() throws Exception
+        {
+            _folder = createContainer("Folder");
+            // Author = Read + Insert but NOT Delete. This lets the caller pass the source-read and destination-create
+            // checks so a same-folder MOVE's outcome turns solely on the source-delete guard under test.
+            _mover = createUserInRole(_folder, AuthorRole.class);
+        }
+
+        // Documents the precondition the MOVE fix relies on: MOVE removes the source, so it requires Delete there.
+        // An Author can read and create but, lacking Delete, must not be able to rename/move.
+        @Test
+        public void testRenamePermissionInvariant()
+        {
+            WebdavResource files = WebdavService.get().lookup(filesPath(_folder));
+            assertNotNull("Expected a @files webdav node for the test folder", files);
+            assertTrue("Author should be able to read @files", files.canRead(_mover, true));
+            assertTrue("Author should be able to create in @files (so the destination check passes)", files.canCreate(_mover, true));
+            assertFalse("Author must NOT be able to rename/move @files (lacks Delete)", files.canRename(_mover, true));
+            assertTrue("Admin should be able to rename @files", files.canRename(getAdmin(), true));
+        }
+
+        // Drives an actual MOVE through WebdavServlet/DavController. The caller can read and create in the (single)
+        // folder but cannot delete, so only the source-delete guard can forbid the move. Without the fix the move
+        // succeeds (SC_CREATED), removing a file the caller has no right to delete; with the fix it is forbidden.
+        @Test
+        public void testMoveActionRequiresSourceDelete() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+            File srcFile = writeFile(dir);
+            assertTrue("Source file should resolve through the resolver", WebdavService.get().lookup(filesPath(_folder).append("secret.txt")).exists());
+
+            Path src = filesPath(_folder).append("secret.txt");
+            Path dest = filesPath(_folder).append("moved.txt");
+
+            MockHttpServletResponse resp = doMove(_folder, src, dest, _mover);
+            assertEquals("A caller without Delete on the source must be forbidden from MOVE", HttpServletResponse.SC_FORBIDDEN, resp.getStatus());
+            assertTrue("Source file must still exist after a forbidden move", srcFile.exists());
+
+            // Positive control: the same MOVE driven by an admin (who has Delete, hence rename) succeeds, proving the
+            // guard forbids only the under-privileged caller rather than every MOVE.
+            MockHttpServletResponse adminResp = doMove(_folder, src, dest, getAdmin());
+            assertEquals("An admin must be allowed to MOVE", HttpServletResponse.SC_CREATED, adminResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", srcFile.exists());
+            assertTrue("Destination file should exist after a successful move", new File(dir, "moved.txt").exists());
+        }
+
+        // Ensure moves by a caller who CAN delete in the source but lacks Insert in the target are forbidden
+        @Test
+        public void testMoveActionRequiresTargetCreate() throws Exception
+        {
+            Container source = createContainer("DeleteSource");
+            Container target = createContainer("NoInsertTarget");
+
+            // Editor in the source (Read+Insert+Update+Delete) -> passes the source read and delete checks.
+            // Reader in the target (no Insert) -> proves read access to the target is not enough; Insert is required.
+            User editorInSourceOnly = createUserInRole(source, EditorRole.class);
+            grantRole(editorInSourceOnly, target, ReaderRole.class);
+
+            File srcDir = ensureFilesDir(source);
+            File targetDir = ensureFilesDir(target);
+            File srcFile = writeFile(srcDir);
+
+            Path src = filesPath(source).append("secret.txt");
+            Path dest = filesPath(target).append("moved.txt");
+
+            MockHttpServletResponse resp = doMove(source, src, dest, editorInSourceOnly);
+            assertEquals("A caller without Insert on the target must be forbidden from MOVE", HttpServletResponse.SC_FORBIDDEN, resp.getStatus());
+            assertTrue("Source file must still exist after a forbidden move", srcFile.exists());
+            assertFalse("Destination file must not have been created", FileUtil.appendName(targetDir, "moved.txt").exists());
+
+            // Positive control: a caller who is also Editor (hence Insert) in the target can complete the same
+            // cross-container MOVE, proving the destination guard forbids only the under-privileged caller.
+            User editorInBoth = createUserInRole(source, EditorRole.class);
+            grantRole(editorInBoth, target, EditorRole.class);
+            MockHttpServletResponse okResp = doMove(source, src, dest, editorInBoth);
+            assertEquals("With Insert on the target the MOVE must succeed", HttpServletResponse.SC_CREATED, okResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", srcFile.exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(targetDir, "moved.txt").exists());
+        }
+
+        private static Path filesPath(Container c)
+        {
+            return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.FILES_LINK);
+        }
+
+        private static File ensureFilesDir(Container c)
+        {
+            WebdavResource filesNode = WebdavService.get().lookup(filesPath(c));
+            assertNotNull("Test requires a @files node for " + c.getName(), filesNode);
+            File dir = filesNode.getFile();
+            assertNotNull("Test requires a file root for " + c.getName(), dir);
+            if (!dir.exists())
+                dir.mkdirs();
+            return dir;
+        }
+
+        private static File writeFile(File dir) throws IOException
+        {
+            File f = FileUtil.appendName(dir, "secret.txt");
+            try (FileOutputStream os = new FileOutputStream(f))
+            {
+                os.write("secret".getBytes(StandardCharsets.UTF_8));
+            }
+            return f;
+        }
+
+        private static MockHttpServletResponse doMove(Container sourceContainer, Path srcResource, Path destResource, User user) throws Exception
+        {
+            String srcWebdav = srcResource.toString();
+            String destWebdav = destResource.toString();
+            String servletPath = "/" + WebdavService.getServletPath();
+
+            HttpServletRequest base = ViewServlet.mockRequest("MOVE", new ActionURL(name, "move", sourceContainer), user, Map.of("Destination", destWebdav), null);
+            MockHttpServletRequest req = (MockHttpServletRequest) base;
+            req.setServletPath(servletPath);
+            req.setPathInfo(srcWebdav.substring(servletPath.length()));
+            req.setRequestURI(srcWebdav);
+
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            new WebdavServlet(false).service(req, resp);
+            return resp;
+        }
     }
 }

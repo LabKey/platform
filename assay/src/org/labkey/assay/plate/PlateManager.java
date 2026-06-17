@@ -3224,6 +3224,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             else
             {
+                // Verify the caller has UpdatePermission on the container of every hit row being removed
+                SimpleFilter hitFilter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
+                hitFilter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
+                Set<String> hitContainerIds = new HashSet<>(new TableSelector(hitTable, Collections.singleton("Container"), hitFilter, null).getArrayList(String.class));
+                for (String hitContainerId : hitContainerIds)
+                {
+                    Container hitContainer = ContainerManager.getForId(hitContainerId);
+                    if (hitContainer == null || !hitContainer.hasPermission(user, UpdatePermission.class))
+                        throw new UnauthorizedException("Failed to unmark hits. You do not have permissions to update hits in this folder.");
+                }
+
                 deleteHits(protocolId, rowIds);
             }
 

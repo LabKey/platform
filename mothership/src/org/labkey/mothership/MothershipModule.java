@@ -117,6 +117,12 @@ public class MothershipModule extends DefaultModule
     }
 
     @Override
+    public @NotNull Set<Class> getIntegrationTests()
+    {
+        return PageFlowUtil.set(MothershipController.ContainerScopingTestCase.class);
+    }
+
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
         MothershipReport.setShowSelfReportExceptions(true);

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -42,6 +43,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.writer.DefaultContainerUser;
+import jakarta.servlet.http.HttpServletResponse;
+import org.junit.Test;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -49,9 +56,9 @@ import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresLogin;
-import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -63,6 +70,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -71,6 +79,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
@@ -315,6 +324,11 @@ public class ReportsController extends BaseStudyController
                 throw new NotFoundException(message);
             }
 
+            // getReport(container, rowId) is container-scoped but does no owner/SecurityPolicy filtering. Enforce the
+            // per-report read check
+            if (!ReportManager.get().canReadReport(getUser(), getContainer(), report))
+                throw new UnauthorizedException("You do not have permission to view this report.");
+
             return report.renderReport(getViewContext());
         }
 
@@ -533,7 +547,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresNoPermission
+    @RequiresPermission(ReadPermission.class)
     public class CreateCrosstabReportAction extends SimpleViewAction<Object>
     {
         @Override
@@ -661,13 +675,22 @@ public class ReportsController extends BaseStudyController
             return reportId;
         }
 
+        @SuppressWarnings("unused")
         public void setReportId(int reportId)
         {
             this.reportId = reportId;
         }
 
-        public void setReportView(String label){_reportView = label;}
-        public String getReportView(){return _reportView;}
+        public String getReportView()
+        {
+            return _reportView;
+        }
+
+        @SuppressWarnings("unused")
+        public void setReportView(String label)
+        {
+            _reportView = label;
+        }
     }
 
     public static class SaveReportForm extends ViewForm
@@ -765,13 +788,35 @@ public class ReportsController extends BaseStudyController
             this.showWithDataset = showWithDataset;
         }
 
-        public void setRedirectToDataset(Integer dataset){redirectToDataset = dataset;}
-        public Integer getRedirectToDataset(){return redirectToDataset;}
+        public Integer getRedirectToDataset()
+        {
+            return redirectToDataset;
+        }
 
-        public void setDescription(String description){this.description = description;}
-        public String getDescription(){return this.description;}
-        public void setErrors(BindException errors){_errors = errors;}
-        public BindException getErrors(){return _errors;}
+        public void setRedirectToDataset(Integer dataset)
+        {
+            redirectToDataset = dataset;
+        }
+
+        public String getDescription()
+        {
+            return this.description;
+        }
+
+        public void setDescription(String description)
+        {
+            this.description = description;
+        }
+
+        public BindException getErrors()
+        {
+            return _errors;
+        }
+
+        public void setErrors(BindException errors)
+        {
+            _errors = errors;
+        }
 
         public String getDataRegionName()
         {
@@ -829,19 +874,57 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public void setShareReport(boolean shareReport){_shareReport = shareReport;}
-        public boolean getShareReport(){return _shareReport;}
+        public void setShareReport(boolean shareReport)
+        {
+            _shareReport = shareReport;
+        }
 
-        public void setSchemaName(String schemaName){_schemaName = schemaName;}
-        public String getSchemaName(){return _schemaName;}
-        public void setQueryName(String queryName){_queryName = queryName;}
-        public String getQueryName(){return _queryName;}
-        public void setViewName(String viewName){_viewName = viewName;}
-        public String getViewName(){return _viewName;}
+        public boolean getShareReport()
+        {
+            return _shareReport;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setViewName(String viewName)
+        {
+            _viewName = viewName;
+        }
+
+        public String getViewName()
+        {
+            return _viewName;
+        }
+
         @Override
-        public void setDataRegionName(String dataRegionName){_dataRegionName = dataRegionName;}
+        public void setDataRegionName(String dataRegionName)
+        {
+            _dataRegionName = dataRegionName;
+        }
+
         @Override
-        public String getDataRegionName(){return _dataRegionName;}
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
 
         public String getRedirectUrl()
         {
@@ -969,7 +1052,9 @@ public class ReportsController extends BaseStudyController
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
-        catch (Exception ignored) {}
+        catch (Exception ignored)
+        {
+        }
         root.addChild(name);
     }
 
@@ -1215,6 +1300,67 @@ public class ReportsController extends BaseStudyController
             {
                 _groups = ja.toString();
             }
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testShowReportRequiresReadPermission() throws Exception
+        {
+            // ShowReportAction resolves a report by global rowId with getReport(container, rowId) -- container-scoped,
+            // but with no owner/policy check. Without the fix a plain container Reader could render another user's
+            // PRIVATE report by guessing its rowId. The fix adds the per-report canReadReport() check.
+            Container folder = createContainer("A");
+
+            // A PRIVATE report: owned by the admin (descriptor owner set), so only the owner / a site admin may read it.
+            Report report = ReportService.get().createReportInstance(QueryReport.TYPE);
+            report.getDescriptor().setReportName("scoping-private-report");
+            report.getDescriptor().setOwner(getAdmin().getUserId());
+            int reportId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), "scoping-report-key", report).getRowId();
+
+            ActionURL url = new ActionURL(ShowReportAction.class, folder).addParameter("reportId", String.valueOf(reportId));
+
+            // A Reader who does not own the report must be rejected (403) rather than shown another user's private report.
+            User reader = createUserInRole(folder, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, get(url, reader));
+
+            // Positive control: the report's owner passes the per-report read check rather than being blocked at 403,
+            // proving the guard rejects only the unauthorized reader.
+            assertNotEquals("The report owner must pass the read check, not be blocked at 403",
+                    HttpServletResponse.SC_FORBIDDEN, get(url, getAdmin()).getStatus());
+        }
+    }
+
+    public static class TestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.hasSiteAdminPermission());
+
+            ReportsController controller = new ReportsController();
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user, false,
+                controller.new BeginAction(),
+                new StreamFileAction(),
+                controller.new SaveReportAction(),
+                controller.new SaveReportViewAction(),
+                new ShowReportAction(),
+                new ParticipantCrosstabAction(),
+                controller.new CreateCrosstabReportAction(),
+                controller.new RunRReportAction(),
+                controller.new ParticipantReportAction(),
+                new SaveParticipantReportAction()
+            );
+
+            // @RequiresPermission(AdminPermission.class)
+            assertForAdminPermission(user,
+                controller.new CreateQueryReportAction()
+            );
         }
     }
 }
