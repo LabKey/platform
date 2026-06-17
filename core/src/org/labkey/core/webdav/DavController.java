@@ -6780,9 +6780,41 @@ public class DavController extends SpringActionController
             assertTrue("Destination file should exist after a successful move", new File(dir, "moved.txt").exists());
         }
 
+        // Regression guard for the canMove()/canDelete() divergence introduced alongside the MOVE fix. A
+        // FileSystemResource subclass whose canDelete() forbids deletion outright (PipelineFolderResource returns
+        // false) must also forbid MOVE. Otherwise the new FileSystemResource.canMove() default - Delete permission
+        // plus a writable file - would let an admin relocate a node that was never deletable, because that default
+        // calls super.canDelete() and so bypasses the subclass override entirely.
+        @Test
+        public void testNonDeletableNodeIsNotMovable() throws Exception
+        {
+            // Configure an explicit pipeline root so the @pipeline webdav node resolves to a PipelineFolderResource.
+            File fileRoot = ensureFilesDir(_folder).getParentFile();
+            File pipelineDir = new File(fileRoot, "pipelineOverrideRoot");
+            if (!pipelineDir.exists())
+                assertTrue("Test requires a writable pipeline root directory", pipelineDir.mkdirs());
+            PipelineService.get().setPipelineRoot(getAdmin(), _folder, PipelineService.PRIMARY_ROOT, false, pipelineDir.toURI());
+
+            WebdavResource pipelineNode = WebdavService.get().lookup(pipelinePath(_folder));
+            assertNotNull("Test requires the @pipeline webdav node to resolve to a PipelineFolderResource", pipelineNode);
+            assertNotNull("The pipeline node must be backed by a writable file root", pipelineNode.getFile());
+
+            User admin = getAdmin();
+            // An admin has Delete permission and the pipeline root is writable, so the inherited
+            // FileSystemResource.canMove() would return true. The override must keep canMove() aligned with the
+            // categorical canDelete()==false, so the node remains immovable.
+            assertFalse("The pipeline node must never be deletable", pipelineNode.canDelete(admin, true, null));
+            assertFalse("A node that is not deletable must also not be movable", pipelineNode.canMove(admin));
+        }
+
         private static Path filesPath(Container c)
         {
             return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.FILES_LINK);
+        }
+
+        private static Path pipelinePath(Container c)
+        {
+            return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.PIPELINE_LINK);
         }
 
         private static File ensureFilesDir(Container c)
