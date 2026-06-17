@@ -1132,8 +1132,8 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.springframework.ai:spring-ai-advisors-vector-store:${springAiVersion}",
-            "spring-ai-advisors-vector-store",
+            "org.springframework.ai:spring-ai-vector-store:${springAiVersion}",
+            "spring-ai-vector-store",
             "spring-ai",
             "https://github.com/spring-projects/spring-ai",
             ExternalDependency.APACHE_2_LICENSE_NAME,

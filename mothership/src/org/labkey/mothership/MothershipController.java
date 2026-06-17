@@ -16,6 +16,7 @@
 
 package org.labkey.mothership;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -48,6 +50,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.AllowedDuringUpgrade;
@@ -63,6 +66,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -473,6 +477,22 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(ServerInstallationForm form, BindException errors) throws Exception
         {
+            // Confirm the row belongs to the current container
+            Object pk = form.getPkVal();
+            if (pk == null)
+                throw new NotFoundException("No server installation specified");
+            int installationId;
+            try
+            {
+                installationId = Integer.parseInt(String.valueOf(pk));
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Invalid server installation id: " + pk);
+            }
+            if (MothershipManager.get().getServerInstallation(installationId, getContainer()) == null)
+                throw new NotFoundException("Server installation not found in this folder");
+
             form.doUpdate();
             return true;
         }
@@ -1858,6 +1878,44 @@ public class MothershipController extends SpringActionController
         public void setUptimeContainer(String uptimeContainer)
         {
             _uptimeContainer = uptimeContainer;
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testUpdateInstallationContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // An installation row that lives in folder B
+            ServerInstallation si = new ServerInstallation();
+            si.setContainer(folderB.getId());
+            si.setServerInstallationGUID(GUID.makeGUID());
+            si.setNote("original");
+            si = Table.insert(admin, MothershipManager.get().getTableInfoServerInstallation(), si);
+            int id = si.getServerInstallationId();
+
+            // Try to update it through folder A; the fix resolves the row in the current container and 404s on a miss
+            ActionURL url = new ActionURL(UpdateInstallationAction.class, folderA)
+                    .addParameter("ServerInstallationId", String.valueOf(id))
+                    .addParameter("Note", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, admin));
+
+            // The row in folder B must be untouched
+            ServerInstallation reloaded = MothershipManager.get().getServerInstallation(id, folderB);
+            assertNotNull("Installation should still exist in its own container", reloaded);
+            assertEquals("Note must not have been overwritten", "original", reloaded.getNote());
+
+            // Positive control: updating through the row's own container (folder B) succeeds and persists the change,
+            // proving the guard rejects only the cross-container case, not every update.
+            ActionURL ownUrl = new ActionURL(UpdateInstallationAction.class, folderB)
+                    .addParameter("ServerInstallationId", String.valueOf(id))
+                    .addParameter("Note", "updated");
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertEquals("Note should have been updated through the row's own container", "updated", MothershipManager.get().getServerInstallation(id, folderB).getNote());
         }
     }
 }

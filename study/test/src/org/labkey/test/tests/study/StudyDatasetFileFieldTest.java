@@ -60,10 +60,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
     private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
     // Include a "\" character at the end of the file field name to verify it round trips with escaped form field characters
-    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate) + "\\";
-    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
-    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
-    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120) + "\\";
+    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
+    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
+    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
 
     @BeforeClass
     public static void doSetup()

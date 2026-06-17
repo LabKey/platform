@@ -165,12 +165,9 @@ public class DatasetLsidImportHelper
             Container c = ContainerManager.createContainer(JunitUtil.getTestContainer(), GUID.makeHash(), context.getUser());
             StudyImpl study = new StudyImpl(c, name);
             study.setTimepointType(timepointType);
-            study.setStartDate(new Date(DateUtil.parseDateTime(c, "2025-04-01")));
-            study.setSubjectColumnName("SubjectID");
-            study.setSubjectNounPlural("Subjects");
-            study.setSubjectNounSingular("Subject");
+            study.setStartDate(new Date(DateUtil.parseDateTime("2025-04-01")));
 
-            return StudyManager.getInstance().createStudy(context.getUser(), study);
+            return StudyManager.getInstance().createTestStudy(context.getUser(), study);
         }
 
         @After

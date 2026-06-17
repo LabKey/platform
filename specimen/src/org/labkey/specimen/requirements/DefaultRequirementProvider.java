@@ -100,7 +100,11 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     @Override
     public R getRequirement(Container container, Object requirementPrimaryKey)
     {
-        return new TableSelector(getRequirementTableInfo()).getObject(requirementPrimaryKey, _requirementClass);
+        R requirement = new TableSelector(getRequirementTableInfo()).getObject(requirementPrimaryKey, _requirementClass);
+        // The lookup is by global primary key; reject rows that don't belong to the requested container
+        if (requirement != null && !container.equals(requirement.getContainer()))
+            return null;
+        return requirement;
     }
 
     public R[] getRequirements(Container container, String ownerEntityId)
@@ -133,7 +137,11 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     @Override
     public A getActor(Container c, Object primaryKey)
     {
-        return new TableSelector(getActorTableInfo()).getObject(primaryKey, _actorClass);
+        A actor = new TableSelector(getActorTableInfo()).getObject(primaryKey, _actorClass);
+        // The lookup is by global primary key; reject rows that don't belong to the requested container
+        if (actor != null && !c.equals(actor.getContainer()))
+            return null;
+        return actor;
     }
 
     @Override

@@ -16,7 +16,9 @@
 
 package org.labkey.pipeline.status;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -35,6 +37,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.Table;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -51,11 +54,13 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
@@ -77,6 +82,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.AnalysisController;
+import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.springframework.validation.BindException;
@@ -84,6 +90,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -471,7 +478,7 @@ public class StatusController extends SpringActionController
             Container c = getContainerCheckAdmin();
 
             PipelineStatusFile psf = getStatusFile(form.getRowId());
-            if (psf == null)
+            if (psf == null || !getContainer().equals(psf.lookupContainer()))
                 throw new NotFoundException("Could not find status file for rowId " + form.getRowId());
 
             var status = StatusDetailsBean.create(c, psf, form.getOffset(), form.getCount());
@@ -1083,6 +1090,41 @@ public class StatusController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new ForceRefreshAction()
             );
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testStatusDetailsContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            // A status file that lives in folder B. FilePath is a required column; point it at a non-existent log so
+            // StatusDetailsBean skips reading it (it only reads when the file exists) without affecting the scoping check.
+            PipelineStatusFileImpl sf = new PipelineStatusFileImpl();
+            sf.beforeInsert(admin, folderB.getId());
+            sf.setStatus(PipelineJob.TaskStatus.complete.toString());
+            sf.setFilePath(FileUtil.appendName(FileUtil.getTempDirectory(), "pipeline-scoping-test-" + folderB.getRowId() + ".log").getAbsolutePath());
+            sf = Table.insert(admin, PipelineSchema.getInstance().getTableInfoStatusFiles(), sf);
+            long rowId = sf.getRowId();
+
+            ActionURL foreignUrl = new ActionURL(StatusDetailsAction.class, folderA).addParameter("rowId", String.valueOf(rowId));
+
+            // The API is scoped to its own container: addressing B's job through folder A is 404, regardless of the
+            // caller's rights in B. This is the case that fails without the fix (the unscoped action would serve B's
+            // job through folder A).
+            // A caller who can read folder A but NOT folder B:
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+            // ...and a site admin, who CAN read folder B, still gets 404 through folder A (no cross-container redirect).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, admin));
+
+            // Positive control: addressing the job through its own container still succeeds.
+            ActionURL ownUrl = new ActionURL(StatusDetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
         }
     }
 }

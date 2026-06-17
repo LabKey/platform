@@ -190,7 +190,10 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
-        return Collections.singleton(org.labkey.issue.model.IssueManager.TestCase.class);
+        return Set.of(
+            org.labkey.issue.model.IssueManager.TestCase.class,
+            org.labkey.issue.IssuesController.MoveActionContainerScopingTestCase.class
+        );
     }
 
     @Override

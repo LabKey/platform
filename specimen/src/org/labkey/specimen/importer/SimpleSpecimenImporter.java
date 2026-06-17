@@ -84,11 +84,6 @@ public class SimpleSpecimenImporter extends SpecimenImporter
     private final Map<String, String> _columnLabels;
     private final TimepointType _timepointType;
 
-    public SimpleSpecimenImporter(Container container, User user)
-    {
-        this(container, user, TimepointType.DATE, "Subject");
-    }
-
     public SimpleSpecimenImporter(Container container, User user, TimepointType timepointType, String participantIdLabel)
     {
         super(container, user);
@@ -128,15 +123,6 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         }
         tl.setColumns(mappedCols);
-    }
-
-    // UNDONE: Converting values belongs in _process
-    public List<Map<String, Object>> fixupSpecimenRows(List<Map<String, Object>> rows)
-    {
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> row : rows)
-            result.add(fixupSpecimenRow(row));
-        return result;
     }
 
     private Map<String, Object> fixupSpecimenRow(Map<String, Object> row)
