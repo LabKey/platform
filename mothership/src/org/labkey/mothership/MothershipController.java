@@ -54,6 +54,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -1887,8 +1888,8 @@ public class MothershipController extends SpringActionController
         public void testUpdateInstallationContainerScoping() throws Exception
         {
             User admin = getAdmin();
-            Container folderA = createContainer("A");
-            Container folderB = createContainer("B");
+            Container folderA = createContainer("A", ModuleLoader.getInstance().getModule(MothershipModule.class));
+            Container folderB = createContainer("B", ModuleLoader.getInstance().getModule(MothershipModule.class));
 
             // An installation row that lives in folder B
             ServerInstallation si = new ServerInstallation();
