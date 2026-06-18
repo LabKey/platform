@@ -6732,9 +6732,7 @@ public class DavController extends SpringActionController
             assertTrue("Destination file should exist after a successful move", FileUtil.appendName(targetDir, "moved.txt").exists());
         }
 
-        // A.1: canDelete() and canMove() diverge ONLY for a file that backs experiment data (used by a run).
-        // Such a file may not be deleted outright, but it may still be relocated. This pins that divergence at
-        // the resource level, independent of the HTTP layer, as an admin who has every relevant permission.
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via Java API
         @Test
         public void testImportedFileCanMoveButNotDelete() throws Exception
         {
@@ -6754,43 +6752,35 @@ public class DavController extends SpringActionController
             assertTrue("Admin MUST still be able to move a file that has been imported by an assay", resource.canMove(admin));
         }
 
-        // A.2: The same divergence end-to-end through WebdavServlet. A file that backs experiment data is refused
-        // by DELETE (SC_FORBIDDEN) but relocated by MOVE (SC_CREATED). This is the platform-level analog of the
-        // PanoramaPublicMoveSkyDocTest scenario and guards against a recurrence of that regression.
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via WebDAV HTTP request
         @Test
         public void testMoveActionMovesImportedFileButDeleteForbidden() throws Exception
         {
             File dir = ensureFilesDir(_folder);
 
             // DELETE of a file imported by a run is forbidden, and the file survives.
-            File importedForDelete = writeFile(dir, "imported-delete.txt");
-            importFileIntoRun(_folder, importedForDelete);
+            File imported = writeFile(dir, "imported.txt");
+            importFileIntoRun(_folder, imported);
             MockHttpServletResponse deleteResp = doDelete(_folder, filesPath(_folder).append("imported-delete.txt"), getAdmin());
             assertEquals("DELETE of a file imported by an assay must be forbidden", HttpServletResponse.SC_FORBIDDEN, deleteResp.getStatus());
-            assertTrue("File must still exist after a forbidden delete", importedForDelete.exists());
+            assertTrue("File must still exist after a forbidden delete", imported.exists());
 
-            // MOVE of an equally-imported file succeeds, relocating it within the file root.
-            File importedForMove = writeFile(dir, "imported-move.txt");
-            importFileIntoRun(_folder, importedForMove);
-            Path src = filesPath(_folder).append("imported-move.txt");
+            // MOVE of an imported file succeeds, relocating it within the file root.
+            Path src = filesPath(_folder).append(imported.getName());
             Path dest = filesPath(_folder).append("moved.txt");
             MockHttpServletResponse moveResp = doMove(_folder, src, dest, getAdmin());
             assertEquals("MOVE of a file imported by an assay must succeed", HttpServletResponse.SC_CREATED, moveResp.getStatus());
-            assertFalse("Source file should no longer exist after a successful move", importedForMove.exists());
-            assertTrue("Destination file should exist after a successful move", new File(dir, "moved.txt").exists());
+            assertFalse("Source file should no longer exist after a successful move", imported.exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(dir, "moved.txt").exists());
         }
 
-        // Regression guard for the canMove()/canDelete() divergence introduced alongside the MOVE fix. A
-        // FileSystemResource subclass whose canDelete() forbids deletion outright (PipelineFolderResource returns
-        // false) must also forbid MOVE. Otherwise the new FileSystemResource.canMove() default - Delete permission
-        // plus a writable file - would let an admin relocate a node that was never deletable, because that default
-        // calls super.canDelete() and so bypasses the subclass override entirely.
+        // Ensure special nodes like @pipeline can't be deleted or moved
         @Test
         public void testNonDeletableNodeIsNotMovable() throws Exception
         {
             // Configure an explicit pipeline root so the @pipeline webdav node resolves to a PipelineFolderResource.
             File fileRoot = ensureFilesDir(_folder).getParentFile();
-            File pipelineDir = new File(fileRoot, "pipelineOverrideRoot");
+            File pipelineDir = FileUtil.appendName(fileRoot, "pipelineOverrideRoot");
             if (!pipelineDir.exists())
                 assertTrue("Test requires a writable pipeline root directory", pipelineDir.mkdirs());
             PipelineService.get().setPipelineRoot(getAdmin(), _folder, PipelineService.PRIMARY_ROOT, false, pipelineDir.toURI());
@@ -6800,9 +6790,6 @@ public class DavController extends SpringActionController
             assertNotNull("The pipeline node must be backed by a writable file root", pipelineNode.getFile());
 
             User admin = getAdmin();
-            // An admin has Delete permission and the pipeline root is writable, so the inherited
-            // FileSystemResource.canMove() would return true. The override must keep canMove() aligned with the
-            // categorical canDelete()==false, so the node remains immovable.
             assertFalse("The pipeline node must never be deletable", pipelineNode.canDelete(admin, true, null));
             assertFalse("A node that is not deletable must also not be movable", pipelineNode.canMove(admin));
         }
