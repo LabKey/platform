@@ -308,6 +308,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineQueueImpl.TestCase.class,
             PipelineServiceImpl.TestCase.class,
             StatusController.TestCase.class,
+            StatusController.ContainerScopingTestCase.class,
             ClusterStartup.TestCase.class
         );
     }
