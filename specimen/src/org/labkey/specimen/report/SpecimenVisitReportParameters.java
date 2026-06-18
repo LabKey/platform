@@ -289,9 +289,13 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         ParticipantGroup group = ParticipantGroupService.get().getParticipantGroup(getContainer(), getUser(), ptidListId);
         if (group != null)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("(").append(StudyService.get().getSubjectColumnName(getContainer())).append(" IN (SELECT ");
-            sql.append("ParticipantId FROM ").append(SpecimenSchema.get().getTableInfoParticipantGroupMap()).append(" WHERE GroupId = ?))").add(ptidListId);
+            SQLFragment sql = new SQLFragment("(")
+                .appendIdentifier(StudyService.get().getSubjectColumnName(getContainer()))
+                .append(" IN (SELECT ")
+                .append("ParticipantId FROM ")
+                .append(SpecimenSchema.get().getTableInfoParticipantGroupMap())
+                .append(" WHERE GroupId = ?))")
+                .add(ptidListId);
             filter.addWhereClause(sql);
         }
     }
@@ -303,11 +307,15 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
         if (cohortFilter == CohortService.get().getUnassignedCohortFilter())
         {
-            filter.addWhereClause("(" + StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" +
-                " OR (" + StudyService.get().getSubjectColumnName(getContainer()) +
-                " NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))",
-                    new Object[] { getContainer().getId(), getContainer().getId()});
+            SQLFragment whereClause = new SQLFragment("(")
+                .appendIdentifier(StudyService.get().getSubjectColumnName(getContainer()))
+                .append(" IN\n" + "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" + " OR (")
+                .appendIdentifier(StudyService.get().getSubjectColumnName(getContainer()))
+                .append(" NOT IN (SELECT ParticipantId FROM study.participant WHERE Container = ?)))")
+                .add(getContainer())
+                .add(getContainer());
+
+            filter.addWhereClause(whereClause);
         }
         else if (cohortFilter != null)
         {
@@ -317,18 +325,25 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             switch (cohortFilter.getType())
             {
                 case DATA_COLLECTION:
-                    filter.addWhereClause("CollectionCohort = ? AND Container = ?",
-                            new Object[] { cohortId, getContainer().getId()} );
+                    filter.addWhereClause(new SQLFragment("CollectionCohort = ? AND Container = ?")
+                        .add(cohortId)
+                        .add(getContainer())
+                    );
                     break;
                 case PTID_CURRENT:
-                    filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                                    "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)",
-                            new Object[] { cohortId, getContainer().getId()});
+                    filter.addWhereClause(new SQLFragment()
+                        .appendIdentifier(StudyService.get().getSubjectColumnName(getContainer()))
+                        .append(" IN\n(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId = ? AND Container = ?)")
+                        .add(cohortId)
+                        .add(getContainer())
+                    );
                     break;
                 case PTID_INITIAL:
-                    filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
-                                    "(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)",
-                            new Object[] { cohortId, getContainer().getId()});
+                    filter.addWhereClause(new SQLFragment()
+                        .appendIdentifier(StudyService.get().getSubjectColumnName(getContainer()))
+                        .append(" IN\n(SELECT ParticipantId FROM study.participant WHERE InitialCohortId = ? AND Container = ?)")
+                        .add(cohortId).add(getContainer())
+                    );
                     break;
             }
         }

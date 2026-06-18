@@ -132,6 +132,7 @@ import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyPropertiesController;
+import org.labkey.study.controllers.publish.PublishConfirmContainerScopingTest;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
@@ -722,6 +723,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 DatasetController.DatasetAuditHistoryScopingTestCase.class,
                 DatasetUpdateService.TestCase.class,
                 DatasetLsidImportHelper.TestCase.class,
+                PublishConfirmContainerScopingTest.class,
                 CreateChildStudyAction.ContainerScopingTestCase.class,
                 StudyController.ContainerScopingTestCase.class,
                 ReportsController.ContainerScopingTestCase.class);

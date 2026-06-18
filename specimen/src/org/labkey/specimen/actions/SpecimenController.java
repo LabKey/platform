@@ -1182,12 +1182,16 @@ public class SpecimenController extends SpringActionController
         @Override
         public ModelAndView getView(SpecimenEventForm form, BindException errors)
         {
-            if (form.getId() != null && form.getTargetStudy() != null)
+            Container targetStudy = form.getTargetStudy();
+            // Note that the query schema used by getVial() below will not select the vial if the user doesn't have
+            // read permissions in the target study, so technically this permission check is redundant. However,
+            // getVial() without read permissions leads to an NPE, so checking here improves behavior.
+            if (form.getId() != null && targetStudy != null && targetStudy.hasPermission(getUser(), ReadPermission.class))
             {
-                Vial vial = SpecimenManager.get().getVial(form.getTargetStudy(), getUser(), form.getId());
+                Vial vial = SpecimenManager.get().getVial(targetStudy, getUser(), form.getId());
                 if (vial != null)
                 {
-                    ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
+                    ActionURL url = new ActionURL(SpecimenEventsAction.class, targetStudy).addParameter("id", vial.getRowId());
                     throw new RedirectException(url);
                 }
             }

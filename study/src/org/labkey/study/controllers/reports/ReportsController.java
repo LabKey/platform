@@ -70,6 +70,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -290,8 +291,14 @@ public class ReportsController extends BaseStudyController
         @Override
         public ActionURL getSuccessURL(SaveReportViewForm form)
         {
-            if (!StringUtils.isBlank(form.getRedirectUrl()))
-                return new ActionURL(form.getRedirectUrl());
+            // Issue: redirectUrl is client-controlled. ReturnURLString validates it at bind time.
+            ReturnURLString redirectUrl = form.getRedirectUrl();
+            if (redirectUrl != null && !redirectUrl.isEmpty())
+            {
+                ActionURL url = redirectUrl.getActionURL();
+                if (url != null)
+                    return url;
+            }
 
             // after the save just redirect to the newly created view, ask the report for its run URL
             Report r = ReportService.get().getReport(getContainer(), _savedReportId);
@@ -461,7 +468,8 @@ public class ReportsController extends BaseStudyController
                     bean.setQueryName(form.getQueryName());
                     bean.setDataRegionName(form.getDataRegionName());
                     bean.setViewName(form.getViewName());
-                    bean.setRedirectUrl(form.getRedirectUrl());
+                    if (form.getRedirectUrl() != null)
+                        bean.setRedirectUrl(new ReturnURLString(form.getRedirectUrl()));
                     bean.setErrors(errors);
 
                     if (!getUser().isGuest())
@@ -836,7 +844,7 @@ public class ReportsController extends BaseStudyController
         private String _schemaName;
         private String _viewName;
         private String _dataRegionName;
-        private String _redirectUrl;
+        private ReturnURLString _redirectUrl;
 
         public SaveReportViewForm()
         {
@@ -926,12 +934,12 @@ public class ReportsController extends BaseStudyController
             return _dataRegionName;
         }
 
-        public String getRedirectUrl()
+        public ReturnURLString getRedirectUrl()
         {
             return _redirectUrl;
         }
 
-        public void setRedirectUrl(String redirectUrl)
+        public void setRedirectUrl(ReturnURLString redirectUrl)
         {
             _redirectUrl = redirectUrl;
         }
@@ -1361,6 +1369,28 @@ public class ReportsController extends BaseStudyController
             assertForAdminPermission(user,
                 controller.new CreateQueryReportAction()
             );
+        }
+
+        // GitHub Issue #1243 regression test.
+        @Test
+        public void redirectUrlConstrainedToAllowableHost()
+        {
+            SaveReportViewForm offHost = new SaveReportViewForm();
+            offHost.setRedirectUrl(new ReturnURLString("https://evil.example.com/phish"));
+            assertNull("Off-host redirectUrl must not resolve to an off-site ActionURL",
+                    offHost.getRedirectUrl().getActionURL());
+
+            SaveReportViewForm local = new SaveReportViewForm();
+            local.setRedirectUrl(new ReturnURLString("/study-reports/begin.view?x=1"));
+            ActionURL localUrl = local.getRedirectUrl().getActionURL();
+            assertNotNull("A local redirectUrl should resolve to an ActionURL", localUrl);
+            assertTrue("A local redirectUrl should be preserved same-origin",
+                    localUrl.getLocalURIString().contains("begin.view"));
+
+            SaveReportViewForm blank = new SaveReportViewForm();
+            blank.setRedirectUrl(new ReturnURLString(""));
+            assertTrue("A blank redirectUrl should be empty so the action falls through to the run URL",
+                    blank.getRedirectUrl().isEmpty());
         }
     }
 }
