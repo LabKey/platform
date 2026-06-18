@@ -139,7 +139,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
@@ -174,7 +173,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -212,7 +210,6 @@ public class AssayController extends SpringActionController
         AssayResultsAction.class,
         AssayRunDetailsAction.class,
         AssayRunsAction.class,
-        DeleteAction.class,
         DeleteProtocolAction.class,
         DesignerAction.class,
         GetAssayBatchAction.class,
@@ -444,7 +441,6 @@ public class AssayController extends SpringActionController
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
         links.put("designCopy", urlProvider.getDesignerURL(c, protocol, true, null));
-        links.put("designDelete", urlProvider.getDeleteDesignURL(protocol));
         links.put("designEdit", urlProvider.getDesignerURL(c, protocol, false, null));
         links.put("import", provider.getImportURL(c, protocol));
         links.put("results", urlProvider.getAssayResultsURL(c, protocol));
@@ -1173,12 +1169,6 @@ public class AssayController extends SpringActionController
                 return null;
 
             return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
-        }
-
-        @Override
-        public ActionURL getDeleteDesignURL(ExpProtocol protocol)
-        {
-            return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
         }
 
         @Override
