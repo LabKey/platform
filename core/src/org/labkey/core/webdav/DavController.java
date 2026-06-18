@@ -6761,7 +6761,7 @@ public class DavController extends SpringActionController
             // DELETE of a file imported by a run is forbidden, and the file survives.
             File imported = writeFile(dir, "imported.txt");
             importFileIntoRun(_folder, imported);
-            MockHttpServletResponse deleteResp = doDelete(_folder, filesPath(_folder).append("imported-delete.txt"), getAdmin());
+            MockHttpServletResponse deleteResp = doDelete(_folder, filesPath(_folder).append(imported.getName()), getAdmin());
             assertEquals("DELETE of a file imported by an assay must be forbidden", HttpServletResponse.SC_FORBIDDEN, deleteResp.getStatus());
             assertTrue("File must still exist after a forbidden delete", imported.exists());
 
@@ -6771,7 +6771,7 @@ public class DavController extends SpringActionController
             MockHttpServletResponse moveResp = doMove(_folder, src, dest, getAdmin());
             assertEquals("MOVE of a file imported by an assay must succeed", HttpServletResponse.SC_CREATED, moveResp.getStatus());
             assertFalse("Source file should no longer exist after a successful move", imported.exists());
-            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(dir, "moved.txt").exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(dir, dest.getName()).exists());
         }
 
         // Ensure special nodes like @pipeline can't be deleted or moved
