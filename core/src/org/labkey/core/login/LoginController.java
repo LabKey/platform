@@ -708,6 +708,12 @@ public class LoginController extends SpringActionController
                 // Don't touch the session in the re-auth case (e.g., CAS renew=true). The CAS spec is silent on
                 // expected behavior when no "ticket-signing ticket" (session, in our case) exists and a "renew" is
                 // requested, but this seems consistent with "ignore the current session" when renew is requested.
+                // Stash the reauth context in session so handleAuthentication can issue the reauth token after
+                // secondary auth completes. Session-scoped because secondary auth (Duo/TOTP) callbacks re-enter
+                // handleAuthentication without form context.
+                if (form.isForceReauth())
+                    AuthenticationManager.setReauthContext(request, form.isLocal());
+
                 AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
@@ -722,11 +728,6 @@ public class LoginController extends SpringActionController
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
                         WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
                     response.put("approvedTermsOfUse", true);
-                }
-
-                if (form.isForceReauth())
-                {
-                    AuthenticationManager.setReauthUser(user, form.isLocal() ? getUser() : null, request, null, redirectUrl);
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI

@@ -1601,6 +1601,29 @@ public class AuthenticationManager
         return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationConfiguration.class.getName() + "$" + configurationId;
     }
 
+    // Session-scoped marker that a forceReauth flow is in progress. Set by LoginApiAction before primary auth and
+    // consumed by handleAuthentication after secondary auth completes, so the reauth token can be issued without
+    // replacing the existing authenticated session. Survives the round-trip to external 2FA providers (Duo, TOTP),
+    // which is essential because their validate actions call handleAuthentication without form context.
+    private record ReauthContext(boolean local) {}
+
+    private static String getReauthContextSessionKey()
+    {
+        return AUTHENTICATION_PROCESS_PREFIX + ReauthContext.class.getName();
+    }
+
+    public static void setReauthContext(HttpServletRequest request, boolean local)
+    {
+        request.getSession(true).setAttribute(getReauthContextSessionKey(), new ReauthContext(local));
+    }
+
+    // Used by 2FA validate actions to tell whether the already-logged-in user is mid-reauth, so they don't
+    // short-circuit to the home page and skip the reauth-token issuance in handleAuthentication.
+    public static boolean isReauthInProgress(HttpServletRequest request)
+    {
+        HttpSession session = request.getSession(false);
+        return session != null && session.getAttribute(getReauthContextSessionKey()) != null;
+    }
 
     // Clear all primary and secondary authentication results
     public static void clearAuthenticationProcessAttributes(HttpServletRequest request)
@@ -1726,6 +1749,17 @@ public class AuthenticationManager
         // Get the redirect URL from the current session
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
+
+        // Reauth path: primary (and any secondary) auth has completed. Issue the one-time reauth token on the return
+        // URL and bail out *before* setAuthenticatedUser runs, so the user's existing session is preserved. The local
+        // flag distinguishes local login-page reauth (must match current session user) from CAS IdP reauth (any user).
+        ReauthContext reauthContext = (ReauthContext)session.getAttribute(getReauthContextSessionKey());
+        if (reauthContext != null)
+        {
+            session.removeAttribute(getReauthContextSessionKey());
+            setReauthUser(primaryAuthUser, reauthContext.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+            return new AuthenticationResult(primaryAuthUser, url);
+        }
 
         if (setSession)
         {
