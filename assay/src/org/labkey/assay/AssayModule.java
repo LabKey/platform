@@ -358,6 +358,7 @@ public class AssayModule extends SpringModule
     {
         return Set.of(
             ModuleAssayCache.TestCase.class,
+            AssayController.ContainerScopingTestCase.class,
             PlateManagerTest.class,
             PlateSchemaTest.class
         );

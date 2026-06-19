@@ -76,7 +76,8 @@ public class StudyDesignModule extends SpringModule
     {
         return Set.of(
             TreatmentManager.TreatmentDataTestCase.class,
-            TreatmentManager.AssayScheduleTestCase.class
+            TreatmentManager.AssayScheduleTestCase.class,
+            StudyDesignController.ContainerScopingTestCase.class
         );
     }
 }

@@ -188,7 +188,8 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     {
         return Set.of(
             org.labkey.issue.model.IssueManager.TestCase.class,
-            org.labkey.issue.IssuesController.MoveActionContainerScopingTestCase.class
+            org.labkey.issue.IssuesController.MoveActionContainerScopingTestCase.class,
+            org.labkey.issue.IssuesController.GetUsersForGroupScopingTestCase.class
         );
     }
 

@@ -2844,13 +2844,14 @@ public class OntologyManager
         return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
-    public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
+    public static List<PropertyUsages> findPropertyUsagesByIds(User user, Container container, List<Integer> propertyIds, int maxUsageCount)
     {
         List<PropertyUsages> ret = new ArrayList<>(propertyIds.size());
         for (int propertyId : propertyIds)
         {
             var pd = getPropertyDescriptor(propertyId);
-            if (pd == null)
+            // Kanban #1924: Get property descriptors for the current container only
+            if (pd == null || !pd.getContainer().equals(container))
                 throw new IllegalArgumentException("property not found: " + propertyId);
 
             ret.add(findPropertyUsages(user, pd, maxUsageCount));

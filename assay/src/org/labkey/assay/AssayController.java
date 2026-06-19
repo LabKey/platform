@@ -141,7 +141,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
@@ -158,15 +157,35 @@ import org.labkey.assay.actions.ShowSelectedDataAction;
 import org.labkey.assay.actions.ShowSelectedRunsAction;
 import org.labkey.assay.actions.TemplateAction;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
+import org.springframework.mock.web.MockMultipartHttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.junit.After;
+import org.junit.Test;
+import org.labkey.api.assay.AssayDataCollector;
+import org.labkey.api.assay.AssayRunCreator;
+import org.labkey.api.assay.PipelineDataCollector;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.gwt.client.assay.model.GWTProtocol;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -196,7 +215,6 @@ public class AssayController extends SpringActionController
         AssayResultsAction.class,
         AssayRunDetailsAction.class,
         AssayRunsAction.class,
-        DeleteAction.class,
         DeleteProtocolAction.class,
         DesignerAction.class,
         GetAssayBatchAction.class,
@@ -429,7 +447,6 @@ public class AssayController extends SpringActionController
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
         links.put("designCopy", urlProvider.getDesignerURL(c, protocol, true, null));
-        links.put("designDelete", urlProvider.getDeleteDesignURL(protocol));
         links.put("designEdit", urlProvider.getDesignerURL(c, protocol, false, null));
         links.put("import", provider.getImportURL(c, protocol));
         links.put("results", urlProvider.getAssayResultsURL(c, protocol));
@@ -1150,12 +1167,6 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDeleteDesignURL(ExpProtocol protocol)
-        {
-            return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
-        }
-
-        @Override
         public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)
         {
             ActionURL url = new ActionURL(PipelineDataCollectorRedirectAction.class, container);
@@ -1407,6 +1418,24 @@ public class AssayController extends SpringActionController
             if (!org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(flagCol.getConceptURI()))
                 throw new NotFoundException();
 
+            // Confirm every requested result row actually belongs to the request container by reading its run's container
+            Set<Integer> requestedIds = new HashSet<>(form.getRowList());
+            if (!requestedIds.isEmpty())
+            {
+                SimpleFilter idFilter = new SimpleFilter();
+                idFilter.addInClause(FieldKey.fromParts("RowId"), requestedIds);
+                Map<String, Object>[] rows = new TableSelector(assayResultTable, PageFlowUtil.set("RowId", "Folder"), idFilter, null).getMapArray();
+                Set<Integer> allowedIds = new HashSet<>();
+                String currentContainerId = getContainer().getId();
+                for (Map<String, Object> row : rows)
+                {
+                    if (currentContainerId.equals(String.valueOf(row.get("Folder"))) && row.get("RowId") instanceof Number n)
+                        allowedIds.add(n.intValue());
+                }
+                if (!allowedIds.containsAll(requestedIds))
+                    throw new NotFoundException("One or more result rows were not found in this folder");
+            }
+
             DbScope scope = ti.getSchema().getScope();
             int rowsAffected  = 0 ;
             try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -1445,6 +1474,9 @@ public class AssayController extends SpringActionController
                 ExpRun expRun = ExperimentService.get().getExpRun(NumberUtils.toInt(run));
                 if (expRun != null)
                 {
+                    // Kanban #1924 assure permissions to the run's container, which might be different from the current container
+                    if (!expRun.getContainer().hasPermission(getUser(), AssayReadPermission.class))
+                        throw new UnauthorizedException("User does not have " + AssayReadPermission.class.getSimpleName() + " for run " + run);
                     response.put("success", true);
                     DataState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
                     if (state != null)
@@ -1593,6 +1625,14 @@ public class AssayController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getRuns() != null && _firstRun != null)
             {
+                for (Long id : form.getRuns())
+                {
+                    // Support cross-container operations but confirm permission
+                    ExpRun run = ExperimentService.get().getExpRun(id);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+                        throw new NotFoundException("Run " + id + " not found in this folder");
+                }
+
                 DataState state = DataStateManager.getInstance().getStateForRowId(_firstRun.getProtocol().getContainer(), form.getState());
                 if (state != null)
                     AssayQCService.getProvider().setQCStates(_firstRun.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
@@ -1750,6 +1790,11 @@ public class AssayController extends SpringActionController
 
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
+            if (protocol == null)
+                throw new NotFoundException("Protocol with id " + form.getProtocolId() + " not found.");
+            // Kanban #1924: Assure permission in the protocol's container, which may be different than the current container
+            if (!protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("User does not have permission to read protocol " + protocol.getName());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
                 throw new NotFoundException("No provider found for protocol " + form.getProtocolId());
@@ -1943,6 +1988,130 @@ public class AssayController extends SpringActionController
             }
 
             return AssayPlateMetadataService.get().previewFilterCriteriaColumns(protocol, form.getColumnNames());
+        }
+    }
+
+    /**
+     * Verifies that assay actions resolving result rows by global RowId reject rows that belong to a different
+     * container, even when the caller has the action's required permission in the request folder. The design is created
+     * in /Shared so its protocol resolves from any sibling folder (project + shared scope, per ProtocolIdForm), while
+     * the result rows live in a folder where the caller has no rights.
+     */
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private ExpProtocol _sharedProtocol;   // lives in /Shared; not auto-cleaned, so we delete it in @After
+
+        @After
+        public void deleteSharedAssay()
+        {
+            if (_sharedProtocol != null)
+            {
+                try { _sharedProtocol.delete(getAdmin()); } catch (Exception ignored) {}
+                _sharedProtocol = null;
+            }
+        }
+
+        // Build a General (GPAT) design in /Shared so its protocol resolves from any sibling folder, with a results
+        // "Flag" property (conceptURI expFlag) that SetResultFlagAction requires plus a plain int result field so a
+        // one-row file can be imported.
+        private Pair<AssayProvider, ExpProtocol> createSharedAssay() throws Exception
+        {
+            Container shared = ContainerManager.getSharedContainer();
+            ViewContext ctx = new ViewContext(new ViewBackgroundInfo(shared, getAdmin(), null));
+            AssayDomainServiceImpl svc = new AssayDomainServiceImpl(ctx);
+            GWTProtocol tmpl = svc.getAssayTemplate("General");
+            tmpl.setName("scoping-assay-" + getClass().getSimpleName());
+            tmpl.setEditableResults(true);
+
+            for (GWTDomain<GWTPropertyDescriptor> d : tmpl.getDomains())
+            {
+                if ("Batch Fields".equals(d.getName()) || "Run Fields".equals(d.getName()))
+                    d.getFields(true).clear();
+                else if ("Data Fields".equals(d.getName()))
+                {
+                    d.getFields(true).clear();
+                    d.getFields(true).add(new GWTPropertyDescriptor("result", "int"));
+                    GWTPropertyDescriptor flag = new GWTPropertyDescriptor("Flag", "string");
+                    // SetResultFlagAction requires the target column to carry the expFlag conceptURI
+                    flag.setConceptURI(org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI());
+                    d.getFields(true).add(flag);
+                }
+            }
+
+            GWTProtocol saved = svc.saveChanges(tmpl, true);
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(saved.getProtocolId());
+            _sharedProtocol = protocol;
+            return Pair.of(AssayService.get().getProvider(protocol), protocol);
+        }
+
+        // Import a one-row run into container c (as the site admin) and return its assay-result RowId.
+        private int importOneResult(Container c, AssayProvider provider, ExpProtocol protocol) throws Exception
+        {
+            var pipeRoot = PipelineService.get().findPipelineRoot(c);
+            assertNotNull("Test requires a pipeline root for " + c.getPath(), pipeRoot);
+            File file = FileUtil.createTempFile(getClass().getSimpleName(), ".tsv", pipeRoot.getRootPath());
+            Files.writeString(file.toPath(), "result\n100\n", StandardCharsets.UTF_8);
+
+            HttpSession session = TestContext.get().getRequest().getSession();
+            PipelineDataCollector.setFileCollection(session, c, protocol, List.of(Map.of(AssayDataCollector.PRIMARY_FILE, FileSystemLike.wrapFile(file))));
+
+            MockMultipartHttpServletRequest req = new MockMultipartHttpServletRequest();
+            req.setUserPrincipal(getAdmin());
+            req.setSession(session);
+            AssayRunUploadForm<TsvAssayProvider> uploadForm = new AssayRunUploadForm<>();
+            uploadForm.setViewContext(new ViewContext(req, null, null));
+            uploadForm.setContainer(c);
+            uploadForm.setUser(getAdmin());
+            uploadForm.setRowId(protocol.getRowId());
+            uploadForm.setName("scoping-run-" + c.getName());
+            uploadForm.setDataCollectorName("Pipeline");
+
+            AssayRunCreator runCreator = provider.getRunCreator();
+            Pair<ExpExperiment, ExpRun> pair = runCreator.saveExperimentRun(uploadForm, null);
+            ExpRun run = pair.second;
+
+            AssayProtocolSchema schema = provider.createProtocolSchema(getAdmin(), c, protocol, null);
+            TableInfo results = schema.getTable("Data");
+            FieldKey runRowIdFk = new FieldKey(FieldKey.fromParts("Run"), "RowId");
+            Map<String, Object> row = new TableSelector(results, Set.of("RowId"), new SimpleFilter(runRowIdFk, run.getRowId()), null).getMap();
+            return (Integer) row.get("RowId");
+        }
+
+        @Test
+        public void testSetResultFlagRejectsForeignResultRow() throws Exception
+        {
+            Container shared = ContainerManager.getSharedContainer();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            Pair<AssayProvider, ExpProtocol> assay = createSharedAssay();
+            AssayProvider provider = assay.first;
+            ExpProtocol protocol = assay.second;
+
+            int resultRowId = importOneResult(folderB, provider, protocol);   // result row lives in folder B
+
+            // Caller can Update folder A and Read the shared design, but has NO rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+            grantRole(editorA, shared, ReaderRole.class);
+
+            // Flagging B's result row through folder A must 404 at the per-row Folder guard (not at getProtocol).
+            ActionURL foreignUrl = new ActionURL(SetResultFlagAction.class, folderA)
+                    .addParameter("rowId", String.valueOf(protocol.getRowId()))
+                    .addParameter("providerName", provider.getName())
+                    .addParameter("resultRowIds", String.valueOf(resultRowId))
+                    .addParameter("columnName", "Flag")
+                    .addParameter("comment", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // Positive control: an Editor in B (with Read on the shared design) flags the same row through folder B → 200.
+            User editorB = createUserInRole(folderB, EditorRole.class);
+            grantRole(editorB, shared, ReaderRole.class);
+            ActionURL ownUrl = new ActionURL(SetResultFlagAction.class, folderB)
+                    .addParameter("rowId", String.valueOf(protocol.getRowId()))
+                    .addParameter("providerName", provider.getName())
+                    .addParameter("resultRowIds", String.valueOf(resultRowId))
+                    .addParameter("columnName", "Flag")
+                    .addParameter("comment", "ok");
+            assertStatus(HttpServletResponse.SC_OK, post(ownUrl, editorB));
         }
     }
 }

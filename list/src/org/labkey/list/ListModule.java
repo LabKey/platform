@@ -228,7 +228,8 @@ public class ListModule extends SpringModule
     {
         return Set.of(
             ListManager.TestCase.class,
-            ListWriter.TestCase.class
+            ListWriter.TestCase.class,
+            ListAuditProvider.TestCase.class
         );
     }
 }
