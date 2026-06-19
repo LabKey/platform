@@ -2022,15 +2022,21 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         var jitters = {};
 
         const jitterPosition = geom.position === position.jitter || geom.position === position.sequential;
-        if (jitterPosition && (geom.xScale.scaleType === scaleType.discrete || geom.xScale.scaleType === scaleType.continuous)) {
+        // Only the opt-in time-based continuous axis (calendar mode) gets day-jittered; other
+        // continuous-x callers (e.g. CDS scatter) keep their prior no-horizontal-jitter behavior.
+        const timeBasedContinuous = geom.xScale.scaleType === scaleType.continuous && geom.xScale.timeBasedXTick === true;
+        if (jitterPosition && (geom.xScale.scaleType === scaleType.discrete || timeBasedContinuous)) {
             if (geom.xScale.scaleType === scaleType.discrete) {
                 xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
             }
             else {
-                // Continuous (time-based) x-axis: jitter band is half a day's pixel width (matches the
-                // per-date half-slot for consecutive dates; safe for gaps since the spread is < 1 day).
-                const pixelsPerUnit = Math.abs(geom.xScale.scale(1) - geom.xScale.scale(0));
-                xBinWidth = pixelsPerUnit / 2;
+                // Continuous (time-based) x-axis: size the same-day jitter band by the distinct-day count
+                // (mirroring the per-date slot half-width) so replicates fan out the same as per-date and
+                // aren't hidden when real-time spacing squeezes a day into a few pixels. Day centers stay
+                // at their true time position; only the same-day spread is normalized. dayCount is supplied by
+                // the time-based scale (plot.js) so the jitter band, bar width, and highlight rects share one count.
+                const slotCount = Math.max(geom.xScale.dayCount || 0, 10);
+                xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / slotCount) / 2;
             }
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
@@ -2273,6 +2279,59 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (typeof colorAcc == 'function') { colorAcc(d); }
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
+
+        // connectAdjacent: render each level (top/bottom) as ONE continuous polyline through the points so a
+        // dash pattern runs evenly across the whole line, including no-data gaps ("---- ---- ----"). Per-point
+        // tiled segments restart the dash each segment and read as solid where points are dense, so avoid that.
+        if (geom.connectAdjacent) {
+            const strokeColor = typeof colorAcc === 'function' ? (data.length ? colorAcc(data[0]) : '#000000') : colorAcc;
+            // Build the line as flat horizontal runs at each constant level: connect consecutive same-y points
+            // (so the dash spans no-data gaps within a level), but START A NEW SUBPATH whenever the level changes
+            // (guide-set boundary) or y is undefined (e.g. log scale where mean +/- error <= 0). This avoids a
+            // diagonal connector between levels and avoids bridging over undefined points, matching the per-point
+            // bars. Each run extends +/- errorLineWidth at its ends, like the per-date segments.
+            const buildPath = function(sign) {
+                let d = '', runStartX = null, runEndX = null, runY = null;
+                const flush = function() {
+                    if (runY !== null) {
+                        d += 'M' + (runStartX - errorLineWidth) + ',' + runY + ' L' + (runEndX + errorLineWidth) + ',' + runY + ' ';
+                    }
+                };
+                for (let k = 0; k < data.length; k++) {
+                    const row = data[k];
+                    const x = xAcc_(row), value = geom.yAes.getValue(row), error = geom.errorAes.getValue(row);
+                    if (value == null || isNaN(x)) {
+                        continue; // no data point that day (e.g. missing-fill row): bridge over it, don't break the level
+                    }
+                    const y = geom.yScale.scale(value + sign * error);
+                    if (y == null || isNaN(y)) { // defined value but unplottable (log scale, value +/- error <= 0): break here
+                        flush();
+                        runStartX = runEndX = runY = null;
+                    } else if (runY === null) { // start a new run
+                        runStartX = runEndX = x; runY = y;
+                    } else if (y === runY) { // same level: extend the run across the gap
+                        runEndX = x;
+                    } else { // level changed (guide-set boundary): close run, start a new one (no diagonal)
+                        flush();
+                        runStartX = runEndX = x; runY = y;
+                    }
+                }
+                flush();
+                return d;
+            };
+            const drawLine = function(cls, sign) {
+                const lineSel = layer.selectAll('path.' + cls).data([data]);
+                lineSel.enter().append('path').attr('class', cls);
+                lineSel.attr('d', buildPath(sign)).attr('stroke', strokeColor).attr('fill', 'none')
+                    .attr('stroke-width', 1).style('stroke-dasharray', '6, 3');
+                lineSel.exit().remove();
+            };
+            drawLine('error-bar-top', 1);
+            if (!geom.topOnly) {
+                drawLine('error-bar-bottom', -1);
+            }
+            return;
+        }
 
         const selection = layer.selectAll('.error-bar').data(data);
         selection.exit().remove();

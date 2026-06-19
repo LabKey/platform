@@ -392,6 +392,8 @@ boxPlot.render();
                 newScale.trans = origScale.trans ? origScale.trans : 'linear';
                 newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
+                newScale.timeBasedXTick = origScale.timeBasedXTick ? origScale.timeBasedXTick : null;
+                newScale.dayCount = origScale.dayCount ? origScale.dayCount : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
@@ -1701,6 +1703,65 @@ boxPlot.render();
         return isNaN(d.getTime()) ? null : Math.round(d.getTime() / 86400000);
     };
 
+    // Format a day number (days since epoch, UTC) back to a YYYY-MM-DD label for calendar-axis ticks.
+    LABKEY.vis.dayNumberToDateLabel = function(dayNumber) {
+        const d = new Date(dayNumber * 86400000);
+        const pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+        return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+    };
+
+    // Pick day-offset tick positions for the calendar axis at "nice" calendar intervals (day/week/month/year),
+    // choosing the finest interval that keeps the tick count within maxTicks AND keeps consecutive ticks at
+    // least minGapOffsets apart (in day-offset units) so the date labels don't overlap.
+    LABKEY.vis.calendarTickOffsets = function(minDayNumber, maxDayOffset, maxTicks, minGapOffsets) {
+        const limit = Math.max(maxTicks || 1, 1);
+        const minGap = minGapOffsets > 0 ? minGapOffsets : 0;
+        const offsets = [];
+
+        const dayLadder = [1, 2, 3, 7, 14];
+        for (let i = 0; i < dayLadder.length; i++) {
+            if (dayLadder[i] >= minGap && Math.floor(maxDayOffset / dayLadder[i]) + 1 <= limit) {
+                for (let off = 0; off <= maxDayOffset; off += dayLadder[i]) {
+                    offsets.push(off);
+                }
+                return offsets;
+            }
+        }
+
+        // Larger spans: tick on the 1st of the month, stepping whole months so the count fits.
+        const minDate = new Date(minDayNumber * 86400000);
+        const maxDate = new Date((minDayNumber + maxDayOffset) * 86400000);
+        const totalMonths = (maxDate.getUTCFullYear() - minDate.getUTCFullYear()) * 12
+                + (maxDate.getUTCMonth() - minDate.getUTCMonth());
+        const monthLadder = [1, 2, 3, 6, 12, 24, 60, 120];
+        const minGapMonths = minGap > 0 ? minGap / 30.4 : 0; // ~days per month
+        let stepMonths = monthLadder[monthLadder.length - 1];
+        for (let i = 0; i < monthLadder.length; i++) {
+            if (monthLadder[i] >= minGapMonths && Math.floor(totalMonths / monthLadder[i]) + 1 <= limit) {
+                stepMonths = monthLadder[i];
+                break;
+            }
+        }
+
+        let year = minDate.getUTCFullYear(), month = minDate.getUTCMonth();
+        if (minDate.getUTCDate() > 1) { // start at the first month boundary at/after minDate
+            month++;
+            if (month > 11) { month = 0; year++; }
+        }
+        while (true) {
+            const off = Math.round(Date.UTC(year, month, 1) / 86400000) - minDayNumber;
+            if (off > maxDayOffset) {
+                break;
+            }
+            if (off >= 0) {
+                offsets.push(off);
+            }
+            month += stepMonths;
+            while (month > 11) { month -= 12; year++; }
+        }
+        return offsets;
+    };
+
     LABKEY.vis.TrendingLinePlot = function(config){
         if (!config.qcPlotType)
             config.qcPlotType = LABKEY.vis.TrendingLinePlotType.LeveyJennings;
@@ -1788,25 +1849,30 @@ boxPlot.render();
         // reflects elapsed time. Offsets are keyed by xTickLabel (the date) so same-day rows share a position.
         const timeBasedXTick = config.properties.timeBasedXTick === true;
         const dayOffsetMap = {}, dayOffsetLabelMap = {};
-        let uniqueDayOffsets = [], maxDayOffset = 0;
+        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null;
         if (timeBasedXTick) {
-            let minDayNumber = null;
-            for (let i = 0; i < config.data.length; i++) {
-                const dn = LABKEY.vis.dateToDayNumber(config.data[i][config.properties.xTickLabel]);
-                if (dn !== null && (minDayNumber === null || dn < minDayNumber)) {
-                    minDayNumber = dn;
-                }
-            }
+            // Parse each distinct date label once, tracking the earliest day; then convert to offsets.
+            const labelToDn = {}, seenLabel = {};
             for (let i = 0; i < config.data.length; i++) {
                 const label = config.data[i][config.properties.xTickLabel];
+                if (seenLabel[label]) {
+                    continue;
+                }
+                seenLabel[label] = true;
                 const dn = LABKEY.vis.dateToDayNumber(label);
-                if (dn !== null && dayOffsetMap[label] === undefined) {
-                    const offset = dn - minDayNumber;
-                    dayOffsetMap[label] = offset;
-                    dayOffsetLabelMap[offset] = label;
-                    if (offset > maxDayOffset) {
-                        maxDayOffset = offset;
+                if (dn !== null) {
+                    labelToDn[label] = dn;
+                    if (minDayNumber === null || dn < minDayNumber) {
+                        minDayNumber = dn;
                     }
+                }
+            }
+            for (const label in labelToDn) {
+                const offset = labelToDn[label] - minDayNumber;
+                dayOffsetMap[label] = offset;
+                dayOffsetLabelMap[offset] = label;
+                if (offset > maxDayOffset) {
+                    maxDayOffset = offset;
                 }
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
@@ -2320,20 +2386,50 @@ boxPlot.render();
             }
         };
 
-        // Calendar mode: continuous linear scale over day offsets, ticks only on data days.
+        // Calendar mode: continuous linear scale over day offsets.
         if (timeBasedXTick) {
             config.scales.x.scaleType = 'continuous';
             config.scales.x.trans = 'linear';
+            config.scales.x.timeBasedXTick = true; // opt-in flag so the renderer only day-jitters this axis
+            config.scales.x.dayCount = uniqueDayOffsets.length; // distinct-day count shared with jitter/bar/rect sizing
             // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.
             // pos(0)=1/(slots+1), pos(maxOffset)=numDates/(slots+1).
             const numDates = uniqueDayOffsets.length;
             const avgStep = numDates > 1 ? maxDayOffset / (numDates - 1) : 1;
             const slots = Math.max(numDates, 10);
             config.scales.x.domain = [-avgStep, avgStep * slots];
-            config.scales.x.tickValues = uniqueDayOffsets;
-            config.scales.x.tickFormat = function(offset) {
-                return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
-            };
+
+            // A date label is ~80px; the domain maps avgStep*(slots+1) offset-units across ~the plot width, so
+            // require at least this many offset-units between adjacent ticks to avoid overlapping labels. This
+            // matters when few dates are close in time: the min-10-slot domain padding compresses them into the
+            // left of the axis, so consecutive-day labels collide unless we thin them.
+            const labelPx = 80;
+            const plotPx = Math.max(config.width - 110, 100); // approx grid width after margins
+            const minLabelGapOffsets = (labelPx * avgStep * (slots + 1)) / plotPx;
+
+            // Default to one tick per data day; switch to adaptive calendar intervals when the per-day labels
+            // would overlap (too many days, or the closest two are within one label width of each other).
+            let perDayTicksFit = uniqueDayOffsets.length <= tickMax;
+            for (let i = 1; perDayTicksFit && i < uniqueDayOffsets.length; i++) {
+                if (uniqueDayOffsets[i] - uniqueDayOffsets[i - 1] < minLabelGapOffsets) {
+                    perDayTicksFit = false;
+                }
+            }
+
+            if (perDayTicksFit) {
+                // One tick per data day.
+                config.scales.x.tickValues = uniqueDayOffsets;
+                config.scales.x.tickFormat = function(offset) {
+                    return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
+                };
+            }
+            else {
+                // Crowded: ticks at nice calendar intervals so labels stay evenly spaced and readable.
+                config.scales.x.tickValues = LABKEY.vis.calendarTickOffsets(minDayNumber, maxDayOffset, tickMax, minLabelGapOffsets);
+                config.scales.x.tickFormat = function(offset) {
+                    return LABKEY.vis.dayNumberToDateLabel(offset + minDayNumber);
+                };
+            }
         }
 
         if (hasYRightMetric) {
@@ -2748,6 +2844,15 @@ boxPlot.render();
                 {
                     config.layers.push(new LABKEY.vis.Layer(getPathLayerConfig('yLeft', config.properties.value)));
                 }
+            }
+
+            // Calendar axis: draw mean/SD/bound lines as one dashed line spanning no-data gaps (not per-point dashes).
+            if (timeBasedXTick) {
+                config.layers.forEach(function(layer) {
+                    if (layer.geom && layer.geom.type === 'ErrorBar') {
+                        layer.geom.connectAdjacent = true;
+                    }
+                });
             }
         }
 
