@@ -139,6 +139,7 @@ import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 
 import java.util.ArrayList;
@@ -435,6 +436,7 @@ public class QueryModule extends DefaultModule
             QNode.TestCase.class,
             QNumber.TestCase.class,
             Query.TestCase.class,
+            RemoteConnections.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
             TableWriter.TestCase.class,
