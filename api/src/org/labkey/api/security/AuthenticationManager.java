@@ -1608,16 +1608,16 @@ public class AuthenticationManager
     // consumed by handleAuthentication after secondary auth completes, so the reauth token can be issued without
     // replacing the existing authenticated session. Survives the round-trip to external 2FA providers (Duo, TOTP),
     // which is essential because their validate actions call handleAuthentication without form context.
-    private record ReauthContext(boolean local) {}
+    private record ReauthFlow(boolean local) {}
 
-    private static String getReauthContextSessionKey()
+    private static String getReauthFlowSessionKey()
     {
-        return AUTHENTICATION_PROCESS_PREFIX + ReauthContext.class.getName();
+        return AUTHENTICATION_PROCESS_PREFIX + ReauthFlow.class.getName();
     }
 
-    public static void setReauthContext(HttpServletRequest request, boolean local)
+    public static void setReauthFlow(HttpServletRequest request, boolean local)
     {
-        request.getSession(true).setAttribute(getReauthContextSessionKey(), new ReauthContext(local));
+        request.getSession(true).setAttribute(getReauthFlowSessionKey(), new ReauthFlow(local));
     }
 
     // Used by 2FA validate actions to tell whether the already-logged-in user is mid-reauth, so they don't
@@ -1625,7 +1625,7 @@ public class AuthenticationManager
     public static boolean isReauthInProgress(HttpServletRequest request)
     {
         HttpSession session = request.getSession(false);
-        return session != null && session.getAttribute(getReauthContextSessionKey()) != null;
+        return session != null && session.getAttribute(getReauthFlowSessionKey()) != null;
     }
 
     // Clear all primary and secondary authentication results
@@ -1756,11 +1756,11 @@ public class AuthenticationManager
         // Reauth path: primary (and any secondary) auth has completed. Issue the one-time reauth token on the return
         // URL and bail out *before* setAuthenticatedUser runs, so the user's existing session is preserved. The local
         // flag distinguishes local login-page reauth (must match current session user) from CAS IdP reauth (any user).
-        ReauthContext reauthContext = (ReauthContext)session.getAttribute(getReauthContextSessionKey());
-        if (reauthContext != null)
+        ReauthFlow reauthFlow = (ReauthFlow)session.getAttribute(getReauthFlowSessionKey());
+        if (reauthFlow != null)
         {
-            session.removeAttribute(getReauthContextSessionKey());
-            setReauthUser(primaryAuthUser, reauthContext.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+            session.removeAttribute(getReauthFlowSessionKey());
+            setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
             return new AuthenticationResult(primaryAuthUser, url);
         }
 

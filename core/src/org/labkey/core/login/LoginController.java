@@ -712,7 +712,7 @@ public class LoginController extends SpringActionController
                 // secondary auth completes. Session-scoped because secondary auth (Duo/TOTP) callbacks re-enter
                 // handleAuthentication without form context.
                 if (form.isForceReauth())
-                    AuthenticationManager.setReauthContext(request, form.isLocal());
+                    AuthenticationManager.setReauthFlow(request, form.isLocal());
 
                 AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
