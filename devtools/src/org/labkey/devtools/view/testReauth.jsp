@@ -65,7 +65,7 @@ Looks like you successfully re-authenticated and received token: <%=h(form.reaut
         if (form.errorMessage() != null)
         {
 %>
-Looks like your reauthentication failed: <%=h(form.errorMessage())%>. Try again?
+Looks like your reauthentication failed: <span class="labkey-error"><%=h(form.errorMessage())%></span>. Try again?
 <%
         }
         else
