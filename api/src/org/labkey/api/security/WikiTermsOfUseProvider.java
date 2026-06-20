@@ -85,6 +85,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             return false;
 
         // Terms are needed, so check if user has already approved
+        //noinspection DataFlowIssue - termsContainer() is null only in the NONE case (see above)
         return !isTermsOfUseApproved(ctx, config.termsContainer());
     }
 
@@ -97,11 +98,14 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         HttpSession session = ctx.getRequest().getSession(false);
         if (null == session)
             return false;
-        @NotNull Set<Container> termsApproved = getApprovedTerms(session);
-        assert WikiService.get().hasTermsOfUseWiki(termsContainer); // TODO: Temporary check
-        boolean approved = termsApproved.contains(termsContainer);
+        boolean approved;
+        synchronized (SessionHelper.getSessionLock(session))
+        {
+            @NotNull Set<Container> termsApproved = getApprovedTerms(session);
+            approved = termsApproved.contains(termsContainer);
+        }
         if (!approved)
-            LOG.info("Approved terms did not include {} for {}", termsContainer, ctx.getUser());
+            LOG.debug("Approved terms did not include {} for {}", termsContainer, ctx.getUser());
         if (!approved)
         {
             User user = ctx.getUser();
@@ -149,7 +153,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         return getTermsOfUseConfiguration(project).type() != TermsOfUseType.NONE;
     }
 
-    public record TermsOfUseConfiguration(TermsOfUseType type, /* Null only if type is NONE */ Container termsContainer){}
+    public record TermsOfUseConfiguration(TermsOfUseType type, /* Null only if type is NONE */ @Nullable Container termsContainer){}
     public static final TermsOfUseConfiguration NO_TERMS_CONFIGURATION = new TermsOfUseConfiguration(TermsOfUseType.NONE, null);
 
     public static TermsOfUseConfiguration getTermsOfUseConfiguration(@Nullable Project project)
@@ -206,7 +210,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             WritablePropertyMap map = PropertyManager.getWritableProperties(ctx.getUser(), termsContainer, LAST_TERMS_ACCEPTANCE, true);
             map.put(DATE, Instant.now().toString());
             map.save();
-            LOG.info("Saving terms acceptance timestamp for {} in {}", ctx.getUser(), termsContainer);
+            LOG.debug("Saving terms acceptance timestamp for {} in {}", ctx.getUser(), termsContainer);
         }
     }
 
@@ -218,7 +222,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             Set<Container> termsApproved = getApprovedTerms(session);
             termsApproved.add(termsContainer);
         }
-        LOG.info("Stashing terms acceptance in session for {} in {}", ctx.getUser(), termsContainer);
+        LOG.debug("Stashing terms acceptance in session for {} in {}", ctx.getUser(), termsContainer);
     }
 
     public enum TermsOfUseType implements SafeToRenderEnum

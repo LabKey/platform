@@ -699,7 +699,7 @@ public class LoginController extends SpringActionController
                 if (form.isApprovedTermsOfUse())
                 {
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(termsProject));
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(termsProject));
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
                         WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
                     response.put("approvedTermsOfUse", true);
@@ -753,11 +753,6 @@ public class LoginController extends SpringActionController
                 response.put("CSRF", CSRFUtil.getExpectedToken(getViewContext()));
             return response;
         }
-    }
-
-    private static Container termsContainer(@Nullable Project project)
-    {
-        return WikiTermsOfUseProvider.getTermsContainer(project);
     }
 
     @SuppressWarnings("unused")
@@ -1001,7 +996,7 @@ public class LoginController extends SpringActionController
                 return false;
             }
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(project));
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
                 WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
             else
@@ -1268,7 +1263,7 @@ public class LoginController extends SpringActionController
             }
 
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(project));
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
                 WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
 

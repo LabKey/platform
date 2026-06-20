@@ -389,7 +389,8 @@ Click the Save button at any time to accept the current settings and continue.</
     final int currentTermsFrequency = AppProps.getInstance().getTermsOfUseFrequencySeconds();
     Map<Integer, String> termsFrequencyOptions = new TreeMap<>(Comparator.comparing(key -> key));
     termsFrequencyOptions.put(0, "Every signin");
-    termsFrequencyOptions.put(60, "Once a minute");
+    if (appProps.isDevMode())
+        termsFrequencyOptions.put(60, "Once a minute"); // For testing
     termsFrequencyOptions.put(SECONDS_PER_DAY, "Once a day");
     termsFrequencyOptions.put(7 * SECONDS_PER_DAY, "Every 7 days");
     termsFrequencyOptions.put(30 * SECONDS_PER_DAY, "Every 30 days");
