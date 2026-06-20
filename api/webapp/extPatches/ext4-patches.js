@@ -1149,4 +1149,22 @@ Ext4.override(Ext4.form.FieldSet, {
     }
 });
 
+/**
+ * ComboBox.onTypeAhead runs on a delayed task (typeAheadDelay). If the field or its store is torn
+ * down before the task fires -- e.g. a grid cell editor closes, or the form/window is destroyed
+ * while the user is still typing -- me.store is null and the stock implementation throws an uncaught
+ * "Cannot read properties of null (reading 'findRecord')". That uncaught error is logged to the
+ * mothership and (in automated tests) fails the run intermittently. Guard against a missing or
+ * destroyed store/component before delegating to the original implementation.
+ */
+Ext4.override(Ext4.form.field.ComboBox, {
+    onTypeAhead: function() {
+        var me = this;
+        if (me.destroying || me.isDestroyed || !me.rendered || !me.store || me.store.isDestroyed) {
+            return;
+        }
+        return me.callParent(arguments);
+    }
+});
+
 Ext4.labkeyPatches = true; // Allow short-circuiting in 'LABKEY.requiresExt4Sandbox'
