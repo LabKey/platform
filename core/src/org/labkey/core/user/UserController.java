@@ -817,9 +817,13 @@ public class UserController extends SpringActionController
             users.setTitle("Users");
             users.setFrame(WebPartView.FrameType.PORTAL);
 
-            JspView<ShowUsersForm> toggleInactiveView = new JspView<>("/org/labkey/core/user/toggleInactive.jsp", form);
+            // GitHub Issue #1232 - inactive users have no permissions so they'll never appear in the "Project Users" grid
+            if (getContainer().isRoot())
+            {
+                JspView<ShowUsersForm> toggleInactiveView = new JspView<>("/org/labkey/core/user/toggleInactive.jsp", form);
+                users.addView(toggleInactiveView);
+            }
 
-            users.addView(toggleInactiveView);
             users.addView(createQueryView(form, errors, false, "Users"));
 
             return users;
