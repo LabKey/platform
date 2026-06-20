@@ -57,12 +57,17 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.Sort;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.premium.AntiVirusService;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.ValidationException;
@@ -3556,17 +3561,24 @@ public class DavController extends SpringActionController
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
 
+            WebdavResource resource = resolvePath();
+            if (null == resource)
+            {
+                throw new DavException(WebdavStatus.SC_NOT_FOUND);
+            }
+
+            if (!resource.canWrite(getUser(), true))
+            {
+                throw new DavException(WebdavStatus.SC_FORBIDDEN);
+            }
+
             FileTime lastModified = getLastModified(getRequest().getInputStream());
 
             if (lastModified != null)
             {
                 try
                 {
-                    WebdavResource resource = resolvePath();
-                    if (resource != null)
-                    {
-                        resource.setLastModified(lastModified.toMillis());
-                    }
+                    resource.setLastModified(lastModified.toMillis());
                 }
                 catch (ConversionException ignored) {}
             }
@@ -3576,12 +3588,6 @@ public class DavController extends SpringActionController
             assert track(writer);
             try
             {
-                WebdavResource resource = resolvePath();
-                if (resource == null)
-                {
-                    throw new DavException(WebdavStatus.SC_NOT_FOUND);
-                }
-
                 XMLResourceWriter resourceWriter = new XMLResourceWriter(writer);
                 resourceWriter.beginResponse(getResponse());
 
@@ -3744,8 +3750,8 @@ public class DavController extends SpringActionController
 
             if (!src.canRead(getUser(), true))
                 return unauthorized(src);
-            // MOVE is effectively a delete operation from the source's perspective so confirm access
-            if (!src.canDelete(getUser(), true))
+            // MOVE removes the resource from the source location, so confirm the caller could delete it there.
+            if (!src.canMove(getUser()))
                 return unauthorized(src);
             if (exists && !dest.canWrite(getUser(),true) || !exists && !dest.canCreate(getUser(),true))
                 return unauthorized(dest);
@@ -6739,9 +6745,76 @@ public class DavController extends SpringActionController
             assertTrue("Destination file should exist after a successful move", FileUtil.appendName(targetDir, "moved.txt").exists());
         }
 
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via Java API
+        @Test
+        public void testImportedFileCanMoveButNotDelete() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+            File srcFile = writeFile(dir, "imported.txt");
+            importFileIntoRun(_folder, srcFile);
+
+            User admin = getAdmin();
+            WebdavResource resource = WebdavService.get().lookup(filesPath(_folder).append("imported.txt"));
+            assertNotNull("Imported file should resolve through the resolver", resource);
+            assertTrue("Imported file should exist", resource.exists());
+            assertFalse("Precondition: a file used by a run must report a non-empty action list", resource.getActions(admin).isEmpty());
+
+            List<String> messages = new ArrayList<>();
+            assertFalse("Admin must NOT be able to delete a file that has been imported by an assay", resource.canDelete(admin, true, messages));
+            assertTrue("canDelete() should explain that the file was imported by an assay", messages.stream().anyMatch(m -> m.contains("imported by an assay")));
+            assertTrue("Admin MUST still be able to move a file that has been imported by an assay", resource.canMove(admin));
+        }
+
+        // A file that backs experiment data (used by a run) can be moved but not deleted. Test via WebDAV HTTP request
+        @Test
+        public void testMoveActionMovesImportedFileButDeleteForbidden() throws Exception
+        {
+            File dir = ensureFilesDir(_folder);
+
+            // DELETE of a file imported by a run is forbidden, and the file survives.
+            File imported = writeFile(dir, "imported.txt");
+            importFileIntoRun(_folder, imported);
+            MockHttpServletResponse deleteResp = doDelete(_folder, filesPath(_folder).append(imported.getName()), getAdmin());
+            assertEquals("DELETE of a file imported by an assay must be forbidden", HttpServletResponse.SC_FORBIDDEN, deleteResp.getStatus());
+            assertTrue("File must still exist after a forbidden delete", imported.exists());
+
+            // MOVE of an imported file succeeds, relocating it within the file root.
+            Path src = filesPath(_folder).append(imported.getName());
+            Path dest = filesPath(_folder).append("moved.txt");
+            MockHttpServletResponse moveResp = doMove(_folder, src, dest, getAdmin());
+            assertEquals("MOVE of a file imported by an assay must succeed", HttpServletResponse.SC_CREATED, moveResp.getStatus());
+            assertFalse("Source file should no longer exist after a successful move", imported.exists());
+            assertTrue("Destination file should exist after a successful move", FileUtil.appendName(dir, dest.getName()).exists());
+        }
+
+        // Ensure special nodes like @pipeline can't be deleted or moved
+        @Test
+        public void testNonDeletableNodeIsNotMovable() throws Exception
+        {
+            // Configure an explicit pipeline root so the @pipeline webdav node resolves to a PipelineFolderResource.
+            File fileRoot = ensureFilesDir(_folder).getParentFile();
+            File pipelineDir = FileUtil.appendName(fileRoot, "pipelineOverrideRoot");
+            if (!pipelineDir.exists())
+                assertTrue("Test requires a writable pipeline root directory", pipelineDir.mkdirs());
+            PipelineService.get().setPipelineRoot(getAdmin(), _folder, PipelineService.PRIMARY_ROOT, false, pipelineDir.toURI());
+
+            WebdavResource pipelineNode = WebdavService.get().lookup(pipelinePath(_folder));
+            assertNotNull("Test requires the @pipeline webdav node to resolve to a PipelineFolderResource", pipelineNode);
+            assertNotNull("The pipeline node must be backed by a writable file root", pipelineNode.getFile());
+
+            User admin = getAdmin();
+            assertFalse("The pipeline node must never be deletable", pipelineNode.canDelete(admin, true, null));
+            assertFalse("A node that is not deletable must also not be movable", pipelineNode.canMove(admin));
+        }
+
         private static Path filesPath(Container c)
         {
             return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.FILES_LINK);
+        }
+
+        private static Path pipelinePath(Container c)
+        {
+            return WebdavService.getPath().append(c.getParsedPath()).append(FileContentService.PIPELINE_LINK);
         }
 
         private static File ensureFilesDir(Container c)
@@ -6757,12 +6830,58 @@ public class DavController extends SpringActionController
 
         private static File writeFile(File dir) throws IOException
         {
-            File f = FileUtil.appendName(dir, "secret.txt");
+            return writeFile(dir, "secret.txt");
+        }
+
+        private static File writeFile(File dir, String name) throws IOException
+        {
+            File f = FileUtil.appendName(dir, name);
             try (FileOutputStream os = new FileOutputStream(f))
             {
                 os.write("secret".getBytes(StandardCharsets.UTF_8));
             }
             return f;
+        }
+
+        // Registers the file as experiment data used by a run, so the resolver's WebdavResource reports a
+        // non-empty action list - the same state that, in production, blocks deletion of an imported file
+        // while still permitting a move.
+        private void importFileIntoRun(Container c, File file) throws Exception
+        {
+            ExperimentService expSvc = ExperimentService.get();
+            User admin = getAdmin();
+
+            ExpData data = expSvc.createData(c, new DataType("Data"), file.getName());
+            data.setDataFileURI(file.toURI());
+            data.save(admin);
+
+            ExpRun run = expSvc.createExperimentRun(c, "import of " + file.getName());
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(c);
+            assertNotNull("Test requires a pipeline root for " + c.getName(), pipeRoot);
+            run.setFilePathRoot(pipeRoot.getRootPath());
+            ExpProtocol protocol = expSvc.ensureSampleDerivationProtocol(admin);
+            run.setProtocol(protocol);
+
+            ViewBackgroundInfo info = new ViewBackgroundInfo(c, admin, null);
+            // Wiring the data as a run input is enough for getRunsUsingDatas() to associate the run with the file.
+            expSvc.saveSimpleExperimentRun(run, Collections.emptyMap(), Map.of(data, "Data"), Collections.emptyMap(),
+                    Collections.emptyMap(), Collections.emptyMap(), info, null, false);
+        }
+
+        private static MockHttpServletResponse doDelete(Container sourceContainer, Path srcResource, User user) throws Exception
+        {
+            String srcWebdav = srcResource.toString();
+            String servletPath = "/" + WebdavService.getServletPath();
+
+            HttpServletRequest base = ViewServlet.mockRequest("DELETE", new ActionURL(name, "delete", sourceContainer), user, Map.of(), null);
+            MockHttpServletRequest req = (MockHttpServletRequest) base;
+            req.setServletPath(servletPath);
+            req.setPathInfo(srcWebdav.substring(servletPath.length()));
+            req.setRequestURI(srcWebdav);
+
+            MockHttpServletResponse resp = new MockHttpServletResponse();
+            new WebdavServlet(false).service(req, resp);
+            return resp;
         }
 
         private static MockHttpServletResponse doMove(Container sourceContainer, Path srcResource, Path destResource, User user) throws Exception

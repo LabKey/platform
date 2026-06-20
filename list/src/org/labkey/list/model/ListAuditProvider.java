@@ -35,13 +35,19 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpressionFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class ListAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
@@ -128,6 +134,22 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         return moveEvents(targetContainer, COLUMN_NAME_LIST_ITEM_ENTITY_ID, listRowEntityIds);
     }
 
+    /**
+     * Verifies that a loaded {@link ListAuditEvent} actually pertains to the requested list and container before its
+     * old/new record maps are surfaced to the caller.
+     * <p>
+     * Called by {@code ListController.ListItemDetailsAction} to close CWE-639 (IDOR via user-controlled {@code rowId}):
+     * without this predicate, a user with audit-read access in container A could pass {@code listId=X&rowId=N-for-Y}
+     * and have List Y's audit payload render inside List X's details page. The container check is defense-in-depth
+     * in case the audit schema's default ContainerFilter is ever changed away from {@code Current}.
+     */
+    public static boolean auditEventMatchesList(@Nullable ListAuditEvent event, int expectedListId, @NotNull Container expectedContainer)
+    {
+        return event != null
+            && event.getListId() == expectedListId
+            && Objects.equals(event.getContainer(), expectedContainer);
+    }
+
     public static class ListAuditEvent extends DetailedAuditTypeEvent
     {
         private int _listId;
@@ -201,6 +223,67 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
             // N.B. oldRecordMap and newRecordMap can be very large and are not included here
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String CONTAINER_A = "11111111-1111-1111-1111-111111111111";
+        private static final String CONTAINER_B = "22222222-2222-2222-2222-222222222222";
+
+        @Test
+        public void matches_whenListIdAndContainerAgree()
+        {
+            Container c = testContainer(CONTAINER_A);
+            assertTrue(auditEventMatchesList(eventFor(42, c), 42, c));
+        }
+
+        @Test
+        public void rejects_nullEvent()
+        {
+            assertFalse(auditEventMatchesList(null, 42, testContainer(CONTAINER_A)));
+        }
+
+        @Test
+        public void rejects_wrongListId()
+        {
+            // Event's listId is 99, but URL asked for list 42: the cross-list-in-same-container
+            // attack. Without this check, List 42's details page renders List 99's payload.
+            Container c = testContainer(CONTAINER_A);
+            assertFalse(auditEventMatchesList(eventFor(99, c), 42, c));
+        }
+
+        @Test
+        public void rejects_wrongContainer()
+        {
+            // Defense-in-depth: even if a future audit-schema CF change ever let an event from
+            // another container leak through getAuditEvent(), this check would still block it.
+            assertFalse(auditEventMatchesList(
+                eventFor(42, testContainer(CONTAINER_B)), 42, testContainer(CONTAINER_A)));
+        }
+
+        @Test
+        public void rejects_nullEventContainer()
+        {
+            // Event present but its container is null (could happen if the audit event was
+            // hand-constructed or persisted without a container): must not match.
+            assertFalse(auditEventMatchesList(eventFor(42, null), 42, testContainer(CONTAINER_A)));
+        }
+
+        private static Container testContainer(String guid)
+        {
+            // Container.equals compares the GUID id, so any non-null parent / name / rowId
+            // values are fine for this test; only the id field is read by the assertion.
+            return new Container(null, "junit-" + guid.substring(0, 8), guid, 0, 0, new Date(0), 0, false);
+        }
+
+        private static ListAuditEvent eventFor(int listId, @Nullable Container container)
+        {
+            ListAuditEvent event = new ListAuditEvent();
+            event.setListId(listId);
+            if (container != null)
+                event.setContainer(container);
+            return event;
         }
     }
 

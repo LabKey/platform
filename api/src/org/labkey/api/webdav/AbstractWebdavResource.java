@@ -404,6 +404,15 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
     @Override
+    public boolean canMove(User user)
+    {
+        // A MOVE removes the resource from its source location, so by default it requires the same rights
+        // as deleting it from there. Resource types where moving and deleting differ (see FileSystemResource)
+        // override this.
+        return canDelete(user, true, null);
+    }
+
+    @Override
     public boolean canRename(User user, boolean forRename)
     {
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);

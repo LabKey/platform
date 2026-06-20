@@ -509,6 +509,12 @@ public class ViewServlet extends HttpServlet
         }
 
         @Override
+        public String getParameter(@NotNull String name)
+        {
+            return _actionURL.getParameter(name);
+        }
+
+        @Override
         public @NotNull String @NotNull [] getParameterValues(@NotNull String name)
         {
             List<String> parameters = _actionURL.getParameterValues(name);

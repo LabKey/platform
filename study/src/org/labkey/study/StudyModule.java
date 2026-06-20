@@ -132,15 +132,18 @@ import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyPropertiesController;
+import org.labkey.study.controllers.publish.PublishConfirmContainerScopingTest;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DataStatesTest;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -762,16 +765,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         return Set.of(
                 DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-                ParticipantGroupManager.ParticipantGroupTestCase.class,
+                DataStatesTest.class,
+                ParticipantGroupManager.ContainerScopingTestCase.class,
                 StudyImpl.ProtocolDocumentTestCase.class,
                 StudyManager.StudySnapshotTestCase.class,
                 StudyManager.VisitCreationTestCase.class,
                 StudyModule.TestCase.class,
                 VisitImpl.TestCase.class,
+                DatasetController.DatasetAuditHistoryScopingTestCase.class,
                 DatasetUpdateService.TestCase.class,
                 DatasetLsidImportHelper.TestCase.class,
-                org.labkey.study.controllers.CreateChildStudyAction.ContainerScopingTestCase.class
-        );
+                PublishConfirmContainerScopingTest.class,
+                CreateChildStudyAction.ContainerScopingTestCase.class,
+                StudyController.ContainerScopingTestCase.class,
+                ReportsController.ContainerScopingTestCase.class);
     }
 
     @Override
@@ -789,6 +796,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DatasetDataWriter.TestCase.class,
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
+            ReportsController.TestCase.class,
             SequenceNumImportHelper.SequenceNumTest.class,
             StudyImpl.DateMathTestCase.class
         );

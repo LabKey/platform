@@ -49,7 +49,7 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
         return BaseViewAction.springBindParameters(this, "form", pvs);
     }
 
-    private Integer _rowId;
+    private Long _rowId;
     private String[] _targetStudy;
     private String[] _participantId;
     private String[] _visitId;
@@ -64,12 +64,12 @@ public class PublishConfirmForm extends ViewForm implements DataRegionSelection.
     private String _defaultValueSource = DefaultValueSource.PublishSource.name();
     private String _autoLinkCategory;
 
-    public Integer getRowId()
+    public Long getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public void setRowId(Long rowId)
     {
         _rowId = rowId;
     }
