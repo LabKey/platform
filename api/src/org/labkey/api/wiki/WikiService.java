@@ -50,6 +50,9 @@ public interface WikiService
 
     RenderedWiki getRenderedWiki(Container c, String name);
 
+    // Quick check for a terms-of-use wiki in the provided container. Helps optimize the every-request terms check.
+    boolean hasTermsOfUseWiki(Container c);
+
     default HtmlString getHtml(Container c, String name)
     {
         var wiki = getRenderedWiki(c, name);

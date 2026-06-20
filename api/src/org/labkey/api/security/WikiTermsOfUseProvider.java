@@ -15,34 +15,40 @@
  */
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpSession;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Project;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
 
-import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
-/**
- * Created by adam on 1/13/2016.
- */
 public class WikiTermsOfUseProvider implements TermsOfUseProvider
 {
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
     public static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
 
+    private static final Logger LOG = LogHelper.getLogger(WikiTermsOfUseProvider.class, "Terms of use workflow");
     private static final TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
 
     @Override
@@ -56,7 +62,8 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         }
     }
 
-    private static boolean isTermsOfUseRequired(ViewContext ctx)
+    // Are terms required in this container and the user hasn't approved them yet
+    public static boolean isTermsOfUseRequired(ViewContext ctx)
     {
         Container proj = ctx.getContainer().getProject();
 
@@ -66,107 +73,152 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             project = new Project(proj);
         }
 
-        // not required if user has already approved at the project level
-        if (isTermsOfUseApproved(ctx, project))
-            return false;
-
-        TermsOfUse termsOfUse = getTermsOfUse(project);
-        boolean required;
-        switch (termsOfUse.getType())
-        {
-            case SITE_WIDE:
-                // if we don't require project-level and have approved site-wide level, not required to ask again,
-                // but we don't cache for the project in case we set project-level terms later
-                required = !isTermsOfUseApproved(ctx, null);
-                break;
-            case PROJECT_LEVEL: // we already checked if the project-level terms were approved, so we know that they are required here
-                required = true;
-                break;
-            default:
-                required = false;
-        }
-
-        return required;
+        return isTermsOfUseRequired(ctx, project);
     }
 
-    public static boolean isTermsOfUseApproved(ViewContext ctx, @Nullable Project project)
+    // Are terms required in this container and the user hasn't approved them yet
+    public static boolean isTermsOfUseRequired(ViewContext ctx, @Nullable Project project)
+    {
+        // First, quick check for whether terms are ever needed for this project
+        TermsOfUseConfiguration config = getTermsOfUseConfiguration(project);
+        if (config.type() == TermsOfUseType.NONE)
+            return false;
+
+        // Terms are needed, so check if user has already approved
+        return !isTermsOfUseApproved(ctx, config.termsContainer());
+    }
+
+    private static final String LAST_TERMS_ACCEPTANCE = "lastTermsAcceptance";
+    private static final String DATE = "date";
+
+    // termsContainer is guaranteed to have a terms-of-use wiki
+    public static boolean isTermsOfUseApproved(ViewContext ctx, @NotNull Container termsContainer)
     {
         HttpSession session = ctx.getRequest().getSession(false);
         if (null == session)
             return false;
-        @Nullable Set<Project> termsApproved = getApprovedTerms(session);
-        return null != termsApproved && termsApproved.contains(project);
-    }
-
-    public static @Nullable Set<Project> getApprovedTerms(@NotNull HttpSession session)
-    {
-        synchronized (SessionHelper.getSessionLock(session))
+        @NotNull Set<Container> termsApproved = getApprovedTerms(session);
+        assert WikiService.get().hasTermsOfUseWiki(termsContainer); // TODO: Temporary check
+        boolean approved = termsApproved.contains(termsContainer);
+        if (!approved)
+            LOG.info("Approved terms did not include {} for {}", termsContainer, ctx.getUser());
+        if (!approved)
         {
-            return (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
+            User user = ctx.getUser();
+            if (!user.isGuest())
+            {
+                int frequencySeconds = AppProps.getInstance().getTermsOfUseFrequencySeconds();
+                if (frequencySeconds > 0)
+                {
+                    String isoDateString = PropertyManager.getProperties(user, termsContainer, LAST_TERMS_ACCEPTANCE).get(DATE);
+                    if (isoDateString != null)
+                    {
+                        Instant lastAccepted = Instant.parse(isoDateString);
+                        approved = Instant.now().isBefore(lastAccepted.plusSeconds(frequencySeconds));
+                        // On first terms check at the site or each project, if last acceptance hasn't expired, stash
+                        // an "approval" into session. This short-circuits future requests (so we don't run through
+                        // this code block on every request). It also ensures the terms dialogs don't randomly pop up
+                        // later in the session (when acceptance expires).
+                        if (approved)
+                        {
+                            try (var ignored = SpringActionController.ignoreSqlUpdates())
+                            {
+                                setTermsOfUseApprovedInSession(ctx, termsContainer);
+                            }
+                        }
+                    }
+                }
+            }
         }
+        return approved;
     }
 
-    public static boolean isTermsOfUseRequired(@Nullable Project project)
+    public static @NotNull Container getTermsContainer(@Nullable Project project)
     {
-        //TODO: Should do this more efficiently, but no efficient public wiki api for this yet
-        TermsOfUse terms = getTermsOfUse(project);
-        return terms.getType() != TermsOfUseType.NONE;
+        return project != null ? project.getContainer() : ContainerManager.getRoot();
+    }
+
+    public static @NotNull Set<Container> getApprovedTerms(@NotNull HttpSession session)
+    {
+        return SessionHelper.getAttribute(session, TERMS_APPROVED_KEY, (Callable<Set<Container>>) HashSet::new);
+    }
+
+    public static boolean isTermsOfUseConfigured(@Nullable Project project)
+    {
+        // This should be fairly efficient. We could consider caching a project -> terms configuration map.
+        return getTermsOfUseConfiguration(project).type() != TermsOfUseType.NONE;
+    }
+
+    public record TermsOfUseConfiguration(TermsOfUseType type, /* Null only if type is NONE */ Container termsContainer){}
+    public static final TermsOfUseConfiguration NO_TERMS_CONFIGURATION = new TermsOfUseConfiguration(TermsOfUseType.NONE, null);
+
+    public static TermsOfUseConfiguration getTermsOfUseConfiguration(@Nullable Project project)
+    {
+        if (ModuleLoader.getInstance().isStartupComplete())
+        {
+            WikiService service = WikiService.get();
+
+            // Need the wiki service to do terms
+            if (null != service)
+            {
+                // Project terms override root terms
+                if (project != null)
+                {
+                    Container c = project.getContainer();
+                    if (service.hasTermsOfUseWiki(c))
+                        return new TermsOfUseConfiguration(TermsOfUseType.PROJECT_LEVEL, c);
+                }
+
+                // Now check the root
+                Container c = ContainerManager.getRoot();
+                if (service.hasTermsOfUseWiki(c))
+                    return new TermsOfUseConfiguration(TermsOfUseType.SITE_WIDE, c);
+            }
+        }
+
+        return NO_TERMS_CONFIGURATION;
     }
 
     @NotNull
     public static TermsOfUse getTermsOfUse(@Nullable Project project)
     {
-        if (!ModuleLoader.getInstance().isStartupComplete())
-            return NO_TERMS;
+        TermsOfUseConfiguration config = getTermsOfUseConfiguration(project);
 
-        WikiService service = WikiService.get();
-        //No wiki service. Wiki module most not be present. Don't do terms here...
-        if (null == service)
-            return NO_TERMS;
-
-        HtmlString termsString;
-        if (null != project) // find project-level terms of use, if any
+        if (config.type() != TermsOfUseType.NONE)
         {
-            termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
+            // Check above guarantees that wiki service is present and getContainer is non-null
+            @SuppressWarnings("DataFlowIssue")
+            HtmlString termsString = WikiService.get().getHtml(config.termsContainer(), TERMS_OF_USE_WIKI_NAME);
             if (null != termsString)
             {
-                return new TermsOfUse(TermsOfUseType.PROJECT_LEVEL, termsString);
+                return new TermsOfUse(config.type(), termsString);
             }
-        }
-
-        // now check if we have site-wide terms of use
-        termsString = service.getHtml(ContainerManager.getRoot(), TERMS_OF_USE_WIKI_NAME);
-        if (null != termsString)
-        {
-            return new TermsOfUse(TermsOfUseType.SITE_WIDE, termsString);
         }
         return NO_TERMS;
     }
 
-    public static void setTermsOfUseApproved(ViewContext ctx, @Nullable Project project, boolean approved)
+    public static void setTermsOfUseApproved(ViewContext ctx, @NotNull Container termsContainer)
     {
-        HttpSession session = ctx.getRequest().getSession(false);
-        if (null == session && !approved)
-            return;
-        session = ctx.getRequest().getSession(true);
+        setTermsOfUseApprovedInSession(ctx, termsContainer);
+        User user = ctx.getUser();
+        if (!user.isGuest() && AppProps.getInstance().getTermsOfUseFrequencySeconds() > 0)
+        {
+            WritablePropertyMap map = PropertyManager.getWritableProperties(ctx.getUser(), termsContainer, LAST_TERMS_ACCEPTANCE, true);
+            map.put(DATE, Instant.now().toString());
+            map.save();
+            LOG.info("Saving terms acceptance timestamp for {} in {}", ctx.getUser(), termsContainer);
+        }
+    }
 
+    private static void setTermsOfUseApprovedInSession(ViewContext ctx, @NotNull Container termsContainer)
+    {
+        HttpSession session = ctx.getRequest().getSession(true);
         synchronized (SessionHelper.getSessionLock(session))
         {
-            Set<Project> termsApproved = (Set<Project>) session.getAttribute(TERMS_APPROVED_KEY);
-            if (null == termsApproved)
-            {
-                termsApproved = new HashSet<>();
-                session.setAttribute(TERMS_APPROVED_KEY, termsApproved);
-            }
-            if (approved)
-            {
-                termsApproved.add(project);
-            }
-            else
-            {
-                termsApproved.remove(project);
-            }
+            Set<Container> termsApproved = getApprovedTerms(session);
+            termsApproved.add(termsContainer);
         }
+        LOG.info("Stashing terms acceptance in session for {} in {}", ctx.getUser(), termsContainer);
     }
 
     public enum TermsOfUseType implements SafeToRenderEnum

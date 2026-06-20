@@ -230,6 +230,13 @@ public interface AppProps
     boolean isIncludeServerHttpHeader();
 
     /**
+     * Returns the terms-of-use re-acceptance frequency in seconds. 0 means require acceptance on every sign-in, which
+     * is the default. Positive value means acceptance is valid for that many seconds before the user is prompted again
+     * after next login.
+     */
+    int getTermsOfUseFrequencySeconds();
+
+    /**
      * @return List of configured external redirect hosts
      */
     @NotNull

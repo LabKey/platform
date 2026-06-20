@@ -201,6 +201,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         {
             writeable.setIncludeServerHttpHeader(Boolean.parseBoolean(value));
         }
+    },
+    termsOfUseFrequencySeconds("Require terms-of-use acceptance frequency in seconds. 0 = every sign-in, or positive number of seconds between required re-acceptance.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setTermsOfUseFrequencySeconds(Integer.parseInt(value));
+        }
     };
 
     private final static Logger LOG = LogHelper.getLogger(SiteSettingsProperties.class, "Warnings about setting properties");

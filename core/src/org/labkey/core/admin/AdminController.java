@@ -1478,6 +1478,8 @@ public class AdminController extends SpringActionController
             props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
+            props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
+
             props.save(getViewContext().getUser());
             UsageReportingLevel.reportNow();
             if (sslSettingChanged)
@@ -2369,6 +2371,7 @@ public class AdminController extends SpringActionController
 
         private String _XFrameOption;
         private boolean _includeServerHttpHeader;
+        private int _termsOfUseFrequencySeconds;
 
         public String getPipelineToolsDirectory()
         {
@@ -2598,6 +2601,16 @@ public class AdminController extends SpringActionController
         public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
         {
             _includeServerHttpHeader = includeServerHttpHeader;
+        }
+
+        public int getTermsOfUseFrequencySeconds()
+        {
+            return _termsOfUseFrequencySeconds;
+        }
+
+        public void setTermsOfUseFrequencySeconds(int termsOfUseFrequencySeconds)
+        {
+            _termsOfUseFrequencySeconds = termsOfUseFrequencySeconds;
         }
     }
 

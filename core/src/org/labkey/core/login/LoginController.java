@@ -665,7 +665,7 @@ public class LoginController extends SpringActionController
             Project termsProject = getTermsOfUseProject(form);
             boolean isGuest = getUser().isGuest();
 
-            if (!isTermsOfUseApproved(form) && !form.isApprovedTermsOfUse())
+            if (!isTermsOfUseApproved(form) && AppProps.getInstance().getTermsOfUseFrequencySeconds() == 0)
             {
                 if (null != termsProject)
                 {
@@ -699,9 +699,9 @@ public class LoginController extends SpringActionController
                 if (form.isApprovedTermsOfUse())
                 {
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(termsProject));
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
                     response.put("approvedTermsOfUse", true);
                 }
 
@@ -753,6 +753,11 @@ public class LoginController extends SpringActionController
                 response.put("CSRF", CSRFUtil.getExpectedToken(getViewContext()));
             return response;
         }
+    }
+
+    private static Container termsContainer(@Nullable Project project)
+    {
+        return WikiTermsOfUseProvider.getTermsContainer(project);
     }
 
     @SuppressWarnings("unused")
@@ -996,9 +1001,9 @@ public class LoginController extends SpringActionController
                 return false;
             }
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), project, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
             else
             {
                 errors.reject(ERROR_MSG, "Unable to determine the terms of use type from the information submitted on the form.");
@@ -1263,9 +1268,9 @@ public class LoginController extends SpringActionController
             }
 
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), project, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
 
             return true;
         }
@@ -1331,7 +1336,7 @@ public class LoginController extends SpringActionController
     private boolean isTermsOfUseApproved(AgreeToTermsForm form)
     {
         Project termsProject = getTermsOfUseProject(form);
-        return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
+        return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(getViewContext(), termsProject);
     }
 
     private static abstract class AbstractLoginForm extends ReturnUrlForm
