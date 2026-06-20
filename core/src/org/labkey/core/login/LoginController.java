@@ -684,7 +684,7 @@ public class LoginController extends SpringActionController
             Project termsProject = getTermsOfUseProject(form);
             boolean isGuest = getUser().isGuest();
 
-            if (!isTermsOfUseApproved(form) && !form.isApprovedTermsOfUse())
+            if (!form.isForceReauth() && !isTermsOfUseApproved(form) && !form.isApprovedTermsOfUse())
             {
                 if (null != termsProject)
                 {
@@ -709,8 +709,7 @@ public class LoginController extends SpringActionController
                 // expected behavior when no "ticket-signing ticket" (session, in our case) exists and a "renew" is
                 // requested, but this seems consistent with "ignore the current session" when renew is requested.
                 // Stash the reauth context in session so handleAuthentication can issue the reauth token after
-                // secondary auth completes. Session-scoped because secondary auth (Duo/TOTP) callbacks re-enter
-                // handleAuthentication without form context.
+                // primary authentication succeeds without running the full login completion flow.
                 if (form.isForceReauth())
                     AuthenticationManager.setReauthFlow(request, form.isLocal());
 
@@ -721,7 +720,7 @@ public class LoginController extends SpringActionController
                 response = new ApiSimpleResponse();
                 response.put("success", true);
 
-                if (form.isApprovedTermsOfUse())
+                if (!form.isForceReauth() && form.isApprovedTermsOfUse())
                 {
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
                         WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);

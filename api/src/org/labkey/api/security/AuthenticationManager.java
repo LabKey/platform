@@ -1605,9 +1605,8 @@ public class AuthenticationManager
     }
 
     // Session-scoped marker that a forceReauth flow is in progress. Set by LoginApiAction before primary auth and
-    // consumed by handleAuthentication after secondary auth completes, so the reauth token can be issued without
-    // replacing the existing authenticated session. Survives the round-trip to external 2FA providers (Duo, TOTP),
-    // which is essential because their validate actions call handleAuthentication without form context.
+    // consumed by handleAuthentication after primary auth succeeds, so the reauth token can be issued without
+    // replacing the existing authenticated session or running the full login completion flow.
     private record ReauthFlow(boolean local) {}
 
     private static String getReauthFlowSessionKey()
@@ -1618,14 +1617,6 @@ public class AuthenticationManager
     public static void setReauthFlow(HttpServletRequest request, boolean local)
     {
         request.getSession(true).setAttribute(getReauthFlowSessionKey(), new ReauthFlow(local));
-    }
-
-    // Used by 2FA validate actions to tell whether the already-logged-in user is mid-reauth, so they don't
-    // short-circuit to the home page and skip the reauth-token issuance in handleAuthentication.
-    public static boolean isReauthInProgress(HttpServletRequest request)
-    {
-        HttpSession session = request.getSession(false);
-        return session != null && session.getAttribute(getReauthFlowSessionKey()) != null;
     }
 
     // Clear all primary and secondary authentication results
@@ -1705,6 +1696,17 @@ public class AuthenticationManager
             }
         }
 
+        // As per 21 CFR Part 11, reauth only requires primary credentials (email + password), so issue the token
+        // before normal login completion (secondary auth, profile-update redirects, validators, or session replacement).
+        ReauthFlow reauthFlow = (ReauthFlow)session.getAttribute(getReauthFlowSessionKey());
+        if (reauthFlow != null)
+        {
+            session.removeAttribute(getReauthFlowSessionKey());
+            URLHelper url = getAfterReauthURL(c, getLoginReturnProperties(request), primaryAuthUser);
+            setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+            return new AuthenticationResult(primaryAuthUser, url);
+        }
+
         List<AuthenticationValidator> validators = new LinkedList<>();
 
         if (primaryAuthResult.getResponse().requireSecondary())
@@ -1753,17 +1755,6 @@ public class AuthenticationManager
         LoginReturnProperties properties = getLoginReturnProperties(request);
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
-        // Reauth path: primary (and any secondary) auth has completed. Issue the one-time reauth token on the return
-        // URL and bail out *before* setAuthenticatedUser runs, so the user's existing session is preserved. The local
-        // flag distinguishes local login-page reauth (must match current session user) from CAS IdP reauth (any user).
-        ReauthFlow reauthFlow = (ReauthFlow)session.getAttribute(getReauthFlowSessionKey());
-        if (reauthFlow != null)
-        {
-            session.removeAttribute(getReauthFlowSessionKey());
-            setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
-            return new AuthenticationResult(primaryAuthUser, url);
-        }
-
         if (setSession)
         {
             // Prep the new session and set the user & authentication-related attributes
@@ -1783,6 +1774,30 @@ public class AuthenticationManager
         SecurityManager.setValidators(session, validators);
 
         return new AuthenticationResult(primaryAuthUser, url);
+    }
+
+    // Builds the URL that receives the reauth token from setReauthUser().
+    // Unlike getAfterLoginURL(), this keeps the caller's return URL even if the user needs a profile update.
+    private static URLHelper getAfterReauthURL(Container current, @Nullable LoginReturnProperties properties, @NotNull User user)
+    {
+        URLHelper returnUrl;
+
+        if (null != properties && null != properties.getReturnUrl())
+        {
+            returnUrl = properties.getReturnUrl();
+        }
+        else
+        {
+            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+            returnUrl = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
+        }
+
+        if (null != properties && null != properties.getUrlhash())
+        {
+            returnUrl.setFragment(properties.getUrlhash().replace("#", ""));
+        }
+
+        return returnUrl;
     }
 
 
