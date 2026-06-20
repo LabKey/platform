@@ -92,6 +92,10 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         SpecimenRequestActor actor = getActor(form);
         LocationImpl location = getLocation(form);
 
+        // getActor is container-scoped; null means the actorId doesn't belong to this folder
+        if (actor == null)
+            throw new NotFoundException();
+
         if (emailsToDelete != null && emailsToDelete.length > 0)
         {
             List<String> invalidEmails = new ArrayList<>();

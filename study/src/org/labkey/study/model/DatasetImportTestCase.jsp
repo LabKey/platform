@@ -114,13 +114,9 @@ public void createStudy()
         c.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), _context.getUser());
         StudyImpl s = new StudyImpl(c, this.getClass().getName());
         s.setTimepointType(TimepointType.DATE);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
-        s.setSubjectColumnName("SubjectID");
-        s.setSubjectNounPlural("Subjects");
-        s.setSubjectNounSingular("Subject");
         s.setSecurityType(SecurityType.BASIC_WRITE);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "1 Jan 2000")));
-        _studyDateBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+        _studyDateBased = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
         MvUtil.assignMvIndicators(c,
                 new String[] {"X", "Y", "Z"},
@@ -132,12 +128,9 @@ public void createStudy()
         Container c = ContainerManager.createContainer(junit, name, _context.getUser());
         StudyImpl s = new StudyImpl(c, "Junit Study");
         s.setTimepointType(TimepointType.VISIT);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
-        s.setSubjectColumnName("SubjectID");
-        s.setSubjectNounPlural("Subjects");
-        s.setSubjectNounSingular("Subject");
+        s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
         s.setSecurityType(SecurityType.BASIC_WRITE);
-        _studyVisitBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        _studyVisitBased = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
         MvUtil.assignMvIndicators(c,
                 new String[] {"X", "Y", "Z"},

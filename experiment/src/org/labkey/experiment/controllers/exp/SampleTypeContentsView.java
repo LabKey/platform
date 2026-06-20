@@ -33,6 +33,8 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.PageFlowUtil;
@@ -215,7 +217,8 @@ public class SampleTypeContentsView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
+        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
+            bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
 
         ActionButton linkToStudyButton = getLinkToStudyButton(view);
         if (linkToStudyButton != null)
