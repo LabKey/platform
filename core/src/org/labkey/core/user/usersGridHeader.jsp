@@ -21,35 +21,6 @@
 <%@ page import="org.labkey.core.user.LimitActiveUsersSettings" %>
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    String inactiveCaption;
-    String temporaryCaption;
-    UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
-    ActionURL inactiveUrl = getViewContext().cloneActionURL();
-    ActionURL temporaryUrl = getViewContext().cloneActionURL();
-
-    if (!form.isInactive())
-    {
-        inactiveUrl.addParameter("inactive", true);
-        inactiveCaption = "include inactive users";
-    }
-    else
-    {
-        inactiveUrl.deleteParameter("inactive");
-        inactiveCaption = "hide inactive users";
-    }
-
-    if (!form.isTemporary())
-    {
-        temporaryUrl.addParameter("temporary", true);
-        temporaryCaption = "show temporary accounts";
-    }
-    else
-    {
-        temporaryUrl.deleteParameter("temporary");
-        temporaryCaption = "show all accounts";
-    }
-%>
 <table>
     <%
         LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
@@ -64,6 +35,35 @@
 
         if (getContainer().isRoot())
         {
+            UserController.ShowUsersForm form = (UserController.ShowUsersForm) HttpView.currentModel();
+
+            String inactiveCaption;
+            String temporaryCaption;
+
+            ActionURL inactiveUrl = getViewContext().cloneActionURL();
+            ActionURL temporaryUrl = getViewContext().cloneActionURL();
+
+            if (!form.isInactive())
+            {
+                inactiveUrl.addParameter("inactive", true);
+                inactiveCaption = "include inactive users";
+            }
+            else
+            {
+                inactiveUrl.deleteParameter("inactive");
+                inactiveCaption = "hide inactive users";
+            }
+
+            if (!form.isTemporary())
+            {
+                temporaryUrl.addParameter("temporary", true);
+                temporaryCaption = "show temporary accounts";
+            }
+            else
+            {
+                temporaryUrl.deleteParameter("temporary");
+                temporaryCaption = "show all accounts";
+            }
     %>
 
     <tr><td><%=link(inactiveCaption, inactiveUrl)%></td></tr>
