@@ -137,7 +137,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
@@ -192,7 +191,6 @@ public class AssayController extends SpringActionController
         AssayResultsAction.class,
         AssayRunDetailsAction.class,
         AssayRunsAction.class,
-        DeleteAction.class,
         DeleteProtocolAction.class,
         DesignerAction.class,
         GetAssayBatchAction.class,
@@ -425,7 +423,6 @@ public class AssayController extends SpringActionController
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
         links.put("designCopy", urlProvider.getDesignerURL(c, protocol, true, null));
-        links.put("designDelete", urlProvider.getDeleteDesignURL(protocol));
         links.put("designEdit", urlProvider.getDesignerURL(c, protocol, false, null));
         links.put("import", provider.getImportURL(c, protocol));
         links.put("results", urlProvider.getAssayResultsURL(c, protocol));
@@ -1146,12 +1143,6 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDeleteDesignURL(ExpProtocol protocol)
-        {
-            return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
-        }
-
-        @Override
         public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)
         {
             ActionURL url = new ActionURL(PipelineDataCollectorRedirectAction.class, container);
@@ -1376,6 +1367,9 @@ public class AssayController extends SpringActionController
                 ExpRun expRun = ExperimentService.get().getExpRun(NumberUtils.toInt(run));
                 if (expRun != null)
                 {
+                    // Kanban #1924 assure permissions to the run's container, which might be different from the current container
+                    if (!expRun.getContainer().hasPermission(getUser(), AssayReadPermission.class))
+                        throw new UnauthorizedException("User does not have " + AssayReadPermission.class.getSimpleName() + " for run " + run);
                     response.put("success", true);
                     DataState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
                     if (state != null)
@@ -1524,6 +1518,14 @@ public class AssayController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getRuns() != null && _firstRun != null)
             {
+                for (Long id : form.getRuns())
+                {
+                    // Support cross-container operations but confirm permission
+                    ExpRun run = ExperimentService.get().getExpRun(id);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+                        throw new NotFoundException("Run " + id + " not found in this folder");
+                }
+
                 DataState state = DataStateManager.getInstance().getStateForRowId(_firstRun.getProtocol().getContainer(), form.getState());
                 if (state != null)
                     AssayQCService.getProvider().setQCStates(_firstRun.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
@@ -1681,6 +1683,11 @@ public class AssayController extends SpringActionController
 
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
+            if (protocol == null)
+                throw new NotFoundException("Protocol with id " + form.getProtocolId() + " not found.");
+            // Kanban #1924: Assure permission in the protocol's container, which may be different than the current container
+            if (!protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("User does not have permission to read protocol " + protocol.getName());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
                 throw new NotFoundException("No provider found for protocol " + form.getProtocolId());

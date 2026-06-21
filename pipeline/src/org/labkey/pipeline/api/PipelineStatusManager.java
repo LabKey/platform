@@ -690,7 +690,7 @@ public class PipelineStatusManager
 
                 if (!statusSet)
                 {
-                    // Fall back to updating the simple bean in the case where can can't deserialize the job itself
+                    // Fall back to updating the simple bean in the case where we can't deserialize the job itself
                     PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
                     if (sf != null)
                     {

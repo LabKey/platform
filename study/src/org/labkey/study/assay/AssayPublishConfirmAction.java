@@ -61,7 +61,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
             if (_protocol == null)
             {
                 if (getRowId() != null)
-                    _protocol = ExperimentService.get().getExpProtocol(getRowId().intValue());
+                    _protocol = ExperimentService.get().getExpProtocol(getRowId());
                 else
                     throw new NotFoundException("Protocol ID not specified.");
 
