@@ -158,6 +158,12 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         }
 
         @Override
+        public boolean canMove(User user)
+        {
+            return hasAccess(user);
+        }
+
+        @Override
         public boolean shouldIndex()
         {
             return false;
