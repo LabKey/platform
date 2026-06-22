@@ -49,7 +49,7 @@
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
     <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=nameToShow%>" isRequired="true"/>
     <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%=url%>" forceSmallContext="true"
-                  contextContent="Enter the server URL, including the protocol and any context path. Use https:// so credentials are encrypted in transit; for example, https://example.labkey.com/labkey. http:// is accepted but sends the configured user and password in cleartext."
+                  contextContent="Enter the server URL, including the protocol and any context path. As an example, https:://localhost:8080/labkey would be a valid name."
                   isRequired="true"/>
     <labkey:input type="text" label="User *" name="userEmail" id="userEmail" size="50" value="<%=userEmail%>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="password" id="password" size="50" isRequired="true"/>
