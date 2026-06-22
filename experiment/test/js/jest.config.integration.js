@@ -14,8 +14,8 @@ module.exports = {
     },
     moduleFileExtensions: ['js', 'ts', 'tsx'],
     moduleDirectories: ['node_modules'],
-    setupFiles: ['@labkey/test/dist/config/integration.setup.js'],
-    setupFilesAfterEnv: ['@labkey/test/dist/config/integration.setup.afterenv.js'],
+    setupFiles: ['./node_modules/@labkey/test/dist/config/integration.setup.js'],
+    setupFilesAfterEnv: ['./node_modules/@labkey/test/dist/config/integration.setup.afterenv.js'],
     testEnvironment: 'jsdom',
     testPathIgnorePatterns: ['/node_modules/'],
     transform: {
