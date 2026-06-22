@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
+import org.labkey.announcements.model.AnnouncementFullModel;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
@@ -214,7 +215,6 @@ public class AnnouncementsController extends SpringActionController
 
     public static AnnouncementModel copyEditableProps(AnnouncementModel target, AnnouncementModel source, boolean isInsert)
     {
-        if (source.getApproved() != null) target.setApproved(source.getApproved());
         if (source.getAssignedTo() != null) target.setAssignedTo(source.getAssignedTo());
         if (source.getBody() != null) target.setBody(source.getBody());
         if (source.getExpires() != null) target.setExpires(source.getExpires());
@@ -915,7 +915,7 @@ public class AnnouncementsController extends SpringActionController
         public ModelAndView getInsertUpdateView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             Permissions perm = getPermissions();
-            AnnouncementModel parent = null;
+            AnnouncementFullModel parent = null;
             Container c = getContainer();
 
             if (null != form.getParentId())
@@ -2238,7 +2238,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class ThreadViewBean
     {
-        public AnnouncementModel announcementModel;
+        public AnnouncementFullModel announcementModel;
         public String message = "";
         public Permissions perm = null;
         public boolean isResponse = false;
@@ -2259,7 +2259,7 @@ public class AnnouncementsController extends SpringActionController
             super("/org/labkey/announcements/announcementThread.jsp", new ThreadViewBean());
         }
 
-        public ThreadView(Container c, ActionURL url, AnnouncementModel ann, Permissions perm)
+        public ThreadView(Container c, ActionURL url, AnnouncementFullModel ann, Permissions perm)
         {
             this();
             init(c, ann, url, perm, true, false);
@@ -2268,11 +2268,11 @@ public class AnnouncementsController extends SpringActionController
         public ThreadView(AnnouncementForm form, Container c, ActionURL url, Permissions perm, boolean print)
         {
             this();
-            AnnouncementModel ann = findThread(c, form.getAsString("rowId"), form.getAsString("entityId"));
+            AnnouncementFullModel ann = findThread(c, form.getAsString("rowId"), form.getAsString("entityId"));
             init(c, ann, url, perm, false, print);
         }
 
-        protected void init(Container c, AnnouncementModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
+        protected void init(Container c, AnnouncementFullModel ann, URLHelper currentURL, Permissions perm, boolean isResponse, boolean print)
         {
             if (null == c || !perm.allowRead(ann))
             {
@@ -2376,7 +2376,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static @Nullable AnnouncementModel findThread(Container c, String rowIdVal, String entityId)
+    private static @Nullable AnnouncementFullModel findThread(Container c, String rowIdVal, String entityId)
     {
         int rowId = 0;
         if (rowIdVal != null)

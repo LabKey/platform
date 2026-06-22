@@ -160,26 +160,21 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
             if (form.isNew())
-            {
                 throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
-            }
 
-            ParticipantCategoryImpl category  = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
-            if (category != null)
-            {
-                form.copySpecialFields(category);
-                category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
+            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
+            if (category == null)
+                throw new NotFoundException("Unable to find category with rowId: " + form.getRowId());
 
-                resp.put("success", true);
-                resp.put("category", category.toJSON());
+            form.copySpecialFields(category);
+            category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
-                return resp;
-            }
-            else
-                throw new RuntimeException("Unable to update the category with rowId: " + form.getRowId());
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("category", category.toJSON());
+
+            return resp;
         }
     }
 
@@ -189,31 +184,26 @@ public class ParticipantGroupController extends BaseStudyController
     {
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors, Modification modification) throws Exception
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
             if (form.isNew())
-            {
                 throw new IllegalArgumentException("The specified category does not exist, you must pass in the RowId");
-            }
 
             ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getRowId());
-            if (category != null)
-            {
-                ParticipantCategoryImpl def = category;
-                form.copySpecialFields(def);
+            if (category == null)
+                throw new NotFoundException("Unable to find category with rowId: " + form.getRowId());
 
-                if (modification == Modification.ADD)
-                    category = ParticipantGroupManager.getInstance().addCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
-                else
-                    category = ParticipantGroupManager.getInstance().removeCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
+            ParticipantCategoryImpl def = category;
+            form.copySpecialFields(def);
 
-                resp.put("success", true);
-                resp.put("category", category.toJSON());
-
-                return resp;
-            }
+            if (modification == Modification.ADD)
+                category = ParticipantGroupManager.getInstance().addCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
             else
-                throw new RuntimeException("Unable to update the category with rowId: " + form.getRowId());
+                category = ParticipantGroupManager.getInstance().removeCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("category", category.toJSON());
+
+            return resp;
         }
 
     }
@@ -245,10 +235,16 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public ApiResponse execute(ParticipantCategoryImpl form, BindException errors)
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
+            // If the category does not exist or the user is unable to read the category, then return a new category.
             ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getLabel());
+            if (category == null)
+            {
+                category = new ParticipantCategoryImpl();
+                category.setContainer(getContainer().getId());
+                category.setLabel(form.getLabel());
+            }
 
+            ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("category", category.toJSON());
 
@@ -262,7 +258,6 @@ public class ParticipantGroupController extends BaseStudyController
         @Override
         public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors)
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
             Collection<ParticipantCategoryImpl> categories;
             if (form.getCategoryType() != null && form.getCategoryType().equals("manual"))
             {
@@ -274,11 +269,10 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             JSONArray defs = new JSONArray();
-
             for (ParticipantCategoryImpl pc : categories)
-            {
                 defs.put(pc.toJSON());
-            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("categories", defs);
 
@@ -295,7 +289,6 @@ public class ParticipantGroupController extends BaseStudyController
             Container c = getContainer();
             User u = getUser();
             JSONArray jsonGroups = new JSONArray();
-            ApiSimpleResponse resp = new ApiSimpleResponse();
 
             for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(c, u))
             {
@@ -303,11 +296,12 @@ public class ParticipantGroupController extends BaseStudyController
                 {
                     if (group.hasLiveFilter())
                     {
-                        jsonGroups.put(group.toJSON(false /*includeParticipants*/));
+                        jsonGroups.put(group.toJSON(false));
                     }
                 }
             }
 
+            ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
             resp.put("participantGroups", jsonGroups);
             return resp;
@@ -537,7 +531,7 @@ public class ParticipantGroupController extends BaseStudyController
             {
                 GroupType groupType = GroupType.valueOf(type);
                 Set<String> selectedParticipants = new HashSet<>();
-                switch(groupType)
+                switch (groupType)
                 {
                     case participantGroup:
                         // the api will support either requesting a specific participant category/group or all of
@@ -545,7 +539,8 @@ public class ParticipantGroupController extends BaseStudyController
                         if (form.getCategoryId() != -1)
                         {
                             ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getCategoryId());
-                            addCategory(form, category, groups);
+                            if (category != null)
+                                addCategory(form, category, groups);
                         }
                         else if (form.getGroupId() != -1)
                         {
@@ -558,6 +553,7 @@ public class ParticipantGroupController extends BaseStudyController
                                 // NOTE: This is intentional as 'personal' groups are not secured and can be shared.
                                 group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
                             }
+
                             if (group != null)
                             {
                                 ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
@@ -620,11 +616,8 @@ public class ParticipantGroupController extends BaseStudyController
         {
             if (form.isIncludePrivateGroups() || category.isShared())
             {
-                Set<String> selectedParticipants = new HashSet<>();
-
                 for (ParticipantGroup group : category.getGroups())
                 {
-                    selectedParticipants.addAll(group.getParticipantSet());
                     JSONGroup jsonGroup = new JSONGroup(group, category);
                     if (form.includeParticipantIds())
                         jsonGroup.setParticipantIds(group.getParticipantSet());
@@ -1114,16 +1107,15 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         /**
-         * Code to check whether an implicitly created category needs to be deleted so we don't accumulate orpaned list type
+         * Code to check whether an implicitly created category needs to be deleted so we don't accumulate orphaned list type
          * categories.
-         *
          */
         private void deleteImplicitCategory(Integer prevCategoryId, ParticipantCategoryImpl current) throws ValidationException
         {
             if (prevCategoryId != null)
             {
                 ParticipantCategoryImpl oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), prevCategoryId);
-                if (oldCategory.getType().equals("list") && !current.getType().equals("list"))
+                if (oldCategory != null && "list".equals(oldCategory.getType()) && !"list".equals(current.getType()))
                 {
                     ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
                 }
