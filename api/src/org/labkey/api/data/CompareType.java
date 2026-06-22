@@ -560,44 +560,6 @@ public abstract class CompareType
         }
     };
 
-    public static final CompareType IN_NS = new CompareType("Equals One Of A Member Of A Named Set", "inns", "IN", true, null, OperatorType.IN)
-    {
-        // Each compare type uses CompareClause by default
-        @Override
-        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-        {
-            String namedSet = null;
-            if (value != null && StringUtils.isNotBlank(value.toString()))
-                namedSet = value.toString();
-            return new SimpleFilter.InClause(fieldKey, namedSet, true);
-        }
-
-        @Override
-        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
-        {
-            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-        }
-    };
-
-    public static final CompareType NOT_IN_NS = new CompareType("Does Not Equal Any Members Of A Named Set", "notinns", "NOT IN", true, null, OperatorType.NOTIN)
-    {
-        // Each compare type uses CompareClause by default
-        @Override
-        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-        {
-            String namedSet = null;
-            if (value != null && StringUtils.isNotBlank(value.toString()))
-                namedSet = value.toString();
-            return new SimpleFilter.InClause(fieldKey, namedSet, true);
-        }
-
-        @Override
-        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
-        {
-            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-        }
-    };
-
     // BETWEEN is inclusive of the begin and end values
     public static final CompareType BETWEEN = new CompareType("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
     {

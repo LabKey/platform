@@ -237,7 +237,6 @@ public class VisDataRequest
         String alias;
         Boolean inNotNullSet;
         String name;
-        String nsvalues;
         String queryName;
         String axisName;
         Boolean requireLeftJoin;
@@ -395,18 +394,6 @@ public class VisDataRequest
         public Measure setIsDemographic(boolean isDemographic)
         {
             this.isDemographic = isDemographic;
-            return this;
-        }
-
-        // see QueryService.get().getNamedSet();
-        public String getNsvalues()
-        {
-            return nsvalues;
-        }
-
-        public Measure setNsvalues(String nsvalues)
-        {
-            this.nsvalues = nsvalues;
             return this;
         }
 

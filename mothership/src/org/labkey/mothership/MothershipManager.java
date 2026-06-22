@@ -35,7 +35,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
@@ -50,6 +53,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
@@ -609,18 +613,17 @@ public class MothershipManager
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
+    private static final Class<? extends Permission> ASSIGNED_TO_PERM = UpdatePermission.class;
+
+    public boolean canAssignTo(Container container, User possibleAssignee)
+    {
+        return container.hasPermission(possibleAssignee, ASSIGNED_TO_PERM);
+    }
+
     public List<User> getAssignedToList(Container container)
     {
-        List<User> projectUsers = org.labkey.api.security.SecurityManager.getProjectUsers(container.getProject());
-        List<User> list = new ArrayList<>();
-        // Filter list to only show active users
-        for (User user : projectUsers)
-        {
-            if (user.isActive())
-            {
-                list.add(user);
-            }
-        }
+        List<User> projectUsers = SecurityManager.getUsersWithPermissions(container.getProject(), Set.of(ASSIGNED_TO_PERM));
+        List<User> list = new ArrayList<>(projectUsers); // Make mutable so we can sort
         list.sort(USER_DISPLAY_NAME_COMPARATOR);
         return list;
     }
