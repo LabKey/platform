@@ -92,9 +92,10 @@ public class RemoteConnections
         }
 
         // validate the url string and connection
+        URL urlObj;
         try
         {
-            URL urlObj = new URL(url);
+            urlObj = new URL(url);
             URLConnection conn = urlObj.openConnection();
             conn.connect();
         }
@@ -114,6 +115,11 @@ public class RemoteConnections
             LOG.warn("Error connecting to remote connection URL: {}", url, e);
             errors.addError(new LabKeyError("A connection to the entered URL could not be established. " + getBriefMessage(e)));
             return false;
+        }
+
+        if (isCleartextHttpUrl(urlObj))
+        {
+            LOG.warn("Remote connection '{}' is configured with a cleartext http:// URL ({}). Credentials will be sent unencrypted. Use https:// instead.", newName, url);
         }
 
         // validate the user
@@ -162,6 +168,11 @@ public class RemoteConnections
     public static String getBriefMessage(Throwable t)
     {
         return t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
+    }
+
+    public static boolean isCleartextHttpUrl(@NotNull URL url)
+    {
+        return "http".equalsIgnoreCase(url.getProtocol());
     }
 
     public static boolean deleteRemoteConnection(RemoteConnectionForm remoteConnectionForm, Container container)
@@ -345,6 +356,15 @@ public class RemoteConnections
         {
             assertEquals("boom", getBriefMessage(new IOException("boom")));
             assertEquals("IOException", getBriefMessage(new IOException()));
+        }
+
+        @Test
+        public void testIsCleartextHttpUrl() throws MalformedURLException
+        {
+            assertTrue("http:// must be detected as cleartext", isCleartextHttpUrl(new URL("http://example.com/labkey")));
+            assertTrue("scheme match is case-insensitive", isCleartextHttpUrl(new URL("HTTP://example.com/labkey")));
+            assertFalse("https:// is encrypted", isCleartextHttpUrl(new URL("https://example.com/labkey")));
+            assertFalse("HTTPS:// is encrypted", isCleartextHttpUrl(new URL("HTTPS://example.com/labkey")));
         }
     }
 }

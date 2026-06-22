@@ -35,14 +35,21 @@
     String connectionKind = remoteConnectionForm.getConnectionKind();
     boolean editConnection = StringUtils.isNotEmpty(name);
     String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
+    boolean usingCleartextHttp = url != null && url.toLowerCase().startsWith("http://");
 %>
 <p><%=h(RemoteConnections.MANAGEMENT_PAGE_INSTRUCTIONS)%></p>
 <labkey:errors/>
+<% if (usingCleartextHttp) { %>
+<p class="labkey-error">
+    Warning: this connection uses an http:// URL. The configured user and password will be sent to the remote
+    server in cleartext on every ETL run. Use https:// so credentials are encrypted in transit.
+</p>
+<% } %>
 <br>
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
     <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=nameToShow%>" isRequired="true"/>
     <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%=url%>" forceSmallContext="true"
-                  contextContent="Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name."
+                  contextContent="Enter the server URL, including the protocol and any context path. Use https:// so credentials are encrypted in transit; for example, https://example.labkey.com/labkey. http:// is accepted but sends the configured user and password in cleartext."
                   isRequired="true"/>
     <labkey:input type="text" label="User *" name="userEmail" id="userEmail" size="50" value="<%=userEmail%>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="password" id="password" size="50" isRequired="true"/>
