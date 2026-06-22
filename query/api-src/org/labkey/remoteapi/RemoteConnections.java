@@ -117,11 +117,6 @@ public class RemoteConnections
             return false;
         }
 
-        if (isCleartextHttpUrl(urlObj))
-        {
-            LOG.warn("Remote connection '{}' is configured with a cleartext http:// URL ({}). Credentials will be sent unencrypted. Use https:// instead.", newName, url);
-        }
-
         // validate the user
         try
         {
@@ -161,6 +156,12 @@ public class RemoteConnections
         if (CONNECTION_KIND_QUERY.equals(connectionKind))
             singleConnectionMap.put(RemoteConnections.FIELD_CONTAINER, folderPath);
         singleConnectionMap.save();
+
+        if (isCleartextHttpUrl(urlObj))
+        {
+            LOG.warn("Remote connection '{}' is configured with a cleartext http:// URL ({}). Credentials will be sent unencrypted. Use https:// instead.", newName, url);
+        }
+
         return true;
     }
 
