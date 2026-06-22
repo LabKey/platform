@@ -192,5 +192,4 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
 
         return qcStateHtml.getHtmlString();
     }
-
 }

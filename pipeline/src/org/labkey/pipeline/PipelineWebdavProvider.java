@@ -107,6 +107,14 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         }
 
         @Override
+        public boolean canMove(User user)
+        {
+            // The pipeline folder node is never deletable (see canDelete()), so it must not be movable either.
+            // FileSystemResource.canMove() relaxes only the assay-import restriction, not this categorical block.
+            return false;
+        }
+
+        @Override
         protected boolean hasAccess(User user)
         {
             return user.hasRootPermission(AdminOperationsPermission.class) || !SecurityManager.getPermissions(c, user, Set.of()).isEmpty();
