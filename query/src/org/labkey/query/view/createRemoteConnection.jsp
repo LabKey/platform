@@ -46,6 +46,7 @@
         }
         catch (MalformedURLException ignored)
         {
+            // Malformed URLs are surfaced by server-side validation in createOrEditRemoteConnection; suppress here.
         }
     }
 %>

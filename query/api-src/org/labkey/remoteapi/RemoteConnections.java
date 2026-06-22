@@ -159,7 +159,8 @@ public class RemoteConnections
 
         if (isCleartextHttpUrl(urlObj))
         {
-            LOG.warn("Remote connection '{}' is configured with a cleartext http:// URL ({}). Credentials will be sent unencrypted. Use https:// instead.", newName, url);
+            // Log the host only — interpolating the full URL could leak credentials embedded in userinfo (e.g., http://user:pass@host/).
+            LOG.warn("Remote connection '{}' is configured with a cleartext http:// URL (host: {}). Credentials will be sent unencrypted. Use https:// instead.", newName, urlObj.getHost());
         }
 
         return true;
