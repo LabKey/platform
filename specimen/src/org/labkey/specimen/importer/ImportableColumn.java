@@ -24,7 +24,7 @@ public class ImportableColumn
     private final boolean _maskOnExport;
     private final boolean _unique;
     private final int _size;
-    private final Class _javaClass;
+    private final Class<?> _javaClass;
     private final JdbcType _jdbcType;
     private Object _defaultValue = null;
 
@@ -88,7 +88,7 @@ public class ImportableColumn
     }
 
     // Can't use standard JdbcType.valueOf() method since this uses contains()
-    private static Class determineJavaType(String dbType)
+    private static Class<?> determineJavaType(String dbType)
     {
         if (dbType.contains(ImportTypes.DATETIME_TYPE))
             throw new IllegalStateException("Java types for DateTime/Timestamp columns should be previously initialized.");
@@ -148,7 +148,7 @@ public class ImportableColumn
         return _unique;
     }
 
-    public Class getJavaClass()
+    public Class<?> getJavaClass()
     {
         return _javaClass;
     }

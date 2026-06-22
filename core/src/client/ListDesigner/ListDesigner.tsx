@@ -104,8 +104,8 @@ export class ListDesigner extends React.Component<Props, State> {
 
     navigate = async (returnUrlProvider: () => Promise<string>, model?: ListModel): Promise<void> => {
         this._dirty = false;
-
-        window.location.href = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        const redirectUrl = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
     };
 
     getReturnUrl = (model?: ListModel): string => {

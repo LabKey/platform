@@ -81,9 +81,8 @@ class IssuesListDesigner extends React.Component<{}, State> {
 
     navigate = (defaultUrl: string) => {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
+        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
     };
 
     onComplete = (model: IssuesListDefModel) => {

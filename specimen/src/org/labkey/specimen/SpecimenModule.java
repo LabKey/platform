@@ -72,6 +72,7 @@ import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.query.SpecimenPivotByDerivativeType;
 import org.labkey.specimen.query.SpecimenPivotByPrimaryType;
 import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
@@ -332,7 +333,9 @@ public class SpecimenModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            SpecimenImporter.TestCase.class
+            SpecimenImporter.TestCase.class,
+            SpecimenRequestRequirementProvider.ContainerScopingTestCase.class,
+            SpecimenController.ContainerScopingTestCase.class
         );
     }
 }

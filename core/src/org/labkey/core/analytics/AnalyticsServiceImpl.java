@@ -50,6 +50,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 {
     private static final String SEPARATOR = ",";
     private static final String GOOGLE_TAG_MANAGER_URL = "https://www.googletagmanager.com";
+    private static final String GOOGLE_URL = "https://www.google.com";
     private static final String ANALYTICS_CSP_KEY = AnalyticsServiceImpl.class.getName();
 
     public static AnalyticsServiceImpl get()
@@ -123,8 +124,9 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Connection, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
-            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Image, "https://www.googletagmanager.com");
+            // Per https://developers.google.com/tag-platform/security/guides/csp (plus other variants we have seen in the wild)
+            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Connection, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com", GOOGLE_URL);
+            ContentSecurityPolicyFilter.registerAllowedSources(ANALYTICS_CSP_KEY, Directive.Image, GOOGLE_TAG_MANAGER_URL);
         }
     }
 

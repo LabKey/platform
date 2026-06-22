@@ -28,6 +28,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
@@ -79,6 +82,7 @@ import org.labkey.api.issues.IssuesDomainKindProperties;
 import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
@@ -99,11 +103,15 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.CSRFUtil;
@@ -114,6 +122,7 @@ import org.labkey.api.util.InputBuilder;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -145,6 +154,7 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1650,9 +1660,41 @@ public class IssuesController extends SpringActionController
         @Override
         public ApiResponse execute(MoveIssueForm form, BindException errors)
         {
+            if (form.getIssueIds() == null || form.getIssueIds().length == 0)
+                throw new NotFoundException("No issues specified to move");
+
+            // The client supplies the destination; resolve it and validate it per issue below
+            Container dest = form.getTargetContainerId() != null ? ContainerManager.getForId(form.getTargetContainerId()) : null;
+            if (dest == null)
+                throw new NotFoundException("Target container not found");
+
+            if (!dest.hasPermission(getUser(), AdminPermission.class))
+                throw new UnauthorizedException();
+
+            List<Integer> issueIds = Arrays.asList(form.getIssueIds());
+            for (Integer issueId : issueIds)
+            {
+                // getIssue(null, ...) resolves by global id, so each issue and the chosen destination must be
+                // authorized explicitly rather than relying on the current container's Admin grant.
+                IssueObject issue = IssueManager.getIssue(null, getUser(), issueId);
+                if (issue == null)
+                    throw new NotFoundException("Issue not found: " + issueId);
+
+                Container source = issue.getContainerFromId();
+                // Moving an issue removes it from its source folder, so require Admin there.
+                if (source == null || !source.hasPermission(getUser(), AdminPermission.class))
+                    throw new UnauthorizedException();
+
+                // The destination must be a legitimate move target for this issue's list definition. This also
+                // confirms the user can access the matching issue list in the destination.
+                IssueListDef issueListDef = IssueManager.getIssueListDef(issue);
+                if (issueListDef == null || !IssueManager.getMoveDestinationContainers(source, getUser(), issueListDef.getName()).contains(dest))
+                    throw new UnauthorizedException();
+            }
+
             try
             {
-                IssueManager.moveIssues(getUser(), Arrays.asList(form.getIssueIds()), ContainerManager.getForId(form.getTargetContainerId()));
+                IssueManager.moveIssues(getUser(), issueIds, dest);
             }
             catch (IOException x)
             {
@@ -1710,6 +1752,13 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    private static List<Group> getSelectableAssignmentGroups(Container c, User user)
+    {
+        return SecurityManager.getGroups(c.getProject(), true).stream()
+                .filter(group -> !group.isGuests() && (!group.isUsers() || user.hasRootAdminPermission()))
+                .toList();
+    }
+
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
     public static class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
@@ -1719,7 +1768,7 @@ public class IssuesController extends SpringActionController
         {
             List<UserGroupForm> groups = new ArrayList<>();
 
-            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
+            getSelectableAssignmentGroups(getContainer(), getUser()).forEach(group -> {
                 String displayText = (group.isProjectGroup() ? "" : "Site: ") + group.getName();
 
                 UserGroupForm userGroups = new UserGroupForm();
@@ -1743,8 +1792,11 @@ public class IssuesController extends SpringActionController
 
             if (null != form.getGroupId())
             {
+                // ensure group is in scope for the container
                 Group group = SecurityManager.getGroup(form.getGroupId());
-                if (group != null)
+                boolean inScope = group != null && getSelectableAssignmentGroups(getContainer(), getUser())
+                        .stream().anyMatch(g -> g.getUserId() == group.getUserId());
+                if (inScope)
                 {
                     for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
                     {
@@ -2355,6 +2407,161 @@ public class IssuesController extends SpringActionController
         public void setIssueId(int issueId)
         {
             this.issueId = issueId;
+        }
+    }
+
+    public static class MoveActionContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testMoveRequiresSourceAdmin() throws Exception
+        {
+            // Admin in the destination only
+            // Positive control is in IssuesTest.moveIssueTest().
+            assertCrossContainerMoveRejected(MoverScope.DESTINATION);
+        }
+
+        @Test
+        public void testMoveRequiresDestinationAdmin() throws Exception
+        {
+            // Admin in the source only: driving the action through the source folder gets past @RequiresPermission and
+            // the source-admin guard, so the move's outcome turns solely on the destination-admin guard -> 403.
+            assertCrossContainerMoveRejected(MoverScope.SOURCE);
+        }
+
+        private enum MoverScope { SOURCE, DESTINATION }
+
+        /**
+         * Create a source and destination folder, put an issue in the source (owned by the site admin), then attempt to
+         * move it as a caller who is a folder admin in exactly one of the two folders ({@code moverScope}).
+         */
+        private void assertCrossContainerMoveRejected(MoverScope moverScope) throws Exception
+        {
+            User admin = getAdmin();
+            Container source = createContainer("Source"); // the issue lives here
+            Container dest = createContainer("Dest");
+
+            ensureIssuesEnabled(source);
+
+            // Create an issue in the source folder (as the site admin)
+            IssueObject issue = new IssueObject();
+            issue.open(source, admin);
+            issue.setAssignedTo(admin.getUserId());
+            issue.setTitle("Scoping test issue");
+            issue.setPriority("3");
+            issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            ObjectFactory.Registry.getFactory(IssueObject.class).toMap(issue, issue.getProperties());
+            IssueManager.saveIssue(admin, source, issue);
+            int issueId = issue.getIssueId();
+
+            // A folder admin in exactly one of the two folders; drive the action through that folder
+            Container moverFolder = moverScope == MoverScope.SOURCE ? source : dest;
+            User mover = createUserInRole(moverFolder, FolderAdminRole.class);
+            // Make them a reader in the other folder
+            grantRole(mover, moverScope == MoverScope.SOURCE ? dest : source, ReaderRole.class);
+
+            ActionURL url = new ActionURL(MoveAction.class, moverFolder)
+                    .addParameter("issueIds", String.valueOf(issueId))
+                    .addParameter("targetContainerId", dest.getId());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, mover));
+
+            // The issue must remain in its source container
+            assertNotNull("Issue should still exist in its source folder", IssueManager.getIssue(source, admin, issueId));
+        }
+
+        private static void ensureIssuesEnabled(Container c)
+        {
+            Module issueModule = ModuleLoader.getInstance().getModule(IssuesModule.NAME);
+            Set<Module> activeModules = c.getActiveModules();
+            if (!activeModules.contains(issueModule))
+            {
+                Set<Module> newActiveModules = new HashSet<>(activeModules);
+                newActiveModules.add(issueModule);
+                c.setActiveModules(newActiveModules);
+            }
+            if (IssueManager.getIssueListDef(c, IssueListDef.DEFAULT_ISSUE_LIST_NAME) == null)
+            {
+                IssueListDef def = new IssueListDef();
+                def.setName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setLabel(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+                def.setKind(IssueDefDomainKind.NAME);
+                def.beforeInsert(TestContext.get().getUser(), c.getId());
+                def.save(TestContext.get().getUser());
+            }
+        }
+    }
+
+    /**
+     * GitHub Issue #1243 regression test.
+     */
+    public static class GetUsersForGroupScopingTestCase extends AbstractContainerScopingTest
+    {
+        private static final String PROJECT_A = "IssuesGroupScopingA";
+        private static final String PROJECT_B = "IssuesGroupScopingB";
+
+        private Container _projectA;
+        private Group _groupA;
+        private Group _groupB;
+        private User _member;
+
+        @Before
+        public void setup() throws Exception
+        {
+            deleteProjects();
+            User admin = getAdmin();
+            _projectA = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_A, admin);
+            Container projectB = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_B, admin);
+
+            // Security groups must be associated with a project, so each group's container is its owning project.
+            _groupA = SecurityManager.createGroup(_projectA, "ScopingGroupA", admin);
+            _groupB = SecurityManager.createGroup(projectB, "ScopingGroupB", admin);
+
+            // A user who can be assigned issues in project A (UpdatePermission via Editor) and is a member of both groups.
+            _member = createUserInRole(_projectA, EditorRole.class);
+            SecurityManager.addMember(_groupA, _member);
+            SecurityManager.addMember(_groupB, _member);
+        }
+
+        @After
+        public void tearDown()
+        {
+            deleteProjects();
+        }
+
+        @Test
+        public void doesNotEnumerateAnotherProjectsGroupMembers() throws Exception
+        {
+            // group B is in a different project from the source request.
+            String content = requestUsersForGroup(_projectA, _groupB).getContentAsString();
+            assertFalse("A group id from another project must not enumerate that group's members through this folder",
+                    content.contains("\"userId\" : " + _member.getUserId()));
+        }
+
+        @Test
+        public void enumeratesOwnProjectGroupMembers() throws Exception
+        {
+            // Control: the request project's own group resolves in scope and returns its members.
+            String content = requestUsersForGroup(_projectA, _groupA).getContentAsString();
+            assertTrue("An in-project group id must enumerate its members",
+                    content.contains("\"userId\" : " + _member.getUserId()));
+        }
+
+        private MockHttpServletResponse requestUsersForGroup(Container project, Group group) throws Exception
+        {
+            ActionURL url = new ActionURL(GetUsersForGroupAction.class, project)
+                    .addParameter("groupId", group.getUserId());
+            return get(url, getAdmin());
+        }
+
+        private void deleteProjects()
+        {
+            User admin = getAdmin();
+            for (String name : new String[]{PROJECT_A, PROJECT_B})
+            {
+                Container c = ContainerManager.getForPath("/" + name);
+                if (c != null)
+                    ContainerManager.deleteAll(c, admin);
+            }
+            _projectA = null;
         }
     }
 }

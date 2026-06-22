@@ -507,27 +507,38 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    // Shared access checks for canDelete() and canMove(): Delete permission plus a writable file on disk.
+    // Deliberately does NOT apply the "imported by an assay" restriction, which is specific to outright
+    // deletion - a file that has been imported may still be relocated within the file root.
+    private boolean hasDeletePermissionAndWritableFile(User user, boolean forDelete, @Nullable List<String> message)
+    {
+        if (!super.canDelete(user, forDelete, message) || !hasFileSystem())
+            return false;
+        File f = getFile();
+        if (null == f)
+            return false;
+        if (!f.canWrite())
+        {
+            SecurityLogger.log("File.canWrite()==false",user,null,false);
+            if (forDelete)
+            {
+                if (null != message)
+                    message.add("File is not writable on server");
+                _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            }
+            return false;
+        }
+        return true;
+    }
+
+
     @Override
     public boolean canDelete(User user, boolean forDelete, @Nullable List<String> message)
     {
         try
         {
-            if (!super.canDelete(user, forDelete, message) || !hasFileSystem())
+            if (!hasDeletePermissionAndWritableFile(user, forDelete, message))
                 return false;
-            File f = getFile();
-            if (null == f)
-                return false;
-            if (!f.canWrite())
-            {
-                SecurityLogger.log("File.canWrite()==false",user,null,false);
-                if (forDelete)
-                {
-                    if (null != message)
-                        message.add("File is not writable on server");
-                    _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
-                }
-                return false;
-            }
             // can't delete if already processed
             if (!getActions(user).isEmpty())
             {
@@ -543,6 +554,15 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
+
+    @Override
+    public boolean canMove(User user)
+    {
+        // A MOVE removes the file from its source location, so it requires Delete permission and a writable
+        // file. Unlike canDelete(), it does NOT require the file to be eligible for outright deletion: a file
+        // that has been imported by an assay may still be relocated within the file root.
+        return hasDeletePermissionAndWritableFile(user, false, null);
+    }
 
     @Override
     public boolean canRename(User user, boolean forRename)
