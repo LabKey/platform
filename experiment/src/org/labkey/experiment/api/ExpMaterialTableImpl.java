@@ -1378,13 +1378,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         });
     }
 
-    /** Drop the cached materialized helper for this table's sample type so the next read rebuilds (or uses the live join). */
-    void uncacheMaterializedView()
-    {
-        if (null != _ss)
-            _materializedQueries.remove(_ss.getLSID());
-    }
-
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
     private @Nullable SQLFragment getMaterializedSQL()
     {
