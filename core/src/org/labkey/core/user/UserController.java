@@ -816,10 +816,7 @@ public class UserController extends SpringActionController
             VBox users = new VBox();
             users.setTitle("Users");
             users.setFrame(WebPartView.FrameType.PORTAL);
-
-            JspView<ShowUsersForm> toggleInactiveView = new JspView<>("/org/labkey/core/user/toggleInactive.jsp", form);
-
-            users.addView(toggleInactiveView);
+            users.addView(new JspView<>("/org/labkey/core/user/usersGridHeader.jsp", form));
             users.addView(createQueryView(form, errors, false, "Users"));
 
             return users;
