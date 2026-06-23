@@ -12,6 +12,7 @@ import {
     AssayPickerTabs,
     GENERAL_ASSAY_PROVIDER_NAME,
     App as LabKeyApp,
+    redirect,
     useServerContext,
 } from '@labkey/components';
 
@@ -58,7 +59,7 @@ const AssayTypeSelect = memo(() => {
     const tab = useMemo(() => ActionURL.getParameter('tab'), []);
 
     const onCancel = useCallback(() => {
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+        redirect(returnUrl || ActionURL.buildURL('project', 'begin'));
     }, [returnUrl]);
 
     const onChange = useCallback((model: AssayPickerSelectionModel) => {
