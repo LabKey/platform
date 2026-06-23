@@ -70,6 +70,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.InputBuilder;
@@ -939,7 +940,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             }
             else
             {
-                sb.append(label);
+                // GitHub Kanban #1946: encode the label (a DataClass name); the if-branch above already encodes via LinkBuilder.simpleLink.
+                sb.append(PageFlowUtil.filter(label));
             }
 
             sb.append("</span> ");
