@@ -1923,8 +1923,9 @@ public class MothershipController extends SpringActionController
         public void testUpdateStackTraceContainerScoping() throws Exception
         {
             User admin = getAdmin();
-            Container folderA = createContainer("A");
-            Container folderB = createContainer("B");
+            MothershipModule module = ModuleLoader.getInstance().getModule(MothershipModule.class);
+            Container folderA = createContainer("A", module);
+            Container folderB = createContainer("B", module);
 
             // An exception stack trace that lives in folder B (StackTraceHash is derived from the stack trace text)
             ExceptionStackTrace st = new ExceptionStackTrace();
