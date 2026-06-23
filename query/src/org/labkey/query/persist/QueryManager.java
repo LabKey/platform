@@ -69,6 +69,7 @@ import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
+import org.labkey.query.audit.QueryExportAuditProvider;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.net.URISyntaxException;
@@ -1064,19 +1065,72 @@ public class QueryManager
                 Map<String, Object> statsMap = bag.uniqueSet().stream()
                         .collect(Collectors.toMap(Function.identity(), bag::getCount));
 
-                return Map.of("externalDatasources", statsMap,
+                Map<String, Object> metrics = new HashMap<>();
+                metrics.put("externalDatasources", statsMap);
+                metrics.put(
                         "customViewCounts",
                         Map.of(
                                 "DataClasses", getSchemaCustomViewCounts("exp.data"),
                                 "SampleTypes", getSchemaCustomViewCounts("samples"),
                                 "Assays", getSchemaCustomViewCounts("assay"),
                                 "Inventory", getSchemaCustomViewCounts("inventory")
-                        ),
-                        "customViewWithLineageColumn", getLineageCustomViewMetrics(),
-                        "queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric()
+                        )
                 );
+                metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics());
+                metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric());
+
+                Map<String, Object> exportTypeCounts = getExportTypeCountsMetric();
+                if (exportTypeCounts != null)
+                    metrics.put("exportTypeCounts", exportTypeCounts);
+                return metrics;
             });
         }
+    }
+
+    // Issue #1179
+    private static Map<String, Object> getExportTypeCountsMetric()
+    {
+        User adminUser = User.getAdminServiceUser();
+        UserSchema schema = AuditLogService.getAuditLogSchema(adminUser, ContainerManager.getRoot());
+        Map<String, Object> counts = new HashMap<>();
+        if (schema != null)
+        {
+            DbSchema dbSchema = schema.getDbSchema();
+            if (!dbSchema.getSqlDialect().isPostgreSQL())
+                return null; // deliberately not reporting metrics from SQL Server
+            TableInfo table = schema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT, new ContainerFilter.AllFolders(adminUser));
+            if (table != null)
+            {
+                SQLFragment sql = new SQLFragment("SELECT COUNT(*) as ExportCount, Comment FROM ").append(table, "t")
+                        .append(" GROUP BY Comment");
+
+                new SqlSelector(dbSchema, sql)
+                        .getMapCollection().forEach(row -> {
+                            String comment = (String) row.get("Comment");
+                            if (comment == null)
+                                return;
+                            if (comment.startsWith("Exported to "))
+                                comment = comment.substring("Exported to ".length());
+                            if (comment.startsWith("Exported "))
+                                comment = comment.substring("Exported ".length());
+                            counts.put(comment, row.get("ExportCount"));
+                        });
+
+                // This is an approximation of the multi-tab export count. We record an audit log for each tab, and
+                // they are all likely to have the same timestamp. Not exact, but perhaps good enough for current purposes.
+                sql = new SQLFragment("SELECT COUNT(*) FROM (SELECT *\n" +
+                        "                      FROM (SELECT COUNT(*) as count, DATE_TRUNC('second', Created) as created, CreatedBy\n" +
+                        "                            FROM ").append(table, "t").append("\n" +
+                        "                            WHERE comment = 'Exported to Excel'\n" +
+                        "                            AND CreatedBy IS NOT NULL\n" +
+                        "                            GROUP BY CreatedBy, DATE_TRUNC('second', created)\n" +
+                        "                            ) AS subquery\n" +
+                        "                      WHERE subquery.count > 1)");
+                counts.put("Excel multi-tab", new SqlSelector(dbSchema, sql)
+                        .getObject(Long.class));
+            }
+        }
+        return counts;
     }
 
     private static Map<String, Object> getCalculatedFieldsCountsMetric()

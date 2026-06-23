@@ -15,10 +15,13 @@
  */
 package org.labkey.api.security.permissions;
 
+import jakarta.servlet.http.HttpServletResponse;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -33,8 +36,11 @@ import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Base class for "container scoping" (a.k.a. broken-object-level-authorization / BOLA / IDOR) integration tests. These
@@ -56,6 +62,7 @@ import java.util.Map;
 public abstract class AbstractContainerScopingTest extends Assert
 {
     private static final Map<String, Object> FORM_HEADERS = Map.of("Content-Type", "application/x-www-form-urlencoded");
+    private static final Map<String, Object> JSON_HEADERS = Map.of("Content-Type", "application/json");
 
     private final List<Container> _containers = new ArrayList<>();
     private final List<User> _users = new ArrayList<>();
@@ -71,11 +78,33 @@ public abstract class AbstractContainerScopingTest extends Assert
      * automatic cleanup. Callers pass a short local name (e.g. "A"/"B"/"Source"); the class name is prepended so two
      * test classes can both ask for "A" without colliding.
      */
-    protected Container createContainer(String name)
+    protected Container createContainer(String name, org.labkey.api.module.Module... enabledModules)
     {
         Container junit = JunitUtil.getTestContainer();
-        Container c = ContainerManager.ensureContainer(junit.getParsedPath().append(getClass().getSimpleName() + "-" + name, true), getAdmin());
+        // Use the fully-qualified class name, not getSimpleName(): the nested test class is named
+        // "ContainerScopingTestCase" in nearly every controller, so getSimpleName() would give them all the SAME
+        // /_junit child path and they would share fixtures (and collide on unique constraints across runs). Sanitize
+        // to a valid folder name, and force-delete any fixture an interrupted prior run left behind so each run starts
+        // from a clean container even when a previous @After could not complete.
+        String prefix = getClass().getName().replaceAll("[^A-Za-z0-9]", "_");
+        var path = junit.getParsedPath().append(prefix + "-" + name, true);
+        Container existing = ContainerManager.getForPath(path);
+        if (existing != null)
+            ContainerManager.deleteAll(existing, getAdmin());
+        Container c = ContainerManager.ensureContainer(path, getAdmin());
+        activateModules(c, enabledModules);
         _containers.add(c);
+        return c;
+    }
+
+    protected Container activateModules(Container c, Module... enabledModules)
+    {
+        if (enabledModules.length > 0)
+        {
+            Set<org.labkey.api.module.Module> m = new HashSet<>(c.getActiveModules());
+            Collections.addAll(m, enabledModules);
+            c.setActiveModules(m, getAdmin());
+        }
         return c;
     }
 
@@ -123,8 +152,14 @@ public abstract class AbstractContainerScopingTest extends Assert
         return ViewServlet.POST(url, user, FORM_HEADERS, null);
     }
 
+    /** Dispatch a JSON POST to a {@code @Marshal(Jackson)} API action, with {@code body} supplied as the request body. */
+    protected MockHttpServletResponse postJson(ActionURL url, User user, JSONObject body) throws Exception
+    {
+        return ViewServlet.POST(url, user, JSON_HEADERS, body.toString());
+    }
+
     /** Assert that a dispatched response has the expected HTTP status code. */
-    protected void assertStatus(int expected, MockHttpServletResponse response)
+    protected void assertStatus(int expected, HttpServletResponse response)
     {
         assertEquals("Unexpected HTTP status", expected, response.getStatus());
     }

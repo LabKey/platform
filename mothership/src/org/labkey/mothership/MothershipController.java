@@ -54,6 +54,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -334,12 +335,21 @@ public class MothershipController extends SpringActionController
         @Override
         public ModelAndView getView(ServerSessionForm form, BindException errors)
         {
-            ServerSession session = form.getBean();
+            Integer serverSessionId = form.getServerSessionId();
+
+            if (serverSessionId == null)
+            {
+                throw new NotFoundException();
+            }
+
+            ServerSession session = MothershipManager.get().getServerSession(serverSessionId, getContainer());
+
             if (session == null)
             {
                 throw new NotFoundException();
             }
-            ServerSessionDetailView detailView = new ServerSessionDetailView(form);
+
+            ServerSessionDetailView detailView = new ServerSessionDetailView(session);
 
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = new QuerySettings(getViewContext(), "ExceptionReports", MothershipSchema.EXCEPTION_REPORT_WITH_STACK_TABLE_NAME);
@@ -477,22 +487,6 @@ public class MothershipController extends SpringActionController
         @Override
         public boolean handlePost(ServerInstallationForm form, BindException errors) throws Exception
         {
-            // Confirm the row belongs to the current container
-            Object pk = form.getPkVal();
-            if (pk == null)
-                throw new NotFoundException("No server installation specified");
-            int installationId;
-            try
-            {
-                installationId = Integer.parseInt(String.valueOf(pk));
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException("Invalid server installation id: " + pk);
-            }
-            if (MothershipManager.get().getServerInstallation(installationId, getContainer()) == null)
-                throw new NotFoundException("Server installation not found in this folder");
-
             form.doUpdate();
             return true;
         }
@@ -1517,8 +1511,8 @@ public class MothershipController extends SpringActionController
                         {
                             exceptionStackTrace.setGithubIssue(-1);
                         }
+                        MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
                     }
-                    MothershipManager.get().updateExceptionStackTrace(exceptionStackTrace, getUser());
                 }
                 catch (NumberFormatException e)
                 {
@@ -1602,9 +1596,9 @@ public class MothershipController extends SpringActionController
 
     public static class ServerSessionDetailView extends DetailsView
     {
-        public ServerSessionDetailView(final ServerSessionForm form)
+        public ServerSessionDetailView(final ServerSession session)
         {
-            super(new DataRegion(), form);
+            super(new DataRegion(), session.getServerSessionId());
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
             getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime,JSONMetrics");
 
@@ -1783,11 +1777,18 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    public static class ServerSessionForm extends BeanViewForm<ServerSession>
+    public static class ServerSessionForm
     {
-        public ServerSessionForm()
+        private Integer _serverSessionId = null;
+
+        public Integer getServerSessionId()
         {
-            super(ServerSession.class, MothershipManager.get().getTableInfoServerSession());
+            return _serverSessionId;
+        }
+
+        public void setServerSessionId(Integer serverSessionId)
+        {
+            _serverSessionId = serverSessionId;
         }
     }
 
@@ -1887,8 +1888,8 @@ public class MothershipController extends SpringActionController
         public void testUpdateInstallationContainerScoping() throws Exception
         {
             User admin = getAdmin();
-            Container folderA = createContainer("A");
-            Container folderB = createContainer("B");
+            Container folderA = createContainer("A", ModuleLoader.getInstance().getModule(MothershipModule.class));
+            Container folderB = createContainer("B", ModuleLoader.getInstance().getModule(MothershipModule.class));
 
             // An installation row that lives in folder B
             ServerInstallation si = new ServerInstallation();
@@ -1916,6 +1917,44 @@ public class MothershipController extends SpringActionController
                     .addParameter("Note", "updated");
             assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
             assertEquals("Note should have been updated through the row's own container", "updated", MothershipManager.get().getServerInstallation(id, folderB).getNote());
+        }
+
+        @Test
+        public void testUpdateStackTraceContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            MothershipModule module = ModuleLoader.getInstance().getModule(MothershipModule.class);
+            Container folderA = createContainer("A", module);
+            Container folderB = createContainer("B", module);
+
+            // An exception stack trace that lives in folder B (StackTraceHash is derived from the stack trace text)
+            ExceptionStackTrace st = new ExceptionStackTrace();
+            st.setContainer(folderB.getId());
+            st.setStackTrace("java.lang.NullPointerException\n\tat org.labkey.scoping.Test.run(Test.java:1)\n");
+            st.setComments("original");
+            st = Table.insert(admin, MothershipManager.get().getTableInfoExceptionStackTrace(), st);
+            int id = st.getExceptionStackTraceId();
+
+            // Updating it through folder A must 404 rather than overwrite/re-home it. doUpdate() keys Table.update on
+            // the id alone and rewrites the container, so without the handlePost guard a site admin (who CAN update
+            // folder B) would edit B's row through folder A and re-home it.
+            ActionURL url = new ActionURL(UpdateStackTraceAction.class, folderA)
+                    .addParameter("ExceptionStackTraceId", String.valueOf(id))
+                    .addParameter("Comments", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, admin));
+
+            // The row in folder B must be untouched
+            ExceptionStackTrace reloaded = MothershipManager.get().getExceptionStackTrace(id, folderB);
+            assertNotNull("Stack trace should still exist in its own container", reloaded);
+            assertEquals("Comments must not have been overwritten", "original", reloaded.getComments());
+
+            // Positive control: updating through the row's own container (folder B) succeeds and persists the change,
+            // proving the guard rejects only the cross-container case, not every update.
+            ActionURL ownUrl = new ActionURL(UpdateStackTraceAction.class, folderB)
+                    .addParameter("ExceptionStackTraceId", String.valueOf(id))
+                    .addParameter("Comments", "updated");
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertEquals("Comments should have been updated through the row's own container", "updated", MothershipManager.get().getExceptionStackTrace(id, folderB).getComments());
         }
     }
 }
