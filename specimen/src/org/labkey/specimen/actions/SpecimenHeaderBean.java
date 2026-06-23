@@ -20,13 +20,13 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.specimen.actions.SpecimenController.PtidVisit;
+import org.labkey.specimen.query.SpecimenQueryView;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -39,7 +39,7 @@ public final class SpecimenHeaderBean
     private final ActionURL _otherViewURL;
     private final ViewContext _viewContext;
     private final boolean _showingVials;
-    private final Set<Pair<String, String>> _filteredPtidVisits;
+    private final Set<PtidVisit> _ptidVisits;
 
     private Integer _selectedRequest;
 
@@ -48,7 +48,7 @@ public final class SpecimenHeaderBean
         this(context, view, Collections.emptySet());
     }
 
-    public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<Pair<String, String>> filteredPtidVisits) throws RuntimeException
+    public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view, Set<PtidVisit> ptidVisits) throws RuntimeException
     {
         Map<String, String[]> params = context.getRequest().getParameterMap();
 
@@ -105,11 +105,11 @@ public final class SpecimenHeaderBean
         otherView.replaceParameter("showVials", Boolean.toString(!view.isShowingVials()));
         if (null != params.get(SpecimenQueryView.PARAMS.excludeRequestedBySite.name()))
             otherView.replaceParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name(),
-                    params.get(SpecimenQueryView.PARAMS.excludeRequestedBySite.name())[0]);
+                params.get(SpecimenQueryView.PARAMS.excludeRequestedBySite.name())[0]);
         _otherViewURL = otherView;
         _viewContext = context;
         _showingVials = view.isShowingVials();
-        _filteredPtidVisits = filteredPtidVisits;
+        _ptidVisits = ptidVisits;
     }
 
     public Integer getSelectedRequest()
@@ -137,20 +137,20 @@ public final class SpecimenHeaderBean
         return _showingVials;
     }
 
-    public Set<Pair<String, String>> getFilteredPtidVisits()
+    public Set<PtidVisit> getPtidVisits()
     {
-        return _filteredPtidVisits;
+        return _ptidVisits;
     }
 
     public boolean isSingleVisitFilter()
     {
-        if (getFilteredPtidVisits().isEmpty())
+        if (getPtidVisits().isEmpty())
             return false;
-        Iterator<Pair<String, String>> visitIt = getFilteredPtidVisits().iterator();
-        String firstVisit = visitIt.next().getValue();
-        while (visitIt.hasNext())
+        Iterator<PtidVisit> ptidVisit = getPtidVisits().iterator();
+        String firstVisit = ptidVisit.next().visit();
+        while (ptidVisit.hasNext())
         {
-            if (!Objects.equals(firstVisit, visitIt.next().getValue()))
+            if (!Objects.equals(firstVisit, ptidVisit.next().visit()))
                 return false;
         }
         return true;
