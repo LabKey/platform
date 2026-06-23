@@ -84,7 +84,7 @@
                 </tr>
                 <tr>
                     <th align="left">Description</th>
-                    <td><%= unsafe(requirement.getDescription()) %></td>
+                    <td><%= h(requirement.getDescription()) %></td>
                 </tr>
                 <%
                     if (!bean.isRequestManager())

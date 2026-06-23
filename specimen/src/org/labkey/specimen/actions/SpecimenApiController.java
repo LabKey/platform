@@ -286,6 +286,7 @@ public class SpecimenApiController extends SpringActionController
         @Override
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
+            // OK for anyone with read access to see any request in this container, even if they didn't create it
             SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
             final Map<String, Object> response = new HashMap<>();
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
