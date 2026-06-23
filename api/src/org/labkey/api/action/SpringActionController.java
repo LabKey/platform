@@ -47,6 +47,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -100,6 +101,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -1259,7 +1261,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void executingMutatingSql(String sql)
     {
-        if (!assertsEnabled())
+        if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
             return;
         if (ignoreUpdates.get())
             return;

@@ -131,7 +131,8 @@ public class MutatingSqlDetector
             "ANALYZE", true,   // Typically executed after UPDATE, CREATE INDEX, et al
             "LOCK", true,      // Not technically mutating. However, it is currently only used in mutating TX.
             "VACUUM", true,    // VACUUM is mutating
-            "{call", true      // Execute a stored procedure, which is likely to be mutating
+            "{call", true,     // Execute a stored procedure, which is likely to be mutating
+            "REFRESH", true    // REFRESH MATERIALIZED VIEW - see JdbcMetaDataTest
         ));
 
         // Needed for SQL Server

@@ -2827,10 +2827,8 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private void _logStatement(String sql, @Nullable SQLException x, int rowsAffected, QueryLogging queryLogging)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
-        boolean isAssertEnabled = false;
-        assert isAssertEnabled = true;
 
-        if (isAssertEnabled && AppProps.getInstance().isDevMode() && isMutatingSql(sql))
+        if (isMutatingSql(sql))
             SpringActionController.executingMutatingSql(sql);
 
         // Hold on to this stack trace so that we can reuse it later (if collection has been enabled)
@@ -2840,6 +2838,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         {
             _conn.logAndCheckException(x);
         }
+
+        boolean isAssertEnabled = false;
+        assert isAssertEnabled = true;
 
         //noinspection ConstantConditions
         if (!_log.isEnabled(Level.DEBUG) && !isAssertEnabled)

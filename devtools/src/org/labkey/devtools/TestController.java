@@ -37,6 +37,9 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.AdminConsoleAction;
@@ -1401,6 +1404,23 @@ public class TestController extends SpringActionController
                 errors.addError(new ObjectError("form", "error saving vectordb: " + x.getMessage()));
                 return false;
             }
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class ExecuteMutatingSqlAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+
+            return new HtmlView(HtmlString.of("UPDATE via GET was allowed!"));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
         }
     }
 
