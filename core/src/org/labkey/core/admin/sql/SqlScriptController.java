@@ -1354,6 +1354,10 @@ public class SqlScriptController extends SpringActionController
     }
 
     private static final String MIGRATE_TO_PG_PROMPT = """
+        Note that `ENTITYID`, `UNIQUEIDENTIFIER`, and `USERID` data types are available on both databases. Maintain
+        these data types when migrating the script (do not replace `ENTITYID` with `VARCHAR(36)` or `USERID` with `INT`,
+        for example).
+
         Include a summary of the changes you made at the end.
         """;
 

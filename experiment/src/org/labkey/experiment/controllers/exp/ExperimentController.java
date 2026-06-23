@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -59,6 +60,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
@@ -150,6 +152,7 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -189,6 +192,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
@@ -200,6 +204,10 @@ import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.sql.LabKeySql;
@@ -302,6 +310,7 @@ import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -320,6 +329,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -390,6 +400,10 @@ public class ExperimentController extends SpringActionController
         Container objectContainer = object.getContainer();
         if (!requestContainer.equals(objectContainer))
         {
+            // Only redirect if the user can read the object's container; otherwise don't reveal that it exists
+            if (objectContainer == null || !objectContainer.hasPermission(viewContext.getUser(), ReadPermission.class))
+                throw new NotFoundException();
+
             ActionURL url = viewContext.cloneActionURL();
             url.setContainer(objectContainer);
             throw new RedirectException(url);
@@ -731,7 +745,8 @@ public class ExperimentController extends SpringActionController
                 JSONArray runIds = json.getJSONArray("runIds");
                 for (int i = 0; i < runIds.length(); i++)
                 {
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i));
+                    // Kanban #1924: Make sure the run belongs to the current container.
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i), getContainer());
                     if (run != null)
                     {
                         runs.add(run);
@@ -1801,6 +1816,8 @@ public class ExperimentController extends SpringActionController
             ExpData data = ExperimentServiceImpl.get().getExpData(lsid.toString());
             if (data == null)
                 throw new NotFoundException("Error: Data object not found for the given LSID: " + lsid);
+            // The LSID could be from another container. If so, redirect there
+            ensureCorrectContainer(getContainer(), data, getViewContext());
             AttachmentParent parent = new ExpDataClassAttachmentParent(data.getContainer(), lsid);
 
             return new Pair<>(parent, form.getName());
@@ -2407,7 +2424,8 @@ public class ExperimentController extends SpringActionController
         public void validateForm(DataFileForm form, Errors errors)
         {
             _data = form.lookupData();
-            if (_data == null)
+            // Not using ensureCorrectContainer() because we don't redirect API actions
+            if (_data == null || !getContainer().equals(_data.getContainer()))
             {
                 errors.reject(ERROR_MSG, "No ExpData found for id: " + form.getRowId());
             }
@@ -3729,6 +3747,10 @@ public class ExperimentController extends SpringActionController
         {
             for (ExpProtocol protocol : getProtocolsForDeletion(form))
             {
+                // Re-check here - cannot delete a run-less assay design owned by another container via a forged rowId.
+                if (!protocol.getContainer().hasPermission(getUser(), DesignAssayPermission.class))
+                    throw new UnauthorizedException("You do not have sufficient permissions to delete this assay design.");
+
                 protocol.delete(getUser(), form.getUserComment());
             }
         }
@@ -4693,6 +4715,12 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExperimentForm form, BindException errors) throws Exception
         {
+            // Confirm the run group actually lives in this container before updating, like the GET sibling ShowUpdateAction.
+            Experiment bean = form.getBean();
+            ExpExperiment exp = bean == null ? null : ExperimentService.get().getExpExperiment(bean.getRowId());
+            if (exp == null || !getContainer().equals(exp.getContainer()))
+                throw new NotFoundException("Run group not found in this folder");
+
             form.doUpdate();
             form.refreshFromDb();
             _exp = form.getBean();
@@ -5259,7 +5287,19 @@ public class ExperimentController extends SpringActionController
         @Override
         public boolean handlePost(ExperimentRunListForm form, BindException errors)
         {
-            addSelectedRunsToExperiment(form.lookupExperiment(), form.getDataRegionSelectionKey());
+            ExpExperiment exp = form.lookupExperiment();
+            if (exp == null || !exp.getContainer().hasPermission(getUser(), InsertPermission.class))
+                throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
+
+            List<ExpRun> runs = new ArrayList<>();
+            for (long runId : DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), true))
+            {
+                ExpRun run = ExperimentService.get().getExpRun(runId);
+                if (run == null || !run.getContainer().hasPermission(getUser(), InsertPermission.class))
+                    throw new NotFoundException("Could not find run with RowId " + runId);
+                runs.add(run);
+            }
+            exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
             return true;
         }
 
@@ -6000,9 +6040,9 @@ public class ExperimentController extends SpringActionController
                             errors.reject(ERROR_MSG, "Can't resolve sample '" + in.rowId + "'");
                     }
 
-                    if (m == null)
+                    if (m == null || !m.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
-                        errors.reject(ERROR_MSG, "Material input lsid or rowId required");
+                        errors.reject(ERROR_MSG, "Material input couldn't be resolved");
                         continue;
                     }
 
@@ -6042,9 +6082,9 @@ public class ExperimentController extends SpringActionController
                             errors.reject(ERROR_MSG, "Can't resolve data '" + in.rowId + "'");
                     }
 
-                    if (d == null)
+                    if (d == null || !d.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
-                        errors.reject(ERROR_MSG, "Data input lsid or rowId required");
+                        errors.reject(ERROR_MSG, "Data input couldn't be resolved");
                         continue;
                     }
 
@@ -6067,9 +6107,8 @@ public class ExperimentController extends SpringActionController
             ExpSampleType outSampleType;
             if (form.targetSampleType != null)
             {
-                // TODO: check in scope and has permission
                 outSampleType = SampleTypeService.get().getSampleType(form.targetSampleType.toString());
-                if (outSampleType == null)
+                if (outSampleType == null || !outSampleType.getContainer().hasPermission(getUser(), ReadPermission.class))
                     errors.reject(ERROR_MSG, "Sample type not found: " + form.targetSampleType.toString());
             }
             else
@@ -6080,9 +6119,8 @@ public class ExperimentController extends SpringActionController
             ExpDataClass outDataClass;
             if (form.targetDataClass != null)
             {
-                // TODO: check in scope and has permission
                 outDataClass = ExperimentServiceImpl.get().getDataClass(form.targetDataClass.toString());
-                if (outDataClass == null)
+                if (outDataClass == null || !outDataClass.getContainer().hasPermission(getUser(), ReadPermission.class))
                     errors.reject(ERROR_MSG, "DataClass not found: " + form.targetDataClass.toString());
             }
             else
@@ -6563,10 +6601,11 @@ public class ExperimentController extends SpringActionController
             for (Long runId : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (run != null)
+                if (run == null || !run.getContainer().equals(getContainer()))
                 {
-                    runs.add(run);
+                    throw new NotFoundException("Could not find run with RowId " + runId + " in this folder");
                 }
+                runs.add(run);
             }
 
             ViewBackgroundInfo info = getViewBackgroundInfo();
@@ -7955,7 +7994,13 @@ public class ExperimentController extends SpringActionController
                 {
                     ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                     if (sampleType != null)
+                    {
+                        // Kanban #1924: Assure permission in the sample type's container
+                        if (!sampleType.getContainer().hasPermission(getUser(), ReadPermission.class))
+                            throw new UnauthorizedException("You do not have permission to read this sample type.");
                         value = sampleType.getCurrentGenId();
+                    }
+
                 }
                 else
                 {
@@ -7967,7 +8012,12 @@ public class ExperimentController extends SpringActionController
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                 if (dataClass != null)
+                {
+                    // Kanban #1924: assure permission in the data class's container
+                    if (!dataClass.getContainer().hasPermission(getUser(), ReadPermission.class))
+                        throw new UnauthorizedException("You do not have permission to read this data class.");
                     value = dataClass.getCurrentGenId();
+                }
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -8008,6 +8058,9 @@ public class ExperimentController extends SpringActionController
                         ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
                         if (sampleType != null)
                         {
+                            if (!sampleType.getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                                throw new UnauthorizedException("Insufficient permissions.");
+
                             sampleType.ensureMinGenId(form.getNewValue());
                             domain = sampleType.getDomain();
                         }
@@ -8342,4 +8395,380 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testDataClassAttachmentContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+
+            // A data object that lives in folder B, with a real attachment so the legitimate download path can be exercised.
+            String attachmentName = "attachment.txt";
+            String lsid = ExperimentService.get().generateGuidLSID(folderB, ExpData.class);
+            ExpData data = ExperimentService.get().createData(folderB, "exp1-scope-test", lsid);
+            data.save(admin);
+            AttachmentParent parent = new ExpDataClassAttachmentParent(folderB, new Lsid(lsid));
+            AttachmentService.get().addAttachments(parent, List.of(new ByteArrayAttachmentFile(attachmentName, "scope test".getBytes(StandardCharsets.UTF_8), "text/plain")), admin);
+
+            ActionURL foreignUrl = new ActionURL(DataClassAttachmentDownloadAction.class, folderA)
+                    .addParameter("lsid", lsid)
+                    .addParameter("name", attachmentName);
+
+            // Deny branch: a caller who can read folder A but NOT folder B must not learn that B's data exists -> 404,
+            // rather than being redirected (which would leak B's existence and path).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+
+            // Redirect branch: a caller who CAN read folder B is redirected to its own container (where Read is
+            // re-enforced) rather than served from folder A. Fails without the ensureCorrectContainer call.
+            MockHttpServletResponse resp = get(foreignUrl, admin);
+            assertStatus(HttpServletResponse.SC_FOUND, resp);
+            String location = resp.getRedirectedUrl();
+            assertNotNull("Redirect must have a Location", location);
+            assertTrue("Redirect should target the data's own container, was: " + location, location.contains(folderB.getPath()));
+
+            // Positive control: addressing the attachment through its own container serves the file (200), proving the
+            // action isn't simply rejecting every request.
+            ActionURL ownUrl = new ActionURL(DataClassAttachmentDownloadAction.class, folderB)
+                    .addParameter("lsid", lsid)
+                    .addParameter("name", attachmentName);
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+
+            ActionURL checkDataFileUrl = new ActionURL(CheckDataFileAction.class, folderB)
+                .addParameter("rowId", data.getRowId());
+            assertStatus(HttpServletResponse.SC_OK, post(checkDataFileUrl, admin));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(checkDataFileUrl, readerA)); // No perms
+            checkDataFileUrl.setContainer(folderA);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(checkDataFileUrl, readerA)); // Has read in folder A, but not admin
+            resp = post(checkDataFileUrl, admin); // Wrong container. Not found.
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            JSONObject json = new JSONObject(resp.getContentAsString());
+            assertEquals("No ExpData found for id: " + data.getRowId(), json.get("exception"));
+        }
+
+        @Test
+        public void testUpdateRunGroupContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run group (Experiment) that lives in folder B
+            ExpExperiment runGroup = ExperimentService.get().createExpExperiment(folderB, "scoping-test-run-group");
+            runGroup.save(admin);
+            long rowId = runGroup.getRowId();
+
+            // A caller who can Update folder A (Editor) but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Updating B's run group through folder A must 404 rather than overwrite/re-home it. The action's
+            // @RequiresPermission(UpdatePermission.class) passes in folder A, so without the handlePost guard the
+            // unscoped doUpdate() would edit B's row and rewrite its container to A.
+            ActionURL foreignUrl = new ActionURL(UpdateAction.class, folderA)
+                    .addParameter("RowId", String.valueOf(rowId))
+                    .addParameter("Name", "hacked");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+            // A site admin, who CAN update folder B, still gets 404 through folder A (no cross-container write).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, admin));
+
+            // The run group must be untouched in its own container
+            ExpExperiment after = ExperimentService.get().getExpExperiment(rowId);
+            assertNotNull("Run group must still exist", after);
+            assertEquals("Name must be unchanged after a cross-container update", "scoping-test-run-group", after.getName());
+            assertEquals("Container must be unchanged after a cross-container update", folderB, after.getContainer());
+
+            // Positive control: updating through its own container succeeds (302 redirect to the success URL) and applies.
+            ActionURL ownUrl = new ActionURL(UpdateAction.class, folderB)
+                    .addParameter("RowId", String.valueOf(rowId))
+                    .addParameter("Name", "renamed");
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertEquals("Name should be updated by a same-container request", "renamed",
+                    ExperimentService.get().getExpExperiment(rowId).getName());
+        }
+
+        @Test
+        public void testAddRunsToExperimentContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run group (Experiment) that lives in folder B
+            ExpExperiment runGroup = ExperimentService.get().createExpExperiment(folderB, "scoping-test-add-runs");
+            runGroup.save(admin);
+            long expRowId = runGroup.getRowId();
+
+            // A caller who can Insert in folder A but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Adding runs to B's run group through folder A must 404: the run group is resolved by a global RowId and
+            // ExpExperimentImpl.addRuns does a raw INSERT with no authorization, so without the handlePost guard a
+            // forged expRowId would let a folder-A user mutate a foreign run group.
+            ActionURL foreignUrl = new ActionURL(AddRunsToExperimentAction.class, folderA)
+                    .addParameter("expRowId", String.valueOf(expRowId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // Positive control: addressing the run group through its own container passes the guard. No runs are
+            // selected, so the action makes no change and redirects to the group's details page (302).
+            ActionURL ownUrl = new ActionURL(AddRunsToExperimentAction.class, folderB)
+                    .addParameter("expRowId", String.valueOf(expRowId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+        }
+
+        @Test
+        public void testMoveRunsContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run that lives in folder B
+            ExpRun run = createRun(folderB, "scoping-test-move-run");
+            long runId = run.getRowId();
+
+            // A caller with Insert+Delete in folder A (Editor) but no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // MoveRuns is scoped to getContainer() as the source and only checks Insert on the target; runs are resolved
+            // from the client-supplied selection by global RowId. Moving B's run via folder A (as both source and
+            // target) must 404 because the run does not live in the source container the caller is operating in.
+            ActionURL foreignUrl = new ActionURL(MoveRunsAction.class, folderA)
+                    .addParameter("targetContainerId", folderA.getId())
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // The run must remain in folder B
+            ExpRun after = ExperimentService.get().getExpRun(runId);
+            assertNotNull("Run must still exist", after);
+            assertEquals("Run must not have been moved out of its container", folderB, after.getContainer());
+
+            // Positive control: a successful move queues a MoveRunsPipelineJob, which is exercised by existing run-move
+            // tests; this case verifies only that the cross-container request is rejected before any job is queued.
+        }
+
+        @Test
+        public void testDeleteProtocolByRowIdsContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run-less protocol (assay design) that lives in folder B. Run-less so deleteProtocolByRowIds skips its
+            // AdminPermission check, leaving the per-protocol DesignAssay guard in deleteObjects as the only gate.
+            ExpProtocol protocol = ExperimentService.get().createExpProtocol(folderB, ExpProtocol.ApplicationType.ExperimentRun, "scoping-test-protocol");
+            protocol.save(getAdmin());
+            long rowId = protocol.getRowId();
+
+            // A caller who can design assays in folder A only. DesignAssayPermission's role lives in the assay module,
+            // resolved by name here to avoid a compile-time dependency from the experiment module.
+            @SuppressWarnings("unchecked")
+            Class<? extends Role> assayDesigner = (Class<? extends Role>) Class.forName("org.labkey.assay.security.AssayDesignerRole");
+            User designerA = createUserInRole(folderA, assayDesigner);
+
+            // Force-deleting B's protocol through folder A must be rejected. The forceDelete POST path runs handlePost
+            // -> deleteObjects directly, bypassing the getView container check, so the deleteObjects guard is what stops
+            // it (403 for an authenticated caller lacking DesignAssay on the protocol's own container).
+            ActionURL foreignUrl = new ActionURL(DeleteProtocolByRowIdsAction.class, folderA)
+                    .addParameter("forceDelete", "true")
+                    .addParameter("singleObjectRowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, designerA));
+
+            // The protocol must still exist in folder B
+            assertNotNull("Protocol must not have been deleted cross-container", ExperimentService.get().getExpProtocol(rowId));
+
+            // Positive control: once the caller is granted design rights in folder B, the same forceDelete through
+            // folder B succeeds (302) and removes the protocol -- proving the guard rejects only the cross-container case.
+            grantRole(designerA, folderB, assayDesigner);
+            ActionURL ownUrl = new ActionURL(DeleteProtocolByRowIdsAction.class, folderB)
+                    .addParameter("forceDelete", "true")
+                    .addParameter("singleObjectRowId", String.valueOf(rowId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, designerA));
+            assertNull("Protocol should be deleted by a same-container request", ExperimentService.get().getExpProtocol(rowId));
+        }
+
+        @Test
+        public void testSetEntitySequenceContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A sample type that lives in folder B
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleType sampleType = SampleTypeService.get().createSampleType(folderB, getAdmin(), "scoping-test-st", null,
+                    props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+            long rowId = sampleType.getRowId();
+
+            // A folder admin in A only (has DesignSampleType in A via FolderAdminRole, no rights in B)
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            // Advancing the genId of B's sample type through folder A must 403. The request-container DesignSampleType
+            // check passes in A, but ensureMinGenId operates on the type's OWN container, so the per-object check rejects it.
+            ActionURL foreignUrl = new ActionURL(SetEntitySequenceAction.class, folderA)
+                    .addParameter("kindName", SampleTypeDomainKind.NAME)
+                    .addParameter("seqType", NameGenerator.EntityCounter.genId.name())
+                    .addParameter("rowId", String.valueOf(rowId))
+                    .addParameter("newValue", "100");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a folder admin in B can advance the sequence through folder B (success, 200).
+            User adminB = createUserInRole(folderB, FolderAdminRole.class);
+            ActionURL ownUrl = new ActionURL(SetEntitySequenceAction.class, folderB)
+                    .addParameter("kindName", SampleTypeDomainKind.NAME)
+                    .addParameter("seqType", NameGenerator.EntityCounter.genId.name())
+                    .addParameter("rowId", String.valueOf(rowId))
+                    .addParameter("newValue", "100");
+            assertStatus(HttpServletResponse.SC_OK, post(ownUrl, adminB));
+        }
+
+        @Test
+        public void testDeriveActionMaterialContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // Editor in folder A only: holds the InsertPermission the action requires in A, but has no rights in folder B.
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // A sample type with one sample in each folder. The editor can read its own folder A but not folder B.
+            ExpSampleType stA = createSampleType(folderA, "DeriveScopeStA");
+            ExpSampleType stB = createSampleType(folderB, "DeriveScopeStB");
+            ExpMaterial sampleA = createSample(folderA, stA, "srcA");
+            ExpMaterial sampleB = createSample(folderB, stB, "srcB");
+
+            ActionURL url = new ActionURL(DeriveAction.class, folderA);
+
+            // Negative (input): a material input resolved by global rowId that lives in folder B must not be usable as a
+            // derivation parent by a caller who cannot read B. Without the per-input Read check the foreign sample would
+            // be silently consumed (an IDOR). The output target is in folder A, so only the foreign input can be at fault.
+            JSONObject foreignInput = new JSONObject()
+                    .put("materialInputs", new JSONArray().put(new JSONObject().put("rowId", sampleB.getRowId())))
+                    .put("targetSampleType", stA.getLSID())
+                    .put("materialOutputCount", 1);
+            MockHttpServletResponse resp = postJson(url, editorA, foreignInput);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a material-input scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Material input couldn't be resolved"));
+
+            // Negative (target): deriving INTO a sample type the caller cannot read must be rejected as "not found", so
+            // the caller can't probe which foreign sample types exist by their LSID.
+            JSONObject foreignTarget = new JSONObject()
+                    .put("targetSampleType", stB.getLSID())
+                    .put("materialOutputCount", 1);
+            resp = postJson(url, editorA, foreignTarget);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a target sample type scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Sample type not found"));
+
+            // Positive control: the same request shape with the input and target both in folder A -- which the editor
+            // can read and insert into -- succeeds and actually derives a new sample, proving the checks reject only the
+            // cross-container case rather than every request.
+            JSONObject ok = new JSONObject()
+                    .put("materialInputs", new JSONArray().put(new JSONObject().put("rowId", sampleA.getRowId())))
+                    .put("targetSampleType", stA.getLSID())
+                    .put("materialOutputs", new JSONArray().put(new JSONObject().put("values", new JSONObject().put("name", "derivedA"))));
+            resp = postJson(url, editorA, ok);
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Derivation should report success, was: " + resp.getContentAsString(),
+                    new JSONObject(resp.getContentAsString()).getBoolean("success"));
+            assertNotNull("A new sample should have been derived in folder A", stA.getSample(folderA, "derivedA"));
+        }
+
+        @Test
+        public void testDeriveActionDataContainerScoping() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // Editor in folder A only: holds the InsertPermission the action requires in A, but has no rights in folder B.
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // A data class with one data object in each folder. The editor can read its own folder A but not folder B.
+            ExpDataClass dcA = createDataClass(folderA, "DeriveScopeDcA");
+            ExpDataClass dcB = createDataClass(folderB, "DeriveScopeDcB");
+            ExpData dataA = createData(folderA, dcA, "srcDataA");
+            ExpData dataB = createData(folderB, dcB, "srcDataB");
+
+            ActionURL url = new ActionURL(DeriveAction.class, folderA);
+
+            // Negative (input): a data input resolved by global rowId that lives in folder B must not be usable as a
+            // derivation parent by a caller who cannot read B. The Read check fires before the data-class membership
+            // check, so a foreign data object is rejected as unresolvable rather than silently consumed (an IDOR).
+            JSONObject foreignInput = new JSONObject()
+                    .put("dataInputs", new JSONArray().put(new JSONObject().put("rowId", dataB.getRowId())))
+                    .put("targetDataClass", dcA.getLSID())
+                    .put("dataOutputCount", 1);
+            MockHttpServletResponse resp = postJson(url, editorA, foreignInput);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a data-input scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("Data input couldn't be resolved"));
+
+            // Negative (target): deriving INTO a data class the caller cannot read must be rejected as "not found", so
+            // the caller can't probe which foreign data classes exist by their LSID.
+            JSONObject foreignTarget = new JSONObject()
+                    .put("targetDataClass", dcB.getLSID())
+                    .put("dataOutputCount", 1);
+            resp = postJson(url, editorA, foreignTarget);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, resp);
+            assertTrue("Expected a target data class scope rejection, was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("DataClass not found"));
+
+            // Positive control: the same request shape with the input and target both in folder A -- which the editor
+            // can read and insert into -- succeeds and actually derives a new data object, proving the checks reject
+            // only the cross-container case rather than every request.
+            JSONObject ok = new JSONObject()
+                    .put("dataInputs", new JSONArray().put(new JSONObject().put("rowId", dataA.getRowId())))
+                    .put("targetDataClass", dcA.getLSID())
+                    .put("dataOutputs", new JSONArray().put(new JSONObject().put("values", new JSONObject().put("name", "derivedDataA"))));
+            resp = postJson(url, editorA, ok);
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Derivation should report success, was: " + resp.getContentAsString(),
+                    new JSONObject(resp.getContentAsString()).getBoolean("success"));
+            assertNotNull("A new data object should have been derived in folder A", ExperimentService.get().getExpData(dcA, "derivedDataA"));
+        }
+
+        // Create a sample type with a single string "name" property, mirroring the idiom in testSetEntitySequenceContainerScoping.
+        private ExpSampleType createSampleType(Container c, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            return SampleTypeService.get().createSampleType(c, getAdmin(), name, null, props, Collections.emptyList(), -1, -1, -1, -1, null, null);
+        }
+
+        // Create a saved sample in the given sample type, mirroring the sample-creation idiom in LineageTest.
+        private ExpMaterial createSample(Container c, ExpSampleType st, String name) throws Exception
+        {
+            ExpMaterial m = ExperimentService.get().createExpMaterial(c, st.generateSampleLSID().setObjectId(name).toString(), name);
+            m.setCpasType(st.getLSID());
+            m.save(getAdmin());
+            return m;
+        }
+
+        // Create a data class with a single string "name" property, mirroring the idiom in LineageTest.
+        private ExpDataClass createDataClass(Container c, String name) throws Exception
+        {
+            List<GWTPropertyDescriptor> props = List.of(new GWTPropertyDescriptor("name", "string"));
+            return ExperimentServiceImpl.get().createDataClass(c, getAdmin(), name, null, props, Collections.emptyList(), null, null);
+        }
+
+        // Insert a single named row into the data class and return the resulting ExpData.
+        private ExpData createData(Container c, ExpDataClass dc, String name) throws Exception
+        {
+            UserSchema dataSchema = new ExpSchema(getAdmin(), c).getUserSchema(ExpSchema.NestedSchemas.data.name());
+            BatchValidationException errors = new BatchValidationException();
+            dataSchema.getTable(dc.getName()).getUpdateService()
+                    .insertRows(getAdmin(), c, List.of(CaseInsensitiveHashMap.of("name", name)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+            return ExperimentService.get().getExpData(dc, name);
+        }
+
+        // Create a minimal saved experiment run in the given container, mirroring the run-creation idiom in LineageTest.
+        private ExpRun createRun(Container c, String name) throws Exception
+        {
+            ExpRun run = ExperimentService.get().createExperimentRun(c, name);
+            run.setFilePathRoot(PipelineService.get().findPipelineRoot(c).getRootPath());
+            run.setProtocol(ExperimentService.get().ensureSampleDerivationProtocol(getAdmin()));
+            return ExperimentService.get().saveSimpleExperimentRun(run, Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+                    new ViewBackgroundInfo(c, getAdmin(), null), null, false);
+        }
+    }
 }

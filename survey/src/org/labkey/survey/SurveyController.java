@@ -70,6 +70,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -420,12 +421,19 @@ public class SurveyController extends SpringActionController implements SurveyUr
     {
         SurveyDesign survey = new SurveyDesign();
         if (form.getRowId() != 0)
+        {
             survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
+            // getSurveyDesign is container-scoped; null here means the rowId doesn't belong to this folder
+            if (survey == null)
+                throw new NotFoundException("No survey design found for rowId " + form.getRowId() + " in this folder");
+        }
         else if (form.getDesignId() != null)
         {
             if (NumberUtils.isDigits(form.getDesignId()))
             {
                 survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), NumberUtils.toInt(form.getDesignId()));
+                if (survey == null)
+                    throw new NotFoundException("No survey design found for designId " + form.getDesignId() + " in this folder");
             }
             else
             {
@@ -455,7 +463,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
     {
         Survey survey = new Survey();
         if (form.getRowId() != null)
+        {
             survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+            // getSurvey is container-scoped; null here means the rowId doesn't belong to this folder
+            if (survey == null)
+                throw new NotFoundException("No survey found for rowId " + form.getRowId() + " in this folder");
+        }
 
         if (survey != null)
         {

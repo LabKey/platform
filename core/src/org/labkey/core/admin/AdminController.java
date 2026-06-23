@@ -216,6 +216,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
@@ -5413,6 +5414,10 @@ public class AdminController extends SpringActionController
             if (!StringUtils.isEmpty(form.getSourceTemplateFolder()))
             {
                 fiConfig = getFolderImportConfigFromTemplateFolder(form, pipelineUnzipDir, errors);
+                if (fiConfig == null || errors.hasErrors())
+                {
+                    return false;
+                }
             }
             else
             {
@@ -5507,10 +5512,16 @@ public class AdminController extends SpringActionController
 
         private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final FileLike pipelineUnzipDir, final BindException errors) throws Exception
         {
-            // user choose to import from a template source folder
+            // user chose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
 
-            // In order to support the Advanced import options to import into multiple target folders we need to zip
+            if (sourceContainer == null || !sourceContainer.hasPermission(getUser(), AdminPermission.class))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to import from the specified source folder.");
+                return null;
+            }
+
+            // To support the Advanced import options to import into multiple target folders we need to zip
             // the source template folder so that the zip file can be passed to the pipeline processes.
             FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                     getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
@@ -8015,6 +8026,8 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
+                    if (!source.hasPermission(getUser(), AdminPermission.class))
+                        throw new UnauthorizedException("You do not have permission to copy permissions from the specified project.");
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c, getUser());
 
                     //copy role assignments
@@ -8437,6 +8450,9 @@ public class AdminController extends SpringActionController
             Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
             if (null != revertContainer)
             {
+                if (!revertContainer.hasPermission(getUser(), AdminPermission.class))
+                    throw new UnauthorizedException();
+
                 if (revertContainer.isContainerTab())
                 {
                     FolderTab tab = revertContainer.getParent().getFolderType().findTab(revertContainer.getName());
@@ -10217,10 +10233,10 @@ public class AdminController extends SpringActionController
             if (isBlank(form.getContainerPath()))
                 throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
+            if (container == null)
+                throw new NotFoundException();
             if (!container.hasPermission(getUser(), AdminPermission.class))
-            {
                 throw new UnauthorizedException();
-            }
             for (String tabName : form.getResurrectFolders())
             {
                 ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
@@ -12384,6 +12400,91 @@ public class AdminController extends SpringActionController
                 User u = UserManager.getUser(new ValidEmail(TEST_EMAIL));
                 UserManager.deleteUser(u.getUserId());
             }
+        }
+    }
+
+    public static class ImportFolderSourceScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testImportFromTemplateRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            ActionURL url = new ActionURL(ImportFolderAction.class, dest)
+                    .addParameter("sourceTemplateFolder", source.getPath())
+                    .addParameter("sourceTemplateFolderId", source.getId());
+            MockHttpServletResponse resp = post(url, destAdminOnly);
+
+            // The fix rejects the import and reshows the form (200) rather than redirecting to success (302), with a
+            // source-permission error message in the rendered content.
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Expected a source-permission rejection message, content was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("permission to import from the specified source folder"));
+
+            // Positive control performed in S3ImportTest.testS3Import(). Difficult to mock here due to pipeline job
+        }
+    }
+
+    public static class RevertFolderScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testRevertFolderRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(RevertFolderAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath());
+
+            // Cross-container attempt by a caller who is not an admin of the target -> 403, before any mutation.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (who IS an admin of the target) is allowed through even cross-container,
+            // proving the fix re-checks AdminPermission on the target rather than locking to the request container.
+            // folderB is a plain folder with no container tabs, so the action makes no change and returns success:false
+            // at status 200 -- the point is that the guard does not reject an authorized caller.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testClearDeletedTabFoldersRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(ClearDeletedTabFoldersAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath())
+                    .addParameter("resurrectFolders", "anyTab");
+
+            // A folder admin in A only must not clear deleted-tab markers in folder B (resolved by containerPath) -> 403.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (admin of the target) is allowed through -> 200.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testSetFolderPermissionsCopyRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdmin = createUserInRole(dest, FolderAdminRole.class);
+
+            // Copying groups/role assignments from a project the caller does not administer must be rejected. The
+            // action's @RequiresPermission(AdminPermission.class) only proves admin on the destination container, so a
+            // dest-only admin supplying another project's id as targetProject must get 403, not a copy of its security
+            // configuration. (Positive control omitted: a successful copy needs real project group/policy fixtures.)
+            ActionURL url = new ActionURL(SetFolderPermissionsAction.class, dest)
+                    .addParameter("permissionType", "CopyExistingProject")
+                    .addParameter("targetProject", source.getId());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, destAdmin));
         }
     }
 }

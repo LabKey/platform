@@ -43,6 +43,7 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.NotFoundException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -212,6 +213,13 @@ public class MothershipManager
         }
     }
 
+    public SoftwareRelease getSoftwareRelease(int softwareReleaseId, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromString("SoftwareReleaseId"), softwareReleaseId);
+        return new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
+    }
+
     public ServerInstallation getServerInstallation(@NotNull String serverGUID, @NotNull String serverHostName, @NotNull Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -224,6 +232,13 @@ public class MothershipManager
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromString("ServerSessionGUID"), serverSessionGUID);
+        return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
+    }
+
+    public ServerSession getServerSession(int serverSessionId, Container c)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromString("ServerSessionId"), serverSessionId);
         return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
@@ -598,6 +613,12 @@ public class MothershipManager
 
     public void updateSoftwareRelease(Container container, User user, SoftwareRelease bean)
     {
+        // Verify the target row actually belongs to this container before updating. The raw Table.update below is
+        // keyed only on the primary key, so without this check a user with UpdatePermission in one folder could edit
+        // (and, via setContainer, re-home) a SoftwareRelease owned by another folder.
+        if (getSoftwareRelease(bean.getSoftwareReleaseId(), container) == null)
+            throw new NotFoundException("SoftwareRelease not found in this folder: " + bean.getSoftwareReleaseId());
+
         bean.setContainer(container.getId());
         Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
     }
