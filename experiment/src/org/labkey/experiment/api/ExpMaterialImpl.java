@@ -37,6 +37,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -497,7 +498,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         for (ExpMaterialTable.Column column : ExpMaterialTable.Column.values())
             skipColumns.add(column.name());
 
-        processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
+        try
+        {
+            processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
+        }
+        catch (RuntimeException x)
+        {
+            // Cached temp table torn down concurrently (schema-change re-index); retry once via the live join.
+            if (!SqlDialect.isObjectNotFoundException(x))
+                throw x;
+            table.uncacheMaterializedView();
+            processIndexValues(props, table, skipColumns, identifiersHi, new HashSet<>(), new HashSet<>(), keywordsHi, new HashSet<>(), new HashSet<>(), jsonData);
+        }
     }
 
     static final List<Pair<Long,Long>> updateLastIndexedList = new ArrayList<>();

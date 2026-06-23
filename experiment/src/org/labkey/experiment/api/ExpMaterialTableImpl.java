@@ -119,6 +119,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
@@ -1377,11 +1378,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         });
     }
 
+    /** Drop the cached materialized helper for this table's sample type so the next read rebuilds (or uses the live join). */
+    void uncacheMaterializedView()
+    {
+        if (null != _ss)
+            _materializedQueries.remove(_ss.getLSID());
+    }
+
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
     private @Nullable SQLFragment getMaterializedSQL()
     {
         if (null == _ss)
             return getJoinSQL(null);
+
+        // Skip the materialized path during shutdown; temp-table cleanup can drop it mid-read (42P01), so use the live join.
+        if (ContextListener.isShuttingDown())
+            return null;
 
         var mqh = getOrCreateMQH();
 
