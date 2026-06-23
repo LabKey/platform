@@ -1933,7 +1933,7 @@ public class ExpDataIterators
                         if (sample != null)
                             parentMaterials.put(sample, sampleRole(sample));
                         else
-                            throw new ValidationException("Sample '" + entityName + "' not found in Sample Type '" + namePart + "'.");
+                            throw new ValidationException("Parent sample '" + entityName + "' from Sample Type '" + namePart + "' not found in the current context.");
 
                     }
                 }
@@ -2002,7 +2002,7 @@ public class ExpDataIterators
                         {
 
                             if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
-                                throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
+                                throw new ValidationException("Source '" + entityName + "' from Source Type  '" + namePart + "' not found in the current context.");
                             else
                                 throw new ValidationException("Data input '" + entityName + "' not found in Data Class '" + namePart + "'.");
                         }
