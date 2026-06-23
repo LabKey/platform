@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.42.3-fb-redirectGH1023.1"
+    "@labkey/components": "7.42.3-fb-redirectGH1023.2"
   },
   "devDependencies": {
     "@labkey/build": "9.1.5",
