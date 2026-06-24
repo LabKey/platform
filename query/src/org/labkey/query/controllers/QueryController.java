@@ -96,7 +96,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSetBuilder;
 import org.labkey.api.data.ColumnHeaderType;
@@ -318,6 +317,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -555,8 +555,18 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.addError(new LabKeyError("The listed credentials for this remote connection failed to connect."));
-                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm);
+                LOG.warn("Failed to connect for remote connection '{}' to {}", name, url, e);
+                // SelectRowsStreamHack wraps the underlying failure in a RuntimeException; unwrap to categorize it
+                Throwable cause = ExceptionUtil.unwrapException(e);
+                String message;
+                if (cause instanceof SSLException)
+                    message = "A secure (TLS) connection to the remote server could not be established. This is often caused by an untrusted, self-signed, or expired certificate. ";
+                else if (cause instanceof IOException)
+                    message = "A connection to the remote server could not be established. ";
+                else
+                    message = "The listed credentials for this remote connection failed to connect. ";
+                errors.addError(new LabKeyError(message + RemoteConnections.getBriefMessage(cause)));
+                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm, errors);
             }
 
             return new JspView<>("/org/labkey/query/view/testRemoteConnectionsSuccess.jsp", remoteConnectionForm);
@@ -7564,64 +7574,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(ReadPermission.class)
-    public static class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class NamedSetForm
-    {
-        String setName;
-        String[] setList;
-
-        public String getSetName()
-        {
-            return setName;
-        }
-
-        public void setSetName(String setName)
-        {
-            this.setName = setName;
-        }
-
-        public String[] getSetList()
-        {
-            return setList;
-        }
-
-        public void setSetList(String[] setList)
-        {
-            this.setList = setList;
-        }
-
-        public List<String> parseSetList()
-        {
-            return Arrays.asList(setList);
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().deleteNamedSet(namedSetForm.getSetName());
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
@@ -8414,8 +8366,6 @@ public class QueryController extends SpringActionController
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
-                new SaveNamedSetAction(),
-                new DeleteNamedSetAction(),
                 new ApiTestAction(),
                 new GetDefaultVisibleColumnsAction()
             );

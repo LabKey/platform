@@ -55,7 +55,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -1883,126 +1882,6 @@ public class SecurityManager
             sb.append("<BR/>");
         }
         return sb.toString();
-    }    
-
-    // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
-    // TODO: Also redundant with getFolderUserids()
-    // TODO: Cache this set
-    public static Set<Integer> getProjectUsersIds(Container c)
-    {
-        SQLFragment sql = getProjectUsersSQL(c.getProject());
-        sql.insert(0, "SELECT DISTINCT members.UserId ");
-
-        Selector selector = new SqlSelector(core.getSchema(), sql);
-        return new HashSet<>(selector.getCollection(Integer.class));
-    }
-
-    // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
-    public static SQLFragment getProjectUsersSQL(Container c)
-    {
-        return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
-                                    "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
-                                    "WHERE (groups.Container = ?)", c);
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getProjectUsers(c, false, true);
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
-    {
-        if (c != null && !c.isProject())
-            c = c.getProject();
-
-        List<Group> groups = getGroups(c, includeGlobal);
-        Set<String> emails = new HashSet<>();
-
-        //get members for each group
-        ArrayList<User> projectUsers = new ArrayList<>();
-        Set<User> members;
-
-        for (Group g : groups)
-        {
-            if (g.isGuests() || g.isUsers())
-                continue;
-
-            // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, includeInactive ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
-
-            //add this group's members to hashset
-            if (!members.isEmpty())
-            {
-                //get list of users from email
-                for (UserPrincipal member : members)
-                {
-                    User user = UserManager.getUser(member.getUserId());
-                    if (null != user && emails.add(user.getEmail()))
-                        projectUsers.add(user);
-                }
-            }
-        }
-
-        return projectUsers;
-    }
-
-    public static Collection<Integer> getFolderUserids(Container c)
-    {
-        Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
-        SecurityPolicy policy = c.getPolicy();
-
-        //don't filter if all site users is playing a role
-        Group allSiteUsers = getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).findAny().isPresent())
-        {
-            // Just select all users
-            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-            sql.append(core.getTableInfoPrincipals(), "u");
-            sql.append(" WHERE u.type='u'");
-
-            return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
-        }
-
-        //users "in the project" consists of:
-        // - users who are members of a project group
-        // - users who belong to a site group that has a role assignment in the policy for the specified folder
-        // - users who have a direct role assignment in the policy for the specified folder
-
-        Set<Integer> userIds = new HashSet<>();
-
-        // Add all project groups
-        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
-
-        // Look for users and site groups that have direct assignment to the container
-        for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
-        {
-            User user = UserManager.getUser(roleAssignment.getUserId());
-            if (user != null)
-            {
-                userIds.add(user.getUserId());
-            }
-            else
-            {
-                Group assignedGroup = getGroup(roleAssignment.getUserId());
-                if (assignedGroup != null && !assignedGroup.isProjectGroup())
-                {
-                    // Add all site groups
-                    groupsToExpand.add(assignedGroup);
-                }
-            }
-        }
-
-        // Find the users who are members of all the relevant site groups
-        for (Group group : groupsToExpand)
-        {
-            Set<User> groupMembers = getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-            for (User groupMember : groupMembers)
-            {
-                userIds.add(groupMember.getUserId());
-            }
-        }
-
-        return userIds;
     }
 
     /**

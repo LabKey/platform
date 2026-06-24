@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -61,6 +62,9 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
@@ -264,9 +268,16 @@ public class SurveyManager
         }
     }
 
+    /** Checks that the user has read permission to the container that owns the design, but we accept cross-container references */
+    @Nullable
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
     {
-        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), new SimpleFilter(FieldKey.fromParts("rowId"), surveyId), null).getObject(SurveyDesign.class);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), surveyId);
+        SurveyDesign result = new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
+        if (result == null)
+            return null;
+        Container actualContainer = ContainerManager.getForId(result.getContainerId());
+        return actualContainer == null || !actualContainer.hasPermission(user, ReadPermission.class) ? null : result;
     }
 
     /**
@@ -313,8 +324,10 @@ public class SurveyManager
 
     public Survey getSurvey(Container container, User user, int rowId)
     {
+        // Scope by container so a global rowId can't read/modify a survey in another folder
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("rowId"), rowId);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getObject(Survey.class);
     }
 
@@ -381,7 +394,7 @@ public class SurveyManager
                     deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ?").add(surveyDesignId);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ? AND Container = ?").add(surveyDesignId).add(c);
             executor.execute(deleteSurveyDesignsSql);
 
             transaction.commit();
@@ -390,8 +403,10 @@ public class SurveyManager
 
     public Survey[] getSurveys(Container c, User user, int surveyDesignId)
     {
+        // Scope by container so the delete cascade and lookups can't reach surveys in another folder
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("surveyDesignId"), surveyDesignId);
+        filter.addCondition(FieldKey.fromParts("Container"), c);
 
         return new TableSelector(SurveySchema.getInstance().getSurveysTable(), filter, null).getArray(Survey.class);
     }
@@ -780,6 +795,83 @@ public class SurveyManager
             assertEquals("Unexpected property value", "string", trimmedMap.get("jsonType"));
             assertEquals("Unexpected property value", "text", trimmedMap.get("inputType"));
             assertEquals("Unexpected property value", true, trimmedMap.get("required"));
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _projectA;
+        private Container _projectB;
+        private User _user;
+
+        @Before
+        public void setUp()
+        {
+            _user = getAdmin();
+            _projectA = createContainer("A");
+            _projectB = createContainer("B");
+        }
+
+        @Test
+        public void testSurveyDesignContainerScoping() throws Exception
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Scoping test design");
+            design = sm.saveSurveyDesign(_projectA, _user, design);
+            int designId = design.getRowId();
+
+            // 1. Same container: a user with read access in the design's container sees it.
+            User readerA = createUserInRole(_projectA, ReaderRole.class);
+            assertNotNull("Design should be visible from its own container to a user with read access",
+                    sm.getSurveyDesign(_projectA, readerA, designId));
+
+            // 2. Different container, caller can read the design's container: tolerated, design is returned.
+            User readerAB = createUserInRole(_projectA, ReaderRole.class);
+            grantRole(readerAB, _projectB, ReaderRole.class);
+            assertNotNull("Design should be visible from another container when the caller can read the design's container",
+                    sm.getSurveyDesign(_projectB, readerAB, designId));
+
+            // 3. Different container, caller cannot read the design's container: must return null.
+            User readerB = createUserInRole(_projectB, ReaderRole.class);
+            assertNull("Design must NOT be visible to a caller without read access to the design's container",
+                    sm.getSurveyDesign(_projectB, readerB, designId));
+
+            // A delete issued from the wrong container must not remove the design
+            sm.deleteSurveyDesign(_projectB, _user, designId, true);
+            assertNotNull("Cross-container delete must be a no-op", sm.getSurveyDesign(_projectA, _user, designId));
+
+            // A delete from the correct container removes it
+            sm.deleteSurveyDesign(_projectA, _user, designId, true);
+            assertNull("Same-container delete should remove the design", sm.getSurveyDesign(_projectA, _user, designId));
+        }
+
+        @Test
+        public void testSurveyContainerScoping()
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Scoping test design for survey");
+            design = sm.saveSurveyDesign(_projectA, _user, design);
+
+            Survey survey = new Survey();
+            survey.setLabel("Scoping test survey");
+            survey.setSurveyDesignId(design.getRowId());
+            survey = sm.saveSurvey(_projectA, _user, survey);
+            int surveyRowId = survey.getRowId();
+
+            assertNotNull("Survey should be visible from its own container", sm.getSurvey(_projectA, _user, surveyRowId));
+            assertNull("Survey must NOT be visible from another container", sm.getSurvey(_projectB, _user, surveyRowId));
+
+            // A delete issued from the wrong container must not remove the survey
+            sm.deleteSurvey(_projectB, _user, surveyRowId);
+            assertNotNull("Cross-container delete must be a no-op", sm.getSurvey(_projectA, _user, surveyRowId));
+
+            // A delete from the correct container removes it
+            sm.deleteSurvey(_projectA, _user, surveyRowId);
+            assertNull("Same-container delete should remove the survey", sm.getSurvey(_projectA, _user, surveyRowId));
         }
     }
 }

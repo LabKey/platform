@@ -286,6 +286,7 @@ public class SpecimenApiController extends SpringActionController
         @Override
         public ApiResponse execute(RequestIdForm requestIdForm, BindException errors)
         {
+            // OK for anyone with read access to see any request in this container, even if they didn't create it
             SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
             final Map<String, Object> response = new HashMap<>();
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
@@ -401,22 +402,22 @@ public class SpecimenApiController extends SpringActionController
     private SpecimenRequest getRequest(User user, Container container, int rowId, boolean checkOwnership, boolean checkEditability)
     {
         SpecimenRequest request = SpecimenRequestManager.get().getRequest(container, rowId);
-        boolean admin = container.hasPermission(user, RequestSpecimensPermission.class);
+        boolean admin = container.hasPermission(user, ManageRequestsPermission.class);
         boolean adminOrOwner = request != null && (admin || request.getCreatedBy() == user.getUserId());
         if (request == null || (checkOwnership && !adminOrOwner))
-            throw new RuntimeException("Request " + rowId + " was not found or the current user does not have permissions to access it.");
+            throw new IllegalArgumentException("Request " + rowId + " was not found or the current user does not have permissions to access it.");
         if (checkEditability)
         {
             if (admin)
             {
                 if (SpecimenRequestManager.get().isInFinalState(request))
-                    throw new RuntimeException("Request " + rowId + " is in a final state and cannot be modified.");
+                    throw new IllegalArgumentException("Request " + rowId + " is in a final state and cannot be modified.");
             }
             else
             {
                 SpecimenRequestStatus cartStatus = SpecimenRequestManager.get().getRequestShoppingCartStatus(container, user);
                 if (cartStatus == null || request.getStatusId() != cartStatus.getRowId())
-                    throw new RuntimeException("Request " + rowId + " has been submitted and can only be modified by an administrator.");
+                    throw new IllegalArgumentException("Request " + rowId + " has been submitted and can only be modified by an administrator.");
             }
         }
         return request;
@@ -615,7 +616,7 @@ public class SpecimenApiController extends SpringActionController
 
     private void buildTypeSummary(List<Map<String, Object>> summary, List<? extends SpecimenTypeSummary.TypeCount> types)
     {
-        // Recursively decend through the vial type hierarchy, adding a count property and a list of children for each type.
+        // Recursively descend through the vial type hierarchy, adding a count property and a list of children for each type.
         for (SpecimenTypeSummary.TypeCount count : types)
         {
             Map<String, Object> countProperties = new TreeMap<>();

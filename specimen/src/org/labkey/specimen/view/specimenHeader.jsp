@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.study.StudyService"%>
-<%@ page import="org.labkey.api.study.StudyUrls"%>
-<%@ page import="org.labkey.api.util.Pair"%>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.specimen.actions.ShowSearchAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController" %>
+<%@ page import="org.labkey.specimen.actions.SpecimenController.PtidVisit" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.SpecimensAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenHeaderBean" %>
 <%@ page import="java.util.Iterator" %>
@@ -74,47 +76,57 @@
 <%=link("Search", ShowSearchAction.getShowSearchURL(getContainer(), bean.isShowingVials()))%>&nbsp;
 <%=link("Reports", urlFor(SpecimenController.AutoReportListAction.class)) %>
 <%
-    if (!bean.getFilteredPtidVisits().isEmpty())
+    if (!bean.getPtidVisits().isEmpty())
     {
         // get the first visit label:
-        StringBuilder filterString = new StringBuilder();
-        filterString.append("<b>This view is displaying specimens only from ");
-        boolean usePlural = bean.getFilteredPtidVisits().size() != 1;
+        HtmlStringBuilder builder = HtmlStringBuilder.of()
+            .unsafeAppend("<b>")
+            .append("This view is displaying specimens only from ");
+        boolean usePlural = bean.getPtidVisits().size() != 1;
         if (bean.isSingleVisitFilter())
         {
-            filterString.append(h((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase())).append(" ");
-            for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
+            builder.append((usePlural ? subjectNounPlural : subjectNounSingle).toLowerCase())
+                .append(" ");
+            for (Iterator<PtidVisit> it = bean.getPtidVisits().iterator(); it.hasNext();)
             {
-                String ptid = it.next().getKey();
-                filterString.append(ptid);
+                String ptid = it.next().ptid();
+                builder.append(ptid);
                 if (it.hasNext())
-                    filterString.append(", ");
+                    builder.append(", ");
             }
-            String visit = bean.getFilteredPtidVisits().iterator().next().getValue();
+            String visit = bean.getPtidVisits().iterator().next().visit();
             if (visit != null)
-                filterString.append(" at visit ").append(visit);
-            filterString.append(".</b><br>");
+                builder.append(" at visit ").append(visit);
+
+            builder.append(".")
+                .unsafeAppend("</b><br>");
         }
         else
         {
-            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit ").append(usePlural?"pairs":"pair").append(":</b><br>");
-            for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
+            builder.append(" the following ")
+                .append(subjectNounSingle.toLowerCase())
+                .append("/visit ").append(usePlural ? "pairs" : "pair")
+                .append(":")
+                .unsafeAppend("</b><br>");
+            for (Iterator<PtidVisit> it = bean.getPtidVisits().iterator(); it.hasNext();)
             {
-                Pair<String, String> ptidVisit = it.next();
-                filterString.append(ptidVisit.getKey()).append("/").append(ptidVisit.getValue());
+                PtidVisit ptidVisit = it.next();
+                builder.append(ptidVisit.ptid())
+                    .append("/")
+                    .append(StringUtils.trimToEmpty(ptidVisit.visit()));
                 if (it.hasNext())
-                    filterString.append(", ");
+                    builder.append(", ");
             }
-            filterString.append(".");
+            builder.append(".");
         }
-        ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction(SpecimensAction.class);
+        ActionURL noFilterUrl = getViewContext().cloneActionURL().setAction(SpecimensAction.class);
 %>
     <p>
         <table width="700px">
-            <tr><td><%= unsafe(filterString.toString()) %></td></tr>
+            <tr><td><%=builder%></td></tr>
         </table>
     </p>
-<%= link("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl)%><%
+<%= link("Remove " + subjectNounSingle + "/Visit Filter", noFilterUrl)%><%
     }
 %>
 <div id="specimen-request-div" class="x-hidden">

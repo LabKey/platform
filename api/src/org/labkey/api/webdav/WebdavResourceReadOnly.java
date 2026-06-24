@@ -292,6 +292,12 @@ public class WebdavResourceReadOnly implements WebdavResource
     }
 
     @Override
+    public boolean canMove(User user)
+    {
+        return false;
+    }
+
+    @Override
     public boolean canRename(User user, boolean forRename)
     {
         return false;

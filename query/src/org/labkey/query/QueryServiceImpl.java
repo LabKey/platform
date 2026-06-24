@@ -39,8 +39,6 @@ import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.AuditConfigurable;
@@ -97,7 +95,6 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidNamedSetException;
 import org.labkey.api.query.MetadataColumnJSON;
 import org.labkey.api.query.MetadataUnavailableException;
 import org.labkey.api.query.QueryAction;
@@ -271,9 +268,6 @@ public class QueryServiceImpl implements QueryService
         }
     };
 
-    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause");
-    private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
-
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module, String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
 
@@ -303,8 +297,6 @@ public class QueryServiceImpl implements QueryService
             CompareType.CONTAINS_NONE_OF,
             CompareType.IN,
             CompareType.NOT_IN,
-            CompareType.IN_NS,
-            CompareType.NOT_IN_NS,
             CompareType.BETWEEN,
             CompareType.NOT_BETWEEN,
             CompareType.MEMBER_OF,
@@ -2575,28 +2567,6 @@ public class QueryServiceImpl implements QueryService
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
-    }
-
-    @Override
-    public void saveNamedSet(String setName, List<String> setList)
-    {
-        NAMED_SET_CACHE.put(NAMED_SET_CACHE_ENTRY + setName, setList);
-    }
-
-    @Override
-    public void deleteNamedSet(String setName)
-    {
-        NAMED_SET_CACHE.remove(NAMED_SET_CACHE_ENTRY + setName);
-    }
-
-    @Override
-    public List<String> getNamedSet(String setName)
-    {
-        List<String> namedSet = NAMED_SET_CACHE.get(NAMED_SET_CACHE_ENTRY + setName);
-        if (namedSet == null)
-            throw new InvalidNamedSetException("Named set not found in cache: " + setName);
-
-        return Collections.unmodifiableList(namedSet);
     }
 
     @Override

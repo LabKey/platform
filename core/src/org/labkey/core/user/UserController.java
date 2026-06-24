@@ -816,10 +816,7 @@ public class UserController extends SpringActionController
             VBox users = new VBox();
             users.setTitle("Users");
             users.setFrame(WebPartView.FrameType.PORTAL);
-
-            JspView<ShowUsersForm> toggleInactiveView = new JspView<>("/org/labkey/core/user/toggleInactive.jsp", form);
-
-            users.addView(toggleInactiveView);
+            users.addView(new JspView<>("/org/labkey/core/user/usersGridHeader.jsp", form));
             users.addView(createQueryView(form, errors, false, "Users"));
 
             return users;
@@ -842,8 +839,8 @@ public class UserController extends SpringActionController
     }
 
     // Site admins and Application admins can act on any user
-    // Project admins can only act on users who are project users
-    private void authorizeUserAction(Integer targetUserId, String action, boolean allowFolderAdmins) throws UnauthorizedException
+    // Project admins can only act on users who have read permissions in the current container
+    private void authorizeUserAction(User targetUser, String action, boolean allowFolderAdmins) throws UnauthorizedException
     {
         User user = getUser();
 
@@ -863,8 +860,8 @@ public class UserController extends SpringActionController
             if (!allowFolderAdmins)
                 requiresProjectAdminOrBetter();
 
-            // ...and user must be a project user
-            if (!SecurityManager.getProjectUsersIds(c.getProject()).contains(targetUserId))
+            // ...and target user has read permission in this folder
+            if (!c.hasPermission(targetUser, ReadPermission.class))
                 throw new UnauthorizedException("You can only " + action + " project users");
         }
     }
@@ -1584,7 +1581,7 @@ public class UserController extends SpringActionController
 
             // Anyone can view their own record; otherwise, make sure current user can view the details of this user
             if (!isOwnRecord)
-                authorizeUserAction(_detailsUserId, "view details of", true);
+                authorizeUserAction(detailsUser, "view details of", true);
 
             Container c = getContainer();
             ActionURL currentUrl = getViewContext().getActionURL();
@@ -2554,27 +2551,17 @@ public class UserController extends SpringActionController
 
 
     /**
-     * Collects a set of users either from a particular group or from any of the project groups of the current container.
-     * Optionally filters for those users who have a given set of permissions. Can also include deactivated users (though if
+     * Collects a set of users either from a particular group or from all users in the system. Optionally filters for
+     * those users who have a given set of permissions. Can also include deactivated users (though if
      * checking for permissions, no deactivated users will be included).
-     *
-     * N.B. Users that have permissions within the current project but are not part of any project group WILL NOT be returned unless
-     * the user is in one of the global groups (such as SiteAdmins) and you set allMembers=true. In other words, this is probably
-     * not the API you're looking for. Consider using GetUsersWithPermissions instead.
      */
-    @RequiresLogin
-    @RequiresPermission(ReadPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
     {
         @Override
         public ApiResponse execute(GetUsersForm form, BindException errors)
         {
             Container container = getContainer();
-            User currentUser = getUser();
-
-            if (container.isRoot() && !currentUser.hasRootPermission(UserManagementPermission.class))
-                throw new UnauthorizedException("Only site/application administrators may see users in the root container!");
-
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
@@ -2583,24 +2570,18 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getProjectGroupUsers(form, response, !form.getActive());
+                users = getGroupUsers(form, response, !form.getActive());
             }
             else
             {
-                //special-case: if container is root, return all active users
-                //else, return all users in the current project
-                //we've already checked above that the current user is a system admin
-                if (container.isRoot())
-                    users = UserManager.getUsers(!form.getActive());
-                else
-                    users = SecurityManager.getProjectUsers(container, form.isAllMembers(), !form.getActive());
+                users = UserManager.getUsers(!form.getActive());
             }
 
-            this.setUsersList(form, filterForPermissions(form, users), response);
+            setUsersList(form, filterForPermissions(form, users), response);
             return response;
         }
 
-        // Filter the collection of users to those that have all of the permissions provided in the form.
+        // Filter the collection of users to those that have all the permissions provided in the form.
         // If no permissions are provided, no filtering will occur.
         protected Set<User> filterForPermissions(GetUsersForm form, Collection<User> users)
         {
@@ -2620,7 +2601,7 @@ public class UserController extends SpringActionController
         }
 
         @NotNull
-        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeInactive)
+        protected Collection<User> getGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeInactive)
         {
             Container project = getContainer().getProject();
 
@@ -2639,6 +2620,10 @@ public class UserController extends SpringActionController
             if (null == group)
                 throw new NotFoundException("Cannot find group with id " + groupId);
 
+            // Kanban #1924: Assure permission in the group's container
+            Container groupContainer =  ContainerManager.getForId(group.getContainer());
+            if (null != groupContainer && !groupContainer.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to see information about the group '" + group.getName() + "'");
             response.put("groupId", group.getUserId());
             response.put("groupName", group.getName());
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
@@ -2737,11 +2722,10 @@ public class UserController extends SpringActionController
 
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response, false));
+                users = filterForPermissions(form, getGroupUsers(form, response, false));
             }
             else
             {
-                // Active users only
                 users = SecurityManager.getUsersWithPermissions(getContainer(), form.getPermissionClasses());
             }
 
@@ -3179,23 +3163,23 @@ public class UserController extends SpringActionController
             UserController controller = new UserController();
 
             assertForNoPermission(user,
-                new GetImpersonationUsersAction(),
-                new ImpersonateUserAction(),
                 new GetImpersonationGroupsAction(),
-                new ImpersonateGroupAction(),
                 new GetImpersonationRolesAction(),
-                new ImpersonateRolesAction()
+                new GetImpersonationUsersAction(),
+                new ImpersonateGroupAction(),
+                new ImpersonateRolesAction(),
+                new ImpersonateUserAction()
             );
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
                 new BeginAction(),
-                new GetUsersAction(),
                 new GetUsersWithPermissionsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
+                new GetUsersAction(),
                 controller.new ShowUsersAction()
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
