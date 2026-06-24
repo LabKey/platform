@@ -99,6 +99,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -1325,12 +1326,12 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
     public class ViewRequestsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            requiresLogin();
             SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
             grid.setExtraLinks(true);
             grid.setShowCustomizeLink(false);
@@ -4428,6 +4429,9 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
+            @Nullable SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+            if (null == request)
+                throw new NotFoundException("Specimen request " + _requestId + " was not found in this study");
             HtmlView header = new HtmlView(LinkBuilder.labkeyLink("View Request", SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);

@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -45,12 +44,18 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getUrl(ViewContext ctx)
+    public ActionURL getUrl(ViewContext ctx)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
         url.addParameter("configuration", getRowId());
 
         return url;
+    }
+
+    @Override
+    public ActionURL getReauthUrl(ViewContext ctx)
+    {
+        return getUrl(ctx).addParameter("reauth", true);
     }
 
     @Override

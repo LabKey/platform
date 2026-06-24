@@ -15,21 +15,25 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.AuthenticationManager.AuthenticationConfigurationForm" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.devtools.authentication.TestSsoController.TestSsoForm" %>
 <%@ page import="org.labkey.devtools.authentication.TestSsoController.ValidateAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    JspView<AuthenticationConfigurationForm> me = HttpView.currentView();
-    AuthenticationConfigurationForm form = me.getModelBean();
+    JspView<TestSsoForm> me = HttpView.currentView();
+    TestSsoForm form = me.getModelBean();
+    boolean reauth = form.isReauth();
+    String label = "SSO Test " + (reauth ? "Reauthentication" : "Authentication");
+    String contextContent = "Type an email address below to \"" + (reauth ? "re" : "") + "authenticate\" as that user.";
 %>
 <labkey:form action="<%=urlFor(ValidateAction.class)%>" method="post" layout="horizontal">
     <input type="hidden" name="configuration" value="<%=form.getConfiguration()%>">
+    <input type="hidden" name="reauth" value="<%=form.isReauth()%>">
     <labkey:input type="text" name="email" value="" size="50"
-                  label="SSO Test Authentication"
-                  contextContent="Type an email address below to \"authenticate\" as that user."
+        label="<%=label%>"
+        contextContent="<%=contextContent%>"
     />
-    <%= button("Authenticate").submit(true) %>
+    <%= button(form.isReauth() ? "Reauthenticate" : "Authenticate").submit(true) %>
 </labkey:form>
