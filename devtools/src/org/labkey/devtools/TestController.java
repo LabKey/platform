@@ -1411,14 +1411,50 @@ public class TestController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public static class ExecuteMutatingSqlAction extends SimpleViewAction<Object>
+    public static class ExecuteMutatingSqlGetAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
+            setTitle("Execute Mutating SQL via GET");
+
             new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
 
             return new HtmlView(HtmlString.of("UPDATE via GET was allowed!"));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class ExecuteMutatingSqlPostAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
+        {
+            setTitle("Execute Mutating SQL via POST");
+            return new HtmlView(HtmlString.of(reshow ? "UPDATE via POST was allowed!" : "Need to POST to this action"));
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return actionURL(BeginAction.class);
         }
 
         @Override
