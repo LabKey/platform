@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureFlag;
@@ -30,8 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 
 public class OptionalFeatureServiceImpl implements OptionalFeatureService
 {
@@ -91,19 +88,7 @@ public class OptionalFeatureServiceImpl implements OptionalFeatureService
     {
         WriteableAppProps props = AppProps.getWriteableInstance();
         setFeatureEnabled(feature, enabled, props);
-
-        // Hack to avoid "Caller is already loading this object!" exception from the cache due to reentrancy
-        if (ALLOW_MUTATING_SQL_VIA_GET.equals(feature))
-        {
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
-            {
-                props.save(user);
-            }
-        }
-        else
-        {
-            props.save(user);
-        }
+        props.save(user);
     }
 
     private void setFeatureEnabled(String feature, boolean enabled, WriteableAppProps props)

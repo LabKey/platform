@@ -1250,10 +1250,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class<?> c = getActionForThread();
         if (null == c)
             return;
-        // Order is important: this method is called very early during startup. The getActionForThread() check above
-        // ensures the service is ready.
-        if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-            return;
 
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
@@ -1269,12 +1265,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
         else if (null != vc && "GET".equals(vc.getRequest().getMethod()))
         {
             readonly = true;
-            _log.warn("Action {} accepted GET unexpectedly... might need to update executingMutatingSql()", c.getName());
+            _log.warn("Action {} accepted GET unexpectedly... might need to update checkForMutatingSql()", c.getName());
         }
 
         if (readonly)
         {
             if (c.getName().contains("JunitController"))
+                return;
+
+            // Checking this late in the game to ensure OptionalFeatureService has been initialized.
+            if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
                 return;
 
             // Note: This defers the mutating SQL parsing & detection until after the quick checks above
