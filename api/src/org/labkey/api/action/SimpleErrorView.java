@@ -23,8 +23,6 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * View that renders an error collection.
- * User: adam
- * Date: Sep 26, 2007
  */
 public class SimpleErrorView extends JspView<Boolean>
 {

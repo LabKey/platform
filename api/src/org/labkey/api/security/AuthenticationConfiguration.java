@@ -114,6 +114,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     {
         LinkFactory getLinkFactory();
         URLHelper getUrl(ViewContext ctx);
+        URLHelper getReauthUrl(ViewContext ctx);
 
         /**
          * Allows an SSO auth configuration to specify that it should be used automatically instead of showing the standard
