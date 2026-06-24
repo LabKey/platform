@@ -1,5 +1,5 @@
 <form class="auth-form" name="login" method="post">
-    <div class="auth-header">Sign In</div>
+    <div class="auth-header" id="header">Sign In</div>
     <div class="labkey-error" id="errors"></div>
     <div class="auth-form-body">
         <label for="email">Email</label>
@@ -23,7 +23,7 @@
         <div class="auth-item auth-credentials-submit">
             <!-- Note: login.js attaches an authenticateUser() click event to elements with classes "loginSubmitButton" and "signin-btn" -->
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
-            <button class="labkey-button primary signin-btn" type="button"><span>Sign In</span></button>
+            <button class="labkey-button primary signin-btn" type="button"><span id="sign-in-button">Sign In</span></button>
             <span class="registrationSection" hidden>
                 <a class="labkey-button" id="registerButton" href="login-register.view">Register</a>
             </span>
