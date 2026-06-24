@@ -98,6 +98,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -1216,10 +1217,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void setActionForThread(Class<?> c)
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            currentAction.get().add(c);
-        }
+        currentAction.get().add(c);
     }
 
     public static void clearActionForThread(Controller c)
@@ -1230,43 +1228,31 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void clearActionForThread(Class<?> c)
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            ArrayList<Class<?>> list = currentAction.get();
-            assert !list.isEmpty();
-            assert list.getLast() == c;
-            list.removeLast();
-        }
-    }
-
-    private static boolean assertsEnabled()
-    {
-        boolean enableasserts = false;
-        //noinspection AssertWithSideEffects
-        assert (enableasserts = true);
-        return enableasserts;
+        ArrayList<Class<?>> list = currentAction.get();
+        assert !list.isEmpty();
+        assert list.getLast() == c;
+        list.removeLast();
     }
 
     @Nullable
     public static Class<?> getActionForThread()
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            ArrayList<Class<?>> list = currentAction.get();
-            if (!list.isEmpty())
-                return list.getLast();
-        }
+        ArrayList<Class<?>> list = currentAction.get();
+        if (!list.isEmpty())
+            return list.getLast();
         return null;
     }
 
-    public static void executingMutatingSql(String sql)
+    public static void checkForMutatingSql(Supplier<String> mutatingSqlSupplier)
     {
-        if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-            return;
         if (ignoreUpdates.get())
             return;
         Class<?> c = getActionForThread();
         if (null == c)
+            return;
+        // Order is important: this method is called very early during startup. The getActionForThread() check above
+        // ensures the service is ready.
+        if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
             return;
 
         ViewContext vc = HttpView.currentContext();
@@ -1291,11 +1277,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (c.getName().contains("JunitController"))
                 return;
 
-            boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
-            String message = "MUTATING SQL executed as part of handling action: " +
-                    (null == vc ? "" : vc.getRequest().getMethod()) + " " +
-                    c.getName() + (verbose ? ("\n" + sql) : "");
-            throw new IllegalStateException(message);
+            // Note: This defers the mutating SQL parsing & detection until after the quick checks above
+            String mutatingSql = mutatingSqlSupplier.get();
+            if (mutatingSql != null)
+            {
+                boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
+                String message = "MUTATING SQL executed as part of handling action: " +
+                        (null == vc ? "" : vc.getRequest().getMethod()) + " " +
+                        c.getName() + (verbose ? ("\n" + mutatingSql) : "");
+                throw new IllegalStateException(message);
+            }
         }
     }
 

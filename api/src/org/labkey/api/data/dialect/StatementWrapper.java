@@ -2828,8 +2828,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     {
         long elapsed = System.currentTimeMillis() - _msStart;
 
-        if (isMutatingSql(sql))
-            SpringActionController.executingMutatingSql(sql);
+        SpringActionController.checkForMutatingSql(() -> isMutatingSql(sql) ? sql : null);
 
         // Hold on to this stack trace so that we can reuse it later (if collection has been enabled)
         Query query = QueryProfiler.getInstance().track(_conn.getScope(), sql, translateParametersForQueryTracking(), elapsed, _stackTrace, isRequestThread(), queryLogging);

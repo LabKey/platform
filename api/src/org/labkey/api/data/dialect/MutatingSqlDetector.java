@@ -18,6 +18,7 @@ package org.labkey.api.data.dialect;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.SqlScanner;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
@@ -65,7 +66,7 @@ public class MutatingSqlDetector
                     if (mutatingWord == null && sql.startsWith("? = CALL"))
                         mutatingWord = Boolean.TRUE;
 
-                    if (null == mutatingWord)
+                    if (null == mutatingWord && AppProps.getInstance().isDevMode())
                         LOG.warn("Unrecognized keyword: {} for SQL: {}", word, sql);
 
                     if (Boolean.TRUE == mutatingWord)
