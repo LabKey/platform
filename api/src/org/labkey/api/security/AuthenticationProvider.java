@@ -307,6 +307,7 @@ public interface AuthenticationProvider
         private @NotNull Map<String, String> _userAttributeMap = Collections.emptyMap();  // A case-insensitive map of attribute names and values associated with the user
         private @NotNull Map<String, Object> _authenticationProperties = Collections.emptyMap();
         private boolean _requireSecondary = true;                                         // Require secondary authentication
+        private boolean _reauth = false;
         private @Nullable String _successDetails = null;                                  // An optional string describing how successful authentication took place, which will
                                                                                           // appear in the audit log. If null, the configuration's description will be used.
 
@@ -445,6 +446,17 @@ public interface AuthenticationProvider
         public AuthenticationResponse setRequireSecondary(boolean requireSecondary)
         {
             _requireSecondary = requireSecondary;
+            return this;
+        }
+
+        public boolean isReauth()
+        {
+            return _reauth;
+        }
+
+        public AuthenticationResponse setReauth(boolean reauth)
+        {
+            _reauth = reauth;
             return this;
         }
     }
