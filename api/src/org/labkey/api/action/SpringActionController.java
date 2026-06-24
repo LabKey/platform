@@ -21,11 +21,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -56,6 +55,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -131,7 +131,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
-    private static final Logger _log = LogManager.getLogger(SpringActionController.class);
+    private static final Logger _log = LogHelper.getLogger(SpringActionController.class, "Problems with actions and template");
 
     public void setActionResolver(ActionResolver actionResolver)
     {
@@ -146,7 +146,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected static void registerAction(ActionDescriptor ad)
     {
         ActionDescriptor prev = _classToDescriptor.put(ad.getActionClass(), ad);
-        assert null == prev || prev == ad;
+        if (null != prev)
+            throw new IllegalStateException("Action class '" + prev.getActionClass() + "' has already registered with a controller");
     }
 
     @Nullable
@@ -751,16 +752,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (action instanceof NavTrailAction)
         {
             ((NavTrailAction)action).addNavTrail(root);
-            assert isValidNavTree(root, action) : action.getClass().getName() + " is generating a malformed NavTree";
+            if (!isValidNavTree(root))
+                throw new IllegalStateException(action.getClass().getName() + " is generating a malformed NavTree");
         }
     }
 
     // NavTrail renders only the first level children, so flag the NavTree as invalid if any child has children. This
     // most likely means that addNavTrail() chained calls to addChild(), which adds nodes that will never render.
-    private boolean isValidNavTree(NavTree tree, Controller action)
+    private boolean isValidNavTree(NavTree tree)
     {
-        return tree.getChildren().stream()   // Very temporary exception for RespondAction. TODO: Remove once 20.7.2 changes are merged to develop.
-            .noneMatch(NavTree::hasChildren) || "org.labkey.announcements.AnnouncementsController$RespondAction".equals(action.getClass().getName());
+        return tree.getChildren().stream()
+            .noneMatch(NavTree::hasChildren);
     }
 
     protected void beforeAction(Controller action) throws ServletException
@@ -1229,9 +1231,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public static void clearActionForThread(Class<?> c)
     {
         ArrayList<Class<?>> list = currentAction.get();
-        assert !list.isEmpty();
-        assert list.getLast() == c;
-        list.removeLast();
+        Class<?> last = list.removeLast();
+        if (last != c)
+            throw new IllegalStateException("Unexpected last action class: " + last.getName() + " vs. " + c.getName());
     }
 
     @Nullable
@@ -1247,30 +1249,34 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         if (ignoreUpdates.get())
             return;
-        Class<?> c = getActionForThread();
-        if (null == c)
+        Class<?> actionClass = getActionForThread();
+        if (null == actionClass)
             return;
 
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
 
-        if (ReadOnlyApiAction.class.isAssignableFrom(c))
+        if (ReadOnlyApiAction.class.isAssignableFrom(actionClass))
         {
             readonly = true;
         }
-        else if (SimpleRedirectAction.class.isAssignableFrom(c) || SimpleViewAction.class.isAssignableFrom(c))
+        else if (SimpleRedirectAction.class.isAssignableFrom(actionClass) || SimpleViewAction.class.isAssignableFrom(actionClass))
         {
             readonly = true;
         }
-        else if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+        else
         {
-            readonly = true;
-            _log.warn("Action {} accepted GET unexpectedly... might need to update checkForMutatingSql()", c.getName());
+            if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+            {
+                readonly = true;
+                if (!FormViewAction.class.isAssignableFrom(actionClass) && AppProps.getInstance().isDevMode())
+                    _log.warn("Action {} accepted GET unexpectedly... might need to update checkForMutatingSql()", actionClass.getName());
+            }
         }
 
         if (readonly)
         {
-            if (c.getName().contains("JunitController"))
+            if (actionClass.getName().contains("JunitController"))
                 return;
 
             // Checking this late in the game to ensure OptionalFeatureService has been initialized.
@@ -1281,10 +1287,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
-                boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
+                boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +
-                        c.getName() + (verbose ? ("\n" + mutatingSql) : "");
+                        actionClass.getName() + (verbose ? ("\n" + mutatingSql) : "");
                 throw new IllegalStateException(message);
             }
         }
