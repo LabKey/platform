@@ -8084,6 +8084,8 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
+                    if (!source.hasPermission(getUser(), AdminPermission.class))
+                        throw new UnauthorizedException("You do not have permission to copy permissions from the specified project.");
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c, getUser());
 
                     //copy role assignments
@@ -8506,6 +8508,9 @@ public class AdminController extends SpringActionController
             Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
             if (null != revertContainer)
             {
+                if (!revertContainer.hasPermission(getUser(), AdminPermission.class))
+                    throw new UnauthorizedException();
+
                 if (revertContainer.isContainerTab())
                 {
                     FolderTab tab = revertContainer.getParent().getFolderType().findTab(revertContainer.getName());
@@ -10433,10 +10438,10 @@ public class AdminController extends SpringActionController
             if (isBlank(form.getContainerPath()))
                 throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
+            if (container == null)
+                throw new NotFoundException();
             if (!container.hasPermission(getUser(), AdminPermission.class))
-            {
                 throw new UnauthorizedException();
-            }
             for (String tabName : form.getResurrectFolders())
             {
                 ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
@@ -12703,6 +12708,67 @@ public class AdminController extends SpringActionController
                     resp.getContentAsString().contains("permission to import from the specified source folder"));
 
             // Positive control performed in S3ImportTest.testS3Import(). Difficult to mock here due to pipeline job
+        }
+    }
+
+    public static class RevertFolderScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testRevertFolderRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(RevertFolderAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath());
+
+            // Cross-container attempt by a caller who is not an admin of the target -> 403, before any mutation.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (who IS an admin of the target) is allowed through even cross-container,
+            // proving the fix re-checks AdminPermission on the target rather than locking to the request container.
+            // folderB is a plain folder with no container tabs, so the action makes no change and returns success:false
+            // at status 200 -- the point is that the guard does not reject an authorized caller.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testClearDeletedTabFoldersRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(ClearDeletedTabFoldersAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath())
+                    .addParameter("resurrectFolders", "anyTab");
+
+            // A folder admin in A only must not clear deleted-tab markers in folder B (resolved by containerPath) -> 403.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (admin of the target) is allowed through -> 200.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testSetFolderPermissionsCopyRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdmin = createUserInRole(dest, FolderAdminRole.class);
+
+            // Copying groups/role assignments from a project the caller does not administer must be rejected. The
+            // action's @RequiresPermission(AdminPermission.class) only proves admin on the destination container, so a
+            // dest-only admin supplying another project's id as targetProject must get 403, not a copy of its security
+            // configuration. (Positive control omitted: a successful copy needs real project group/policy fixtures.)
+            ActionURL url = new ActionURL(SetFolderPermissionsAction.class, dest)
+                    .addParameter("permissionType", "CopyExistingProject")
+                    .addParameter("targetProject", source.getId());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, destAdmin));
         }
     }
 }

@@ -79,6 +79,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -98,6 +99,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -105,6 +107,7 @@ import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.specimen.SpecimenQuerySchema;
 import org.labkey.api.specimen.SpecimenSchema;
 import org.labkey.api.specimen.Vial;
@@ -169,8 +172,10 @@ import org.labkey.specimen.RequestEventType;
 import org.labkey.specimen.RequestedSpecimens;
 import org.labkey.specimen.SpecimenManager;
 import org.labkey.specimen.SpecimenRequestException;
+import org.labkey.specimen.SpecimenModule;
 import org.labkey.specimen.SpecimenRequestManager;
 import org.labkey.specimen.SpecimenRequestStatus;
+import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.importer.QueryBasedSpecimenTransform;
 import org.labkey.specimen.importer.RequestabilityManager;
 import org.labkey.specimen.importer.SimpleSpecimenImporter;
@@ -1197,12 +1202,16 @@ public class SpecimenController extends SpringActionController
         @Override
         public ModelAndView getView(SpecimenEventForm form, BindException errors)
         {
-            if (form.getId() != null && form.getTargetStudy() != null)
+            Container targetStudy = form.getTargetStudy();
+            // Note that the query schema used by getVial() below will not select the vial if the user doesn't have
+            // read permissions in the target study, so technically this permission check is redundant. However,
+            // getVial() without read permissions leads to an NPE, so checking here improves behavior.
+            if (form.getId() != null && targetStudy != null && targetStudy.hasPermission(getUser(), ReadPermission.class))
             {
-                Vial vial = SpecimenManager.get().getVial(form.getTargetStudy(), getUser(), form.getId());
+                Vial vial = SpecimenManager.get().getVial(targetStudy, getUser(), form.getId());
                 if (vial != null)
                 {
-                    ActionURL url = new ActionURL(SpecimenEventsAction.class, form.getTargetStudy()).addParameter("id", vial.getRowId());
+                    ActionURL url = new ActionURL(SpecimenEventsAction.class, targetStudy).addParameter("id", vial.getRowId());
                     throw new RedirectException(url);
                 }
             }
@@ -1317,12 +1326,12 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    @RequiresLogin
     public class ViewRequestsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            requiresLogin();
             SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
             grid.setExtraLinks(true);
             grid.setShowCustomizeLink(false);
@@ -3820,6 +3829,8 @@ public class SpecimenController extends SpringActionController
             if (_specimenRequest == null)
                 throw new NotFoundException();
 
+            requiresEditRequestPermissions(_specimenRequest);
+
             boolean statusChanged = form.getStatus() != _specimenRequest.getStatusId();
             boolean detailsChanged = !nullSafeEqual(form.getRequestDescription(), _specimenRequest.getComments());
 
@@ -4418,6 +4429,9 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(IdForm form, BindException errors)
         {
             _requestId = form.getId();
+            @Nullable SpecimenRequest request = SpecimenRequestManager.get().getRequest(getContainer(), _requestId);
+            if (null == request)
+                throw new NotFoundException("Specimen request " + _requestId + " was not found in this study");
             HtmlView header = new HtmlView(LinkBuilder.labkeyLink("View Request", SpecimenController.getManageRequestURL(getContainer(), form.getId(), null)));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RequestId"), form.getId());
             GridView historyGrid = getRequestEventGridView(getViewContext().getRequest(), errors, filter);
@@ -5565,6 +5579,8 @@ public class SpecimenController extends SpringActionController
         }
     }
 
+    public record PtidVisit(String ptid, String visit){}
+
     @RequiresPermission(ReadPermission.class)
     public class SelectedSpecimensAction extends QueryViewAction<SpecimenViewTypeForm, SpecimenQueryView>
     {
@@ -5580,26 +5596,26 @@ public class SpecimenController extends SpringActionController
         protected ModelAndView getHtmlView(SpecimenViewTypeForm form, BindException errors) throws Exception
         {
             Study study = getStudyRedirectIfNull();
-            Set<Pair<String, String>> ptidVisits = new HashSet<>();
+            Set<PtidVisit> ptidVisits = new HashSet<>();
             for (ParticipantDataset pd : getFilterPds())
             {
                 if (pd.getSequenceNum() == null)
                 {
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), null));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), null));
                 }
                 else if (study.getTimepointType() != TimepointType.VISIT && pd.getVisitDate() != null)
                 {
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), DateUtil.formatDate(pd.getContainer(), pd.getVisitDate())));
                 }
                 else
                 {
                     Visit visit = pd.getSequenceNum() != null ? StudyInternalService.get().getVisitForSequence(study, pd.getSequenceNum()) : null;
-                    ptidVisits.add(new Pair<>(pd.getParticipantId(), visit != null ? visit.getLabel() : "" + StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
+                    ptidVisits.add(new PtidVisit(pd.getParticipantId(), visit != null ? visit.getLabel() : StudyInternalService.get().formatSequenceNum(pd.getSequenceNum())));
                 }
             }
             SpecimenQueryView view = createInitializedQueryView(form, errors, form.getExportType() != null, null);
             JspView<SpecimenHeaderBean> header = new JspView<>("/org/labkey/specimen/view/specimenHeader.jsp",
-                    new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
+                new SpecimenHeaderBean(getViewContext(), view, ptidVisits));
             return new VBox(header, view);
         }
 
@@ -6004,6 +6020,78 @@ public class SpecimenController extends SpringActionController
                     .addParameter("requirementId", String.valueOf(requirementId));
             post(ownUrl, getAdmin());
             assertNull("Same-container delete should remove the requirement", provider.getRequirement(folderA, requirementId));
+        }
+
+        @Test
+        public void testDeleteActorActionRejectsForeignActor() throws Exception
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            SpecimenRequestRequirementProvider provider = SpecimenRequestRequirementProvider.get();
+
+            // An actor that lives in folder A
+            SpecimenRequestActor actor = createActor(folderA, "Delete actor scoping actor");
+            int actorId = actor.getRowId();
+
+            // Deleting through folder B, where the actor does not live, must be a graceful no-op rather than a 500:
+            // the fix makes getActor container-scoped, so handlePost sees null and skips actor.delete() instead of
+            // NPEing. The action still redirects (302) and the actor must survive in its own folder.
+            ActionURL foreignUrl = new ActionURL(DeleteActorAction.class, folderB)
+                    .addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(foreignUrl, getAdmin()));
+            assertNotNull("Cross-container delete must not remove the actor", provider.getActor(folderA, actorId));
+
+            // Positive control: deleting through the actor's own folder removes it, proving the guard rejects only the
+            // cross-container case rather than every delete
+            ActionURL ownUrl = new ActionURL(DeleteActorAction.class, folderA)
+                    .addParameter("id", String.valueOf(actorId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, getAdmin()));
+            assertNull("Same-container delete should remove the actor", provider.getActor(folderA, actorId));
+        }
+
+        @Test
+        public void testManageRequestStatusRequiresEditPermission() throws Exception
+        {
+            // ManageRequestStatusAction is annotated @RequiresPermission(RequestSpecimensPermission.class), which only
+            // proves the caller may make requests. However, a requester shouldn't be able to change ANOTHER user's request
+            //
+            // SpecimenRequesterRole (RequestSpecimensPermission only, no ManageRequestsPermission) is applicable only
+            // in a study folder that has the Specimen module, so stand up a minimal study.
+            Container folder = createContainer("ManageStatus");
+            Set<Module> modules = new HashSet<>(folder.getActiveModules());
+            modules.add(ModuleLoader.getInstance().getModule("study"));
+            modules.add(ModuleLoader.getInstance().getModule(SpecimenModule.NAME));
+            folder.setActiveModules(modules, getAdmin());
+            StudyService.get().createStudy(folder, getAdmin(), "Specimen scoping study", TimepointType.VISIT, true);
+
+            // A request OWNED BY THE ADMIN (not the attacker), in a freshly created status
+            SpecimenRequestStatus status = new SpecimenRequestStatus();
+            status.setContainer(folder);
+            status.setLabel("Manage status scoping status");
+            status.setSortOrder(1);     // non-null and >= 0 so the bean isn't treated as a system status
+            status = Table.insert(getAdmin(), SpecimenSchema.get().getTableInfoSampleRequestStatus(), status);
+
+            SpecimenRequest request = new SpecimenRequest();
+            request.setContainer(folder);
+            request.setStatusId(status.getRowId());
+            request = SpecimenRequestManager.get().createRequest(getAdmin(), request, false);
+            int requestId = request.getRowId();
+
+            // A plain requester: holds RequestSpecimensPermission (so the action's annotation passes) but is neither a
+            // coordinator nor the request's owner, so hasEditRequestPermissions() is false.
+            User requester = createUserInRole(folder, SpecimenRequesterRole.class);
+
+            // Mutating another user's request must be rejected at the per-request guard (403) rather than applied. The
+            // request id and a no-op status keep the form valid, so without the fix the action proceeds and does NOT 403.
+            ActionURL url = new ActionURL(ManageRequestStatusAction.class, folder)
+                    .addParameter("id", String.valueOf(requestId))
+                    .addParameter("status", String.valueOf(status.getRowId()));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, requester));
+
+            // Positive control: an admin holds ManageRequestsPermission, so the same request passes the guard rather
+            // than being blocked at 403 -- proving the guard rejects only the unprivileged requester, not every caller.
+            assertNotEquals("An admin must pass the edit-request guard, not be blocked at 403",
+                    HttpServletResponse.SC_FORBIDDEN, post(url, getAdmin()).getStatus());
         }
     }
 }
