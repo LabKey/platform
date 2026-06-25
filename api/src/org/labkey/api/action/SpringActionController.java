@@ -1280,7 +1280,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return;
 
             // Checking this late in the game to ensure OptionalFeatureService has been initialized.
-            if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
+            if (!ModuleLoader.getInstance().isStartupComplete() || OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
                 return;
 
             // Note: This defers the mutating SQL parsing & detection until after the quick checks above
