@@ -119,6 +119,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
@@ -907,7 +908,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment sql;
         UserSchema plateUserSchema;
-        // Issue 53194 : this would be the case for linked to study samples. The contextual role is set up from the study dataset
+        // Issue 53194: this would be the case for linked to study samples. The contextual role is set up from the study dataset
         // for the source sample, we want to allow the plate schema to inherit any contextual roles to allow querying
         // against tables in that schema.
         if (_userSchema instanceof UserSchema.HasContextualRoles samplesSchema && !samplesSchema.getContextualRoles().isEmpty())
@@ -988,7 +989,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private ContainerFilter getSampleStatusLookupContainerFilter()
     {
-        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // The default lookup container filter is Current. However, we want to have the default be CurrentPlusProjectAndShared
         // for the sample status lookup since in the app project context we want to share status definitions across
         // a given project instead of creating duplicate statuses in each subfolder project.
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
@@ -1058,7 +1059,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         for (ColumnInfo dbColumn : dbTable.getColumns())
         {
-            // Don't include PHI columns in full text search index
+            // Don't include PHI columns in the full-text search index
             // CONSIDER: Can we move this to a base class? Maybe in .addColumn()
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
@@ -1111,7 +1112,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (propColumn.isMvEnabled())
                 {
                     // The column in the physical table has a "_MVIndicator" suffix, but we want to expose
-                    // it with a "MVIndicator" suffix (no underscore)
+                    // it with an "MVIndicator" suffix (no underscore)
                     var mvColumn = new AliasedColumn(this, dp.getName() + MvColumn.MV_INDICATOR_SUFFIX,
                             StorageProvisioner.get().getMvIndicatorColumn(dbTable, dp.getPropertyDescriptor(), "No MV column found for '" + dp.getName() + "' in sample type '" + getName() + "'"));
                     mvColumn.setLabel(dp.getLabel() != null ? dp.getLabel() : dp.getName() + " MV Indicator");
@@ -1176,27 +1177,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public SQLFragment getFromSQLExpanded(String alias, Set<FieldKey> selectedColumns)
     {
         SQLFragment sql = new SQLFragment("(");
-        boolean usedMaterialized;
-
 
         // SELECT FROM
-        /* NOTE We want to avoid caching in paths where the table is actively being updated (e.g. loadRows)
-         * Unfortunately, we don't _really_ know when this is, but if we in a transaction that's a good guess.
-         * Also, we may use RemapCache for material lookup outside a transaction
-         */
+        // NOTE: We want to avoid caching in paths where the table is actively being updated (e.g., loadRows).
+        // Unfortunately, we don't _really_ know when this is, but if we are in a transaction, that's a good guess.
+        // Also, we may use RemapCache for material lookup outside a transaction.
         boolean onlyMaterialColums = false;
         if (null != selectedColumns && !selectedColumns.isEmpty())
             onlyMaterialColums = selectedColumns.stream().allMatch(fk -> fk.getName().equalsIgnoreCase("Folder") || null != _rootTable.getColumn(fk));
+
+        boolean usedMaterialized = false;
         if (!onlyMaterialColums && null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
-            sql.append(getMaterializedSQL());
-            usedMaterialized = true;
+            SQLFragment materializedSql = getMaterializedSQL();
+            if (materializedSql != null)
+            {
+                sql.append(materializedSql);
+                usedMaterialized = true;
+            }
         }
-        else
-        {
+
+        if (!usedMaterialized)
             sql.append(getJoinSQL(selectedColumns));
-            usedMaterialized = false;
-        }
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
@@ -1221,7 +1223,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public boolean supportTableRules() // intentional override
+    public boolean supportTableRules()
     {
         return _supportTableRules;
     }
@@ -1234,7 +1236,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             definitionContainer = _ss.getContainer();
         return TableRulesManager.get().getTableRules(definitionContainer, getUserSchema().getUser(), getUserSchema().getContainer());
     }
-
 
     static class InvalidationCounters
     {
@@ -1349,13 +1350,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return _invalidationCounters.computeIfAbsent(lsid, (_) -> new InvalidationCounters());
     }
 
-    /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
-    private SQLFragment getMaterializedSQL()
+    /** Look up (or build and cache) the {@link _MaterializedQueryHelper} for this table's sample type. Caller must ensure {@code _ss != null}. */
+    private _MaterializedQueryHelper getOrCreateMQH()
     {
-        if (null == _ss)
-            return getJoinSQL(null);
-
-        var mqh = _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
+        return _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
         {
             /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
              * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
@@ -1367,6 +1365,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
+                .unlogged(true)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
@@ -1377,7 +1376,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             return (_MaterializedQueryHelper) builder.build();
         });
-        return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+    }
+
+    /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
+    private @Nullable SQLFragment getMaterializedSQL()
+    {
+        if (null == _ss)
+            return getJoinSQL(null);
+
+        // Skip the materialized path during shutdown; temp-table cleanup can drop it mid-read (42P01), so use the live join.
+        if (ContextListener.isShuttingDown())
+            return null;
+
+        var mqh = getOrCreateMQH();
+
+        SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
+        if (tempRef == null)
+        {
+            mqh.materializeAsync();
+            return null;
+        }
+
+        return new SQLFragment("SELECT * FROM ").append(tempRef);
     }
 
     /**
@@ -1434,7 +1454,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
             }
         }
 
@@ -1448,10 +1468,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             Supplier<String> supplier,
             @Nullable Collection<String> indexes,
             long maxTimeToCache,
-            boolean isSelectIntoSql
+            boolean isSelectIntoSql,
+            boolean unlogged
         )
         {
-            super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql);
+            super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql, unlogged);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
         }
@@ -1478,14 +1499,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
 
-                if (!materialized.incrementalDeleteCheck.stillValid(0))
-                    executeIncrementalDelete();
-                if (!materialized.incrementalUpdateCheck.stillValid(0))
-                    executeIncrementalUpdate();
-                if (!materialized.incrementalRollupCheck.stillValid(0))
-                    executeIncrementalRollup();
-                if (!materialized.incrementalInsertCheck.stillValid(0))
-                    executeIncrementalInsert();
+                runIncremental(materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
+                runIncremental(materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
+                runIncremental(materialized.incrementalRollupCheck, this::executeIncrementalRollup);
+                runIncremental(materialized.incrementalInsertCheck, this::executeIncrementalInsert);
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1503,6 +1520,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (lockAcquired)
                     materialized.getLock().unlock();
             }
+        }
+
+        /**
+         * Apply one incremental step, advancing its invalidation snapshot only after the work has committed.
+         * The counter is captured (via {@code current()}) before the work runs and accepted (via {@code markValidAs()})
+         * afterward, so a concurrent reader's non-destructive {@code peekValid()} reports stale for the entire
+         * duration of the update. That keeps reads on the live (unmaterialized) query until the temp table actually
+         * reflects the change, instead of briefly serving a stale materialized view. Must be called while holding the
+         * materialized's loading lock so only one updater runs at a time.
+         */
+        private static void runIncremental(MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
+        {
+            if (check.peekValid())
+                return;
+            String token = check.current();
+            work.run();
+            check.markValidAs(token);
         }
 
         void upsertWithRetry(SQLFragment sql)
@@ -1631,10 +1665,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class _Materialized extends MaterializedQueryHelper.Materialized
     {
-        final MaterializedQueryHelper.Invalidator incrementalInsertCheck;
-        final MaterializedQueryHelper.Invalidator incrementalRollupCheck;
-        final MaterializedQueryHelper.Invalidator incrementalDeleteCheck;
-        final MaterializedQueryHelper.Invalidator incrementalUpdateCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalInsertCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalRollupCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalDeleteCheck;
+        final MaterializedQueryHelper.SupplierInvalidator incrementalUpdateCheck;
 
         _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
         {
@@ -1655,6 +1689,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             incrementalRollupCheck.stillValid(now);
             incrementalDeleteCheck.stillValid(now);
             incrementalUpdateCheck.stillValid(now);
+        }
+
+        /**
+         * Returns true if any incremental counter has changed since the last reset, indicating that
+         * {@code incrementalUpdateBeforeSelect()} would perform synchronous DB work.
+         * Uses non-destructive {@code peekValid()} so the background task can still apply the updates.
+         */
+        @Override
+        public boolean needsSynchronousWork()
+        {
+            if (super.needsSynchronousWork()) return true;
+            return !incrementalInsertCheck.peekValid()
+                || !incrementalDeleteCheck.peekValid()
+                || !incrementalUpdateCheck.peekValid()
+                || !incrementalRollupCheck.peekValid();
         }
 
         Lock getLock()
@@ -2287,12 +2336,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         /**
-         * Trigger materialization (and any pending incremental update) as a side effect of {@link #getMaterializedSQL()},
-         * then assert the cached temp table equals a fresh derivation of the join query in both directions.
+         * Trigger materialization (and any pending incremental update) synchronously, then assert the cached
+         * temp table equals a fresh derivation of the join query in both directions.
          */
         private void assertCacheMatchesFreshDerivation(ExpMaterialTableImpl table, String lsid)
         {
-            SQLFragment cached = table.getMaterializedSQL(); // builds/refreshes the temp table via the normal read path
+            _MaterializedQueryHelper mqh = table.getOrCreateMQH();
+            assertNotNull("MQH should not be null for a sample type table", mqh);
+            SQLFragment cached = new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
             SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
