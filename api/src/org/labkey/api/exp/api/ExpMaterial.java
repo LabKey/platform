@@ -57,6 +57,8 @@ public interface ExpMaterial extends ExpRunItem
 
     void setAliquotedFromLSID(String lsid);
 
+    Long getSampleStateId();
+
     DataState getSampleState();
 
     String getStateLabel();

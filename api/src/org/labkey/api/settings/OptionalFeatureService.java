@@ -37,6 +37,11 @@ public interface OptionalFeatureService
         return svc;
     }
 
+    static boolean isAvailable()
+    {
+        return null != ServiceRegistry.get().getService(OptionalFeatureService.class);
+    }
+
     static void setInstance(OptionalFeatureService impl)
     {
         ServiceRegistry.get().registerService(OptionalFeatureService.class, impl);

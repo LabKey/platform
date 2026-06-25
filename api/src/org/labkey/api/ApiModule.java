@@ -220,6 +220,7 @@ public class ApiModule extends CodeOnlyModule
 
     public static final String EXTJS_3_REQUIRED = "ExtJs3Required";
     public static final String EXTJS_3_API_REQUIRED = "ExtJs3ApiRequired";
+    public static final String ALLOW_MUTATING_SQL_VIA_GET = "AllowMutatingSqlViaGet";
 
     @Override
     protected void init()
@@ -261,6 +262,14 @@ public class ApiModule extends CodeOnlyModule
             EXTJS_3_API_REQUIRED,
             "Require that ExtJS v3.x-based Client API is loaded on every page",
             "This option will be removed in LabKey Server 26.11",
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            ALLOW_MUTATING_SQL_VIA_GET,
+            "Allow GET requests to execute mutating SQL",
+            "We strongly recommend leaving this off since it bypasses a critical security check (CSRF). This option will be removed in LabKey Server 26.11",
             false,
             false,
             FeatureType.Deprecated

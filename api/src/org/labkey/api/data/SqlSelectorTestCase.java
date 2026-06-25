@@ -223,7 +223,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         }
     }
 
-    // Passing in a Connections and calling setJdbcCaching() should throw
+    // Passing in a Connection and calling setJdbcCaching() should throw
     @Test(expected = IllegalStateException.class)
     public void testJdbcUncachedTrue() throws SQLException
     {
@@ -234,7 +234,7 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         }
     }
 
-    // Passing in a Connections and calling setJdbcCaching() should throw
+    // Passing in a Connection and calling setJdbcCaching() should throw
     @Test(expected = IllegalStateException.class)
     public void testJdbcUncachedFalse() throws SQLException
     {

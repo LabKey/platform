@@ -501,7 +501,7 @@ public class PropertyManager
             // Flag all property map saves here to catch the unmodified case (those code paths are likely to mutate in
             // other scenarios). Also, we want to flag updates to existing property maps, but that path invokes a stored
             // procedure that StatementWrapper doesn't recognize as mutating SQL.
-            SpringActionController.executingMutatingSql("Saving a PropertyMap");
+            SpringActionController.checkForMutatingSql(() -> "Saving a PropertyMap");
 
             if (!isModified())
             {
