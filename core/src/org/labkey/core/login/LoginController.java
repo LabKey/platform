@@ -1619,6 +1619,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresTermsOfUse
     // Always invoked in the root, so no need to ignore locked projects
     public static class SsoRedirectAction extends BaseSsoRedirectAction
     {
@@ -1641,6 +1642,7 @@ public class LoginController extends SpringActionController
 
     // Very similar to SsoRedirectAction, but needs different annotations, so we have two separate classes
     @RequiresLogin
+    @IgnoresTermsOfUse
     public static class SsoReauthAction extends BaseSsoRedirectAction
     {
         @Override
