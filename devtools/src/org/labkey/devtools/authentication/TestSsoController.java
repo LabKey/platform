@@ -50,10 +50,10 @@ public class TestSsoController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public static class TestSsoAction extends SimpleViewAction<AuthenticationConfigurationForm>
+    public static class TestSsoAction extends SimpleViewAction<TestSsoForm>
     {
         @Override
-        public ModelAndView getView(AuthenticationConfigurationForm form, BindException errors)
+        public ModelAndView getView(TestSsoForm form, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/devtools/authentication/testSso.jsp", form, errors);
@@ -68,6 +68,7 @@ public class TestSsoController extends SpringActionController
     public static class TestSsoForm extends AuthenticationConfigurationForm
     {
         private String _email;
+        private boolean _reauth;
 
         public String getEmail()
         {
@@ -78,6 +79,17 @@ public class TestSsoController extends SpringActionController
         public void setEmail(String email)
         {
             _email = email;
+        }
+
+        public boolean isReauth()
+        {
+            return _reauth;
+        }
+
+        @SuppressWarnings("unused")
+        public void setReauth(boolean reauth)
+        {
+            _reauth = reauth;
         }
     }
 
@@ -94,7 +106,7 @@ public class TestSsoController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Invalid TestSso configuration");
 
-            return AuthenticationResponse.success(configuration, new ValidEmail(form.getEmail()));
+            return AuthenticationResponse.success(configuration, new ValidEmail(form.getEmail())).setReauth(form.isReauth());
         }
     }
 

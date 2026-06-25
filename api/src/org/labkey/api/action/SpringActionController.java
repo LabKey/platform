@@ -267,14 +267,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return PageFlowUtil.urlProvider(inter);
     }
 
-    protected void requiresLogin()
-    {
-        if (getUser().isGuest())
-        {
-            throw new UnauthorizedException();
-        }
-    }
-
     protected ViewBackgroundInfo getViewBackgroundInfo()
     {
         ViewContext vc = getViewContext();
