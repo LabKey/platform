@@ -1502,6 +1502,37 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // Note: records don't work with JSON binding yet
+    public static class TermsFrequency
+    {
+        public int getSeconds()
+        {
+            return _seconds;
+        }
+
+        public void setSeconds(int seconds)
+        {
+            _seconds = seconds;
+        }
+
+        private int _seconds;
+    }
+
+    // For SiteWideTermsOfUseTest
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class SetTermsOfUseFrequencyAction extends MutatingApiAction<TermsFrequency>
+    {
+        @Override
+        public Object execute(TermsFrequency tf, BindException errors) throws Exception
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setTermsOfUseFrequencySeconds(tf.getSeconds());
+            props.save(getUser());
+
+            return null;
+        }
+    }
+
     public static class NetworkDriveForm
     {
         private String _networkDriveLetter;
