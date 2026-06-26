@@ -2197,7 +2197,7 @@ public class PropertyController extends SpringActionController
             List<OntologyManager.PropertyUsages> usages = null;
             if (form.getPropertyIds() != null)
             {
-                usages = OntologyManager.findPropertyUsages(getUser(), form.getPropertyIds(), form.maxUsageCount);
+                usages = OntologyManager.findPropertyUsagesByIds(getUser(), getContainer(), form.getPropertyIds(), form.maxUsageCount);
             }
             else if (form.getPropertyURIs() != null)
             {

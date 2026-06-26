@@ -2644,6 +2644,10 @@ public class UserController extends SpringActionController
             if (null == group)
                 throw new NotFoundException("Cannot find group with id " + groupId);
 
+            // Kanban #1924: Assure permission in the group's container
+            Container groupContainer =  ContainerManager.getForId(group.getContainer());
+            if (null != groupContainer && !groupContainer.hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("You do not have permission to see information about the group '" + group.getName() + "'");
             response.put("groupId", group.getUserId());
             response.put("groupName", group.getName());
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
