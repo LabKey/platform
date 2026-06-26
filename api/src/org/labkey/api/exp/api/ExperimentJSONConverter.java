@@ -754,6 +754,8 @@ public class ExperimentJSONConverter
             isDerivative = material.getRunId() != null && material.getRunId() > 0;
 
         jsonObject.put("materialLineageType", isAliquot ? "Aliquot" : (isDerivative ? "Derivative" : "RootMaterial"));
+        if (material.getSampleStateId() != null)
+            jsonObject.put("sampleStatus", material.getSampleStateId());
 
         return jsonObject;
     }

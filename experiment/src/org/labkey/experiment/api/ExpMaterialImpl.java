@@ -179,6 +179,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         _object.setAliquotedFromLSID(lsid);
     }
 
+    @Override
     public Long getSampleStateId()
     {
         return _object.getSampleState();

@@ -732,7 +732,10 @@ export async function verifyRequiredLineageInsertUpdate(server: IntegrationTestS
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
     expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: ' + parentInput);
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\t' + parentInput + '\nCData3\tbadparentname', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
-    expect(JSON.parse(failedImportResp.text).exception).toContain("'badparentname' not found in");
+    if (isParentSample)
+        expect(JSON.parse(failedImportResp.text).exception).toContain("Parent sample 'badparentname' from Sample Type '" + parentDataType + "' not found in the current context.");
+    else
+        expect(JSON.parse(failedImportResp.text).exception).toContain("Data input 'badparentname' from Data Class '" + parentDataType + "' not found in the current context.");
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\tpAlias\nCData3\t', dataType, 'IMPORT', topFolderOptions, editorUserOptions, false, false, isChildSample, true);
     expect(JSON.parse(failedImportResp.text).exception).toBe('Missing value for required property: pAlias');
     failedImportResp = await ExperimentCRUDUtils.importData(server, 'name\nCData3', dataType, 'MERGE', topFolderOptions, editorUserOptions, false, false, isChildSample, true);

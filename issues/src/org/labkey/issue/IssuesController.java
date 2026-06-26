@@ -1792,7 +1792,9 @@ public class IssuesController extends SpringActionController
             // ensure group is in scope for the container
             boolean inScope = group != null && getSelectableAssignmentGroups(getContainer(), getUser())
                     .stream().anyMatch(g -> g.getUserId() == group.getUserId());
-            if (inScope)
+            // if either the specified group is null or we can't resolve the group we default to all
+            // users with update in the current container.
+            if (inScope || group == null)
             {
                 return IssueManager.getUsersForGroup(getContainer(), group)
                     .map(user -> {

@@ -2118,7 +2118,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!exp.isEmpty())
         {
             // We're not actually mutating in this case, but we would be if some action hadn't already cached this run group. Flag it as if we're mutating.
-            SpringActionController.executingMutatingSql("Creating an experiment run group");
+            SpringActionController.checkForMutatingSql(() -> "Creating an experiment run group");
 
             // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
             // already part of a hidden run group.
@@ -5595,10 +5595,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
-            LOG.info("Deleting {} dataIds {} ", dataIds.size(), dataIds);
+            LOG.debug("Deleting {} dataIds {} ", dataIds.size(), dataIds);
             deleteDataByRowIds(user, c, dataIds);
 
-            LOG.info("Deleting objects from container {}", c);
+            LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
 
             transaction.commit();
