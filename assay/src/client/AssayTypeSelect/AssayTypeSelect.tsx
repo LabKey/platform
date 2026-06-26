@@ -70,13 +70,15 @@ const AssayTypeSelect = memo(() => {
         const { container, file, provider, tab } = assayPickerSelection;
         if (tab === AssayPickerTabs.XAR_IMPORT_TAB && file) {
             uploadXarFile(file, container).then(() => {
-                window.location.href = ActionURL.buildURL('pipeline', 'status-showList', container);
+                redirect(ActionURL.buildURL('pipeline', 'status-showList', container));
             });
         } else {
-            window.location.href = ActionURL.buildURL('assay', 'designer', container, {
-                providerName: provider ? provider.name : GENERAL_ASSAY_PROVIDER_NAME,
-                returnUrl,
-            });
+            redirect(
+                ActionURL.buildURL('assay', 'designer', container, {
+                    providerName: provider ? provider.name : GENERAL_ASSAY_PROVIDER_NAME,
+                    returnUrl,
+                })
+            );
         }
     }, [assayPickerSelection, returnUrl]);
 
