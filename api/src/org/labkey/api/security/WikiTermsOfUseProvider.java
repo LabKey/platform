@@ -207,10 +207,12 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         User user = ctx.getUser();
         if (!user.isGuest() && AppProps.getInstance().getTermsOfUseFrequencySeconds() > 0)
         {
-            WritablePropertyMap map = PropertyManager.getWritableProperties(ctx.getUser(), termsContainer, LAST_TERMS_ACCEPTANCE, true);
+            if (user.isImpersonated())
+                user = user.getImpersonatingUser();
+            WritablePropertyMap map = PropertyManager.getWritableProperties(user, termsContainer, LAST_TERMS_ACCEPTANCE, true);
             map.put(DATE, Instant.now().toString());
             map.save();
-            LOG.debug("Saving terms acceptance timestamp for {} in {}", ctx.getUser(), termsContainer);
+            LOG.debug("Saving terms acceptance timestamp for {} in {}", user, termsContainer);
         }
     }
 
@@ -222,7 +224,8 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
             Set<Container> termsApproved = getApprovedTerms(session);
             termsApproved.add(termsContainer);
         }
-        LOG.debug("Stashing terms acceptance in session for {} in {}", ctx.getUser(), termsContainer);
+        User user = ctx.getUser();
+        LOG.debug("Stashing terms acceptance in session for {} in {}", user + (user.isImpersonated() ? " (impersonated by " + user.getImpersonatingUser() + ")" : ""), termsContainer);
     }
 
     public enum TermsOfUseType implements SafeToRenderEnum
