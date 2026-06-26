@@ -1252,15 +1252,18 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class<?> actionClass = getActionForThread();
         if (null == actionClass)
             return;
+        if (actionClass.getName().contains("JunitController"))
+            return;
 
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
 
-        if (ReadOnlyApiAction.class.isAssignableFrom(actionClass))
-        {
-            readonly = true;
-        }
-        else if (SimpleRedirectAction.class.isAssignableFrom(actionClass) || SimpleViewAction.class.isAssignableFrom(actionClass))
+        if (
+            ReadOnlyApiAction.class.isAssignableFrom(actionClass) ||
+            SimpleAction.class.isAssignableFrom(actionClass) ||
+            SimpleRedirectAction.class.isAssignableFrom(actionClass) ||
+            SimpleViewAction.class.isAssignableFrom(actionClass)
+        )
         {
             readonly = true;
         }
@@ -1276,17 +1279,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         if (readonly)
         {
-            if (actionClass.getName().contains("JunitController"))
-                return;
-
-            // Checking this late in the game to ensure OptionalFeatureService has been initialized.
-            if (!ModuleLoader.getInstance().isStartupComplete() || OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-                return;
-
             // Note: This defers the mutating SQL parsing & detection until after the quick checks above
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
+                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
+                // reentrancy when querying this optional feature when it's not already cached.
+                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
+                    return;
+
                 boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +
