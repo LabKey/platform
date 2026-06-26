@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.45.1-fb-redirectGH1023.1",
+    "@labkey/components": "7.45.2-fb-redirectGH1023.0",
     "@labkey/themes": "1.9.4"
   },
   "devDependencies": {
