@@ -293,7 +293,7 @@ Ext.ux.form.LovCombo = Ext.extend(Ext.form.ComboBox, {
                 this.store.suspendEvents(true);
 				this.store.clearFilter();
 				this.store.each(function (r) {
-					// Issue 1266: String() (not JSON.stringify) so native RegExp.escape doesn't throw on a
+					// GH Issue 1266: String() (not JSON.stringify) so native RegExp.escape doesn't throw on a
 					// numeric valueField, while string values stay unquoted to match getCheckedValue() output.
 					var checked = !(!v.match(
 							'(^|' + this.separator + ')' + RegExp.escape(String(r.get(this.valueField)))
