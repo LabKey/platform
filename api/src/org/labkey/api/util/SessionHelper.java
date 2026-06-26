@@ -32,12 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-
-/**
- * User: matthewb
- * Date: 2012-01-24
- * Time: 3:03 PM
- */
 public class SessionHelper
 {
     private static final LockManager<HttpSession> LOCK_MANAGER = new LockManager<>();

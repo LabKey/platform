@@ -1478,6 +1478,8 @@ public class AdminController extends SpringActionController
             props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
+            props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
+
             props.save(getViewContext().getUser());
             UsageReportingLevel.reportNow();
             if (sslSettingChanged)
@@ -1497,6 +1499,37 @@ public class AdminController extends SpringActionController
             {
                 return new AdminUrlsImpl().getAdminConsoleURL();
             }
+        }
+    }
+
+    // Note: records don't work with JSON binding yet
+    public static class TermsFrequency
+    {
+        public int getSeconds()
+        {
+            return _seconds;
+        }
+
+        public void setSeconds(int seconds)
+        {
+            _seconds = seconds;
+        }
+
+        private int _seconds;
+    }
+
+    // For SiteWideTermsOfUseTest
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class SetTermsOfUseFrequencyAction extends MutatingApiAction<TermsFrequency>
+    {
+        @Override
+        public Object execute(TermsFrequency tf, BindException errors) throws Exception
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setTermsOfUseFrequencySeconds(tf.getSeconds());
+            props.save(getUser());
+
+            return null;
         }
     }
 
@@ -2369,6 +2402,7 @@ public class AdminController extends SpringActionController
 
         private String _XFrameOption;
         private boolean _includeServerHttpHeader;
+        private int _termsOfUseFrequencySeconds;
 
         public String getPipelineToolsDirectory()
         {
@@ -2598,6 +2632,16 @@ public class AdminController extends SpringActionController
         public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
         {
             _includeServerHttpHeader = includeServerHttpHeader;
+        }
+
+        public int getTermsOfUseFrequencySeconds()
+        {
+            return _termsOfUseFrequencySeconds;
+        }
+
+        public void setTermsOfUseFrequencySeconds(int termsOfUseFrequencySeconds)
+        {
+            _termsOfUseFrequencySeconds = termsOfUseFrequencySeconds;
         }
     }
 

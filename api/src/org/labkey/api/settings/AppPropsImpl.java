@@ -645,6 +645,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getTermsOfUseFrequencySeconds()
+    {
+        return lookupIntValue(termsOfUseFrequencySeconds, 0);
+    }
+
+    @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
