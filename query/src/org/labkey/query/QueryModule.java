@@ -77,7 +77,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -149,7 +148,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-import static org.labkey.api.reports.ReportService.R_REPORT_CUSTOM_SHARING;
 
 public class QueryModule extends DefaultModule
 {
@@ -351,14 +349,6 @@ public class QueryModule extends DefaultModule
         Role trustedAnalystRole = RoleManager.getRole("org.labkey.api.security.roles.TrustedAnalystRole");
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
-
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(R_REPORT_CUSTOM_SHARING,
-            "Restore custom R report sharing",
-            "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
-            false,
-            false,
-            OptionalFeatureService.FeatureType.Deprecated)
-        );
 
         McpService.get().register(new QueryMcp());
         QueryUserSchema.register(this);
