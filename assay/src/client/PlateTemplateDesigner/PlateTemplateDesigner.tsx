@@ -5,6 +5,7 @@
  */
 import React, { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
+import { redirect } from '@labkey/components';
 
 import { computeWarnings, PlateTemplate, Position, WellGroup } from './models';
 import { StatusBar } from './components/StatusBar';
@@ -70,14 +71,6 @@ export function toggleCell(groups: WellGroup[], activeGroupRowId: number, row: n
         }
         return g;
     });
-}
-
-export function isSameOrigin(url: string): boolean {
-    try {
-        return new URL(url, window.location.origin).origin === window.location.origin;
-    } catch {
-        return false;
-    }
 }
 
 export const PlateTemplateDesigner: FC = () => {
@@ -334,8 +327,7 @@ export const PlateTemplateDesigner: FC = () => {
     const navigateAway = useCallback(() => {
         isIntentionalExitRef.current = true;
         const returnURL = returnURLRef.current;
-        window.location.href =
-            returnURL && isSameOrigin(returnURL) ? returnURL : ActionURL.buildURL('plate', 'plateList');
+        redirect(returnURL || ActionURL.buildURL('plate', 'plateList'));
     }, []);
 
     /**

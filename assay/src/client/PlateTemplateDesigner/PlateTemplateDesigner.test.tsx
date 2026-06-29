@@ -25,6 +25,10 @@ jest.mock('@labkey/api', () => ({
     },
 }));
 
+jest.mock('@labkey/components', () => ({
+    redirect: jest.fn(),
+}));
+
 const mockPlate: PlateTemplate = {
     rowId: 1,
     name: 'Test Plate',
