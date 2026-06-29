@@ -1076,9 +1076,9 @@ public abstract class Method
         }
     }
 
-    // Portable isnumeric() — emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
-    // Returns 1 when the input is numeric (digits with optional sign / decimal point), 0 otherwise.
-    // NULL inputs return 0 to match SQL Server's ISNUMERIC behavior.
+    // Portable isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+    // Returns 1 for digit strings with an optional sign/decimal point, 0 otherwise.
+    // This is stricter than SQL Server's ISNUMERIC(), which also accepts formats like scientific notation.
     static class IsNumericInfo extends AbstractMethodInfo
     {
         IsNumericInfo()
@@ -1096,8 +1096,8 @@ public abstract class Method
             }
             if (dialect.isPostgreSQL())
             {
-                return new SQLFragment("(CASE WHEN (").append(arg)
-                        .append(") ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+                return new SQLFragment("(CASE WHEN CAST((").append(arg)
+                        .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
             }
             throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
         }
