@@ -1090,15 +1090,9 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment arg = arguments[0];
-            if (dialect.isSqlServer())
-            {
-                return new SQLFragment("ISNUMERIC(").append(arg).append(")");
-            }
-            if (dialect.isPostgreSQL())
-            {
-                return new SQLFragment("(CASE WHEN CAST((").append(arg)
-                        .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
-            }
+            if (dialect.supportsIsNumeric())
+                return dialect.isNumericExpr(arg);
+
             throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
         }
     }
