@@ -20,7 +20,10 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
 import org.apache.commons.beanutils.DynaClass;
+import org.labkey.api.action.BaseViewAction.BeanUtilsPropertyBindingResult;
 import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.NullSafeBindException;
+import org.springframework.validation.BindException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +87,13 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean, HasBindP
     {
         ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
         setTypedValues(factory.toMap(bean, null), false);
+    }
+
+    @Override
+    public BindException createErrors()
+    {
+        // Teaches Spring to resolve field names via string lookups instead of getters. e.g., errors.rejectValue().
+        return new NullSafeBindException(new BeanUtilsPropertyBindingResult(this, "form"));
     }
 
     @Override
