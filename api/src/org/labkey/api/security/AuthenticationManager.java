@@ -487,7 +487,7 @@ public class AuthenticationManager
     {
         Map<String, Object> config = new HashMap<>();
         config.put("registrationEnabled", isRegistrationEnabled());
-        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseRequired(project));
+        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseConfigured(project) && AppProps.getInstance().getTermsOfUseFrequencySeconds() == 0);
         config.put("hasOtherLoginMechanisms", hasSSOAuthenticationConfiguration());
         return config;
     }

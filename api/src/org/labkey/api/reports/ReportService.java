@@ -46,8 +46,6 @@ import java.util.List;
 
 public interface ReportService
 {
-    String R_REPORT_CUSTOM_SHARING = "rReportCustomSharing";
-
     // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
     @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());

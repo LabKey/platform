@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
 <%@ page import="org.labkey.api.reports.report.ModuleReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
@@ -50,7 +49,6 @@
 
     ActionURL vewReportURL = report.getRunReportURL(context);
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
-    ActionURL shareReportURL = urlProvider(ReportUrls.class).urlShareReport(getContainer(), report);
 
     String type = report.getTypeDescription();
     String category = "";
@@ -253,7 +251,6 @@
         <td colspan="2">
             <%= button("View Report").href(vewReportURL).target(report.getRunReportTarget()) %>
             <%= report.canEdit(getUser(), getContainer()) && (editReportURL != null) ? button("Edit Report").href(editReportURL) : HtmlString.EMPTY_STRING%>
-            <%= report.allowShareButton(getUser(), getContainer()) && (shareReportURL != null) ? button("Share Report").href(shareReportURL) : HtmlString.EMPTY_STRING%>
         </td>
     </tr>
 </table>

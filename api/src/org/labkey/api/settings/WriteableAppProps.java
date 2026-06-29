@@ -186,6 +186,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(includeServerHttpHeader, b);
     }
 
+    public void setTermsOfUseFrequencySeconds(int seconds)
+    {
+        if (seconds < 0)
+            throw new IllegalArgumentException("termsOfUseFrequencySeconds must be >= 0");
+        storeIntValue(termsOfUseFrequencySeconds, seconds);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(administratorContactEmail, email);

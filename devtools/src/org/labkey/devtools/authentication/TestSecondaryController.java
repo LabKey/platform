@@ -23,6 +23,7 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SaveConfigurationAction;
@@ -98,6 +99,7 @@ public class TestSecondaryController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresTermsOfUse
     public static class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override
