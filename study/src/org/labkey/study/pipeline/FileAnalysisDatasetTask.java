@@ -16,7 +16,6 @@
 package org.labkey.study.pipeline;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.assay.transform.DataTransformService;
@@ -114,7 +113,7 @@ public class FileAnalysisDatasetTask extends AbstractDatasetImportTask<FileAnaly
             for (String error : readerErrors)
                 _ctx.getLogger().error(error);
 
-            BindException errors = new NullSafeBindException(new BaseViewAction.BeanUtilsPropertyBindingResult(this, "pipeline"));
+            BindException errors = new NullSafeBindException(this, "pipeline");
             boolean allowDomainUpdates = true;
             if (_ctx.getProperties().containsKey(StudyImportContext.ALLOW_DOMAIN_UPDATES))
                 allowDomainUpdates = Boolean.parseBoolean(_ctx.getProperties().get(StudyImportContext.ALLOW_DOMAIN_UPDATES));
