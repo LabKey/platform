@@ -997,6 +997,7 @@ public class ExpDataIterators
                     _parentCols.put(entry.getValue(), entry.getKey());
                     if (requiredParents.contains(name))
                         _requiredParentCols.put(entry.getValue(), entry.getKey());
+                    _context.markColumnUsage(name, DataIteratorContext.ColumnUsage.LINEAGE);
                 }
             }
 

@@ -69,6 +69,7 @@ public class Pump implements Runnable
 
         try (DataIterator it = _it)
         {
+            _context.checkShouldCancel();
             while (it.next())
             {
                 _rowCount++;

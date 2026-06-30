@@ -24,8 +24,10 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.query.QueryUpdateService;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,6 +51,7 @@ public class DataIteratorContext
 
     final BatchValidationException _errors;
     boolean _failFast = true;
+    boolean _dryRun = false;
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
     LookupResolutionType _lookupResolutionType = LookupResolutionType.primaryKey;
@@ -121,6 +124,22 @@ public class DataIteratorContext
         _failFast = failFast;
         if (!_failFast && _maxRowErrors == 1)
             _maxRowErrors = 1000;
+    }
+
+    public void setDryRun(boolean dryRun)
+    {
+        if (!dryRun && _dryRun)
+        {
+            throw new IllegalStateException("Dry run cannot be changed once set.");
+        }
+        _dryRun = dryRun;
+        if (_dryRun)
+            setFailFast(true);
+    }
+
+    public boolean isDryRun()
+    {
+        return _dryRun;
     }
 
     public int getMaxRowErrors()
@@ -257,6 +276,8 @@ public class DataIteratorContext
     {
         if (shouldCancel())
             throw _errors;
+        if (_dryRun)
+            throw new DryRunException();
     }
 
     /** Extra parameters associated with the DataIterator sequence. */
@@ -326,4 +347,66 @@ public class DataIteratorContext
         return _backgroundJob;
     }
 
+    public enum ColumnUsage
+    {
+        DIRECT,   // input column maps directly to a target column
+        LOOKUP,   // input column maps to a target column via FK lookup resolution
+        LINEAGE,  // input column consumed to establish parent/child relationships (no target column)
+        UNUSED    // input column present in input but not matched or recognized
+    }
+
+    public static class ColumnMapping
+    {
+        public final String inputName;
+        @Nullable public final String targetName;
+        public ColumnUsage usage;
+
+        private ColumnMapping(String inputName, @Nullable String targetName, ColumnUsage usage)
+        {
+            this.inputName = inputName;
+            this.targetName = targetName;
+            this.usage = usage;
+        }
+    }
+
+    private final List<ColumnMapping> _columnMappings = new ArrayList<>();
+
+    public void recordColumnMapping(String inputName, @Nullable String targetName, ColumnUsage usage)
+    {
+        for (ColumnMapping m : _columnMappings)
+        {
+            if (m.inputName.equalsIgnoreCase(inputName))
+            {
+                m.usage = usage;
+                return;
+            }
+        }
+        _columnMappings.add(new ColumnMapping(inputName, targetName, usage));
+    }
+
+    public void markColumnUsage(String inputName, ColumnUsage usage)
+    {
+        for (ColumnMapping m : _columnMappings)
+        {
+            if (m.inputName.equalsIgnoreCase(inputName))
+            {
+                m.usage = usage;
+                return;
+            }
+        }
+    }
+
+    public List<ColumnMapping> getColumnMappings()
+    {
+        return Collections.unmodifiableList(_columnMappings);
+    }
+
+    // the only "expected" usage of this exception is for Pump.run().
+    public class DryRunException extends IllegalStateException
+    {
+        DryRunException()
+        {
+            super("next() called on a dry run iterator.");
+        }
+    }
 }

@@ -116,6 +116,7 @@ public interface QueryUpdateService extends HasPermission
         TargetContainer,
         ByPassAudit, // (Bool) If true, skip DetailedAuditLogDataIterator. For internal use only, don't expose for API.
         SkipAuditSummary, // (Bool) If true, skip audit summary logging. For internal use only, don't expose for API.'
+        DryRun, // (Bool) Set up the DataIterator and report errors.  Do not process any data.
     }
 
 

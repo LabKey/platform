@@ -40,9 +40,11 @@ public class ErrorIterator extends AbstractDataIterator
 
     public static DataIterator wrap(DataIterator di, DataIteratorContext context, boolean errorEvenIfEmpty, ValidationException x)
     {
-        if (null == x || !x.hasErrors())
+        if (!context.isDryRun() && (null == x || !x.hasErrors()))
             return di;
-        return new ErrorIterator(di, context, errorEvenIfEmpty, x);
+        var ret = new ErrorIterator(di, context, errorEvenIfEmpty, x);
+
+        return ret;
     }
 
     ErrorIterator(DataIterator di, DataIteratorContext context, boolean errorEvenIfEmpty, ValidationException x)

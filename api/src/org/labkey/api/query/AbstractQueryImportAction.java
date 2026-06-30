@@ -38,6 +38,7 @@ import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.api.ExperimentService;
@@ -832,10 +833,16 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
+    protected DataIteratorContext createDataIteratorContext(BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment)
+    {
+        return createDataIteratorContext(_insertOption, getOptionParamsMap(), getLookupResolutionType(), auditBehaviorType, auditUserComment, errors, null, getContainer());
+    }
+
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), getLookupResolutionType(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
+        DataIteratorContext dataIteratorContext = createDataIteratorContext(errors, auditBehaviorType, auditUserComment);
+        return importData(dl, _target, _updateService, dataIteratorContext, auditEvent, getUser(), getContainer());
     }
 
     public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
@@ -877,10 +884,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, LookupResolutionType lookupResolutionType, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
+        var context = createDataIteratorContext(insertOption, optionParamsMap, lookupResolutionType, auditBehaviorType, auditUserComment, errors, logger, container);
+        return importData(dl, target, updateService, context, auditEvent, user, container);
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    public static int importData(DataIteratorBuilder dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
         if (target != null)
         {

@@ -138,6 +138,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
@@ -192,6 +193,7 @@ import org.labkey.api.query.TempQuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
@@ -229,6 +231,7 @@ import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -4183,6 +4186,70 @@ public class QueryController extends SpringActionController
             else
                 root.addChild(_form.getQueryName(), executeQuery);
             root.addChild("Import Data");
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    public class ImportDryRunAction extends ImportAction
+    {
+        private DataIteratorContext _dryRunContext;
+
+        @Override
+        protected DataIteratorContext createDataIteratorContext(BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment)
+        {
+            _dryRunContext = super.createDataIteratorContext(errors, auditBehaviorType, auditUserComment);
+            _dryRunContext.setDryRun(true);
+            return _dryRunContext;
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
+        {
+            DataIteratorBuilder dlDryRun = context1 -> {
+                // the context should have dry run set
+                if (!context1.isDryRun())
+                    throw new IllegalStateException();
+                return ErrorIterator.wrap(dl.getDataIterator(context1), context1, true, null);
+            };
+
+            // this should absoutely fail, but adding TX for insurance
+            DbScope scope = _target.getSchema().getScope();
+            try (DbScope.Transaction tx = scope.ensureTransaction())
+            {
+                var ret = super.importData(dl, file, originalName, errors, auditBehaviorType, auditEvent, auditUserComment);
+                if (ret > 0 || !errors.hasErrors())
+                    throw new IllegalStateException("Dry run should have failed");
+            }
+            catch (DataIteratorContext.DryRunException x)
+            {
+                // pass through
+            }
+            return 0;
+        }
+
+        @Override
+        protected JSONObject createSuccessResponse(int rowCount)
+        {
+            JSONObject response = super.createSuccessResponse(rowCount);
+            if (_dryRunContext != null)
+                response.put("columnMappings", serializeColumnMappings(_dryRunContext.getColumnMappings()));
+            return response;
+        }
+
+        private JSONArray serializeColumnMappings(List<DataIteratorContext.ColumnMapping> mappings)
+        {
+            JSONArray result = new JSONArray();
+            for (DataIteratorContext.ColumnMapping mapping : mappings)
+            {
+                JSONObject m = new JSONObject();
+                m.put("inputName", mapping.inputName);
+                if (mapping.targetName != null)
+                    m.put("targetName", mapping.targetName);
+                m.put("usage", mapping.usage.name());
+                result.put(m);
+            }
+            return result;
         }
     }
 

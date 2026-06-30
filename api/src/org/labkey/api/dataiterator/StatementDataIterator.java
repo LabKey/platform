@@ -296,6 +296,7 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public boolean next() throws BatchValidationException
     {
+        checkShouldCancel();
         boolean ret = false;
         try
         {

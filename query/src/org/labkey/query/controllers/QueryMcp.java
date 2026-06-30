@@ -27,6 +27,13 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableDescription;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.TabLoader;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.mcp.McpInternal;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.DefaultSchema;
@@ -208,6 +215,69 @@ public class QueryMcp implements McpService.McpImpl
         {
             return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
+    }
+
+    @Tool(description = "Preview how a TSV import file will map to a target table's columns without writing any data. Returns a mapping of each input column to its target column and the kind of mapping (DIRECT, LOOKUP, LINEAGE, or UNUSED), plus any validation errors encountered on the first data row.")
+    @RequiresPermission(InsertPermission.class)
+    String previewImport(
+            ToolContext toolContext,
+            @ToolParam(description = "Fully qualified schema name, e.g. \"samples\" or \"exp.materials\"") String schemaName,
+            @ToolParam(description = "Table or query name") String queryName,
+            @ToolParam(description = "TSV content: a header row followed by at least one data row") String tsvData
+    )
+    {
+        var context = getContext(toolContext);
+
+        SchemaKey schemaKey = getSchemaKey(schemaName);
+        UserSchema schema = (UserSchema) DefaultSchema.get(context.getUser(), context.getContainer(), schemaKey);
+        if (schema == null)
+            return "Schema '" + schemaName + "' not found.";
+        TableInfo table = schema.getTable(queryName);
+        if (table == null)
+            return "Table '" + queryName + "' not found in schema '" + schemaName + "'.";
+        QueryUpdateService updateService = table.getUpdateService();
+        if (updateService == null)
+            return "Table '" + queryName + "' does not support import.";
+
+        TabLoader loader = new TabLoader(tsvData, true);
+
+        BatchValidationException errors = new BatchValidationException();
+        DataIteratorContext diContext = new DataIteratorContext(errors);
+        diContext.setInsertOption(QueryUpdateService.InsertOption.INSERT);
+        diContext.setDryRun(true);
+
+        try
+        {
+            AbstractQueryImportAction.importData(loader, table, updateService, diContext, null, context.getUser(), context.getContainer());
+        }
+        catch (DataIteratorContext.DryRunException ignored)
+        {
+            // expected — pipeline stopped after first row without writing
+        }
+        catch (IOException e)
+        {
+            return "Error reading TSV data: " + e.getMessage();
+        }
+
+        JSONArray columnMappings = new JSONArray();
+        for (DataIteratorContext.ColumnMapping mapping : diContext.getColumnMappings())
+        {
+            JSONObject m = new JSONObject();
+            m.put("inputName", mapping.inputName);
+            if (mapping.targetName != null)
+                m.put("targetName", mapping.targetName);
+            m.put("usage", mapping.usage.name());
+            columnMappings.put(m);
+        }
+
+        JSONArray errorList = new JSONArray();
+        for (ValidationException rowError : errors.getRowErrors())
+            errorList.put(rowError.getMessage());
+
+        JSONObject result = new JSONObject();
+        result.put("columnMappings", columnMappings);
+        result.put("errors", errorList);
+        return result.toString();
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */

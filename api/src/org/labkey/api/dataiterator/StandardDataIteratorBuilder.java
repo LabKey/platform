@@ -230,6 +230,9 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());
                 to.indexMv = null==indexMv ? SimpleTranslator.NO_MV_INDEX : indexMv.intValue();
                 convertTargetCols.add(to);
+                boolean isLookup = to.target.getFk() != null && context.isWithLookupRemapping();
+                context.recordColumnMapping(input.getColumnInfo(i).getName(), to.target.getName(),
+                        isLookup ? DataIteratorContext.ColumnUsage.LOOKUP : DataIteratorContext.ColumnUsage.DIRECT);
             }
             else
             {
@@ -237,6 +240,7 @@ public class StandardDataIteratorBuilder implements DataIteratorBuilder
                 to = new TranslateHelper(null, null);
                 to.indexFrom = i;
                 convertTargetCols.add(to);
+                context.recordColumnMapping(input.getColumnInfo(i).getName(), null, DataIteratorContext.ColumnUsage.UNUSED);
             }
         }
 

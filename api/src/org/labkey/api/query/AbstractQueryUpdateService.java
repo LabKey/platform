@@ -451,6 +451,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     /** this is extracted so subclasses can add wrap */
     protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows,  DataIteratorContext context)
     {
+        boolean dryRun = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.DryRun);
+        if (dryRun)
+            context.setDryRun(dryRun);
         DataIterator it = etl.getDataIterator(context);
 
         if (null == it)
