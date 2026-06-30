@@ -217,7 +217,7 @@ public class QueryMcp implements McpService.McpImpl
             "Execute a LabKey SQL query and return results as tab-separated values (RFC 4180 TSV). " +
                     "Use this to inspect actual query results while writing or debugging SQL. " +
                     "Prefer validateSQL when you only need to check syntax without running the query. " +
-                    "Returns at most 100 rows; use offset and limit to page through larger result sets. " +
+                    "Returns up to 100 rows by default, or up to 1,000 rows when using limit; use offset and limit to page through larger result sets. " +
                     "Response format: a header row of column names, then one data row per newline, fields tab-separated. " +
                     "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
                     "On SQL error, the error message is returned as plain text rather than throwing. " +
