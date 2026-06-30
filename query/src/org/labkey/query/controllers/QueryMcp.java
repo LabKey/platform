@@ -229,7 +229,7 @@ public class QueryMcp implements McpService.McpImpl
             @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
             @ToolParam(description = "LabKey SQL to execute") String sql,
             @ToolParam(description = "Rows to skip before returning results.", required=false) Integer offset,
-            @ToolParam(description = "Number of rows to return (limit <= 100)", required=false) Integer limit
+            @ToolParam(description = "Number of rows to return (limit <= 1000, default=100)", required=false) Integer limit
     )
     {
         var cu = getContext(toolContext);
@@ -238,7 +238,7 @@ public class QueryMcp implements McpService.McpImpl
             return "Could not find schema " + schemaName;
 
         offset = null==offset ? 0 : offset < 0 ? 0 : offset;
-        limit = (limit == null || limit < 0) ? 100 : Math.min(100, limit);
+        limit = (limit == null || limit < 0) ? 100 : Math.min(1000, limit);
         var execute = new SqlController.SqlExecute(cu, userSchema, sql)
                 .page(offset, limit)
                 .truncation(500, "…[truncated]");
