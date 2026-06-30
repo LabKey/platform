@@ -33,8 +33,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
-import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -409,7 +409,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    void setImpersonationContext(PermissionsContext permissionsContext)
+    void setPermissionsContext(PermissionsContext permissionsContext)
     {
         _permissionsContext = permissionsContext;
     }

@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -122,7 +123,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 // API keys are exempt from secondary authentication, Issue 48764
                 ret = AuthenticationResponse.success(configuration, auth.getUser()).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
                     .setRequireSecondary(false)
-                    .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
+                    .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()))
+                    .setRoleRestriction(auth.roleRestrictionClass());
 
                 // Update core.ApiKeys.LastUsed (throttled)
                 API_KEY_LAST_USED_THROTTLE.execute(password);
@@ -184,7 +186,8 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
                 }
             }
 
-            return AuthenticationResponse.success(configuration, user);
+            Class<? extends Role> roleRestriction = null;  // TODO: Temp for testing - set a breakpoint and assign a value to test
+            return AuthenticationResponse.success(configuration, user).setRoleRestriction(roleRestriction);
         }
     }
 

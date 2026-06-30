@@ -15,7 +15,6 @@
  */
 package org.labkey.api.security;
 
-import com.google.common.collect.Streams;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
@@ -24,26 +23,18 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Do not use this class directly; use ElevatedUser instead.
+ * See subclasses ElevatedUser and RoleRestrictedUser
  */
-public class WrappedPermissionsContext implements PermissionsContext
+abstract class WrappedPermissionsContext implements PermissionsContext
 {
     private final PermissionsContext _delegate;
-    private final Set<Role> _additionalRoles;
 
-    public WrappedPermissionsContext(PermissionsContext delegate, Set<Role> additionalRoles)
+    public WrappedPermissionsContext(PermissionsContext delegate)
     {
         _delegate = delegate;
-        _additionalRoles = additionalRoles;
-    }
-
-    public WrappedPermissionsContext(PermissionsContext delegate, Role additionalRole)
-    {
-        this(delegate, Set.of(additionalRole));
     }
 
     @Override
@@ -86,7 +77,7 @@ public class WrappedPermissionsContext implements PermissionsContext
     @Override
     public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
     {
-        return Streams.concat(_additionalRoles.stream(), _delegate.getAssignedRoles(user, resource));
+        return _delegate.getAssignedRoles(user, resource);
     }
 
     @Override

@@ -177,6 +177,7 @@ public class SecurityManager
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
+    private static final String ROLE_RESTRICTION_KEY = RoleRestrictedUser.class.getName() + "$RoleRestrictionKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
@@ -517,8 +518,13 @@ public class SecurityManager
 
                 if (null != factory)
                 {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                    sessionUser.setPermissionsContext(factory.getImpersonationContext());
                 }
+
+                //noinspection unchecked
+                Class<? extends Role> roleRestrictionClass = (Class<? extends Role>) session.getAttribute(ROLE_RESTRICTION_KEY);
+                if (roleRestrictionClass != null)
+                    sessionUser = new RoleRestrictedUser(sessionUser, roleRestrictionClass);
             }
         }
 
@@ -586,7 +592,7 @@ public class SecurityManager
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
-                    sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
+                    sessionUser.setPermissionsContext(DisallowPrivilegedRolesContext.get());
                 }
 
                 HttpSession session = request.getSession(false);
@@ -816,6 +822,8 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
+            if (response.getRoleRestriction() != null)
+                newSession.setAttribute(ROLE_RESTRICTION_KEY, response.getRoleRestriction());
         }
 
         return newSession;
@@ -1121,7 +1129,7 @@ public class SecurityManager
 
         // Issue 25813: if two users are being inserted at the same time through the addUser method above, we can get deadlock on SQLServer so we
         // actively lock when doing this select to prevent it from promoting a lock up the chain.
-        SQLFragment select = new SQLFragment("SELECT UserId FROM " + core.getTableInfoUsersData());
+        SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
         if (core.getSchema().getScope().getSqlDialect().isSqlServer())
             select.append(" WITH (UPDLOCK)");
         select.append(" WHERE DisplayName = ? AND UserId != ?");
@@ -3343,7 +3351,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyPermissionsContext());
+            user.setPermissionsContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 

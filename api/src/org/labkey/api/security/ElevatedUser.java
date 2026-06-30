@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import com.google.common.collect.Streams;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.permissions.Permission;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A wrapped user that possesses all the security properties (groups, roles, impersonation status, etc.) of the
@@ -35,9 +37,26 @@ import java.util.stream.Collectors;
  */
 public class ElevatedUser extends ClonedUser
 {
+    private static class ElevatedUserContext extends WrappedPermissionsContext
+    {
+        private final Set<Role> _additionalRoles;
+
+        private ElevatedUserContext(PermissionsContext delegate, Set<Role> additionalRoles)
+        {
+            super(delegate);
+            _additionalRoles = additionalRoles;
+        }
+
+        @Override
+        public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
+        {
+            return Streams.concat(_additionalRoles.stream(), super.getAssignedRoles(user, resource));
+        }
+    }
+
     private ElevatedUser(User user, Set<Role> rolesToAdd)
     {
-        super(user, new WrappedPermissionsContext(user.getPermissionsContext(), rolesToAdd));
+        super(user, new ElevatedUserContext(user.getPermissionsContext(), rolesToAdd));
     }
 
     private ElevatedUser(User user, PermissionsContext ctx)

@@ -39,6 +39,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -183,13 +184,17 @@ public class ApiKeyManager
 
         try (Transaction t = scope.beginTransaction(TRANSACTION_KIND))
         {
-            SQLFragment sql = new SQLFragment("UPDATE " + CoreSchema.getInstance().getTableAPIKeys() + " SET LastUsed = ? WHERE Crypt = ?", new Date(), crypt(apikey));
+            SQLFragment sql = new SQLFragment("UPDATE ")
+                .append(CoreSchema.getInstance().getTableAPIKeys())
+                .append(" SET LastUsed = ? WHERE Crypt = ?")
+                .add(new Date())
+                .add(crypt(apikey));
             new SqlExecutor(scope).execute(sql);
             t.commit();
         }
     }
 
-    public record ApiKeyAuthentication(int createdBy, int rowId)
+    public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> roleRestrictionClass)
     {
         public User getUser()
         {
