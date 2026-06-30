@@ -42,7 +42,7 @@ import java.util.Set;
  */
 public class FastaDataLoader extends DataLoader
 {
-    public static FileType FILE_TYPE = new FileType(Arrays.asList(".fna", ".fasta"), ".fna");
+    public static FileType FILE_TYPE = new FileType(Arrays.asList(".fna", ".fasta", ".fa"), ".fna");
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }
