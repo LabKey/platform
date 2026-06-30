@@ -78,6 +78,6 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
         {
             // That's OK, we won't try to do anything with the link
         }
-        return "<a href=\"" + link + "\">" + PageFlowUtil.filter(label) + "</a>";
+        return "<a href=\"" + PageFlowUtil.filter(link) + "\">" + PageFlowUtil.filter(label) + "</a>";
     }
 }

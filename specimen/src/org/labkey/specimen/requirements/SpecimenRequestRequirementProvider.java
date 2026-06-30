@@ -16,9 +16,12 @@
 
 package org.labkey.specimen.requirements;
 
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.util.GUID;
 import org.labkey.specimen.model.SpecimenRequestActor;
 
 import java.util.Collection;
@@ -98,5 +101,50 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         for (SpecimenRequestActor actor : actors)
             ids.add(actor.getRowId());
         return ids;
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testGetActorContainerScoping()
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            SpecimenRequestRequirementProvider provider = SpecimenRequestRequirementProvider.get();
+
+            SpecimenRequestActor actor = new SpecimenRequestActor();
+            actor.setContainer(folderA);
+            actor.setLabel("Scoping test actor");
+            actor = actor.create(getAdmin());
+            int rowId = actor.getRowId();
+
+            assertNotNull("Actor should be visible from its own container", provider.getActor(folderA, rowId));
+            assertNull("Actor must NOT be visible from another container", provider.getActor(folderB, rowId));
+        }
+
+        @Test
+        public void testGetRequirementContainerScoping()
+        {
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            SpecimenRequestRequirementProvider provider = SpecimenRequestRequirementProvider.get();
+
+            // A requirement references an actor through a NOT NULL foreign key, so create one in the same folder first
+            SpecimenRequestActor actor = new SpecimenRequestActor();
+            actor.setContainer(folderA);
+            actor.setLabel("Requirement scoping test actor");
+            actor = actor.create(getAdmin());
+
+            SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
+            requirement.setContainer(folderA);
+            requirement.setRequestId(-1);       // no real request row is needed for a primary-key lookup
+            requirement.setActorId(actor.getRowId());
+            requirement.setDescription("Requirement scoping test");
+            requirement = requirement.persist(getAdmin(), GUID.makeGUID());
+            int rowId = requirement.getRowId();
+
+            assertNotNull("Requirement should be visible from its own container", provider.getRequirement(folderA, rowId));
+            assertNull("Requirement must NOT be visible from another container", provider.getRequirement(folderB, rowId));
+        }
     }
 }

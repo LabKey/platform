@@ -20,8 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -474,13 +474,6 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     public boolean canShare(User user, Container container)
     {
         return canShare(user, container, new ArrayList<>());
-    }
-
-    @Override
-    public boolean allowShareButton(User user, Container container)
-    {
-        // See RReport, currently only allowing ShareReportAction for that report type
-        return false;
     }
 
     @Override

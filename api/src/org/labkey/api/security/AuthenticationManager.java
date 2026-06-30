@@ -22,8 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponseWriter.Format;
@@ -86,6 +86,7 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -94,6 +95,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Rate;
 import org.labkey.api.util.RateLimiter;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -108,6 +110,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -483,7 +487,7 @@ public class AuthenticationManager
     {
         Map<String, Object> config = new HashMap<>();
         config.put("registrationEnabled", isRegistrationEnabled());
-        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseRequired(project));
+        config.put("requiresTermsOfUse", WikiTermsOfUseProvider.isTermsOfUseConfigured(project) && AppProps.getInstance().getTermsOfUseFrequencySeconds() == 0);
         config.put("hasOtherLoginMechanisms", hasSSOAuthenticationConfiguration());
         return config;
     }
@@ -549,7 +553,12 @@ public class AuthenticationManager
         public ModelAndView getView(FORM form, BindException errors) throws Exception
         {
             AuthenticationResponse response = validateAuthentication(form, errors);
+            return response.isReauth() ? getReauthView(response, errors) : getAuthView(response, errors);
+        }
 
+        // Normal primary authentication case
+        private ModelAndView getAuthView(AuthenticationResponse response, BindException errors)
+        {
             // Show validation error(s), if any
             if (errors.hasErrors() || !response.isAuthenticated())
             {
@@ -584,6 +593,36 @@ public class AuthenticationManager
             getPageConfig().setIncludeSearch(false);
 
             return new SimpleErrorView(errors, false);
+        }
+
+        // Reauthentication case for electronic signing and other sensitive operations. Check that reauthentication
+        // was successful and re-auth user matches session user. Not currently verifying that the same authentication
+        // configuration was used to reauthenticate.
+        private ModelAndView getReauthView(AuthenticationResponse response, BindException errors)
+        {
+            String errorMessage = null;
+
+            if (!response.isAuthenticated())
+            {
+                errorMessage = errors.hasErrors() ? errors.getMessage() : "Reauthentication failed";
+            }
+
+            LoginReturnProperties properties = getLoginReturnProperties(getViewContext().getRequestOrThrow());
+
+            // We lost the return URL. Could happen on local session timeout.
+            if (properties == null)
+                throw new NotFoundException("Reauthentication failed");
+
+            URLHelper url = properties.getReturnUrl();
+
+            if (null == url)
+                throw new NotFoundException("Reauthentication failed: no return URL");
+
+            @Nullable User reauthUser = response.isAuthenticated() ? UserManager.getUser(response.getValidEmail()) : null;
+
+            AuthenticationManager.setReauthUser(reauthUser, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
+
+            throw new RedirectException(url);
         }
 
         @Override
@@ -1565,6 +1604,20 @@ public class AuthenticationManager
         return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationConfiguration.class.getName() + "$" + configurationId;
     }
 
+    // Session-scoped marker that a forceReauth flow is in progress. Set by LoginApiAction before primary auth and
+    // consumed by handleAuthentication after primary auth succeeds, so the reauth token can be issued without
+    // replacing the existing authenticated session or running the full login completion flow.
+    private record ReauthFlow(boolean local) {}
+
+    private static String getReauthFlowSessionKey()
+    {
+        return AUTHENTICATION_PROCESS_PREFIX + ReauthFlow.class.getName();
+    }
+
+    public static void setReauthFlow(HttpServletRequest request, boolean local)
+    {
+        request.getSession(true).setAttribute(getReauthFlowSessionKey(), new ReauthFlow(local));
+    }
 
     // Clear all primary and secondary authentication results
     public static void clearAuthenticationProcessAttributes(HttpServletRequest request)
@@ -1643,6 +1696,17 @@ public class AuthenticationManager
             }
         }
 
+        // As per 21 CFR Part 11, reauth only requires primary credentials (email + password), so issue the token
+        // before normal login completion (secondary auth, profile-update redirects, validators, or session replacement).
+        ReauthFlow reauthFlow = (ReauthFlow)session.getAttribute(getReauthFlowSessionKey());
+        if (reauthFlow != null)
+        {
+            session.removeAttribute(getReauthFlowSessionKey());
+            URLHelper url = getAfterReauthURL(c, getLoginReturnProperties(request), primaryAuthUser);
+            setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+            return new AuthenticationResult(primaryAuthUser, url);
+        }
+
         List<AuthenticationValidator> validators = new LinkedList<>();
 
         if (primaryAuthResult.getResponse().requireSecondary())
@@ -1712,6 +1776,30 @@ public class AuthenticationManager
         return new AuthenticationResult(primaryAuthUser, url);
     }
 
+    // Builds the URL that receives the reauth token from setReauthUser().
+    // Unlike getAfterLoginURL(), this keeps the caller's return URL even if the user needs a profile update.
+    private static URLHelper getAfterReauthURL(Container current, @Nullable LoginReturnProperties properties, @NotNull User user)
+    {
+        URLHelper returnUrl;
+
+        if (null != properties && null != properties.getReturnUrl())
+        {
+            returnUrl = properties.getReturnUrl();
+        }
+        else
+        {
+            Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : current);
+            returnUrl = !c.hasPermission(user, ReadPermission.class) ? getWelcomeURL() : c.getStartURL(user);
+        }
+
+        if (null != properties && null != properties.getUrlhash())
+        {
+            returnUrl.setFragment(properties.getUrlhash().replace("#", ""));
+        }
+
+        return returnUrl;
+    }
+
 
     public static URLHelper getAfterLoginURL(Container current, @Nullable LoginReturnProperties properties, @NotNull User user)
     {
@@ -1767,10 +1855,71 @@ public class AuthenticationManager
         return new URLHelper(true);
     }
 
-    public record Reauth(String token, User user){}
-    public static final String REAUTH_TOKEN_NAME = "reauthToken";
+    public record ReauthContext(User user, Instant expiration)
+    {
+        public boolean isExpired()
+        {
+            return Instant.now().isAfter(expiration());
+        }
+    }
 
-    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token)
+    public static final String REAUTH_TOKEN_NAME = "reauthToken";           // URL parameter name for re-auth token
+    public static final String ERROR_MESSAGE = "errorMessage";              // URL parameter name for error message
+    public static final String REAUTH_TOKEN_MAP_NAME = "reauthTokenSet";    // Session attribute name for token map
+
+    /**
+     * @param reauthUser   Re-auth user to stash in session with the re-auth token
+     * @param sessionUser  If not null, validate that this user and reauthUser are the same
+     * @param request      Request from which to retrieve the session
+     * @param errorMessage Pre-existing error message to add to the URL
+     * @param redirectUrl  URL to which the token (on success) or error message (on failure) gets added
+     */
+    public static void setReauthUser(User reauthUser, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
+    {
+        if (errorMessage == null && sessionUser != null && !sessionUser.equals(reauthUser))
+        {
+            errorMessage = "Reauthentication failed: wrong user reauthenticated";
+        }
+
+        if (errorMessage != null)
+        {
+            redirectUrl.addParameter(ERROR_MESSAGE, errorMessage);
+        }
+        else
+        {
+            String reauthToken = GUID.makeHash();
+            redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
+            // The setReauthUser() and getAndClearReauthUser() should be invoked within a second of each other
+            // (browser redirects with no user interaction). Five minute expiration should be more than ample.
+            addToken(request, reauthUser, reauthToken, Instant.now().plus(5, ChronoUnit.MINUTES));
+        }
+    }
+
+    // Separate method to allow unit testing
+    private static void addToken(HttpServletRequest request, User reauthUser, String reauthToken, Instant expiration)
+    {
+        // Very unlikely to have contention or even multiple elements, and synchronized map is lightweight
+        Map<String, ReauthContext> tokenMap = getTokenMap(request);
+        if (!tokenMap.isEmpty())
+            clearExpiredTokens(tokenMap);
+        tokenMap.put(reauthToken, new ReauthContext(reauthUser, expiration));
+    }
+
+    // Separate method to allow unit testing
+    private static Map<String, ReauthContext> getTokenMap(HttpServletRequest request)
+    {
+        return SessionHelper.getAttribute(request, REAUTH_TOKEN_MAP_NAME, () -> Collections.synchronizedMap(new HashMap<>(5)));
+    }
+
+    /**
+     * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
+     * context that's not expired and (if requested) the context user matches the provided user, then return the user.
+     * @param request      Request from which to retrieve the session
+     * @param token        The reauth token to validate
+     * @param sessionUser  If non-null, causes validation that this user matches the reauth user
+     * @return             The re-auth user, if token is valid and session user check passes. Otherwise, null.
+     */
+    public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
         if (token != null)
         {
@@ -1778,16 +1927,20 @@ public class AuthenticationManager
 
             if (session != null)
             {
-                Reauth reauth = (Reauth) session.getAttribute(REAUTH_TOKEN_NAME);
+                @SuppressWarnings("unchecked")
+                Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
 
-                if (reauth != null)
+                if (tokenMap != null)
                 {
-                    boolean matches = token.equals(reauth.token());
+                    clearExpiredTokens(tokenMap);
+                    ReauthContext context = tokenMap.remove(token);
 
-                    if (matches)
+                    if (context != null && !context.isExpired())
                     {
-                        session.removeAttribute(REAUTH_TOKEN_NAME);
-                        return reauth.user();
+                        User reauthUser = context.user();
+
+                        if (sessionUser == null || sessionUser.equals(reauthUser))
+                            return reauthUser;
                     }
                 }
             }
@@ -1796,11 +1949,80 @@ public class AuthenticationManager
         return null;
     }
 
+    // Clear any abandoned tokens
+    private static void clearExpiredTokens(@NotNull Map<String, ReauthContext> tokenMap)
+    {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (tokenMap)
+        {
+            tokenMap.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
+    }
+
+    public static class ReauthTokenTest extends Assert
+    {
+        @Test
+        public void testReauthTokens() throws InterruptedException
+        {
+            HttpServletRequest request = TestContext.get().getRequest();
+            User admin = TestContext.get().getUser();
+            Map<String, ReauthContext> map = getTokenMap(request);
+            clearExpiredTokens(map);
+            // Might have some unexpired tokens stashed away. Assume they won't expired during this test run.
+            int initialCount = map.size();
+            ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
+
+            ActionURL clone = url.clone();
+            setReauthUser(admin, admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            String token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ReauthContext ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertEquals(admin, getAndClearReauthUser(request, token, admin));
+            assertEquals(initialCount, map.size());
+
+            // Try same token again
+            assertNull(getAndClearReauthUser(request, token, admin));
+            // Try a bogus token
+            assertNull(getAndClearReauthUser(request, "xyz", admin));
+
+            // Wrong user on set case
+            clone = url.clone();
+            setReauthUser(admin, new User(), request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals("Reauthentication failed: wrong user reauthenticated", clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Wrong user on get case
+            clone = url.clone();
+            setReauthUser(admin, admin, request, null, clone);
+            assertEquals(initialCount + 1, map.size());
+            token = clone.getParameter(REAUTH_TOKEN_NAME);
+            ctx = map.get(token);
+            assertFalse(ctx.isExpired());
+            assertEquals(admin, ctx.user());
+            assertNull(getAndClearReauthUser(request, token, new User()));
+            assertEquals(initialCount, map.size());
+
+            addToken(request, admin, "abc", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "xyz", Instant.now().plus(1, ChronoUnit.SECONDS));
+            addToken(request, admin, "123", Instant.now().plus(1, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 3, map.size());
+
+            // Wait a second then add another one -- tokens above should all get removed
+            Thread.sleep(1000);
+            addToken(request, admin, "foo", Instant.now().plus(10, ChronoUnit.SECONDS));
+            assertEquals(initialCount + 1, map.size());
+            assertEquals(admin, getAndClearReauthUser(request, "foo", admin));
+            assertEquals(initialCount, map.size());
+        }
+    }
+
     // test() method should return true if the authentication is still valid
     public interface AuthenticationValidator extends Predicate<HttpServletRequest>
     {
     }
-
 
     public static class LinkFactory
     {

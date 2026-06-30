@@ -168,7 +168,8 @@ public class ChangeSummary
                     summary += " of " + duplicateOf.getIssueId();
             }
 
-            sbHTMLChanges.append("<b>").append(summary);
+            // GitHub Kanban #1946: encode summary, which includes the issue resolution text
+            sbHTMLChanges.append("<b>").append(PageFlowUtil.filter(summary));
             sbHTMLChanges.append("</b><br>\n");
         }
 

@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 import React, { ReactNode } from 'react';
-import { imageURL, HelpLink, HELP_LINK_REFERRER } from '@labkey/components';
+import { HELP_LINK_REFERRER, HelpLink, imageURL, redirect } from '@labkey/components';
 import { ActionURL, Ajax, getServerContext } from '@labkey/api';
 
 import { ErrorDetails, ErrorType } from './model';
@@ -161,7 +161,7 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
                                 returnUrl,
                             },
                             callback: () => {
-                                window.location.href = returnUrl;
+                                redirect(returnUrl);
                             },
                         });
                     }}
@@ -176,7 +176,6 @@ const PERMISSION_DETAILS = (errorDetails: ErrorDetails) => (
 const CONFIGURATION_HEADING = () => 'Oops! A server configuration error has occurred.';
 const CONFIGURATION_SUBHEADING = (errorMessage?: string) => (
     <>
-        {'The requested page cannot be found. '}
         {errorMessage !== undefined
             ? errorMessage.endsWith('.')
                 ? errorMessage

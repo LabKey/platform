@@ -575,6 +575,19 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
+    /** Helper to populate a test study with reasonable defaults */
+    public StudyImpl createTestStudy(User user, StudyImpl study)
+    {
+        if (StringUtils.isBlank(study.getSubjectNounSingular()))
+            study.setSubjectNounSingular("Subject");
+        if (StringUtils.isBlank(study.getSubjectNounPlural()))
+            study.setSubjectNounPlural("Subjects");
+        if (StringUtils.isBlank(study.getSubjectColumnName()))
+            study.setSubjectColumnName("SubjectID");
+
+        return createStudy(user, study);
+    }
+
     public StudyImpl createStudy(User user, StudyImpl study)
     {
         Container container = study.getContainer();

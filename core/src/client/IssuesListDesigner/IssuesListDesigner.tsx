@@ -23,6 +23,7 @@ import {
     IssuesListDefDesignerPanels,
     IssuesListDefModel,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -82,8 +83,7 @@ class IssuesListDesigner extends React.Component<{}, State> {
 
     navigate = (defaultUrl: string) => {
         this._dirty = false;
-        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     };
 
     onComplete = (model: IssuesListDefModel) => {

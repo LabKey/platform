@@ -388,9 +388,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpRunImpl getExpRun(long rowId)
     {
+        return getExpRun(rowId, null);
+    }
+
+    @Override
+    public @Nullable ExpRunImpl getExpRun(long rowId, @Nullable Container container)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
         ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        return run == null ? null : new ExpRunImpl(run);
+        if (run == null)
+            return null;
+
+        // GitHub Issue #1892: if container provided, ensure the run belongs to the container
+        if (container != null && !run.getContainer().equals(container))
+            return null;
+
+        return new ExpRunImpl(run);
     }
 
     private List<ExpRunImpl> getExpRuns(SimpleFilter filter)
@@ -2105,7 +2118,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!exp.isEmpty())
         {
             // We're not actually mutating in this case, but we would be if some action hadn't already cached this run group. Flag it as if we're mutating.
-            SpringActionController.executingMutatingSql("Creating an experiment run group");
+            SpringActionController.checkForMutatingSql(() -> "Creating an experiment run group");
 
             // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
             // already part of a hidden run group.
@@ -5582,10 +5595,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
-            LOG.info("Deleting {} dataIds {} ", dataIds.size(), dataIds);
+            LOG.debug("Deleting {} dataIds {} ", dataIds.size(), dataIds);
             deleteDataByRowIds(user, c, dataIds);
 
-            LOG.info("Deleting objects from container {}", c);
+            LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
 
             transaction.commit();

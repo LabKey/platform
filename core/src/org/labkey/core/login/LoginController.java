@@ -25,6 +25,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -52,6 +53,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfigurationCache;
@@ -60,7 +62,6 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
-import org.labkey.api.security.AuthenticationManager.Reauth;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.CSRF;
@@ -72,6 +73,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
@@ -93,7 +95,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MailHelper;
@@ -115,6 +116,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnsafeExternalRedirectException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
@@ -141,7 +143,6 @@ import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_ENABLE
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_LIMIT_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_PERIOD_KEY;
 import static org.labkey.api.security.AuthenticationManager.LOGIN_ATTEMPT_RESET_TIME_KEY;
-import static org.labkey.api.security.AuthenticationManager.REAUTH_TOKEN_NAME;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
@@ -248,10 +249,16 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl)
+        public ActionURL getForceReauthURL(Container c, boolean local, @Nullable URLHelper returnUrl)
         {
-            return getLoginURL(c, returnUrl)
+            ActionURL url = getLoginURL(c, returnUrl)
                 .addParameter("forceReauth", true);
+
+            // Customizes re-auth behavior for the local login page case (vs. CAS IdP case)
+            if (local)
+                url.addParameter("local", true);
+
+            return url;
         }
 
         @Override
@@ -301,12 +308,24 @@ public class LoginController extends SpringActionController
         @Override
         public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile)
         {
-            ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
-            url.addParameter("configuration", configuration.getRowId());
+            ActionURL url = getRedirectURL(SsoRedirectAction.class, configuration, returnUrl);
             if (skipProfile)
             {
                 url.addParameter("skipProfile", 1);
             }
+            return url;
+        }
+
+        @Override
+        public ActionURL getSSOReauthURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl)
+        {
+            return getRedirectURL(SsoReauthAction.class, configuration, returnUrl);
+        }
+
+        private ActionURL getRedirectURL(Class<? extends Controller> redirectActionClass, SSOAuthenticationConfiguration<?> configuration, @Nullable URLHelper returnUrl)
+        {
+            ActionURL url = new ActionURL(redirectActionClass, ContainerManager.getRoot());
+            url.addParameter("configuration", configuration.getRowId());
             if (null != returnUrl)
             {
                 String fragment = returnUrl.getFragment();
@@ -650,7 +669,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(LoginForm form, BindException errors)
         {
-            HttpServletRequest request = getViewContext().getRequest();
+            HttpServletRequest request = getViewContext().getRequestOrThrow();
 
             // Store passed in returnUrl and skipProfile param at the start of the login so we can redirect to it after
             // any password resets, secondary logins, profile updates, etc. have finished
@@ -665,7 +684,7 @@ public class LoginController extends SpringActionController
             Project termsProject = getTermsOfUseProject(form);
             boolean isGuest = getUser().isGuest();
 
-            if (!isTermsOfUseApproved(form) && !form.isApprovedTermsOfUse())
+            if (!form.isForceReauth() && !isTermsOfUseApproved(form) && AppProps.getInstance().getTermsOfUseFrequencySeconds() == 0)
             {
                 if (null != termsProject)
                 {
@@ -689,6 +708,11 @@ public class LoginController extends SpringActionController
                 // Don't touch the session in the re-auth case (e.g., CAS renew=true). The CAS spec is silent on
                 // expected behavior when no "ticket-signing ticket" (session, in our case) exists and a "renew" is
                 // requested, but this seems consistent with "ignore the current session" when renew is requested.
+                // Stash the reauth context in session so handleAuthentication can issue the reauth token after
+                // primary authentication succeeds without running the full login completion flow.
+                if (form.isForceReauth())
+                    AuthenticationManager.setReauthFlow(request, form.isLocal());
+
                 AuthenticationResult authResult = AuthenticationManager.handleAuthentication(request, getContainer(), !form.isForceReauth());
                 // getUser will return null if authentication is incomplete as is the case when secondary authentication is required
                 User user = authResult.getUser();
@@ -696,20 +720,13 @@ public class LoginController extends SpringActionController
                 response = new ApiSimpleResponse();
                 response.put("success", true);
 
-                if (form.isApprovedTermsOfUse())
+                if (!form.isForceReauth() && form.isApprovedTermsOfUse())
                 {
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(termsProject));
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
                     response.put("approvedTermsOfUse", true);
-                }
-
-                if (form.isForceReauth())
-                {
-                    String reauthToken = GUID.makeHash();
-                    redirectUrl.addParameter(REAUTH_TOKEN_NAME, reauthToken);
-                    request.getSession().setAttribute(REAUTH_TOKEN_NAME, new Reauth(reauthToken, user));
                 }
 
                 // Use the full hostname in the URL if we have one, otherwise just go with a local URI
@@ -996,9 +1013,9 @@ public class LoginController extends SpringActionController
                 return false;
             }
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), project, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
             else
             {
                 errors.reject(ERROR_MSG, "Unable to determine the terms of use type from the information submitted on the form.");
@@ -1263,9 +1280,9 @@ public class LoginController extends SpringActionController
             }
 
             if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), project, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(project));
             else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), null, true);
+                WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
 
             return true;
         }
@@ -1331,7 +1348,7 @@ public class LoginController extends SpringActionController
     private boolean isTermsOfUseApproved(AgreeToTermsForm form)
     {
         Project termsProject = getTermsOfUseProject(form);
-        return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(termsProject) || WikiTermsOfUseProvider.isTermsOfUseApproved(getViewContext(), termsProject);
+        return form.isApprovedTermsOfUse() || !WikiTermsOfUseProvider.isTermsOfUseRequired(getViewContext(), termsProject);
     }
 
     private static abstract class AbstractLoginForm extends ReturnUrlForm
@@ -1388,7 +1405,8 @@ public class LoginController extends SpringActionController
         private String email;
         private String password;
         private String provider;
-        private boolean forceReauth = false;
+        private boolean forceReauth = false;     // If true, require valid credentials even if logged in
+        private boolean local = false;           // If true, require on re-auth that current session user matches re-auth user
 
         public String getProvider()
         {
@@ -1432,6 +1450,17 @@ public class LoginController extends SpringActionController
         public void setForceReauth(boolean forceReauth)
         {
             this.forceReauth = forceReauth;
+        }
+
+        public boolean isLocal()
+        {
+            return local;
+        }
+
+        @SuppressWarnings("unused")
+        public void setLocal(boolean local)
+        {
+            this.local = local;
         }
     }
 
@@ -1539,19 +1568,7 @@ public class LoginController extends SpringActionController
 
     public static class SsoRedirectForm extends AbstractLoginForm
     {
-        private String _provider;
         private int _configuration;
-
-        public String getProvider()
-        {
-            return _provider;
-        }
-
-        @SuppressWarnings("unused")
-        public void setProvider(String provider)
-        {
-            _provider = provider;
-        }
 
         public int getConfiguration()
         {
@@ -1565,18 +1582,13 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    @AllowedDuringUpgrade
-    // Always invoked in the root, so no need to ignore locked projects
-    public static class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
+    private static abstract class BaseSsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
+        protected abstract URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context);
+
         @Override
         public ModelAndView getView(SsoRedirectForm form, BindException errors)
         {
-            // If logged in then redirect immediately
-            if (!getUser().isGuest())
-                return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
-
             // If we have a returnUrl or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnUrl = form.getReturnUrlHelper();
             if (null != returnUrl || form.getSkipProfile())
@@ -1592,7 +1604,7 @@ public class LoginController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Authentication configuration is not valid");
 
-            url = configuration.getUrl(getViewContext());
+            url = getUrl(configuration, getViewContext());
 
             // It's safe to bypass checking the external redirect allow list in this case because we are redirecting to
             // the administrator-provided URL from the SSO authentication configuration.
@@ -1602,6 +1614,64 @@ public class LoginController extends SpringActionController
         @Override
         public final void addNavTrail(NavTree root)
         {
+        }
+    }
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    @IgnoresTermsOfUse
+    // Always invoked in the root, so no need to ignore locked projects
+    public static class SsoRedirectAction extends BaseSsoRedirectAction
+    {
+        @Override
+        public ModelAndView getView(SsoRedirectForm form, BindException errors)
+        {
+            // If logged in then redirect immediately
+            if (!getUser().isGuest())
+                return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
+
+            return super.getView(form, errors);
+        }
+
+        @Override
+        protected URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context)
+        {
+            return configuration.getUrl(context);
+        }
+    }
+
+    // Very similar to SsoRedirectAction, but needs different annotations, so we have two separate classes
+    @RequiresLogin
+    @IgnoresTermsOfUse
+    public static class SsoReauthAction extends BaseSsoRedirectAction
+    {
+        @Override
+        protected URLHelper getUrl(SSOAuthenticationConfiguration<?> configuration, ViewContext context)
+        {
+            return configuration.getReauthUrl(context);
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from client code
+    @RequiresLogin
+    public static class GetAuthenticationConfigurationAction extends ReadOnlyApiAction<ReturnUrlForm>
+    {
+        @Override
+        public Object execute(ReturnUrlForm form, BindException errors)
+        {
+            PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(getViewContext().getSession());
+            if (configuration == null)
+            {
+                throw new NotFoundException("No configuration found");
+            }
+            JSONObject resp = new JSONObject();
+            resp.put("description", configuration.getDescription());
+            LoginUrls urls = urlProvider(LoginUrls.class);
+            ActionURL reauthUrl = configuration instanceof SSOAuthenticationConfiguration<?> sso ?
+                urls.getSSOReauthURL(sso, form.getReturnActionURL()) :
+                urls.getForceReauthURL(getContainer(), true, form.getReturnActionURL());
+            resp.put("reauthUrl", reauthUrl.getLocalURIString());
+            return success(resp);
         }
     }
 

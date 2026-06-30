@@ -46,6 +46,7 @@ public interface AppProps
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
     String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
+    String DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP = "deriveSamplesNotInApp";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
@@ -227,6 +228,13 @@ public interface AppProps
 
     /** @return whether the server should include its name and version as a header in HTTP responses */
     boolean isIncludeServerHttpHeader();
+
+    /**
+     * Returns the terms-of-use re-acceptance frequency in seconds. 0 means require acceptance on every sign-in, which
+     * is the default. Positive value means acceptance is valid for that many seconds before the user is prompted again
+     * after next login.
+     */
+    int getTermsOfUseFrequencySeconds();
 
     /**
      * @return List of configured external redirect hosts

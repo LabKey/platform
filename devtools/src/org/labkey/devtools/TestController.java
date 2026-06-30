@@ -19,6 +19,7 @@ package org.labkey.devtools;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
@@ -37,15 +38,20 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -1404,6 +1410,59 @@ public class TestController extends SpringActionController
         }
     }
 
+    @RequiresPermission(UpdatePermission.class)
+    public static class ExecuteMutatingSqlGetAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            setTitle("Execute Mutating SQL via GET");
+
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+
+            return new HtmlView(HtmlString.of("UPDATE via GET was allowed!"));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class ExecuteMutatingSqlPostAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
+        {
+            setTitle("Execute Mutating SQL via POST");
+            return new HtmlView(HtmlString.of(reshow ? "UPDATE via POST was allowed!" : "Need to POST to this action"));
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors)
+        {
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return actionURL(BeginAction.class);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
     @AdminConsoleAction(AdminOperationsPermission.class)
     @JsonInputLimit(50)
     public static class TestJsonObjectInputLimitAction extends MutatingApiAction<SimpleApiJsonForm>
@@ -1492,4 +1551,41 @@ public class TestController extends SpringActionController
         }
     }
 
+    public record ReauthForm(@Nullable String reauthToken, @Nullable String errorMessage){}
+
+    @RequiresLogin
+    public class TestReauthAction extends FormViewAction<ReauthForm>
+    {
+        @Override
+        public void validateCommand(ReauthForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ReauthForm form, boolean reshow, BindException errors)
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/devtools/view/testReauth.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ReauthForm form, BindException errors)
+        {
+            User reauthUser = AuthenticationManager.getAndClearReauthUser(getViewContext().getRequestOrThrow(), form.reauthToken(), getUser());
+            if (reauthUser == null)
+                throw new NotFoundException("Reauthentication validation failed!");
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ReauthForm form)
+        {
+            return actionURL(BeginAction.class);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
 }
