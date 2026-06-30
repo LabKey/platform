@@ -177,7 +177,7 @@
                         }
                         else
                         {
-                            termsSecitons[0].hidden = true;
+                            termsSections[0].hidden = true;
                         }
                     }
                     if (document.getElementById('termsOfUseType') && response && response.termsOfUseType)

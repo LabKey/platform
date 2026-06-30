@@ -27,6 +27,7 @@ import {
     FormButtons,
     LoadingSpinner,
     Modal,
+    redirect,
     resolveErrorMessage,
     saveDomain,
 } from '@labkey/components';
@@ -161,8 +162,7 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
 
     navigate = (): void => {
         this._dirty = false;
-        const redirectUrl = ActionURL.getReturnUrl() || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(ActionURL.getReturnUrl() || ActionURL.buildURL('project', 'begin', getServerContext().container.path));
     };
 
     renderWarningConfirm() {

@@ -23,6 +23,7 @@ import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager.AuthenticationConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SsoSaveConfigurationAction;
@@ -50,6 +51,7 @@ public class TestSsoController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresTermsOfUse
     public static class TestSsoAction extends SimpleViewAction<TestSsoForm>
     {
         @Override
@@ -95,6 +97,7 @@ public class TestSsoController extends SpringActionController
 
     @AllowedDuringUpgrade
     @RequiresNoPermission
+    @IgnoresTermsOfUse
     // NOTE: Always invoked in the root, so no need for @IgnoresForbiddenProjectCheck
     public static class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
     {

@@ -23,6 +23,7 @@ import {
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
@@ -66,8 +67,7 @@ class DatasetDesigner extends PureComponent<any, State> {
 
     navigate(defaultUrl: string): void {
         this._dirty = false;
-        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     navigateOnComplete(model: DatasetModel): void {

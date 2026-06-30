@@ -8,7 +8,7 @@ import { ActionURL } from '@labkey/api';
 
 import { getErrorHeading, getImage, getInstruction, getShowDetailsBtn, getSubHeading, getViewDetails } from './ErrorType';
 import { ErrorDetails } from './model';
-import { withServerContext } from '@labkey/components';
+import { redirect, withServerContext } from '@labkey/components';
 
 export interface AppContext {
     errorDetails: ErrorDetails;
@@ -32,7 +32,7 @@ export class ErrorHandlerImpl extends PureComponent<ErrorHandlerProps, ErrorHand
             // browsers like chrome stores their homepage as first item
             window.history.back();
         } else {
-            window.location.href = ActionURL.getBaseURL(false);
+            redirect(ActionURL.getBaseURL(false));
         }
     };
 
@@ -41,7 +41,7 @@ export class ErrorHandlerImpl extends PureComponent<ErrorHandlerProps, ErrorHand
     };
 
     onHomeClick = (): void => {
-        window.location.href = ActionURL.getBaseURL(false);
+        redirect(ActionURL.getBaseURL(false));
     }
 
     render() {

@@ -27,6 +27,7 @@ import {
     getWebDavUrl,
     inferDomainFromFile,
     LoadingSpinner,
+    redirect,
     setDomainFields,
 } from '@labkey/components';
 
@@ -136,9 +137,7 @@ class AssayDesigner extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-        const redirectUrl = this.state.returnUrl || defaultUrl;
-        // TODO refactor this and other usages in platform/core/src/client to a helper safeRedirect() function from @labkey/components
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(this.state.returnUrl || defaultUrl);
     }
 
     onCancel = (): void => {

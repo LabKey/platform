@@ -27,9 +27,9 @@ import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentService.DuplicateFilenameException;
-import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.CoreSchema;
@@ -48,7 +48,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
@@ -98,6 +97,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME;
 
 public class WikiManager implements WikiService
 {
@@ -749,7 +749,7 @@ public class WikiManager implements WikiService
                 wikiName = rs.getString("name");
                 assert null != wikiName;
 
-                if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
+                if (TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
 
                 if (!rs.getBoolean("shouldindex"))
@@ -893,6 +893,12 @@ public class WikiManager implements WikiService
         {
             throw new RuntimeException(x);
         }
+    }
+
+    @Override
+    public boolean hasTermsOfUseWiki(Container c)
+    {
+        return (c.isRoot() || c.isProject()) && null != WikiSelectManager.getWiki(c, TERMS_OF_USE_WIKI_NAME);
     }
 
     @Override

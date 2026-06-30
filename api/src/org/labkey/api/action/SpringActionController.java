@@ -1252,15 +1252,20 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class<?> actionClass = getActionForThread();
         if (null == actionClass)
             return;
+        if (actionClass.getName().contains("JunitController"))
+            return;
 
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
 
-        if (ReadOnlyApiAction.class.isAssignableFrom(actionClass))
-        {
-            readonly = true;
-        }
-        else if (SimpleRedirectAction.class.isAssignableFrom(actionClass) || SimpleViewAction.class.isAssignableFrom(actionClass))
+        // Action classes listed below have a single code path that responds to GET and POST, so check for mutating SQL
+        // regardless of the current method
+        if (
+            ReadOnlyApiAction.class.isAssignableFrom(actionClass) ||
+            SimpleAction.class.isAssignableFrom(actionClass) ||
+            SimpleRedirectAction.class.isAssignableFrom(actionClass) ||
+            SimpleViewAction.class.isAssignableFrom(actionClass)
+        )
         {
             readonly = true;
         }
@@ -1269,24 +1274,27 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (null != vc && "GET".equals(vc.getRequest().getMethod()))
             {
                 readonly = true;
-                if (!FormViewAction.class.isAssignableFrom(actionClass) && AppProps.getInstance().isDevMode())
+                // Action classes listed below have different code paths for GET vs. POST. Treat them as read-only when
+                // current method is GET.
+                if (AppProps.getInstance().isDevMode() && !(
+                    ConfirmAction.class.isAssignableFrom(actionClass) ||
+                    FormViewAction.class.isAssignableFrom(actionClass)
+                ))
                     _log.warn("Action {} accepted GET unexpectedly... might need to update checkForMutatingSql()", actionClass.getName());
             }
         }
 
         if (readonly)
         {
-            if (actionClass.getName().contains("JunitController"))
-                return;
-
-            // Checking this late in the game to ensure OptionalFeatureService has been initialized.
-            if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-                return;
-
-            // Note: This defers the mutating SQL parsing & detection until after the quick checks above
+            // Supplier allows the quick checks above us to short-circuit the mutating SQL parsing & detection work
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
+                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
+                // reentrancy when querying this optional feature flag's value when it's not already cached.
+                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
+                    return;
+
                 boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +

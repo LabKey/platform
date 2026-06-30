@@ -46,7 +46,6 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.rstudio.RStudioService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -74,8 +73,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.reports.ReportService.R_REPORT_CUSTOM_SHARING;
 
 public class RReport extends ExternalScriptEngineReport
 {
@@ -937,17 +934,6 @@ public class RReport extends ExternalScriptEngineReport
     public String getEditAreaSyntax()
     {
         return "text/x-rsrc";
-    }
-
-    @Override
-    public boolean allowShareButton(User user, Container container)
-    {
-        if (OptionalFeatureService.get().isFeatureEnabled(R_REPORT_CUSTOM_SHARING))
-        {
-            // allow sharing if this R report is a DB report and the user canShare
-            return !getDescriptor().isModuleBased() && canShare(user, container);
-        }
-        return false;
     }
 
     public static class TestCase extends Assert
