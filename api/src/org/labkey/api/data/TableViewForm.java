@@ -30,7 +30,6 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -890,9 +889,15 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             setValueToBind(pv.getName(), pv.getValue());
         }
 
-        BindException errors = new NullSafeBindException(this, "form");
+        BindException errors = createErrors();
         validateBind(errors);
         return errors;
+    }
+
+    // Construct and return a BindException that's appropriate for this form
+    public BindException createErrors()
+    {
+        return new NullSafeBindException(this, "form");
     }
 }
 
