@@ -86,9 +86,9 @@ public class ApiKeyManager
      * @param user User to be associated with the new API key.
      * @return An API key that expires after the admin-configured duration
      */
-    public @NotNull String createKey(@NotNull User user, @Nullable String description)
+    public @NotNull String createKey(@NotNull User user, @Nullable String description, @Nullable Class<? extends Role> restrictedRole)
     {
-        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds(), description);
+        return createKey(user, AppProps.getInstance().getApiKeyExpirationSeconds(), description, restrictedRole);
     }
 
     /**
@@ -98,6 +98,18 @@ public class ApiKeyManager
      * @return An API key that expires after the specified number of seconds
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description)
+    {
+        return createKey(user, expirationSeconds, description, null);
+    }
+
+    /**
+     * Create an API key associated with a user and persist it in the database.
+     * @param user User to be associated with the new API key.
+     * @param expirationSeconds Number of seconds until expiration. -1 means no expiration.
+     * @param restrictedRole Role class that limits this API key's permissions. null means no restrictions.
+     * @return An API key that expires after the specified number of seconds
+     */
+    public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictedRole)
     {
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
@@ -120,6 +132,9 @@ public class ApiKeyManager
 
         if (description != null)
             map.put("Description", StringUtils.abbreviate(description.trim(), 256));
+
+        if (restrictedRole != null)
+            map.put("RestrictedRole", restrictedRole.getName());
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
