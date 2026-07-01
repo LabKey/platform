@@ -1518,7 +1518,7 @@ public class AdminController extends SpringActionController
         private int _seconds;
     }
 
-    // For SiteWideTermsOfUseTest
+    // For SiteWideTermsOfUseTest - must be invoked in root, as with CustomizeSiteAction
     @AdminConsoleAction(AdminOperationsPermission.class)
     public static class SetTermsOfUseFrequencyAction extends MutatingApiAction<TermsFrequency>
     {
