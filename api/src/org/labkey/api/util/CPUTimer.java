@@ -115,7 +115,7 @@ public class CPUTimer
         return true;
     }
 
-    protected void _update(long elapsed)
+    public void _update(long elapsed)
     {
         _cumulative += elapsed;
         _min = Math.min(_min, elapsed);
