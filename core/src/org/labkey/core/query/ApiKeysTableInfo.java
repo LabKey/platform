@@ -44,6 +44,7 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
         addWrapColumn(getRealTable().getColumn("Expiration"));
         addWrapColumn(getRealTable().getColumn("LastUsed"));
         addWrapColumn(getRealTable().getColumn("Description"));
+        addWrapColumn(getRealTable().getColumn("RestrictionRole"));
 
         if (filterToCurrentUser)
         {
