@@ -21,6 +21,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -76,10 +77,25 @@ public class WorkEntity
             this.setContainerId(new GUID((String) map.get("Container")));
     }
 
+    public WorkEntity(WorkType workType, Long workRowId, EntityType entityType, Long entityValue, Long actionId)
+    {
+        _workType = workType;
+        _workRowId = workRowId;
+        _entityType = entityType;
+        _entityValue = entityValue;
+        _actionId = actionId;
+    }
+
     public WorkEntity(ExpMaterial sample)
     {
         _entityType = EntityType.Sample;
         _entityValue = sample.getRowId();
+    }
+
+    public WorkEntity(ExpData source)
+    {
+        _entityType = EntityType.Source;
+        _entityValue = source.getRowId();
     }
 
     public WorkEntity(ExpMaterial sample, WorkType workType, Long workRowId, @Nullable Long actionId)
