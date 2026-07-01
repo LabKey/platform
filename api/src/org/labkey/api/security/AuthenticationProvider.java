@@ -307,7 +307,7 @@ public interface AuthenticationProvider
         private @Nullable ActionURL _redirectURL = null;
         private @NotNull Map<String, String> _userAttributeMap = Collections.emptyMap();  // A case-insensitive map of attribute names and values associated with the user
         private @NotNull Map<String, Object> _authenticationProperties = Collections.emptyMap();
-        private @Nullable Class<? extends Role> _roleRestriction;                         // Limit user's permissions to those of this role
+        private @Nullable Class<? extends Role> _restrictionRole;                         // Limit user's permissions to those of this role
         private boolean _requireSecondary = true;                                         // Require secondary authentication
         private boolean _reauth = false;
         private @Nullable String _successDetails = null;                                  // An optional string describing how successful authentication took place, which will
@@ -430,19 +430,19 @@ public interface AuthenticationProvider
         }
 
         /**
-         * Get the role restriction class, if present
+         * Get the restriction role class, if present
          */
-        public @Nullable Class<? extends Role> getRoleRestriction()
+        public @Nullable Class<? extends Role> getRestrictionRole()
         {
-            return _roleRestriction;
+            return _restrictionRole;
         }
 
         /**
          * Set a role that restricts this user's permissions
          */
-        public AuthenticationResponse setRoleRestriction(Class<? extends Role> clazz)
+        public AuthenticationResponse setRestrictionRole(Class<? extends Role> clazz)
         {
-            _roleRestriction = clazz;
+            _restrictionRole = clazz;
             return this;
         }
 

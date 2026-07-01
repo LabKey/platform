@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * A cloned user that has the user's permissions in all that user's containers, but always restricted to the supplied
+ * A cloned user that has the user's permissions in all the user's containers, but always restricted to the supplied
  * role. This is useful for creating read-only API keys, editor-only API keys, etc.
  */
 public class RoleRestrictedUser extends ClonedUser
@@ -17,10 +17,10 @@ public class RoleRestrictedUser extends ClonedUser
     {
         private final Role _role;
 
-        private RoleRestrictedPermissionsContext(PermissionsContext ctx, Class<? extends Role> clazz)
+        private RoleRestrictedPermissionsContext(PermissionsContext ctx, Class<? extends Role> restrictionRole)
         {
             super(ctx);
-            _role = RoleManager.getRole(clazz);
+            _role = RoleManager.getRole(restrictionRole);
         }
 
         @Override
@@ -31,8 +31,8 @@ public class RoleRestrictedUser extends ClonedUser
         }
     }
 
-    public RoleRestrictedUser(User user, Class<? extends Role> clazz)
+    public RoleRestrictedUser(User user, Class<? extends Role> restrictionRole)
     {
-        super(user, new RoleRestrictedPermissionsContext(user.getPermissionsContext(), clazz));
+        super(user, new RoleRestrictedPermissionsContext(user.getPermissionsContext(), restrictionRole));
     }
 }

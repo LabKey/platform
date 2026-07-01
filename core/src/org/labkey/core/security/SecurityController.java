@@ -2294,7 +2294,7 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    record RestrictedRole(Class<? extends Role> roleClass)
+    record RestrictionRole(Class<? extends Role> roleClass)
     {
         String displayName()
         {
@@ -2302,12 +2302,12 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private static final Map<String, RestrictedRole> RESTRICTED_ROLE_MAP = Stream.of(
+    private static final Map<String, RestrictionRole> RESTRICTION_ROLE_MAP = Stream.of(
         ReaderRole.class,
         AuthorRole.class,
         EditorWithoutDeleteRole.class,
         EditorRole.class
-    ).collect(LabKeyCollectors.toLinkedMap(Class::getName, RestrictedRole::new));
+    ).collect(LabKeyCollectors.toLinkedMap(Class::getName, RestrictionRole::new));
 
     @RequiresLogin
     public static class GetApiKeyRolesAction extends ReadOnlyApiAction<Object>
@@ -2315,7 +2315,7 @@ public class SecurityController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            return RESTRICTED_ROLE_MAP.entrySet().stream()
+            return RESTRICTION_ROLE_MAP.entrySet().stream()
                 .map(e -> new JSONObject(Map.of("uniqueName", e.getKey(), "displayName", e.getValue().displayName())))
                 .collect(LabKeyCollectors.toJSONArray());
         }
@@ -2374,7 +2374,7 @@ public class SecurityController extends SpringActionController
                     if (!AppProps.getInstance().isAllowApiKeys())
                         throw new NotFoundException("Creation of API keys is disabled");
 
-                    RestrictedRole rr = RESTRICTED_ROLE_MAP.get(form.getRole());
+                    RestrictionRole rr = RESTRICTION_ROLE_MAP.get(form.getRole());
                     apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription(), rr != null ? rr.roleClass() : null);
                     break;
                 case "session":
@@ -2410,29 +2410,29 @@ public class SecurityController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                    new CompleteUserReadAction()
+                new CompleteUserReadAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                    new PermissionsAction(),
-                    new StandardDeleteGroupAction(),
+                new PermissionsAction(),
+                new StandardDeleteGroupAction(),
                 controller.new GroupAction(),
-                    new CompleteMemberAction(),
-                    new CompleteUserAction(),
-                    new GroupExportAction(),
-                    new GroupPermissionAction(),
-                    new UpdatePermissionsAction(),
-                    new ShowRegistrationEmailAction(),
-                    new GroupDiagramAction(),
-                    new FolderAccessAction()
+                new CompleteMemberAction(),
+                new CompleteUserAction(),
+                new GroupExportAction(),
+                new GroupPermissionAction(),
+                new UpdatePermissionsAction(),
+                new ShowRegistrationEmailAction(),
+                new GroupDiagramAction(),
+                new FolderAccessAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
-                    new ShowResetEmailAction(),
-                    new AdminResetPasswordAction()
+                new ShowResetEmailAction(),
+                new AdminResetPasswordAction()
             );
         }
 

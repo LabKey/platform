@@ -177,7 +177,7 @@ public class SecurityManager
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
-    private static final String ROLE_RESTRICTION_KEY = RoleRestrictedUser.class.getName() + "$RoleRestrictionKey";
+    private static final String RESTRICTION_ROLE_KEY = RoleRestrictedUser.class.getName() + "$RestrictionRoleKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
@@ -522,9 +522,9 @@ public class SecurityManager
                 }
 
                 //noinspection unchecked
-                Class<? extends Role> roleRestrictionClass = (Class<? extends Role>) session.getAttribute(ROLE_RESTRICTION_KEY);
-                if (roleRestrictionClass != null)
-                    sessionUser = new RoleRestrictedUser(sessionUser, roleRestrictionClass);
+                Class<? extends Role> restrictionRole = (Class<? extends Role>) session.getAttribute(RESTRICTION_ROLE_KEY);
+                if (restrictionRole != null)
+                    sessionUser = new RoleRestrictedUser(sessionUser, restrictionRole);
             }
         }
 
@@ -822,8 +822,8 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
-            if (response.getRoleRestriction() != null)
-                newSession.setAttribute(ROLE_RESTRICTION_KEY, response.getRoleRestriction());
+            if (response.getRestrictionRole() != null)
+                newSession.setAttribute(RESTRICTION_ROLE_KEY, response.getRestrictionRole());
         }
 
         return newSession;
