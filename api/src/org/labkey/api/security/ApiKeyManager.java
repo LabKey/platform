@@ -232,7 +232,7 @@ public class ApiKeyManager
 
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId"), filter, null).getObject(ApiKeyAuthentication.class);
+            ret = new TableSelector(CoreSchema.getInstance().getTableAPIKeys(), Set.of("CreatedBy", "RowId", "RestrictionRole"), filter, null).getObject(ApiKeyAuthentication.class);
             t.commit();
         }
 
