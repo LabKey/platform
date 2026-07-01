@@ -97,7 +97,6 @@ import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -894,10 +893,6 @@ public class XarReader extends AbstractXarImporter
 
         try
         {
-            DomainKind<?> kind = domain.getDomainKind();
-            if (kind != null)
-                domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(getContainer())); // GitHub Issue 1117
-
             domain.save(getUser());
             DefaultValueService.get().setDefaultValues(domain.getContainer(), newDefaultValues);
         }

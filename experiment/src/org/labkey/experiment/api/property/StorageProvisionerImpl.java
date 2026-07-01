@@ -213,7 +213,10 @@ public class StorageProvisionerImpl implements StorageProvisioner
             indices.addAll(domain.getPropertyIndices());
             change.setIndexedColumns(domain, indices);
 
-            change.setForeignKeys(domain.getPropertyForeignKeys());
+            // GitHub Issue 1117
+            Set<PropertyStorageSpec.ForeignKey> foreignKeys = new LinkedHashSet<>(kind.getPropertyForeignKeys(domain.getContainer()));
+            foreignKeys.addAll(domain.getPropertyForeignKeys());
+            change.setForeignKeys(foreignKeys);
 
             try
             {
