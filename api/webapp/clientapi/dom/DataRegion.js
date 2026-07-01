@@ -2889,8 +2889,8 @@ if (!LABKEY.DataRegions) {
             session: true
         });
 
-        // GitHub Issue 1219: the view 'fields' column-metadata is never used on save so can be removed from payload
-        // and only fieldKey/title are read per column trim down that as well
+        // GitHub Issue 1219: the 'fields' column-metadata for the view is never used on the server-side save action
+        // so it can be removed from the payload. Also, only fieldKey/title are read per column so we can trim down that as well.
         delete viewConfig.fields;
         if (LABKEY.Utils.isArray(viewConfig.columns)) {
             viewConfig.columns = $.map(viewConfig.columns, function(col) {
