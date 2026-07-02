@@ -35,7 +35,9 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.wiki.WikiService;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
@@ -116,7 +118,7 @@ public class CoreMcp implements McpService.McpImpl
     @RequiresNoPermission // Because we don't have a container yet, but the tool will verify read permission before setting the container
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. MyProject/MyFolder") String containerPath)
     {
-        final String message;
+        String message;
 
         Container container = ContainerManager.getForPath(containerPath);
 
@@ -142,6 +144,17 @@ public class CoreMcp implements McpService.McpImpl
         {
             McpService.get().saveSessionContainer(context, container);
             message = "Container has been set to " + container.getPath();
+
+            WikiService wikiService = WikiService.get();
+            if (wikiService != null)
+            {
+                var memoryCount = wikiService.getNames(container).stream().filter(name -> name.startsWith("memory:")).count();
+                message = "Container has been set to " + container.getPath() + ".";
+                if (memoryCount == 0)
+                    message += "\nThis container has no assistant memories.";
+                else
+                    message += "\nThis container has " + StringUtilsLabKey.pluralize(memoryCount, "assistant memory", "assistant memories") + " available using the \"listAssistantMemory\" tool.";
+            }
         }
 
         return message;
