@@ -911,8 +911,10 @@ d,seven,twelve,day,month,date,duration,guid
                 assertFalse(rs.getColumn(1).isHidden());
                 assertEquals("0.00", rs.getColumn(1).getFormat());
             }
-        }
+        },
 
+        // test operators in WHEN expression
+        new SqlTest("SELECT CASE WHEN 1=1 THEN 'a' || 'b' ELSE CASE WHEN (2=2) THEN 'two' ELSE NULL END END")
     );
 
     List<SqlTest> postgres = List.of(
