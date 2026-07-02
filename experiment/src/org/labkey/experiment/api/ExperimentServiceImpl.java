@@ -8074,8 +8074,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             OntologyManager.ensureObject(c, lsid.toString());
 
-            if (kind != null)
-                domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
             domain.save(u, options == null ? null : options.getAuditRecordMap(), calculatedFields);
             impl.save(u);
 

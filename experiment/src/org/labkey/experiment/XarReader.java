@@ -95,10 +95,8 @@ import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -123,7 +121,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataClass;
-import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.DataInput;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -896,10 +893,6 @@ public class XarReader extends AbstractXarImporter
 
         try
         {
-            DomainKind<?> kind = domain.getDomainKind();
-            if (kind instanceof SampleTypeDomainKind || kind instanceof DataClassDomainKind)
-                domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(getContainer())); // GitHub Issue 1117
-
             domain.save(getUser());
             DefaultValueService.get().setDefaultValues(domain.getContainer(), newDefaultValues);
         }

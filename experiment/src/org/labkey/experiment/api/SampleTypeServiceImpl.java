@@ -835,10 +835,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null)
-        {
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
-            domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c)); // GitHub Issue 1117
-        }
 
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
