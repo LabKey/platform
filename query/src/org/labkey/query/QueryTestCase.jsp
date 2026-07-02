@@ -913,8 +913,8 @@ d,seven,twelve,day,month,date,duration,guid
             }
         },
 
-        // test operators in WHEN expression
-        new SqlTest("SELECT CASE WHEN 1=1 THEN 'a' || 'b' ELSE CASE WHEN (2=2) THEN 'two' ELSE NULL END END")
+        // test operators in THEN expression
+        new SqlTest("SELECT CASE WHEN 1=1 THEN 'a' || 'b' ELSE 'x' || 'y' END")
     );
 
     List<SqlTest> postgres = List.of(
