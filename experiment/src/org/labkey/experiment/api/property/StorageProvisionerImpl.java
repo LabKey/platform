@@ -213,10 +213,16 @@ public class StorageProvisionerImpl implements StorageProvisioner
             indices.addAll(domain.getPropertyIndices());
             change.setIndexedColumns(domain, indices);
 
-            // GitHub Issue 1117
-            Set<PropertyStorageSpec.ForeignKey> foreignKeys = new LinkedHashSet<>(kind.getPropertyForeignKeys(domain.getContainer()));
-            foreignKeys.addAll(domain.getPropertyForeignKeys());
-            change.setForeignKeys(foreignKeys);
+            /*
+             * TODO:
+             * GitHub Issue 1117: Consider the generic fix below fore develop. See https://github.com/LabKey/platform/pull/7804
+             * Tests may need updates and domains FKs (for example, issues) maybe need to adjusted.
+             *
+             * Set<PropertyStorageSpec.ForeignKey> foreignKeys = new LinkedHashSet<>(kind.getPropertyForeignKeys(domain.getContainer()));
+             * foreignKeys.addAll(domain.getPropertyForeignKeys());
+             * change.setForeignKeys(foreignKeys);
+             */
+            change.setForeignKeys(domain.getPropertyForeignKeys());
 
             try
             {
