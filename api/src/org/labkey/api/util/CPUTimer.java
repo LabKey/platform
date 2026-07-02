@@ -109,13 +109,13 @@ public class CPUTimer
     public boolean save()
     {
         if (_stop > _start)
-            _update(_stop - _start);
+            update(_stop - _start);
         _start = 0;
         _stop = 0;
         return true;
     }
 
-    public void _update(long elapsed)
+    public void update(long elapsed)
     {
         _cumulative += elapsed;
         _min = Math.min(_min, elapsed);
@@ -134,7 +134,7 @@ public class CPUTimer
         {
             synchronized (accumulator)
             {
-                accumulator._update(_stop-_start);
+                accumulator.update(_stop-_start);
             }
         }
         _start = 0;
