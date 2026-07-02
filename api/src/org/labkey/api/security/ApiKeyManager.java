@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
@@ -39,6 +40,13 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
@@ -62,6 +70,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
@@ -361,6 +370,53 @@ public class ApiKeyManager
 
             ApiKeyManager.get().deleteKey(apikey);
             assertNull(ApiKeyManager.get().authenticateFromApiKey(apikey));
+        }
+
+        private record UserAndKey(User user, String apiKey){}
+
+        @Test
+        public void testRoleRestrictions()
+        {
+            User admin = TestContext.get().getUser();
+            UserAndKey readerUAK = createApiKeyAndRetrieveUser(admin, ReaderRole.class);
+            User reader = readerUAK.user();
+            UserAndKey editorUAK = createApiKeyAndRetrieveUser(admin, EditorRole.class);
+            User editor = editorUAK.user();
+
+            ContainerManager.getAllChildren(ContainerManager.getRoot(), admin, AdminPermission.class).stream()
+                .limit(5)
+                .forEach(child -> {
+                    assertTrue(child.hasPermission(admin, AdminPermission.class));
+                    assertFalse(child.hasPermission(editor, AdminPermission.class));
+                    assertFalse(child.hasPermission(reader, AdminPermission.class));
+                    Stream.of(DeletePermission.class, UpdatePermission.class, InsertPermission.class)
+                        .forEach(perm -> {
+                            assertTrue(child.hasPermission(admin, perm));
+                            assertTrue(child.hasPermission(editor, perm));
+                            assertFalse(child.hasPermission(reader, perm));
+                        });
+                    assertTrue(child.hasPermission(admin, ReadPermission.class));
+                    assertTrue(child.hasPermission(editor, ReadPermission.class));
+                    assertTrue(child.hasPermission(reader, ReadPermission.class));
+                });
+
+            ApiKeyManager.get().deleteKey(readerUAK.apiKey());
+            ApiKeyManager.get().deleteKey(editorUAK.apiKey());
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(readerUAK.apiKey()));
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(editorUAK.apiKey()));
+        }
+
+        private UserAndKey createApiKeyAndRetrieveUser(User user, Class<? extends Role> restrictionRole)
+        {
+            String apiKey = ApiKeyManager.get().createKey(user, 10, "Created by ApiKeyManager.TestCase", restrictionRole);
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(apiKey);
+            assertNotNull(auth);
+            User restrictedUser = auth.getUser();
+            assertNotNull(restrictedUser);
+            assertEquals(user.getUserId(), restrictedUser.getUserId());
+            assertTrue(restrictedUser instanceof PermissionsRestrictedUser);
+
+            return new UserAndKey(restrictedUser, apiKey);
         }
     }
 
