@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
@@ -96,5 +97,11 @@ abstract class WrappedPermissionsContext implements PermissionsContext
     public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return _delegate.filterPermissions(perms);
+    }
+
+    @Override
+    public void modifySession(HttpSession session)
+    {
+        _delegate.modifySession(session);
     }
 }

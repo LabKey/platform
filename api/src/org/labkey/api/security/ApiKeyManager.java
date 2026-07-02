@@ -51,7 +51,6 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.time.Instant;
@@ -213,7 +212,7 @@ public class ApiKeyManager
 
     public record ApiKeyAuthentication(int createdBy, int rowId, @Nullable Class<? extends Role> restrictionRole)
     {
-        public User getUser()
+        public @Nullable User getUser()
         {
             User user = UserManager.getUser(createdBy());
             if (restrictionRole != null)
@@ -221,9 +220,13 @@ public class ApiKeyManager
                 Role role = RoleManager.getRole(restrictionRole);
                 if (role == null)
                 {
-                    throw new NotFoundException("Role " + restrictionRole.getName() + " not found");
+                    LOG.error("API key for {} specifies a restriction role {} that was not found", user, restrictionRole.getName());
+                    user = null;
                 }
-                user = new PermissionsRestrictedUser(user, role.getPermissions());
+                else
+                {
+                    user = new PermissionsRestrictedUser(user, role.getPermissions());
+                }
             }
             return user;
         }

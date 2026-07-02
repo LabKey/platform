@@ -2380,7 +2380,7 @@ public class SecurityController extends SpringActionController
                     {
                         rr = RESTRICTION_ROLE_MAP.get(form.getRole());
                         if (rr == null)
-                            throw new NotFoundException("Restiction role was not found!");
+                            throw new NotFoundException("Restriction role was not found.");
                     }
 
                     apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription(), rr != null ? rr.roleClass() : null);
