@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import com.google.common.collect.Streams;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -86,5 +87,10 @@ public interface PermissionsContext extends Serializable
     default Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return perms;
+    }
+
+    /** PermissionsContext can add session attributes alongside the user ID and attributes */
+    default void modifySession(HttpSession session)
+    {
     }
 }

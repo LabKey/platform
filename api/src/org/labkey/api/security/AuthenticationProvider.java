@@ -429,23 +429,6 @@ public interface AuthenticationProvider
             return this;
         }
 
-        /**
-         * Get the restriction role class, if present
-         */
-        public @Nullable Class<? extends Role> getRestrictionRole()
-        {
-            return _restrictionRole;
-        }
-
-        /**
-         * Set a role that restricts this user's permissions
-         */
-        public AuthenticationResponse setRestrictionRole(Class<? extends Role> clazz)
-        {
-            _restrictionRole = clazz;
-            return this;
-        }
-
         public @Nullable String getSuccessDetails()
         {
             return _successDetails;

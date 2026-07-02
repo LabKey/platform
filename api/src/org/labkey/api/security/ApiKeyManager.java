@@ -40,6 +40,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.UserManager.SessionHandler;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -50,6 +51,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.time.Instant;
@@ -213,7 +215,17 @@ public class ApiKeyManager
     {
         public User getUser()
         {
-            return UserManager.getUser(createdBy());
+            User user = UserManager.getUser(createdBy());
+            if (restrictionRole != null)
+            {
+                Role role = RoleManager.getRole(restrictionRole);
+                if (role == null)
+                {
+                    throw new NotFoundException("Role " + restrictionRole.getName() + " not found");
+                }
+                user = new PermissionsRestrictedUser(user, role.getPermissions());
+            }
+            return user;
         }
     }
 

@@ -148,6 +148,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.PermissionsRestrictedUser.ALLOWED_PERMISSIONS_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
@@ -177,7 +178,6 @@ public class SecurityManager
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
-    private static final String RESTRICTION_ROLE_KEY = RoleRestrictedUser.class.getName() + "$RestrictionRoleKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
 
@@ -522,9 +522,9 @@ public class SecurityManager
                 }
 
                 //noinspection unchecked
-                Class<? extends Role> restrictionRole = (Class<? extends Role>) session.getAttribute(RESTRICTION_ROLE_KEY);
-                if (restrictionRole != null)
-                    sessionUser = new RoleRestrictedUser(sessionUser, restrictionRole);
+                Set<Class<? extends Permission>> allowedPermissions = (Set<Class<? extends Permission>>) session.getAttribute(ALLOWED_PERMISSIONS_KEY);
+                if (allowedPermissions != null)
+                    sessionUser = new PermissionsRestrictedUser(sessionUser, allowedPermissions);
             }
         }
 
@@ -822,8 +822,7 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
-            if (response.getRestrictionRole() != null)
-                newSession.setAttribute(RESTRICTION_ROLE_KEY, response.getRestrictionRole());
+            user.getPermissionsContext().modifySession(newSession);
         }
 
         return newSession;
