@@ -206,7 +206,8 @@ public class SystemMaintenance
         setTimer();
 
         StringBuilder html = new StringBuilder("<table>");
-        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(container, "The system maintenance tasks were changed (see details).");
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(container,
+                "The system maintenance tasks were changed (see details).");
         AbstractWriteableSettingsGroup.appendDiffRow(html, TIME_PROPERTY_NAME, null, time);
         for (String task : enabled)
             AbstractWriteableSettingsGroup.appendDiffRow(html, task, null, "ENABLED");
