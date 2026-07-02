@@ -115,6 +115,11 @@ public class CPUTimer
         return true;
     }
 
+    /**
+     * Manually set the elapse time for a timer. Could be used to set the timer to a predefined "max-high" value.
+     *
+     * @param elapsed time in nanoseconds.
+     */
     public void update(long elapsed)
     {
         _cumulative += elapsed;
