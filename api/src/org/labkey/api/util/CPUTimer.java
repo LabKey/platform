@@ -116,7 +116,7 @@ public class CPUTimer
     }
 
     /**
-     * Manually set the elapse time for a timer. Could be used to set the timer to a predefined "max-high" value.
+     * Manually set the elapsed time for a timer. Could be used to set the timer to a predefined "max-high" value.
      *
      * @param elapsed time in nanoseconds.
      */
