@@ -20,12 +20,6 @@ import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Caches special-character field metrics (GitHub Issue 1086) computed asynchronously by
- * {@link SpecialCharacterMetricsMaintenanceTask}. Following the {@link FileLinkMetricsProvider} pattern, the expensive
- * scan runs on the System Maintenance schedule and stores its result here in memory; the daily usage-metrics
- * collection just reads the cached value. The cache reverts to "Not run yet." on server restart until the task runs.
- */
 public class SpecialCharacterMetricsProvider implements UsageMetricsProvider
 {
     public static final String METRIC_KEY = "specialCharacterFields";
