@@ -2265,7 +2265,7 @@ public class PageFlowUtil
         if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
-        if (McpService.get().isEnabled())
+        if (McpService.get().isAIFeaturesEnabled())
             json.put("mcpReady", McpService.get().isReady());
 
         JSONObject defaultHeaders = new JSONObject();

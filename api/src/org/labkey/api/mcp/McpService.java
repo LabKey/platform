@@ -99,6 +99,7 @@ public interface McpService extends ToolCallbackProvider
 
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
+    String ENABLE_AI_FEATURES = "enableAIFeatures";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
@@ -143,6 +144,11 @@ public interface McpService extends ToolCallbackProvider
     default boolean isEnabled()
     {
         return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
+    }
+
+    default boolean isAIFeaturesEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_AI_FEATURES);
     }
 
     boolean isReady();
