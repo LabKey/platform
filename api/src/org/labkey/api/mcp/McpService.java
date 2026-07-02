@@ -36,6 +36,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 ///
@@ -94,6 +95,8 @@ import java.util.function.Supplier;
 ///
 public interface McpService extends ToolCallbackProvider
 {
+    String VECTOR_SCHEMA = "vector_indexes"; // for pgvector extension, see core-26.005-26.006.sql
+
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
 
@@ -187,6 +190,8 @@ public interface McpService extends ToolCallbackProvider
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
+    record VectorDocument(String id, String text, Map<String, Object> metadata) {}
+
     /** get a consolidated response (good for many text-oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);
 
@@ -201,4 +206,21 @@ public interface McpService extends ToolCallbackProvider
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */
     VectorStore getVectorStore();
+
+    /** Returns true if the vector store exists and contains at least one document. */
+    boolean isVectorStorePopulated(@NotNull VectorStore vs);
+
+    /**
+     * Adds documents to the vector store, automatically splitting any document whose token
+     * count exceeds the embedding model's input limit. Prefer this over
+     * {@code getVectorStore().add(...)} for indexing — it prevents the
+     * {@code IllegalArgumentException} that {@code TokenCountBatchingStrategy} throws on
+     * oversized inputs.
+     */
+    void addDocuments(List<VectorDocument> documents);
+
+    void saveVectorStore();
+
+    /** Drop and recreate the vector store table. Use when the embedding model has changed and dimensions no longer match. */
+    void resetVectorStore();
 }

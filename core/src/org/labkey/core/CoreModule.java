@@ -368,6 +368,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -1556,7 +1557,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             CoreSchema.getInstance().getSchemaName(),       // core
             PropertySchema.getInstance().getSchemaName(),   // prop
             TestSchema.getInstance().getSchemaName(),       // test
-            DbSchema.TEMP_SCHEMA_NAME                       // temp
+            DbSchema.TEMP_SCHEMA_NAME,                      // temp
+            VECTOR_SCHEMA                                   // used by pgvector - see core-26.005-26.006.sql
         );
     }
 
