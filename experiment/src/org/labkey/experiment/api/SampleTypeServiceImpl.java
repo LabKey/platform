@@ -836,7 +836,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null)
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
-
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
