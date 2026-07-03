@@ -173,7 +173,7 @@ public class DomainPropertyManager
             // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
             if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)
             {
-                LOG.error("Invalid property validator typeUri: {}", pv.getTypeURI());
+                LOG.warn("Invalid property validator typeUri: {}", pv.getTypeURI());
             }
             else
             {
