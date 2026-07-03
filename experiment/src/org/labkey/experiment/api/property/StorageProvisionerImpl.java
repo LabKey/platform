@@ -215,7 +215,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
             /*
              * TODO:
-             * GitHub Issue 1117: Consider the generic fix below fore develop. See https://github.com/LabKey/platform/pull/7804
+             * GitHub Issue 1117: Consider the generic fix below for develop. See https://github.com/LabKey/platform/pull/7804
              * Tests may need updates and domains FKs (for example, issues) maybe need to adjusted.
              *
              * Set<PropertyStorageSpec.ForeignKey> foreignKeys = new LinkedHashSet<>(kind.getPropertyForeignKeys(domain.getContainer()));
