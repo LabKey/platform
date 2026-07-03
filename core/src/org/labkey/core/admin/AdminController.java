@@ -9193,7 +9193,7 @@ public class AdminController extends SpringActionController
                                         if (null != module.getZippedPath())
                                             p = module.getZippedPath().toPath();
                                         if (isDevMode && ModuleEditorService.get().canEditSourceModule(module))
-                                            if (!module.getExplodedPath().getPath().equals(module.getSourcePath()))
+                                            if (!isBlank(module.getSourcePath()) && !module.getExplodedPath().getPath().equals(module.getSourcePath()))
                                                 p = Paths.get(module.getSourcePath());
                                         fullPathToModule = p.toString();
                                         shortPathToModule = fullPathToModule;

@@ -24,7 +24,6 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -43,7 +42,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -82,7 +80,6 @@ public class AdminBean
     public static final String sessionTimeout = Formats.commaf0.format(ModuleLoader.getServletContext().getSessionTimeout());
     public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();
     public static final String serverStartupTime = DateUtil.formatDateTime(ContainerManager.getRoot());
-    public static final List<Module> modules;
 
     public static String asserts = "disabled";
 
@@ -116,9 +113,6 @@ public class AdminBean
 
         //noinspection ConstantConditions,AssertWithSideEffects
         assert null != (asserts = "enabled");
-
-        modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
-        modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
     }
 
     private static @Nullable String getValue(Field field)
