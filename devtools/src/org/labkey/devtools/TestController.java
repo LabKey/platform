@@ -1285,7 +1285,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            if (null == McpService.get() || !McpService.get().isReady())
+            if (null == McpService.get() || !McpService.get().isAIFeaturesReady())
                 return HtmlView.of("Service is not ready yet.");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/devtools/view/chat.jsp");

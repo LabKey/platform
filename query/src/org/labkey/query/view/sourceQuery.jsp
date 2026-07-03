@@ -52,7 +52,7 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
-    boolean isChatReady = canEdit && McpService.get().isReady();
+    boolean isChatReady = canEdit && McpService.get().isAIFeaturesReady();
 %>
 <style type="text/css">
 
