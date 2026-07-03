@@ -1122,7 +1122,7 @@ public class SqlScriptController extends SpringActionController
         protected void renderButtons(SqlScript script, PrintWriter out)
         {
             out.println(PageFlowUtil.button("Reorder Script").href(getScriptURL(ReorderScriptAction.class, script)));
-            if (McpService.get().isReady())
+            if (McpService.get().isAIFeaturesReady())
             {
                 out.println(
                     PageFlowUtil.button("Clean Up Script")
@@ -1259,7 +1259,7 @@ public class SqlScriptController extends SpringActionController
         protected ModelAndView getScriptView(SqlScript script)
         {
             McpService mcpService = McpService.get();
-            if (mcpService.isReady())
+            if (mcpService.isAIFeaturesReady())
             {
                 String prompt = getPrompt(DbScope.getLabKeyScope().getSqlDialect(), script);
                 HttpSession session = getViewContext().getSession();

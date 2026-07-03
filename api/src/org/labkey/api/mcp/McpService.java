@@ -150,6 +150,12 @@ public interface McpService extends ToolCallbackProvider
 
     boolean isReady();
 
+    // Convenience for in-product AI features: the AI feature flag is on AND the service has started.
+    default boolean isAIFeaturesReady()
+    {
+        return isAIFeaturesEnabled() && isReady();
+    }
+
     // Register MCPs in Module.startup()
     default void register(McpImpl mcp)
     {
