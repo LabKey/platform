@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.45.3-fb-role-restricted-api-keys.2",
+    "@labkey/components": "7.45.3-fb-role-restricted-api-keys.3",
     "@labkey/themes": "1.9.4"
   },
   "devDependencies": {
