@@ -98,6 +98,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -2469,6 +2470,38 @@ public abstract class SqlDialect
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a\0b", 0, false, false, scope));
             // A dotted name is rejected: schema and procedure are separate parameters, so a '.' in a single component is an ambiguous schema-qualified reference
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a.b", 0, false, false, scope));
+        }
+
+        // GH Issue #1223: Verify the server/database clock-skew arithmetic and warning threshold
+        @Test
+        public void testServerDatabaseTimeDifference()
+        {
+            LocalDateTime base = LocalDateTime.of(2026, 7, 6, 12, 0, 0);
+
+            // Identical times: zero difference, no warning
+            ServerDatabaseTimeDifference equal = new ServerDatabaseTimeDifference(base, base);
+            assertEquals(0, equal.getSeconds());
+            assertFalse(equal.exceedsWarningThreshold());
+
+            // Comfortably below the threshold: no warning
+            ServerDatabaseTimeDifference below = new ServerDatabaseTimeDifference(base, base.plusSeconds(5));
+            assertEquals(5, below.getSeconds());
+            assertFalse(below.exceedsWarningThreshold());
+
+            // Exactly at the threshold: no warning (comparison is strictly greater-than)
+            ServerDatabaseTimeDifference atThreshold = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS, atThreshold.getSeconds());
+            assertFalse(atThreshold.exceedsWarningThreshold());
+
+            // Just past the threshold: warning
+            ServerDatabaseTimeDifference over = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, over.getSeconds());
+            assertTrue(over.exceedsWarningThreshold());
+
+            // Difference is absolute: database clock behind the web server is treated the same as ahead
+            ServerDatabaseTimeDifference behind = new ServerDatabaseTimeDifference(base, base.minusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, behind.getSeconds());
+            assertTrue(behind.exceedsWarningThreshold());
         }
     }
 }
