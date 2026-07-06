@@ -371,6 +371,8 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         super.addAdminWarningMessages(warnings, showAllWarnings);
         if (showAllWarnings)
             warnings.add(HtmlString.of(PostgreSqlDialectFactory.getStandardWarningMessage("has not been tested against", getMajorVersion() + ".x")));
+
+        addTimeDifferenceWarning(warnings, showAllWarnings);
     }
 
     private int getIdentifierMaxByteLength()

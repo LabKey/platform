@@ -19,7 +19,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
@@ -34,8 +34,6 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="java.time.Duration" %>
-<%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -43,6 +41,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.apache.commons.lang3.Strings" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -92,15 +91,12 @@
 <%
     row = 0;
 
-    LocalDateTime serverTime = LocalDateTime.now();
-    LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
-    long duration = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
+    SqlDialect.ServerDatabaseTimeDifference timeDifference = SqlDialect.getServerDatabaseTimeDifference(DbScope.getLabKeyScope());
+    boolean exceedsThreshold = timeDifference.exceedsWarningThreshold();
 
-    // Warn if greater than this many seconds
-    long warningSeconds = 10;
-
-    HtmlString style = unsafe(duration > warningSeconds ? " style=\"color:red;\"" : "");
-    HtmlString warning = unsafe(duration > warningSeconds ? " - Warning: Web and database server times differ by " + duration + " seconds!" : "");
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
+    HtmlString style = unsafe(exceedsThreshold ? " style=\"color:red;\"" : "");
+    HtmlString warning = unsafe(exceedsThreshold ? " - Warning: Web and database server times differ by " + timeDifference.getSeconds() + " seconds!" : "");
 %>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
@@ -126,8 +122,8 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td<%=style%>><%=h(AdminBean.serverStartupTime)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(timeDifference.serverTime().format(dateTimeFormatter))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(timeDifference.databaseTime().format(dateTimeFormatter))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
