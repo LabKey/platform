@@ -39,8 +39,17 @@ public class PermissionsRestrictedUser extends ClonedUser
         }
     }
 
+    private final @NotNull Set<Class<? extends Permission>> _allowedPermissions;
+
     public PermissionsRestrictedUser(User user, @NotNull Set<Class<? extends Permission>> allowedPermissions)
     {
         super(user, new RoleRestrictedPermissionsContext(user.getPermissionsContext(), allowedPermissions));
+        _allowedPermissions = allowedPermissions;
+    }
+
+    @Override
+    public String getPermissionsRestrictions()
+    {
+        return "Current user is restricted to these permissions: " + _allowedPermissions;
     }
 }
