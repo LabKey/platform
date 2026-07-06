@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.Formats" %>
 <%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.text.DecimalFormat" %>
@@ -54,6 +55,7 @@
     .lk-admin-section { display: none; }
     .header-title { margin-bottom: 5px; }
     .header-link { margin: 0 5px 20px 0; }
+    .lk-server-time-warning { color: red; }
 </style>
 <div class="row">
     <div class="col-sm-12 col-md-3">
@@ -90,13 +92,19 @@
             <br/>
 <%
     row = 0;
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
+    String timeCellCls = "";
+    HtmlString warning = HtmlString.EMPTY_STRING;
 
     SqlDialect.ServerDatabaseTimeDifference timeDifference = SqlDialect.getServerDatabaseTimeDifference(DbScope.getLabKeyScope());
-    boolean exceedsThreshold = timeDifference.exceedsWarningThreshold();
-
-    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
-    HtmlString style = unsafe(exceedsThreshold ? " style=\"color:red;\"" : "");
-    HtmlString warning = unsafe(exceedsThreshold ? " - Warning: Web and database server times differ by " + timeDifference.getSeconds() + " seconds!" : "");
+    if (timeDifference.exceedsWarningThreshold())
+    {
+        timeCellCls = "lk-server-time-warning";
+        warning = HtmlStringBuilder.of(" - Warning: Web and database server times differ by ")
+                .append(timeDifference.getSeconds())
+                .append(" seconds!")
+                .getHtmlString();
+    }
 %>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
@@ -121,9 +129,9 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td<%=style%>><%=h(AdminBean.serverStartupTime)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(timeDifference.serverTime().format(dateTimeFormatter))%><%=warning%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(timeDifference.databaseTime().format(dateTimeFormatter))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td class="<%=h(timeCellCls)%>"><%=h(AdminBean.serverStartupTime)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(timeDifference.serverTime().format(dateTimeFormatter))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(timeDifference.databaseTime().format(dateTimeFormatter))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
