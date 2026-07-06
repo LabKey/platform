@@ -182,7 +182,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
-                    .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
+                    .append(queryImportPipelineJob.getImportSourceDescription());
 
             if (job.getContainer().hasProductFolders())
             {
@@ -224,7 +224,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             return "Failed to import " +
                     type +
                     " from " +
-                    queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName() +
+                    queryImportPipelineJob.getImportSourceDescription() +
                     "\n" +
                     rawErrorMsg;// resolveErrorMessage on client
         }
