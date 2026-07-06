@@ -101,15 +101,6 @@ public class AssayResultDomainKind extends AssayDomainKind
     }
 
     @Override
-    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
-    {
-        return new HashSet<>(Arrays.asList(
-            new PropertyStorageSpec.ForeignKey(SpecialColumn.CreatedBy.name(), "core", "users", "userid", null, false),
-            new PropertyStorageSpec.ForeignKey(SpecialColumn.ModifiedBy.name(), "core", "users", "userid", null, false)
-        ));
-    }
-
-    @Override
     public DbScope getScope()
     {
         return getSchema().getScope();
