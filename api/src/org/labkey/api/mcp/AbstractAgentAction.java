@@ -85,9 +85,18 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
+        if (!McpService.get().isAIFeaturesEnabled())
+        {
+            errors.reject(ERROR_GENERIC, "Agent actions are not available.");
+            return;
+        }
+
         String prompt = form.getPrompt();
         if (prompt != null && prompt.length() > MAX_PROMPT_CHAR_LENGTH)
+        {
             errors.rejectValue("prompt", ERROR_GENERIC, "Prompt cannot exceed " + MAX_PROMPT_CHAR_LENGTH + " characters.");
+            return;
+        }
 
         // Only honor a client-supplied conversationId if this agent previously issued this session that
         // id. Otherwise, generate a fresh one. This prevents a same-session caller from splicing into
