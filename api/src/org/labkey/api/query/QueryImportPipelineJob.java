@@ -441,11 +441,6 @@ public class QueryImportPipelineJob extends PipelineJob
         return _additionalJobResponseInfo;
     }
 
-    /**
-     * Human-readable description of the import source, used in job success/error notification messages
-     * (e.g. "imported ... from &lt;this&gt;"). Defaults to the primary file name; subclasses that import multiple
-     * files may override (e.g. "3 files").
-     */
     public String getImportSourceDescription()
     {
         FileLike primaryFile = _importContextBuilder == null ? null : _importContextBuilder.getPrimaryFile();
