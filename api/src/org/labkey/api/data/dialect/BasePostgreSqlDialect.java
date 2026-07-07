@@ -924,6 +924,19 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return true;
     }
 
+    @Override
+    public boolean supportsIsNumeric()
+    {
+        return true;
+    }
+
+    @Override
+    public SQLFragment isNumericExpr(SQLFragment expression)
+    {
+        return new SQLFragment("(CASE WHEN CAST((").append(expression)
+                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+    }
+
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final TableInfo _table;
