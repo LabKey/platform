@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.module.ModuleLoader"%>
 <%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
@@ -36,7 +37,9 @@
 <%@ page import="java.time.Duration" %>
 <%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.apache.commons.lang3.Strings" %>
@@ -152,7 +155,9 @@
             <%=link("Module Details", AdminController.ModulesAction.class)%>
             <br/><br/>
             <table><%
-                for (Module module : AdminBean.modules)
+                ArrayList<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+                modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Module module : modules)
                 {
                     String guid = makeId("m_");
                     String toggleScript = "return LABKEY.Utils.toggleLink(document.getElementById(" + q(guid) + "), false);";
