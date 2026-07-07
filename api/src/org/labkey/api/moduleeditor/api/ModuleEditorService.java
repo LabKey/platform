@@ -66,4 +66,11 @@ public interface ModuleEditorService
             return null;
         return FileUtil.appendPath(resources, path);
     }
+
+    // used by ModuleResourceProvider@AllModuleResourcesRoot() (_webdav/@modules) which wants to soo
+    // the whole module source directory (e.g. when using SourcePath)
+    default File getModuleRoot(Module module, @Nullable List<String> messages)
+    {
+        return null;
+    }
 }
