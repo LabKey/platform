@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -325,27 +326,47 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected Map<Params, Boolean> getOptionParamsMap()
     {
         if (_optionParamsMap == null)
-        {
-            _optionParamsMap = new HashMap<>();
-            _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
-            _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
-            _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
-            _optionParamsMap.put(Params.useTransactionAuditCache, Boolean.valueOf(getParam(Params.useTransactionAuditCache)));
-        }
+            _optionParamsMap = parseOptionParamsMap(getViewContext().getRequest());
         return _optionParamsMap;
     }
 
+    /**
+     * Builds the standard import option flags ({@link Params#importIdentity}, {@link Params#crossTypeImport},
+     * {@link Params#allowCreateStorage}, {@link Params#useTransactionAuditCache}) from request parameters. Exposed as a
+     * static so actions that do not go through the {@code final} single-file {@code _execute()} flow (e.g. multi-file
+     * importers) can produce the same map.
+     */
+    public static Map<Params, Boolean> parseOptionParamsMap(HttpServletRequest request)
+    {
+        Map<Params, Boolean> map = new HashMap<>();
+        map.put(Params.importIdentity, Boolean.valueOf(request.getParameter(Params.importIdentity.name())));
+        map.put(Params.crossTypeImport, Boolean.valueOf(request.getParameter(Params.crossTypeImport.name())));
+        map.put(Params.allowCreateStorage, Boolean.valueOf(request.getParameter(Params.allowCreateStorage.name())));
+        map.put(Params.useTransactionAuditCache, Boolean.valueOf(request.getParameter(Params.useTransactionAuditCache.name())));
+        return map;
+    }
+
     protected Set<String> getTransactionImportParams(String insertOption, boolean useAsync)
+    {
+        return parseTransactionImportParams(getViewContext().getRequest(), insertOption, useAsync);
+    }
+
+    /**
+     * Builds the {@link TransactionAuditProvider.TransactionDetail#ImportOptions} set from request parameters. Exposed
+     * as a static so actions that do not go through the {@code final} single-file {@code _execute()} flow (e.g.
+     * multi-file importers) can record the same import options on their transaction audit event.
+     */
+    public static Set<String> parseTransactionImportParams(HttpServletRequest request, String insertOption, boolean useAsync)
     {
         Set<String> importParams = new TreeSet<>();
         importParams.add(insertOption);
         if (useAsync)
             importParams.add("backgroundImport");
-        if (Boolean.valueOf(getParam(Params.crossTypeImport)))
+        if (Boolean.valueOf(request.getParameter(Params.crossTypeImport.name())))
             importParams.add(Params.crossTypeImport.name());
-        if (Boolean.valueOf(getParam(Params.useTransactionAuditCache)))
+        if (Boolean.valueOf(request.getParameter(Params.useTransactionAuditCache.name())))
             importParams.add(Params.useTransactionAuditCache.name());
-        if (Boolean.valueOf(getParam(Params.allowCreateStorage)))
+        if (Boolean.valueOf(request.getParameter(Params.allowCreateStorage.name())))
             importParams.add(Params.allowCreateStorage.name());
         return importParams;
     }
