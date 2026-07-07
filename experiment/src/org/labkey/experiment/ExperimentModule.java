@@ -237,6 +237,8 @@ public class ExperimentModule extends SpringModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), FileLinkMetricsProvider.getInstance());
 
+        UsageMetricsService.get().registerUsageMetrics(getName(), SpecialCharacterMetricsProvider.getInstance());
+
         ExperimentProperty.register();
         SamplesSchema.register(this);
         ExpSchema.register(this);
@@ -600,6 +602,7 @@ public class ExperimentModule extends SpringModule
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
+        SystemMaintenance.addTask(new SpecialCharacterMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -1140,6 +1143,7 @@ public class ExperimentModule extends SpringModule
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
+            SpecialCharacterMetricsMaintenanceTask.TestCase.class,
             StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class,
