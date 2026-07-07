@@ -230,6 +230,14 @@ public abstract class Method
                 return new IsMemberInfo();
             }
         });
+        labkeyMethod.put("isnumeric", new Method("isnumeric", JdbcType.BOOLEAN, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
+            }
+        });
         labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
         {
             @Override
@@ -375,6 +383,7 @@ public abstract class Method
         labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("right", new JdbcMethod("right", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
         {
             @Override
@@ -1064,6 +1073,27 @@ public abstract class Method
             ret.append("))");
 
             return ret;
+        }
+    }
+
+    // Portable isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+    // Returns 1 for digit strings with an optional sign/decimal point, 0 otherwise.
+    // This is stricter than SQL Server's ISNUMERIC(), which also accepts formats like scientific notation.
+    static class IsNumericInfo extends AbstractMethodInfo
+    {
+        IsNumericInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment arg = arguments[0];
+            if (dialect.supportsIsNumeric())
+                return dialect.isNumericExpr(arg);
+
+            throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
         }
     }
 
@@ -1874,14 +1904,13 @@ public abstract class Method
         mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
-        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
+        // isnumeric is registered in labkeyMethod (portable across PostgreSQL and SQL Server)
         mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
         mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
         mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
         mssqlMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
         mssqlMethods.put("replicate", new PassthroughMethod("replicate", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("reverse", new PassthroughMethod("reverse", JdbcType.VARCHAR, 1, 1));
-        mssqlMethods.put("right", new PassthroughMethod("right", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("soundex", new PassthroughMethod("soundex", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("space", new PassthroughMethod("space", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("str", new PassthroughMethod("str", JdbcType.VARCHAR, 1, 3));

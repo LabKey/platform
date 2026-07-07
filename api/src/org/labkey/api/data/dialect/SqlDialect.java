@@ -837,6 +837,16 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    public boolean supportsIsNumeric()
+    {
+        return false;
+    }
+
+    public SQLFragment isNumericExpr(SQLFragment expression)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         throw(new ServletException("Can't create database", e));
