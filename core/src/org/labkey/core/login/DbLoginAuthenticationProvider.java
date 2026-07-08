@@ -115,24 +115,21 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         if (API_KEY.equals(id))
         {
             ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(password);
-            final AuthenticationResponse ret;
 
             if (auth != null)
             {
-                // API keys are exempt from secondary authentication, Issue 48764
-                ret = AuthenticationResponse.success(configuration, auth.getUser()).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
-                    .setRequireSecondary(false)
-                    .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
-
-                // Update core.ApiKeys.LastUsed (throttled)
-                API_KEY_LAST_USED_THROTTLE.execute(password);
-            }
-            else
-            {
-                ret = AuthenticationResponse.failure(configuration, FailureReason.badApiKey);
+                User user = auth.getUser();
+                if (user != null)
+                {
+                    // Update core.ApiKeys.LastUsed (throttled)
+                    API_KEY_LAST_USED_THROTTLE.execute(password);
+                    return AuthenticationResponse.success(configuration, user).setSuccessDetails(UserManager.UserAuditEvent.API_KEY)
+                        .setRequireSecondary(false) // API keys are exempt from secondary authentication, Issue 48764
+                        .setAuthenticationProperties(Map.of(ApiKeyManager.API_KEY_ROW_ID, auth.rowId()));
+                }
             }
 
-            return ret;
+            return AuthenticationResponse.failure(configuration, FailureReason.badApiKey);
         }
         else
         {

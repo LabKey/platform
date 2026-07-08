@@ -15,10 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DOM" %>
-<%@ page import="java.util.stream.Stream" %>
-<%@ page import="static org.labkey.api.util.DOM.*" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <style type="text/css">
@@ -30,7 +26,7 @@
       border-radius: 15px;
       border : solid 1px darkgray;
       display: flex;
-      align-items: center; */
+      align-items: center;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 

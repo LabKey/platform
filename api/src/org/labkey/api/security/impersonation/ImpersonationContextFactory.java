@@ -16,17 +16,16 @@
 package org.labkey.api.security.impersonation;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
 import java.io.Serializable;
 
-// We store implementations of this interface in session and construct ImpersonationContexts at each request. This
-// protects us somewhat from user, container, etc. objects getting out-of-date.
+// We store implementations of this interface in session and construct AbstractImpersonationContexts at each request.
+// This protects us somewhat from user, container, etc. objects getting out-of-date.
 public interface ImpersonationContextFactory extends Serializable
 {
-    PermissionsContext getImpersonationContext();
+    AbstractImpersonationContext getImpersonationContext();
     void startImpersonating(ViewContext context);
     void stopImpersonating(HttpServletRequest request);
     User getAdminUser();
