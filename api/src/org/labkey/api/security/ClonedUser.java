@@ -45,7 +45,7 @@ public abstract class ClonedUser extends User
         setPhone(phone);
         setLastActivity(lastActivity);
 
-        setImpersonationContext(ctx);
+        setPermissionsContext(ctx);
     }
 
     // Map a stream of role classes to a set of roles

@@ -34,6 +34,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
@@ -353,8 +354,8 @@ Click the Save button at any time to accept the current settings and continue.</
     {
         expirationOptions.put(10, "10 seconds - for testing purposes only");
     }
-    for (int days : new int[]{7, 30, 90, 180, 365})
-        expirationOptions.put(days * SECONDS_PER_DAY, days + " days");
+    Stream.of(7, 30, 90, 180, 365)
+        .forEach(days -> expirationOptions.put(days * SECONDS_PER_DAY, days + " days"));
 
     // If current expiration is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!expirationOptions.containsKey(currentExpiration))
@@ -392,8 +393,8 @@ Click the Save button at any time to accept the current settings and continue.</
     if (appProps.isDevMode())
         termsFrequencyOptions.put(60, "Once a minute"); // For testing
     termsFrequencyOptions.put(SECONDS_PER_DAY, "Once a day");
-    termsFrequencyOptions.put(7 * SECONDS_PER_DAY, "Every 7 days");
-    termsFrequencyOptions.put(30 * SECONDS_PER_DAY, "Every 30 days");
+    Stream.of(7, 30, 90, 180, 365)
+        .forEach(days -> termsFrequencyOptions.put(days * SECONDS_PER_DAY, "Every " + days + " days"));
 
     // If current value is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!termsFrequencyOptions.containsKey(currentTermsFrequency))

@@ -43,6 +43,12 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public boolean isAIFeaturesEnabled()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isReady()
     {
         return false;

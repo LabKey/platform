@@ -2265,8 +2265,7 @@ public class PageFlowUtil
         if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
-        if (McpService.get().isEnabled())
-            json.put("mcpReady", McpService.get().isReady());
+        json.put("mcpReady", McpService.get().isAIFeaturesReady());
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2695,6 +2694,16 @@ public class PageFlowUtil
         if (Character.isWhitespace(value.charAt(0)) || Character.isWhitespace(value.charAt(value.length()-1)))
             return true;
         return StringUtils.containsAny(value,",\"");
+    }
+
+    /// Generate one row of tab-delimited output using RFC 4180 quoting rules.
+    /// Fields containing tabs, newlines, or double quotes are enclosed in double quotes,
+    /// with embedded double quotes escaped by doubling.
+    public static String joinValuesWithTabs4180(@NotNull List<String> values)
+    {
+        return values.stream()
+                .map(value -> null == value ? "" : StringUtils.containsAny(value, "\t\n\r\"") ? "\"" + Strings.CS.replace(value, "\"", "\"\"") + "\"" : value)
+                .collect(Collectors.joining("\t"));
     }
 
 

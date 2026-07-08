@@ -69,6 +69,7 @@ public class CoreMcp implements McpService.McpImpl
         userObj.put("displayName", user.getDisplayName(user));
         if (isNotBlank(user.getFirstName()))
             userObj.put("firstName", user.getFirstName());
+        userObj.put("permissionsRestrictions", user.getPermissionsRestrictions());
 
         JSONObject folderObj = new JSONObject();
         folderObj.put("name", folder.getName());
@@ -163,7 +164,7 @@ public class CoreMcp implements McpService.McpImpl
 
     // TODO replace/augment with available feature list
     @Tool(description = "List the modules installed on this server, this may be useful in inferring the available functionality. For instance, " +
-            "the presence of the `premium` module implies the availability of premium featues.")
+            "the presence of the `premium` module implies the availability of premium features.")
     @RequiresNoPermission
     public String listModules(ToolContext context)
     {
@@ -234,5 +235,4 @@ public class CoreMcp implements McpService.McpImpl
                 )
         ));
     }
-
 }

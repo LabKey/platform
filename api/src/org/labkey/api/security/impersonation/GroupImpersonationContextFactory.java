@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupMembershipCache;
-import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
@@ -77,7 +76,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     }
 
     @Override
-    public PermissionsContext getImpersonationContext()
+    public AbstractImpersonationContext getImpersonationContext()
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
