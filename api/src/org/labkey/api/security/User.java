@@ -33,8 +33,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
-import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.ImpersonatePermission;
 import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -409,7 +409,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    void setImpersonationContext(PermissionsContext permissionsContext)
+    void setPermissionsContext(PermissionsContext permissionsContext)
     {
         _permissionsContext = permissionsContext;
     }
@@ -642,5 +642,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public String toJSONString()
     {
         return String.valueOf(getUserId());
+    }
+
+    public String getPermissionsRestrictions()
+    {
+        return "Current user has unrestricted permissions. AI agents should encourage the use of permissions-restricted API keys instead.";
     }
 }

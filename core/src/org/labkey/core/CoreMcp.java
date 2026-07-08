@@ -19,11 +19,13 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -65,6 +67,7 @@ public class CoreMcp implements McpService.McpImpl
         userObj.put("displayName", user.getDisplayName(user));
         if (isNotBlank(user.getFirstName()))
             userObj.put("firstName", user.getFirstName());
+        userObj.put("permissionsRestrictions", user.getPermissionsRestrictions());
 
         JSONObject folderObj = new JSONObject();
         folderObj.put("name", folder.getName());
@@ -145,11 +148,32 @@ public class CoreMcp implements McpService.McpImpl
         return message;
     }
 
+
+    // TODO replace/augment with available feature list
+    @Tool(description = "List the modules installed on this server, this may be useful in inferring the available functionality. For instance, " +
+            "the presence of the `premium` module implies the availability of premium features.")
+    @RequiresNoPermission
+    public String listModules(ToolContext context)
+    {
+        JSONArray modules = new JSONArray();
+        ModuleLoader.getInstance().getModules().stream()
+                .map(module -> {
+                    JSONObject obj = new JSONObject();
+                    obj.put("name", module.getName());
+                    if (StringUtils.isNotEmpty(module.getLabel()))
+                        obj.put("label", module.getLabel());
+                    return obj;
+                })
+                .forEach(modules::put);
+        return new JSONObject(Map.of("modules",modules)).toString();
+    }
+
+
     @McpResource(
         uri = "resource://org/labkey/core/FileBasedModules.md",
         mimeType = "application/markdown",
         name = "File-Based Module Development Guide",
-        description = "Provide documentation for developing LabKey file-based modules")
+        description = "Required reading before building file-based modules. Covers module.properties, directory structure, web parts, SQL queries, reports, and deployment.")
     public ReadResourceResult getFileBasedModuleDevelopmentGuide() throws IOException
     {
         incrementResourceRequestCount("File-Based Modules");
@@ -167,7 +191,7 @@ public class CoreMcp implements McpService.McpImpl
             uri = "resource://org/labkey/core/DataAnalysis_Python.md",
             mimeType = "application/markdown",
             name = "Python Data Analysis Development Guide",
-            description = "Provide documentation for developers using Python to analyze LabKey data")
+            description = "Required reading before writing Python scripts. Covers APIWrapper setup, .netrc auth, select_rows, execute_sql, QueryFilter, and pandas workflows.")
     public ReadResourceResult getPythonDataAnalysisGuide() throws IOException
     {
         incrementResourceRequestCount("Python Data Analysis");
@@ -185,7 +209,7 @@ public class CoreMcp implements McpService.McpImpl
             uri = "resource://org/labkey/core/DataAnalysis_R.md",
             mimeType = "application/markdown",
             name = "R Data Analysis Development Guide",
-            description = "Provide documentation for developers using R to analyze LabKey data")
+            description = "Required reading before writing R scripts. Covers Rlabkey setup, .netrc auth, labkey.selectRows, labkey.executeSql, makeFilter, and data frame workflows.")
     public ReadResourceResult getRDataAnalysisGuide() throws IOException
     {
         incrementResourceRequestCount("R Data Analysis");
@@ -198,5 +222,4 @@ public class CoreMcp implements McpService.McpImpl
                 )
         ));
     }
-
 }

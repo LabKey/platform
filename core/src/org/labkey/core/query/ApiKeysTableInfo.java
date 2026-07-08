@@ -18,7 +18,9 @@ package org.labkey.core.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
@@ -27,6 +29,8 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 
 /**
  * All users can view and delete from the "filtered to current user" version of this table. CoreQuerySchema shows
@@ -44,6 +48,20 @@ public class ApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
         addWrapColumn(getRealTable().getColumn("Expiration"));
         addWrapColumn(getRealTable().getColumn("LastUsed"));
         addWrapColumn(getRealTable().getColumn("Description"));
+        // Show the role's display name instead of the fully qualified Java class name that's stored
+        addWrapColumn(getRealTable().getColumn("RestrictionRole")).setDisplayColumnFactory(colInfo -> new DataColumn(colInfo){
+            @Override
+            public Object getDisplayValue(RenderContext ctx)
+            {
+                String value = (String)super.getDisplayValue(ctx);
+                if (value != null)
+                {
+                    Role role = RoleManager.getRole(value);
+                    value = role != null ? role.getDisplayName() : "<Unknown Role>";
+                }
+                return value;
+            }
+        });
 
         if (filterToCurrentUser)
         {

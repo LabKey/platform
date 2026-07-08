@@ -67,7 +67,7 @@ public class QueryMcp implements McpService.McpImpl
         uri = "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
         mimeType = "application/markdown",
         name = "LabKey SQL",
-        description = "Provide documentation for LabKey SQL specific syntax")
+        description = "Required reading before writing or debugging LabKey SQL. Covers lookup traversal, PIVOT, parameterized queries, cross-folder queries, and all available functions.")
     public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");

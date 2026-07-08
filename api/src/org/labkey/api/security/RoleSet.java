@@ -166,7 +166,7 @@ public class RoleSet
             assertEquals(roles, reconstitutedRoleSet.getRoles());
 
             RoleImpersonationContextFactory factory = new RoleImpersonationContextFactory(project, adminUser, roles, Collections.emptySet(), null);
-            impersonatingUser.setImpersonationContext(factory.getImpersonationContext());
+            impersonatingUser.setPermissionsContext(factory.getImpersonationContext());
 
             if (null == project)
                 assertEquals(roles, impersonatingUser.getSiteRoles(ContainerManager.getRoot()).collect(Collectors.toSet()));
