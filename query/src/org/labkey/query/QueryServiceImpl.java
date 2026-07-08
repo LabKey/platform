@@ -3848,5 +3848,44 @@ public class QueryServiceImpl implements QueryService
                 }
             }
         }
+
+        @Test
+        public void testRightAndIsnumeric() throws SQLException
+        {
+            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape;
+            // isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+            // This test exercises both against whichever dialect the test container is using.
+            String sql =
+                "SELECT " +
+                "  right('hello', 2) AS r1, " +
+                "  right('xy', 5) AS r2, " +
+                "  isnumeric('5') AS n1, " +
+                "  isnumeric('-3.14') AS n2, " +
+                "  isnumeric('abc') AS n3, " +
+                "  isnumeric(NULL) AS n4 " +
+                "FROM core.Containers";
+
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql);
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = qdef.getTable(errors, false);
+            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
+            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+
+            try (Results results = new TableSelector(t).getResults())
+            {
+                assertTrue("Expected at least one row from core.Containers", results.next());
+                assertEquals("right('hello', 2) on " + dialect, "lo", results.getString("r1"));
+                assertEquals("right('xy', 5) on " + dialect, "xy", results.getString("r2"));
+                assertEquals("isnumeric('5') on " + dialect, 1, results.getInt("n1"));
+                assertEquals("isnumeric('-3.14') on " + dialect, 1, results.getInt("n2"));
+                assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
+                assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
+            }
+        }
     }
 }
