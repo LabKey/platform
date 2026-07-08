@@ -964,6 +964,54 @@ public class WikiManager implements WikiService
         return new ArrayList<>(l);
     }
 
+    /** Storage-name prefix for assistant-memory wikis. Package-local: only the wiki module needs it. */
+    public static final String MEMORY_PREFIX = "memory:";
+
+    @Override
+    public List<AssistantMemory> getAssistantMemories(Container c)
+    {
+        List<AssistantMemory> memories = new ArrayList<>();
+        for (String wikiName : getNames(c))
+        {
+            if (!wikiName.startsWith(MEMORY_PREFIX))
+                continue;
+
+            String name = wikiName.substring(MEMORY_PREFIX.length());
+            Map<String, String> front = parseFrontmatter(getContent(c, wikiName));
+            memories.add(new AssistantMemory(name, front.getOrDefault("description", ""), front.getOrDefault("type", "")));
+        }
+        return memories;
+    }
+
+    /** Parse the leading {@code ---}-delimited frontmatter block of a memory wiki into a key/value map. Best effort. */
+    private static Map<String, String> parseFrontmatter(String content)
+    {
+        Map<String, String> map = new HashMap<>();
+        if (null == content)
+            return map;
+
+        List<String> lines = List.of(content.split("\n", -1));
+        if (lines.isEmpty() || !lines.getFirst().strip().equals("---"))
+            return map;
+
+        for (int i = 1; i < lines.size(); i++)
+        {
+            String line = lines.get(i);
+            if (line.strip().equals("---"))
+                break;
+            int colon = line.indexOf(':');
+            if (colon > 0)
+            {
+                String key = line.substring(0, colon).strip();
+                String value = line.substring(colon + 1).strip();
+                if (StringUtils.isNotBlank(key))
+                    map.put(key, value);
+            }
+        }
+
+        return map;
+    }
+
     @Override
     public int populateVectorStore(Container container)
     {

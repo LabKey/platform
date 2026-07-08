@@ -144,17 +144,29 @@ public class CoreMcp implements McpService.McpImpl
         else
         {
             McpService.get().saveSessionContainer(context, container);
-            message = "Container has been set to " + container.getPath();
+            message = "Container has been set to " + container.getPath() + ".";
 
             WikiService wikiService = WikiService.get();
             if (wikiService != null)
             {
-                var memoryCount = wikiService.getNames(container).stream().filter(name -> name.startsWith("memory:")).count();
-                message = "Container has been set to " + container.getPath() + ".";
-                if (memoryCount == 0)
+                var memories = wikiService.getAssistantMemories(container);
+                if (memories.isEmpty())
+                {
                     message += "\nThis container has no assistant memories.";
+                }
                 else
-                    message += "\nThis container has " + StringUtilsLabKey.pluralize(memoryCount, "assistant memory", "assistant memories") + " available using the \"listAssistantMemory\" tool.";
+                {
+                    StringBuilder sb = new StringBuilder("\nThis container has ")
+                        .append(StringUtilsLabKey.pluralize(memories.size(), "assistant memory", "assistant memories"))
+                        .append(". Review this index before answering questions about this container, and call getAssistantMemory to read the full body of any that look relevant:");
+                    for (var memory : memories)
+                    {
+                        sb.append("\n  • ").append(memory.name());
+                        if (isNotBlank(memory.description()))
+                            sb.append(" — ").append(memory.description());
+                    }
+                    message += sb;
+                }
             }
         }
 

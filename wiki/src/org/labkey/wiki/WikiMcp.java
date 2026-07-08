@@ -33,11 +33,6 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * POC: exposes "assistant memory" over MCP, backed by ordinary wikis. Each memory is stored as a
@@ -54,8 +49,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  */
 public class WikiMcp implements McpService.McpImpl
 {
-    private static final String PREFIX = "memory:";
-
     private static WikiService wikiService()
     {
         WikiService svc = WikiService.get();
@@ -78,22 +71,14 @@ public class WikiMcp implements McpService.McpImpl
     String listAssistantMemory(ToolContext toolContext)
     {
         ContainerUser cu = getContext(toolContext);
-        WikiService svc = wikiService();
 
         JSONArray array = new JSONArray();
-        for (String wikiName : svc.getNames(cu.getContainer()))
+        for (WikiService.AssistantMemory memory : wikiService().getAssistantMemories(cu.getContainer()))
         {
-            if (!wikiName.startsWith(PREFIX))
-                continue;
-
-            String slug = wikiName.substring(PREFIX.length());
-            String content = svc.getContent(cu.getContainer(), wikiName);
-            Map<String, String> front = parseFrontmatter(content);
-
             JSONObject obj = new JSONObject();
-            obj.put("name", slug);
-            obj.put("description", front.getOrDefault("description", ""));
-            obj.put("type", front.getOrDefault("type", ""));
+            obj.put("name", memory.name());
+            obj.put("description", memory.description());
+            obj.put("type", memory.type());
             array.put(obj);
         }
 
@@ -115,7 +100,7 @@ public class WikiMcp implements McpService.McpImpl
         String name)
     {
         ContainerUser cu = getContext(toolContext);
-        String content = wikiService().getContent(cu.getContainer(), PREFIX + name);
+        String content = wikiService().getContent(cu.getContainer(), WikiManager.MEMORY_PREFIX + name);
         if (null == content)
             throw new NotFoundException("No assistant memory named \"" + name + "\" exists in this container. Use listAssistantMemory to see the available slugs.");
         return content;
@@ -157,7 +142,7 @@ public class WikiMcp implements McpService.McpImpl
     {
         ContainerUser cu = getContext(toolContext);
         WikiService svc = wikiService();
-        String wikiName = PREFIX + name;
+        String wikiName = WikiManager.MEMORY_PREFIX + name;
         String content = composeContent(name, type, description, body);
 
         // Upsert: WikiService splits create vs. update, so route on existence.
@@ -187,7 +172,7 @@ public class WikiMcp implements McpService.McpImpl
     {
         ContainerUser cu = getContext(toolContext);
         WikiService svc = wikiService();
-        String wikiName = PREFIX + name;
+        String wikiName = WikiManager.MEMORY_PREFIX + name;
 
         if (null == svc.getContent(cu.getContainer(), wikiName))
             throw new NotFoundException("No assistant memory named \"" + name + "\" exists in this container.");
@@ -213,34 +198,5 @@ public class WikiMcp implements McpService.McpImpl
             "description: " + StringUtils.trimToEmpty(description) + "\n" +
             "---\n\n" +
             StringUtils.trimToEmpty(body) + "\n";
-    }
-
-    /** Parse the leading {@code ---}-delimited frontmatter block into a key/value map. Best effort. */
-    private static Map<String, String> parseFrontmatter(String content)
-    {
-        Map<String, String> map = new HashMap<>();
-        if (null == content)
-            return map;
-
-        List<String> lines = List.of(content.split("\n", -1));
-        if (lines.isEmpty() || !lines.getFirst().strip().equals("---"))
-            return map;
-
-        for (int i = 1; i < lines.size(); i++)
-        {
-            String line = lines.get(i);
-            if (line.strip().equals("---"))
-                break;
-            int colon = line.indexOf(':');
-            if (colon > 0)
-            {
-                String key = line.substring(0, colon).strip();
-                String value = line.substring(colon + 1).strip();
-                if (isNotBlank(key))
-                    map.put(key, value);
-            }
-        }
-
-        return map;
     }
 }
