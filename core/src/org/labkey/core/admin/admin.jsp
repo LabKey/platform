@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.text.DecimalFormat" %>
+<%@ page import="java.time.ZoneId" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -92,7 +93,7 @@
             <br/>
 <%
     row = 0;
-    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString()).withZone(ZoneId.systemDefault());
     String timeCellCls = "";
     HtmlString warning = HtmlString.EMPTY_STRING;
 
@@ -129,9 +130,9 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td class="<%=h(timeCellCls)%>"><%=h(AdminBean.serverStartupTime)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(timeDifference.serverTime().format(dateTimeFormatter))%><%=warning%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(timeDifference.databaseTime().format(dateTimeFormatter))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td><%=h(AdminBean.serverStartupTime)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(dateTimeFormatter.format(timeDifference.serverTime()))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(dateTimeFormatter.format(timeDifference.databaseTime()))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">

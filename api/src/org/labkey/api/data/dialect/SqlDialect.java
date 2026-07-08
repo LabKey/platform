@@ -80,9 +80,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -2004,13 +2005,14 @@ public abstract class SqlDialect
 
     public static ServerDatabaseTimeDifference getServerDatabaseTimeDifference(DbScope scope)
     {
-        LocalDateTime serverTime = LocalDateTime.now();
-        LocalDateTime databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+        // Compare Instants, not wall-clock values, so the skew is measured correctly even when the servers are in different time zones.
+        Instant serverTime = Instant.now();
+        Instant databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class).toInstant();
 
         return new ServerDatabaseTimeDifference(serverTime, databaseTime);
     }
 
-    public record ServerDatabaseTimeDifference(LocalDateTime serverTime, LocalDateTime databaseTime)
+    public record ServerDatabaseTimeDifference(Instant serverTime, Instant databaseTime)
     {
         public long getSeconds()
         {
@@ -2476,7 +2478,7 @@ public abstract class SqlDialect
         @Test
         public void testServerDatabaseTimeDifference()
         {
-            LocalDateTime base = LocalDateTime.of(2026, 7, 6, 12, 0, 0);
+            Instant base = Instant.parse("2026-07-06T12:00:00Z");
 
             // Identical times: zero difference, no warning
             ServerDatabaseTimeDifference equal = new ServerDatabaseTimeDifference(base, base);
