@@ -552,10 +552,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 List<MultipartFile> uploadedFiles = getUploadedFiles();
                 if (!uploadedFiles.isEmpty())
                 {
-                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, multipartfile.getOriginalFilename());
                     hasPostData = true;
                     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
                     originalName = uploadedFiles.getFirst().getOriginalFilename();
+                    transactionDetails.put(TransactionAuditProvider.TransactionDetail.ImportFileName, originalName);
 
                     FileLike dataFileDir = null;
 
@@ -652,7 +652,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 loader.close();
             if (null != file)
                 file.closeInputStream();
-            if (dataFiles.isEmpty() && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
+            if (!dataFiles.isEmpty() && !Boolean.parseBoolean(saveToPipeline) && !_useAsync)
             {
                 for (FileLike tmpFile : dataFiles)
                     tmpFile.delete();
