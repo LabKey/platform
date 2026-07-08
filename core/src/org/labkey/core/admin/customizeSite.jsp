@@ -354,8 +354,8 @@ Click the Save button at any time to accept the current settings and continue.</
     {
         expirationOptions.put(10, "10 seconds - for testing purposes only");
     }
-    for (int days : new int[]{7, 30, 90, 180, 365})
-        expirationOptions.put(days * SECONDS_PER_DAY, days + " days");
+    Stream.of(7, 30, 90, 180, 365)
+        .forEach(days -> expirationOptions.put(days * SECONDS_PER_DAY, days + " days"));
 
     // If current expiration is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!expirationOptions.containsKey(currentExpiration))
