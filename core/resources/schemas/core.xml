@@ -705,6 +705,7 @@
           <column columnName="Expiration"/>
           <column columnName="Description"/>
           <column columnName="LastUsed"/>
+          <column columnName="RestrictionRole"/>
       </columns>
   </table>
 

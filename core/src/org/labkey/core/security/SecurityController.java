@@ -47,6 +47,7 @@ import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider.GroupAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -115,9 +116,13 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.EditorWithoutDeleteRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
@@ -164,6 +169,7 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -2288,10 +2294,38 @@ public class SecurityController extends SpringActionController
         }
     }
 
+    record RestrictionRole(Class<? extends Role> roleClass)
+    {
+        String displayName()
+        {
+            return RoleManager.getRole(roleClass).getDisplayName();
+        }
+    }
+
+    private static final Map<String, RestrictionRole> RESTRICTION_ROLE_MAP = Stream.of(
+        ReaderRole.class,
+        AuthorRole.class,
+        EditorWithoutDeleteRole.class,
+        EditorRole.class
+    ).collect(LabKeyCollectors.toLinkedMap(Class::getName, RestrictionRole::new));
+
+    @RequiresLogin
+    public static class GetApiKeyRolesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return RESTRICTION_ROLE_MAP.entrySet().stream()
+                .map(e -> new JSONObject(Map.of("uniqueName", e.getKey(), "displayName", e.getValue().displayName())))
+                .collect(LabKeyCollectors.toJSONArray());
+        }
+    }
+
     public static class CreateApiKeyForm
     {
         private String _type;
         private String _description;
+        private String _role;
 
         public String getType()
         {
@@ -2314,6 +2348,16 @@ public class SecurityController extends SpringActionController
         {
             _description = description;
         }
+
+        public String getRole()
+        {
+            return _role;
+        }
+
+        public void setRole(String role)
+        {
+            _role = role;
+        }
     }
 
     @RequiresLogin
@@ -2330,7 +2374,16 @@ public class SecurityController extends SpringActionController
                     if (!AppProps.getInstance().isAllowApiKeys())
                         throw new NotFoundException("Creation of API keys is disabled");
 
-                    apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription());
+                    RestrictionRole rr = null;
+
+                    if (form.getRole() != null)
+                    {
+                        rr = RESTRICTION_ROLE_MAP.get(form.getRole());
+                        if (rr == null)
+                            throw new NotFoundException("Restriction role was not found.");
+                    }
+
+                    apiKey = ApiKeyManager.get().createKey(getUser(), form.getDescription(), rr != null ? rr.roleClass() : null);
                     break;
                 case "session":
                     if (!AppProps.getInstance().isAllowSessionKeys())
@@ -2365,29 +2418,29 @@ public class SecurityController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                    new CompleteUserReadAction()
+                new CompleteUserReadAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                    new PermissionsAction(),
-                    new StandardDeleteGroupAction(),
+                new PermissionsAction(),
+                new StandardDeleteGroupAction(),
                 controller.new GroupAction(),
-                    new CompleteMemberAction(),
-                    new CompleteUserAction(),
-                    new GroupExportAction(),
-                    new GroupPermissionAction(),
-                    new UpdatePermissionsAction(),
-                    new ShowRegistrationEmailAction(),
-                    new GroupDiagramAction(),
-                    new FolderAccessAction()
+                new CompleteMemberAction(),
+                new CompleteUserAction(),
+                new GroupExportAction(),
+                new GroupPermissionAction(),
+                new UpdatePermissionsAction(),
+                new ShowRegistrationEmailAction(),
+                new GroupDiagramAction(),
+                new FolderAccessAction()
             );
 
             // @RequiresPermission(UserManagementPermission.class)
             assertForUserPermissions(user,
                 controller.new AddUsersAction(),
-                    new ShowResetEmailAction(),
-                    new AdminResetPasswordAction()
+                new ShowResetEmailAction(),
+                new AdminResetPasswordAction()
             );
         }
 

@@ -729,15 +729,15 @@ caseExpression
 	;
 	
 whenClause
-	: (WHEN^ logicalExpression THEN! unaryExpression)
+	: (WHEN^ logicalExpression THEN! valueExpression)
 	;
 	
 altWhenClause
-	: (WHEN^ unaryExpression THEN! unaryExpression)
+	: (WHEN^ unaryExpression THEN! valueExpression)
 	;
 	
 elseClause
-	: (ELSE^ unaryExpression)
+	: (ELSE^ valueExpression)
 	;
 	
 

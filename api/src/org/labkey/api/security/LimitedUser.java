@@ -97,7 +97,7 @@ public class LimitedUser extends ClonedUser
         @JsonProperty("_lastLogin") Date lastLogin,
         @JsonProperty("_phone") String phone,
         @JsonProperty("_lastActivity") Date lastActivity,
-        @JsonProperty("_impersonationContext") PermissionsContext ctx
+        @JsonProperty("_permissionsContext") PermissionsContext ctx
     )
     {
         super(name, userId, displayName, firstName, lastName, active, lastLogin, phone, lastActivity, ctx);

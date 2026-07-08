@@ -148,6 +148,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.PermissionsRestrictedUser.ALLOWED_PERMISSIONS_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
@@ -517,8 +518,13 @@ public class SecurityManager
 
                 if (null != factory)
                 {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                    sessionUser.setPermissionsContext(factory.getImpersonationContext());
                 }
+
+                //noinspection unchecked
+                Set<Class<? extends Permission>> allowedPermissions = (Set<Class<? extends Permission>>) session.getAttribute(ALLOWED_PERMISSIONS_KEY);
+                if (allowedPermissions != null)
+                    sessionUser = new PermissionsRestrictedUser(sessionUser, allowedPermissions);
             }
         }
 
@@ -586,7 +592,7 @@ public class SecurityManager
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
-                    sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
+                    sessionUser.setPermissionsContext(DisallowPrivilegedRolesContext.get());
                 }
 
                 HttpSession session = request.getSession(false);
@@ -816,6 +822,7 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
+            user.getPermissionsContext().modifySession(newSession);
         }
 
         return newSession;
@@ -1121,7 +1128,7 @@ public class SecurityManager
 
         // Issue 25813: if two users are being inserted at the same time through the addUser method above, we can get deadlock on SQLServer so we
         // actively lock when doing this select to prevent it from promoting a lock up the chain.
-        SQLFragment select = new SQLFragment("SELECT UserId FROM " + core.getTableInfoUsersData());
+        SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
         if (core.getSchema().getScope().getSqlDialect().isSqlServer())
             select.append(" WITH (UPDLOCK)");
         select.append(" WHERE DisplayName = ? AND UserId != ?");
@@ -3343,7 +3350,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyPermissionsContext());
+            user.setPermissionsContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 
