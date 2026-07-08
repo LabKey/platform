@@ -144,7 +144,7 @@ public class PipelineQueryView extends QueryView
             {
                 ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
                 button.setActionType(ActionButton.Action.LINK);
-                button.setURL(PipelineController.urlSetup(getContainer(), getViewContext().getActionURL()));
+                button.setURL(PipelineController.urlSetup(getContainer(), _returnUrl == null ? getViewContext().getActionURL() : _returnUrl));
                 bar.add(button);
             }
         }
