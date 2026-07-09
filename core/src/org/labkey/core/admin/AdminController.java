@@ -1471,13 +1471,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
-            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
-            {
-                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
-                return false;
-            }
-            props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
             props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
@@ -2402,7 +2395,6 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOption;
         private boolean _includeServerHttpHeader;
         private int _termsOfUseFrequencySeconds;
 
@@ -2614,16 +2606,6 @@ public class AdminController extends SpringActionController
         public void setAllowSessionKeys(boolean allowSessionKeys)
         {
             _allowSessionKeys = allowSessionKeys;
-        }
-
-        public String getXFrameOption()
-        {
-            return _XFrameOption;
-        }
-
-        public void setXFrameOption(String XFrameOption)
-        {
-            _XFrameOption = XFrameOption;
         }
 
         public boolean isIncludeServerHttpHeader()

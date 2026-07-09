@@ -178,14 +178,6 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setAdminOnlyMessage(value);
         }
     },
-    XFrameOption("Controls whether or not a browser may render a server page in a <frame> , <iframe> or <object>. Valid values: [SAMEORIGIN, ALLOW]")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setXFrameOption(value);
-        }
-    },
     navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")
     {
         @Override
