@@ -225,11 +225,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(allowSessionKeys, b);
     }
 
-    public void setXFrameOption(String option)
-    {
-        storeStringValue(XFrameOption, option);
-    }
-
     public void setExternalRedirectHosts(@NotNull Collection<String> externalRedirectHosts)
     {
         setAllowList(externalRedirectHostURLs, externalRedirectHosts);

@@ -464,15 +464,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label"><label for="<%=XFrameOption%>">X-Frame-Options</label></td>
-    <td><select name="<%=XFrameOption%>" id="<%=XFrameOption%>">
-        <% String option = appProps.getXFrameOption(); %>
-        <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
-        <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
-        <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
     <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
     <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
 </tr>
