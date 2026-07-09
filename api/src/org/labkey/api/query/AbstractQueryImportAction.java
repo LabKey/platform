@@ -673,8 +673,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                           TransactionAuditProvider.TransactionAuditEvent auditEvent, String queryName) throws BatchValidationException, IOException
     {
         BatchValidationException ve = new BatchValidationException();
-        //di = wrap(di, ve);
-        //importData(di, ve);
 
         configureLoader(loader, _target, getRenamedColumns(), allowLineageColumns(), getLineageImportAliases(), getOptionParamsMap());
 
