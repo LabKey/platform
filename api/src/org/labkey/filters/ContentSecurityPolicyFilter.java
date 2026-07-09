@@ -96,9 +96,6 @@ public class ContentSecurityPolicyFilter implements Filter
     // ensurePolicyExpression().
     private volatile StringExpression _policyExpression;
 
-    // Initialized on first request and reset when allowed sources change
-    private volatile boolean _shouldSetXFrameOptionsHeader = false;
-
     public enum ContentSecurityPolicyType
     {
         Report("Content-Security-Policy-Report-Only"), Enforce("Content-Security-Policy");
@@ -223,8 +220,6 @@ public class ContentSecurityPolicyFilter implements Filter
                 }
 
                 resp.setHeader(getType().getHeaderName(), csp);
-                if (_shouldSetXFrameOptionsHeader)
-                    resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME,"SAMEORIGIN");
             }
         }
         chain.doFilter(request, response);
@@ -281,8 +276,6 @@ public class ContentSecurityPolicyFilter implements Filter
                 var substitutedPolicy = StringExpressionFactory.create(getStashedTemplate(), false, NullValueBehavior.KeepSubstitution)
                     .eval(SUBSTITUTION_MAP);
                 expression = _policyExpression = StringExpressionFactory.create(substitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
-                // If frame-ancestors 'self' (no customization) is present in the CSP then we'll add X-Frame-Options: SAMEORIGIN for old browsers
-                _shouldSetXFrameOptionsHeader = getType() == ContentSecurityPolicyType.Enforce && substitutedPolicy.contains("frame-ancestors 'self'  ;");
             }
         }
 
