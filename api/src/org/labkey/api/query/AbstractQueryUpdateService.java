@@ -889,6 +889,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
+        if (errors.hasErrors())
+            throw errors;
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
         afterInsertUpdate(null==result?0:result.size(), errors, true);
 
