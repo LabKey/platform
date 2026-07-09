@@ -35,7 +35,6 @@
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="java.time.ZoneId" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
@@ -93,7 +92,7 @@
             <br/>
 <%
     row = 0;
-    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString()).withZone(ZoneId.systemDefault());
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
     String timeCellCls = "";
     HtmlString warning = HtmlString.EMPTY_STRING;
 

@@ -80,10 +80,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -173,7 +172,7 @@ public abstract class SqlDialect
     {
         StringBuilder sb = new StringBuilder();
 
-        // Per 18789, also include threads without db connections.
+        // Per Issue 18789, also include threads without db connections.
         List<Thread> dbThreads = new ArrayList<>();
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
@@ -2005,14 +2004,14 @@ public abstract class SqlDialect
 
     public static ServerDatabaseTimeDifference getServerDatabaseTimeDifference(DbScope scope)
     {
-        // Compare Instants, not wall-clock values, so the skew is measured correctly even when the servers are in different time zones.
-        Instant serverTime = Instant.now();
-        Instant databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class).toInstant();
+        // Compare LocalDateTime to capture any difference in server and database times (skew or timezone).
+        LocalDateTime serverTime = LocalDateTime.now();
+        LocalDateTime databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
 
         return new ServerDatabaseTimeDifference(serverTime, databaseTime);
     }
 
-    public record ServerDatabaseTimeDifference(Instant serverTime, Instant databaseTime)
+    public record ServerDatabaseTimeDifference(LocalDateTime serverTime, LocalDateTime databaseTime)
     {
         public long getSeconds()
         {
@@ -2099,7 +2098,7 @@ public abstract class SqlDialect
 
     /**
      *
-     * @return true If the dialect is one supported for the backend LabKey database. ie, Postgres or SQL Server
+     * @return true If the dialect is one supported for the backend LabKey database. i.e., Postgres or SQL Server
      */
     public boolean isLabKeyDbDialect()
     {
@@ -2478,7 +2477,7 @@ public abstract class SqlDialect
         @Test
         public void testServerDatabaseTimeDifference()
         {
-            Instant base = Instant.parse("2026-07-06T12:00:00Z");
+            LocalDateTime base = LocalDateTime.of(2026, 7, 6, 12, 0, 0);
 
             // Identical times: zero difference, no warning
             ServerDatabaseTimeDifference equal = new ServerDatabaseTimeDifference(base, base);
