@@ -89,12 +89,15 @@ public class ContentSecurityPolicyFilter implements Filter
     // This is effectively @NotNull since it's set to non-null values in init() and never changed
     private String _stashedTemplate = null;
 
-    // We can't set this statically because the class is referenced before URLProviders are available
+    // We can't set this statically because this class is referenced before URLProviders are available
     private final String _reportingEndpointsHeaderValue = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     // Initialized on first request and reset when allowed sources change. Don't reference this directly; always use
     // ensurePolicyExpression().
     private volatile StringExpression _policyExpression;
+
+    // Initialized on first request and reset when allowed sources change
+    private volatile boolean _shouldSetXFrameOptionsHeader = false;
 
     public enum ContentSecurityPolicyType
     {
@@ -203,6 +206,8 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
+    private static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
@@ -218,6 +223,8 @@ public class ContentSecurityPolicyFilter implements Filter
                 }
 
                 resp.setHeader(getType().getHeaderName(), csp);
+                if (_shouldSetXFrameOptionsHeader)
+                    resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME,"SAMEORIGIN");
             }
         }
         chain.doFilter(request, response);
@@ -274,6 +281,8 @@ public class ContentSecurityPolicyFilter implements Filter
                 var substitutedPolicy = StringExpressionFactory.create(getStashedTemplate(), false, NullValueBehavior.KeepSubstitution)
                     .eval(SUBSTITUTION_MAP);
                 expression = _policyExpression = StringExpressionFactory.create(substitutedPolicy, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
+                // If frame-ancestors 'self' (no customization) is present in the CSP then we'll add X-Frame-Options: SAMEORIGIN for old browsers
+                _shouldSetXFrameOptionsHeader = getType() == ContentSecurityPolicyType.Enforce && substitutedPolicy.contains("frame-ancestors 'self'  ;");
             }
         }
 
