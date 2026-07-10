@@ -33,6 +33,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +47,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 {
     private static final Logger LOGGER = LogHelper.getLogger(SqlExecutingSelector.class, "Log warnings about SQL exceptions");
 
+    // Warn when this many (or more) rows are pulled into a Java collection; suggests switching to a streaming method
+    private static final int LARGE_RESULT_THRESHOLD = 10_000;
+
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
     @Nullable Map<String, Object> _namedParameters = null;
-    private ConnectionFactory _connectionFactory = super::getConnection;
+    private @Nullable ConnectionFactory _connectionFactory = null; // null means "no explicit choice"; see getEffectiveConnectionFactory()
+    private boolean _jdbcCachingExplicitlySet = false;
     private Integer _fetchSize = null; // By default, use the standard fetch size
 
     private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
@@ -79,21 +84,51 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     @Override
     public Connection getConnection() throws SQLException
     {
-        return _connectionFactory.get();
+        return getEffectiveConnectionFactory().get();
+    }
+
+    /**
+     * Determines which {@link ConnectionFactory} to use for this query. When a caller has explicitly chosen a caching
+     * behavior via {@link #setJdbcCaching(boolean)} or supplied a Connection at construction time, that choice is
+     * honored. Otherwise, JDBC caching is disabled by default: we ask the dialect for a streaming ConnectionFactory so
+     * the driver won't buffer the entire ResultSet in memory. The dialect returns null (meaning "use the shared
+     * Connection with the driver's default caching") when a transaction is active, the dialect is not PostgreSQL, or the
+     * statement is not a SELECT, so this default is safe by construction. Resolving lazily here (rather than at
+     * construction) ensures the transaction check reflects the state at execution time.
+     */
+    private ConnectionFactory getEffectiveConnectionFactory()
+    {
+        // Honor an explicit setJdbcCaching() call (which populated _connectionFactory)...
+        if (_jdbcCachingExplicitlySet)
+            return _connectionFactory;
+
+        // ...or a Connection supplied at construction time (super::getConnection returns the stashed _conn)
+        if (null != _conn)
+            return super::getConnection;
+
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(false, getScope(),
+            new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
+
+        return null != factory ? factory : super::getConnection;
     }
 
     /**
      * <p>Calling this method with cache=false ensures that the JDBC driver will not cache the produced ResultSet in
      * memory, which is useful when potentially working with very large (e.g., > 100MB) ResultSets. Calling it with
-     * cache=true (the default setting) ensures the JDBC driver's default caching behavior.</p>
+     * cache=true ensures the JDBC driver's default caching behavior.</p>
      *
      * <p>By default, the PostgreSQL JDBC driver caches every ResultSet in its entirety. This can lead to
      * OutOfMemoryErrors when working with very large ResultSets. When the underlying database is PostgreSQL, calling
      * this method with false instructs this SqlExecutingSelector to use an unshared Connection and configure it with
      * special settings that disable the driver caching. The trade-off is that the underlying database query will not
      * use the shared Connection that other code on the thread (up or down the call stack) may be using, making
-     * Connection exhaustion more likely; that's why JDBC caching is on by default. Calling this method is not
-     * compatible with passing in an explicit Connection to the constructor.</p>
+     * Connection exhaustion more likely. Calling this method is not compatible with passing in an explicit Connection to
+     * the constructor.</p>
+     *
+     * <p>Note that when neither this method nor an explicit Connection is supplied, JDBC caching is disabled by default
+     * whenever it's safe to do so (PostgreSQL, no active transaction, SELECT statement) — see
+     * {@link #getEffectiveConnectionFactory()}. Callers that require the driver's default caching behavior (e.g., to
+     * share the thread's Connection) must therefore opt in explicitly by calling this method with cache=true.</p>
      *
      * <p>When the underlying database is not PostgreSQL, calling this method has no effect, other than validating that
      * the stashed Connection is null.</p>
@@ -109,8 +144,30 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, getScope(),
             new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
         _connectionFactory = null != factory ? factory : super::getConnection;
+        _jdbcCachingExplicitlySet = true;
 
         return getThis();
+    }
+
+    /**
+     * Overridden to warn when a large number of rows is pulled into a Java collection. Loading many rows into memory
+     * (here plus, potentially, in the JDBC driver's buffer) is a common source of OutOfMemoryErrors; callers should
+     * generally prefer a streaming method — {@link #forEach}, {@link #forEachBatch}, or {@link #uncachedStream} — that
+     * processes rows without materializing them all at once. {@code getArray}, {@code getCollection},
+     * {@code getMapArray}, and {@code getMapCollection} all delegate here, so they're covered as well.
+     */
+    @Override
+    public @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz)
+    {
+        ArrayList<E> result = super.getArrayList(clazz);
+
+        if (result.size() >= LARGE_RESULT_THRESHOLD)
+        {
+            LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to forEach(), forEachBatch(), or uncachedStream() to reduce memory usage. SQL: {}",
+                result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql(), new Throwable("Stack trace for large collection load"));
+        }
+
+        return result;
     }
 
     /**

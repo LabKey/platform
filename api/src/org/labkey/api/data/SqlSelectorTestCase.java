@@ -186,13 +186,23 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            // Default setting is to cache and share the connection
+            // Default (no explicit setJdbcCaching() call) now auto-disables JDBC caching when it's safe: a separate,
+            // uncached Connection on PostgreSQL (outside a transaction), but still the shared Connection on SQL Server.
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
             {
-                assertEquals(conn, conn2);
+                if (scope.getSqlDialect().isPostgreSQL())
+                {
+                    assertNotEquals(conn, conn2);
+                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
+                    assertFalse(conn2.getAutoCommit());
+                }
+                else
+                {
+                    assertEquals(conn, conn2);
+                }
             }
 
-            // Same as the default setting
+            // Explicitly requesting caching shares the connection, even on PostgreSQL
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
@@ -220,6 +230,17 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                     assertTrue(conn2.getAutoCommit());
                 }
             }
+        }
+
+        // Inside a transaction, the default must NOT grab a separate Connection, even on PostgreSQL: the caller may be
+        // relying on reading its own uncommitted writes, so we fall back to the shared, transactional Connection.
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            {
+                assertEquals(scope.getConnection(), conn2);
+            }
+            tx.commit();
         }
     }
 
