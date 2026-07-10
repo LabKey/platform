@@ -35,9 +35,6 @@
     ActionURL url = getActionURL();
     ViewContext context = getViewContext();
 
-    if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
-        response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
-
     boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
     if (isExplicitNoIndex)
         model.setRobotsNone();
