@@ -94,6 +94,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
@@ -240,6 +241,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SharedViewEditorRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -1469,13 +1471,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
-            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
-            {
-                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
-                return false;
-            }
-            props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
             props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
@@ -2400,7 +2395,6 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOption;
         private boolean _includeServerHttpHeader;
         private int _termsOfUseFrequencySeconds;
 
@@ -2612,16 +2606,6 @@ public class AdminController extends SpringActionController
         public void setAllowSessionKeys(boolean allowSessionKeys)
         {
             _allowSessionKeys = allowSessionKeys;
-        }
-
-        public String getXFrameOption()
-        {
-            return _XFrameOption;
-        }
-
-        public void setXFrameOption(String XFrameOption)
-        {
-            _XFrameOption = XFrameOption;
         }
 
         public boolean isIncludeServerHttpHeader()
@@ -3604,8 +3588,8 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors)
         {
-            SystemMaintenance.setTimeDisabled(!form.isEnableSystemMaintenance());
-            SystemMaintenance.setProperties(form.getEnable(), form.getMaintenanceTime());
+            SystemMaintenance.setTimeDisabled(getContainer(), getUser(), !form.isEnableSystemMaintenance());
+            SystemMaintenance.setProperties(getContainer(), getUser(), form.getEnable(), form.getMaintenanceTime());
 
             return true;
         }
@@ -4961,17 +4945,26 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(MissingValuesForm form, BindException errors)
         {
+            Container c = getContainer();
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(c, "The missing value indicators were changed (see details).");
+            StringBuilder html = new StringBuilder("<table>");
             if (form.isInheritMvIndicators())
             {
-                MvUtil.inheritMvIndicators(getContainer());
-                return true;
+                MvUtil.inheritMvIndicators(c);
+                AbstractWriteableSettingsGroup.appendDiffRow(html, "Inherit settings", null, "TRUE");
             }
             else
             {
                 // Javascript should have enforced any constraints
-                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
-                return true;
+                MvUtil.assignMvIndicators(c, form.getMvIndicators(), form.getMvLabels());
+                for (int i=0; i < form.getMvIndicators().length; i++)
+                    AbstractWriteableSettingsGroup.appendDiffRow(html, form.getMvIndicators()[i], null, form.getMvLabels()[i]);
             }
+            html.append("</table>");
+            event.setChanges(html.toString());
+            AuditLogService.get().addEvent(getUser(), event);
+
+            return true;
         }
     }
 
