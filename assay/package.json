@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.46.1-fb-object-assign.1"
+    "@labkey/components": "7.46.1"
   },
   "devDependencies": {
     "@labkey/build": "9.1.5",
