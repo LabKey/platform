@@ -189,6 +189,7 @@ import org.labkey.api.view.RedirectorServlet;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 
@@ -219,6 +220,7 @@ public class ApiModule extends CodeOnlyModule
 
     public static final String EXTJS_3_REQUIRED = "ExtJs3Required";
     public static final String EXTJS_3_API_REQUIRED = "ExtJs3ApiRequired";
+    public static final String ALLOW_MUTATING_SQL_VIA_GET = "AllowMutatingSqlViaGet";
 
     @Override
     protected void init()
@@ -260,6 +262,14 @@ public class ApiModule extends CodeOnlyModule
             EXTJS_3_API_REQUIRED,
             "Require that ExtJS v3.x-based Client API is loaded on every page",
             "This option will be removed in LabKey Server 26.11",
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            ALLOW_MUTATING_SQL_VIA_GET,
+            "Allow GET requests to execute mutating SQL",
+            "We strongly recommend leaving this off since it bypasses a critical security check (CSRF). This option will be removed in LabKey Server 26.11",
             false,
             false,
             FeatureType.Deprecated
@@ -389,6 +399,7 @@ public class ApiModule extends CodeOnlyModule
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
             AssayResultsFileWriter.TestCase.class,
+            AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
@@ -552,6 +563,7 @@ public class ApiModule extends CodeOnlyModule
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,
+            WikiRendererType.TestCase.class,
             WorkbookContainerType.TestCase.class,
             WriteableLookAndFeelProperties.TestCase.class
         );

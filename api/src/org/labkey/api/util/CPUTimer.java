@@ -109,13 +109,18 @@ public class CPUTimer
     public boolean save()
     {
         if (_stop > _start)
-            _update(_stop - _start);
+            update(_stop - _start);
         _start = 0;
         _stop = 0;
         return true;
     }
 
-    protected void _update(long elapsed)
+    /**
+     * Manually set the elapsed time for a timer. Could be used to set the timer to a predefined "max-high" value.
+     *
+     * @param elapsed time in nanoseconds.
+     */
+    public void update(long elapsed)
     {
         _cumulative += elapsed;
         _min = Math.min(_min, elapsed);
@@ -134,7 +139,7 @@ public class CPUTimer
         {
             synchronized (accumulator)
             {
-                accumulator._update(_stop-_start);
+                accumulator.update(_stop-_start);
             }
         }
         _start = 0;

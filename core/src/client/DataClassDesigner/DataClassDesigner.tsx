@@ -23,6 +23,7 @@ import {
     DataClassModel,
     fetchDataClass,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -66,8 +67,7 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     onCancel = () => {

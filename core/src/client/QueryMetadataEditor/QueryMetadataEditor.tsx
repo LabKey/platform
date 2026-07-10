@@ -26,6 +26,7 @@ import {
     IBannerMessage,
     LoadingSpinner,
     Modal,
+    redirect,
     IFieldChange,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
@@ -188,10 +189,12 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href = ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
-            schemaName,
-            'query.queryName': queryName,
-        });
+        redirect(
+            ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
+                schemaName,
+                'query.queryName': queryName,
+            })
+        );
     };
 
     onConfirmViewData = () => {
@@ -231,11 +234,12 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href =
+        redirect(
             ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {
                 schemaName,
                 'query.queryName': queryName,
-            }) + '#metadata';
+            }) + '#metadata'
+        );
     };
 
     editSourceBtnHandler = () => {

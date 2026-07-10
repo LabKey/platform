@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -104,6 +106,8 @@ import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -149,6 +153,7 @@ import org.labkey.issue.query.IssuesQuerySchema;
 import org.labkey.issue.view.IssuesListView;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1746,6 +1751,13 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    private static List<Group> getSelectableAssignmentGroups(Container c, User user)
+    {
+        return SecurityManager.getGroups(c.getProject(), true).stream()
+                .filter(group -> !group.isGuests() && (!group.isUsers() || user.hasRootAdminPermission()))
+                .toList();
+    }
+
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
     public static class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
@@ -1755,7 +1767,7 @@ public class IssuesController extends SpringActionController
         {
             List<UserGroupForm> groups = new ArrayList<>();
 
-            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
+            getSelectableAssignmentGroups(getContainer(), getUser()).forEach(group -> {
                 String displayText = (group.isProjectGroup() ? "" : "Site: ") + group.getName();
 
                 UserGroupForm userGroups = new UserGroupForm();
@@ -1777,17 +1789,29 @@ public class IssuesController extends SpringActionController
         {
             Integer groupId = form.getGroupId();
             Group group = null != groupId ? SecurityManager.getGroup(groupId) : null;
-            return IssueManager.getUsersForGroup(getContainer(), group)
-                .map(user -> {
-                    UserGroupForm userGroupForm = new UserGroupForm();
-                    if (groupId != null)
-                        userGroupForm.setGroupId(groupId);
-                    userGroupForm.setUserId(user.getUserId());
-                    userGroupForm.setDisplayName(user.getDisplayName(getUser()));
-                    return userGroupForm;
-                })
-                .sorted(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER))
-                .collect(Collectors.toList());
+            // ensure group is in scope for the container
+            boolean inScope = group != null && getSelectableAssignmentGroups(getContainer(), getUser())
+                    .stream().anyMatch(g -> g.getUserId() == group.getUserId());
+            // if either the specified group is null or we can't resolve the group we default to all
+            // users with update in the current container.
+            if (inScope || group == null)
+            {
+                return IssueManager.getUsersForGroup(getContainer(), group)
+                    .map(user -> {
+                        UserGroupForm userGroupForm = new UserGroupForm();
+                        if (groupId != null)
+                            userGroupForm.setGroupId(groupId);
+                        userGroupForm.setUserId(user.getUserId());
+                        userGroupForm.setDisplayName(user.getDisplayName(getUser()));
+                        return userGroupForm;
+                    })
+                    .sorted(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER))
+                    .collect(Collectors.toList());
+            }
+            else
+            {
+                return Collections.emptyList();
+            }
         }
     }
 
@@ -2447,6 +2471,81 @@ public class IssuesController extends SpringActionController
                 def.beforeInsert(TestContext.get().getUser(), c.getId());
                 def.save(TestContext.get().getUser());
             }
+        }
+    }
+
+    /**
+     * GitHub Issue #1243 regression test.
+     */
+    public static class GetUsersForGroupScopingTestCase extends AbstractContainerScopingTest
+    {
+        private static final String PROJECT_A = "IssuesGroupScopingA";
+        private static final String PROJECT_B = "IssuesGroupScopingB";
+
+        private Container _projectA;
+        private Group _groupA;
+        private Group _groupB;
+        private User _member;
+
+        @Before
+        public void setup() throws Exception
+        {
+            deleteProjects();
+            User admin = getAdmin();
+            _projectA = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_A, admin);
+            Container projectB = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_B, admin);
+
+            // Security groups must be associated with a project, so each group's container is its owning project.
+            _groupA = SecurityManager.createGroup(_projectA, "ScopingGroupA", admin);
+            _groupB = SecurityManager.createGroup(projectB, "ScopingGroupB", admin);
+
+            // A user who can be assigned issues in project A (UpdatePermission via Editor) and is a member of both groups.
+            _member = createUserInRole(_projectA, EditorRole.class);
+            SecurityManager.addMember(_groupA, _member);
+            SecurityManager.addMember(_groupB, _member);
+        }
+
+        @After
+        public void tearDown()
+        {
+            deleteProjects();
+        }
+
+        @Test
+        public void doesNotEnumerateAnotherProjectsGroupMembers() throws Exception
+        {
+            // group B is in a different project from the source request.
+            String content = requestUsersForGroup(_projectA, _groupB).getContentAsString();
+            assertFalse("A group id from another project must not enumerate that group's members through this folder",
+                    content.contains("\"userId\" : " + _member.getUserId()));
+        }
+
+        @Test
+        public void enumeratesOwnProjectGroupMembers() throws Exception
+        {
+            // Control: the request project's own group resolves in scope and returns its members.
+            String content = requestUsersForGroup(_projectA, _groupA).getContentAsString();
+            assertTrue("An in-project group id must enumerate its members",
+                    content.contains("\"userId\" : " + _member.getUserId()));
+        }
+
+        private MockHttpServletResponse requestUsersForGroup(Container project, Group group) throws Exception
+        {
+            ActionURL url = new ActionURL(GetUsersForGroupAction.class, project)
+                    .addParameter("groupId", group.getUserId());
+            return get(url, getAdmin());
+        }
+
+        private void deleteProjects()
+        {
+            User admin = getAdmin();
+            for (String name : new String[]{PROJECT_A, PROJECT_B})
+            {
+                Container c = ContainerManager.getForPath("/" + name);
+                if (c != null)
+                    ContainerManager.deleteAll(c, admin);
+            }
+            _projectA = null;
         }
     }
 }

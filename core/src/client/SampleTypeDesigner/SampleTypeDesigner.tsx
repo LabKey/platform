@@ -26,6 +26,7 @@ import {
     getSampleSet,
     getSampleTypeDetails,
     LoadingSpinner,
+    redirect,
     SampleTypeDesigner,
     SampleTypeModel,
 } from '@labkey/components';
@@ -144,8 +145,7 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-        const redirectUrl = ActionURL.getReturnUrl() || defaultUrl;
-        window.location.href = ActionURL.buildURL('core', 'safeRedirect', undefined, { returnUrl: redirectUrl });
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     render() {

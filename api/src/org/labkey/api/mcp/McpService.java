@@ -36,6 +36,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 ///
@@ -94,8 +95,11 @@ import java.util.function.Supplier;
 ///
 public interface McpService extends ToolCallbackProvider
 {
+    String VECTOR_SCHEMA = "vector_indexes"; // for pgvector extension, see core-26.005-26.006.sql
+
     Logger LOG = LogHelper.getLogger(McpService.class, "MCP registration exceptions");
     String ENABLE_MCP_SERVER_FLAG = "enableMcpServer";
+    String ENABLE_AI_FEATURES = "enableAIFeatures";
 
     // Interface for MCP classes that we will "ingest" using Spring annotations. Provides a few helper methods.
     interface McpImpl
@@ -117,9 +121,6 @@ public interface McpService extends ToolCallbackProvider
         // Every MCP resource should call this on every invocation
         default void incrementResourceRequestCount(String resource)
         {
-            if (!get().isEnabled())
-                throw new RuntimeException("The MCP server is not enabled for external requests. Consider toggling the optional feature flag.");
-
             get().incrementResourceRequestCount(resource);
         }
     }
@@ -142,7 +143,18 @@ public interface McpService extends ToolCallbackProvider
         return OptionalFeatureService.get().isFeatureEnabled(ENABLE_MCP_SERVER_FLAG);
     }
 
+    default boolean isAIFeaturesEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(ENABLE_AI_FEATURES);
+    }
+
     boolean isReady();
+
+    // Convenience for in-product AI features: the AI feature flag is on AND the service has started.
+    default boolean isAIFeaturesReady()
+    {
+        return isAIFeaturesEnabled() && isReady();
+    }
 
     // Register MCPs in Module.startup()
     default void register(McpImpl mcp)
@@ -187,6 +199,8 @@ public interface McpService extends ToolCallbackProvider
 
     record MessageResponse(String contentType, String text, HtmlString html) {}
 
+    record VectorDocument(String id, String text, Map<String, Object> metadata) {}
+
     /** get a consolidated response (good for many text-oriented agents/use-cases) */
     MessageResponse sendMessage(ChatClient chat, String message);
 
@@ -201,4 +215,21 @@ public interface McpService extends ToolCallbackProvider
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */
     VectorStore getVectorStore();
+
+    /** Returns true if the vector store exists and contains at least one document. */
+    boolean isVectorStorePopulated(@NotNull VectorStore vs);
+
+    /**
+     * Adds documents to the vector store, automatically splitting any document whose token
+     * count exceeds the embedding model's input limit. Prefer this over
+     * {@code getVectorStore().add(...)} for indexing — it prevents the
+     * {@code IllegalArgumentException} that {@code TokenCountBatchingStrategy} throws on
+     * oversized inputs.
+     */
+    void addDocuments(List<VectorDocument> documents);
+
+    void saveVectorStore();
+
+    /** Drop and recreate the vector store table. Use when the embedding model has changed and dimensions no longer match. */
+    void resetVectorStore();
 }

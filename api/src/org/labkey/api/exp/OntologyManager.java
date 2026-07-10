@@ -1372,7 +1372,7 @@ public class OntologyManager
             String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
             executor.execute(deleteObjPropSql, c);
             String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
-            _log.info("Deleting from exp.object in container {}", c);
+            _log.debug("Deleting from exp.object in container {}", c);
             executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
@@ -2811,13 +2811,14 @@ public class OntologyManager
         return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
-    public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
+    public static List<PropertyUsages> findPropertyUsagesByIds(User user, Container container, List<Integer> propertyIds, int maxUsageCount)
     {
         List<PropertyUsages> ret = new ArrayList<>(propertyIds.size());
         for (int propertyId : propertyIds)
         {
             var pd = getPropertyDescriptor(propertyId);
-            if (pd == null)
+            // Kanban #1924: Get property descriptors for the current container only
+            if (pd == null || !pd.getContainer().equals(container))
                 throw new IllegalArgumentException("property not found: " + propertyId);
 
             ret.add(findPropertyUsages(user, pd, maxUsageCount));

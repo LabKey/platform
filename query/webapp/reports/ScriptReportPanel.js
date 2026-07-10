@@ -601,19 +601,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             }
         });
 
-        items.push({
-            xtype: 'button',
-            text: 'Share Report',
-            hidden: !this.allowShareReport || this.reportConfig.reportId == null,
-            style: 'margin-left: 5px;',
-            scope: this,
-            handler: function() {
-                window.location = LABKEY.ActionURL.buildURL('reports', 'shareReport', null, {
-                    reportId: this.reportConfig.reportId
-                });
-            }
-        });
-
         if (this.externalEditSettings) {
             items.push(this.getExternalEditBtn());
         }

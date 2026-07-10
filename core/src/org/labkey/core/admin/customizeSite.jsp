@@ -126,11 +126,11 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("""
         <tr>
-                <td colspan=2>&nbsp;</td>
-            </tr>
-            <tr>
-                <td colspan=2>"""), HtmlString.unsafe("</td>\n" +
-        "    </tr>"))%>
+            <td colspan=2>&nbsp;</td>
+        </tr>
+        <tr>
+            <td colspan=2>"""), HtmlString.unsafe("</td>\n" +
+        "</tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -374,6 +374,41 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td class="labkey-form-label"><label for="<%=allowSessionKeys%>">Let users create session keys</label></td>
     <td><labkey:checkbox id="<%=allowSessionKeys.name()%>" name="<%=allowSessionKeys.name()%>" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
+</tr>
+
+<tr>
+    <td>&nbsp;</td>
+</tr>
+<tr>
+    <td colspan=2>Customize terms-of-use frequency (<%=bean.getSiteSettingsHelpLink("terms")%>)</td>
+</tr>
+<tr><td colspan=3 class=labkey-title-area-line></td></tr>
+<tr>
+    <td class="labkey-form-label"><label for="<%=termsOfUseFrequencySeconds%>">Require terms-of-use acceptance</label></td>
+<%
+    final int currentTermsFrequency = AppProps.getInstance().getTermsOfUseFrequencySeconds();
+    Map<Integer, String> termsFrequencyOptions = new TreeMap<>(Comparator.comparing(key -> key));
+    termsFrequencyOptions.put(0, "Every sign-in");
+    if (appProps.isDevMode())
+        termsFrequencyOptions.put(60, "Once a minute"); // For testing
+    termsFrequencyOptions.put(SECONDS_PER_DAY, "Once a day");
+    termsFrequencyOptions.put(7 * SECONDS_PER_DAY, "Every 7 days");
+    termsFrequencyOptions.put(30 * SECONDS_PER_DAY, "Every 30 days");
+
+    // If current value is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
+    if (!termsFrequencyOptions.containsKey(currentTermsFrequency))
+        termsFrequencyOptions.put(currentTermsFrequency, DateUtil.formatDuration(1000L * currentTermsFrequency));
+%>
+    <td>
+    <%=
+        select()
+            .name(termsOfUseFrequencySeconds.name())
+            .id(termsOfUseFrequencySeconds.name())
+            .addOptions(termsFrequencyOptions)
+            .selected(currentTermsFrequency)
+            .className(null)
+    %>
+    </td>
 </tr>
 
 <tr>

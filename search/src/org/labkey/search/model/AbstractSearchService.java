@@ -57,6 +57,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
@@ -1155,15 +1156,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             catch (Throwable x)
             {
                 success = false;
-                try
+                if (!(_shuttingDown || x instanceof ShuttingDownException))
                 {
-                    ExceptionUtil.logExceptionToMothership(null, x);
+                    try
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, x);
+                    }
+                    catch (Throwable t)
+                    {
+                        /* */
+                    }
+                    _log.error("Error running {}", null != i ? i._id : "", x);
                 }
-                catch (Throwable t)
-                {
-                    /* */
-                }
-                _log.error("Error running {}", null != i ? i._id : "", x);
             }
             finally
             {

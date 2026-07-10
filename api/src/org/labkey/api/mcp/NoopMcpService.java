@@ -43,6 +43,12 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public boolean isAIFeaturesEnabled()
+    {
+        return false;
+    }
+
+    @Override
     public boolean isReady()
     {
         return false;
@@ -100,5 +106,26 @@ class NoopMcpService implements McpService
     public VectorStore getVectorStore()
     {
         return null;
+    }
+
+    @Override
+    public boolean isVectorStorePopulated(@NotNull VectorStore vs)
+    {
+        return false;
+    }
+
+    @Override
+    public void addDocuments(List<VectorDocument> documents)
+    {
+    }
+
+    @Override
+    public void saveVectorStore()
+    {
+    }
+
+    @Override
+    public void resetVectorStore()
+    {
     }
 }

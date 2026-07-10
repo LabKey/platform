@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.42.1",
+    "@labkey/components": "7.46.0",
     "@labkey/themes": "1.9.4"
   },
   "devDependencies": {
