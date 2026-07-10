@@ -57,9 +57,6 @@ tokens
 @lexer::header
 {
 	package org.labkey.query.sql.antlr;
-
-    import org.apache.logging.log4j.Logger;
-    import org.apache.logging.log4j.LogManager;
 }
 
 
@@ -134,17 +131,14 @@ tokens
 
 @lexer::members
 {
-    Logger _log = LogManager.getLogger(org.labkey.query.sql.SqlParser.class);
-    
     protected void setPossibleID(boolean possibleID)
     {
     }
 
-    @Override
-    public void emitErrorMessage(String msg)
-    {
-        _log.debug(msg);
-    }
+    // NOTE: lexer errors are reported via reportError(), which SqlParser._SqlLexer overrides to collect
+    // them as parse errors. Always use _SqlLexer rather than instantiating SqlBaseLexer directly -- the
+    // default ANTLR emitErrorMessage() prints unmatchable input to System.err and then drops it, letting
+    // the remaining characters re-lex into a different, valid-looking query.
 }
 
 

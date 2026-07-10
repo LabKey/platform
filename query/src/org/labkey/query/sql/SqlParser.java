@@ -17,8 +17,10 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.MismatchedTokenException;
 import org.antlr.runtime.MissingTokenException;
 import org.antlr.runtime.ParserRuleReturnScope;
 import org.antlr.runtime.RecognitionException;
@@ -35,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -433,9 +436,10 @@ public class SqlParser
                     errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
             }
 
+            CommonTokenStream tokens = parser.getTokenStream() instanceof CommonTokenStream cts ? cts : null;
             for (Throwable e : _parseErrors)
             {
-                errors.add(wrapParseException(e));
+                errors.add(wrapParseException(e, tokens));
             }
 
             if (null != _root)
@@ -517,9 +521,10 @@ public class SqlParser
                 _root = qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             }
 
+            CommonTokenStream tokens = parser.getTokenStream() instanceof CommonTokenStream cts ? cts : null;
             for (Throwable e : _parseErrors)
             {
-                errors.add(wrapParseException(e));
+                errors.add(wrapParseException(e, tokens));
             }
             return (QExpr)_root;
         }
@@ -740,6 +745,12 @@ public class SqlParser
 
     static QueryParseException wrapParseException(Throwable e)
     {
+        return wrapParseException(e, null);
+    }
+
+
+    static QueryParseException wrapParseException(Throwable e, @Nullable CommonTokenStream tokens)
+    {
         if (e instanceof QueryParseException)
         {
             return (QueryParseException) e;
@@ -750,7 +761,7 @@ public class SqlParser
 //        }
         else if (e instanceof RecognitionException re)
         {
-            String message = formatRecognitionException(re);
+            String message = formatRecognitionException(re, tokens);
             return new QueryParseException(message, re, re.line, re.charPositionInLine);
         }
         else if (e instanceof RuntimeException)
@@ -761,7 +772,7 @@ public class SqlParser
     }
 
 
-    static String formatRecognitionException(RecognitionException re)
+    static String formatRecognitionException(RecognitionException re, @Nullable CommonTokenStream tokens)
     {
         String message = re.getMessage();
         if (null != message)
@@ -769,13 +780,21 @@ public class SqlParser
 
         String missing = null;
         String near = null;
-        
+
         if (null != re.token)
             near = re.token.getText();
+        else if (re.c < 0)
+            near = "<EOF>";     // lexer error at end of input (e.g. unterminated string literal)
+        else if (re.c > 0)
+            near = String.valueOf((char)re.c);      // lexer error: no token, but we know the offending character
         if (re instanceof MissingTokenException mte)
         {
             if (null != mte.inserted)
                 missing = tokenName(((CommonToken)mte.inserted).getType());
+        }
+        else if (re instanceof MismatchedTokenException mte && null == re.token && mte.expecting > 0)
+        {
+            missing = String.valueOf((char)mte.expecting);      // lexer error: expected character
         }
 
         if (null != near)
@@ -784,6 +803,11 @@ public class SqlParser
             message = "Syntax error";
         if (null != missing)
             message += ", expected '" + missing + "'";
+
+        // append a targeted hint when the failure looks like a recognizable unsupported construct
+        String hint = SyntaxHints.forSyntaxError(re, tokens);
+        if (null != hint)
+            message += ". " + hint;
         return message;
     }
 
@@ -1159,7 +1183,10 @@ public class SqlParser
                     catch (IllegalArgumentException x)
                     {
                         if (failOnUnrecognizedMethodName)
-                            _parseErrors.add(new QueryParseException("Unknown method " + name, null, id.getLine(), id.getColumn()));
+                        {
+                            String hint = SyntaxHints.forUnknownMethod(name, _dialect);
+                            _parseErrors.add(new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, id.getLine(), id.getColumn()));
+                        }
                     }
                 }
                 break;
@@ -1727,6 +1754,30 @@ public class SqlParser
     }
 
 
+    /**
+     * The default ANTLR lexer error handling prints unmatchable input to System.err and then drops it,
+     * letting the remaining characters re-lex into a different, valid-looking query (e.g.
+     * "{d'2001-02-03'}" -- missing the space after "{d" -- evaluated as 2001-02-03 = 1996 and swallowed
+     * the rest of the statement). Collect lexer errors so they surface as parse errors instead.
+     */
+    private static class _SqlLexer extends SqlBaseLexer
+    {
+        private final ArrayList<Exception> _errors;
+
+        _SqlLexer(CharStream input, ArrayList<Exception> errors)
+        {
+            super(input);
+            _errors = errors;
+        }
+
+        @Override
+        public void reportError(RecognitionException e)
+        {
+            _errors.add(e);
+        }
+    }
+
+
     private static class _SqlParser extends SqlBaseParser implements AutoCloseable
     {
         ArrayList<Exception> _errors;
@@ -1748,7 +1799,7 @@ public class SqlParser
         public void reset(String str, ArrayList<Exception> errors)
         {
             _errors = errors;
-            setTokenStream(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
+            setTokenStream(new CommonTokenStream(new _SqlLexer(new CaseInsensitiveStringStream(str), errors)));
         }
 
         @Override
@@ -2062,6 +2113,9 @@ public class SqlParser
         "SELECT TIMESTAMPDIFF('SQL_TSI_Second',a,b), TIMESTAMPDIFF('Second',a,b), TIMESTAMPDIFF('SQL_TSI_Day',a,b), TIMESTAMPDIFF('Day',a,b) FROM R",
         "SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
 
+        // date/timestamp literals (JDBC escape syntax; note the space after {d and {ts is required)
+        "SELECT {d '2001-02-03'} AS d, {ts '2001-02-03 04:05:06'} AS ts FROM R",
+
         "SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
         "SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
         "SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T ON R.z=T.z",
@@ -2129,6 +2183,15 @@ public class SqlParser
         "SELECT a, GROUP_CONCAT(b, '%$', 'STUPID') FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT() FROM R GROUP BY a",
 
+        // lexer errors must be reported, not silently dropped (see _SqlLexer)
+        // missing space after {d used to evaluate as arithmetic (2001-02-03 = 1996) and swallow the rest of the statement
+        "SELECT {d'2001-02-03'} AS d FROM R",
+        "SELECT {ts'2001-02-03 04:05:06'} AS ts FROM R",
+        // unmatchable character used to be dropped, silently parsing as "SELECT a b FROM R"
+        "SELECT a # b FROM R",
+        // unterminated string literal
+        "SELECT a FROM R WHERE a = 'unterminated",
+
         "BROKEN",
             
         // empty select list
@@ -2142,6 +2205,37 @@ public class SqlParser
         // With within subquery
         "SELECT * FROM (WITH peeps AS (SELECT * FROM study.participant) SELECT * FROM peeps)"
     };
+
+    // unsupported standard-SQL constructs that should fail with a targeted hint (see SyntaxHints):
+    // sql -> expected substring of the error message
+    static List<Pair<String, String>> hintSql = Arrays.asList(
+        new Pair<>("SELECT a FROM R LIMIT 5 OFFSET 10", "OFFSET is not supported"),
+        new Pair<>("SELECT a FROM R ORDER BY a FETCH FIRST 5 ROWS ONLY", "FETCH FIRST is not supported"),
+        new Pair<>("SELECT ROW_NUMBER() OVER (ORDER BY a) FROM R", "Window functions"),
+        new Pair<>("SELECT SUM(x) OVER (PARTITION BY a) FROM R", "Window functions"),
+        new Pair<>("SELECT COUNT(*) FILTER (WHERE a > 0) FROM R", "FILTER is not supported"),
+        new Pair<>("SELECT a FROM R WHERE a ILIKE 'x%'", "ILIKE is not supported"),
+        new Pair<>("SELECT a FROM R JOIN S USING (x)", "USING is not supported"),
+        new Pair<>("SELECT a FROM R ORDER BY a NULLS LAST", "NULLS FIRST/LAST is not supported"),
+        new Pair<>("SELECT a::INTEGER FROM R", "CAST(expr AS TYPE)"),
+        new Pair<>("SELECT SUM(DISTINCT a) FROM R", "DISTINCT is only supported inside COUNT()"),
+        new Pair<>("SELECT a FROM R WHERE a IS DISTINCT FROM b", "is_distinct_from"),
+        new Pair<>("SELECT a FROM R WHERE a IS NOT DISTINCT FROM b", "is_distinct_from"),
+        new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
+        new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
+        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported")
+    );
+
+    // unrecognized method names that should fail with a suggested replacement (see SyntaxHints)
+    static List<Pair<String, String>> methodHintSql = Arrays.asList(
+        new Pair<>("SELECT POSITION('a' IN b) FROM R", "LOCATE"),
+        new Pair<>("SELECT DATEDIFF('day', a, b) FROM R", "TIMESTAMPDIFF"),
+        new Pair<>("SELECT ISNULL(a, b) FROM R", "IFNULL"),
+        new Pair<>("SELECT DAY(a) FROM R", "DAYOFMONTH"),
+        new Pair<>("SELECT CURRENT_DATE() FROM R", "CURDATE"),
+        new Pair<>("SELECT STRING_AGG(a, ',') FROM R", "GROUP_CONCAT"),
+        new Pair<>("SELECT TRIM(a) FROM R", "LTRIM(RTRIM")
+    );
 
     @SuppressWarnings("JUnitMalformedDeclaration")
     public static class SqlParserTestCase extends Assert
@@ -2355,6 +2449,46 @@ public class SqlParser
             }
             long end = System.currentTimeMillis();
             _log.trace("SqlParser.testSql(): {}", DateUtil.formatDuration(end - start));
+        }
+
+        @Test
+        public void testSyntaxHints()
+        {
+            for (Pair<String, String> test : hintSql)
+            {
+                List<QueryParseException> errors = new ArrayList<>();
+                new SqlParser().parseQuery(test.first, errors, null);
+                assertFalse("expected a parse error: " + test.first, errors.isEmpty());
+                assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
+                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+            }
+        }
+
+        @Test
+        public void testUnknownMethodHints()
+        {
+            for (Pair<String, String> test : methodHintSql)
+            {
+                List<QueryParseException> errors = new ArrayList<>();
+                new SqlParser().setFailOnUnrecognizedMethodName(true).parseQuery(test.first, errors, null);
+                assertFalse("expected a parse error: " + test.first, errors.isEmpty());
+                assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
+                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+            }
+        }
+
+        @Test
+        public void testDialectMethodHints()
+        {
+            // the suggestion should be appropriate for the current dialect and never name a database product
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+            List<QueryParseException> errors = new ArrayList<>();
+            new SqlParser(d, null).setFailOnUnrecognizedMethodName(true).parseQuery("SELECT TRIM(a) FROM R", errors, null);
+            assertFalse(errors.isEmpty());
+            String message = errors.getFirst().getMessage();
+            assertTrue(message, StringUtils.contains(message, "LTRIM(RTRIM"));
+            assertEquals(message, d.isPostgreSQL(), StringUtils.contains(message, "btrim"));
+            assertFalse(message, StringUtils.containsIgnoreCase(message, "postgres"));
         }
 
         @Test
