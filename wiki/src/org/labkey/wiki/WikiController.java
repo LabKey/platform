@@ -1849,27 +1849,11 @@ public class WikiController extends SpringActionController
          }
     }
 
-    public static class ContainerForm
-    {
-        private String _id;
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setId(String id)
-        {
-            _id = id;
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
-    public static class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
+    public static class GetPagesAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public ApiResponse execute(ContainerForm form, BindException errors)
+        public ApiResponse execute(Object o, BindException errors)
         {
             Map<String, String> wikiMap = WikiSelectManager.getNameTitleMap(getContainer());
             if (null == wikiMap)
@@ -2532,21 +2516,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    public static class GetWikiTocForm
-    {
-        private String _currentPage = null;
-
-        public String getCurrentPage()
-        {
-            return _currentPage;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCurrentPage(String currentPage)
-        {
-            _currentPage = currentPage;
-        }
-    }
+    public record GetWikiTocForm(String currentPage){}
 
     @RequiresPermission(ReadPermission.class)
     public static class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
@@ -2564,7 +2534,7 @@ public class WikiController extends SpringActionController
             response.put("pages", pageProps);
 
             Set<String> expandedPaths = NavTreeManager.getExpandedPathsCopy(getViewContext(), WikiTOC.getNavTreeId(getContainer()));
-            applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
+            applyExpandedState(pageProps, expandedPaths, form.currentPage());
 
             //include info about the current container
             Map<String, Object> containerProps = new HashMap<>();
@@ -2572,9 +2542,9 @@ public class WikiController extends SpringActionController
             containerProps.put("id", container.getId());
             containerProps.put("path", container.getPath());
 
-            if (form.getCurrentPage() != null)
+            if (form.currentPage() != null)
             {
-                Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.getCurrentPage());
+                Wiki wiki = WikiSelectManager.getWiki(getContainer(), form.currentPage());
                 if (wiki != null)
                 {
                     WikiVersion version = wiki.getLatestVersion();

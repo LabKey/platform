@@ -31,6 +31,7 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HttpUtil;
@@ -78,6 +79,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig, ContainerUser
 {
@@ -122,27 +124,22 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             setCommandClass(typeBest);
     }
 
-
     protected abstract String getCommandClassMethodName();
-
 
     protected BaseViewAction(@NotNull Class<? extends FORM> commandClass)
     {
         setCommandClass(commandClass);
     }
 
-
     public void setProperties(PropertyValues pvs)
     {
         _pvs = pvs;
     }
 
-
     public void setProperties(Map<?,?> m)
     {
         _pvs = new MutablePropertyValues(m);
     }
-
 
     /* Doesn't guarantee non-null, non-empty */
     public Object getProperty(String key, String d)
@@ -151,13 +148,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return pv == null ? d : pv.getValue();
     }
 
-
     public Object getProperty(Enum<?> key)
     {
         PropertyValue pv = _pvs.getPropertyValue(key.name());
         return pv == null ? null : pv.getValue();
     }
-
 
     public Object getProperty(String key)
     {
@@ -169,7 +164,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     {
         return _pvs;
     }
-
 
     public static PropertyValues getPropertyValuesForFormBinding(PropertyValues pvs, @NotNull Predicate<String> allowBind)
     {
@@ -183,7 +177,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
         return ret;
     }
-
 
     /// Some characters can be mishandled by the browser in multipart/formdata requests (e.g. doublequote and backslask).
     /// We support an encoding from fields to avoid these characters, see {@link PageFlowUtil#encodeFormName} and {@link PageFlowUtil#decodeFormName}.
@@ -217,7 +210,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
         return handleRequest();
     }
-
 
     private void handleSpecialProperties()
     {
@@ -260,13 +252,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
 
     public abstract ModelAndView handleRequest() throws Exception;
 
-
     @Override
     public void setPageConfig(PageConfig page)
     {
         _pageConfig = page;
     }
-
 
     @Override
     public Container getContainer()
@@ -274,13 +264,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return getViewContext().getContainer();
     }
 
-
     @Override
     public User getUser()
     {
         return getViewContext().getUser();
     }
-
 
     @Override
     public PageConfig getPageConfig()
@@ -288,26 +276,22 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _pageConfig;
     }
 
-
     public void setTitle(String title)
     {
         assert null != getPageConfig() : "action not initialized property";
         getPageConfig().setTitle(title);
     }
 
-
     public void setHelpTopic(String topicName)
     {
         setHelpTopic(new HelpTopic(topicName));
     }
-
 
     public void setHelpTopic(HelpTopic topic)
     {
         assert null != getPageConfig() : "action not initialized properly";
         getPageConfig().setHelpTopic(topic);
     }
-
 
     protected Object newInstance(Class<?> c)
     {
@@ -324,7 +308,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         }
     }
 
-
     protected @NotNull FORM getCommand(HttpServletRequest request) throws Exception
     {
         FORM command = (FORM) createCommand();
@@ -335,12 +318,10 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return command;
     }
 
-
     protected @NotNull FORM getCommand() throws Exception
     {
         return getCommand(getViewContext().getRequest());
     }
-
 
     //
     // PARAMETER BINDING
@@ -353,6 +334,32 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return defaultBindParameters(form, getCommandName(), params);
     }
 
+    /**
+     * Bind request parameters to the action's command class, dispatching to record binding when that class is a Java
+     * record. Records are immutable (no setters), so instead of instantiating the form and populating it via Spring data
+     * binding we collect the property values into a map and construct the record via its {@link ObjectFactory}. Callers
+     * that previously invoked {@code defaultBindParameters(getCommand(), params)} directly should prefer this method so
+     * they transparently gain record support.
+     */
+    public @NotNull BindException defaultBindParameters(PropertyValues params) throws Exception
+    {
+        Class<?> commandClass = getCommandClass();
+        return commandClass.isRecord() ? bindParametersToRecord(commandClass, params) : defaultBindParameters(getCommand(), params);
+    }
+
+    // Simple binding for Java records: no support for binding errors, arrays, lists, etc.
+    public static <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
+    {
+        // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
+        // properties at record construction time and therefore can't invoke allowBindParameter() prior to that.
+        PropertyValues m = getPropertyValuesForFormBinding(pvs, HasAllowBindParameter.getDefaultPredicate());
+        ObjectFactory<R> factory = ObjectFactory.Registry.getFactory(recordClass);
+        Map<String, Object> map = m.stream()
+            .filter(pv -> pv.getValue() != null)
+            .collect(Collectors.toMap(PropertyValue::getName, PropertyValue::getValue));
+        R record = factory.fromMap(map);
+        return new NullSafeBindException(record, "Form");
+    }
 
     public static @NotNull BindException defaultBindParameters(Object form, String commandName, PropertyValues params)
     {
