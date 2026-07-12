@@ -69,6 +69,8 @@ public class RecordFactory<K> implements ObjectFactory<K>
             .toList();
     }
 
+    // Throws IllegalArgumentException for missing primitive parameters and ConversionExceptions for parameters that
+    // fail type conversion
     private <MAP extends Map<String, ?> & CaseInsensitiveCollection> K fromCaseInsensitiveMap(MAP m)
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
