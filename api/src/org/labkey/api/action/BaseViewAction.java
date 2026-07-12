@@ -365,7 +365,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             R record = factory.fromMap(map);
             errors = new NullSafeBindException(record, commandName);
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalArgumentException | ConversionException e)
         {
             // We have no instance to bind to, so report a global error with details
             errors = new NullSafeBindException(new Object(), commandName);

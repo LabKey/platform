@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
@@ -191,13 +192,15 @@ public class RecordFactory<K> implements ObjectFactory<K>
         @Test
         public void testRecordBinding()
         {
+            Date lastLogin = new Date();
+
             // Provide all parameters
             testRecordBinding(Map.of(
                 "FirstName", "Fred",
                 "LastName", "Flintstone",
-                "LastLogin", "2026-07-12",
+                "LastLogin", DateUtil.formatIsoDateLongTime(lastLogin),
                 "UserId", 1009
-            ), "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=Sun Jul 12 00:00:00 PDT 2026, userid=1009]");
+            ), "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=" + lastLogin + ", userid=1009]");
 
             // Provide just the primitive parameter; others are nullable
             testRecordBinding(Map.of(
@@ -206,6 +209,9 @@ public class RecordFactory<K> implements ObjectFactory<K>
 
             // No parameters should fail due to "userid" primitive. Ensure a reasonable error message.
             testRecordBinding(Map.of(), "Unable to bind parameters to MiniUser: Primitive parameter \"userid\" is required");
+
+            // Verify message for conversion error
+            testRecordBinding(Map.of("UserId", "abc"), "Unable to bind parameters to MiniUser: Could not convert 'abc' to an integer");
         }
 
         private void testRecordBinding(Map<String, Object> map, String expectedToStringOrError)
