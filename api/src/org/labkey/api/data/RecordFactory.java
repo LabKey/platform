@@ -74,6 +74,20 @@ public class RecordFactory<K> implements ObjectFactory<K>
         {
             return _constructor.newInstance(params);
         }
+        catch (IllegalArgumentException e)
+        {
+            // Try to determine if this failed due to missing primitive parameters to improve the exception message
+            List<String> missingPrimitiveParameters = Arrays.stream(_parameters)
+                .filter(p -> p.getType().isPrimitive())
+                .map(Parameter::getName)
+                .filter(name -> m.get(name) == null)
+                .toList();
+            if (missingPrimitiveParameters.isEmpty())
+                throw e; // Unclear what the problem is, so just re-throw
+            if (missingPrimitiveParameters.size() == 1)
+                throw new IllegalArgumentException("Primitive parameter \"" + missingPrimitiveParameters.getFirst() + "\" is required");
+            throw new IllegalArgumentException("One or more primitive parameters are missing. Primitive parameters include: " + missingPrimitiveParameters);
+        }
         catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
             throw new RuntimeException(e);

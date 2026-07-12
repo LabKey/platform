@@ -81,6 +81,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+
 public abstract class BaseViewAction<FORM> extends PermissionCheckableAction implements Validator, HasPageConfig, ContainerUser
 {
     protected static final Logger logger = LogHelper.getLogger(BaseViewAction.class, "BaseViewAction");
@@ -348,7 +350,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
     // Simple binding for Java records: no support for binding errors, arrays, lists, etc.
-    public static <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
+    public <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
     {
         // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
         // properties at record construction time and therefore can't invoke allowBindParameter() prior to that.
@@ -357,8 +359,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         Map<String, Object> map = m.stream()
             .filter(pv -> pv.getValue() != null)
             .collect(Collectors.toMap(PropertyValue::getName, PropertyValue::getValue));
-        R record = factory.fromMap(map);
-        return new NullSafeBindException(record, "Form");
+        BindException errors;
+        try
+        {
+            R record = factory.fromMap(map);
+            errors = new NullSafeBindException(record, getCommandName());
+        }
+        catch (IllegalArgumentException e)
+        {
+            // We have no instance to bind to, so report a global error with details
+            errors = new NullSafeBindException(new Object(), getCommandName());
+            errors.reject(ERROR_MSG, "Unable to bind parameters to " + recordClass.getSimpleName() + ": " + e.getMessage());
+        }
+        return errors;
     }
 
     public static @NotNull BindException defaultBindParameters(Object form, String commandName, PropertyValues params)
@@ -405,28 +418,28 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             // Maybe we should propagate exception and return SC_BAD_REQUEST (in ExceptionUtil.handleException())
             // most POST handlers check errors.hasErrors(), but not all GET handlers do
             BindException errors = new BindException(command, commandName);
-            errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getPropertyName());
+            errors.reject(ERROR_MSG, "Error binding property: " + x.getPropertyName());
             return errors;
         }
         catch (NumberFormatException x)
         {
             // Malformed array parameter throws this exception, unfortunately. Just reject the request. #21931
             BindException errors = new BindException(command, commandName);
-            errors.reject(SpringActionController.ERROR_MSG, "Error binding array property; invalid array index (" + x.getMessage() + ")");
+            errors.reject(ERROR_MSG, "Error binding array property; invalid array index (" + x.getMessage() + ")");
             return errors;
         }
         catch (NegativeArraySizeException x)
         {
             // Another malformed array parameter throws this exception. #23929
             BindException errors = new BindException(command, commandName);
-            errors.reject(SpringActionController.ERROR_MSG, "Error binding array property; negative array size (" + x.getMessage() + ")");
+            errors.reject(ERROR_MSG, "Error binding array property; negative array size (" + x.getMessage() + ")");
             return errors;
         }
         catch (IllegalArgumentException x)
         {
             // General bean binding problem. #23929
             BindException errors = new BindException(command, commandName);
-            errors.reject(SpringActionController.ERROR_MSG, "Error binding property; (" + x.getMessage() + ")");
+            errors.reject(ERROR_MSG, "Error binding property; (" + x.getMessage() + ")");
             return errors;
         }
     }
