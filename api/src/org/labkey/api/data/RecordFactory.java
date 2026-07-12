@@ -19,11 +19,16 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
+import org.springframework.validation.BindException;
+import org.springframework.validation.ObjectError;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -150,7 +155,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws SQLException
+        public void testDatabase() throws SQLException
         {
             Map<String, Object> adHocMap = new CaseInsensitiveHashMap<>();
             adHocMap.put("FirstName", "Keyser");
@@ -181,6 +186,44 @@ public class RecordFactory<K> implements ObjectFactory<K>
 
             // Test fromMap() variant (should ignore selectedUser)
             assertEquals(adHocUser, factory.fromMap(selectedUser, adHocMap));
+        }
+
+        @Test
+        public void testRecordBinding()
+        {
+            // Provide all parameters
+            testRecordBinding(Map.of(
+                "FirstName", "Fred",
+                "LastName", "Flintstone",
+                "LastLogin", "2026-07-12",
+                "UserId", 1009
+            ), "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=Sun Jul 12 00:00:00 PDT 2026, userid=1009]");
+
+            // Provide just the primitive parameter; others are nullable
+            testRecordBinding(Map.of(
+                "UserId", 1009
+            ), "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=1009]");
+
+            // No parameters should fail due to "userid" primitive. Ensure a reasonable error message.
+            testRecordBinding(Map.of(), "Unable to bind parameters to MiniUser: Primitive parameter \"userid\" is required");
+        }
+
+        private void testRecordBinding(Map<String, Object> map, String expectedToStringOrError)
+        {
+            PropertyValues pvs = new MutablePropertyValues(map);
+            BindException be = BaseViewAction.bindParametersToRecord(MiniUser.class, pvs, "form");
+            if (be.hasErrors())
+            {
+                ObjectError error = be.getGlobalError();
+                assertNotNull(error);
+                assertEquals(expectedToStringOrError, error.getDefaultMessage());
+            }
+            else
+            {
+                MiniUser user = (MiniUser) be.getTarget();
+                assertNotNull(user);
+                assertEquals(expectedToStringOrError, user.toString());
+            }
         }
 
         // Simple test record. Weird casing is intentional to test case-insensitivity.

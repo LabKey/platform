@@ -346,11 +346,11 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     public @NotNull BindException defaultBindParameters(PropertyValues params) throws Exception
     {
         Class<?> commandClass = getCommandClass();
-        return commandClass.isRecord() ? bindParametersToRecord(commandClass, params) : defaultBindParameters(getCommand(), params);
+        return commandClass.isRecord() ? bindParametersToRecord(commandClass, params, getCommandName()) : defaultBindParameters(getCommand(), params);
     }
 
     // Simple binding for Java records: no support for binding errors, arrays, lists, etc.
-    public <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
+    public static <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs, String commandName)
     {
         // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
         // properties at record construction time and therefore can't invoke allowBindParameter() prior to that.
@@ -363,12 +363,12 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         try
         {
             R record = factory.fromMap(map);
-            errors = new NullSafeBindException(record, getCommandName());
+            errors = new NullSafeBindException(record, commandName);
         }
         catch (IllegalArgumentException e)
         {
             // We have no instance to bind to, so report a global error with details
-            errors = new NullSafeBindException(new Object(), getCommandName());
+            errors = new NullSafeBindException(new Object(), commandName);
             errors.reject(ERROR_MSG, "Unable to bind parameters to " + recordClass.getSimpleName() + ": " + e.getMessage());
         }
         return errors;
