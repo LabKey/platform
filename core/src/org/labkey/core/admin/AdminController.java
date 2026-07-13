@@ -146,6 +146,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
@@ -3524,6 +3525,25 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "Secrets", this.getClass());
         }
     }
+
+    // NOTE let the Professional Module register this action (there is no ProfessionalController)
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class AssistantStatusAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return McpService.get().getAssistantStatusView();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+        }
+    }
+
 
 
     public static class ConfigureSystemMaintenanceForm
@@ -11142,9 +11162,10 @@ public class AdminController extends SpringActionController
             res.put("server", AdminBean.getPropertyMap());
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
-            new SqlSelector(CoreSchema.getInstance().getScope(),
-                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+            var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
+                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+            new SqlSelector(CoreSchema.getInstance().getScope(), sql)
+                    .forEachMap(m ->
                 {
                     String category = (String)m.get("category");
                     String name = (String)m.get("name");
