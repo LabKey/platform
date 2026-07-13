@@ -142,6 +142,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -1291,6 +1292,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
+        RoleManager.registerPermission(new EditModuleResourcesPermission(), false);
         MarkdownService.setInstance(new MarkdownServiceImpl());
 
         // initialize email preference service and listeners
