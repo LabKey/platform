@@ -350,7 +350,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
     // Simple binding for Java records: provides binding errors for missing primitive parameters and type conversions
-    // failures. Current no support for array or list parameter types.
+    // failures. Currently no support for array or list parameter types.
     public static <R> BindException bindParametersToRecord(Class<R> recordClass, PropertyValues pvs, String commandName)
     {
         // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
