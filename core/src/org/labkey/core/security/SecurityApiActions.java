@@ -1558,6 +1558,9 @@ public class SecurityApiActions
         }
     }
 
+    /**
+     * Note: DeleteUserPermission is granted to Application Admins and above, so Project Admins can never delete a user
+     */
     @RequiresPermission(DeleteUserPermission.class)
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
@@ -1911,7 +1914,8 @@ public class SecurityApiActions
     }
 
     /**
-     * Invalidate existing password and send new password link
+     * Invalidate existing password and send new password link. Note: UpdateUserPermission is granted to Application
+     * Admins and above, so Project Admins can never rotate a user's password.
      */
     @RequiresPermission(UpdateUserPermission.class)
     public static class AdminRotatePasswordAction extends MutatingApiAction<UserForm>
