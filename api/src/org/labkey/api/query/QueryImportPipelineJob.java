@@ -441,4 +441,10 @@ public class QueryImportPipelineJob extends PipelineJob
         return _additionalJobResponseInfo;
     }
 
+    public String getImportSourceDescription()
+    {
+        FileLike primaryFile = _importContextBuilder == null ? null : _importContextBuilder.getPrimaryFile();
+        return primaryFile != null ? primaryFile.getName() : "";
+    }
+
 }
