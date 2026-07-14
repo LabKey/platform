@@ -128,7 +128,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -323,7 +322,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    abstract static class BaseStylesheetAction extends ExportAction
+    abstract static class BaseStylesheetAction extends ExportAction<Object>
     {
         @Override
         public void checkPermissions() throws UnauthorizedException
@@ -2872,8 +2871,7 @@ public class CoreController extends SpringActionController
             {
                 try
                 {
-                    HashMap<String, String> labels =
-                            JsonUtil.DEFAULT_MAPPER.readValue(form.getLabelsJson(), HashMap.class);
+                    HashMap<String, String> labels = JsonUtil.DEFAULT_MAPPER.readValue(form.getLabelsJson(), HashMap.class);
                     _customLabelProvider.saveLabels(labels, getContainer(), getUser());
                 }
                 catch (Exception e)

@@ -258,7 +258,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             throw new DeprecatedActionException(actionClass);
     }
 
-
     private void checkPermissionsAndTermsOfUse(Set<Role> contextualRoles, boolean isSendBasic) throws UnauthorizedException
     {
         checkActionPermissions(contextualRoles);
@@ -266,7 +265,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         if (!getClass().isAnnotationPresent(IgnoresTermsOfUse.class))
             verifyTermsOfUse(isSendBasic);
     }
-
 
     /**
      * Check if terms of use are ever required for this request. If so, enumerate all the terms-of-use providers and ask
@@ -288,7 +286,6 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         for (SecurityManager.TermsOfUseProvider provider : SecurityManager.getTermsOfUseProviders())
             provider.verifyTermsOfUse(context, isBasicAuth);
     }
-
 
     /**
      * Actions may provide a set of {@link Role}s used during permission checking
