@@ -46,6 +46,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -508,6 +509,7 @@ public class ApiModule extends CodeOnlyModule
             ApiKeyManager.TestCase.class,
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
+            BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
