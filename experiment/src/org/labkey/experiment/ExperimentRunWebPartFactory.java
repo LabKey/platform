@@ -53,6 +53,14 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
         return webPart.getPropertyMap().get(EXPERIMENT_RUN_FILTER);
     }
 
+    /**
+     * Create a unique data region name for the webpart.
+     */
+    private String getDataRegionName(Portal.WebPart webPart, int index)
+    {
+        return String.format("expRunWebPart_%d_%d", webPart.getIndex(), index);
+    }
+
     public static class Bean
     {
         private final Set<ExperimentRunType> _types;
@@ -106,9 +114,12 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
                 VBox result = new VBox();
                 result.setTitle("Experiment Runs");
                 result.setFrame(WebPartView.FrameType.PORTAL);
+                int gridIndex = 0;
                 for (ExperimentRunType runType : runTypes)
                 {
                     ExperimentRunListView runView = ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), runType);
+                    // GitHub Issue 1295: give each grid a unique data region name
+                    runView.getSettings().setDataRegionName(getDataRegionName(webPart, gridIndex++));
                     if (runType != ExperimentRunType.ALL_RUNS_TYPE)
                     {
                         runView.setTitle(runType.getDescription() + " Runs");
@@ -126,6 +137,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
         }
 
         ExperimentRunListView result = ExperimentService.get().createExperimentRunWebPart(new ViewContext(portalCtx), selectedType);
+        result.getSettings().setDataRegionName(getDataRegionName(webPart, 0));
         if (selectedType != ExperimentRunType.ALL_RUNS_TYPE)
         {
             result.setTitle(result.getTitle() + " (" + selectedType.getDescription() + ")");
