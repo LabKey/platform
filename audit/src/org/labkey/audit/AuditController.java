@@ -383,7 +383,9 @@ public class AuditController extends SpringActionController
         {
             AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
-            ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), elevatedUser);
+            // Issue 1307: scope strictly to the current container. 26.7 removed cross-type file imports, a transaction's rows live in the same
+            // container as the transaction
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getContainer(), elevatedUser);
             if (form.isSampleType())
                 results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
             else
@@ -403,7 +405,6 @@ public class AuditController extends SpringActionController
         private Long _transactionAuditId;
         private String _dataType;
         private boolean _isSampleType;
-        String _containerFilter;
 
         public Long getTransactionAuditId()
         {
@@ -428,16 +429,6 @@ public class AuditController extends SpringActionController
         public boolean isSampleType()
         {
             return _isSampleType;
-        }
-
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
         }
 
         public void validate(Errors errors)
