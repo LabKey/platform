@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -75,7 +76,14 @@ public class RecordFactory<K> implements ObjectFactory<K>
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
             Object value = m.get(p.getName());
-            return value != null ? ConvertUtils.convert(value, p.getType()) : null;
+            try
+            {
+                return value != null ? ConvertUtils.convert(value, p.getType()) : null;
+            }
+            catch (ConversionException e)
+            {
+                throw e;
+            }
         }).toArray();
 
         try
@@ -192,51 +200,143 @@ public class RecordFactory<K> implements ObjectFactory<K>
         }
 
         @Test
-        public void testRecordBinding()
+        public void testBinding()
         {
             Date lastLogin = new Date();
 
             // Provide all parameters
-            testRecordBinding(Map.of(
-                "FirstName", "Fred",
-                "LastName", "Flintstone",
-                "LastLogin", DateUtil.formatIsoDateLongTime(lastLogin),
-                "UserId", 1009
-            ), "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=" + lastLogin + ", userid=1009]");
+            Map<String, Object> params = Map.of(
+                "firstName", "Fred",
+                "lastName", "Flintstone",
+                "lastLogin", DateUtil.formatIsoDateLongTime(lastLogin),
+                "userId", 1009
+            );
+            String toString = "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=" + lastLogin + ", userid=1009]";
+            testRecordBinding(params, toString);
+            testFormBinding(params, toString);
 
             // Provide just the primitive parameter; others are nullable
-            testRecordBinding(Map.of(
-                "UserId", 1009
-            ), "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=1009]");
+            params = Map.of(
+                "userId", 1009
+            );
+            toString = "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=1009]";
+            testRecordBinding(params, toString);
+            testFormBinding(params, toString);
 
-            // No parameters should fail due to "userid" primitive. Ensure a reasonable error message.
+            // No parameters should fail for record due to "userid" primitive. Ensure a reasonable error message.
             testRecordBinding(Map.of(), "Unable to bind parameters to MiniUser: Primitive parameter \"userid\" is required");
+            // No parameters should succeed for form class. UserId simply defaults to 0;
+            testFormBinding(Map.of(), "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=0]");
 
             // Verify message for conversion error
             testRecordBinding(Map.of("UserId", "abc"), "Unable to bind parameters to MiniUser: Could not convert 'abc' to an integer");
+            testFormBinding(Map.of("UserId", "abc"), "Failed to convert property value of type 'java.lang.String' to required type 'int' for property 'UserId'; Could not convert 'abc' to an integer");
         }
 
         private void testRecordBinding(Map<String, Object> map, String expectedToStringOrError)
         {
             PropertyValues pvs = new MutablePropertyValues(map);
             BindException be = BaseViewAction.bindParametersToRecord(MiniUser.class, pvs, "form");
+
             if (be.hasErrors())
             {
-                ObjectError error = be.getGlobalError();
-                assertNotNull(error);
-                assertEquals(expectedToStringOrError, error.getDefaultMessage());
+                validateError(be, expectedToStringOrError);
             }
             else
             {
-                MiniUser user = (MiniUser) be.getTarget();
-                assertNotNull(user);
-                assertEquals(expectedToStringOrError, user.toString());
+                validateTarget(be.getTarget(), expectedToStringOrError);
             }
+        }
+
+        private void testFormBinding(Map<String, Object> map, String expectedToStringOrError)
+        {
+            PropertyValues pvs = new MutablePropertyValues(map);
+            BindException be = BaseViewAction.defaultBindParameters(new MiniUserForm(), "form", pvs);
+
+            if (be.hasErrors())
+            {
+                validateError(be, expectedToStringOrError);
+            }
+            else
+            {
+                validateTarget(be.getTarget(), expectedToStringOrError);
+            }
+        }
+
+        private void validateError(BindException be, String expectedErrorMessage)
+        {
+            ObjectError error = be.getAllErrors().getFirst();
+            assertNotNull(error);
+            assertEquals(expectedErrorMessage, error.getDefaultMessage());
+        }
+
+        private void validateTarget(Object user, String expectedToString)
+        {
+            assertNotNull(user);
+            assertEquals(expectedToString, user.toString());
         }
 
         // Simple test record. Weird casing is intentional to test case-insensitivity.
         private record MiniUser(String FIRSTname, String LASTNAME, Date LastLogin, int userid)
         {
+        }
+
+        // Simple test form
+        @SuppressWarnings("unused")
+        private static class MiniUserForm
+        {
+            String _firstName;
+            String _lastName;
+            Date _lastLogin;
+            int _userId;
+
+            public String getFirstName()
+            {
+                return _firstName;
+            }
+
+            public void setFirstName(String firstName)
+            {
+                _firstName = firstName;
+            }
+
+            public String getLastName()
+            {
+                return _lastName;
+            }
+
+            public void setLastName(String lastName)
+            {
+                _lastName = lastName;
+            }
+
+            public Date getLastLogin()
+            {
+                return _lastLogin;
+            }
+
+            public void setLastLogin(Date lastLogin)
+            {
+                _lastLogin = lastLogin;
+            }
+
+            public int getUserId()
+            {
+                return _userId;
+            }
+
+            public void setUserId(int userId)
+            {
+                _userId = userId;
+            }
+
+            @Override
+            public String toString()
+            {
+                // No useful default toString(), so emulate the standard record toString(). That's good enough to verify
+                // that the parameters were bound correctly.
+                return "MiniUser[FIRSTname=" + _firstName + ", LASTNAME=" + _lastName + ", LastLogin=" + _lastLogin + ", userid=" + _userId + "]";
+            }
         }
     }
 }

@@ -1089,7 +1089,7 @@ public class SecurityApiActions
         {
             Container container = getContainer();
             if (!container.isRoot() && !container.isProject())
-                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
+                throw new IllegalArgumentException("You may not manage groups at the folder level. Call this API at the project or root level.");
 
             if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(UpdateUserPermission.class) )
             {
