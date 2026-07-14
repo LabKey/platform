@@ -371,7 +371,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             // Missing primitive parameter or type conversion error. We have no instance to bind to, so report a global
             // error with details.
             errors = new NullSafeBindException(new Object(), commandName);
-            errors.reject(ERROR_MSG, "Unable to bind parameters to " + recordClass.getSimpleName() + ": " + e.getMessage());
+            errors.reject(ERROR_MSG, e.getMessage());
         }
         return errors;
     }

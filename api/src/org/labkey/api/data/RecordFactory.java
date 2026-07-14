@@ -70,8 +70,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
             .toList();
     }
 
-    // Throws IllegalArgumentException for missing primitive parameters and ConversionExceptions for parameters that
-    // fail type conversion
+    // Throws IllegalArgumentExceptions for missing primitive parameters and conversion errors
     private <MAP extends Map<String, ?> & CaseInsensitiveCollection> K fromCaseInsensitiveMap(MAP m)
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
@@ -82,7 +81,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
             }
             catch (ConversionException e)
             {
-                throw e;
+                throw new IllegalArgumentException("Failed to convert property value of type '" + value.getClass().getName() + "' to required type '" + p.getType() + "' for property '" + p.getName() + "'; " + e.getMessage());
             }
         }).toArray();
 
@@ -192,7 +191,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
                 Assert.assertEquals(users.getFirst(), factory.handle(rs));
             }
             MiniUser randomUser = users.get((int)(Math.random() * users.size()));
-            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userid), null).getObject(MiniUser.class);
+            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.UserId), null).getObject(MiniUser.class);
             Assert.assertEquals(randomUser, selectedUser);
 
             // Test fromMap() variant (should ignore selectedUser)
@@ -211,7 +210,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
                 "lastLogin", DateUtil.formatIsoDateLongTime(lastLogin),
                 "userId", 1009
             );
-            String toString = "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, LastLogin=" + lastLogin + ", userid=1009]";
+            String toString = "MiniUser[FIRSTname=Fred, LASTNAME=Flintstone, lastLogin=" + lastLogin + ", UserId=1009]";
             testRecordBinding(params, toString);
             testFormBinding(params, toString);
 
@@ -219,18 +218,20 @@ public class RecordFactory<K> implements ObjectFactory<K>
             params = Map.of(
                 "userId", 1009
             );
-            toString = "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=1009]";
+            toString = "MiniUser[FIRSTname=null, LASTNAME=null, lastLogin=null, UserId=1009]";
             testRecordBinding(params, toString);
             testFormBinding(params, toString);
 
             // No parameters should fail for record due to "userid" primitive. Ensure a reasonable error message.
-            testRecordBinding(Map.of(), "Unable to bind parameters to MiniUser: Primitive parameter \"userid\" is required");
+            testRecordBinding(Map.of(), "Primitive parameter \"UserId\" is required");
             // No parameters should succeed for form class. UserId simply defaults to 0;
-            testFormBinding(Map.of(), "MiniUser[FIRSTname=null, LASTNAME=null, LastLogin=null, userid=0]");
+            testFormBinding(Map.of(), "MiniUser[FIRSTname=null, LASTNAME=null, lastLogin=null, UserId=0]");
 
             // Verify message for conversion error
-            testRecordBinding(Map.of("UserId", "abc"), "Unable to bind parameters to MiniUser: Could not convert 'abc' to an integer");
-            testFormBinding(Map.of("UserId", "abc"), "Failed to convert property value of type 'java.lang.String' to required type 'int' for property 'UserId'; Could not convert 'abc' to an integer");
+            params = Map.of("UserId", "abc");
+            String errorMessage = "Failed to convert property value of type 'java.lang.String' to required type 'int' for property 'UserId'; Could not convert 'abc' to an integer";
+            testRecordBinding(params, errorMessage);
+            testFormBinding(params, errorMessage);
         }
 
         private void testRecordBinding(Map<String, Object> map, String expectedToStringOrError)
@@ -277,7 +278,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
         }
 
         // Simple test record. Weird casing is intentional to test case-insensitivity.
-        private record MiniUser(String FIRSTname, String LASTNAME, Date LastLogin, int userid)
+        private record MiniUser(String FIRSTname, String LASTNAME, Date lastLogin, int UserId)
         {
         }
 
@@ -335,7 +336,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
             {
                 // No useful default toString(), so emulate the standard record toString(). That's good enough to verify
                 // that the parameters were bound correctly.
-                return "MiniUser[FIRSTname=" + _firstName + ", LASTNAME=" + _lastName + ", LastLogin=" + _lastLogin + ", userid=" + _userId + "]";
+                return "MiniUser[FIRSTname=" + _firstName + ", LASTNAME=" + _lastName + ", lastLogin=" + _lastLogin + ", UserId=" + _userId + "]";
             }
         }
     }
