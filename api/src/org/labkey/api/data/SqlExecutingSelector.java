@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -34,9 +36,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
 
@@ -49,6 +53,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     // Warn when this many (or more) rows are pulled into a Java collection; suggests switching to a streaming method
     private static final int LARGE_RESULT_THRESHOLD = 10_000;
+
+    // Throttles the large-result warning to at most once per day per unique call stack, so a legitimately large (but
+    // expected) load doesn't flood the log. Keyed by a signature of the call stack; see getArrayList().
+    private static final Cache<String, Boolean> LARGE_RESULT_WARNING_THROTTLE = CacheManager.getCache(1000, CacheManager.DAY, "SqlSelector large result warnings");
 
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
@@ -84,19 +92,37 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     @Override
     public Connection getConnection() throws SQLException
     {
-        return getEffectiveConnectionFactory().get();
+        // Public callers may hold the returned Connection beyond this call, so treat it as "escaping": don't borrow the
+        // thread's shared connection. Internal callers that fully consume and close the ResultSet within a single
+        // selector call use getConnection(true); see getEffectiveConnectionFactory().
+        return getConnection(false);
+    }
+
+    Connection getConnection(boolean selfContained) throws SQLException
+    {
+        return getEffectiveConnectionFactory(selfContained).get();
     }
 
     /**
      * Determines which {@link ConnectionFactory} to use for this query. When a caller has explicitly chosen a caching
      * behavior via {@link #setJdbcCaching(boolean)} or supplied a Connection at construction time, that choice is
-     * honored. Otherwise, JDBC caching is disabled by default: we ask the dialect for a streaming ConnectionFactory so
-     * the driver won't buffer the entire ResultSet in memory. The dialect returns null (meaning "use the shared
-     * Connection with the driver's default caching") when a transaction is active, the dialect is not PostgreSQL, or the
-     * statement is not a SELECT, so this default is safe by construction. Resolving lazily here (rather than at
-     * construction) ensures the transaction check reflects the state at execution time.
+     * honored. Otherwise, JDBC caching is disabled by default: we ask the dialect for a ConnectionFactory so the driver
+     * won't buffer the entire ResultSet in memory.
+     * <p>
+     * The {@code selfContained} flag reflects how the ResultSet is consumed. When true (e.g. {@link #getArrayList},
+     * {@link #forEach}, {@link #getRowCount}), the ResultSet is fully consumed and closed within this selector call, so
+     * the dialect may borrow the thread's shared, ref-counted connection — nested queries then reuse it (avoiding
+     * connection-pool exhaustion) and connection-local state (temp tables, search_path) stays visible — because its
+     * state can be restored before control returns to the caller. When false (e.g. {@code getResultSet(false)},
+     * {@link #uncachedStream}), a live ResultSet/Stream is handed back to the caller, so the dialect uses a dedicated,
+     * unshared connection whose lifetime the caller controls.
+     * <p>
+     * The dialect returns null (meaning "use the shared Connection with the driver's default caching") when a
+     * transaction is active, the dialect is not PostgreSQL, or the statement is not a SELECT, so this default is safe by
+     * construction. Resolving lazily here (rather than at construction) ensures the transaction check reflects the state
+     * at execution time.
      */
-    private ConnectionFactory getEffectiveConnectionFactory()
+    private ConnectionFactory getEffectiveConnectionFactory(boolean selfContained)
     {
         // Honor an explicit setJdbcCaching() call (which populated _connectionFactory)...
         if (_jdbcCachingExplicitlySet)
@@ -106,7 +132,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (null != _conn)
             return super::getConnection;
 
-        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(false, getScope(),
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(false, selfContained, getScope(),
             new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
 
         return null != factory ? factory : super::getConnection;
@@ -141,7 +167,8 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (null != _conn)
             throw new IllegalStateException("Calling setJdbcCaching() is not valid when a Connection has already been provided");
 
-        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, getScope(),
+        // Explicitly disabling caching is documented to use an unshared Connection, so this path is never self-contained
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, false, getScope(),
             new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
         _connectionFactory = null != factory ? factory : super::getConnection;
         _jdbcCachingExplicitlySet = true;
@@ -163,11 +190,26 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
         if (result.size() >= LARGE_RESULT_THRESHOLD)
         {
-            LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to forEach(), forEachBatch(), or uncachedStream() to reduce memory usage. SQL: {}",
-                result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql(), new Throwable("Stack trace for large collection load"));
+            Throwable stackTrace = new Throwable("Stack trace for large collection load");
+            String stackKey = getStackKey(stackTrace);
+
+            // Warn at most once per day per unique call stack to avoid flooding the log. A benign race (two threads
+            // logging the same stack at once) is acceptable for a throttle.
+            if (null == LARGE_RESULT_WARNING_THROTTLE.get(stackKey))
+            {
+                LARGE_RESULT_WARNING_THROTTLE.put(stackKey, Boolean.TRUE);
+                LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to forEach(), forEachBatch(), or uncachedStream() to reduce memory usage. SQL: {}",
+                    result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql(), stackTrace);
+            }
         }
 
         return result;
+    }
+
+    // Builds a stable key from a Throwable's stack trace so identical call stacks map to the same throttle entry
+    private static String getStackKey(Throwable t)
+    {
+        return Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
     }
 
     /**
@@ -453,7 +495,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 if (null != _sql)
                 {
                     DbScope scope = getScope();
-                    conn = getConnection();
+                    // _closeResultSet means this factory fully consumes and closes the ResultSet within this call, so
+                    // the connection can be borrowed from the thread and restored rather than dedicated to the caller
+                    conn = getConnection(_closeResultSet);
 
                     try
                     {

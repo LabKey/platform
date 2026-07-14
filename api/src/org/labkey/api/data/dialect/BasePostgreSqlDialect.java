@@ -1039,7 +1039,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
         // and it's a read-only statement (a SELECT), so we won't mess up any state the caller is relying on.
@@ -1047,11 +1047,31 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             return null;
         }
+        else if (selfContained)
+        {
+            // The ResultSet will be fully consumed and the connection released within a single selector call, so borrow
+            // the thread's shared, ref-counted connection (the same one scope.getConnection() hands out) instead of
+            // grabbing a separate one. Nested queries then reuse it (avoiding connection-pool exhaustion), and
+            // connection-local state (temp tables, search_path, session settings) stays visible. We piggyback on the
+            // existing thread-connection reference count rather than tracking our own: only the outermost borrower (when
+            // isThreadConnectionActive() is false) flips the connection into no-JDBC-caching mode and registers the
+            // restore via runOnClose, which ConnectionType.Thread fires when the last holder releases it (ref count
+            // returns to 0). Nested borrows find it already configured and reuse it as-is.
+            return () -> {
+                boolean alreadyHeld = scope.isThreadConnectionActive();
+                Connection conn = scope.getConnection();
+
+                if (!alreadyHeld && conn instanceof ConnectionWrapper cw)
+                    cw.setRunOnClose(configureToDisableJdbcCaching(cw, scope));
+
+                return conn;
+            };
+        }
         else
         {
-            // Factory that gets a fresh, read-only connection directly from the pool (not shared with the thread) and
-            // configures it to not cache ResultSet data in the JDBC driver, making it suitable for streaming very large
-            // ResultSets. See #39753 and #39888.
+            // The connection escapes the selector call (a live, streaming ResultSet/Stream is handed back to the caller)
+            // or the caller explicitly disabled caching, so use a fresh, read-only connection directly from the pool
+            // (not shared with the thread) whose lifetime the caller controls. See #39753 and #39888.
             return () -> {
                 ConnectionWrapper conn = scope.getPooledConnection(DbScope.ConnectionType.Pooled, null);
                 Closer closer = configureToDisableJdbcCaching(conn, scope);

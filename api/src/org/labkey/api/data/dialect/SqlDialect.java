@@ -361,8 +361,11 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Return a ConnectionFactory only if the default behavior needs to be overridden
-    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    // Return a ConnectionFactory only if the default behavior needs to be overridden. selfContained indicates that the
+    // ResultSet will be fully consumed and closed within a single selector call (so the shared, ref-counted thread
+    // connection can be borrowed and its state restored on release); when false, the connection escapes to the caller
+    // as a live ResultSet/Stream and must therefore be an unshared connection whose lifetime the caller controls.
+    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         return null;
     }

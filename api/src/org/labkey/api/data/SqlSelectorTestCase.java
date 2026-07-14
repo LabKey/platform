@@ -232,6 +232,43 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             }
         }
 
+        // A "self-contained" read (getArrayList(), forEach(), getRowCount(), etc., which fully consume and close the
+        // ResultSet within the call) borrows the thread's shared connection rather than a dedicated one, so nested
+        // queries reuse it and connection-local state stays visible. On PostgreSQL the outermost borrower puts it into
+        // no-caching mode and restores it on release; on SQL Server it's simply the shared connection.
+        Connection borrowed = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true);
+        try
+        {
+            // A plain thread-connection acquisition returns the very same object (it was borrowed, not dedicated)
+            try (Connection threadConn = scope.getConnection())
+            {
+                assertEquals(borrowed, threadConn);
+            }
+
+            // A nested self-contained read reuses the same connection rather than grabbing another one
+            try (Connection nested = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true))
+            {
+                assertEquals(borrowed, nested);
+            }
+
+            if (scope.getSqlDialect().isPostgreSQL())
+            {
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, borrowed.getTransactionIsolation());
+                assertFalse(borrowed.getAutoCommit());
+            }
+        }
+        finally
+        {
+            borrowed.close();
+        }
+
+        // Once the outermost borrower releases it, the thread connection is restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
+        }
+
         // Inside a transaction, the default must NOT grab a separate Connection, even on PostgreSQL: the caller may be
         // relying on reading its own uncommitted writes, so we fall back to the shared, transactional Connection.
         try (DbScope.Transaction tx = scope.ensureTransaction())
