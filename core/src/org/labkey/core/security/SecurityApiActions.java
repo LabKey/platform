@@ -1100,6 +1100,12 @@ public class SecurityApiActions
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
 
+            // A project group must belong to the current container
+            if (_group.getContainer() != null && !container.getId().equals(_group.getContainer()))
+            {
+                throw new UnauthorizedException("The specified group does not belong to this project.");
+            }
+
             SecurityController.verifyUserCanModifyGroup(_group, getUser());
 
             Map<String, String> memberErrors = new HashMap<>();
@@ -1213,6 +1219,11 @@ public class SecurityApiActions
 
                     if (principal == null && member.getEmail() != null) // create the user
                     {
+                        if (!getContainer().hasPermission(getUser(), AddUserPermission.class))
+                        {
+                            memberErrors.put(member.getEmail(), "You do not have permission to create new users.");
+                            continue;
+                        }
                         try
                         {
                             SecurityManager.NewUserStatus status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
