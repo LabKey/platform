@@ -722,7 +722,7 @@ public class SqlParser
     static private final Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "all","any","and","as","asc","avg",
             "between","both",
-            "case","class","count",
+            "case","class","count","current_date","current_time","current_timestamp",
             "delete","desc","distinct",
             "elements","else","empty","end","escape","except","exists",
             "false","fetch","from","full",
@@ -805,10 +805,132 @@ public class SqlParser
             message += ", expected '" + missing + "'";
 
         // append a targeted hint when the failure looks like a recognizable unsupported construct
-        String hint = SyntaxHints.forSyntaxError(re, tokens);
+        String hint = forSyntaxError(re, tokens);
         if (null != hint)
             message += ". " + hint;
         return message;
+    }
+
+
+    /**
+     * Suggestions for common standard-SQL constructs that LabKey SQL does not support. Authors (and AI assistants)
+     * regularly reach for window functions, OFFSET, EXTRACT, ILIKE, etc.; the generic "Syntax error near '...'" gives
+     * them no way to converge on working LabKey SQL, so we append a targeted hint when the failure looks recognizable.
+     *
+     * These hints are consulted ONLY after a parse error has already occurred, keyed off the token ANTLR blames (with a
+     * little look-behind for constructs where the blamed token is generic). None of the trigger words are reserved in
+     * LabKey SQL -- most are legal identifiers -- so this method must never influence what parses; message text only.
+     */
+    @Nullable
+    static String forSyntaxError(RecognitionException re, @Nullable CommonTokenStream tokens)
+    {
+        if (null == re.token || null == re.token.getText())
+            return null;
+        String near = re.token.getText().toLowerCase();
+        String prev1 = previousToken(tokens, re.token, 1);
+        String prev2 = previousToken(tokens, re.token, 2);
+        String prev3 = previousToken(tokens, re.token, 3);
+
+        switch (near)
+        {
+            case "offset":
+                return "OFFSET is not supported. Use LIMIT n; apply paging via the client API (maxRows/offset).";
+            case "fetch":
+                return "FETCH FIRST is not supported. Use LIMIT n.";
+            case "ilike":
+                return "ILIKE is not supported. Use LOWER(x) LIKE LOWER(pattern).";
+            case "using":
+                return "JOIN ... USING is not supported. Use JOIN ... ON a.col = b.col.";
+            case "nulls":
+                return "NULLS FIRST/LAST is not supported. Try ORDER BY x IS NULL, x.";
+            case ":":
+                return "The '::' cast syntax is not supported. Use CAST(expr AS TYPE).";
+            case "(":
+                // "MAX(a) OVER (...)" parses OVER as a column alias, so the '(' gets the blame
+                if ("over".equals(prev1))
+                    return "Window functions (OVER) are not supported in LabKey SQL.";
+                if ("filter".equals(prev1))
+                    return "FILTER is not supported. Use an aggregate over CASE: SUM(CASE WHEN condition THEN 1 ELSE 0 END).";
+                // "JOIN S USING (x)" parses USING as the table alias, so the '(' gets the blame
+                if ("using".equals(prev1))
+                    return "JOIN ... USING is not supported. Use JOIN ... ON a.col = b.col.";
+                // "CURRENT_DATE()" -- these are niladic keywords, not functions, so the trailing '(' is unexpected
+                if ("current_date".equals(prev1) || "current_time".equals(prev1) || "current_timestamp".equals(prev1))
+                    return "CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses; use them as bare keywords.";
+                return null;
+            case "distinct":
+                if ("is".equals(prev1) || "not".equals(prev1))
+                    return "IS [NOT] DISTINCT FROM is not supported. Use is_distinct_from(a, b) or is_not_distinct_from(a, b).";
+                if ("(".equals(prev1))
+                    return "DISTINCT is only supported inside COUNT() and GROUP_CONCAT().";
+                return null;
+            case "from":
+                // "EXTRACT(YEAR FROM d)" parses as a method call, so the FROM gets the blame
+                if ("(".equals(prev2) && "extract".equals(prev3))
+                    return "EXTRACT is not supported. Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc.";
+                return null;
+            default:
+                if (near.startsWith("'") && "interval".equals(prev1))
+                    return "INTERVAL literals are not supported. Use TIMESTAMPADD('SQL_TSI_DAY', n, ts) and TIMESTAMPDIFF().";
+                // "SELECT TOP 10 a FROM R" parses TOP as an expression, so the blame lands on a later token
+                if (("top".equals(prev1) && "select".equals(prev2)) || ("top".equals(prev2) && "select".equals(prev3)))
+                    return "TOP is not supported. Use LIMIT n at the end of the statement.";
+                return null;
+        }
+    }
+
+
+    @Nullable
+    private static String previousToken(@Nullable CommonTokenStream tokens, Token t, int back)
+    {
+        if (null == tokens)
+            return null;
+        int i = t.getTokenIndex();
+        if (i < back || i >= tokens.size())
+            return null;
+        Token p = tokens.get(i - back);
+        return null == p || null == p.getText() ? null : p.getText().toLowerCase();
+    }
+
+
+    // Suggestions for unrecognized method names, keyed by lower-cased name. These entries are valid on both
+    // databases; dialect-specific suggestions live in forUnknownMethod(). Some entries (len, charindex, instr)
+    // are dialect-specific methods that resolve on one database and land here on the other.
+    private static final Map<String, String> methodHints = Map.ofEntries(
+            Map.entry("position", "Use LOCATE(substring, string[, start])."),
+            Map.entry("extract", "Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc."),
+            Map.entry("string_agg", "Use GROUP_CONCAT([DISTINCT] expr[, separator])."),
+            Map.entry("nvl", "Use COALESCE(a, b) or IFNULL(a, b)."),
+            Map.entry("isnull", "Use IFNULL(a, b) or COALESCE(a, b)."),
+            Map.entry("iif", "Use CASE WHEN condition THEN a ELSE b END."),
+            Map.entry("if", "Use CASE WHEN condition THEN a ELSE b END."),
+            Map.entry("datediff", "Use TIMESTAMPDIFF('SQL_TSI_DAY', ts1, ts2) or AGE()/age_in_days()."),
+            Map.entry("dateadd", "Use TIMESTAMPADD('SQL_TSI_DAY', n, ts)."),
+            Map.entry("date_part", "Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc."),
+            Map.entry("day", "Use DAYOFMONTH(date)."),
+            Map.entry("len", "Use LENGTH(string)."),
+            Map.entry("instr", "Use LOCATE(substring, string)."),
+            Map.entry("charindex", "Use LOCATE(substring, string)."),
+            Map.entry("getdate", "Use NOW()."),
+            Map.entry("sysdate", "Use NOW().")
+    );
+
+    /**
+     * The suggestion should simply be appropriate for the current dialect -- never name a database product.
+     * A null dialect (expression parsing, tests) gets the portable suggestion.
+     */
+    @Nullable
+    static String forUnknownMethod(String name, @Nullable SqlDialect dialect)
+    {
+        boolean pg = null != dialect && dialect.isPostgreSQL();
+        return switch (name.toLowerCase())
+        {
+            case "trim" -> pg ? "Use btrim(x) or LTRIM(RTRIM(x))." : "Use LTRIM(RTRIM(x)).";
+            case "substring_index" -> pg ? "Use split_part(string, delimiter, n)." : null;
+            case "regexp_like", "regexp_matches" -> pg ? "Use similar_to(x, pattern) or regexp_replace(x, pattern, replacement)." : "Use LIKE with wildcards.";
+            case "date_trunc" -> pg ? "Use CAST(ts AS DATE) for day granularity, or to_char(ts, format)." : "Use CAST(ts AS DATE) for day granularity.";
+            default -> methodHints.get(name.toLowerCase());
+        };
     }
 
 
@@ -1184,7 +1306,7 @@ public class SqlParser
                     {
                         if (failOnUnrecognizedMethodName)
                         {
-                            String hint = SyntaxHints.forUnknownMethod(name, _dialect);
+                            String hint = forUnknownMethod(name, _dialect);
                             _parseErrors.add(new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, id.getLine(), id.getColumn()));
                         }
                     }
@@ -2206,7 +2328,7 @@ public class SqlParser
         "SELECT * FROM (WITH peeps AS (SELECT * FROM study.participant) SELECT * FROM peeps)"
     };
 
-    // unsupported standard-SQL constructs that should fail with a targeted hint (see SyntaxHints):
+    // unsupported standard-SQL constructs that should fail with a targeted hint (see forSyntaxError() above):
     // sql -> expected substring of the error message
     static List<Pair<String, String>> hintSql = Arrays.asList(
         new Pair<>("SELECT a FROM R LIMIT 5 OFFSET 10", "OFFSET is not supported"),
@@ -2223,16 +2345,16 @@ public class SqlParser
         new Pair<>("SELECT a FROM R WHERE a IS NOT DISTINCT FROM b", "is_distinct_from"),
         new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
         new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
-        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported")
+        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
+        new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses")
     );
 
-    // unrecognized method names that should fail with a suggested replacement (see SyntaxHints)
+    // unrecognized method names that should fail with a suggested replacement (see forUnknownMethod() above)
     static List<Pair<String, String>> methodHintSql = Arrays.asList(
         new Pair<>("SELECT POSITION('a' IN b) FROM R", "LOCATE"),
         new Pair<>("SELECT DATEDIFF('day', a, b) FROM R", "TIMESTAMPDIFF"),
         new Pair<>("SELECT ISNULL(a, b) FROM R", "IFNULL"),
         new Pair<>("SELECT DAY(a) FROM R", "DAYOFMONTH"),
-        new Pair<>("SELECT CURRENT_DATE() FROM R", "CURDATE"),
         new Pair<>("SELECT STRING_AGG(a, ',') FROM R", "GROUP_CONCAT"),
         new Pair<>("SELECT TRIM(a) FROM R", "LTRIM(RTRIM")
     );
@@ -2297,6 +2419,9 @@ public class SqlParser
             new Pair<>("a.b","(. a b)"),
             new Pair<>("a.b.fn(5)","(METHOD_CALL (. (. a b) fn) (EXPR_LIST 5))"),
             new Pair<>("CURDATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("CURRENT_DATE","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("CURRENT_TIME","(METHOD_CALL CURTIME EXPR_LIST)"),
+            new Pair<>("CURRENT_TIMESTAMP","(METHOD_CALL NOW EXPR_LIST)"),
             new Pair<>("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
             new Pair<>("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
             new Pair<>("SUM(a+b)","(SUM (+ a b))"),

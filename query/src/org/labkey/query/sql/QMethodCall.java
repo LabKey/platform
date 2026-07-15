@@ -140,7 +140,7 @@ public class QMethodCall extends QExpr
         if (getMethod(d) == null)
         {
             String name = getField().getName();
-            String hint = SyntaxHints.forUnknownMethod(name, d);
+            String hint = SqlParser.forUnknownMethod(name, d);
             return new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, getLine(), getColumn());
         }
         return null;

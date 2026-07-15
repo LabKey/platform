@@ -20,7 +20,6 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 | `LIMIT 10 OFFSET 20`, `FETCH FIRST n ROWS`, `TOP n` | Only `LIMIT <integer literal>` exists; no OFFSET | `LIMIT 10`; page via client API `maxRows`/`offset` |
 | `GROUP BY 1` | Ordinals/constants rejected in GROUP BY (error: "Expression in Group By clause must not be a constant") | Repeat the expression: `GROUP BY YEAR(Date)`. (`ORDER BY 1` **is** allowed.) |
 | `EXTRACT(YEAR FROM d)` | Not supported | `YEAR(d)`, `MONTH(d)`, `DAYOFMONTH(d)`, `HOUR(d)`, … |
-| `CURRENT_DATE`, `CURRENT_TIMESTAMP` | Resolve as (missing) columns | `CURDATE()`, `NOW()`, `CURTIME()` |
 | `col::integer` | No `::` cast | `CAST(col AS INTEGER)` |
 | `SUM(DISTINCT x)`, `AVG(DISTINCT x)` | `DISTINCT` only inside `COUNT()` and `GROUP_CONCAT()` | Aggregate over a `SELECT DISTINCT` subquery |
 | `x ILIKE 'a%'`, `x ~ 'regex'`, `x SIMILAR TO p` | Operators not supported | `LOWER(x) LIKE 'a%'`; PostgreSQL only: `similar_to(x, pattern[, escape])` |
@@ -50,7 +49,7 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 * **Booleans**: `TRUE`, `FALSE`. Special doubles: `CAST('Infinity' AS DOUBLE)`, `CAST('-Infinity' AS DOUBLE)`, `CAST('NaN' AS DOUBLE)`.
 * **Reserved words** — these cannot be used as bare identifiers/aliases; double-quote them (`SELECT COUNT(*) AS "Count"`):
 
-  `all, any, and, as, asc, avg, between, both, case, class, count, delete, desc, distinct, elements, else, empty, end, escape, except, exists, false, fetch, from, full, group, having, in, indices, inner, insert, intersect, into, is, join, leading, left, like, limit, max, member, min, new, not, null, of, on, or, order, outer, right, select, set, some, stddev, sum, trailing, then, true, union, update, user, versioned, when, where`
+  `all, any, and, as, asc, avg, between, both, case, class, count, current_date, current_time, current_timestamp, delete, desc, distinct, elements, else, empty, end, escape, except, exists, false, fetch, from, full, group, having, in, indices, inner, insert, intersect, into, is, join, leading, left, like, limit, max, member, min, new, not, null, of, on, or, order, outer, right, select, set, some, stddev, sum, trailing, then, true, union, update, user, versioned, when, where`
 
 * Do not end statements with `;` (produces a warning) and do not submit multiple statements.
 
@@ -124,7 +123,7 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 `concat(a, b)` (exactly 2 args; prefer `||`), `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`, `locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
 
 #### Date and Time
-* `curdate()`, `curtime()`, `now()`
+* `curdate()`, `curtime()`, `now()` — and the SQL-standard niladic keyword forms `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP` (**no parentheses** — `CURRENT_DATE()` is a syntax error, unlike the function forms)
 * `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`, `hour(t)`, `minute(t)`, `second(t)`
 * `timestampadd(interval, n, ts)` — interval is a quoted constant, one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'`, `'SQL_TSI_WEEK'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_QUARTER'`, `'SQL_TSI_YEAR'` (the `SQL_TSI_` prefix may be omitted: `'DAY'`).
 * `timestampdiff(interval, ts1, ts2)` — same constants, **but on PostgreSQL only `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'` work**; YEAR/MONTH/WEEK/QUARTER fail at execution time. For those use:
@@ -352,7 +351,7 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `Syntax error near 'OFFSET'` / near `'('` after OVER | Unsupported OFFSET / window function — see §1 |
 | `Expression in Group By clause must not be a constant` | `GROUP BY 1` — repeat the expression instead |
 | `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` or `IS DISTINCT FROM` — see §1 |
-| `Could not resolve column: CURRENT_DATE` | Use `CURDATE()` / `NOW()` |
+| `CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses` | Drop the parens: bare `CURRENT_DATE`, not `CURRENT_DATE()` |
 | `Unknown method X` | Function doesn't exist in LabKey SQL (check §6-§7) or is dialect-specific |
 | `CONCAT function expects 2 arguments` | Use `\|\|` for 3+ values |
 | `Syntax error near 'Count'` (or other keyword) | Reserved word used as alias — double-quote it |
