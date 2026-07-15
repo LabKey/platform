@@ -2346,7 +2346,9 @@ public class SqlParser
         new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
         new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
         new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
-        new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses")
+        new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses"),
+        new Pair<>("SELECT CURRENT_TIME() FROM R", "take no parentheses"),
+        new Pair<>("SELECT CURRENT_TIMESTAMP() FROM R", "take no parentheses")
     );
 
     // unrecognized method names that should fail with a suggested replacement (see forUnknownMethod() above)
@@ -2448,7 +2450,13 @@ public class SqlParser
             new Pair<>("1 + 2.1", JdbcType.DECIMAL),
             new Pair<>("ROUND(0.0,1)", JdbcType.DOUBLE),
             new Pair<>("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
-            new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
+            new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE),
+            new Pair<>("CURDATE()", JdbcType.DATE),
+            new Pair<>("CURTIME()", JdbcType.TIME),
+            new Pair<>("NOW()", JdbcType.TIMESTAMP),
+            new Pair<>("CURRENT_DATE", JdbcType.DATE),
+            new Pair<>("CURRENT_TIME", JdbcType.TIME),
+            new Pair<>("CURRENT_TIMESTAMP", JdbcType.TIMESTAMP)
         );
 
 
