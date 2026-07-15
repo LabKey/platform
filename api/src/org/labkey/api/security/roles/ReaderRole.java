@@ -23,32 +23,28 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.ReadSomePermission;
 
 import java.util.Collection;
+import java.util.stream.Stream;
 
-/*
-* User: Dave
-* Date: Apr 27, 2009
-* Time: 1:22:04 PM
-*/
 public class ReaderRole extends AbstractRole
 {
+    static final Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
+        RestrictedReaderRole.PERMISSIONS.stream(),
+        Stream.of(
+            AssayReadPermission.class,
+            DataClassReadPermission.class,
+            MediaReadPermission.class,
+            NotebookReadPermission.class,
+            ReadPermission.class
+        )
+    ).toList();
+
     public ReaderRole()
     {
         super("Reader", "Readers may read information but may not change anything.",
-                ReadPermission.class,
-                ReadSomePermission.class,
-                AssayReadPermission.class,
-                DataClassReadPermission.class,
-                NotebookReadPermission.class,
-                MediaReadPermission.class
+            PERMISSIONS
         );
-    }
-
-    public ReaderRole(String name, String description, Collection<Class<? extends Permission>>... permCollections)
-    {
-        super(name, description, permCollections);
     }
 
     @Override
