@@ -554,13 +554,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(allowSessionKeys, false);
     }
 
-    @Override
-    public String getXFrameOption()
-    {
-        return lookupStringValue(XFrameOption, "SAMEORIGIN");
-    }
-
-
     private static final String not_init = "";
     private String staticFilesPrefix = not_init;
 

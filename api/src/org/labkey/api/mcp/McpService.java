@@ -25,6 +25,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -232,4 +234,9 @@ public interface McpService extends ToolCallbackProvider
 
     /** Drop and recreate the vector store table. Use when the embedding model has changed and dimensions no longer match. */
     void resetVectorStore();
+
+    default HttpView<Object> getAssistantStatusView()
+    {
+        return new HtmlView(HtmlString.of("AI Assistant features are not available."));
+    }
 }

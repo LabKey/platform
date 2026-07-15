@@ -112,7 +112,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 
     public BindException bindParameters(PropertyValues m) throws Exception
     {
-        return defaultBindParameters(getCommand(), m);
+        return defaultBindParameters(m);
     }
 
     /**

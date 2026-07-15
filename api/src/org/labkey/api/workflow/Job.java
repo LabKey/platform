@@ -312,6 +312,9 @@ public abstract class Job extends CreatedModified implements Identifiable
     @JsonIgnore
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
 
+    @JsonIgnore
+    public abstract @NotNull List<String> getSampleNames();
+
     public void setEntities(List<WorkEntity> entities)
     {
         _entities = entities;

@@ -114,7 +114,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
 
     public BindException bindParameters(PropertyValues pvs) throws Exception
     {
-        return defaultBindParameters(getCommand(), pvs);
+        return defaultBindParameters(pvs);
     }
 
     public void validate(FORM form, BindException errors)
