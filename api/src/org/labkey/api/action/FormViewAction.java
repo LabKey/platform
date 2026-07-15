@@ -17,13 +17,11 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
-import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -31,8 +29,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Is this better than BaseCommandController?  Probably not, but it understands TableViewForm.
@@ -149,22 +145,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
 
     public BindException bindParameters(PropertyValues m) throws Exception
     {
-        Class<?> commandClass = getCommandClass();
-        return commandClass.isRecord() ? defaultBindParametersToRecord(commandClass, m) : defaultBindParameters(getCommand(), m);
-    }
-
-    // Simple binding for Java records: no support for binding errors, arrays, lists, etc.
-    private <R> BindException defaultBindParametersToRecord(Class<R> recordClass, PropertyValues pvs)
-    {
-        // Note: We don't support record-based forms implementing HasAllowBindParameter since we must populate all
-        // properties at record construction time and therefore can't invoke allowBindParameter() prior to that.
-        PropertyValues m = getPropertyValuesForFormBinding(pvs, HasAllowBindParameter.getDefaultPredicate());
-        ObjectFactory<R> factory = ObjectFactory.Registry.getFactory(recordClass);
-        Map<String, Object> map = m.stream()
-            .filter(pv -> pv.getValue() != null)
-            .collect(Collectors.toMap(PropertyValue::getName, PropertyValue::getValue));
-        R record = factory.fromMap(map);
-        return new NullSafeBindException(record, "Form");
+        return defaultBindParameters(m);
     }
 
     @Override
