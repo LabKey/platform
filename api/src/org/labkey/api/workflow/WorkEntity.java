@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.GUID;
@@ -77,35 +77,19 @@ public class WorkEntity
             this.setContainerId(new GUID((String) map.get("Container")));
     }
 
-    public WorkEntity(WorkType workType, Long workRowId, EntityType entityType, Long entityValue, Long actionId)
+    public WorkEntity(@NotNull Long rowId, @NotNull WorkEntity.EntityType entityType)
     {
-        _workType = workType;
-        _workRowId = workRowId;
         _entityType = entityType;
-        _entityValue = entityValue;
-        _actionId = actionId;
+        _entityValue = rowId;
     }
 
-    public WorkEntity(ExpMaterial sample)
+    public WorkEntity(@NotNull Long rowId, @NotNull WorkEntity.EntityType entityType, WorkType workType, Long workRowId, @Nullable Long actionId)
     {
-        _entityType = EntityType.Sample;
-        _entityValue = sample.getRowId();
-    }
-
-    public WorkEntity(ExpData source)
-    {
-        _entityType = EntityType.Source;
-        _entityValue = source.getRowId();
-    }
-
-    public WorkEntity(ExpMaterial sample, WorkType workType, Long workRowId, @Nullable Long actionId)
-    {
-        this(sample);
+        this(rowId, entityType);
         _workType = workType;
         _workRowId = workRowId;
         _actionId = actionId;
     }
-
 
     public Long getRowId()
     {

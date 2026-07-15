@@ -833,7 +833,6 @@ public class ExceptionUtil
                         ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName(),
                         ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName(),
                         AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME,
-                        AuthFilter.X_FRAME_OPTIONS_HEADER_NAME,
                         AuthFilter.X_CONTENT_TYPE_OPTIONS_HEADER_NAME,
                         AuthFilter.REFERRER_POLICY_HEADER_NAME,
                         AuthFilter.SERVER_HEADER_NAME))
@@ -1106,7 +1105,6 @@ public class ExceptionUtil
             else
             {
                 pageConfig.setTemplate(originalConfig.getTemplate());
-                pageConfig.setFrameOption(originalConfig.getFrameOption());
             }
 
             HttpView<?> errorView = null;
