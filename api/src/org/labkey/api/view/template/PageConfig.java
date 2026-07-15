@@ -152,7 +152,6 @@ public class PageConfig
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
-    private FrameOption _frameOption = FrameOption.ALLOW;
     private boolean _trackingScript = true;
     private String _canonicalLink = null;
     private boolean _includePostParameters = false;
@@ -503,21 +502,6 @@ public class PageConfig
             }
         }
         return sb.getHtmlString();
-    }
-
-    public enum FrameOption
-    {
-        ALLOW, SAMEORIGIN, DENY
-    }
-    
-    public void setFrameOption(FrameOption option)
-    {
-        _frameOption = option;
-    }
-
-    public FrameOption getFrameOption()
-    {
-        return null==_frameOption?FrameOption.ALLOW:_frameOption;
     }
 
     public void setAllowTrackingScript(TrueFalse opt)

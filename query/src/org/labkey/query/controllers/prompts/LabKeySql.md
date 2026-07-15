@@ -34,6 +34,12 @@ LabKey SQL allows you to create virtual columns within a query by using SQL expr
   `SELECT expression AS column_name FROM table`
 * **Functionality:**
   The syntax involves performing a calculation and then aliasing the result with a new column name using the `as` keyword.
+* **Reserved words as aliases:** SQL function names (`COUNT`, `SUM`, `AVG`, `MIN`, `MAX`) and other SQL keywords are reserved and cannot be used as bare column aliases. Quote them or choose a different name:
+  ```sql
+  -- Wrong:  COUNT(MouseId) AS Count   → parse error
+  -- Right:  COUNT(MouseId) AS "Count"
+  -- Right:  COUNT(MouseId) AS TotalCount
+  ```
 * **Examples:**
     * **Pulse Pressure:** To calculate pulse pressure from systolic and diastolic blood pressure values:
       ```sql
