@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 public class EditorWithoutDeleteRole extends AbstractRole
 {
-    protected static Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
+    static final Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
         AuthorRole.PERMISSIONS.stream(),
         Stream.of(
             EditSharedReportPermission.class,

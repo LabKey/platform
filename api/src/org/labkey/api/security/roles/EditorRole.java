@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 public class EditorRole extends EditorWithoutDeleteRole
 {
-    protected static Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
+    static final Collection<Class<? extends Permission>> PERMISSIONS = Stream.concat(
         EditorWithoutDeleteRole.PERMISSIONS.stream(),
         Stream.of(
             DeletePermission.class,
