@@ -53,7 +53,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides static functions for help with sending email. Supports SMTP and Microsoft Graph transport providers.
@@ -65,11 +67,15 @@ public class MailHelper
     private static final Logger _log = LogHelper.getLogger(MailHelper.class, "Errors sending and configuring email");
 
     // Transport providers
-    private static final SmtpTransportProvider _smtpProvider = new SmtpTransportProvider();
-    private static final List<EmailTransportProvider> _providers = new ArrayList<>(List.of(_smtpProvider));
+    private static final List<EmailTransportProvider> _providers = new CopyOnWriteArrayList<>();
+
+    // A neutral session for building MIME messages. Used when the active provider doesn't need session-based transport
+    // config (e.g. Microsoft Graph) or when no provider is configured. Message assembly (headers, body, attachments)
+    // doesn't depend on any transport-specific session state.
+    private static final Session DEFAULT_SESSION = Session.getInstance(new Properties());
 
     // Active provider (set during initialization)
-    private static EmailTransportProvider _activeProvider = null;
+    private static volatile EmailTransportProvider _activeProvider = null;
 
     // Configuration conflict flag
     private static boolean _configurationConflict = false;
@@ -121,13 +127,24 @@ public class MailHelper
         return _activeProvider;
     }
 
+    /**
+     * Directly set the active transport provider, bypassing the normal configuration-driven selection in
+     * {@link #loadActiveProvider()}. Intended for tools that need to temporarily redirect all outgoing email, such as
+     * the Dumbster mail recorder, which installs its own {@link SmtpTransportProvider} pointed at a local capture
+     * server. Callers should save the previous provider (via {@link #getActiveProvider()}) and restore it when done.
+     */
+    public static void setActiveProvider(@Nullable EmailTransportProvider provider)
+    {
+        _activeProvider = provider;
+    }
+
     public static boolean hasActiveProvider()
     {
         return null != _activeProvider;
     }
 
     /**
-     * Registers an optional transport provider. Must be called during module {@code init()} so that
+     * Registers a transport provider. Must be called during module {@code init()} so that
      * all providers are in place before {@link #init()} calls {@link #loadActiveProvider()}.
      */
     public static void registerProvider(EmailTransportProvider provider)
@@ -140,18 +157,24 @@ public class MailHelper
         _activeProvider = loadActiveProvider();
     }
 
-    public static void setSmtpSession(Session session)
+    /**
+     * @return the {@link Session} to associate with newly created messages, supplied by the active transport provider
+     * (which decides what session state, if any, a message needs to carry to be delivered). Falls back to a neutral
+     * session when no provider is configured. Provider-agnostic: callers should not assume this is an SMTP session.
+     */
+    @NotNull
+    public static Session getSession()
     {
-        _smtpProvider.setSession(session);
+        return null != _activeProvider ? _activeProvider.getSession() : DEFAULT_SESSION;
     }
 
     /**
-     * Returns the SMTP session for creating messages
+     * @return a neutral session suitable for assembling MIME messages that don't need transport-specific session state.
      */
-    @Nullable
-    public static Session getSmtpSession()
+    @NotNull
+    static Session getDefaultSession()
     {
-        return _smtpProvider.getSession();
+        return DEFAULT_SESSION;
     }
 
     /**
@@ -159,12 +182,12 @@ public class MailHelper
      */
     public static ViewMessage createMessage()
     {
-        return new ViewMessage(getSmtpSession());
+        return new ViewMessage(getSession());
     }
 
     public static MultipartMessage createMultipartMessage()
     {
-        return new MultipartMessage(getSmtpSession());
+        return new MultipartMessage(getSession());
     }
 
     /**
@@ -200,6 +223,19 @@ public class MailHelper
     }
 
     /**
+     * Builds the "no email transport configured" message from the hints of the currently registered providers, so that
+     * an undeployed provider (e.g. Microsoft Graph, when its module isn't present) is never mentioned.
+     */
+    private static String noTransportConfiguredMessage()
+    {
+        List<String> hints = _providers.stream()
+            .map(EmailTransportProvider::getConfigurationHint)
+            .toList();
+        String choices = StringUtilsLabKey.joinWithConjunction(hints, "or");
+        return "No email transport configured. Please configure " + choices + " settings.";
+    }
+
+    /**
      * Sends an email message using the configured transport provider. This method logs
      * exceptions before throwing them to the caller. The caller should avoid double-logging
      * the failure but may want to handle the exception in some other way, e.g., displaying
@@ -222,9 +258,7 @@ public class MailHelper
             // Check if any provider is configured
             if (_activeProvider == null)
             {
-                throw new ConfigurationException(
-                    "No email transport configured. Please configure either SMTP (mail.smtp.*) " +
-                    "or Microsoft Graph (mail.graph.*) settings.");
+                throw new ConfigurationException(noTransportConfiguredMessage());
             }
 
             // Send via the active provider
