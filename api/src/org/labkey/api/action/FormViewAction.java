@@ -65,7 +65,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         try (Timing ignored = MiniProfiler.step("bind"))
         {
             errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
+            form = (errors.hasErrors() && getCommandClass().isRecord()) ? null : (FORM) errors.getTarget();
         }
 
         return handleRequest(form, errors);

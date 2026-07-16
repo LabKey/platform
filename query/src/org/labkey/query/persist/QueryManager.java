@@ -1125,7 +1125,7 @@ public class QueryManager
                         "                            AND CreatedBy IS NOT NULL\n" +
                         "                            GROUP BY CreatedBy, DATE_TRUNC('second', created)\n" +
                         "                            ) AS subquery\n" +
-                        "                      WHERE subquery.count > 1)");
+                        "                      WHERE subquery.count > 1) AS multitab");
                 counts.put("Excel multi-tab", new SqlSelector(dbSchema, sql)
                         .getObject(Long.class));
             }

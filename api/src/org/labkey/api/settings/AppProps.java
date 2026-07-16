@@ -211,11 +211,6 @@ public interface AppProps
 
     // configurable http security settings
 
-    /**
-     * @return "SAMEORIGIN" or "DENY" or "ALLOW"
-     */
-    String getXFrameOption();
-
     String getStaticFilesPrefix();
 
     boolean isWebfilesRootEnabled();
