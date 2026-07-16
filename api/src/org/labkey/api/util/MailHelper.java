@@ -231,6 +231,8 @@ public class MailHelper
         List<String> hints = _providers.stream()
             .map(EmailTransportProvider::getConfigurationHint)
             .toList();
+        if (hints.isEmpty())
+            return "No email transport configured and no transport providers are registered.";
         String choices = StringUtilsLabKey.joinWithConjunction(hints, "or");
         return "No email transport configured. Please configure " + choices + " settings.";
     }
