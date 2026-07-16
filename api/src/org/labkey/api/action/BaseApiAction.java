@@ -341,7 +341,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         saveRequestedApiVersion(getViewContext().getRequest(), null);
 
         BindException errors = defaultBindParameters(getPropertyValues());
-        FORM form = (FORM)errors.getTarget();
+        FORM form = (errors.hasErrors() && getCommandClass().isRecord()) ? null : (FORM) errors.getTarget();
 
         return new FormAndErrors<>(form, errors);
     }
@@ -468,7 +468,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         {
             PropertyValues values = null == jsonObj ? new MutablePropertyValues() : new JsonPropertyValues(jsonObj);
             BindException errors = defaultBindParameters(values);
-            return new FormAndErrors<>((FORM)errors.getTarget(), errors);
+            FORM form = errors.hasErrors() ? null : (FORM) errors.getTarget();
+            return new FormAndErrors<>(form, errors);
         }
 
         FORM form = getCommand();
