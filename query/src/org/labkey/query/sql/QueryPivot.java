@@ -549,7 +549,9 @@ public class QueryPivot extends AbstractQueryRelation
 
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
-                        _columns.put(pivotName, pvt);
+                        // _makePivotedAggColumn() returns null when parse errors are present; don't store nulls
+                        if (null != pvt)
+                            _columns.put(pivotName, pvt);
                     }
                 }
             }
@@ -822,9 +824,20 @@ public class QueryPivot extends AbstractQueryRelation
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
                 sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
+                {
                     sql.append(" IS NULL");
+                }
                 else
-                    sql.append("=").append(value.getSourceText());
+                {
+                    // Bind the pivot value as a parameter rather than embedding its source-text literal.
+                    // Embedding via getSourceText() trips SQLFragment's semicolon/quote guardrail when the
+                    // value contains ';' or unbalanced '"' (both legal inside SQL string literals, but the
+                    // guardrail can't distinguish them from unsafe raw SQL).
+                    // Bind with an explicit JdbcType so Postgres can resolve the parameter's type — an
+                    // untyped bind can trip "could not determine data type of parameter $N" in some plans.
+                    sql.append("=?");
+                    sql.add(((IConstant) value).getValue(), ((QExpr) value).getJdbcType());
+                }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
