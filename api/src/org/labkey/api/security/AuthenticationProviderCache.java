@@ -56,13 +56,14 @@ public class AuthenticationProviderCache
 
         private AuthenticationProviderCollections()
         {
-            for (AuthenticationProvider provider : AuthenticationManager.getAllProviders())
-            {
-                AuthenticationProvider.ALL_PROVIDER_INTERFACES
+            boolean acceptOnlyFicamProviders = AuthenticationManager.isAcceptOnlyFicamProviders();
+
+            AuthenticationManager.getAllProviders().stream()
+                .filter(provider -> !acceptOnlyFicamProviders || provider.isFicamApproved())
+                .forEach(provider -> AuthenticationProvider.ALL_PROVIDER_INTERFACES
                     .stream()
                     .filter(providerClass -> providerClass.isInstance(provider))
-                    .forEach(providerClass -> _map.put(providerClass, provider));
-            }
+                    .forEach(providerClass -> _map.put(providerClass, provider)));
         }
 
         private <T extends AuthenticationProvider> Collection<T> get(Class<T> clazz)
