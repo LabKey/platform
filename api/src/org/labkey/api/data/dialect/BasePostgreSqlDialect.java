@@ -1061,7 +1061,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 boolean alreadyHeld = scope.isThreadConnectionActive();
                 Connection conn = scope.getConnection();
 
-                if (!alreadyHeld && conn instanceof ConnectionWrapper cw)
+                if (!alreadyHeld && conn instanceof ConnectionWrapper cw && cw.getAutoCommit())
                     cw.setRunOnClose(configureToDisableJdbcCaching(cw, scope));
 
                 return conn;
