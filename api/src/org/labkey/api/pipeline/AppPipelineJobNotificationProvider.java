@@ -182,7 +182,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
-                    .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
+                    .append(queryImportPipelineJob.getImportSourceDescription());
 
             if (job.getContainer().hasProductFolders())
             {
@@ -214,7 +214,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         return null;
     }
 
-    private String getJobErrorMsg(PipelineJob job, String rawErrorMsg)
+    private String getJobErrorMsg(PipelineJob job, @NotNull String errorMsg)
     {
         if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
@@ -224,16 +224,14 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             return "Failed to import " +
                     type +
                     " from " +
-                    queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;// resolveErrorMessage on client
+                    queryImportPipelineJob.getImportSourceDescription() +
+                    errorMsg;// resolveErrorMessage on client
         }
         else if (job instanceof AssayUploadPipelineJob<?> assayJob)
         {
             return "Failed to import assay run from " +
                     assayJob.getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;
+                    errorMsg;
         }
 
         return null;
@@ -332,7 +330,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         }
         else
         {
-            n.setContent(getJobErrorMsg(job, msgContent), "text/plain");
+            n.setContent(getJobErrorMsg(job, msgContent == null ? "" : "\n" + msgContent), "text/plain");
             n.setActionLinkURL(getJobErrorUrl(job));
             n.setActionLinkText("view error details");
         }
