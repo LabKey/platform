@@ -599,7 +599,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     String maxLength = rs.getString("character_maximum_length");
 
                     // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                    scale = Integer.parseInt(null != maxLength ? maxLength : rs.getString("character_octet_length"));
                 }
                 else
                 {
@@ -903,10 +903,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            int direction = paramInfo.getParamTraits().get(ParamTraits.direction).intValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype).intValue() == Types.INTEGER)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;
@@ -1009,7 +1009,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 }
             }
 
-            return scale.intValue();
+            return scale;
         }
 
         @Nullable
@@ -1049,14 +1049,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
         else if (selfContained)
         {
-            // The ResultSet will be fully consumed and the connection released within a single selector call, so borrow
-            // the thread's shared, ref-counted connection (the same one scope.getConnection() hands out) instead of
-            // grabbing a separate one. Nested queries then reuse it (avoiding connection-pool exhaustion), and
-            // connection-local state (temp tables, search_path, session settings) stays visible. We piggyback on the
-            // existing thread-connection reference count rather than tracking our own: only the outermost borrower (when
-            // isThreadConnectionActive() is false) flips the connection into no-JDBC-caching mode and registers the
-            // restore via runOnClose, which ConnectionType.Thread fires when the last holder releases it (ref count
-            // returns to 0). Nested borrows find it already configured and reuse it as-is.
+            // Borrow the thread's shared, ref-counted connection via scope.getConnection() rather than a
+            // separate one, so nested queries reuse it (avoiding pool exhaustion) and connection-local state (temp tables,
+            // session settings, etc) stays visible. Only the outermost borrower — isThreadConnectionActive() ==
+            // false — disables JDBC caching and registers the restore via runOnClose (fired when the ref count returns to
+            // 0); nested borrows reuse it as-is.
             return () -> {
                 boolean alreadyHeld = scope.isThreadConnectionActive();
                 Connection conn = scope.getConnection();

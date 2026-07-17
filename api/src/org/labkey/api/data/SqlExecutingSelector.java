@@ -104,23 +104,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     }
 
     /**
-     * Determines which {@link ConnectionFactory} to use for this query. When a caller has explicitly chosen a caching
-     * behavior via {@link #setJdbcCaching(boolean)} or supplied a Connection at construction time, that choice is
-     * honored. Otherwise, JDBC caching is disabled by default: we ask the dialect for a ConnectionFactory so the driver
-     * won't buffer the entire ResultSet in memory.
+     * Determines which {@link ConnectionFactory} to use for this query, resolved lazily so the transaction check
+     * reflects execution-time state. An explicit {@link #setJdbcCaching(boolean)} call or a Connection supplied at
+     * construction is honored; otherwise JDBC caching is disabled by default (via the dialect) so the driver won't
+     * buffer the whole ResultSet in memory. The dialect returns null — use the shared Connection with default caching —
+     * when that default is unnecessary or unsafe: in a transaction, non-PostgreSQL, or not a SELECT.
      * <p>
-     * The {@code selfContained} flag reflects how the ResultSet is consumed. When true (e.g. {@link #getArrayList},
-     * {@link #forEach}, {@link #getRowCount}), the ResultSet is fully consumed and closed within this selector call, so
-     * the dialect may borrow the thread's shared, ref-counted connection — nested queries then reuse it (avoiding
-     * connection-pool exhaustion) and connection-local state (temp tables, search_path) stays visible — because its
-     * state can be restored before control returns to the caller. When false (e.g. {@code getResultSet(false)},
-     * {@link #uncachedStream}), a live ResultSet/Stream is handed back to the caller, so the dialect uses a dedicated,
-     * unshared connection whose lifetime the caller controls.
-     * <p>
-     * The dialect returns null (meaning "use the shared Connection with the driver's default caching") when a
-     * transaction is active, the dialect is not PostgreSQL, or the statement is not a SELECT, so this default is safe by
-     * construction. Resolving lazily here (rather than at construction) ensures the transaction check reflects the state
-     * at execution time.
+     * {@code selfContained} is passed through to {@link SqlDialect#getConnectionFactory}, which documents how it governs
+     * whether the thread's shared connection may be borrowed.
      */
     private ConnectionFactory getEffectiveConnectionFactory(boolean selfContained)
     {
@@ -151,10 +142,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
      * Connection exhaustion more likely. Calling this method is not compatible with passing in an explicit Connection to
      * the constructor.</p>
      *
-     * <p>Note that when neither this method nor an explicit Connection is supplied, JDBC caching is disabled by default
-     * whenever it's safe to do so (PostgreSQL, no active transaction, SELECT statement) — see
-     * {@link #getEffectiveConnectionFactory()}. Callers that require the driver's default caching behavior (e.g., to
-     * share the thread's Connection) must therefore opt in explicitly by calling this method with cache=true.</p>
+     * <p>When neither this method nor an explicit Connection is supplied, JDBC caching is disabled by default whenever
+     * it's safe (PostgreSQL, no active transaction, SELECT) — see {@link #getEffectiveConnectionFactory(boolean)}. Callers that
+     * require the driver's default caching (e.g. to share the thread's Connection) must opt in by calling this with
+     * cache=true.</p>
      *
      * <p>When the underlying database is not PostgreSQL, calling this method has no effect, other than validating that
      * the stashed Connection is null.</p>
@@ -179,7 +170,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     /**
      * Overridden to warn when a large number of rows is pulled into a Java collection. Loading many rows into memory
      * (here plus, potentially, in the JDBC driver's buffer) is a common source of OutOfMemoryErrors; callers should
-     * generally prefer a streaming method — {@link #forEach}, {@link #forEachBatch}, or {@link #uncachedStream} — that
+     * generally prefer a streaming method — {@link #forEach(Class, Selector.ForEachBlock)}, {@link #forEachBatch}, or {@link #uncachedStream} — that
      * processes rows without materializing them all at once. {@code getArray}, {@code getCollection},
      * {@code getMapArray}, and {@code getMapCollection} all delegate here, so they're covered as well.
      */
@@ -193,8 +184,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             Throwable stackTrace = new Throwable("Stack trace for large collection load");
             String stackKey = getStackKey(stackTrace);
 
-            // Warn at most once per day per unique call stack to avoid flooding the log. A benign race (two threads
-            // logging the same stack at once) is acceptable for a throttle.
+            // Warn at most once per day (tolerating a race condition) per unique call stack to avoid flooding the log.
             if (null == LARGE_RESULT_WARNING_THROTTLE.get(stackKey))
             {
                 LARGE_RESULT_WARNING_THROTTLE.put(stackKey, Boolean.TRUE);

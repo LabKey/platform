@@ -1266,14 +1266,12 @@ public class DbScope
 
     /**
      * @return true if this thread already holds the shared, ref-counted thread connection — i.e., some code up the stack
-     * called {@link #getConnection()} and hasn't released it yet. This simply reports the existing {@link
-     * ConnectionHolder} reference count (the same count that already governs {@link ConnectionType#Thread} sharing); it
-     * is NOT a separate/new counter maintained for this purpose.
+     * called {@link #getConnection()} and hasn't released it. Reports the existing {@link ConnectionHolder} ref count
+     * that governs {@link ConnectionType#Thread} sharing.
      * <p>
-     * Callers that borrow the thread connection and temporarily modify its state (e.g., disabling JDBC caching for a
-     * streaming read) must do so only when this returns false, so that they are the outermost borrower and can safely
-     * restore the original state — via the connection's runOnClose, which {@link ConnectionType#Thread} fires when the
-     * last holder releases it (ref count returns to 0).
+     * A caller that borrows the thread connection and temporarily changes its state (e.g. disabling JDBC caching for a
+     * streaming read) must do so only when this returns false, so it is the outermost borrower and can restore the
+     * original state via runOnClose, which {@link ConnectionType#Thread} fires when the last holder releases it.
      */
     public boolean isThreadConnectionActive()
     {
