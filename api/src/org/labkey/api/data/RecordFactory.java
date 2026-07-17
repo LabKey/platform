@@ -75,7 +75,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
             }
             catch (ConversionException e)
             {
-                throw new IllegalArgumentException("Failed to convert property value of type '" + value.getClass().getName() + "' to required type '" + p.getType() + "' for property '" + p.getName() + "'; " + e.getMessage());
+                throw new IllegalArgumentException("Failed to convert property value of type '" + value.getClass().getName() + "' to required type '" + p.getType().getName() + "' for property '" + p.getName() + "'; " + e.getMessage());
             }
         }).toArray();
 
@@ -95,7 +95,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
                 throw e; // Unclear what the problem is, so just re-throw
             if (missingPrimitiveParameters.size() == 1)
                 throw new IllegalArgumentException("Primitive parameter \"" + missingPrimitiveParameters.getFirst() + "\" is required");
-            throw new IllegalArgumentException("One or more primitive parameters are missing. Primitive parameters include: " + missingPrimitiveParameters);
+            throw new IllegalArgumentException("Primitive parameters are missing: " + missingPrimitiveParameters);
         }
         catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
