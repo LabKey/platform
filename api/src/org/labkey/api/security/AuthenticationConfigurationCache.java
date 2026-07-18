@@ -103,6 +103,7 @@ public class AuthenticationConfigurationCache
             _activeDomainMap = getActive(PrimaryAuthenticationConfiguration.class).stream()
                 .filter(config -> null != config.getDomain())
                 .filter(config -> !AuthenticationManager.ALL_DOMAINS.equals(config.getDomain()))
+                .map(config -> (AuthenticationConfiguration<?>) config)
                 .collect(LabKeyCollectors.toMultiValuedMap(AuthenticationConfiguration::getDomain, config -> config));
 
             List<String> activeDomains = new ArrayList<>(_activeDomainMap.keySet());
@@ -162,7 +163,7 @@ public class AuthenticationConfigurationCache
             return null != configurations ? configurations : Collections.emptyList();
         }
 
-        private @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+        private @NotNull Collection<AuthenticationConfiguration<?>> getActiveConfigurationsForDomain(String domain)
         {
             return new ArrayList<>(_activeDomainMap.get(domain));
         }
@@ -233,7 +234,7 @@ public class AuthenticationConfigurationCache
     /**
      * Return a collection of authentication configurations that claim the specified domain
      */
-    public static @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+    public static @NotNull Collection<AuthenticationConfiguration<?>> getActiveConfigurationsForDomain(String domain)
     {
         return CACHE.get(CACHE_KEY).getActiveConfigurationsForDomain(domain);
     }
