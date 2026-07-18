@@ -150,7 +150,9 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
     @Override
     public PipelineJob deserializeFromJSON(String json, Class<? extends PipelineJob> cls)
     {
-        ObjectMapper mapper = PipelineJob.createObjectMapper();
+        // Deny-by-default type allowlist: jobs arrive as JSON with polymorphic default typing, so an unrestricted mapper
+        // would let the wire pick the instantiated class. See PipelineJacksonTyping.
+        ObjectMapper mapper = PipelineJacksonTyping.createJobDeserializationMapper();
 
         try
         {
