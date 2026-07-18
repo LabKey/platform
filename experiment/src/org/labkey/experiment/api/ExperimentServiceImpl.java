@@ -291,7 +291,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1663,6 +1662,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
     {
         return new SampleStatusTable(expSchema, containerFilter);
+    }
+
+    @Override
+    public TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new DataColorTable(expSchema, containerFilter);
     }
 
     @Override
@@ -3977,6 +3982,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public TableInfo getTinfoDataTypeExclusion()
     {
         return getExpSchema().getTable("DataTypeExclusion");
+    }
+
+    public TableInfo getTinfoDataColors()
+    {
+        return getExpSchema().getTable("DataColors");
+    }
+
+    public TableInfo getTinfoDataTypeColorExclusion()
+    {
+        return getExpSchema().getTable("DataTypeColorExclusion");
     }
 
     /**
@@ -9106,6 +9121,106 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
         }
         return builder.toString();
+    }
+
+    @Override
+    public @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ColorRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId)
+    {
+        Set<Long> disabled = getDataTypeExcludedColors(dataType, dataTypeId);
+        return DataColorManager.getInstance().getActiveColors(container).stream()
+                .map(c -> (long) c.getRowId())
+                .filter(rowId -> !disabled.contains(rowId))
+                .collect(toSet());
+    }
+
+    @Override
+    public boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user)
+    {
+        if (disabledColorRowIds == null)
+            return false;
+
+        Set<Long> previous = getDataTypeExcludedColors(dataType, dataTypeId);
+        Set<Long> updated = new HashSet<>(disabledColorRowIds);
+
+        Set<Long> toAdd = new HashSet<>(updated);
+        toAdd.removeAll(previous);
+
+        Set<Long> toRemove = new HashSet<>(previous);
+        toRemove.removeAll(updated);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return false;
+
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+        {
+            for (Long colorRowId : toAdd)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("DataTypeRowId", dataTypeId);
+                fields.put("DataType", dataType.name());
+                fields.put("ColorRowId", colorRowId);
+                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
+            }
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(getTinfoDataTypeColorExclusion())
+                        .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                        .add(dataTypeId).add(dataType.name())
+                        .append(" AND ColorRowId ");
+                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
+                new SqlExecutor(getExpSchema()).execute(sql);
+            }
+            tx.commit();
+        }
+
+        return true;
+    }
+
+    @Override
+    public void removeDataColorExclusionsForColor(long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ?").add(colorRowId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeContainerDataColorExclusions(String containerId)
+    {
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
+        SQLFragment delExclusions = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId IN (SELECT RowId FROM ")
+                .append(getTinfoDataColors())
+                .append(" WHERE Container = ?)").add(containerId);
+        executor.execute(delExclusions);
+
+        SQLFragment delColors = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataColors())
+                .append(" WHERE Container = ?").add(containerId);
+        executor.execute(delColors);
     }
 
     @Override

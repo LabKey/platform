@@ -710,6 +710,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
+    TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter cf);
+
     ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
@@ -1138,6 +1140,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Long dataTypeId, Container container, User user);
 
     String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Long> ids, boolean isUpdate);
+
+    @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId);
+
+    @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
+
+    boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
+
+    void removeDataColorExclusionsForColor(long colorRowId);
+
+    void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType);
+
+    void removeContainerDataColorExclusions(String containerId);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

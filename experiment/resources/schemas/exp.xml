@@ -295,6 +295,9 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
+      <column columnName="SampleColor">
+          <description>The color assigned to this individual sample</description>
+      </column>
       <column columnName="StoredAmount">
           <columnTitle>Amount</columnTitle>
       </column>
@@ -1249,6 +1252,31 @@
             <column columnName="DataTypeRowId"/>
             <column columnName="DataType"/>
             <column columnName="ExcludedContainer" />
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataColors" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="Container"/>
+            <column columnName="Label"/>
+            <column columnName="Color"/>
+            <column columnName="Archived"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataTypeColorExclusion" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="DataTypeRowId"/>
+            <column columnName="DataType"/>
+            <column columnName="ColorRowId"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>

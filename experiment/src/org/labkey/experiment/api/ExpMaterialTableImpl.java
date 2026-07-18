@@ -597,6 +597,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 return createPropertiesColumn(alias);
             }
+            case SampleColor ->
+            {
+                boolean colorsEnabled = colorsEnabled(getContainer());
+                var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
+                ret.setLabel("Sample Color");
+                ret.setHidden(!colorsEnabled);
+                ret.setShownInDetailsView(colorsEnabled);
+                ret.setShownInInsertView(colorsEnabled);
+                ret.setShownInUpdateView(colorsEnabled);
+                ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
+                        .schema(getExpSchema()).table(ExpSchema.TableType.DataColors).display("Label"));
+                return ret;
+            }
             case SampleState ->
             {
                 boolean statusEnabled = isStatusEnabled(getContainer());
@@ -757,6 +771,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(c).isEmpty();
     }
 
+    // The SampleColor system field is shown only when at least one sample color is enabled for the sample type
+    // (or, for the non-type-specific "All Samples" table, when any active color is defined in the container).
+    private boolean colorsEnabled(Container c)
+    {
+        // TODO: check SampleManagement module
+        if (_ss != null)
+            return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
+        return !DataColorManager.getInstance().getActiveColors(c).isEmpty();
+    }
+
     private Unit getSampleTypeUnit()
     {
         Unit typeUnit = null;
@@ -862,6 +886,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleState);
         if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
+        addColumn(SampleColor);
+        if (colorsEnabled(getContainer()))
+            defaultCols.add(SampleColor.fieldKey());
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))

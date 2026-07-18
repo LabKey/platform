@@ -175,7 +175,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
 
-public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService, DataColorManager.DataColorHandler
 {
     public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
@@ -201,6 +201,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static SampleTypeServiceImpl get()
     {
         return (SampleTypeServiceImpl) SampleTypeService.get();
+    }
+
+    @Override
+    public String getHandlerType()
+    {
+        return "SampleColorMaterial";
+    }
+
+    @Override
+    public boolean isColorInUse(Container container, long colorRowId)
+    {
+        // Colors are referenced by samples across folders, so this is intentionally not container-scoped.
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.SampleColor.name()), colorRowId);
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
     }
 
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
@@ -686,6 +700,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
+            ExperimentService.get().removeDataColorExclusionsForDataType(rowId, ExperimentService.DataTypeForExclusion.SampleType);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -1200,6 +1215,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
                 newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
+            if (options != null && options.getDisabledSampleColorRowIds() != null)
+            {
+                List<Long> disabledColorRowIds = options.getDisabledSampleColorRowIds().stream().map(Integer::longValue).toList();
+                boolean hasChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, container, user);
+                if (hasChange)
+                    addAuditEventForSampleColorExclusion(container, st.getRowId(), user);
+            }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
@@ -1223,6 +1245,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return errors;
     }
+
+    private void addAuditEventForSampleColorExclusion(Container container, long materialSourceId, User user)
+    {
+        Set<Long> disabled = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, materialSourceId);
+        String msg = "Sample color exclusion was updated for sample type (rowId " + materialSourceId + "). "
+                + (disabled.isEmpty() ? "All colors enabled." : "Excluded color rowIds: " + StringUtils.join(disabled, ", ") + ".");
+        AuditTypeEvent event = new AuditTypeEvent(SampleTypeAuditProvider.EVENT_TYPE, container, msg);
+        AuditLogService.get().addEvent(user, event);
+    }
+
 
     public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {

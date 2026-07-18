@@ -192,6 +192,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
+    public Long getSampleColorId()
+    {
+        return _object.getSampleColor();
+    }
+
+    @Override
+    public void setSampleColorId(Long colorId)
+    {
+        _object.setSampleColor(colorId);
+    }
+
+    @Override
     public DataState getSampleState()
     {
         if (getSampleStateId() == null)

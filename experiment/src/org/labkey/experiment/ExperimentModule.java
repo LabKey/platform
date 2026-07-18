@@ -118,6 +118,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.DataColorManager;
 import org.labkey.experiment.api.EdgeDiagnosticsTestCase;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassTableImpl;
@@ -209,7 +210,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.007;
+        return 26.008;
     }
 
     @Nullable
@@ -552,6 +553,8 @@ public class ExperimentModule extends SpringModule
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleTypeAuditProvider());
         AuditLogService.get().registerAuditType(new SampleTimelineAuditProvider());
+
+        DataColorManager.getInstance().registerHandler(SampleTypeServiceImpl.get());
 
         FileContentService fileContentService = FileContentService.get();
         if (null != fileContentService)

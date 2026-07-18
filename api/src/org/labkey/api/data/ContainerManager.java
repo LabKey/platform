@@ -1952,7 +1952,10 @@ public class ContainerManager
 
             ExperimentService experimentService = ExperimentService.get();
             if (experimentService != null)
+            {
                 experimentService.removeContainerDataTypeExclusions(c.getId());
+                experimentService.removeContainerDataColorExclusions(c.getId());
+            }
 
             // Issue 17015: After we've committed the transaction, be sure that we remove this container from the cache
             tx.addCommitTask(() ->
