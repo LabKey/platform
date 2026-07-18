@@ -187,15 +187,6 @@ public class UserController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @Override
-    public PageConfig defaultPageConfig()
-    {
-        PageConfig ret = super.defaultPageConfig();
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME))
-            ret.setFrameOption(PageConfig.FrameOption.DENY);
-        return ret;
-    }
-
     public static class UserUrlsImpl implements UserUrls
     {
         @Override

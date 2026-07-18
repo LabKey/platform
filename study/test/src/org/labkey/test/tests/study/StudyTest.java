@@ -53,6 +53,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SearchHelper;
+import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.search.SearchAdminAPIHelper;
 
 import java.io.File;
@@ -146,17 +147,18 @@ public class StudyTest extends StudyBaseTest
     public void runApiTests() throws Exception
     {
         log("Dataset saveRows API");
+        final String mouseId = TestDataGenerator.randomName("92104", 3, 3, TRICKY_CHARACTERS, null).name();
         Connection cn = WebTestHelper.getRemoteApiConnection();
         InsertRowsCommand insertCmd = new InsertRowsCommand("study", "DEM-1");
 
-        insertCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "first"));
+        insertCmd.addRow(Map.of("MouseId", mouseId, "SequenceNum", 0, "DEMraco", "first"));
 
         try
         {
             RowsResponse saveResp = insertCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check return values for inserted values and user defined and built-in columns in response
-            assertEquals("Save rows return has incorrect value for: MouseId", "92104", saveResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: MouseId", mouseId, saveResp.getRows().getFirst().get("MouseId"));
             assertEquals("Save rows return has incorrect value for: DEMraco", "first", saveResp.getRows().getFirst().get("DEMraco"));
             assertTrue("Save rows return is missing field: DEMasian", saveResp.getRows().getFirst().keySet().contains("DEMasian"));
             assertTrue("Save rows return is missing field: ModifiedBy", saveResp.getRows().getFirst().keySet().contains("ModifiedBy"));
@@ -169,7 +171,7 @@ public class StudyTest extends StudyBaseTest
         log("Verify inserted row");
         SelectRowsCommand selectCmd = new SelectRowsCommand("study", "DEM-1");
 
-        selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
+        selectCmd.setFilters(List.of(new Filter("MouseId", mouseId, Filter.Operator.EQUAL)));
         selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
         selectCmd.setColumns(Collections.singletonList("*"));
         SelectRowsResponse selectResp;
@@ -178,7 +180,7 @@ public class StudyTest extends StudyBaseTest
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
 
             // Spot check response values for inserted values and user defined and built-in columns
-            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: MouseId", mouseId, selectResp.getRows().getFirst().get("MouseId"));
             assertEquals("Select rows return has incorrect value for: DEMraco", "first", selectResp.getRows().getFirst().get("DEMraco"));
             assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().getFirst().keySet().contains("DEMasian"));
             assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().getFirst().keySet().contains("ModifiedBy"));
@@ -190,14 +192,14 @@ public class StudyTest extends StudyBaseTest
 
         log("Updating dataset row via API");
         UpdateRowsCommand updateCmd = new UpdateRowsCommand("study", "DEM-1");
-        updateCmd.addRow(Map.of("MouseId", "92104", "SequenceNum", 0, "DEMraco", "second", "lsid", selectResp.getRows().getFirst().get("lsid")));
+        updateCmd.addRow(Map.of("MouseId", mouseId, "SequenceNum", 0, "DEMraco", "second", "lsid", selectResp.getRows().getFirst().get("lsid")));
 
         try
         {
             RowsResponse updateResp = updateCmd.execute(cn, getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
-            assertEquals("Save rows return has incorrect value for: MouseId", "92104", updateResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Save rows return has incorrect value for: MouseId", mouseId, updateResp.getRows().getFirst().get("MouseId"));
             assertEquals("Save rows return has incorrect value for: DEMraco", "second", updateResp.getRows().getFirst().get("DEMraco"));
             assertTrue("Save rows return is missing field: DEMasian", updateResp.getRows().getFirst().keySet().contains("DEMasian"));
             assertTrue("Save rows return is missing field: ModifiedBy", updateResp.getRows().getFirst().keySet().contains("ModifiedBy"));
@@ -210,7 +212,7 @@ public class StudyTest extends StudyBaseTest
         log("Verify updated row");
         selectCmd = new SelectRowsCommand("study", "DEM-1");
 
-        selectCmd.setFilters(List.of(new Filter("MouseId", "92104", Filter.Operator.EQUAL)));
+        selectCmd.setFilters(List.of(new Filter("MouseId", mouseId, Filter.Operator.EQUAL)));
         selectCmd.setContainerFilter(ContainerFilter.CurrentAndSubfolders);
         selectCmd.setColumns(Collections.singletonList("*"));
         try
@@ -218,7 +220,7 @@ public class StudyTest extends StudyBaseTest
             selectResp = selectCmd.execute(cn, "/" + getProjectName() + "/" + getFolderName());
 
             // Spot check response values for updated values and user defined and built-in columns
-            assertEquals("Select rows return has incorrect value for: MouseId", "92104", selectResp.getRows().getFirst().get("MouseId"));
+            assertEquals("Select rows return has incorrect value for: MouseId", mouseId, selectResp.getRows().getFirst().get("MouseId"));
             assertEquals("Select rows return has incorrect value for: DEMraco", "second", selectResp.getRows().getFirst().get("DEMraco"));
             assertTrue("Select rows return is missing field: DEMasian", selectResp.getRows().getFirst().keySet().contains("DEMasian"));
             assertTrue("Save rows return is missing field: ModifiedBy", selectResp.getRows().getFirst().keySet().contains("ModifiedBy"));

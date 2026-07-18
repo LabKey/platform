@@ -47,6 +47,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.EscapeUtil;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TestDataGenerator;
 import org.labkey.test.util.TextSearcher;
 import org.labkey.test.util.ext4cmp.Ext4GridRef;
 
@@ -475,7 +476,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     @Test
     public void verifyVisitProperties()
     {
-        String visitLabel = "My visit label";
+        String visitLabel = TestDataGenerator.randomName("My visit label", 5, 5, TRICKY_CHARACTERS, "'").name();
         String visitSeqNumMin = "999.0";
         String visitSeqNumMax = "999.999";
         String visitProtocolDay = "999.001";

@@ -41,6 +41,7 @@ import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.PostgresOnlyTest;
+import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -85,16 +86,21 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
     private static final String[] CHALLENGES = {"Challenge1", "Challenge2", "Challenge3"};
 
+    private static String trickyVisitLabel(String part)
+    {
+        return TestDataGenerator.randomName(part, 3, 3, TRICKY_CHARACTERS, null).name();
+    }
+
     private static final List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1.0, 1.0),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 2", 2.0, 2.0),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
-        new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Enrollment"), 0.0, 0.0),
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 1"), 1.0, 1.0),
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 2"), 2.0, 2.0),
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 3"), 3.0, 3.0),
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 4"), 4.0, 4.0)
     );
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6.0, 7.0),
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8.0, 8.0)
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("NewVisit1"), 6.0, 7.0),
+        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("NewVisit2"), 8.0, 8.0)
     );
 
 
