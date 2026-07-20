@@ -1050,6 +1050,7 @@
       <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
+      <column columnName="SampleColor"/>
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
