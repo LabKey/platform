@@ -253,14 +253,6 @@ public class ExpSchema extends AbstractExpSchema
                 return ExperimentService.get().createDataColorTable(expSchema, cf);
             }
         },
-        DataTypeColorExclusion
-        {
-            @Override
-            public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
-            {
-                return ExperimentService.get().createDataTypeColorExclusionTable(expSchema, cf);
-            }
-        },
         Fields
         {
             @Override

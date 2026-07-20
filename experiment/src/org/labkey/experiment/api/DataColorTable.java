@@ -95,8 +95,6 @@ public class DataColorTable extends FilteredTable<ExpSchema>
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            // TODO: audit insert/update/delete for this table
-
             if (isBlankLabel(row, false))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
             if (isDuplicateLabel(String.valueOf(row.get("label")), container, -1))

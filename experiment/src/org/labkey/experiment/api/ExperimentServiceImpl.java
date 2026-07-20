@@ -1671,12 +1671,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public TableInfo createDataTypeColorExclusionTable(ExpSchema expSchema, ContainerFilter containerFilter)
-    {
-        return new DataTypeColorExclusionTable(expSchema, containerFilter);
-    }
-
-    @Override
     public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
     {
         return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
@@ -9193,7 +9187,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return true;
     }
 
-    private Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
+    @Override
+    public @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
     {
         SQLFragment sql = new SQLFragment("SELECT DataTypeRowId FROM ")
                 .append(getTinfoDataTypeColorExclusion())

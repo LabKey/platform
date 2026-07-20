@@ -798,15 +798,15 @@ public class ExperimentModule extends SpringModule
 
                 Map<String, Object> sampleColorMetrics = new HashMap<>();
                 Long colorCount = new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class);
-                results.put("colorCount", colorCount);
+                sampleColorMetrics.put("colorCount", colorCount);
                 if (colorCount > 0)
                 {
                     Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class);
-                    results.put("archivedColorCount", archivedColorCount);
-                    results.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE samplecolor IS NOT NULL").getObject(Long.class));
-                    results.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.samplecolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class));
+                    sampleColorMetrics.put("archivedColorCount", archivedColorCount);
+                    sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE samplecolor IS NOT NULL").getObject(Long.class));
+                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.samplecolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class));
 
-                    results.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
+                    sampleColorMetrics.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
                             "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
                                     "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = " + schema.getSqlDialect().getBooleanFALSE() + " AND NOT EXISTS (" +
                                     "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))")
