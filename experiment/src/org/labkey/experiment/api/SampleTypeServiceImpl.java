@@ -1220,7 +1220,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Long> disabledColorRowIds = options.getDisabledSampleColorRowIds().stream().map(Integer::longValue).toList();
                 boolean hasChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, container, user);
                 if (hasChange)
-                    addAuditEventForSampleColorExclusion(container, st.getRowId(), user);
+                    auditSampleColorExclusion(container, st.getRowId(), user);
             }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
@@ -1246,7 +1246,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return errors;
     }
 
-    private void addAuditEventForSampleColorExclusion(Container container, long materialSourceId, User user)
+    @Override
+    public void auditSampleColorExclusion(Container container, long materialSourceId, User user)
     {
         Set<Long> disabled = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, materialSourceId);
         String msg = "Sample color exclusion was updated for sample type (rowId " + materialSourceId + "). "

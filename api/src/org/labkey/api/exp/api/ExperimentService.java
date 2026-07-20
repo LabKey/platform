@@ -712,6 +712,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter cf);
 
+    TableInfo createDataTypeColorExclusionTable(ExpSchema expSchema, ContainerFilter cf);
+
     ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
@@ -1146,6 +1148,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
 
     boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
+
+    @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, User user);
 
     void removeDataColorExclusionsForColor(long colorRowId);
 

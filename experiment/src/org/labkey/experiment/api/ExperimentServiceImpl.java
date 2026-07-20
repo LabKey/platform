@@ -1671,6 +1671,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public TableInfo createDataTypeColorExclusionTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new DataTypeColorExclusionTable(expSchema, containerFilter);
+    }
+
+    @Override
     public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
     {
         return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
@@ -9185,6 +9191,60 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return true;
+    }
+
+    private Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ? AND DataType = ?")
+                .add(colorRowId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, User user)
+    {
+        Set<Long> toAdd = newlyDisabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyDisabledDataTypeIds);
+        Set<Long> toRemove = newlyEnabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyEnabledDataTypeIds);
+        toRemove.removeAll(toAdd);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        Set<Long> existing = getDataTypesExcludingColor(dataType, colorRowId);
+        toAdd.removeAll(existing);
+        toRemove.retainAll(existing);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+        {
+            for (Long dataTypeId : toAdd)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("DataTypeRowId", dataTypeId);
+                fields.put("DataType", dataType.name());
+                fields.put("ColorRowId", colorRowId);
+                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
+            }
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(getTinfoDataTypeColorExclusion())
+                        .append(" WHERE ColorRowId = ? AND DataType = ?")
+                        .add(colorRowId).add(dataType.name())
+                        .append(" AND DataTypeRowId ");
+                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
+                new SqlExecutor(getExpSchema()).execute(sql);
+            }
+            tx.commit();
+        }
+
+        Set<Long> affected = new HashSet<>(toAdd);
+        affected.addAll(toRemove);
+        return affected;
     }
 
     @Override

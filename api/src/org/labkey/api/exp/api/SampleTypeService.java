@@ -123,6 +123,8 @@ public interface SampleTypeService
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
+    void auditSampleColorExclusion(Container container, long sampleTypeRowId, User user);
+
     /**
      * Create a new SampleType with the provided properties.
      * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleType.
