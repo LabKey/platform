@@ -762,12 +762,12 @@ boxPlot.render();
             // adjust the plot range to reserve space for log gutter
             var mainPlotRangeAdjustment = 30;
             if (xLogGutter) {
-                if (scales.yLeft && Ext.isArray(scales.yLeft.range)) {
+                if (scales.yLeft && Array.isArray(scales.yLeft.range)) {
                     scales.yLeft.range = [scales.yLeft.range[0] + mainPlotRangeAdjustment, scales.yLeft.range[1]];
                 }
             }
             if (yLogGutter) {
-                if (scales.x && Ext.isArray(scales.x.range)) {
+                if (scales.x && Array.isArray(scales.x.range)) {
                     scales.x.range = [scales.x.range[0] - mainPlotRangeAdjustment, scales.x.range[1]];
                 }
             }
