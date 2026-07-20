@@ -1381,6 +1381,10 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
+            if (form.getScriptExecutionTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1415,6 +1419,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2384,6 +2389,7 @@ public class AdminController extends SpringActionController
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
+        private int _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2522,6 +2528,16 @@ public class AdminController extends SpringActionController
         public int getReadOnlyHttpRequestTimeout()
         {
             return _readOnlyHttpRequestTimeout;
+        }
+
+        public int getScriptExecutionTimeout()
+        {
+            return _scriptExecutionTimeout;
+        }
+
+        public void setScriptExecutionTimeout(int timeout)
+        {
+            _scriptExecutionTimeout = timeout;
         }
 
         public void setReadOnlyHttpRequestTimeout(int timeout)

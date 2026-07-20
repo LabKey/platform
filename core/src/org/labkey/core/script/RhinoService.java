@@ -40,6 +40,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
@@ -1006,9 +1007,8 @@ class SandboxContextFactory extends ContextFactory
     {
         SandboxContext ctx = (SandboxContext)cx;
         long currentTime = HeartBeat.currentTimeMillis();
-        final int timeout = 60;
-        if (currentTime - ctx.startTime > timeout*1000)
-            Context.reportError("Script execution exceeded " + timeout + " seconds.");
+        if (ctx.timeoutSeconds > 0 && currentTime - ctx.startTime > ctx.timeoutSeconds * 1000L)
+            Context.reportError("Script execution exceeded " + ctx.timeoutSeconds + " seconds.");
     }
 
     @Override
@@ -1044,12 +1044,15 @@ class SandboxContextFactory extends ContextFactory
     private static class SandboxContext extends Context
     {
         private final long startTime;
+        // resolved once per context; observeInstructionCount runs far too often for a property lookup
+        private final int timeoutSeconds;
 
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
             setLanguageVersion(Context.VERSION_1_8);
             startTime = HeartBeat.currentTimeMillis();
+            timeoutSeconds = AppProps.getInstance().getScriptExecutionTimeout();
         }
     }
 
