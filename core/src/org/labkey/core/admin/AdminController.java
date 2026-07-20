@@ -1381,7 +1381,7 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
-            if (form.getScriptExecutionTimeout() < 0)
+            if (form.getScriptExecutionTimeout() != null && form.getScriptExecutionTimeout() < 0)
             {
                 errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
             }
@@ -1419,7 +1419,8 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
-            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
+            if (form.getScriptExecutionTimeout() != null)
+                props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2389,7 +2390,7 @@ public class AdminController extends SpringActionController
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
-        private int _scriptExecutionTimeout;
+        private Integer _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2530,12 +2531,14 @@ public class AdminController extends SpringActionController
             return _readOnlyHttpRequestTimeout;
         }
 
-        public int getScriptExecutionTimeout()
+        /** Null when the request omits the parameter; leave the stored setting unchanged in that case. */
+        @Nullable
+        public Integer getScriptExecutionTimeout()
         {
             return _scriptExecutionTimeout;
         }
 
-        public void setScriptExecutionTimeout(int timeout)
+        public void setScriptExecutionTimeout(@Nullable Integer timeout)
         {
             _scriptExecutionTimeout = timeout;
         }
