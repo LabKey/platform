@@ -16,6 +16,7 @@
 package org.labkey.pipeline.mule.transformers;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.security.AnyTypePermission;
 import com.thoughtworks.xstream.security.ForbiddenClassException;
 import com.thoughtworks.xstream.security.NoTypePermission;
 import com.thoughtworks.xstream.security.NullPermission;
@@ -27,6 +28,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.URLHelper;
+import org.labkey.pipeline.api.PipelineJacksonTyping;
 import org.labkey.pipeline.mule.RequeueLostJobsRequest;
 import org.labkey.pipeline.mule.StatusChangeRequest;
 import org.labkey.pipeline.mule.StatusRequest;
@@ -44,6 +46,9 @@ import java.util.Set;
  * {@code AnyTypePermission.ANY}, which would let any class on the classpath be instantiated during deserialization
  * (a classic XStream gadget-chain RCE primitive). See https://x-stream.github.io/security.html. This is
  * defense-in-depth: only the types that legitimately appear in a {@link StatusRequest} object graph are allowed.
+ * <p>
+ * Gated by the same deprecated {@link PipelineJacksonTyping#FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST} escape hatch as the
+ * JSON job channel: when set, {@link #configure} reverts to {@code AnyTypePermission.ANY}.
  */
 public class PipelineXStreamSecurity
 {
@@ -53,6 +58,15 @@ public class PipelineXStreamSecurity
 
     public static void configure(XStream x)
     {
+        if (!PipelineJacksonTyping.isEnforced())
+        {
+            // Escape hatch: the deprecated FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST reverts both pipeline deserialization
+            // channels to their historical unrestricted behavior. Reopens the gadget-chain RCE surface; only for
+            // temporarily unblocking a legitimate type the allowlist rejects.
+            x.addPermission(AnyTypePermission.ANY);
+            return;
+        }
+
         // Deny everything, then carve out exactly the types reachable from a StatusRequest. NONE must be added
         // first: XStream evaluates permissions in reverse registration order, so the catch-all deny goes in last.
         x.addPermission(NoTypePermission.NONE);

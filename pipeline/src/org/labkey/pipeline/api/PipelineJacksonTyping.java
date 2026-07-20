@@ -45,8 +45,11 @@ import java.util.Set;
  *
  * <p>A single {@code org.labkey.} prefix covers every {@link PipelineJob} subclass and LabKey domain object in the graph;
  * the remaining allowlist entries are the JDK collection/scalar and known-safe library packages that appear as job
- * fields (most JDK scalars — {@code String}, {@code Integer}, {@code File}, {@code URI} — are either final or have
- * custom string serializers, so they never carry a type id).
+ * fields. The final scalar value types ({@code String}, {@code Integer}, {@code Long}, {@code Double}, {@code Boolean},
+ * {@code Short}, {@code Byte}, {@code Float}, {@code Character}) are pinned individually in {@code ALLOWED_EXACT}: some
+ * carry a {@code java.lang.*} type id even as a bare value, and the rest surface a {@code [Ljava.lang.X;} id once boxed
+ * in an {@code Object[]}. They are listed exactly rather than via a {@code java.lang.} prefix that would also re-admit
+ * gadget classes like {@code Runtime}.
  */
 public final class PipelineJacksonTyping
 {
@@ -55,8 +58,9 @@ public final class PipelineJacksonTyping
     }
 
     /**
-     * Deprecated feature flag that reverts pipeline job deserialization to the historical unrestricted default typing.
-     * Off by default (i.e. the allowlist is enforced). Acts as a workaround if the allowlist rejects a legitimate type.
+     * Deprecated feature flag that reverts both pipeline deserialization channels to their historical unrestricted
+     * behavior: the JSON job allowlist here, and the XStream status-channel allowlist in {@code PipelineXStreamSecurity}.
+     * Off by default (i.e. the allowlists are enforced). Acts as a workaround if an allowlist rejects a legitimate type.
      */
     public static final String FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST = "PipelineJobDisableTypeAllowlist";
 
@@ -71,16 +75,29 @@ public final class PipelineJacksonTyping
             "it.unimi.dsi.fastutil."       // fastutil collections used by the sequence-analysis job family
     );
 
-    // Exact JDK / third-party class names whose type ids are pinned by the custom serializers registered in
-    // PipelineJob.createObjectMapper(): FileSerialization, PathSerialization and URISerialization call
-    // typeSer.typeId(value, File.class/Path.class/URI.class, ...) and CronExpressionSerialization emits the runtime
-    // org.quartz.CronExpression. These write the base class as the type id (never a subclass), so an exact allow is both
-    // necessary and sufficient.
+    // Exact JDK / third-party class names that carry a type id but whose package prefix must stay off the allowlist.
+    // Two sources. (1) Base classes pinned by the custom serializers registered in PipelineJob.createObjectMapper():
+    // FileSerialization, PathSerialization and URISerialization call typeSer.typeId(value, File.class/Path.class/URI.class,
+    // ...) and CronExpressionSerialization emits the runtime org.quartz.CronExpression, always as the base class (never a
+    // subtype). (2) Final scalar value types that NON_FINAL default typing tags with a java.lang.* id: Long/Short/Byte/
+    // Float/Character get one even as a bare value (they aren't the natural binding for their JSON token), while
+    // String/Integer/Double/Boolean travel untyped as scalars but still surface a [Ljava.lang.X; id when boxed in an
+    // Object[] (elementType strips the array to the component). None can be a gadget, so an exact allow is safe; a broad
+    // java.lang. prefix is deliberately avoided so it can never re-admit Runtime/Process/etc.
     private static final Set<String> ALLOWED_EXACT = Set.of(
             "java.io.File",
             "java.nio.file.Path",
             "java.net.URI",
-            "org.quartz.CronExpression"
+            "org.quartz.CronExpression",
+            "java.lang.Long",
+            "java.lang.Short",
+            "java.lang.Byte",
+            "java.lang.Float",
+            "java.lang.Character",
+            "java.lang.String",
+            "java.lang.Integer",
+            "java.lang.Double",
+            "java.lang.Boolean"
     );
 
     // Explicit denials, checked before the allowlist. None overlap ALLOWED_PREFIXES today, so this is belt-and-suspenders
@@ -195,14 +212,24 @@ public final class PipelineJacksonTyping
         {
             // The Holder root (org.labkey.*), the HashMap/ArrayList (java.util.*), and the java.sql.Timestamp value all
             // carry type ids and must round-trip through the enforcing mapper without a ForbiddenClass-style rejection.
+            // Long/Float/Character are final too but, unlike String/Integer/Double, NON_FINAL default typing still tags
+            // them with a java.lang.* type id in an Object-typed slot, both as a direct value and as a collection element.
             ObjectMapper writeMapper = PipelineJob.createObjectMapper();
             ObjectMapper secureMapper = PipelineJob.createObjectMapper(validator());
 
             Map<String, Object> map = new HashMap<>();
             map.put("string", "hello");
             map.put("number", 42);
+            map.put("long", 42L);
+            map.put("float", 3.14f);
+            map.put("char", 'x');
             map.put("timestamp", new Timestamp(1400938833L));
             map.put("list", new ArrayList<>(List.of("a", "b")));
+            map.put("scalarList", new ArrayList<>(List.of(42L, 3.14f, 'x')));
+            // An Object[] carries a [Ljava.lang.X; type id even for scalars that travel untyped as bare values, so
+            // String[]/Integer[] exercise the component-type allow that a direct String/Integer value does not.
+            map.put("stringArray", new String[]{"a", "b"});
+            map.put("intArray", new Integer[]{1, 2});
             Holder holder = new Holder();
             holder.value = map;
 
@@ -210,7 +237,19 @@ public final class PipelineJacksonTyping
             Holder result = secureMapper.readValue(json, Holder.class);
 
             assertTrue("Expected the map value to survive", result.value instanceof Map);
-            assertTrue("Expected the Timestamp to survive", ((Map<?, ?>) result.value).get("timestamp") instanceof Timestamp);
+            Map<?, ?> resultMap = (Map<?, ?>) result.value;
+            assertTrue("Expected the Timestamp to survive", resultMap.get("timestamp") instanceof Timestamp);
+            assertTrue("Expected the Long to survive", resultMap.get("long") instanceof Long);
+            assertTrue("Expected the Float to survive", resultMap.get("float") instanceof Float);
+            assertTrue("Expected the Character to survive", resultMap.get("char") instanceof Character);
+
+            List<?> scalarList = (List<?>) resultMap.get("scalarList");
+            assertTrue("Expected the boxed Long element to survive", scalarList.get(0) instanceof Long);
+            assertTrue("Expected the boxed Float element to survive", scalarList.get(1) instanceof Float);
+            assertTrue("Expected the boxed Character element to survive", scalarList.get(2) instanceof Character);
+
+            assertTrue("Expected the String[] to survive", resultMap.get("stringArray") instanceof String[]);
+            assertTrue("Expected the Integer[] to survive", resultMap.get("intArray") instanceof Integer[]);
         }
 
         @Test

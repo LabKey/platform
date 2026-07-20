@@ -212,8 +212,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(PipelineJacksonTyping.FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST,
-            "Disable pipeline job deserialization type allowlist",
-            "Reverts pipeline job JSON deserialization to unrestricted Jackson default typing instead of the deny-by-default type allowlist. Enable only as a temporary escape hatch if the allowlist rejects a legitimate job type.", false, true, FeatureType.Deprecated));
+            "Disable pipeline deserialization type allowlists",
+            "Reverts both pipeline deserialization channels to their historical unrestricted behavior: JSON jobs to unrestricted Jackson default typing, and the XStream JMS status channel to AnyTypePermission. Enable only as a temporary escape hatch if an allowlist rejects a legitimate type.", false, true, FeatureType.Deprecated));
 
         if (null != FileContentService.get())
             FileContentService.get().addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
