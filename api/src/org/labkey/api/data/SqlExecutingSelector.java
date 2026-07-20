@@ -188,8 +188,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null == LARGE_RESULT_WARNING_THROTTLE.get(stackKey))
             {
                 LARGE_RESULT_WARNING_THROTTLE.put(stackKey, Boolean.TRUE);
+                // Log the parameterized SQL only (getSQL(), not the SQLFragment) so bound parameter values stay out of the log
                 LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to forEach(), forEachBatch(), or uncachedStream() to reduce memory usage. SQL: {}",
-                    result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql(), stackTrace);
+                    result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql().getSQL(), stackTrace);
             }
         }
 

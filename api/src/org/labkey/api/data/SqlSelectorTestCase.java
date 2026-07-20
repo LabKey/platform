@@ -22,7 +22,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
@@ -278,6 +281,54 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 assertEquals(scope.getConnection(), conn2);
             }
             tx.commit();
+        }
+    }
+
+    // Verify that nested DB access from a row callback reuses that same borrowed connection (rather than grabbing a
+    // second one), returns correct results while the outer ResultSet is still open, doesn't truncate the outer
+    // iteration, and leaves the thread connection fully restored once forEach() completes.
+    @Test
+    public void testNestedQueryDuringForEach() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+
+        // The borrow-and-disable-caching path only engages outside a transaction
+        assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
+
+        // core.Containers always has at least the root container
+        long expectedRows = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers")).getRowCount();
+        assertTrue("core.Containers should never be empty", expectedRows > 0);
+
+        MutableInt visited = new MutableInt(0);
+        Set<Connection> callbackConnections = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers ORDER BY RowId")).forEach(Integer.class, rowId -> {
+            visited.increment();
+
+            // The callback runs while the outer ResultSet is open. Acquiring the thread connection must return the same
+            // borrowed connection, in no-caching mode — proving nested code shares the transction/conncetion.
+            try (Connection nested = scope.getConnection())
+            {
+                callbackConnections.add(nested);
+
+                assertFalse("Nested access during forEach() should run on the uncached borrowed connection", nested.getAutoCommit());
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, nested.getTransactionIsolation());
+            }
+
+            // A nested self-contained query must return correct results even though the outer server-side cursor is open
+            // on the same connection — this is the interleaving that would fail if the nested statement clobbered it.
+            Integer nestedRowId = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers WHERE RowId = ?", rowId)).getObject(Integer.class);
+            assertEquals("Nested query should return exactly the matching row", rowId, nestedRowId);
+        });
+
+        assertEquals("forEach() should visit every row even with nested queries in the callback", expectedRows, visited.longValue());
+        assertEquals("Nested access should reuse the single borrowed connection across all rows", 1, callbackConnections.size());
+
+        // Once the outermost borrower (forEach) releases the connection, it must be restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
         }
     }
 
