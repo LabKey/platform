@@ -142,6 +142,18 @@ public class SecretServiceImpl implements SecretService
         return provider != null ? provider.getDescription() : null;
     }
 
+    @Override
+    public @Nullable String getAppName()
+    {
+        for (SecretProvider provider : activeProviders())
+        {
+            String appName = provider.getAppName();
+            if (appName != null)
+                return appName;
+        }
+        return null;
+    }
+
     public void shutdown()
     {
         SecretProvider external = _externalProvider;
@@ -235,6 +247,41 @@ public class SecretServiceImpl implements SecretService
             SecretProperty prop = new SecretProperty("my.KEY");
             svc.register(prop);
             assertEquals("from-external", svc.getSecret(prop));
+        }
+
+        @Test
+        public void testGetAppNameFromExternalProvider()
+        {
+            SecretServiceImpl svc = new SecretServiceImpl();
+            svc.setExternalProvider(new SecretProvider()
+            {
+                @Override
+                public @Nullable String getSecret(String propertyName)
+                {
+                    return null;
+                }
+
+                @Override
+                public @NotNull String getDescription()
+                {
+                    return "Test provider";
+                }
+
+                @Override
+                public @Nullable String getAppName()
+                {
+                    return "MyApp";
+                }
+            });
+
+            assertEquals("MyApp", svc.getAppName());
+        }
+
+        @Test
+        public void testGetAppNameNullWhenNoProviderReportsOne()
+        {
+            SecretServiceImpl svc = new SecretServiceImpl();
+            assertNull(svc.getAppName());
         }
 
         private StartupPropertySecretProvider startupProviderWith(String name, String value)
