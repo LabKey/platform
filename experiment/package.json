@@ -16,7 +16,7 @@
     "@labkey/components": "7.46.4-fb-rspack-build.1"
   },
   "devDependencies": {
-    "@labkey/build": "10.0.1-fb-rspack-build.13",
+    "@labkey/build": "10.0.1-fb-rspack-build.14",
     "@labkey/eslint-config": "1.2.2",
     "@labkey/test": "1.14.1",
     "@types/jest": "30.0.0",
