@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongHashMap;
-import org.labkey.api.collections.StringHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -36,24 +35,20 @@ public class DataColorManager
     {
         private final List<DataColor> _colors;
         private final Map<Long, DataColor> _byRowId;
-        private final Map<String, DataColor> _byLabel;
 
         private DataColorCollections(Container c)
         {
             List<DataColor> colors = new ArrayList<>();
             Map<Long, DataColor> byRowId = new LongHashMap<>();
-            Map<String, DataColor> byLabel = new StringHashMap<>();
 
             new TableSelector(ExperimentServiceImpl.get().getTinfoDataColors(), SimpleFilter.createContainerFilter(c), new Sort("Label"))
                     .forEach(DataColor.class, color -> {
                         colors.add(color);
                         byRowId.put((long) color.getRowId(), color);
-                        byLabel.put(color.getLabel(), color);
                     });
 
             _colors = Collections.unmodifiableList(colors);
             _byRowId = Collections.unmodifiableMap(byRowId);
-            _byLabel = Collections.unmodifiableMap(byLabel);
         }
     }
 
@@ -105,12 +100,6 @@ public class DataColorManager
     public DataColor getColorForRowId(Container container, Long rowId)
     {
         return rowId == null ? null : CACHE.get(container)._byRowId.get(rowId);
-    }
-
-    @Nullable
-    public DataColor getColorForLabel(Container container, String label)
-    {
-        return label == null ? null : CACHE.get(container)._byLabel.get(label);
     }
 
     public void clearCache(Container c)
