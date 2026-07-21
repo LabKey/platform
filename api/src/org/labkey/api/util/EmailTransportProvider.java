@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
 
 import java.util.Properties;
 
@@ -30,6 +31,13 @@ public interface EmailTransportProvider
      * @return the display name of this provider for logging purposes
      */
     String getName();
+
+    /**
+     * @return a short, human-readable hint describing how to configure this provider, used when building the
+     * "no email transport configured" error message. For example, {@code "SMTP (mail.smtp.*)"}. Only the hints of
+     * registered providers are shown, so an undeployed provider (e.g. Microsoft Graph) never appears in the message.
+     */
+    String getConfigurationHint();
 
     /**
      * Load configuration from startup properties and/or ServletContext.
@@ -49,6 +57,17 @@ public interface EmailTransportProvider
      * @throws MessagingException if sending fails
      */
     void send(Message message) throws MessagingException;
+
+    /**
+     * @return the {@link Session} to associate with newly created messages. The session travels with the message and
+     * carries any transport-specific configuration needed at send time (e.g. SMTP host/port/auth). Transports that
+     * don't rely on the session (e.g. Microsoft Graph, which reads the assembled MIME content) can use the default
+     * neutral session.
+     */
+    default Session getSession()
+    {
+        return MailHelper.getDefaultSession();
+    }
 
     /**
      * @return the configuration properties for this provider
