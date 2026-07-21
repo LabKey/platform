@@ -1381,7 +1381,11 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
-            if (form.getScriptExecutionTimeout() != null && form.getScriptExecutionTimeout() < 0)
+            if (form.getScriptExecutionTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getScriptExecutionTimeout() < 0)
             {
                 errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
             }
@@ -1419,8 +1423,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
-            if (form.getScriptExecutionTimeout() != null)
-                props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2531,7 +2534,7 @@ public class AdminController extends SpringActionController
             return _readOnlyHttpRequestTimeout;
         }
 
-        /** Null when the request omits the parameter; leave the stored setting unchanged in that case. */
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
         @Nullable
         public Integer getScriptExecutionTimeout()
         {
