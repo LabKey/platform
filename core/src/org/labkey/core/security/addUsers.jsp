@@ -134,7 +134,7 @@
     <%
         if (form.getProvider() != null)
         {
-            %><input type="hidden" name="provider" id="provider" value=<%=h(form.getProvider())%>><%
+            %><input type="hidden" name="provider" id="provider" value="<%=h(form.getProvider())%>"><%
         }
         else
         {
