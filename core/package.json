@@ -5,11 +5,11 @@
     "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
     "build-analyze": "cross-env ANALYZE=true npm run build",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development rspack build --config node_modules/@labkey/build/webpack/dev.config.js",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map rspack build --config node_modules/@labkey/build/webpack/prod.config.js",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development rspack build --config node_modules/@labkey/build/configs/dev.config.js",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map rspack build --config node_modules/@labkey/build/configs/prod.config.js",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/web/gen",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development rspack serve --config node_modules/@labkey/build/configs/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint",
@@ -24,7 +24,7 @@
     "@labkey/themes": "1.9.4"
   },
   "devDependencies": {
-    "@labkey/build": "10.0.1-fb-rspack-build.12",
+    "@labkey/build": "10.0.1-fb-rspack-build.13",
     "@labkey/eslint-config": "1.2.2",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
