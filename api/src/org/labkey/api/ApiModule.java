@@ -173,6 +173,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.SmtpTransportProvider;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SvgUtil;
@@ -234,6 +235,7 @@ public class ApiModule extends CodeOnlyModule
 
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();
+        MailHelper.registerProvider(new SmtpTransportProvider());
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
