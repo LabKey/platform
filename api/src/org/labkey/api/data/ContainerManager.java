@@ -1091,9 +1091,12 @@ public class ContainerManager
             try (DbScope.Transaction t = ensureTransaction())
             {
                 List<GUID> ids = new ArrayList<>();
+                ContainerFactory factory = new ContainerFactory();
+                // ContainerFactory only builds from a ResultSet (fromMap is unsupported), so iterate rows directly
                 new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        parent.getId()).forEach(Container.class, c -> {
+                        parent.getId()).forEach(rs -> {
+                    Container c = factory.handle(rs);
                     ids.add(c.getEntityId());
                     _addToCache(c);
                 });
