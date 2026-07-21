@@ -97,7 +97,8 @@ public final class PipelineJacksonTyping
             "java.lang.String",
             "java.lang.Integer",
             "java.lang.Double",
-            "java.lang.Boolean"
+            "java.lang.Boolean",
+            "java.lang.Object"             // Object[] container id [Ljava.lang.Object;; each element is still validated independently
     );
 
     // Explicit denials, checked before the allowlist. None overlap ALLOWED_PREFIXES today, so this is belt-and-suspenders
@@ -230,6 +231,7 @@ public final class PipelineJacksonTyping
             // String[]/Integer[] exercise the component-type allow that a direct String/Integer value does not.
             map.put("stringArray", new String[]{"a", "b"});
             map.put("intArray", new Integer[]{1, 2});
+            map.put("2dArray", new Object[]{new Object[]{"s", 4L, 5.0d}, "x", Boolean.TRUE});
             Holder holder = new Holder();
             holder.value = map;
 
@@ -250,6 +252,7 @@ public final class PipelineJacksonTyping
 
             assertTrue("Expected the String[] to survive", resultMap.get("stringArray") instanceof String[]);
             assertTrue("Expected the Integer[] to survive", resultMap.get("intArray") instanceof Integer[]);
+            assertTrue("Expected the Object[] to survive", resultMap.get("2dArray") instanceof Object[]);
         }
 
         @Test
