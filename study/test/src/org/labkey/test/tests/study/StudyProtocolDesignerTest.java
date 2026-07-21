@@ -86,11 +86,6 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
     private static final String[] CHALLENGES = {"Challenge1", "Challenge2", "Challenge3"};
 
-    private static String trickyVisitLabel(String part)
-    {
-        return TestDataGenerator.randomName(part, 3, 3, TRICKY_CHARACTERS, null).name();
-    }
-
 
     private static final List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
         new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
@@ -100,8 +95,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("NewVisit1"), 6.0, 7.0),
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("NewVisit2"), 8.0, 8.0)
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TRICKY_CHARACTERS, null).name(), 6.0, 7.0),
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TRICKY_CHARACTERS, null).name(), 8.0, 8.0)
     );
 
 
