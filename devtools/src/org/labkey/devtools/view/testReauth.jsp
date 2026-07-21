@@ -39,8 +39,8 @@
                     document.getElementById("link").href = data.reauthUrl;
                 }
             },
-            failure: LABKEY.Utils.getCallbackWrapper(function(response) {
-                document.getElementById("content").innerHTML = '<span>' + LABKEY.Utils.encodeHtml(response.exception) + '</span>';
+            failure: LABKEY.Utils.getCallbackWrapper(function(errorInfo) {
+                document.getElementById("content").innerHTML = '<span>' + LABKEY.Utils.encodeHtml(errorInfo.exception ?? 'Failed to retrieve configuration') + '</span>';
             }, this, true)
         });
     });

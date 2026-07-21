@@ -1642,8 +1642,6 @@ public class LoginController extends SpringActionController
         }
     }
 
-    private static final String CONFIGURATION_ADVICE = ". Please Sign Out and Sign In again.";
-
     @SuppressWarnings("unused") // Called from client code
     @RequiresLogin
     public static class GetAuthenticationConfigurationAction extends ReadOnlyApiAction<ReturnUrlForm>
@@ -1670,6 +1668,8 @@ public class LoginController extends SpringActionController
             return success(resp);
         }
     }
+
+    private static final String CONFIGURATION_ADVICE = ". Please Sign Out and Sign In again.";
 
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
