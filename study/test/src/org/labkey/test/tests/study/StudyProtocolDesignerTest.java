@@ -91,12 +91,13 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         return TestDataGenerator.randomName(part, 3, 3, TRICKY_CHARACTERS, null).name();
     }
 
+
     private static final List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Enrollment"), 0.0, 0.0),
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 1"), 1.0, 1.0),
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 2"), 2.0, 2.0),
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 3"), 3.0, 3.0),
-        new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("Visit 4"), 4.0, 4.0)
+        new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1.0, 1.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 2", 2.0, 2.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
+        new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
         new BaseManageVaccineDesignVisitPage.Visit(trickyVisitLabel("NewVisit1"), 6.0, 7.0),
@@ -294,7 +295,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     {
         ManageTreatmentsSingleTablePage singleManagementTable;
         TreatmentDialog treatmentDialog;
-        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
+        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", NEW_VISITS.get(0).getLabel(), NEW_VISITS.get(1).getLabel()));
         String tempText;
 
         // These are the expected Immunogen options:
