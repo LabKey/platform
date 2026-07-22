@@ -771,7 +771,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null, null);
     }
 
     @NotNull
@@ -779,7 +779,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable List<Integer> excludedSampleColorIds, @Nullable Map<String, Object> changeDetails)
         throws ExperimentException
     {
         validateSampleTypeName(c, u, name, false);
@@ -968,6 +968,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
+                    if (excludedSampleColorIds != null && !excludedSampleColorIds.isEmpty())
+                    {
+                        List<Long> disabledColorRowIds = excludedSampleColorIds.stream().map(Integer::longValue).toList();
+                        boolean hasColorChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, c, u);
+                        if (hasColorChange)
+                            auditSampleColorExclusion(c, st, null, u);
+                    }
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     transaction.addCommitTask(() -> indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
 
@@ -1219,7 +1226,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Long> disabledColorRowIds = options.getDisabledSampleColorRowIds().stream().map(Integer::longValue).toList();
                 boolean hasChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, container, user);
                 if (hasChange)
-                    auditSampleColorExclusion(container, st.getRowId(), user);
+                    auditSampleColorExclusion(container, st, auditUserComment, user);
             }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
@@ -1246,13 +1253,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public void auditSampleColorExclusion(Container container, long materialSourceId, User user)
+    public void auditSampleColorExclusion(Container container, long materialSourceId, @Nullable String auditUserComment, User user)
     {
-        Set<Long> disabled = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, materialSourceId);
-        String msg = "Sample color exclusion was updated for sample type (rowId " + materialSourceId + "). "
+        auditSampleColorExclusion(container, getSampleType(container, materialSourceId), auditUserComment, user);
+    }
+
+    public void auditSampleColorExclusion(Container container, ExpSampleType sampleType, @Nullable String auditUserComment, User user)
+    {
+        Set<Long> disabled = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, sampleType.getRowId());
+        String msg = "Sample color exclusion was updated for sample type (rowId " + sampleType.getRowId() + "). "
                 + (disabled.isEmpty() ? "All colors enabled." : "Excluded color rowIds: " + StringUtils.join(disabled, ", ") + ".");
-        AuditTypeEvent event = new AuditTypeEvent(SampleTypeAuditProvider.EVENT_TYPE, container, msg);
-        AuditLogService.get().addEvent(user, event);
+        addSampleTypeAuditEvent(user, container, sampleType, msg, auditUserComment, "update colors");
     }
 
 
