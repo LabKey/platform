@@ -1275,6 +1275,7 @@
     <table tableName="DataTypeColorExclusion" tableDbType="TABLE">
         <columns>
             <column columnName="RowId"/>
+            <column columnName="Container"/>
             <column columnName="DataTypeRowId"/>
             <column columnName="DataType"/>
             <column columnName="ColorRowId"/>

@@ -26,6 +26,7 @@ ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_ExpMaterialColor FOREIGN KEY
 CREATE TABLE exp.DataTypeColorExclusion
 (
     RowId SERIAL NOT NULL,
+    Container ENTITYID NOT NULL,
     DataTypeRowId INT NOT NULL,
     DataType VARCHAR(20) NOT NULL,
     ColorRowId INT NOT NULL,

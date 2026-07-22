@@ -118,6 +118,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
@@ -771,11 +772,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(c).isEmpty();
     }
 
-    // The SampleColor system field is shown only when at least one sample color is enabled for the sample type
-    // (or, for the non-type-specific "All Samples" table, when any active color is defined in the container).
     private boolean colorsEnabled(Container c)
     {
-        // TODO: check SampleManagement module
+        if (!OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS))
+            return false;
         if (_ss != null)
             return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
         return !DataColorManager.getInstance().getActiveColors(c).isEmpty();

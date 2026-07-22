@@ -9166,6 +9166,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (Long colorRowId : toAdd)
             {
                 Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", container.getId());
                 fields.put("DataTypeRowId", dataTypeId);
                 fields.put("DataType", dataType.name());
                 fields.put("ColorRowId", colorRowId);
@@ -9198,7 +9199,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, User user)
+    public @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user)
     {
         Set<Long> toAdd = newlyDisabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyDisabledDataTypeIds);
         Set<Long> toRemove = newlyEnabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyEnabledDataTypeIds);
@@ -9219,6 +9220,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (Long dataTypeId : toAdd)
             {
                 Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", container.getId());
                 fields.put("DataTypeRowId", dataTypeId);
                 fields.put("DataType", dataType.name());
                 fields.put("ColorRowId", colorRowId);
@@ -9267,9 +9269,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SqlExecutor executor = new SqlExecutor(getExpSchema());
         SQLFragment delExclusions = new SQLFragment("DELETE FROM ")
                 .append(getTinfoDataTypeColorExclusion())
-                .append(" WHERE ColorRowId IN (SELECT RowId FROM ")
-                .append(getTinfoDataColors())
-                .append(" WHERE Container = ?)").add(containerId);
+                .append(" WHERE Container = ?").add(containerId);
         executor.execute(delExclusions);
 
         SQLFragment delColors = new SQLFragment("DELETE FROM ")
