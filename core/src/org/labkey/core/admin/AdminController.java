@@ -146,6 +146,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
@@ -1380,6 +1381,14 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
+            if (form.getScriptExecutionTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getScriptExecutionTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1414,6 +1423,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2383,6 +2393,7 @@ public class AdminController extends SpringActionController
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
+        private Integer _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2521,6 +2532,18 @@ public class AdminController extends SpringActionController
         public int getReadOnlyHttpRequestTimeout()
         {
             return _readOnlyHttpRequestTimeout;
+        }
+
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
+        @Nullable
+        public Integer getScriptExecutionTimeout()
+        {
+            return _scriptExecutionTimeout;
+        }
+
+        public void setScriptExecutionTimeout(@Nullable Integer timeout)
+        {
+            _scriptExecutionTimeout = timeout;
         }
 
         public void setReadOnlyHttpRequestTimeout(int timeout)
@@ -3524,6 +3547,25 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "Secrets", this.getClass());
         }
     }
+
+    // NOTE let the Professional Module register this action (there is no ProfessionalController)
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class AssistantStatusAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return McpService.get().getAssistantStatusView();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+        }
+    }
+
 
 
     public static class ConfigureSystemMaintenanceForm
@@ -11142,9 +11184,10 @@ public class AdminController extends SpringActionController
             res.put("server", AdminBean.getPropertyMap());
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
-            new SqlSelector(CoreSchema.getInstance().getScope(),
-                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+            var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
+                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+            new SqlSelector(CoreSchema.getInstance().getScope(), sql)
+                    .forEachMap(m ->
                 {
                     String category = (String)m.get("category");
                     String name = (String)m.get("name");
