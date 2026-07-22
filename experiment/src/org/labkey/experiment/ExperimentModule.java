@@ -297,7 +297,7 @@ public class ExperimentModule extends SpringModule
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
                 "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS, "Sample Colors",
-                "Enable assigning custom colors to individual samples, with an app-level color palette configurable per sample type.", false);
+                "Enable assigning custom colors to individual samples, with an app-level color palette configurable per sample type.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
