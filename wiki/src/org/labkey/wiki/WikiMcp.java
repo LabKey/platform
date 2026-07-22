@@ -153,7 +153,7 @@ public class WikiMcp implements McpService.McpImpl
         }
         else
         {
-            svc.insertWiki(cu.getUser(), cu.getContainer(), wikiName, content, WikiRendererType.MARKDOWN, description);
+            WikiManager.get().insertAssistantMemory(cu.getUser(), cu.getContainer(), wikiName, content, description);
             return "Created assistant memory \"" + name + "\".";
         }
     }

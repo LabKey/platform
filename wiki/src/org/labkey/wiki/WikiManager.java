@@ -967,6 +967,62 @@ public class WikiManager implements WikiService
     /** Storage-name prefix for assistant-memory wikis. Package-local: only the wiki module needs it. */
     public static final String MEMORY_PREFIX = "memory:";
 
+    /** Name of the parent wiki page under which all assistant-memory wikis are nested. Package-local: only the wiki module needs it. */
+    public static final String MEMORY_PARENT_NAME = "_ai_assistant";
+
+    /**
+     * Ensures the {@link #MEMORY_PARENT_NAME} wiki page exists in the container, creating an empty
+     * one if necessary, and returns it.
+     */
+    private Wiki ensureAssistantMemoryParent(Container c, User user)
+    {
+        Wiki parent = WikiSelectManager.getWiki(c, MEMORY_PARENT_NAME);
+        if (null != parent)
+            return parent;
+
+        Wiki wiki = new Wiki(c, MEMORY_PARENT_NAME);
+        WikiVersion wikiversion = new WikiVersion();
+        wikiversion.setTitle("AI Assistant Memory");
+        wikiversion.setBody("");
+        wikiversion.setRendererTypeEnum(WikiRendererType.MARKDOWN);
+
+        try
+        {
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return wiki;
+    }
+
+    /**
+     * Inserts a new assistant-memory wiki, nesting it under {@link #MEMORY_PARENT_NAME} (creating
+     * that parent page first if it doesn't already exist).
+     */
+    void insertAssistantMemory(User user, Container c, String wikiName, String content, String title)
+    {
+        Wiki parent = ensureAssistantMemoryParent(c, user);
+
+        Wiki wiki = new Wiki(c, wikiName);
+        wiki.setParent(parent.getRowId());
+        WikiVersion wikiversion = new WikiVersion();
+        wikiversion.setTitle(title);
+        wikiversion.setBody(content);
+        wikiversion.setRendererTypeEnum(WikiRendererType.MARKDOWN);
+
+        try
+        {
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public List<AssistantMemory> getAssistantMemories(Container c)
     {
