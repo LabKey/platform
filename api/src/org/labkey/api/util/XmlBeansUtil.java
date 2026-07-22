@@ -33,6 +33,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedList;
@@ -196,5 +198,41 @@ public class XmlBeansUtil
         result.setXIncludeAware(false);
         result.setExpandEntityReferences(false);
         return result;
+    }
+
+    /**
+     * A {@link SchemaFactory} hardened against XXE (CWE-611): external DTD and schema access blocked,
+     * secure processing on. Not thread-safe, so a fresh instance is returned per call.
+     */
+    public static SchemaFactory schemaFactory()
+    {
+        //noinspection SchemaFactory
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        try
+        {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        }
+        catch (SAXException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        return factory;
+    }
+
+    // The Validator resolves entities in the instance document independently of the SchemaFactory, so it must be locked down separately.
+    public static Validator hardenValidator(Validator validator)
+    {
+        try
+        {
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        }
+        catch (SAXException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+        return validator;
     }
 }
