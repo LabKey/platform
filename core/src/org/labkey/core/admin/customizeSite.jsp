@@ -313,6 +313,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="<%=readOnlyHttpRequestTimeout%>" id="<%=readOnlyHttpRequestTimeout%>" size="4" value="<%=appProps.getReadOnlyHttpRequestTimeout()%>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label"><label for="<%=scriptExecutionTimeout%>">Timeout for server-side scripts, in seconds<%=helpPopup("Script execution timeout",
+        "Maximum time a server-side JavaScript invocation (such as a trigger script) may run before it is terminated. Measured in wall-clock time, including database and other Java operations invoked by the script. Set to 0 to disable the timeout.")%></label></td>
+    <td><input type="text" name="<%=scriptExecutionTimeout%>" id="<%=scriptExecutionTimeout%>" size="4" value="<%=appProps.getScriptExecutionTimeout()%>"></td>
+</tr>
+<tr>
     <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>
     <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>
@@ -321,7 +326,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure Security (<%=bean.getSiteSettingsHelpLink("security")%>)</td>
+    <td colspan=2>Security settings (<%=bean.getSiteSettingsHelpLink("security")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -332,10 +337,14 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label"><label for="<%=sslPort%>">HTTPS port number (specified in <%= h(AppProps.getInstance().getWebappConfigurationFilename()) %>)</label></td>
     <td><input type="text" name="<%=sslPort%>" id="<%=sslPort%>" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
-
+<tr>
+    <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
+    <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
+</tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Configure API Keys (<%=bean.getSiteSettingsHelpLink("apiKey")%>)</td>
 </tr>
@@ -376,10 +385,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label"><label for="<%=allowSessionKeys%>">Let users create session keys</label></td>
     <td><labkey:checkbox id="<%=allowSessionKeys.name()%>" name="<%=allowSessionKeys.name()%>" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
-
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Customize terms-of-use frequency (<%=bean.getSiteSettingsHelpLink("terms")%>)</td>
 </tr>
@@ -411,10 +420,10 @@ Click the Save button at any time to accept the current settings and continue.</
     %>
     </td>
 </tr>
-
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Configure pipeline settings (<%=bean.getSiteSettingsHelpLink("pipeline")%>)</td>
 </tr>
@@ -444,7 +453,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Put web site in administrative mode (<%=bean.getSiteSettingsHelpLink("adminonly")%>)</td>
+    <td colspan=2>Put website in administrative mode (<%=bean.getSiteSettingsHelpLink("adminonly")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -455,30 +464,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label" style="vertical-align: top"><label for="<%=adminOnlyMessage%>">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</label></td>
     <td><textarea id="<%=adminOnlyMessage%>" name="<%=adminOnlyMessage%>" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
 </tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
 
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
-    <td colspan=2>HTTP security settings (<%=bean.getSiteSettingsHelpLink("http")%>)</td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=XFrameOption%>">X-Frame-Options</label></td>
-    <td><select name="<%=XFrameOption%>" id="<%=XFrameOption%>">
-        <% String option = appProps.getXFrameOption(); %>
-        <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
-        <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
-        <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
-    <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
-</tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
 <tr>
     <td colspan=2>Customize navigation options (<%=bean.getSiteSettingsHelpLink("nav")%>)</td>
 </tr>

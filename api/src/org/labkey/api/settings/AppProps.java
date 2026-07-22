@@ -173,6 +173,11 @@ public interface AppProps
     /** Timeout in seconds for read-only HTTP requests, after which resources like DB connections and spawned processes will be killed. Set to 0 to disable. */
     int getReadOnlyHttpRequestTimeout();
 
+    int DEFAULT_SCRIPT_EXECUTION_TIMEOUT = 60;
+
+    /** Timeout in seconds for server-side JavaScript (e.g. trigger scripts), measured in wall-clock time including database and other Java operations invoked by the script. Set to 0 to disable. */
+    int getScriptExecutionTimeout();
+
     int getMaxBLOBSize();
 
     ExceptionReportingLevel getExceptionReportingLevel();
@@ -210,11 +215,6 @@ public interface AppProps
     boolean isAllowSessionKeys();
 
     // configurable http security settings
-
-    /**
-     * @return "SAMEORIGIN" or "DENY" or "ALLOW"
-     */
-    String getXFrameOption();
 
     String getStaticFilesPrefix();
 

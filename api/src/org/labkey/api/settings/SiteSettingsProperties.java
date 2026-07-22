@@ -90,6 +90,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setReadOnlyHttpRequestTimeout(Integer.parseInt(value));
         }
     },
+    scriptExecutionTimeout("Timeout in seconds for server-side JavaScript such as trigger scripts. Measured in wall-clock time, including database and other Java operations invoked by the script. Set to 0 to disable.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setScriptExecutionTimeout(Integer.parseInt(value));
+        }
+    },
     maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
     {
         @Override
@@ -176,14 +184,6 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         public void setValue(WriteableAppProps writeable, String value)
         {
             writeable.setAdminOnlyMessage(value);
-        }
-    },
-    XFrameOption("Controls whether or not a browser may render a server page in a <frame> , <iframe> or <object>. Valid values: [SAMEORIGIN, ALLOW]")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setXFrameOption(value);
         }
     },
     navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")

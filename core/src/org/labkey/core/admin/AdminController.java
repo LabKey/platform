@@ -94,6 +94,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
@@ -145,6 +146,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
@@ -240,6 +242,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SharedViewEditorRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -1378,6 +1381,14 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
+            if (form.getScriptExecutionTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getScriptExecutionTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1412,6 +1423,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -1469,13 +1481,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
-            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
-            {
-                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
-                return false;
-            }
-            props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
 
             props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
@@ -2388,6 +2393,7 @@ public class AdminController extends SpringActionController
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
+        private Integer _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2400,7 +2406,6 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOption;
         private boolean _includeServerHttpHeader;
         private int _termsOfUseFrequencySeconds;
 
@@ -2529,6 +2534,18 @@ public class AdminController extends SpringActionController
             return _readOnlyHttpRequestTimeout;
         }
 
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
+        @Nullable
+        public Integer getScriptExecutionTimeout()
+        {
+            return _scriptExecutionTimeout;
+        }
+
+        public void setScriptExecutionTimeout(@Nullable Integer timeout)
+        {
+            _scriptExecutionTimeout = timeout;
+        }
+
         public void setReadOnlyHttpRequestTimeout(int timeout)
         {
             _readOnlyHttpRequestTimeout = timeout;
@@ -2612,16 +2629,6 @@ public class AdminController extends SpringActionController
         public void setAllowSessionKeys(boolean allowSessionKeys)
         {
             _allowSessionKeys = allowSessionKeys;
-        }
-
-        public String getXFrameOption()
-        {
-            return _XFrameOption;
-        }
-
-        public void setXFrameOption(String XFrameOption)
-        {
-            _XFrameOption = XFrameOption;
         }
 
         public boolean isIncludeServerHttpHeader()
@@ -3541,6 +3548,25 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // NOTE let the Professional Module register this action (there is no ProfessionalController)
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class AssistantStatusAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return McpService.get().getAssistantStatusView();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+        }
+    }
+
+
 
     public static class ConfigureSystemMaintenanceForm
     {
@@ -3604,8 +3630,8 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors)
         {
-            SystemMaintenance.setTimeDisabled(!form.isEnableSystemMaintenance());
-            SystemMaintenance.setProperties(form.getEnable(), form.getMaintenanceTime());
+            SystemMaintenance.setTimeDisabled(getContainer(), getUser(), !form.isEnableSystemMaintenance());
+            SystemMaintenance.setProperties(getContainer(), getUser(), form.getEnable(), form.getMaintenanceTime());
 
             return true;
         }
@@ -4961,17 +4987,26 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(MissingValuesForm form, BindException errors)
         {
+            Container c = getContainer();
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(c, "The missing value indicators were changed (see details).");
+            StringBuilder html = new StringBuilder("<table>");
             if (form.isInheritMvIndicators())
             {
-                MvUtil.inheritMvIndicators(getContainer());
-                return true;
+                MvUtil.inheritMvIndicators(c);
+                AbstractWriteableSettingsGroup.appendDiffRow(html, "Inherit settings", null, "TRUE");
             }
             else
             {
                 // Javascript should have enforced any constraints
-                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
-                return true;
+                MvUtil.assignMvIndicators(c, form.getMvIndicators(), form.getMvLabels());
+                for (int i=0; i < form.getMvIndicators().length; i++)
+                    AbstractWriteableSettingsGroup.appendDiffRow(html, form.getMvIndicators()[i], null, form.getMvLabels()[i]);
             }
+            html.append("</table>");
+            event.setChanges(html.toString());
+            AuditLogService.get().addEvent(getUser(), event);
+
+            return true;
         }
     }
 
@@ -11149,9 +11184,10 @@ public class AdminController extends SpringActionController
             res.put("server", AdminBean.getPropertyMap());
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
-            new SqlSelector(CoreSchema.getInstance().getScope(),
-                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+            var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
+                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+            new SqlSelector(CoreSchema.getInstance().getScope(), sql)
+                    .forEachMap(m ->
                 {
                     String category = (String)m.get("category");
                     String name = (String)m.get("name");
