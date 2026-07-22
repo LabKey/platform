@@ -94,9 +94,10 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
         new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
+
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TRICKY_CHARACTERS, null).name(), 6.0, 7.0),
-            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TRICKY_CHARACTERS, null).name(), 8.0, 8.0)
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TRICKY_CHARACTERS, "\\").name(), 6.0, 7.0),
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TRICKY_CHARACTERS, "\\").name(), 8.0, 8.0)
     );
 
 
