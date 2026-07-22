@@ -35,7 +35,7 @@ public class Material extends RunItem
     private Long rootMaterialRowId;
     private String aliquotedFromLSID;
     private Long sampleState;
-    private Long sampleColor;
+    private Long expMaterialColor;
 
     private Date materialExpDate;
     private Double storedAmount;
@@ -113,14 +113,14 @@ public class Material extends RunItem
         this.sampleState = sampleState;
     }
 
-    public Long getSampleColor()
+    public Long getExpMaterialColor()
     {
-        return sampleColor;
+        return expMaterialColor;
     }
 
-    public void setSampleColor(Long sampleColor)
+    public void setExpMaterialColor(Long expMaterialColor)
     {
-        this.sampleColor = sampleColor;
+        this.expMaterialColor = expMaterialColor;
     }
 
     public Integer getAliquotCount()

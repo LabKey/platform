@@ -194,13 +194,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     @Override
     public Long getSampleColorId()
     {
-        return _object.getSampleColor();
+        return _object.getExpMaterialColor();
     }
 
     @Override
     public void setSampleColorId(Long colorId)
     {
-        _object.setSampleColor(colorId);
+        _object.setExpMaterialColor(colorId);
     }
 
     @Override

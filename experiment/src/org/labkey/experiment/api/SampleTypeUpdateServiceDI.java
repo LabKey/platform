@@ -1309,7 +1309,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isExpMaterialColumn(SampleState, name))
                         continue;
-                    if (isExpMaterialColumn(SampleColor, name))
+                    if (isExpMaterialColumn(ExpMaterialColor, name))
                         continue;
                     if (isExpMaterialColumn(MaterialExpDate, name))
                         continue;

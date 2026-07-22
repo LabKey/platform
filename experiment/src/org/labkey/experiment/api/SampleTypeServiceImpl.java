@@ -212,8 +212,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public boolean isColorInUse(Container container, long colorRowId)
     {
-        // Colors are referenced by samples across folders, so this is intentionally not container-scoped.
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.SampleColor.name()), colorRowId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExpMaterialColor"), colorRowId);
         return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
     }
 

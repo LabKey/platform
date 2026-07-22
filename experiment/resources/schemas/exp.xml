@@ -295,7 +295,7 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
-      <column columnName="SampleColor">
+      <column columnName="ExpMaterialColor">
           <description>The color assigned to this individual sample</description>
       </column>
       <column columnName="StoredAmount">
@@ -1050,7 +1050,7 @@
       <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
-      <column columnName="SampleColor"/>
+      <column columnName="ExpMaterialColor"/>
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>

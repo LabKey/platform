@@ -597,7 +597,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 return createPropertiesColumn(alias);
             }
-            case SampleColor ->
+            case ExpMaterialColor ->
             {
                 boolean colorsEnabled = colorsEnabled(getContainer());
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
@@ -886,9 +886,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleState);
         if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
-        addColumn(SampleColor);
+        addColumn(ExpMaterialColor);
         if (colorsEnabled(getContainer()))
-            defaultCols.add(SampleColor.fieldKey());
+            defaultCols.add(ExpMaterialColor.fieldKey());
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))

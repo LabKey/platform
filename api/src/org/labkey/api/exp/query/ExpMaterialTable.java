@@ -66,7 +66,7 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         RunId, // database table only
         RunApplication,
         RunApplicationOutput,
-        SampleColor,
+        ExpMaterialColor,
         SampleSet,
         SampleState,
         SourceApplicationId, // database table only

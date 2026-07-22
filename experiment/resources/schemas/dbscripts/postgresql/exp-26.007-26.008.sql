@@ -20,8 +20,8 @@ CREATE TABLE exp.DataColors
     CONSTRAINT UQ_DataColors_Label UNIQUE (Container, Label)
 );
 
-ALTER TABLE exp.Material ADD COLUMN SampleColor INT;
-ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_SampleColor FOREIGN KEY (SampleColor) REFERENCES exp.DataColors (RowId);
+ALTER TABLE exp.Material ADD COLUMN ExpMaterialColor INT;
+ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_ExpMaterialColor FOREIGN KEY (ExpMaterialColor) REFERENCES exp.DataColors (RowId);
 
 CREATE TABLE exp.DataTypeColorExclusion
 (

@@ -803,8 +803,8 @@ public class ExperimentModule extends SpringModule
                 {
                     Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class);
                     sampleColorMetrics.put("archivedColorCount", archivedColorCount);
-                    sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE samplecolor IS NOT NULL").getObject(Long.class));
-                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.samplecolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class));
+                    sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class));
+                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class));
 
                     sampleColorMetrics.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
                             "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
