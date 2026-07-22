@@ -17,6 +17,7 @@ package org.labkey.pipeline;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
@@ -101,6 +102,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
@@ -142,6 +144,7 @@ import java.util.Set;
 public class PipelineController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineController.class, "Pipeline controller actions, including job cancellation");
 
     public enum Params { path, rootset, overrideRoot }
 
@@ -1087,6 +1090,8 @@ public class PipelineController extends SpringActionController
             catch (PipelineProvider.HandlerException e)
             {
                 _successURL = StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
+                // Help diagnose rare but recurring test failure in PipelineCancelTest
+                LOG.info("CancelJobAction.handlePost: cancel rejected for rowId {} ({}); _successURL set to details page {}", form.getRowId(), e.getMessage(), _successURL);
             }
             return true;
         }
@@ -1094,6 +1099,14 @@ public class PipelineController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(StatusController.RowIdForm rowIdForm)
         {
+            if (_successURL == null)
+            {
+                // Diagnostic (PipelineCancelTest intermittent blank page after cancel): capture the redirect target and the response state at the moment the framework
+                // decides between issuing the redirect and rendering an (empty) view. A null _successURL here, or a response
+                // that is already committed, would explain the observed 200/empty-body response instead of a 302.
+                HttpServletResponse response = getViewContext().getResponse();
+                LOG.info("CancelJobAction.getSuccessURL: returning _successURL={}, response.isCommitted={}, response.status={}", _successURL, response.isCommitted(), response.getStatus());
+            }
             return _successURL;
         }
     }
