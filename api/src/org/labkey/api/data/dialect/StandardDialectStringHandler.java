@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Parameter;
@@ -28,17 +29,12 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-/*
-* User: adam
-* Date: Aug 13, 2011
-* Time: 3:55:55 PM
-*/
 public class StandardDialectStringHandler implements DialectStringHandler
 {
     @Override
     public String quoteStringLiteral(String str)
     {
-        return "'" + StringUtils.replace(str, "'", "''") + "'";
+        return "'" + Strings.CS.replace(str, "'", "''") + "'";
     }
 
 
