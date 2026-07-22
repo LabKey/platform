@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.SupportedDatabase;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -74,6 +75,17 @@ public interface AppProps
 
     @Nullable
     String getEnlistmentId();
+
+    /**
+     * Returns the DevOps-assigned name of the tenant/customer this deployment belongs to (e.g., "Hooli",
+     * "WNPRC"), or {@code null} if none is configured. Not customer-facing; currently sourced from
+     * whichever active {@link org.labkey.api.secrets.SecretProvider} reports one.
+     * @see SecretService#getAppName()
+     */
+    default @Nullable String getAppName()
+    {
+        return SecretService.get().getAppName();
+    }
 
     boolean isCachingAllowed();
 

@@ -90,7 +90,6 @@ public class WorkEntity
         _actionId = actionId;
     }
 
-
     public Long getRowId()
     {
         return _rowId;

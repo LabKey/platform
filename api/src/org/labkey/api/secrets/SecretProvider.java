@@ -30,4 +30,14 @@ public interface SecretProvider
 
     /** Human-readable name for this source, shown on the admin secrets page. */
     @NotNull String getDescription();
+
+    /**
+     * Returns the name of the application this source is scoped to, or {@code null} if this
+     * source has no notion of an application name (the default). Used for attributing
+     * externally-billed resources (e.g., Vertex AI requests) back to the owning app.
+     */
+    default @Nullable String getAppName()
+    {
+        return null;
+    }
 }
