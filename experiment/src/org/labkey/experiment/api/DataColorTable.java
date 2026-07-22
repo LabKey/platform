@@ -30,6 +30,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.labkey.api.util.IntegerUtils.asLong;
 
@@ -64,6 +65,8 @@ public class DataColorTable extends FilteredTable<ExpSchema>
 
     private static class DataColorUpdateService extends DefaultQueryUpdateService
     {
+        private static final Pattern COLOR_PATTERN = Pattern.compile("^#[0-9a-fA-F]{6}$");
+
         public DataColorUpdateService(FilteredTable table)
         {
             super(table, table.getRealTable());
@@ -74,6 +77,14 @@ public class DataColorTable extends FilteredTable<ExpSchema>
             if (allowMissing && !row.containsKey("label"))
                 return false;
             return StringUtils.isBlank((String) row.get("label"));
+        }
+
+        private boolean isInvalidColor(Map<String, Object> row, boolean allowMissing)
+        {
+            if (allowMissing && !row.containsKey("color"))
+                return false;
+            String color = (String) row.get("color");
+            return color == null || !COLOR_PATTERN.matcher(color).matches();
         }
 
         private boolean isDuplicateLabel(String label, Container container, int currentRowId)
@@ -97,6 +108,8 @@ public class DataColorTable extends FilteredTable<ExpSchema>
         {
             if (isBlankLabel(row, false))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
+            if (isInvalidColor(row, false))
+                throw new QueryUpdateServiceException("Color must be a 6-digit hex value (e.g. #1a2b3c).");
             if (isDuplicateLabel(String.valueOf(row.get("label")), container, -1))
                 throw new QueryUpdateServiceException("Label '" + row.get("label") + "' is already in use.");
             if (getColorCount(container) >= DataColorManager.MAX_DATA_COLORS)
@@ -117,6 +130,8 @@ public class DataColorTable extends FilteredTable<ExpSchema>
         {
             if (isBlankLabel(row, true))
                 throw new QueryUpdateServiceException("Label cannot be blank.");
+            if (isInvalidColor(row, true))
+                throw new QueryUpdateServiceException("Color must be a 6-digit hex value (e.g. #1a2b3c).");
             int rowId = (int) row.get("rowId");
             if (row.containsKey("label") && isDuplicateLabel(String.valueOf(row.get("label")), container, rowId))
                 throw new QueryUpdateServiceException("Label '" + row.get("label") + "' is already in use.");
