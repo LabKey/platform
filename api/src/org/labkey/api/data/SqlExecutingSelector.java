@@ -19,8 +19,8 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -56,7 +56,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     // Throttles the large-result warning to at most once per day per unique call stack, so a legitimately large (but
     // expected) load doesn't flood the log. Keyed by a signature of the call stack; see getArrayList().
-    private static final Cache<String, Boolean> LARGE_RESULT_WARNING_THROTTLE = CacheManager.getCache(1000, CacheManager.DAY, "SqlSelector large result warnings");
+    private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
+            w -> LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
+                    w.rowCount, w.selectorClass, w.sql, w.stackTrace));
 
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
@@ -172,7 +174,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
      * (here plus, potentially, in the JDBC driver's buffer) is a common source of OutOfMemoryErrors; callers should
      * generally prefer a streaming method — {@link #forEach(Class, Selector.ForEachBlock)}, {@link #forEachBatch}, or {@link #uncachedStream} — that
      * processes rows without materializing them all at once. {@code getArray}, {@code getCollection},
-     * {@code getMapArray}, and {@code getMapCollection} all delegate here, so they're covered as well.
+     * {@code getMapArray}, {@code stream}, and {@code getMapCollection} all delegate here, so they're covered as well.
      */
     @Override
     public @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz)
@@ -182,16 +184,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (result.size() >= LARGE_RESULT_THRESHOLD)
         {
             Throwable stackTrace = new Throwable("Stack trace for large collection load");
-            String stackKey = getStackKey(stackTrace);
-
-            // Warn at most once per day (tolerating a race condition) per unique call stack to avoid flooding the log.
-            if (null == LARGE_RESULT_WARNING_THROTTLE.get(stackKey))
-            {
-                LARGE_RESULT_WARNING_THROTTLE.put(stackKey, Boolean.TRUE);
-                // Log the parameterized SQL only (getSQL(), not the SQLFragment) so bound parameter values stay out of the log
-                LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to forEach(), forEachBatch(), or uncachedStream() to reduce memory usage. SQL: {}",
-                    result.size(), getClass().getSimpleName(), getSqlFactory(false).getSql().getSQL(), stackTrace);
-            }
+            // Log the parameterized SQL only so bound parameter values stay out of the log
+            SQLFragment sql = getSqlFactory(false).getSql();
+            LARGE_RESULT_WARNING_THROTTLE.execute(new LargeResultWarning(getStackKey(stackTrace), result.size(),
+                    getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
         }
 
         return result;
@@ -201,6 +197,24 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private static String getStackKey(Throwable t)
     {
         return Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+    }
+
+    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call-stack signature
+    // so the throttle dedupes per unique call stack rather than per (stack + row count + SQL) combination.
+    private record LargeResultWarning(String stackKey, int rowCount, String selectorClass, String sql,
+                                      Throwable stackTrace)
+    {
+        @Override
+        public boolean equals(Object o)
+        {
+            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return stackKey.hashCode();
+        }
     }
 
     /**
