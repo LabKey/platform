@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@labkey/build/webpack/tsconfig.json",
+  "extends": "./node_modules/@labkey/build/configs/tsconfig.json",
   "compilerOptions": {
     "paths": {
       // Point to the dist/lib folder where the .d.ts files are output

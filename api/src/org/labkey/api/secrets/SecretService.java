@@ -90,4 +90,10 @@ public interface SecretService
      * The external provider takes priority over startup-property and environment-variable sources.
      */
     @Nullable String getExternalProviderDescription();
+
+    /**
+     * Returns the application name reported by the highest-priority provider that has one
+     * (see {@link SecretProvider#getAppName()}), or {@code null} if no active provider reports one.
+     */
+    @Nullable String getAppName();
 }
