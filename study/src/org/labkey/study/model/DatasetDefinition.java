@@ -2527,7 +2527,6 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     noDeleteMap.put(uniq,key);
 
                 // partial fix for 16647, we should handle the replace case differently (do we ever replace?)
-                String sep = "";
                 if (uriMap.size() < 10000 || Boolean.TRUE==replace)
                 {
                     idList.add(uniq);
@@ -2574,8 +2573,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
-        SQLFragment inClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment(demographic ?"ParticipantId":"LSID"), idList);
-        filter.addWhereClause(inClause);
+        SQLFragment checkInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment(demographic ?"ParticipantId":"LSID"), idList);
+        filter.addWhereClause(checkInClause);
         if (isShared())
         {
             Container rowsContainer = getContainer();
@@ -2609,16 +2608,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();
-        StringBuilder sbDelete = new StringBuilder();
-        String sep = "";
-        for (String s : deleteSet)
-        {
-            if (s.contains(("'")))
-                s = s.replaceAll("'","''");
-            sbDelete.append(sep).append("'").append(s).append("'");
-            sep = ", ";
-        }
-        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+        SQLFragment deleteInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment("LSID"), deleteSet);
+        deleteFilter.addWhereClause(deleteInClause);
         Table.delete(tinfo, deleteFilter);
 
         return null;
