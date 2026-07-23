@@ -44,6 +44,11 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
         }));
     };
 
+    closeDeleteModal = (): void => {
+        this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
+        this.props.toggleModalOpen(false);
+    };
+
     render() {
         const {
             authConfig,
@@ -141,11 +146,15 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             <Modal
                 confirmText="Yes, delete"
                 confirmClass="labkey-button primary"
-                onCancel={() => {
-                    this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
-                    toggleModalOpen(false);
+                onCancel={this.closeDeleteModal}
+                onConfirm={() => {
+                    // Close the confirmation modal as soon as the user confirms, regardless of whether the
+                    // delete succeeds. On success the row unmounts anyway; on failure (e.g. the configuration
+                    // was already removed, or FICAM-only mode was enabled in another tab and the provider is no
+                    // longer available) the error is surfaced in the main window and the modal should not linger.
+                    this.closeDeleteModal();
+                    onDelete?.();
                 }}
-                onConfirm={onDelete}
                 title={`Permanently delete ${authConfig.provider} configuration?`}
             >
                 <div className="auth-row__delete-modal__textBox">
