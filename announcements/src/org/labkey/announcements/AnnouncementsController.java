@@ -2930,5 +2930,42 @@ public class AnnouncementsController extends SpringActionController
             grantRole(readerAB, _folderB, ReaderRole.class);
             assertStatus(HttpServletResponse.SC_FOUND, post(url, readerAB));
         }
+
+        @Test
+        public void testSubscribeThreadEnforcesSecureBoardMemberList() throws Exception
+        {
+            // A secure board scopes read to its member list, so allowRead() rejects a board reader who is not on the
+            // thread's member list. The old plain container-ReadPermission check missed exactly this: it let any
+            // reader subscribe to a secure thread they cannot read. Address the request to the thread's own folder so
+            // only member-list membership varies.
+            Container secure = createContainer("Secure");
+            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
+            settings.setSecure(Settings.SECURE_WITHOUT_EMAIL);
+            settings.setMemberList(true);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+
+            // Both are plain readers (ReaderRole lacks SecureMessageBoardReadPermission, so neither is an editor who
+            // could read every thread). Create them before insert: the member-list validation checks that each listed
+            // member can read the thread.
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Secure member-list test thread");
+            insert.setBody("body");
+            // insertAnnouncement rebuilds memberListIds from memberListInput, so set the input, not the ids directly.
+            insert.setMemberListInput(String.valueOf(member.getUserId()));
+            AnnouncementModel secureThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), insert, null, false);
+
+            ActionURL url = new ActionURL(SubscribeThreadAction.class, secure)
+                    .addParameter("threadId", secureThread.getEntityId());
+
+            // Negative: a reader of the secure board who is not on the member list cannot read the thread, so cannot
+            // subscribe. Under the old container-ReadPermission check this incorrectly succeeded.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, nonMember));
+
+            // Positive control: a reader who is on the member list can read the thread, so the subscription succeeds.
+            assertStatus(HttpServletResponse.SC_FOUND, post(url, member));
+        }
     }
 }
