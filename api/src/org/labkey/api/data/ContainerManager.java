@@ -1090,17 +1090,18 @@ public class ContainerManager
         {
             try (DbScope.Transaction t = ensureTransaction())
             {
-                List<Container> children = new SqlSelector(CORE.getSchema(),
+                List<GUID> ids = new ArrayList<>();
+                ContainerFactory factory = new ContainerFactory();
+                // ContainerFactory only builds from a ResultSet (fromMap is unsupported), so iterate rows directly
+                new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        parent.getId()).getArrayList(Container.class);
-
-                childIds = new ArrayList<>(children.size());
-                for (Container c : children)
-                {
-                    childIds.add(c.getEntityId());
+                        parent.getId()).forEach(rs -> {
+                    Container c = factory.handle(rs);
+                    ids.add(c.getEntityId());
                     _addToCache(c);
-                }
-                childIds = Collections.unmodifiableList(childIds);
+                });
+
+                childIds = Collections.unmodifiableList(ids);
                 CACHE_CHILDREN.put(parent.getEntityId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
