@@ -5,18 +5,18 @@
   "scripts": {
     "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
-    "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development rspack serve --config node_modules/@labkey/build/configs/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
-    "build-dev": "npm run clean && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
-    "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
+    "build-dev": "npm run clean && cross-env NODE_ENV=development rspack build --config node_modules/@labkey/build/configs/dev.config.js",
+    "build-prod": "npm run clean && cross-env NODE_ENV=production rspack build --config node_modules/@labkey/build/configs/prod.config.js",
     "clean": "rimraf resources/web/experiment/gen && rimraf resources/views/gen && rimraf resources/web/gen",
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.46.0"
+    "@labkey/components": "7.47.0"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.5",
+    "@labkey/build": "10.0.0",
     "@labkey/eslint-config": "1.2.2",
     "@labkey/test": "1.14.1",
     "@types/jest": "30.0.0",

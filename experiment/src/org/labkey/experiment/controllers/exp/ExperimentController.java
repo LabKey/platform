@@ -8133,7 +8133,7 @@ public class ExperimentController extends SpringActionController
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
             if (!"samples".equalsIgnoreCase(form.getDataType()) && !"exp.data".equalsIgnoreCase(form.getDataType())&& !"assay".equalsIgnoreCase(form.getDataType()))
-                errors.reject(ERROR_REQUIRED, "Data type (sample, data or assayrun) must be specified.");
+                errors.reject(ERROR_REQUIRED, "Data type (samples, exp.data or assay) must be specified.");
         }
 
         @Override

@@ -187,15 +187,6 @@ public class UserController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    @Override
-    public PageConfig defaultPageConfig()
-    {
-        PageConfig ret = super.defaultPageConfig();
-        if (!AppProps.getInstance().isOptionalFeatureEnabled(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME))
-            ret.setFrameOption(PageConfig.FrameOption.DENY);
-        return ret;
-    }
-
     public static class UserUrlsImpl implements UserUrls
     {
         @Override
@@ -1596,11 +1587,10 @@ public class UserController extends SpringActionController
             if (schema == null)
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
-            // use getTable(forWrite=true) because we hack on this TableInfo
-            // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
-            TableInfo table = schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME, null, true, true);
+            String tableName = isUserManager ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
+            TableInfo table = schema.getTable(tableName, null, true, true);
             if (table == null)
-                throw new NotFoundException(CoreQuerySchema.SITE_USERS_TABLE_NAME + " table");
+                throw new NotFoundException(tableName + " table");
             else if (table instanceof AbstractTableInfo)
             {
                 // conditionally remove the email and groups columns only for this view

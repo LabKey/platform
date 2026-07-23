@@ -15,8 +15,6 @@
  */
 package org.labkey.pipeline.mule.transformers;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.security.AnyTypePermission;
 import org.mule.umo.UMOEventContext;
 import org.mule.umo.transformer.TransformerException;
 
@@ -27,13 +25,12 @@ public class ObjectToXml extends org.mule.transformers.xml.ObjectToXml
     @Override
     public Object transform(Object src, String encoding, UMOEventContext context) throws TransformerException
     {
-        // Allow XStream to deserialize into any class. We are using this internally and trust the content of
-        // the messages since the JMS endpoint is considered secure.
-        // https://x-stream.github.io/security.html#framework
+        // Restrict XStream deserialization to the types reachable from a StatusRequest rather than granting
+        // AnyTypePermission. The JMS endpoint is considered secure, but deny-by-default is defense-in-depth
+        // against gadget-chain attacks. https://x-stream.github.io/security.html#framework
         if (!_securityInitialized)
         {
-            XStream x = getXStream();
-            x.addPermission(AnyTypePermission.ANY);
+            PipelineXStreamSecurity.configure(getXStream());
             _securityInitialized = true;
         }
         return super.transform(src, encoding, context);

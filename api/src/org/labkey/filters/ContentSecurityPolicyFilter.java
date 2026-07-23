@@ -89,7 +89,7 @@ public class ContentSecurityPolicyFilter implements Filter
     // This is effectively @NotNull since it's set to non-null values in init() and never changed
     private String _stashedTemplate = null;
 
-    // We can't set this statically because the class is referenced before URLProviders are available
+    // We can't set this statically because this class is referenced before URLProviders are available
     private final String _reportingEndpointsHeaderValue = "csp-report=\"" + PageFlowUtil.urlProvider(AdminUrls.class).getCspReportToURL().getLocalURIString() + "\"";
 
     // Initialized on first request and reset when allowed sources change. Don't reference this directly; always use
@@ -202,6 +202,8 @@ public class ContentSecurityPolicyFilter implements Filter
             LOG.debug("CspVersion: {}", getCspVersion());
         }
     }
+
+    private static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException

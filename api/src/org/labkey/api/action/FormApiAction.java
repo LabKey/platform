@@ -79,7 +79,7 @@ public abstract class FormApiAction<FORM> extends BaseApiAction<FORM> implements
 
     protected BindException bindParameters(PropertyValues pvs) throws Exception
     {
-        return SimpleViewAction.defaultBindParameters(getCommand(), getCommandName(), pvs);
+        return defaultBindParameters(pvs);
     }
 
     /**

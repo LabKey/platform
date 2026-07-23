@@ -34,6 +34,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
@@ -320,7 +321,7 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>Configure Security (<%=bean.getSiteSettingsHelpLink("security")%>)</td>
+    <td colspan=2>Security settings (<%=bean.getSiteSettingsHelpLink("security")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -331,10 +332,14 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label"><label for="<%=sslPort%>">HTTPS port number (specified in <%= h(AppProps.getInstance().getWebappConfigurationFilename()) %>)</label></td>
     <td><input type="text" name="<%=sslPort%>" id="<%=sslPort%>" value="<%=appProps.getSSLPort()%>" size="6"></td>
 </tr>
-
+<tr>
+    <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
+    <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
+</tr>
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Configure API Keys (<%=bean.getSiteSettingsHelpLink("apiKey")%>)</td>
 </tr>
@@ -353,8 +358,8 @@ Click the Save button at any time to accept the current settings and continue.</
     {
         expirationOptions.put(10, "10 seconds - for testing purposes only");
     }
-    for (int days : new int[]{7, 30, 90, 180, 365})
-        expirationOptions.put(days * SECONDS_PER_DAY, days + " days");
+    Stream.of(7, 30, 90, 180, 365)
+        .forEach(days -> expirationOptions.put(days * SECONDS_PER_DAY, days + " days"));
 
     // If current expiration is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!expirationOptions.containsKey(currentExpiration))
@@ -375,10 +380,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label"><label for="<%=allowSessionKeys%>">Let users create session keys</label></td>
     <td><labkey:checkbox id="<%=allowSessionKeys.name()%>" name="<%=allowSessionKeys.name()%>" checked="<%=appProps.isAllowSessionKeys()%>" value="true"/></td>
 </tr>
-
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Customize terms-of-use frequency (<%=bean.getSiteSettingsHelpLink("terms")%>)</td>
 </tr>
@@ -392,8 +397,8 @@ Click the Save button at any time to accept the current settings and continue.</
     if (appProps.isDevMode())
         termsFrequencyOptions.put(60, "Once a minute"); // For testing
     termsFrequencyOptions.put(SECONDS_PER_DAY, "Once a day");
-    termsFrequencyOptions.put(7 * SECONDS_PER_DAY, "Every 7 days");
-    termsFrequencyOptions.put(30 * SECONDS_PER_DAY, "Every 30 days");
+    Stream.of(7, 30, 90, 180, 365)
+        .forEach(days -> termsFrequencyOptions.put(days * SECONDS_PER_DAY, "Every " + days + " days"));
 
     // If current value is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!termsFrequencyOptions.containsKey(currentTermsFrequency))
@@ -410,10 +415,10 @@ Click the Save button at any time to accept the current settings and continue.</
     %>
     </td>
 </tr>
-
 <tr>
     <td>&nbsp;</td>
 </tr>
+
 <tr>
     <td colspan=2>Configure pipeline settings (<%=bean.getSiteSettingsHelpLink("pipeline")%>)</td>
 </tr>
@@ -443,7 +448,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Put web site in administrative mode (<%=bean.getSiteSettingsHelpLink("adminonly")%>)</td>
+    <td colspan=2>Put website in administrative mode (<%=bean.getSiteSettingsHelpLink("adminonly")%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -454,30 +459,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label" style="vertical-align: top"><label for="<%=adminOnlyMessage%>">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</label></td>
     <td><textarea id="<%=adminOnlyMessage%>" name="<%=adminOnlyMessage%>" cols="60" rows="3"><%= h(appProps.getAdminOnlyMessage()) %></textarea></td>
 </tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
 
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
-    <td colspan=2>HTTP security settings (<%=bean.getSiteSettingsHelpLink("http")%>)</td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=XFrameOption%>">X-Frame-Options</label></td>
-    <td><select name="<%=XFrameOption%>" id="<%=XFrameOption%>">
-        <% String option = appProps.getXFrameOption(); %>
-        <%-- BREAKS GWT <option value="DENY" <%=selectedEq("DENY",option)%>>DENY</option> --%>
-        <option value="SAMEORIGIN" <%=selectedEq("SAMEORIGIN",option)%>>SAMEORIGIN</option>
-        <option value="ALLOW" <%=selectedEq("ALLOW",option)%>>Allow</option></select></td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label"><label for="<%=includeServerHttpHeader%>">Include a <code>Server</code> HTTP header in responses</label></td>
-    <td><labkey:checkbox id="<%=includeServerHttpHeader.name()%>" name="<%=includeServerHttpHeader.name()%>" checked="<%=AppProps.getInstance().isIncludeServerHttpHeader()%>" value="true"/></td>
-</tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
 <tr>
     <td colspan=2>Customize navigation options (<%=bean.getSiteSettingsHelpLink("nav")%>)</td>
 </tr>

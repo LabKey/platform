@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * A step down from site admins, app admins have broad access but don't get to control native resources on the server.
+ * A step-down from site admins, app admins have broad access but don't get to control native resources on the server.
  */
 public class ApplicationAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {

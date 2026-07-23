@@ -59,6 +59,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -80,6 +81,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -95,6 +98,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -168,7 +172,7 @@ public abstract class SqlDialect
     {
         StringBuilder sb = new StringBuilder();
 
-        // Per 18789, also include threads without db connections.
+        // Per Issue 18789, also include threads without db connections.
         List<Thread> dbThreads = new ArrayList<>();
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
@@ -361,8 +365,11 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Return a ConnectionFactory only if the default behavior needs to be overridden
-    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    // Return a ConnectionFactory only if the default behavior needs to be overridden. selfContained indicates that the
+    // ResultSet will be fully consumed and closed within a single selector call (so the shared, ref-counted thread
+    // connection can be borrowed and its state restored on release); when false, the connection escapes to the caller
+    // as a live ResultSet/Stream and must therefore be an unshared connection whose lifetime the caller controls.
+    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         return null;
     }
@@ -1990,10 +1997,59 @@ public abstract class SqlDialect
     // Add any database configuration warnings (e.g., missing aggregate function or deprecated database server version)
     // to display in the page header for administrators. This will be called:
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
-    // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
+    // - After the core module has been upgraded, and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
     public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
+    }
+
+    public static final long TIME_DIFFERENCE_WARNING_SECONDS = 10;
+
+    public static ServerDatabaseTimeDifference getServerDatabaseTimeDifference(DbScope scope)
+    {
+        // Compare LocalDateTime to capture any difference in server and database times (skew or timezone).
+        LocalDateTime serverTime = LocalDateTime.now();
+        LocalDateTime databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+
+        return new ServerDatabaseTimeDifference(serverTime, databaseTime);
+    }
+
+    public record ServerDatabaseTimeDifference(LocalDateTime serverTime, LocalDateTime databaseTime)
+    {
+        public long getSeconds()
+        {
+            return Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
+        }
+
+        public boolean exceedsWarningThreshold()
+        {
+            return getSeconds() > TIME_DIFFERENCE_WARNING_SECONDS;
+        }
+    }
+
+    // GH Issue #1223: Add a site configuration warning for administrators if the server and database clocks differ.
+    protected void addTimeDifferenceWarning(Warnings warnings, boolean showAllWarnings)
+    {
+        try
+        {
+            ServerDatabaseTimeDifference difference = getServerDatabaseTimeDifference(DbScope.getLabKeyScope());
+
+            if (difference.exceedsWarningThreshold())
+                warnings.add(getTimeDifferenceWarning(difference.getSeconds()));
+            else if (showAllWarnings)
+                warnings.add(getTimeDifferenceWarning(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Unable to compare web server and database server times", e);
+        }
+    }
+
+    private HtmlString getTimeDifferenceWarning(long seconds)
+    {
+        return HtmlString.of("The web server and database server times differ by " + seconds + " seconds. " +
+            "LabKey Server often relies on comparing timestamps stored in the database with timestamps generated by " +
+            "the web server, so this difference can lead to data integrity issues. Synchronize the clocks on these servers.");
     }
 
     public abstract List<SQLFragment> getChangeStatements(TableChange change);
@@ -2017,7 +2073,7 @@ public abstract class SqlDialect
     // Defragment an index, if necessary
     public void defragmentIndex(DbSchema schema, String tableSelectName, String indexName)
     {
-        // By default do nothing
+        // By default, do nothing
     }
 
     public boolean isTableExists(DbScope scope, String schema, String name)
@@ -2045,7 +2101,7 @@ public abstract class SqlDialect
 
     /**
      *
-     * @return true If the dialect is one supported for the backend LabKey database. ie, Postgres or SQL Server
+     * @return true If the dialect is one supported for the backend LabKey database. i.e., Postgres or SQL Server
      */
     public boolean isLabKeyDbDialect()
     {
@@ -2362,7 +2418,7 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
@@ -2418,6 +2474,38 @@ public abstract class SqlDialect
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a\0b", 0, false, false, scope));
             // A dotted name is rejected: schema and procedure are separate parameters, so a '.' in a single component is an ambiguous schema-qualified reference
             assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a.b", 0, false, false, scope));
+        }
+
+        // GH Issue #1223: Verify the server/database clock-skew arithmetic and warning threshold
+        @Test
+        public void testServerDatabaseTimeDifference()
+        {
+            LocalDateTime base = LocalDateTime.of(2026, 7, 6, 12, 0, 0);
+
+            // Identical times: zero difference, no warning
+            ServerDatabaseTimeDifference equal = new ServerDatabaseTimeDifference(base, base);
+            assertEquals(0, equal.getSeconds());
+            assertFalse(equal.exceedsWarningThreshold());
+
+            // Comfortably below the threshold: no warning
+            ServerDatabaseTimeDifference below = new ServerDatabaseTimeDifference(base, base.plusSeconds(5));
+            assertEquals(5, below.getSeconds());
+            assertFalse(below.exceedsWarningThreshold());
+
+            // Exactly at the threshold: no warning (comparison is strictly greater-than)
+            ServerDatabaseTimeDifference atThreshold = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS, atThreshold.getSeconds());
+            assertFalse(atThreshold.exceedsWarningThreshold());
+
+            // Just past the threshold: warning
+            ServerDatabaseTimeDifference over = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, over.getSeconds());
+            assertTrue(over.exceedsWarningThreshold());
+
+            // Difference is absolute: database clock behind the web server is treated the same as ahead
+            ServerDatabaseTimeDifference behind = new ServerDatabaseTimeDifference(base, base.minusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, behind.getSeconds());
+            assertTrue(behind.exceedsWarningThreshold());
         }
     }
 }

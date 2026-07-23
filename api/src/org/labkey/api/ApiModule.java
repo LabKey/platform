@@ -46,6 +46,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.CompareType;
@@ -172,6 +173,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionHelper;
+import org.labkey.api.util.SmtpTransportProvider;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SvgUtil;
@@ -233,6 +235,7 @@ public class ApiModule extends CodeOnlyModule
 
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();
+        MailHelper.registerProvider(new SmtpTransportProvider());
 
         LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
 
@@ -508,6 +511,7 @@ public class ApiModule extends CodeOnlyModule
             ApiKeyManager.TestCase.class,
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
+            BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
             ContainerDisplayColumn.TestCase.class,

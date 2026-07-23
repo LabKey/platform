@@ -27,6 +27,7 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
@@ -311,6 +312,15 @@ public abstract class Job extends CreatedModified implements Identifiable
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
+
+    @JsonIgnore
+    public abstract @NotNull List<String> getSampleNames();
+
+    @JsonIgnore
+    public abstract @NotNull List<? extends ExpData> getSources();
+
+    @JsonIgnore
+    public abstract @NotNull List<String> getSourceNames();
 
     public void setEntities(List<WorkEntity> entities)
     {

@@ -2146,7 +2146,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type)
     {
-        ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
+        return createExperimentRunWebPart(context, type, null);
+    }
+
+    @Override
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, @Nullable String dataRegionName)
+    {
+        ExperimentRunListView view = ExperimentRunListView.createView(context, type, dataRegionName, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(true);

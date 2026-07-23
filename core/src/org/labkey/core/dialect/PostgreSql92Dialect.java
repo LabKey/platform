@@ -38,6 +38,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.dialect.BackslashEscapingStringHandler;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -190,7 +191,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         if (getStandardConformingStrings())
             return super.createStringHandler();
         else
-            return new PostgreSqlNonConformingStringHandler();
+            return new BackslashEscapingStringHandler();
     }
 
     /*
@@ -371,6 +372,8 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         super.addAdminWarningMessages(warnings, showAllWarnings);
         if (showAllWarnings)
             warnings.add(HtmlString.of(PostgreSqlDialectFactory.getStandardWarningMessage("has not been tested against", getMajorVersion() + ".x")));
+
+        addTimeDifferenceWarning(warnings, showAllWarnings);
     }
 
     private int getIdentifierMaxByteLength()

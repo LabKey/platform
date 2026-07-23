@@ -139,8 +139,6 @@ import org.labkey.experiment.lineage.LineageMethod;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1406,19 +1404,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     private static boolean isIncrementalUpdateDisabled()
     {
+        // Disable if web server and database time differ
         if (_incrementalUpdateDisabled == null)
         {
-            // borrowed from core/admin.jsp
-            LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
-            LocalDateTime serverTime = LocalDateTime.now();
-
-            // Disable if greater than this many seconds
-            long thresholdSeconds = 10;
-            long deltaSeconds = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
-            _incrementalUpdateDisabled = deltaSeconds > thresholdSeconds;
+            DbScope scope = DbScope.getLabKeyScope();
+            SqlDialect.ServerDatabaseTimeDifference difference = SqlDialect.getServerDatabaseTimeDifference(scope);
+            _incrementalUpdateDisabled = difference.exceedsWarningThreshold();
 
             if (_incrementalUpdateDisabled)
-                _log.warn("Incremental update disabled for samples. Web and database server time differ by {} seconds which exceeds the threshold of {} seconds. You may experience degraded sample query performance.", deltaSeconds, thresholdSeconds);
+                _log.warn("Incremental update disabled for samples. Web and database server time differ by {} seconds which exceeds the threshold of {} seconds. You may experience degraded sample query performance.", difference.getSeconds(), SqlDialect.TIME_DIFFERENCE_WARNING_SECONDS);
         }
 
         return _incrementalUpdateDisabled;

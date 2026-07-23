@@ -44,6 +44,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -339,8 +340,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         saveRequestedApiVersion(getViewContext().getRequest(), null);
 
-        BindException errors = defaultBindParameters(getCommand(), getPropertyValues());
-        FORM form = (FORM)errors.getTarget();
+        BindException errors = defaultBindParameters(getPropertyValues());
+        FORM form = (errors.hasErrors() && getCommandClass().isRecord()) ? null : (FORM) errors.getTarget();
 
         return new FormAndErrors<>(form, errors);
     }
@@ -459,6 +460,17 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             throw new BadRequestException(x.getMessage(), x);
         }
         saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
+
+        // Records are immutable, so we can't instantiate the form up front and populate it; instead collect the JSON
+        // properties and construct the record via defaultBindParameters(). Note: record forms can't implement
+        // ApiJsonForm since that relies on mutating an existing instance.
+        if (getCommandClass().isRecord())
+        {
+            PropertyValues values = null == jsonObj ? new MutablePropertyValues() : new JsonPropertyValues(jsonObj);
+            BindException errors = defaultBindParameters(values);
+            FORM form = errors.hasErrors() ? null : (FORM) errors.getTarget();
+            return new FormAndErrors<>(form, errors);
+        }
 
         FORM form = getCommand();
         BindException errors = populateForm(jsonObj, form);
