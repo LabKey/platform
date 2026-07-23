@@ -25,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementFullModel;
 import org.labkey.announcements.model.AnnouncementManager;
@@ -94,12 +96,14 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
@@ -2447,9 +2451,15 @@ public class AnnouncementsController extends SpringActionController
             {
                 throw new NotFoundException("No such message thread: " + id);
             }
-            // Make sure they have permission to see the container for the specific message they're
-            // requesting
-            if (!ann.lookupContainer().hasPermission(getUser(), ReadPermission.class))
+            // Resolve permissions against the thread's own container since this action resolves threads cross-container.
+            // Use allowRead() not a plain container ReadPermission check: secure boards additionally enforce member-list membership.
+            Container threadContainer = ann.lookupContainer();
+            if (threadContainer == null)
+            {
+                throw new UnauthorizedException();
+            }
+            Permissions perm = getPermissions(threadContainer, getUser(), getSettings(threadContainer));
+            if (!perm.allowRead(ann))
             {
                 throw new UnauthorizedException();
             }
@@ -2881,6 +2891,44 @@ public class AnnouncementsController extends SpringActionController
             }
 
             return success(updatedThread);
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        private Container _folderA;
+        private Container _folderB;
+        private AnnouncementModel _thread;
+
+        @Before
+        public void createThread() throws Exception
+        {
+            // A message thread that lives in folder B. SubscribeThreadAction resolves threads by global entityId
+            // (cross-container by design), so each test addresses B's thread through a folder-A request.
+            _folderA = createContainer("A");
+            _folderB = createContainer("B");
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Container scoping test thread");
+            insert.setBody("body");
+            _thread = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), insert, null, false);
+        }
+
+        @Test
+        public void testSubscribeThreadRequiresReadOnThreadContainer() throws Exception
+        {
+            ActionURL url = new ActionURL(SubscribeThreadAction.class, _folderA)
+                    .addParameter("threadId", _thread.getEntityId());
+
+            // Negative: the @RequiresPermission(ReadPermission) gate only proves read on folder A; a caller who
+            // cannot read the thread's own folder must not be able to subscribe to it.
+            User readerA = createUserInRole(_folderA, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, readerA));
+
+            // Positive control: the same subscription succeeds (302 to the success URL) once the caller can also
+            // read the thread's folder.
+            User readerAB = createUserInRole(_folderA, ReaderRole.class);
+            grantRole(readerAB, _folderB, ReaderRole.class);
+            assertStatus(HttpServletResponse.SC_FOUND, post(url, readerAB));
         }
     }
 }
