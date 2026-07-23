@@ -201,8 +201,9 @@ public class XmlBeansUtil
     }
 
     /**
-     * A {@link SchemaFactory} hardened against XXE (CWE-611): external DTD and schema access blocked,
-     * secure processing on. Not thread-safe, so a fresh instance is returned per call.
+     * A {@link SchemaFactory} hardened against XXE (CWE-611): external DTD access blocked and external
+     * schema access limited to local protocols, secure processing on. Not thread-safe, so a fresh
+     * instance is returned per call.
      */
     public static SchemaFactory schemaFactory()
     {
@@ -212,7 +213,8 @@ public class XmlBeansUtil
         {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            // Bundled schemas compose sibling XSDs via import/include; permit local file/jar resolution while blocking network (http/https/ftp) access
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file,jar");
         }
         catch (SAXException e)
         {
