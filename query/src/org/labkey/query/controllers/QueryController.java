@@ -4615,6 +4615,7 @@ public class QueryController extends SpringActionController
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
                 f = new RowMapFactory<>();
             CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
+            boolean loggedConflictingCasing = false;
 
             for (int idx = 0; idx < rows.length(); ++idx)
             {
@@ -4632,9 +4633,10 @@ public class QueryController extends SpringActionController
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
-                    if (conflictingCasing)
+                    if (conflictingCasing && !loggedConflictingCasing)
                     {
-                        // Issue 52616
+                        loggedConflictingCasing = true;
+                        // Issue 52616; GH Issue 1332: log once per request, not once per conflicting row
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
