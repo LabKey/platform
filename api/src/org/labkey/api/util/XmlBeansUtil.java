@@ -228,6 +228,7 @@ public class XmlBeansUtil
     {
         try
         {
+            validator.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
         }
