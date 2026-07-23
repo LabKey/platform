@@ -2495,7 +2495,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // duplicate keys found in error
             final LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
-            StringBuilder sbIn = new StringBuilder();
+            ArrayList<String> idList = new ArrayList<>();
             final Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
@@ -2530,9 +2530,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 String sep = "";
                 if (uriMap.size() < 10000 || Boolean.TRUE==replace)
                 {
-                    if (uniq.contains(("'")))
-                        uniq = uniq.replaceAll("'","''");
-                    sbIn.append(sep).append("'").append(uniq).append("'");
+                    idList.add(uniq);
                 }
                 count++;
             }
@@ -2549,7 +2547,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     return null;
             }
             else // also check target dataset
-                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, sbIn, uriMap);
+                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, idList, uriMap);
         }
         catch (BatchValidationException vex)
         {
@@ -2569,14 +2567,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
-    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap)
+    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, ArrayList<String> idList, final Map<String, Object[]> uriMap)
     {
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
 
         TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
+        SQLFragment inClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment(demographic ?"ParticipantId":"LSID"), idList);
+        filter.addWhereClause(inClause);
         if (isShared())
         {
             Container rowsContainer = getContainer();
