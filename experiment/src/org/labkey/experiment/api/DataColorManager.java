@@ -103,7 +103,7 @@ public class DataColorManager
         List<DataColor> colors = new ArrayList<>(getColors(container));
         if (!container.isProject() && container.getProject() != null)
             colors.addAll(getColors(container.getProject()));
-        if (container != ContainerManager.getSharedContainer())
+        if (!container.equals(ContainerManager.getSharedContainer()))
             colors.addAll(getColors(ContainerManager.getSharedContainer()));
         return colors;
     }
