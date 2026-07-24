@@ -361,12 +361,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
     // its ".py" file extension. R and Jupyter (.ipynb) are handled by earlier branches, so they won't match here.
     private static boolean isPythonEngine(ExternalScriptEngineDefinition def)
     {
-        for (String ext : def.getExtensions())
-        {
-            if ("py".equalsIgnoreCase(ext))
-                return true;
-        }
-        return false;
+        return Arrays.stream(def.getExtensions()).anyMatch("py"::equalsIgnoreCase);
     }
 
     // Locates any specific engines scoped at either the container or project level for an engine context
