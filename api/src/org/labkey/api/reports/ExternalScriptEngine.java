@@ -125,12 +125,30 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         try
         {
             Object result = eval(scriptFile, context);
-            recordSuccessfulRun(context);
+
+            // Metric tracking must never affect script execution, so swallow any failure here
+            try
+            {
+                recordSuccessfulRun(context);
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to record successful script run", e);
+            }
+
             return result;
         }
         finally
         {
-            recordPackageUsage(context);
+            // Guard so a metric failure can't mask the script's result or a real exception
+            try
+            {
+                recordPackageUsage(context);
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to record script package usage", e);
+            }
         }
     }
 
@@ -178,26 +196,44 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      * GitHub Issue #1130
      * Read a sidecar file of package names (one per line) from the working directory and record each under the given
      * language in {@link ScriptPackageUsageTracker}. Never throws. A missing file means the script errored before the
-     * capture epilog ran (or capture was skipped) - nothing to do.
+     * capture epilog ran (or capture was skipped) - nothing to do. The file is deleted after reading.
      */
     protected void readPackageSidecar(ScriptContext context, String fileName, String language)
     {
+        FileLike packagesFile;
         try
         {
-            FileLike packagesFile = getWorkingDir(context).resolveChild(fileName);
-            if (!packagesFile.exists())
-                return;
+            packagesFile = getWorkingDir(context).resolveChild(fileName);
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to locate " + language + " package usage sidecar", e);
+            return;
+        }
 
-            try (BufferedReader reader = Readers.getReader(packagesFile.openInputStream()))
-            {
-                String packageName;
-                while ((packageName = reader.readLine()) != null)
-                    ScriptPackageUsageTracker.record(language, packageName);
-            }
+        if (!packagesFile.exists())
+            return;
+
+        try (BufferedReader reader = Readers.getReader(packagesFile.openInputStream()))
+        {
+            String packageName;
+            while ((packageName = reader.readLine()) != null)
+                ScriptPackageUsageTracker.record(language, packageName);
         }
         catch (Exception e)
         {
             LOG.warn("Failed to record " + language + " package usage", e);
+        }
+        finally
+        {
+            try
+            {
+                packagesFile.delete();
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to delete " + language + " package usage sidecar", e);
+            }
         }
     }
 
