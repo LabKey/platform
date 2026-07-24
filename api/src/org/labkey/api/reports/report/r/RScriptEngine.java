@@ -16,15 +16,16 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.report.ScriptPackageUsageTracker;
 import org.labkey.vfs.FileLike;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
-import javax.script.ScriptException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import java.util.List;
 */
 public class RScriptEngine extends ExternalScriptEngine
 {
+    private static final String PACKAGES_FILE = "labkeyRPackages.txt";
     public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
     public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
     public static final String PANDOC_USE_DEFAULT_OUTPUT_FORMAT = "r.script.engine.pandocUseDefaultOutputFormat";
@@ -59,6 +61,7 @@ public class RScriptEngine extends ExternalScriptEngine
         return new RScriptEngineFactory(_def);
     }
 
+    @Override
     protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions)
     {
         FileLike scriptFile;
@@ -86,18 +89,48 @@ public class RScriptEngine extends ExternalScriptEngine
         return scriptFile;
     }
 
+    /**
+     * R appended to the end of the user script (in the same R session) that captures the set of loaded packages,
+     * writing them (one per line) to a sidecar file in the working directory for {@link #recordPackageUsage} to read
+     * back. Wrapped in tryCatch so a capture failure can never break the report or transform run.
+     */
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
     {
-        List<String> extensions = getFactory().getExtensions();
+        // For knitr the executed file is a generated wrapper (createKnitrScript), not the user's R, so appending R here
+        // wouldn't run. We instead record the wrapper's known libraries in recordSuccessfulRun().
+        if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
+            return null;
 
-        if (!extensions.isEmpty())
-        {
-            FileLike scriptFile = prepareScriptFile(script, context, extensions);
-            return eval(scriptFile, context);
-        }
-        else
-            throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
+        return """
+                # --- LabKey R package usage capture ---
+                tryCatch({
+                    writeLines(sort(loadedNamespaces()), "%s")
+                }, error = function(e) invisible(NULL))
+                """.formatted(PACKAGES_FILE);
+    }
+
+    @Override
+    protected void recordPackageUsage(ScriptContext context)
+    {
+        readPackageSidecar(context, PACKAGES_FILE, "r");
+    }
+
+    @Override
+    protected void recordSuccessfulRun(ScriptContext context)
+    {
+        // Non-knitr R runs report their loaded packages via the capture epilog (see getPackageCaptureEpilog).
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
+            return;
+
+        // For knitr, the generated wrapper (createKnitrScript) always loads knitr and, for the markdown+pandoc path,
+        // rmarkdown; record those as R package usage so they show up alongside other packages.
+        // NOTE: this only captures the wrapper's libraries, not packages loaded inside the report's own R chunks (e.g.
+        // ggplot2 used within an .rmd). Fully capturing those would require injecting a loadedNamespaces() write into
+        // createKnitrScript after the knit()/render() call.
+        ScriptPackageUsageTracker.record("r", "knitr");
+        if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.Markdown && isPandocEnabled())
+            ScriptPackageUsageTracker.record("r", "rmarkdown");
     }
 
     private boolean isPandocEnabled()
