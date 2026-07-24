@@ -11,6 +11,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
@@ -63,7 +64,7 @@ public class DataColorManager
     {
         String getHandlerType();
 
-        boolean isColorInUse(Container container, long colorRowId);
+        boolean isColorInUse(long colorRowId);
     }
 
     public void registerHandler(DataColorHandler handler)
@@ -74,11 +75,11 @@ public class DataColorManager
         _handlers.put(type, handler);
     }
 
-    public boolean isInUse(Container container, long colorRowId)
+    public boolean isInUse(long colorRowId)
     {
         for (DataColorHandler handler : _handlers.values())
         {
-            if (handler.isColorInUse(container, colorRowId))
+            if (handler.isColorInUse(colorRowId))
                 return true;
         }
         return false;
@@ -94,6 +95,23 @@ public class DataColorManager
     public List<DataColor> getActiveColors(Container container)
     {
         return getColors(container).stream().filter(c -> !c.isArchived()).toList();
+    }
+
+    @NotNull
+    public List<DataColor> getAllProjectColors(Container container)
+    {
+        List<DataColor> colors = new ArrayList<>(getColors(container));
+        if (!container.isProject() && container.getProject() != null)
+            colors.addAll(getColors(container.getProject()));
+        if (container != ContainerManager.getSharedContainer())
+            colors.addAll(getColors(ContainerManager.getSharedContainer()));
+        return colors;
+    }
+
+    @NotNull
+    public List<DataColor> getActiveProjectColors(Container container)
+    {
+        return getAllProjectColors(container).stream().filter(c -> !c.isArchived()).toList();
     }
 
     @Nullable

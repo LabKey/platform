@@ -17,11 +17,14 @@ CREATE TABLE exp.DataColors
     ModifiedBy INT,
 
     CONSTRAINT PK_DataColors PRIMARY KEY (RowId),
-    CONSTRAINT UQ_DataColors_Label UNIQUE (Container, Label)
+    CONSTRAINT FK_DataColors_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 );
+
+CREATE UNIQUE INDEX UQ_DataColors_Label ON exp.DataColors (Container, LOWER(Label));
 
 ALTER TABLE exp.Material ADD COLUMN ExpMaterialColor INT;
 ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_ExpMaterialColor FOREIGN KEY (ExpMaterialColor) REFERENCES exp.DataColors (RowId);
+CREATE INDEX IX_Material_ExpMaterialColor ON exp.Material (ExpMaterialColor) WHERE ExpMaterialColor IS NOT NULL;
 
 CREATE TABLE exp.DataTypeColorExclusion
 (
@@ -36,5 +39,7 @@ CREATE TABLE exp.DataTypeColorExclusion
     ModifiedBy INT,
 
     CONSTRAINT PK_DataTypeColorExclusion PRIMARY KEY (RowId),
-    CONSTRAINT UQ_DataTypeColorExclusion UNIQUE (DataTypeRowId, DataType, ColorRowId)
+    CONSTRAINT UQ_DataTypeColorExclusion UNIQUE (DataTypeRowId, DataType, ColorRowId),
+    CONSTRAINT FK_DataTypeColorExclusion_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT FK_DataTypeColorExclusion_Color FOREIGN KEY (ColorRowId) REFERENCES exp.DataColors (RowId)
 );

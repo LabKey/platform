@@ -9137,10 +9137,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId)
     {
         Set<Long> disabled = getDataTypeExcludedColors(dataType, dataTypeId);
-        return DataColorManager.getInstance().getActiveColors(container).stream()
+        return DataColorManager.getInstance().getActiveProjectColors(container).stream()
                 .map(c -> (long) c.getRowId())
                 .filter(rowId -> !disabled.contains(rowId))
                 .collect(toSet());
+    }
+
+    // Applies a reconciled set of exclusion changes to exp.DataTypeColorExclusion in one transaction: one key column is
+    // held fixed (fixedColumn = fixedValue), the other varies. Rows in toAdd are inserted; rows in toRemove are deleted.
+    // Shared by ensureDataColorExclusions (fixes DataTypeRowId, varies ColorRowId) and updateColorDataTypeExclusions
+    // (fixes ColorRowId, varies DataTypeRowId). The column names are code constants, not caller input.
+    private void applyExclusionChanges(String fixedColumn, long fixedValue, String varyingColumn, Set<Long> toAdd, Set<Long> toRemove, DataTypeForExclusion dataType, Container container, User user)
+    {
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+        {
+            for (Long id : toAdd)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", container.getId());
+                fields.put("DataType", dataType.name());
+                fields.put(fixedColumn, fixedValue);
+                fields.put(varyingColumn, id);
+                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
+            }
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(getTinfoDataTypeColorExclusion())
+                        .append(" WHERE ").append(fixedColumn).append(" = ? AND DataType = ?")
+                        .add(fixedValue).add(dataType.name())
+                        .append(" AND ").append(varyingColumn).append(" ");
+                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
+                new SqlExecutor(getExpSchema()).execute(sql);
+            }
+            tx.commit();
+        }
     }
 
     @Override
@@ -9161,30 +9192,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (toAdd.isEmpty() && toRemove.isEmpty())
             return false;
 
-        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
-        {
-            for (Long colorRowId : toAdd)
-            {
-                Map<String, Object> fields = new HashMap<>();
-                fields.put("Container", container.getId());
-                fields.put("DataTypeRowId", dataTypeId);
-                fields.put("DataType", dataType.name());
-                fields.put("ColorRowId", colorRowId);
-                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
-            }
-            if (!toRemove.isEmpty())
-            {
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
-                        .append(getTinfoDataTypeColorExclusion())
-                        .append(" WHERE DataTypeRowId = ? AND DataType = ?")
-                        .add(dataTypeId).add(dataType.name())
-                        .append(" AND ColorRowId ");
-                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
-                new SqlExecutor(getExpSchema()).execute(sql);
-            }
-            tx.commit();
-        }
-
+        // Fix the sample type; vary the colors being disabled/re-enabled for it.
+        applyExclusionChanges("DataTypeRowId", dataTypeId, "ColorRowId", toAdd, toRemove, dataType, container, user);
         return true;
     }
 
@@ -9215,29 +9224,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (toAdd.isEmpty() && toRemove.isEmpty())
             return Set.of();
 
-        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
-        {
-            for (Long dataTypeId : toAdd)
-            {
-                Map<String, Object> fields = new HashMap<>();
-                fields.put("Container", container.getId());
-                fields.put("DataTypeRowId", dataTypeId);
-                fields.put("DataType", dataType.name());
-                fields.put("ColorRowId", colorRowId);
-                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
-            }
-            if (!toRemove.isEmpty())
-            {
-                SQLFragment sql = new SQLFragment("DELETE FROM ")
-                        .append(getTinfoDataTypeColorExclusion())
-                        .append(" WHERE ColorRowId = ? AND DataType = ?")
-                        .add(colorRowId).add(dataType.name())
-                        .append(" AND DataTypeRowId ");
-                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
-                new SqlExecutor(getExpSchema()).execute(sql);
-            }
-            tx.commit();
-        }
+        // Fix the color; vary the sample types it's disabled/re-enabled for.
+        applyExclusionChanges("ColorRowId", colorRowId, "DataTypeRowId", toAdd, toRemove, dataType, container, user);
 
         Set<Long> affected = new HashSet<>(toAdd);
         affected.addAll(toRemove);

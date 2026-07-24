@@ -185,6 +185,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Expiration Date", "MaterialExpDate");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleColor", "ExpSampleColor");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Color", "ExpSampleColor");
     }
 
     public enum Options

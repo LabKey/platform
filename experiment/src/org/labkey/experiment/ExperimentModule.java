@@ -119,6 +119,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.DataColorManager;
+import org.labkey.experiment.api.DataColorTable;
 import org.labkey.experiment.api.EdgeDiagnosticsTestCase;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassTableImpl;
@@ -813,6 +814,9 @@ public class ExperimentModule extends SpringModule
                                     "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = " + schema.getSqlDialect().getBooleanFALSE() + " AND NOT EXISTS (" +
                                     "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))")
                             .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class));
+                    sampleColorMetrics.put("sampleTypesWithColorsDisabledCount", new SqlSelector(schema, new SQLFragment(
+                            "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
+                            .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class));
                 }
                 results.put("sampleColors", sampleColorMetrics);
 
@@ -1152,6 +1156,7 @@ public class ExperimentModule extends SpringModule
         return Set.of(
             EdgeDiagnosticsTestCase.class,
             ExperimentController.ContainerScopingTestCase.class,
+            DataColorTable.TestCase.class,
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,

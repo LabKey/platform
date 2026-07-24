@@ -210,7 +210,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public boolean isColorInUse(Container container, long colorRowId)
+    public boolean isColorInUse(long colorRowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExpMaterialColor"), colorRowId);
         return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();

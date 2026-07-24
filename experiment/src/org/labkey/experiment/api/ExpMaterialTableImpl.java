@@ -608,7 +608,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(colorsEnabled);
                 ret.setShownInUpdateView(colorsEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getMaterialBaseFieldLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.DataColors).display("Label"));
                 return ret;
             }
@@ -622,7 +622,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getMaterialBaseFieldLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
@@ -778,7 +778,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return false;
         if (_ss != null)
             return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
-        return !DataColorManager.getInstance().getActiveColors(c).isEmpty();
+        return !DataColorManager.getInstance().getActiveProjectColors(c).isEmpty();
     }
 
     private Unit getSampleTypeUnit()
@@ -1012,7 +1012,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(lineageLookup);
     }
 
-    private ContainerFilter getSampleStatusLookupContainerFilter()
+    private ContainerFilter getMaterialBaseFieldLookupContainerFilter()
     {
         // The default lookup container filter is Current. However, we want to have the default be CurrentPlusProjectAndShared
         // for the sample status lookup since in the app project context we want to share status definitions across
