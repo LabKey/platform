@@ -304,6 +304,33 @@ public class DataColorTable extends FilteredTable<ExpSchema>
                 throw errors;
         }
 
+        private static Map<String, Object> sampleRow(String name, Long colorRowId)
+        {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+            row.put("Name", name);
+            row.put("ExpMaterialColor", colorRowId);
+            return row;
+        }
+
+        private String saveSample(ExpSampleType st, Map<String, Object> row, boolean isUpdate)
+        {
+            try
+            {
+                UserSchema schema = QueryService.get().getUserSchema(_user, _c, SchemaKey.fromParts("Samples"));
+                QueryUpdateService qus = schema.getTable(st.getName()).getUpdateService();
+                BatchValidationException errors = new BatchValidationException();
+                if (isUpdate)
+                    qus.updateRows(_user, _c, List.of(row), null, errors, null, null);
+                else
+                    qus.insertRows(_user, _c, List.of(row), errors, null, null);
+                return errors.hasErrors() ? errors.getMessage() : null;
+            }
+            catch (Exception e)
+            {
+                return e.getMessage();
+            }
+        }
+
         private long countInContainer(TableInfo table, String containerId)
         {
             SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(table).append(" WHERE Container = ?").add(containerId);
@@ -376,6 +403,67 @@ public class DataColorTable extends FilteredTable<ExpSchema>
             assertFalse(DataColorManager.getInstance().isInUse(red));
             deleteColor(red);
             assertNull(DataColorManager.getInstance().getColorForRowId(_c, red));
+        }
+
+        // ---- sample import: color exclusion enforcement ---------------------
+
+        @Test
+        public void testCannotInsertSampleWithExcludedColor() throws Exception
+        {
+            ExpSampleType st = createSampleType("ColorInsertST");
+            long red = insertColor("Red", "#ff0000", false);
+            long blue = insertColor("Blue", "#0000ff", false);
+            // Blue is excluded for this sample type; Red is not.
+            ExperimentService.get().ensureDataColorExclusions(st.getRowId(), DataTypeForExclusion.SampleType, List.of(blue), _c, _user);
+
+            // an allowed (non-excluded) color imports fine
+            assertNull("a non-excluded color should be insertable", saveSample(st, sampleRow("okSample", red), false));
+            // a null color is always fine
+            assertNull("a sample with no color should be insertable", saveSample(st, sampleRow("noColor", null), false));
+
+            // an excluded color is rejected
+            String err = saveSample(st, sampleRow("badSample", blue), false);
+            assertNotNull("inserting an excluded color should fail", err);
+            assertTrue("Unexpected error: " + err, err.toLowerCase().contains("not valid"));
+        }
+
+        @Test
+        public void testCannotUpdateSampleToExcludedColor() throws Exception
+        {
+            ExpSampleType st = createSampleType("ColorUpdateST");
+            long red = insertColor("Red", "#ff0000", false);
+            long blue = insertColor("Blue", "#0000ff", false);
+            ExperimentService.get().ensureDataColorExclusions(st.getRowId(), DataTypeForExclusion.SampleType, List.of(blue), _c, _user);
+
+            assertNull(saveSample(st, sampleRow("s1", red), false));
+            long sampleRowId = st.getSample(_c, "s1").getRowId();
+
+            // updating to the excluded color is rejected
+            Map<String, Object> toExcluded = new CaseInsensitiveHashMap<>();
+            toExcluded.put("RowId", sampleRowId);
+            toExcluded.put("ExpMaterialColor", blue);
+            String err = saveSample(st, toExcluded, true);
+            assertNotNull("updating to an excluded color should fail", err);
+            assertTrue("Unexpected error: " + err, err.toLowerCase().contains("not valid"));
+
+            // updating to an allowed color succeeds
+            Map<String, Object> toAllowed = new CaseInsensitiveHashMap<>();
+            toAllowed.put("RowId", sampleRowId);
+            toAllowed.put("ExpMaterialColor", red);
+            assertNull("updating to a non-excluded color should succeed", saveSample(st, toAllowed, true));
+        }
+
+        @Test
+        public void testArchivedNonExcludedColorCanBeImported() throws Exception
+        {
+            ExpSampleType st = createSampleType("ColorArchivedImportST");
+            long blue = insertColor("Blue", "#0000ff", false);
+            long gray = insertColor("Gray", "#888888", true); // archived, but NOT excluded
+            // Exclude Blue so the import check is active for this type.
+            ExperimentService.get().ensureDataColorExclusions(st.getRowId(), DataTypeForExclusion.SampleType, List.of(blue), _c, _user);
+
+            // Exclusion — not archived-ness — is what's enforced on import, so an archived non-excluded color is allowed.
+            assertNull("an archived non-excluded color should still be insertable", saveSample(st, sampleRow("s1", gray), false));
         }
 
         // ---- exclusion service methods --------------------------------------
