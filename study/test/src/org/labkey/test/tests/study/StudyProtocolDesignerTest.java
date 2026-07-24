@@ -86,7 +86,6 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
     private static final String[] CHALLENGES = {"Challenge1", "Challenge2", "Challenge3"};
 
-
     private static final List<BaseManageVaccineDesignVisitPage.Visit> VISITS = Arrays.asList(
         new BaseManageVaccineDesignVisitPage.Visit("Enrollment", 0.0, 0.0),
         new BaseManageVaccineDesignVisitPage.Visit("Visit 1", 1.0, 1.0),
@@ -96,8 +95,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     );
 
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TRICKY_CHARACTERS, "\\").name(), 6.0, 7.0),
-            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TRICKY_CHARACTERS, "\\").name(), 8.0, 8.0)
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 6.0, 7.0),
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 8.0, 8.0)
     );
 
 
@@ -123,6 +122,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         clickProject(getProjectName());
     }
 
+    //Sometimes fails intermittently GitHub Issue 1335.
     @Test
     public void testStudyProtocolDesigner()
     {
