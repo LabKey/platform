@@ -82,8 +82,6 @@ public class AuthenticationConfigurationCache
 
         private AuthenticationConfigurationCollections()
         {
-            boolean acceptOnlyFicamProviders = AuthenticationManager.isAcceptOnlyFicamProviders();
-
             // Select the configurations stored in the core.AuthenticationConfigurations table, add the database
             // authentication configuration, map each to the appropriate AuthenticationConfiguration, and add to the maps.
 
@@ -99,13 +97,13 @@ public class AuthenticationConfigurationCache
             configs
                 .map(this::getAuthenticationConfiguration)
                 .filter(Objects::nonNull)
-                .filter(c->!acceptOnlyFicamProviders || c.getAuthenticationProvider().isFicamApproved())
                 .forEach(this::addConfiguration);
 
             // MultiValuedMap of domains to AuthenticationConfigurations that claim them
             _activeDomainMap = getActive(PrimaryAuthenticationConfiguration.class).stream()
                 .filter(config -> null != config.getDomain())
                 .filter(config -> !AuthenticationManager.ALL_DOMAINS.equals(config.getDomain()))
+                .map(config -> (AuthenticationConfiguration<?>) config)
                 .collect(LabKeyCollectors.toMultiValuedMap(AuthenticationConfiguration::getDomain, config -> config));
 
             List<String> activeDomains = new ArrayList<>(_activeDomainMap.keySet());
@@ -113,15 +111,18 @@ public class AuthenticationConfigurationCache
             _activeDomains = Collections.unmodifiableCollection(activeDomains);
         }
 
-        // Little helper method simplifies the stream handling above
+        // Little helper method simplifies the stream handling above. Filters out configurations based on FICAM-only setting.
         private @Nullable AuthenticationConfiguration<?> getAuthenticationConfiguration(Map<String, Object> map)
         {
             String providerName = (String)map.get("Provider");
             AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, providerName);
             if (null == provider)
             {
-                String description = (String)map.get("Description");
-                LOG.warn("A saved authentication configuration requires the \"{}\" authentication provider, but that provider is not present in this deployment. Authentication via {} will not be available.", providerName, null != description ? "\"" + description + "\"" : "this mechanism");
+                if (!AuthenticationManager.isAcceptOnlyFicamProviders()) // Don't warn if FICAM-only is checked
+                {
+                    String description = (String)map.get("Description");
+                    LOG.warn("A saved authentication configuration requires the \"{}\" authentication provider, but that provider is not present in this deployment. Authentication via {} will not be available.", providerName, null != description ? "\"" + description + "\"" : "this mechanism");
+                }
                 return null;
             }
 
@@ -162,7 +163,7 @@ public class AuthenticationConfigurationCache
             return null != configurations ? configurations : Collections.emptyList();
         }
 
-        private @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+        private @NotNull Collection<AuthenticationConfiguration<?>> getActiveConfigurationsForDomain(String domain)
         {
             return new ArrayList<>(_activeDomainMap.get(domain));
         }
@@ -233,7 +234,7 @@ public class AuthenticationConfigurationCache
     /**
      * Return a collection of authentication configurations that claim the specified domain
      */
-    public static @NotNull Collection<AuthenticationConfiguration> getActiveConfigurationsForDomain(String domain)
+    public static @NotNull Collection<AuthenticationConfiguration<?>> getActiveConfigurationsForDomain(String domain)
     {
         return CACHE.get(CACHE_KEY).getActiveConfigurationsForDomain(domain);
     }
