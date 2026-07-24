@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
@@ -26,7 +27,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.logging.LogHelper;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -41,6 +45,8 @@ import java.util.LinkedList;
 
 public class XmlBeansUtil
 {
+    private static final Logger LOG = LogHelper.getLogger(XmlBeansUtil.class, "XML schema and validator XXE hardening");
+
     private XmlBeansUtil()
     {
     }
@@ -209,33 +215,59 @@ public class XmlBeansUtil
     {
         //noinspection SchemaFactory
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        try
-        {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            // Bundled schemas compose sibling XSDs via import/include; permit local file/jar resolution while blocking network (http/https/ftp) access
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file,jar");
-        }
-        catch (SAXException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
+        require(() -> factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true));
+        attempt(() -> factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, ""), XMLConstants.ACCESS_EXTERNAL_DTD);
+        // Bundled schemas compose sibling XSDs via import/include; permit local file/jar resolution while blocking network (http/https/ftp) access
+        attempt(() -> factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file,jar"), XMLConstants.ACCESS_EXTERNAL_SCHEMA);
         return factory;
     }
 
     // The Validator resolves entities in the instance document independently of the SchemaFactory, so it must be locked down separately.
     public static Validator hardenValidator(Validator validator)
     {
+        require(() -> validator.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true));
+        // Standalone Apache Xerces ignores the accessExternal* properties below, so these SAX features (which it does honor) are what actually block instance-document XXE on the server; the JDK factory relies on the properties instead.
+        attempt(() -> validator.setFeature("http://xml.org/sax/features/external-general-entities", false), "external-general-entities");
+        attempt(() -> validator.setFeature("http://xml.org/sax/features/external-parameter-entities", false), "external-parameter-entities");
+        attempt(() -> validator.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false), "load-external-dtd");
+        attempt(() -> validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, ""), XMLConstants.ACCESS_EXTERNAL_DTD);
+        attempt(() -> validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""), XMLConstants.ACCESS_EXTERNAL_SCHEMA);
+        return validator;
+    }
+
+    @FunctionalInterface
+    private interface XmlSetting
+    {
+        void apply() throws SAXException;
+    }
+
+    // FEATURE_SECURE_PROCESSING is honored by every JAXP implementation, so failure to set it is fatal.
+    private static void require(XmlSetting setting)
+    {
         try
         {
-            validator.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            setting.apply();
         }
         catch (SAXException e)
         {
             throw UnexpectedException.wrap(e);
         }
-        return validator;
+    }
+
+    // Implementations recognize different subsets of the XXE controls (e.g. standalone Apache Xerces rejects the JAXP 1.5 accessExternal* properties, XERCESJ-1654), so each is attempted independently and a not-recognized setting is skipped rather than aborting the rest.
+    private static void attempt(XmlSetting setting, String name)
+    {
+        try
+        {
+            setting.apply();
+        }
+        catch (SAXNotRecognizedException | SAXNotSupportedException e)
+        {
+            LOG.debug("XML implementation does not recognize {}; relying on the other hardening settings", name);
+        }
+        catch (SAXException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 }
