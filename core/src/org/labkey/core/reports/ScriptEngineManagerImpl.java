@@ -47,6 +47,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.report.python.PythonScriptEngine;
 import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
@@ -348,10 +349,24 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 LOG.error("Jupyter Report engine [{}] requested, but premium module not available/enabled.", def.getName());
                 throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
+            else if (isPythonEngine(def))
+                return new PythonScriptEngine(def);
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
         }
         return null;
+    }
+
+    // A Python engine is configured as a generic external engine (there is no dedicated Type.Python), so identify it by
+    // its ".py" file extension. R and Jupyter (.ipynb) are handled by earlier branches, so they won't match here.
+    private static boolean isPythonEngine(ExternalScriptEngineDefinition def)
+    {
+        for (String ext : def.getExtensions())
+        {
+            if ("py".equalsIgnoreCase(ext))
+                return true;
+        }
+        return false;
     }
 
     // Locates any specific engines scoped at either the container or project level for an engine context
