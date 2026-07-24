@@ -23,6 +23,7 @@ import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.reports.report.ScriptPackageUsageTracker;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.LabKeyProcessBuilder;
@@ -113,15 +114,91 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
-
-        if (!extensions.isEmpty())
-        {
-            // write out the script file to disk using the first extension as the default
-            FileLike scriptFile = writeScriptFile(script, context, extensions);
-            return eval(scriptFile, context);
-        }
-        else
+        if (extensions.isEmpty())
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
+
+        String epilog = getPackageCaptureEpilog(context);
+        if (epilog != null)
+            script = script + "\n" + epilog;
+
+        FileLike scriptFile = prepareScriptFile(script, context, extensions);
+        try
+        {
+            Object result = eval(scriptFile, context);
+            recordSuccessfulRun(context);
+            return result;
+        }
+        finally
+        {
+            recordPackageUsage(context);
+        }
+    }
+
+    /**
+     * Prepare the on-disk script file that will be executed. The default writes the script as-is; subclasses (e.g. the
+     * R engine's knitr handling) may wrap it in a different driver script.
+     */
+    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions)
+    {
+        return writeScriptFile(script, context, extensions);
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Script appended to the end of the user script (in the same process) that captures the loaded packages/modules and
+     * writes them, one per line, to a sidecar file in the working directory for {@link #recordPackageUsage} to read
+     * back. The default returns null (no capture); language-specific engines (e.g. R, Python) override this. Wrapped so
+     * a capture failure can never break the script run.
+     */
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
+    {
+        return null;
+    }
+
+    /**
+     * GitHub Issue #1130
+     * After a script runs, read back and record the packages loaded by the script. The default does nothing;
+     * language-specific engines override this, typically delegating to {@link #readPackageSidecar}. Never throws:
+     * package tracking must not affect script execution.
+     */
+    protected void recordPackageUsage(ScriptContext context)
+    {
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Called after a script has run successfully (eval returned without throwing). The default does nothing;
+     * language-specific engines may override to record success metrics.
+     */
+    protected void recordSuccessfulRun(ScriptContext context)
+    {
+    }
+
+    /**
+     * GitHub Issue #1130
+     * Read a sidecar file of package names (one per line) from the working directory and record each under the given
+     * language in {@link ScriptPackageUsageTracker}. Never throws. A missing file means the script errored before the
+     * capture epilog ran (or capture was skipped) - nothing to do.
+     */
+    protected void readPackageSidecar(ScriptContext context, String fileName, String language)
+    {
+        try
+        {
+            FileLike packagesFile = getWorkingDir(context).resolveChild(fileName);
+            if (!packagesFile.exists())
+                return;
+
+            try (BufferedReader reader = Readers.getReader(packagesFile.openInputStream()))
+            {
+                String packageName;
+                while ((packageName = reader.readLine()) != null)
+                    ScriptPackageUsageTracker.record(language, packageName);
+            }
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to record " + language + " package usage", e);
+        }
     }
 
     protected Object eval(FileLike scriptFile, ScriptContext context) throws ScriptException
