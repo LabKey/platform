@@ -120,9 +120,8 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
     }
 
     @Override
-    protected Map<String, Object> getConfigurationMap(int rowId)
+    protected Map<String, Object> getConfigurationMap(@NotNull AC configuration)
     {
-        AC configuration = getFromCache(rowId);
         return AuthenticationManager.getSsoConfigurationMap(configuration);
     }
 

@@ -127,7 +127,8 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         return StringUtilsLabKey.getMapDifference(
             null != oldConfiguration ? oldConfiguration.getLoggingProperties() : null,
             null != newConfiguration ? newConfiguration.getLoggingProperties() : null,
-            50);
+            50
+        );
     }
 
     protected AC getFromCache(int rowId)
@@ -136,9 +137,20 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         return (AC)AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
     }
 
-    protected Map<String, Object> getConfigurationMap(int rowId)
+    protected final Map<String, Object> getConfigurationMap(int rowId)
     {
         AC configuration = getFromCache(rowId);
+
+        if (null == configuration)
+        {
+            throw new NotFoundException("Unable to save configuration");
+        }
+
+        return getConfigurationMap(configuration);
+    }
+
+    protected Map<String, Object> getConfigurationMap(@NotNull AC configuration)
+    {
         return AuthenticationManager.getConfigurationMap(configuration);
     }
 }

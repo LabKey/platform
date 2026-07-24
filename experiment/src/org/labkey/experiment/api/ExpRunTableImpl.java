@@ -69,6 +69,7 @@ import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
@@ -90,6 +91,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -455,8 +457,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createPropertiesColumn(alias);
             case WorkflowTask:
                 var workflowTaskCol = wrapColumn(alias, _rootTable.getColumn("WorkflowTask"));
-                workflowTaskCol.setShownInInsertView(false);
-                workflowTaskCol.setShownInUpdateView(false);
                 // the "workflow" schema is part of the samplemanagement module
                 if (ModuleLoader.getInstance().hasModule("samplemanagement"))
                 {
@@ -465,6 +465,12 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                                     .schema("workflow", getContainer())
                                     .to("Task", "RowId", "Name")
                     );
+                }
+                if (!ProductRegistry.isProductFeatureEnabled(ProductFeature.Workflow))
+                {
+                    workflowTaskCol.setShownInInsertView(false);
+                    workflowTaskCol.setShownInUpdateView(false);
+                    workflowTaskCol.setShownInDetailsView(false);
                 }
                 workflowTaskCol.setLabel("Workflow Task");
                 return workflowTaskCol;

@@ -16,6 +16,7 @@
 package org.labkey.test.tests.devtools;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -29,6 +30,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.Git;
 import org.labkey.test.pages.core.login.LoginConfigRow;
 import org.labkey.test.pages.core.login.LoginConfigurePage;
+import org.labkey.test.pages.devtools.TestSecondaryPage;
 import org.labkey.test.params.devtools.SecondaryAuthenticationProvider;
 import org.labkey.test.util.PasswordUtil;
 import org.labkey.test.util.login.AuthenticationAPIUtils;
@@ -119,21 +121,19 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
             //'Sign In' link shouldn't be present
             waitForElementToDisappear(Locator.linkContainingText("Sign In"));
 
+            TestSecondaryPage secondaryAuthPage = new TestSecondaryPage(getDriver());
+
             //User should be still recognized as guest until secondary authentication is successful.
             assertTextPresent("Is " + PasswordUtil.getUsername() +" really you?");
 
             //Select Radio button No
-            checkRadioButton(Locator.radioButtonByNameAndValue("valid", "0"));
-            click(Locator.input("TestSecondary"));
+            secondaryAuthPage.denyIdentity();
 
             //should stay on Secondary Authentication page until user selects Yes radio
             assertTextPresent("Secondary Authentication");
+            Assert.assertEquals("Logged in as", "guest", getCurrentUserName());
 
-            //Select radio Yes
-            checkRadioButton(Locator.radioButtonByNameAndValue("valid", "1"));
-
-            //Click on button 'TestSecondary'
-            clickAndWait(Locator.input("TestSecondary"));
+            secondaryAuthPage.confirmIdentity();
 
             //get current relative URL after Sign In
             String relativeURLAfterSignIn = getCurrentRelativeURL();
