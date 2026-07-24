@@ -394,6 +394,7 @@ boxPlot.render();
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.timeBasedXTick = origScale.timeBasedXTick ? origScale.timeBasedXTick : null;
                 newScale.dayCount = origScale.dayCount ? origScale.dayCount : null;
+                newScale.dayNumberOffsetMap = origScale.dayNumberOffsetMap ? origScale.dayNumberOffsetMap : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
@@ -1845,34 +1846,61 @@ boxPlot.render();
         }
         uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
 
-        // Calendar (time-based) x-axis: position each day by its offset from the earliest day so spacing
-        // reflects elapsed time. Offsets are keyed by xTickLabel (the date) so same-day rows share a position.
+        // Calendar (time-based) x-axis: space each day by elapsed time; with an ordinal prefix (guide-set "always show") the prefix rows collapse to ordinal slots and only the recent window is time-spaced.
         const timeBasedXTick = config.properties.timeBasedXTick === true;
-        const dayOffsetMap = {}, dayOffsetLabelMap = {};
-        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null;
+        const prefixField = config.properties.calendarPrefixField;
+        const prefixValue = config.properties.calendarPrefixValue;
+        const dayOffsetMap = {}, dayOffsetLabelMap = {}, dayNumberOffsetMap = {};
+        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null, ordinalPrefixApplied = false;
         if (timeBasedXTick) {
-            // Parse each distinct date label once, tracking the earliest day; then convert to offsets.
-            const labelToDn = {}, seenLabel = {};
+            // Collect each distinct date label once (data order): its day number and whether it is a prefix row.
+            const labelInfo = {}, prefixLabels = [], recentLabels = [];
             for (let i = 0; i < config.data.length; i++) {
                 const label = config.data[i][config.properties.xTickLabel];
-                if (seenLabel[label]) {
+                if (labelInfo[label] !== undefined) {
                     continue;
                 }
-                seenLabel[label] = true;
                 const dn = LABKEY.vis.dateToDayNumber(label);
+                const isPrefix = prefixField !== undefined && prefixValue !== undefined
+                        && config.data[i][prefixField] === prefixValue;
+                labelInfo[label] = { dn: dn, prefix: isPrefix };
                 if (dn !== null) {
-                    labelToDn[label] = dn;
                     if (minDayNumber === null || dn < minDayNumber) {
                         minDayNumber = dn;
                     }
+                    (isPrefix ? prefixLabels : recentLabels).push(label);
                 }
             }
-            for (const label in labelToDn) {
-                const offset = labelToDn[label] - minDayNumber;
+
+            const byDn = function(a, b) { return labelInfo[a].dn - labelInfo[b].dn; };
+            const putOffset = function(label, offset) {
                 dayOffsetMap[label] = offset;
                 dayOffsetLabelMap[offset] = label;
+                dayNumberOffsetMap[labelInfo[label].dn] = offset;
                 if (offset > maxDayOffset) {
                     maxDayOffset = offset;
+                }
+            };
+
+            if (prefixLabels.length > 0 && recentLabels.length > 0) {
+                // Prefix days -> ordinal slots 0..p-1; recent days -> p + elapsed days from the first recent day.
+                ordinalPrefixApplied = true;
+                prefixLabels.sort(byDn);
+                recentLabels.sort(byDn);
+                for (let k = 0; k < prefixLabels.length; k++) {
+                    putOffset(prefixLabels[k], k);
+                }
+                const firstRecentDn = labelInfo[recentLabels[0]].dn;
+                for (let k = 0; k < recentLabels.length; k++) {
+                    putOffset(recentLabels[k], prefixLabels.length + (labelInfo[recentLabels[k]].dn - firstRecentDn));
+                }
+            }
+            else {
+                // No prefix split: every day spaced by its offset from the earliest day.
+                for (const label in labelInfo) {
+                    if (labelInfo[label].dn !== null) {
+                        putOffset(label, labelInfo[label].dn - minDayNumber);
+                    }
                 }
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
@@ -2392,6 +2420,7 @@ boxPlot.render();
             config.scales.x.trans = 'linear';
             config.scales.x.timeBasedXTick = true; // opt-in flag so the renderer only day-jitters this axis
             config.scales.x.dayCount = uniqueDayOffsets.length; // distinct-day count shared with jitter/bar/rect sizing
+            config.scales.x.dayNumberOffsetMap = dayNumberOffsetMap; // day number -> x offset, for annotation overlay alignment
             // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.
             // pos(0)=1/(slots+1), pos(maxOffset)=numDates/(slots+1).
             const numDates = uniqueDayOffsets.length;
@@ -2419,6 +2448,27 @@ boxPlot.render();
             if (perDayTicksFit) {
                 // One tick per data day.
                 config.scales.x.tickValues = uniqueDayOffsets;
+                config.scales.x.tickFormat = function(offset) {
+                    return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
+                };
+            }
+            else if (ordinalPrefixApplied) {
+                // Piecewise axis: offsets aren't linear in day number, so tick only on data days (thinned to fit) and label from the offset->date map.
+                const picked = [uniqueDayOffsets[0]];
+                for (let i = 1; i < uniqueDayOffsets.length; i++) {
+                    if (uniqueDayOffsets[i] - picked[picked.length - 1] >= minLabelGapOffsets) {
+                        picked.push(uniqueDayOffsets[i]);
+                    }
+                }
+                let thinned = picked;
+                if (picked.length > tickMax) {
+                    thinned = [];
+                    const step = Math.ceil(picked.length / tickMax);
+                    for (let i = 0; i < picked.length; i += step) {
+                        thinned.push(picked[i]);
+                    }
+                }
+                config.scales.x.tickValues = thinned;
                 config.scales.x.tickFormat = function(offset) {
                     return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
                 };
