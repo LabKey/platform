@@ -662,6 +662,12 @@ public class AuthenticationManager
     {
         // Delete any logos attached to the configuration
         AuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+
+        if (null == configuration)
+        {
+            throw new NotFoundException("Unable to delete authentication configuration");
+        }
+
         AttachmentService.get().deleteAttachments(configuration);
 
         // Delete configuration
@@ -746,6 +752,7 @@ public class AuthenticationManager
         if (isAcceptOnlyFicamProviders() != enable)
         {
             saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+            AuthenticationProviderCache.clear();
             AuthenticationConfigurationCache.clear();
         }
     }
