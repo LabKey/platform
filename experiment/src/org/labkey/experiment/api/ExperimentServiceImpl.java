@@ -9134,6 +9134,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId)
+    {
+        return DataColorManager.getInstance().getAllProjectColors(container).stream()
+                .filter(c -> c.getRowId() == colorRowId)
+                .map(DataColor::getLabel)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
     public @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId)
     {
         Set<Long> disabled = getDataTypeExcludedColors(dataType, dataTypeId);

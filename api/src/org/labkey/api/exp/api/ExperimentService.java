@@ -1150,6 +1150,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
 
+    @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId);
+
     boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
 
     @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user);
