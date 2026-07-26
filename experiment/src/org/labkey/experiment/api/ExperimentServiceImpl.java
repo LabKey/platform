@@ -9202,7 +9202,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (toAdd.isEmpty() && toRemove.isEmpty())
             return false;
 
-        // Fix the sample type; vary the colors being disabled/re-enabled for it.
         applyExclusionChanges("DataTypeRowId", dataTypeId, "ColorRowId", toAdd, toRemove, dataType, container, user);
         return true;
     }
@@ -9234,7 +9233,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (toAdd.isEmpty() && toRemove.isEmpty())
             return Set.of();
 
-        // Fix the color; vary the sample types it's disabled/re-enabled for.
         applyExclusionChanges("ColorRowId", colorRowId, "DataTypeRowId", toAdd, toRemove, dataType, container, user);
 
         Set<Long> affected = new HashSet<>(toAdd);
