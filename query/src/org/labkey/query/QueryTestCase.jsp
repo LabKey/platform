@@ -892,7 +892,7 @@ d,seven,twelve,day,month,date,duration,guid
                 assertNull(rs.getColumn(1).getFormat());
             }
         },
-        new SqlTest("SELECT 1 AS name @hidden'")
+        new SqlTest("SELECT 1 AS name @hidden")
         {
             @Override
             protected void validateResults(Results rs) throws Exception
