@@ -660,6 +660,18 @@ public class ExperimentModule extends SpringModule
                             "%\"" + DataTransformService.TransformOperation.INSERT + "\"%"
                     ).getObject(Long.class));
 
+                    // GitHub Issue #159: approximate count of assay designs whose transform scripts aren't in an
+                    // @scripts directory. This is done in SQL instead of parsing each script so there are some caveats
+                    // for cases that aren't counted:
+                    // 1. Any path containing "@scripts" matches, so a script in a sibling container's @scripts looks compliant here but is rejected on save.
+                    // 2. Undercounts designs with a MIX of compliant and non-compliant scripts
+                    assayMetrics.put("protocolsWithTransformScriptNotInScriptsDirCount", new SqlSelector(schema,
+                            "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = ? AND status = ? AND OP.stringvalue NOT LIKE ?",
+                            AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
+                            ExpProtocol.Status.Active.toString(),
+                            "%" + FileContentService.SCRIPTS_LINK + "%"
+                    ).getObject(Long.class));
+
                     assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
                     SQLFragment runsWithPlateSQL = new SQLFragment("""
                         SELECT COUNT(*) FROM exp.experimentrun r
