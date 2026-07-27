@@ -615,6 +615,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
             if (updatedDomainDesign != null)
             {
+                // This allows existing domains to save with conflicting aliases. Should it?
                 if (!existingAliases.contains(trimmedKey))
                 {
                     var field = updatedDomainDesign.getFieldByName(trimmedKey);
@@ -622,13 +623,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
                     {
                         throw new IllegalArgumentException(String.format("An existing %1$s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
                     }
-                }
 
-                // GH Issue 1257
-                var field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
-                if (field != null)
-                {
-                    throw new IllegalArgumentException(String.format("Field %1$s has an import alias %2$s that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                    // GH Issue 1257
+                    field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
+                    if (field != null)
+                    {
+                        throw new IllegalArgumentException(String.format("Field %1$s has an import alias %2$s that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                    }
                 }
             }
 

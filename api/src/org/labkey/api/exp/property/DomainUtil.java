@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -1563,6 +1564,9 @@ public class DomainUtil
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
+        // GH Issue 1257: import alias -> the fields declaring it.
+        Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
+        Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
@@ -1575,6 +1579,15 @@ public class DomainUtil
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "Please provide a name for each field.")));
                 continue;
+            }
+
+            fieldNames.add(name);
+
+            // GH Issue 1257: Collect alias to field list mapping
+            for (String alias : new CaseInsensitiveHashSet(ColumnRenderPropertiesImpl.convertToSet(field.getImportAliases())))
+            {
+                if (!alias.equalsIgnoreCase(name)) // an alias that repeats the field's name is redundant but not ambiguous, so skip it
+                    importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
@@ -1674,7 +1687,26 @@ public class DomainUtil
             }
         }
 
+        // GH Issue 1257: import aliases must be unique across the domain and must not collide with a field name, since
+        // ImportAliasable.Helper.createImportMap() resolves names, labels, and aliases into one case-insensitive map.
+        importAliasMap.forEach((alias, fields) -> {
+            String names = fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining(", "));
+
+            if (fields.size() > 1)
+                addImportAliasErrors(exception, updates, fields, "Duplicate import alias " + alias + " for fields " + names + ".");
+
+            if (fieldNames.contains(alias))
+                addImportAliasErrors(exception, updates, fields, "Import alias " + alias + " on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+        });
+
         return exception;
+    }
+
+    /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
+    private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
+        for (GWTPropertyDescriptor field : fields)
+            exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
     }
 
     @Nullable

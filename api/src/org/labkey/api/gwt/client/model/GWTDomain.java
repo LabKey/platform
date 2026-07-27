@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.gwt.client.DefaultValueType;
 
@@ -198,12 +199,12 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         return null;
     }
 
-    public FieldType getFieldByImportAlias(String name)
+    public FieldType getFieldByImportAlias(String alias)
     {
         for (FieldType field : getFields(true))
         {
             Set<String> importAliases = ColumnRenderPropertiesImpl.convertToSet(field.getImportAliases());
-            if (importAliases.contains(name))
+            if (new CaseInsensitiveHashSet(importAliases).contains(alias))
                 return field;
         }
         return null;
