@@ -2075,6 +2075,8 @@ public abstract class Method
             SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
             SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
             SQLFragment sql = new SQLFragment("SELECT ").append("CASE WHEN ").append(expr).append(" THEN ").append(T).append(" ELSE ").append(F).append(" END");
+            if (d.isOracle())
+                sql.append(" FROM DUAL");
             Boolean result = new SqlSelector(scope, sql).getObject(Boolean.class);
             assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
         }
