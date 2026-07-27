@@ -1895,14 +1895,16 @@ public abstract class Method
                 // Snowflake dialects (and recent SQL Server). Elsewhere rewrite as a CASE expression that always
                 // evaluates to a real TRUE/FALSE -- never NULL, even when exactly one side is null -- so it behaves
                 // the same as the native predicate would.
-                ret.append("(CASE WHEN (").append(a).append(") = (").append(b).append(")");
-                ret.append(" OR ((").append(a).append(") IS NULL AND (").append(b).append(") IS NULL)");
-                ret.append(" THEN ").append(dialect.getBooleanFALSE());
-                ret.append(" ELSE ").append(dialect.getBooleanTRUE());
-                ret.append(" END");
-                ret.append(" = ").append(token==IS ? dialect.getBooleanTRUE(): dialect.getBooleanFALSE()).append(")");
-                // NOTE: The inner CASE prevents NULL-valued expression result
-                // NOTE: The outer " = " is needed to make the value boolean/truthy for use in WHERE
+
+                // This is more complicated than the obvious (a=b or a is null and b is null).
+                // That expression can return NULL, we need to return only TRUE/FALSE.
+                if (token == IS)
+                    ret.append(" NOT ");
+                ret.append("(");
+                ret.append("((").append(a).append(") IS NOT NULL AND (").append(b).append(") IS NOT NULL AND (").append(a).append(")=(").append(b).append("))");
+                ret.append(" OR ");
+                ret.append("((").append(a).append(") IS NULL AND (").append(b).append(") IS NULL)");
+                ret.append(")");
             }
 
             return ret;
