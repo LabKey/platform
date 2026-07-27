@@ -65,7 +65,8 @@ var DateFormat = {};
                 millis = delimited[delimited.length - 1];
             }
 
-            timeArray = time.split(':');
+            // Strip trailing timezone label before splitting on ':' so a colon in the label (e.g. Honolulu's GMT-10:00) doesn't produce >3 parts and lose the time.
+            timeArray = time.replace(/\s.+/, '').split(':');
 
             if(timeArray.length === 3) {
                 hour   = timeArray[0];
