@@ -15,13 +15,19 @@
  */
 package org.labkey.test.params.devtools;
 
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.pages.core.login.LoginConfigRow;
 import org.labkey.test.pages.core.login.SsoAuthDialogBase;
 import org.labkey.test.params.login.AuthenticationProvider;
 import org.openqa.selenium.WebDriver;
 
+import java.io.File;
+
 public class TestSsoProvider extends AuthenticationProvider<TestSsoProvider.TestSsoConfigureDialog>
 {
+    public static final File THUMBNAIL_COOL = TestFileUtils.getSampleData("thumbnails/Super Cool R Report/Thumbnail.png");
+    public static final File THUMBNAIL_UNCOOL = TestFileUtils.getSampleData("thumbnails/Want To Be Cool/Thumbnail.png");
+
     @Override
     public String getProviderName()
     {

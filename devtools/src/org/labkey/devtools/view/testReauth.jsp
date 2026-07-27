@@ -34,19 +34,21 @@
             success: function(response) {
                 const needReauth = <%=form.reauthToken() == null%>;
                 const data = JSON.parse(response.responseText).data;
-                document.getElementById("description").textContent = data.description;
+                document.getElementById("description").textContent = data.description; // Setting textContent HTML encodes the value
                 if (needReauth) {
                     document.getElementById("link").href = data.reauthUrl;
                 }
             },
-            failure: function() {
-                alert('Failed to retrieve configuration!');
-            }
+            failure: LABKEY.Utils.getCallbackWrapper(function(errorInfo) {
+                document.getElementById("content").innerHTML = '<span>' + LABKEY.Utils.encodeHtml(errorInfo.exception ?? 'Failed to retrieve configuration') + '</span>';
+            }, this, true)
         });
     });
 </script>
 
-You authenticated with: <span id="description"></span><br/>
+<div id="content">
+
+    You authenticated with: <span id="description"></span><br/>
 
 <%
     if (form.reauthToken() != null)
@@ -79,3 +81,5 @@ You need to re-authenticate.
 <%
     }
 %>
+
+</div>

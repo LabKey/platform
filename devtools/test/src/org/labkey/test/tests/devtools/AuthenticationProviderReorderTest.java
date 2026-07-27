@@ -21,23 +21,22 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.BootstrapLocators;
 import org.labkey.test.Locator;
-import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Git;
 import org.labkey.test.pages.core.login.LoginConfigurePage;
 import org.labkey.test.params.devtools.TestSsoProvider;
 import org.labkey.test.util.login.AuthenticationAPIUtils;
 import org.openqa.selenium.WebElement;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.labkey.test.params.devtools.TestSsoProvider.THUMBNAIL_COOL;
+import static org.labkey.test.params.devtools.TestSsoProvider.THUMBNAIL_UNCOOL;
 
 @Category({Git.class})
 public class AuthenticationProviderReorderTest extends BaseWebDriverTest
 {
     private static final TestSsoProvider PROVIDER = new TestSsoProvider();
-    private static final File THUMBNAIL_COOL = TestFileUtils.getSampleData("thumbnails/Super Cool R Report/Thumbnail.png");
-    private static final File THUMBNAIL_UNCOOL = TestFileUtils.getSampleData("thumbnails/Want To Be Cool/Thumbnail.png");
 
     @Override
     protected void doCleanup(boolean afterTest)

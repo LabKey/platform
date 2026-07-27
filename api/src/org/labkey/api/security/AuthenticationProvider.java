@@ -234,6 +234,12 @@ public interface AuthenticationProvider
          * @param isAdminCopy true for sending admin a copy of reset password email
          */
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
@@ -286,11 +292,23 @@ public interface AuthenticationProvider
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
         void resetUserDelay(String id);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface ExpireAccountProvider extends AuthenticationProvider
     {
         boolean isEnabled();
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     class AuthenticationResponse
