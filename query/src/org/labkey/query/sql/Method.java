@@ -216,6 +216,22 @@ public abstract class Method
                 };
             }
         });
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS);
+            }
+        });
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS_NOT);
+            }
+        });
         labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2)
         {
             @Override
@@ -1666,24 +1682,6 @@ public abstract class Method
                 }
             };
         }
-
-        // "is distinct from" and "is not distinct from" operators in method form
-        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS);
-            }
-        });
-        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS_NOT);
-            }
-        });
     }
 
     final static Map<String, Method> postgresMethods = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
@@ -1894,17 +1892,17 @@ public abstract class Method
             else
             {
                 // "IS [NOT] DISTINCT FROM" isn't standard/portable SQL -- it's native only on PostgreSQL-family and
-                // Snowflake dialects. Elsewhere (e.g. SQL Server), rewrite as a CASE expression that always
+                // Snowflake dialects (and recent SQL Server). Elsewhere rewrite as a CASE expression that always
                 // evaluates to a real TRUE/FALSE -- never NULL, even when exactly one side is null -- so it behaves
                 // the same as the native predicate would.
-                String notDistinctValue = token == IS ? dialect.getBooleanFALSE() : dialect.getBooleanTRUE();
-                String distinctValue = token == IS ? dialect.getBooleanTRUE() : dialect.getBooleanFALSE();
-
                 ret.append("(CASE WHEN (").append(a).append(") = (").append(b).append(")");
                 ret.append(" OR ((").append(a).append(") IS NULL AND (").append(b).append(") IS NULL)");
-                ret.append(" THEN ").append(notDistinctValue);
-                ret.append(" ELSE ").append(distinctValue);
-                ret.append(" END)");
+                ret.append(" THEN ").append(dialect.getBooleanFALSE());
+                ret.append(" ELSE ").append(dialect.getBooleanTRUE());
+                ret.append(" END");
+                ret.append(" = ").append(token==IS ? dialect.getBooleanTRUE(): dialect.getBooleanFALSE()).append(")");
+                // NOTE: The inner CASE prevents NULL-valued expression result
+                // NOTE: The outer " = " is needed to make the value boolean/truthy for use in WHERE
             }
 
             return ret;
@@ -2041,6 +2039,10 @@ public abstract class Method
         // Exercises both the native and portable-fallback branches of IsDistinctFromMethodInfo.getSQL() against every
         // dialect that's actually connected in this environment, not just whichever dialect the current CI leg happens
         // to be running against. A FROM-less SELECT works everywhere except Oracle, which requires FROM DUAL.
+        //
+        // Covers both usage contexts: as a selected boolean value (where three-valued logic would otherwise leak NULL
+        // for the one-null-argument case) and as a WHERE clause filter (where three-valued logic normally treats NULL
+        // as non-matching, so this instead confirms the CASE-based rewrite still evaluates to a real TRUE/FALSE there).
         @Test
         public void testIsDistinctFrom()
         {
@@ -2060,6 +2062,8 @@ public abstract class Method
                 {
                     assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
                     assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                    assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
+                    assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
                 }
             }
         }
@@ -2067,12 +2071,22 @@ public abstract class Method
         private void assertIsDistinctFrom(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
         {
             SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
-            SQLFragment sql = new SQLFragment("SELECT ").append(expr);
-            if (d.isOracle())
-                sql.append(" FROM DUAL");
-
+            SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
+            SQLFragment sql = new SQLFragment("SELECT ").append("CASE WHEN ").append(expr).append(" THEN ").append(T).append(" ELSE ").append(F).append(" END");
             Boolean result = new SqlSelector(scope, sql).getObject(Boolean.class);
             assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
+        }
+
+        private void assertIsDistinctFromWhere(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        {
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment sql = new SQLFragment("SELECT 1");
+            if (d.isOracle())
+                sql.append(" FROM DUAL");
+            sql.append(" WHERE ").append(expr);
+
+            boolean matched = new SqlSelector(scope, sql).exists();
+            assertEquals(d.getClass().getSimpleName() + " (WHERE): " + sql.toDebugString(), expected, matched);
         }
     }
 }
