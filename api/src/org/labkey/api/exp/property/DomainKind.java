@@ -16,10 +16,12 @@
 
 package org.labkey.api.exp.property;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchemaType;
@@ -48,7 +50,9 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -443,6 +447,11 @@ abstract public class DomainKind<T> implements Handler<String>
 
         if (isUpdate && !canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain");
+
+        String validationMsg = validateFieldImportAliases(updatedDomainDesign.getFields());
+
+        if (validationMsg != null)
+            throw new IllegalArgumentException(validationMsg);
     }
 
     public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain<?> domainDesign, Container container)
@@ -450,6 +459,30 @@ abstract public class DomainKind<T> implements Handler<String>
         return null;
     }
 
+    // GH Issue 1257: Check for duplicate aliases and conflicts with field names
+    public String validateFieldImportAliases(List<? extends GWTPropertyDescriptor> properties)
+    {
+        Map<String, List<String>> aliasesMap = new HashMap<>();
+        Map<String, GWTPropertyDescriptor> propNames = properties.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, p -> p));
+        properties.forEach(pd -> {
+            Set<String> aliasSet = ColumnRenderPropertiesImpl.convertToSet(pd.getImportAliases());
+            aliasSet.forEach(alias -> {
+                aliasesMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(pd.getName());
+            });
+        });
+        List<String> fieldMessages = new ArrayList<>();
+        aliasesMap.forEach((alias, fields) -> {
+            if (fields.size() > 1)
+                fieldMessages.add("Duplicate import alias " + alias + " for fields " + fields.stream().sorted().collect(Collectors.joining(", ")) + ".");
+        });
+        aliasesMap.forEach((alias, fields) -> {
+            if (propNames.containsKey(alias))
+                fieldMessages.add("Import alias " + alias + " on field" + (fields.size() == 1 ? " " : "s ") + fields.stream().sorted().collect(Collectors.joining(", ")) + " conflicts with a field name.");
+        });
+        if (!fieldMessages.isEmpty())
+            return StringUtils.join(fieldMessages, " ");
+        return null;
+    }
     /**
      * @return Return preview name(s) based on the name expression configured for the designer. For DataClass,
      * up to one preview names is returned. For samples, up to 2 names can be returned, with the 1st one being

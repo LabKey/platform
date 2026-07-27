@@ -613,9 +613,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (updatedDomainDesign != null && !existingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
+            if (updatedDomainDesign != null && !existingAliases.contains(trimmedKey))
             {
-                throw new IllegalArgumentException(String.format("An existing " + dataTypeNoun + " property conflicts with parent alias header: %1$s", trimmedKey));
+                var field = updatedDomainDesign.getFieldByName(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("An existing %1s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
+                }
+
+                // GH Issue 1257
+                field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("Field %1$s has an import alias %2$s that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                }
             }
 
             if (!dupes.add(trimmedKey))

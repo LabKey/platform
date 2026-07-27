@@ -19,6 +19,7 @@ package org.labkey.api.gwt.client.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.gwt.client.DefaultValueType;
 
 import java.util.ArrayList;
@@ -192,6 +193,17 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor>
         for (FieldType field : getFields(true))
         {
             if (field.getName() != null && field.getName().equalsIgnoreCase(name))
+                return field;
+        }
+        return null;
+    }
+
+    public FieldType getFieldByImportAlias(String name)
+    {
+        for (FieldType field : getFields(true))
+        {
+            Set<String> importAliases = ColumnRenderPropertiesImpl.convertToSet(field.getImportAliases());
+            if (importAliases.contains(name))
                 return field;
         }
         return null;
