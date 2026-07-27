@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -52,10 +53,11 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -448,10 +450,13 @@ abstract public class DomainKind<T> implements Handler<String>
         if (isUpdate && !canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain");
 
-        String validationMsg = validateFieldImportAliases(updatedDomainDesign.getFields());
+        if (updatedDomainDesign != null)
+        {
+            String validationMsg = validateFieldImportAliases(updatedDomainDesign.getFields(true));
 
-        if (validationMsg != null)
-            throw new IllegalArgumentException(validationMsg);
+            if (validationMsg != null)
+                throw new IllegalArgumentException(validationMsg);
+        }
     }
 
     public NameExpressionValidationResult validateNameExpressions(T options, GWTDomain<?> domainDesign, Container container)
@@ -462,8 +467,8 @@ abstract public class DomainKind<T> implements Handler<String>
     // GH Issue 1257: Check for duplicate aliases and conflicts with field names
     public String validateFieldImportAliases(List<? extends GWTPropertyDescriptor> properties)
     {
-        Map<String, List<String>> aliasesMap = new HashMap<>();
-        Map<String, GWTPropertyDescriptor> propNames = properties.stream().collect(Collectors.toMap(GWTPropertyDescriptor::getName, p -> p));
+        Map<String, List<String>> aliasesMap = new CaseInsensitiveLinkedHashMap<>();
+        HashSet<String> propNames = properties.stream().map(GWTPropertyDescriptor::getName).filter(Objects::nonNull).collect(Collectors.toCollection(CaseInsensitiveHashSet::new));
         properties.forEach(pd -> {
             Set<String> aliasSet = ColumnRenderPropertiesImpl.convertToSet(pd.getImportAliases());
             aliasSet.forEach(alias -> {
@@ -474,9 +479,7 @@ abstract public class DomainKind<T> implements Handler<String>
         aliasesMap.forEach((alias, fields) -> {
             if (fields.size() > 1)
                 fieldMessages.add("Duplicate import alias " + alias + " for fields " + fields.stream().sorted().collect(Collectors.joining(", ")) + ".");
-        });
-        aliasesMap.forEach((alias, fields) -> {
-            if (propNames.containsKey(alias))
+            if (propNames.contains(alias))
                 fieldMessages.add("Import alias " + alias + " on field" + (fields.size() == 1 ? " " : "s ") + fields.stream().sorted().collect(Collectors.joining(", ")) + " conflicts with a field name.");
         });
         if (!fieldMessages.isEmpty())
