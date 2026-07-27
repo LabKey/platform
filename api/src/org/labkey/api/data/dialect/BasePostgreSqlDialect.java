@@ -1133,6 +1133,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return formatFunction(call, nativeFn, arguments);
         else if (fn.equalsIgnoreCase("timestampdiff"))
             return timestampdiff(arguments);
+        else if (fn.equalsIgnoreCase("week"))
+            return week(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
@@ -1171,6 +1173,24 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
+    }
+
+    /* week() inconsistent between sql server and postgres: pgjdbc translates {fn week(x)} to
+     * EXTRACT(WEEK FROM x), which returns ISO 8601 week numbering (week 1 contains the year's
+     * first Thursday; weeks start on Monday). The Microsoft SQL Server JDBC driver translates
+     * {fn week(x)} to DATEPART(week, x), which uses US-style numbering (week 1 always contains
+     * Jan 1; weeks start on Sunday under the default DATEFIRST=7). The two agree most of the
+     * year but disagree by 1 on Sundays and around year boundaries. Emit an equivalent US-style
+     * expression here so LabKey SQL's week() returns matching values on both databases.
+     */
+    private SQLFragment week(SQLFragment... arguments)
+    {
+        SQLFragment ret = new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM ");
+        ret.append(arguments[0]);
+        ret.append(") + EXTRACT(dow FROM date_trunc('year', ");
+        ret.append(arguments[0]);
+        ret.append(")) - 1) / 7) + 1 AS INTEGER)");
+        return ret;
     }
 
     @Override
