@@ -5622,6 +5622,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
 
+            removeContainerDataTypeExclusions(c.getId());
+            removeContainerDataColors(c.getId());
+
             transaction.commit();
         }
         catch (ValidationException e)
@@ -9260,7 +9263,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void removeContainerDataColorExclusions(String containerId)
+    public void removeContainerDataColors(String containerId)
     {
         SqlExecutor executor = new SqlExecutor(getExpSchema());
         SQLFragment delExclusions = new SQLFragment("DELETE FROM ")

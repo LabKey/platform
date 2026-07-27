@@ -1160,7 +1160,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType);
 
-    void removeContainerDataColorExclusions(String containerId);
+    void removeContainerDataColors(String containerId);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

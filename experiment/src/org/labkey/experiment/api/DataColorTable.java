@@ -466,34 +466,10 @@ public class DataColorTable extends FilteredTable<ExpSchema>
             assertNull("an archived non-excluded color should still be insertable", saveSample(st, sampleRow("s1", gray), false));
         }
 
-        @Test
-        public void testCannotInsertSampleWithBadColor() throws Exception
-        {
-
-            ExpSampleType st = createSampleType("ColorCaseST");
-            insertColor("Red", "#ff0000", false);
-
-            Map<String, Object> exactCase = new CaseInsensitiveHashMap<>();
-            exactCase.put("Name", "exactCase");
-            exactCase.put("ExpMaterialColor", "Red");
-            assertNull("a sample referencing the color by its exact label should import", saveSample(st, exactCase, false));
-
-            // cannot insert sample with colr differing by case
-            Map<String, Object> wrongCase = new CaseInsensitiveHashMap<>();
-            wrongCase.put("Name", "wrongCase");
-            wrongCase.put("ExpMaterialColor", "red");
-            String err = saveSample(st, wrongCase, false);
-            assertNotNull("a color label differing only by case should not resolve to the existing color", err);
-            assertTrue("Unexpected error: " + err, err.toLowerCase().contains("not found"));
-
-            // cannot insert sample with non-existent color
-            Map<String, Object> unknown = new CaseInsensitiveHashMap<>();
-            unknown.put("Name", "unknownColor");
-            unknown.put("ExpMaterialColor", "Purple"); // no such color exists
-            err = saveSample(st, unknown, false);
-            assertNotNull("a sample referencing a nonexistent color should be rejected", err);
-            assertTrue("Unexpected error: " + err, err.toLowerCase().contains("not found"));
-        }
+        // Note: resolving a color by its Label (and rejecting a wrong-case or nonexistent label) is an import-path
+        // concern — the label -> rowId remap happens in the ETL/import DataIterator, not in a direct QUS insertRows
+        // (which expects the ExpMaterialColor key). That coverage lives in the remoteapi SMSampleColorsApiTest, which
+        // imports by label via QueryApiHelper.importData.
 
         // ---- exclusion service methods --------------------------------------
 

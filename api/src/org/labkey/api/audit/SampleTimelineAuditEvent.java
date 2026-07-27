@@ -251,10 +251,14 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
 
         String statusLabel = getStatusLabel(row, container);
-        row.put("samplestatelabel", statusLabel);
+        if (row.containsKey("samplestate"))
+            row.put("samplestatelabel", statusLabel);
 
-        String colorLabel = getColorLabel(row, container);
-        row.put("expmaterialcolorlabel", colorLabel);
+        if (row.containsKey(ExpMaterialColor.name()))
+        {
+            String colorLabel = getColorLabel(row, container);
+            row.put("expmaterialcolorlabel", colorLabel);
+        }
 
         return AbstractAuditTypeProvider.encodeForDataMap(row);
     }
