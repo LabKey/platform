@@ -134,6 +134,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
+    String EXPERIMENTAL_SAMPLE_COLORS = "org.labkey.api.exp.api.ExperimentService#SAMPLE_COLORS";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -724,6 +726,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
+    TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter cf);
+
     ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
@@ -1152,6 +1156,25 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Long dataTypeId, Container container, User user);
 
     String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Long> ids, boolean isUpdate);
+
+    @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId);
+
+    /** The data type rowIds (e.g. sample type rowIds) that currently exclude the given color. Inverse of {@link #getDataTypeExcludedColors}. */
+    @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId);
+
+    @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
+
+    @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId);
+
+    boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
+
+    @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user);
+
+    void removeDataColorExclusionsForColor(long colorRowId);
+
+    void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType);
+
+    void removeContainerDataColors(String containerId);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

@@ -291,7 +291,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -1663,6 +1662,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter containerFilter)
     {
         return new SampleStatusTable(expSchema, containerFilter);
+    }
+
+    @Override
+    public TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new DataColorTable(expSchema, containerFilter);
     }
 
     @Override
@@ -3979,6 +3984,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("DataTypeExclusion");
     }
 
+    public TableInfo getTinfoDataColors()
+    {
+        return getExpSchema().getTable("DataColors");
+    }
+
+    public TableInfo getTinfoDataTypeColorExclusion()
+    {
+        return getExpSchema().getTable("DataTypeColorExclusion");
+    }
+
     /**
      * return the object of any known experiment type that is identified with the LSID
      *
@@ -5606,6 +5621,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
+
+            removeContainerDataTypeExclusions(c.getId());
+            removeContainerDataColors(c.getId());
 
             transaction.commit();
         }
@@ -9106,6 +9124,157 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
         }
         return builder.toString();
+    }
+
+    @Override
+    public @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ColorRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId)
+    {
+        return DataColorManager.getInstance().getAllProjectColors(container).stream()
+                .filter(c -> c.getRowId() == colorRowId)
+                .map(DataColor::getLabel)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId)
+    {
+        Set<Long> disabled = getDataTypeExcludedColors(dataType, dataTypeId);
+        return DataColorManager.getInstance().getActiveProjectColors(container).stream()
+                .map(c -> (long) c.getRowId())
+                .filter(rowId -> !disabled.contains(rowId))
+                .collect(toSet());
+    }
+
+    // Applies a reconciled set of exclusion changes to exp.DataTypeColorExclusion in one transaction: one key column is
+    // held fixed (fixedColumn = fixedValue), the other varies. Rows in toAdd are inserted; rows in toRemove are deleted.
+    // Shared by ensureDataColorExclusions (fixes DataTypeRowId, varies ColorRowId) and updateColorDataTypeExclusions
+    // (fixes ColorRowId, varies DataTypeRowId). The column names are code constants, not caller input.
+    private void applyExclusionChanges(String fixedColumn, long fixedValue, String varyingColumn, Set<Long> toAdd, Set<Long> toRemove, DataTypeForExclusion dataType, Container container, User user)
+    {
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+        {
+            for (Long id : toAdd)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", container.getId());
+                fields.put("DataType", dataType.name());
+                fields.put(fixedColumn, fixedValue);
+                fields.put(varyingColumn, id);
+                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
+            }
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(getTinfoDataTypeColorExclusion())
+                        .append(" WHERE ").append(fixedColumn).append(" = ? AND DataType = ?")
+                        .add(fixedValue).add(dataType.name())
+                        .append(" AND ").append(varyingColumn).append(" ");
+                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
+                new SqlExecutor(getExpSchema()).execute(sql);
+            }
+            tx.commit();
+        }
+    }
+
+    @Override
+    public boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user)
+    {
+        if (disabledColorRowIds == null)
+            return false;
+
+        Set<Long> previous = getDataTypeExcludedColors(dataType, dataTypeId);
+        Set<Long> updated = new HashSet<>(disabledColorRowIds);
+
+        Set<Long> toAdd = new HashSet<>(updated);
+        toAdd.removeAll(previous);
+
+        Set<Long> toRemove = new HashSet<>(previous);
+        toRemove.removeAll(updated);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return false;
+
+        applyExclusionChanges("DataTypeRowId", dataTypeId, "ColorRowId", toAdd, toRemove, dataType, container, user);
+        return true;
+    }
+
+    @Override
+    public @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ? AND DataType = ?")
+                .add(colorRowId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user)
+    {
+        Set<Long> toAdd = newlyDisabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyDisabledDataTypeIds);
+        Set<Long> toRemove = newlyEnabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyEnabledDataTypeIds);
+        toRemove.removeAll(toAdd);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        Set<Long> existing = getDataTypesExcludingColor(dataType, colorRowId);
+        toAdd.removeAll(existing);
+        toRemove.retainAll(existing);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        applyExclusionChanges("ColorRowId", colorRowId, "DataTypeRowId", toAdd, toRemove, dataType, container, user);
+
+        Set<Long> affected = new HashSet<>(toAdd);
+        affected.addAll(toRemove);
+        return affected;
+    }
+
+    @Override
+    public void removeDataColorExclusionsForColor(long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ?").add(colorRowId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeContainerDataColors(String containerId)
+    {
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
+        SQLFragment delExclusions = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE Container = ?").add(containerId);
+        executor.execute(delExclusions);
+
+        SQLFragment delColors = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataColors())
+                .append(" WHERE Container = ?").add(containerId);
+        executor.execute(delColors);
     }
 
     @Override
