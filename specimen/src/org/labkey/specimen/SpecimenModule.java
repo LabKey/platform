@@ -16,7 +16,8 @@
 
 package org.labkey.specimen;
 
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -74,12 +75,12 @@ import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
-import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.query.SpecimenPivotByDerivativeType;
 import org.labkey.specimen.query.SpecimenPivotByPrimaryType;
 import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.settings.RepositorySettings;
@@ -272,7 +273,7 @@ public class SpecimenModule extends SpringModule
             {
                 svc.registerUsageMetrics(NAME, () -> {
                     // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
-                    HashBag<String> specimenBag = new HashBag<>();
+                    MultiSet<String> specimenBag = new HashMultiSet<>();
                     MutableInt requestsEnabled = new MutableInt(0);
                     MutableInt hasLocations = new MutableInt(0);
 

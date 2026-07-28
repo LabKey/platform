@@ -15,8 +15,8 @@
  */
 package org.labkey.test.tests;
 
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -116,7 +116,7 @@ public class AttachmentsTest extends BaseWebDriverTest
     {
         SelectRowsResponse auditResponse = new SelectRowsCommand("auditLog", AuditLogHelper.AuditEvent.ATTACHMENT_AUDIT_EVENT.getName()).execute(createDefaultConnection(), getProjectName());
         Assert.assertEquals(10, auditResponse.getRowCount());
-        Bag<String> parentTypes = new HashBag<>();
+        MultiSet<String> parentTypes = new HashMultiSet<>();
         auditResponse.getRowset().forEach(row -> parentTypes.add((String)row.getValue("ParentType")));
         Assert.assertEquals(ISSUE_ATTACHMENTS, parentTypes.getCount("IssueComment"));
         Assert.assertEquals(WIKI_ATTACHMENTS, parentTypes.getCount("Wiki"));
