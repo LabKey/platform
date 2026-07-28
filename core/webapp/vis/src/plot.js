@@ -1887,10 +1887,17 @@ boxPlot.render();
                     lastPrefixDn = info.dn;
                 }
             }
-            for (let k = 0; lastPrefixDn !== null && k < orderedLabels.length; k++) {
-                const info = labelInfo[orderedLabels[k]];
-                if (info.real && info.dn > lastPrefixDn && (windowAnchorDn === null || info.dn < windowAnchorDn)) {
-                    windowAnchorDn = info.dn;
+            // an explicitly named window start (the selected date range) anchors the split even when that day has no data
+            const windowStartDn = LABKEY.vis.dateToDayNumber(config.properties.calendarWindowStartDate);
+            if (lastPrefixDn !== null && windowStartDn !== null && windowStartDn > lastPrefixDn) {
+                windowAnchorDn = windowStartDn;
+            }
+            else {
+                for (let k = 0; lastPrefixDn !== null && k < orderedLabels.length; k++) {
+                    const info = labelInfo[orderedLabels[k]];
+                    if (info.real && info.dn > lastPrefixDn && (windowAnchorDn === null || info.dn < windowAnchorDn)) {
+                        windowAnchorDn = info.dn;
+                    }
                 }
             }
             const prefixLabels = [], recentLabels = [];
