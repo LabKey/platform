@@ -36,7 +36,7 @@ import java.util.List;
 */
 public class RScriptEngine extends ExternalScriptEngine
 {
-    private static final String PACKAGES_FILE = "labkeyRPackages.txt";
+    protected static final String PACKAGES_FILE = "labkeyRPackages.txt";
     public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
     public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
     public static final String PANDOC_USE_DEFAULT_OUTPUT_FORMAT = "r.script.engine.pandocUseDefaultOutputFormat";
@@ -90,23 +90,28 @@ public class RScriptEngine extends ExternalScriptEngine
     }
 
     /**
-     * R appended to the end of the user script (in the same R session) that captures the set of loaded packages,
-     * writing them (one per line) to a sidecar file in the working directory for {@link #recordPackageUsage} to read
-     * back. Wrapped in tryCatch so a capture failure can never break the report or transform run.
+     * R prepended to the user script (in the same R session) that registers a finalizer on the global environment to
+     * write the set of loaded packages (one per line) to a sidecar file for {@link #recordPackageUsage} to read back.
+     * reg.finalizer(onexit = TRUE) runs as R shuts down, including when the script errors out ("Execution halted"), so
+     * we capture usage for failed runs and scripts calling q() too. Note: tryCatch means a capture failure can never
+     * break the report or transform run
      */
     @Override
-    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
+    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
     {
-        // For knitr the executed file is a generated wrapper (createKnitrScript), not the user's R, so appending R here
-        // wouldn't run. We instead record the wrapper's known libraries in recordSuccessfulRun().
+        // For knitr the user's script is written as the knitr input (.rhtml/.rmd), where prepended bare R would render
+        // as text rather than run. We instead record the generated wrapper's known libraries in recordSuccessfulRun().
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
             return null;
 
         return """
                 # --- LabKey R package usage capture ---
-                tryCatch({
-                    writeLines(sort(loadedNamespaces()), "%s")
-                }, error = function(e) invisible(NULL))
+                local({
+                    labkeyPackagesFile <- file.path(getwd(), "%s")
+                    invisible(reg.finalizer(globalenv(), function(e) {
+                        tryCatch(writeLines(sort(loadedNamespaces()), labkeyPackagesFile), error = function(e) invisible(NULL))
+                    }, onexit = TRUE))
+                })
                 """.formatted(PACKAGES_FILE);
     }
 
@@ -119,7 +124,7 @@ public class RScriptEngine extends ExternalScriptEngine
     @Override
     protected void recordSuccessfulRun(ScriptContext context)
     {
-        // Non-knitr R runs report their loaded packages via the capture epilog (see getPackageCaptureEpilog).
+        // Non-knitr R runs report their loaded packages via the capture prolog (see getPackageCaptureProlog).
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
             return;
 

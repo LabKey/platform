@@ -119,9 +119,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         if (extensions.isEmpty())
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
 
-        String epilog = getPackageCaptureEpilog(context);
-        if (epilog != null)
-            script = script + "\n" + epilog;
+        String packageCapture = getPackageCaptureProlog(context);
+        if (packageCapture != null)
+            script = packageCapture + "\n" + script;
 
         FileLike scriptFile = prepareScriptFile(script, context, extensions);
         try
@@ -165,12 +165,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
     /**
      * GitHub Issue #1130
-     * Script appended to the end of the user script (in the same process) that captures the loaded packages/modules and
-     * writes them, one per line, to a sidecar file in the working directory for {@link #recordPackageUsage} to read
-     * back. The default returns null (no capture); language-specific engines (e.g. R, Python) override this. Wrapped so
-     * a capture failure can never break the script run.
+     * Script prepended to the user script (in the same process) that registers an exit hook to capture the loaded
+     * packages/modules, writing them one per line to a sidecar file in the working directory for
+     * {@link #recordPackageUsage} to read back.  The default returns null (no capture); language-specific
+     * engines (e.g. R, Python) override this. Wrapped so a capture failure can never break the script run.
      */
-    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
+    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
     {
         return null;
     }
@@ -198,7 +198,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      * GitHub Issue #1130
      * Read a sidecar file of package names (one per line) from the working directory and record each under the given
      * language in {@link ScriptPackageUsageTracker}, up to {@link #MAX_PACKAGES_PER_RUN} per run. Never throws. A
-     * missing file means the script errored before the capture epilog ran (or capture was skipped) - nothing to do.
+     * missing file means the capture code never ran (or was skipped) - nothing to do.
      * The file is deleted after reading.
      */
     protected void readPackageSidecar(ScriptContext context, String fileName, String language)

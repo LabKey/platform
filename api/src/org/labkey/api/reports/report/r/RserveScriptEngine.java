@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -289,6 +290,24 @@ public class RserveScriptEngine extends RScriptEngine
     }
 
 
+    /**
+     * GitHub Issue #1130
+     * Writes the loaded packages directly rather than registering the finalizer {@link RScriptEngine} uses, because our
+     * eval() appends this instead of prepending it.
+     */
+    @Override
+    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
+    {
+        // As in RScriptEngine, knitr runs a generated wrapper and reports its libraries via recordSuccessfulRun().
+        if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
+            return null;
+
+        return """
+                # --- LabKey R package usage capture ---
+                tryCatch(writeLines(sort(loadedNamespaces()), file.path(getwd(), "%s")), error = function(e) invisible(NULL))
+                """.formatted(PACKAGES_FILE);
+    }
+
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
@@ -315,9 +334,12 @@ public class RserveScriptEngine extends RScriptEngine
         }
 
         // GitHub Issue #1130
-        String epilog = getPackageCaptureEpilog(context);
-        if (epilog != null)
-            script = script + "\n" + epilog;
+        // Appended here, unlike ExternalScriptEngine.eval() which prepends it: the R session on the remote outlives the
+        // script, so an exit hook wouldn't run until after copyWorkingDirectoryFromRemote() below.
+        // The tradeoff is that a script that errors out reports no package usage.
+        String packageCapture = getPackageCaptureProlog(context);
+        if (packageCapture != null)
+            script = script + "\n" + packageCapture;
 
         FileLike scriptFile = prepareScriptFile(script, context, extensions);
 
