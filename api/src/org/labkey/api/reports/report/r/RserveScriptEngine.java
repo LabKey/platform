@@ -19,7 +19,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.impl.common.IOUtil;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
@@ -290,24 +289,6 @@ public class RserveScriptEngine extends RScriptEngine
     }
 
 
-    /**
-     * GitHub Issue #1130
-     * Writes the loaded packages directly rather than registering the finalizer {@link RScriptEngine} uses, because our
-     * eval() appends this instead of prepending it.
-     */
-    @Override
-    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
-    {
-        // As in RScriptEngine, knitr runs a generated wrapper and reports its libraries via recordSuccessfulRun().
-        if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
-            return null;
-
-        return """
-                # --- LabKey R package usage capture ---
-                tryCatch(writeLines(sort(loadedNamespaces()), file.path(getwd(), "%s")), error = function(e) invisible(NULL))
-                """.formatted(PACKAGES_FILE);
-    }
-
     @Override
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
@@ -333,15 +314,10 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.info("Reusing RServe connection in use: {}", rh.isInUse());
         }
 
-        // GitHub Issue #1130
-        // Appended here, unlike ExternalScriptEngine.eval() which prepends it: the R session on the remote outlives the
-        // script, so an exit hook wouldn't run until after copyWorkingDirectoryFromRemote() below.
-        // The tradeoff is that a script that errors out reports no package usage.
-        String packageCapture = getPackageCaptureProlog(context);
-        if (packageCapture != null)
-            script = script + "\n" + packageCapture;
-
-        FileLike scriptFile = prepareScriptFile(script, context, extensions);
+        // GitHub Issue #1130: capture the packages the script loaded (see RScriptEngine.getPackageCaptureEpilog). This
+        // has to run inside the script rather than as an exit hook, because the R session on the remote outlives the
+        // script and so wouldn't shut down until after copyWorkingDirectoryFromRemote() below.
+        FileLike scriptFile = prepareScriptFile(appendPackageCaptureEpilog(script, context), context, extensions);
 
         try
         {
@@ -366,15 +342,9 @@ public class RserveScriptEngine extends RScriptEngine
             // no logging here, because this is a no-op by default
             copyWorkingDirectoryFromRemote(rconn);
 
-            // GitHub Issue #1130: Metric tracking must never affect script execution, so swallow any failure here
-            try
-            {
-                recordSuccessfulRun(context);
-            }
-            catch (Exception e)
-            {
-                LOG.warn("Failed to record successful script run", e);
-            }
+            // GitHub Issue #1130: only reached when the script succeeded, and has to follow the copy above so the
+            // sidecar file the epilog wrote on the remote is available locally
+            recordPackageUsage(context);
 
             return output;
         }
@@ -385,16 +355,6 @@ public class RserveScriptEngine extends RScriptEngine
         finally
         {
             closeConnection(rconn, rh);
-
-            // GitHub Issue #1130: Guard so a metric failure can't mask the script's result or a real exception
-            try
-            {
-                recordPackageUsage(context);
-            }
-            catch (Exception e)
-            {
-                LOG.warn("Failed to record script package usage", e);
-            }
         }
     }
 

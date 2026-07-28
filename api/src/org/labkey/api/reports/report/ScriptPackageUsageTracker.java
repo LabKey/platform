@@ -23,9 +23,12 @@ import java.util.Set;
 
 /**
  * Tracks which packages/modules are loaded by scripts run on this server (R reports, assay transform scripts, Python
- * scripts, and anything else that runs through {@link ExternalScriptEngine}). Populated by a language-specific prolog
- * prepended to each script that registers an exit hook to write the loaded packages to a sidecar file, which the engine
- * reads back after the script runs. Usage is tracked per language (e.g. "r", "python").
+ * scripts, and anything else that runs through {@link ExternalScriptEngine}). Populated by a language-specific epilog
+ * appended to each script that writes the loaded packages to a sidecar file, which the engine reads back after the
+ * script has run successfully. Usage is tracked per language (e.g. "r", "python").
+ * <p>
+ * Note that this only sees scripts that ran to completion: a script that fails, or that exits early via q() or
+ * sys.exit(), never reaches the epilog and so reports nothing. Counts are a lower bound.
  *
  * Each load is recorded via {@link SimpleMetricsService}, which persists a cumulative per-package load count across
  * restarts and reports it to mothership under "simpleMetricCounts". The package name is the metric name and the feature
@@ -39,11 +42,11 @@ public class ScriptPackageUsageTracker
 
     /**
      * Packages that ship with a given language's runtime and are always present, so aren't interesting as "library
-     * usage". R's base packages are filtered here; Python's standard library is filtered in the capture prolog itself
+     * usage". R's base packages are filtered here; Python's standard library is filtered in the capture epilog itself
      * (via sys.stdlib_module_names), so no Python entry is needed.
      */
     private static final Map<String, Set<String>> BASE_PACKAGES = Map.of(
-        "r", Set.of("base", "compiler", "datasets", "graphics", "grDevices", "methods", "stats", "tools", "utils")
+        "r", Set.of("base", "compiler", "datasets", "graphics", "grDevices", "grid", "methods", "parallel", "splines", "stats", "stats4", "tcltk", "tools", "utils")
     );
 
     private ScriptPackageUsageTracker()

@@ -119,39 +119,13 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         if (extensions.isEmpty())
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
 
-        String packageCapture = getPackageCaptureProlog(context);
-        if (packageCapture != null)
-            script = packageCapture + "\n" + script;
+        FileLike scriptFile = prepareScriptFile(appendPackageCaptureEpilog(script, context), context, extensions);
+        Object result = eval(scriptFile, context);
 
-        FileLike scriptFile = prepareScriptFile(script, context, extensions);
-        try
-        {
-            Object result = eval(scriptFile, context);
+        // Only reached when the script succeeded; a failed run reports no package usage
+        recordPackageUsage(context);
 
-            // Metric tracking must never affect script execution, so swallow any failure here
-            try
-            {
-                recordSuccessfulRun(context);
-            }
-            catch (Exception e)
-            {
-                LOG.warn("Failed to record successful script run", e);
-            }
-
-            return result;
-        }
-        finally
-        {
-            // Guard so a metric failure can't mask the script's result or a real exception
-            try
-            {
-                recordPackageUsage(context);
-            }
-            catch (Exception e)
-            {
-                LOG.warn("Failed to record script package usage", e);
-            }
-        }
+        return result;
     }
 
     /**
@@ -165,32 +139,44 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
     /**
      * GitHub Issue #1130
-     * Script prepended to the user script (in the same process) that registers an exit hook to capture the loaded
+     * Script appended to the end of the user script (running in the same process) that captures the loaded
      * packages/modules, writing them one per line to a sidecar file in the working directory for
-     * {@link #recordPackageUsage} to read back.  The default returns null (no capture); language-specific
-     * engines (e.g. R, Python) override this. Wrapped so a capture failure can never break the script run.
+     * {@link #recordPackageUsage} to read back. The default returns null (no capture); language-specific engines
+     * (e.g. R, Python) override this.
      */
-    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
     {
         return null;
     }
 
     /**
      * GitHub Issue #1130
-     * After a script runs, read back and record the packages loaded by the script. The default does nothing;
-     * language-specific engines override this, typically delegating to {@link #readPackageSidecar}. Never throws:
-     * package tracking must not affect script execution.
+     * Append this engine's package capture epilog, if it has one, to the end of the given script.
+     * Never throws: package tracking must not affect script execution.
      */
-    protected void recordPackageUsage(ScriptContext context)
+    protected String appendPackageCaptureEpilog(String script, ScriptContext context)
     {
+        try
+        {
+            String epilog = getPackageCaptureEpilog(context);
+            if (epilog != null)
+                return script + "\n" + epilog;
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to build the script package capture epilog", e);
+        }
+
+        return script;
     }
 
     /**
      * GitHub Issue #1130
-     * Called after a script has run successfully (eval returned without throwing). The default does nothing;
-     * language-specific engines may override to record success metrics.
+     * Called after a script has run successfully (eval returned without throwing), to record the packages it loaded.
+     * The default does nothing; language-specific engines override this, typically delegating to
+     * {@link #readPackageSidecar}.
      */
-    protected void recordSuccessfulRun(ScriptContext context)
+    protected void recordPackageUsage(ScriptContext context)
     {
     }
 

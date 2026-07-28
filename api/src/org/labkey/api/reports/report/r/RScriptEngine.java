@@ -90,43 +90,33 @@ public class RScriptEngine extends ExternalScriptEngine
     }
 
     /**
-     * R prepended to the user script (in the same R session) that registers a finalizer on the global environment to
-     * write the set of loaded packages (one per line) to a sidecar file for {@link #recordPackageUsage} to read back.
-     * reg.finalizer(onexit = TRUE) runs as R shuts down, including when the script errors out ("Execution halted"), so
-     * we capture usage for failed runs and scripts calling q() too. Note: tryCatch means a capture failure can never
-     * break the report or transform run
+     * R appended to the end of the user script (running in the same R session) that writes the set of loaded packages,
+     * one per line, to a sidecar file for {@link #recordPackageUsage} to read back. Notes: tryCatch means a capture
+     * failure can never break the report or transform run.
      */
     @Override
-    protected @Nullable String getPackageCaptureProlog(ScriptContext context)
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
     {
-        // For knitr the user's script is written as the knitr input (.rhtml/.rmd), where prepended bare R would render
-        // as text rather than run. We instead record the generated wrapper's known libraries in recordSuccessfulRun().
+        // For knitr the user's script is written as the knitr input (.rhtml/.rmd), where appended bare R would render
+        // as text rather than run. We instead record the generated wrapper's known libraries in recordPackageUsage().
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
             return null;
 
         return """
                 # --- LabKey R package usage capture ---
-                local({
-                    labkeyPackagesFile <- file.path(getwd(), "%s")
-                    invisible(reg.finalizer(globalenv(), function(e) {
-                        tryCatch(writeLines(sort(loadedNamespaces()), labkeyPackagesFile), error = function(e) invisible(NULL))
-                    }, onexit = TRUE))
-                })
+                tryCatch(writeLines(sort(loadedNamespaces()), file.path(getwd(), "%s")), error = function(e) invisible(NULL))
                 """.formatted(PACKAGES_FILE);
     }
 
     @Override
     protected void recordPackageUsage(ScriptContext context)
     {
-        readPackageSidecar(context, PACKAGES_FILE, "r");
-    }
-
-    @Override
-    protected void recordSuccessfulRun(ScriptContext context)
-    {
-        // Non-knitr R runs report their loaded packages via the capture prolog (see getPackageCaptureProlog).
+        // Non-knitr R runs report their loaded packages via the capture epilog (see getPackageCaptureEpilog).
         if (getKnitrFormat(context) == RReportDescriptor.KnitrFormat.None)
+        {
+            readPackageSidecar(context, PACKAGES_FILE, "r");
             return;
+        }
 
         // For knitr, the generated wrapper (createKnitrScript) always loads knitr and, for the markdown+pandoc path,
         // rmarkdown; record those as R package usage so they show up alongside other packages.
