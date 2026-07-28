@@ -203,8 +203,6 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
-    private static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
@@ -231,15 +229,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
         if (getType() != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
         {
-            Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
-            String csp = expression.eval(map);
-
-            if ("https".equals(req.getScheme()))
-            {
-                csp = csp + " report-to csp-report ;";
-            }
-
-            return csp;
+            return expression.eval(Map.of(NONCE_SUBST, getScriptNonceHeader(req)));
         }
 
         return null;
