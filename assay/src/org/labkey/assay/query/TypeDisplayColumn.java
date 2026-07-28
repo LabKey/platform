@@ -42,6 +42,9 @@ public class TypeDisplayColumn extends DataColumn
 
     private static final FieldKey LSID_FIELD_KEY = new FieldKey(null, "LSID");
 
+    // GH Issue 1332: a broken provider pattern misses on every row; warn once per instance, not once per cell
+    private boolean _loggedProviderMismatch = false;
+
     public TypeDisplayColumn(ColumnInfo colInfo)
     {
         super(colInfo);
@@ -74,7 +77,11 @@ public class TypeDisplayColumn extends DataColumn
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider != null)
                 {
-                    LOG.warn("Failed to match AssayProvider '{}' using pattern '{}' for LSID: {}", provider.getName(), provider.getProtocolPattern(), lsid);
+                    if (!_loggedProviderMismatch)
+                    {
+                        _loggedProviderMismatch = true;
+                        LOG.warn("Failed to match AssayProvider '{}' using pattern '{}' for LSID: {}", provider.getName(), provider.getProtocolPattern(), lsid);
+                    }
                     out.write(provider.getName());
                     return;
                 }

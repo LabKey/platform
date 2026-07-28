@@ -242,7 +242,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            AnnouncementManager.TestCase.class
+            AnnouncementManager.TestCase.class,
+            AnnouncementsController.ContainerScopingTestCase.class
         );
     }
 

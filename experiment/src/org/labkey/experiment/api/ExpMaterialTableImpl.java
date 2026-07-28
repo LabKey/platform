@@ -118,6 +118,7 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
@@ -597,6 +598,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 return createPropertiesColumn(alias);
             }
+            case ExpMaterialColor ->
+            {
+                boolean colorsEnabled = colorsEnabled(getContainer());
+                var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
+                ret.setLabel("Sample Color");
+                ret.setHidden(!colorsEnabled);
+                ret.setShownInDetailsView(colorsEnabled);
+                ret.setShownInInsertView(colorsEnabled);
+                ret.setShownInUpdateView(colorsEnabled);
+                ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getMaterialBaseFieldLookupContainerFilter())
+                        .schema(getExpSchema()).table(ExpSchema.TableType.DataColors).display("Label"));
+                return ret;
+            }
             case SampleState ->
             {
                 boolean statusEnabled = isStatusEnabled(getContainer());
@@ -607,7 +622,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getMaterialBaseFieldLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
                 return ret;
             }
@@ -757,6 +772,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(c).isEmpty();
     }
 
+    private boolean colorsEnabled(Container c)
+    {
+        if (!OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS))
+            return false;
+        if (_ss != null)
+            return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
+        return !DataColorManager.getInstance().getActiveProjectColors(c).isEmpty();
+    }
+
     private Unit getSampleTypeUnit()
     {
         Unit typeUnit = null;
@@ -862,6 +886,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleState);
         if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
+        addColumn(ExpMaterialColor);
+        if (colorsEnabled(getContainer()))
+            defaultCols.add(ExpMaterialColor.fieldKey());
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
@@ -985,7 +1012,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(lineageLookup);
     }
 
-    private ContainerFilter getSampleStatusLookupContainerFilter()
+    private ContainerFilter getMaterialBaseFieldLookupContainerFilter()
     {
         // The default lookup container filter is Current. However, we want to have the default be CurrentPlusProjectAndShared
         // for the sample status lookup since in the app project context we want to share status definitions across
