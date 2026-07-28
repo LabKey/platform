@@ -84,6 +84,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
+    private static final int MAX_PACKAGES_PER_RUN = 100;
+
     private FileLike _workingDirectory;
 
     protected ExternalScriptEngineDefinition _def;
@@ -195,8 +197,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     /**
      * GitHub Issue #1130
      * Read a sidecar file of package names (one per line) from the working directory and record each under the given
-     * language in {@link ScriptPackageUsageTracker}. Never throws. A missing file means the script errored before the
-     * capture epilog ran (or capture was skipped) - nothing to do. The file is deleted after reading.
+     * language in {@link ScriptPackageUsageTracker}, up to {@link #MAX_PACKAGES_PER_RUN} per run. Never throws. A
+     * missing file means the script errored before the capture epilog ran (or capture was skipped) - nothing to do.
+     * The file is deleted after reading.
      */
     protected void readPackageSidecar(ScriptContext context, String fileName, String language)
     {
@@ -217,8 +220,17 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         try (BufferedReader reader = Readers.getReader(packagesFile.openInputStream()))
         {
             String packageName;
+            int recorded = 0;
             while ((packageName = reader.readLine()) != null)
+            {
+                if (recorded >= MAX_PACKAGES_PER_RUN)
+                {
+                    LOG.warn("Recorded the first {} {} packages for this script run and ignored the rest", MAX_PACKAGES_PER_RUN, language);
+                    break;
+                }
                 ScriptPackageUsageTracker.record(language, packageName);
+                recorded++;
+            }
         }
         catch (Exception e)
         {

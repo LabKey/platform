@@ -35,6 +35,7 @@ public class ScriptPackageUsageTracker
 {
     private static final String MODULE_NAME = "API";
     private static final String FEATURE_AREA_SUFFIX = "PackageUsage";
+    private static final int MAX_METRIC_NAME_LENGTH = 255;
 
     /**
      * Packages that ship with a given language's runtime and are always present, so aren't interesting as "library
@@ -42,7 +43,7 @@ public class ScriptPackageUsageTracker
      * (via sys.stdlib_module_names), so no Python entry is needed.
      */
     private static final Map<String, Set<String>> BASE_PACKAGES = Map.of(
-        "r", Set.of("base", "compiler", "datasets", "graphics", "grDevices", "methods", "stats", "utils")
+        "r", Set.of("base", "compiler", "datasets", "graphics", "grDevices", "methods", "stats", "tools", "utils")
     );
 
     private ScriptPackageUsageTracker()
@@ -63,6 +64,15 @@ public class ScriptPackageUsageTracker
         if (packageName == null || packageName.isBlank() || isBasePackage(language, packageName))
             return;
 
-        SimpleMetricsService.get().increment(MODULE_NAME, language + FEATURE_AREA_SUFFIX, packageName);
+        SimpleMetricsService.get().increment(MODULE_NAME, language + FEATURE_AREA_SUFFIX, truncateMetricName(packageName));
+    }
+
+    /**
+     * The package name is used as the metric name, and the names come from whatever the script actually loaded rather
+     * than from a fixed list, so cap the length at what the DB column holds.
+     */
+    private static String truncateMetricName(String packageName)
+    {
+        return packageName.length() <= MAX_METRIC_NAME_LENGTH ? packageName : packageName.substring(0, MAX_METRIC_NAME_LENGTH);
     }
 }
