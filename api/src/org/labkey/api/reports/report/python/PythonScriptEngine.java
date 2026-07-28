@@ -24,23 +24,24 @@ import javax.script.ScriptContext;
 /**
  * Script engine for locally-executed Python scripts (Python assay transform scripts configured as an
  * external ".py" engine). Behaves like the base {@link ExternalScriptEngine} except that it appends a capture epilog to
- * track which Python modules each script loads; see
+ * track which Python packages each script loads; see
  * {@link org.labkey.api.reports.report.ScriptPackageUsageTracker}.
  */
 public class PythonScriptEngine extends ExternalScriptEngine
 {
     private static final String PACKAGES_FILE = "labkeyPythonPackages.txt";
 
-    // Python appended to a user script to capture the loaded modules (top-level names, excluding the standard library
-    // and private names). try/except means a capture failure can never break the script run.
+    // Python appended to a user script to capture the packages it loaded.
+    // try/except means a capture failure can never break the script run.
     private static final String PACKAGE_CAPTURE_EPILOG = """
             # --- LabKey Python package usage capture ---
             try:
-                import os as _lk_os, sys as _lk_sys
-                _lk_stdlib = set(getattr(_lk_sys, 'stdlib_module_names', ()))
-                _lk_mods = sorted({m.split('.')[0] for m in list(_lk_sys.modules)} - _lk_stdlib)
+                import importlib.metadata as _lk_md, os as _lk_os, sys as _lk_sys
+                _lk_dists = _lk_md.packages_distributions()
+                _lk_tops = {m.split('.')[0] for m in list(_lk_sys.modules)} - set(_lk_sys.stdlib_module_names)
+                _lk_names = sorted({d for t in _lk_tops if t and not t.startswith('_') for d in _lk_dists.get(t, ())})
                 with open(_lk_os.path.join(_lk_os.getcwd(), '%s'), 'w') as _lk_f:
-                    _lk_f.write('\\n'.join(m for m in _lk_mods if m and not m.startswith('_')))
+                    _lk_f.write('\\n'.join(_lk_names))
             except Exception:
                 pass
             """.formatted(PACKAGES_FILE);
