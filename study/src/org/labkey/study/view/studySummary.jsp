@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.SafeToRender" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -152,7 +153,11 @@
                     SpecimenMigrationService sms = SpecimenMigrationService.get();
                     if (sms != null)
                     {
-                        %><%=sms.getStudySummaryLink(c, user)%><%
+                        SafeToRender link = sms.getSpecimenSettingsLink(c, user);
+                        if (link != null)
+                        {
+                            %><p><%=link%></p><%
+                        }
                     }
                 }
             %>

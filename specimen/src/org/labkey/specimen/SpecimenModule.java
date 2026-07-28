@@ -245,25 +245,22 @@ public class SpecimenModule extends SpringModule
             }
 
             @Override
-            public @NotNull SafeToRender getStudySummaryLink(Container c, User user)
+            public @Nullable SafeToRender getSpecimenSettingsLink(Container c, User user)
             {
                 // Must have ManageRequestSettingsPermission and requests enabled (otherwise non-admin will see a blank Manage Study page)
                 if (c.hasPermission(user, ManageRequestSettingsPermission.class) && isEnableRequests(c))
                 {
-                    return HtmlStringBuilder.of()
-                        .unsafeAppend("<p>")
-                        .append(LinkBuilder.labkeyLink(
-                            "Manage Specimen Request Settings",
-                            PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(c)
-                        ))
-                        .unsafeAppend("</p>");
+                    return LinkBuilder.labkeyLink(
+                        "Manage Specimen Request Settings",
+                        PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(c)
+                    );
                 }
 
-                return HtmlString.EMPTY_STRING;
+                return null;
             }
 
             @Override
-            public @NotNull Class<? extends Permission> getSpecimenEditDataPermission()
+            public @NotNull Class<? extends Permission> getEditSpecimenDataPermission()
             {
                 return EditSpecimenDataPermission.class;
             }

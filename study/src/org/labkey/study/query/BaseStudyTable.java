@@ -801,7 +801,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             return getContainer().hasPermission(user, perm, getContextualRoles());
 
         SpecimenMigrationService sms = SpecimenMigrationService.get();
-        return sms != null && getContainer().hasPermissions(user, Set.of(perm, sms.getSpecimenEditDataPermission()), getContextualRoles());
+        return sms != null && getContainer().hasPermissions(user, Set.of(perm, sms.getEditSpecimenDataPermission()), getContextualRoles());
     }
 
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)

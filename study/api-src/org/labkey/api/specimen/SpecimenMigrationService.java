@@ -78,7 +78,7 @@ public interface SpecimenMigrationService
      */
     @Nullable TableInfo getSpecimenPivotTable(UserSchema schema, String name, Study study, ContainerFilter cf);
 
-    @NotNull SafeToRender getStudySummaryLink(Container c, User user);
+    @Nullable SafeToRender getSpecimenSettingsLink(Container c, User user);
 
-    @NotNull Class<? extends Permission> getSpecimenEditDataPermission();
+    @NotNull Class<? extends Permission> getEditSpecimenDataPermission();
 }
