@@ -45,7 +45,9 @@ public interface WorkflowService
         CheckOut("input parameters", "Checked out samples"),
         CheckIn("input parameters", "Checked in samples"),
         RemoveFromStorage("sample status value", "Removed samples from storage"),
-        UpdateSampleStatus("sample status value", "Updated sample status");
+        UpdateSampleStatus("sample status value", "Updated sample status"),
+        DeriveSamplesFromSources("derivation source type parameters", "Derived samples from sources"),
+        DeriveSources("derivation source type parameters", "Derives sources");
 
         private final String _inputDescription;
         private final String _auditMessage;
