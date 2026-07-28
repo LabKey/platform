@@ -925,6 +925,12 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
+    public boolean supportsNativeIsDistinctFrom()
+    {
+        return true;
+    }
+
+    @Override
     public boolean supportsIsNumeric()
     {
         return true;
