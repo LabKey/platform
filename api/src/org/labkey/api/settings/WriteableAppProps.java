@@ -94,6 +94,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(readOnlyHttpRequestTimeout, timeout);
     }
 
+    public void setScriptExecutionTimeout(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("scriptExecutionTimeout must be >= 0");
+        storeIntValue(scriptExecutionTimeout, timeout);
+    }
+
     public void setMaxBLOBSize(int maxSize)
     {
         if (maxSize < 0)

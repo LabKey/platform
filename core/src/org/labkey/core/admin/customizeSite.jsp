@@ -313,6 +313,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="<%=readOnlyHttpRequestTimeout%>" id="<%=readOnlyHttpRequestTimeout%>" size="4" value="<%=appProps.getReadOnlyHttpRequestTimeout()%>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label"><label for="<%=scriptExecutionTimeout%>">Timeout for server-side scripts, in seconds<%=helpPopup("Script execution timeout",
+        "Maximum time a server-side JavaScript invocation (such as a trigger script) may run before it is terminated. Measured in wall-clock time, including database and other Java operations invoked by the script. Set to 0 to disable the timeout.")%></label></td>
+    <td><input type="text" name="<%=scriptExecutionTimeout%>" id="<%=scriptExecutionTimeout%>" size="4" value="<%=appProps.getScriptExecutionTimeout()%>"></td>
+</tr>
+<tr>
     <td class="labkey-form-label"><label for="<%=maxBLOBSize%>">Maximum file size, in bytes, to allow in database BLOBs</label></td>
     <td><input type="text" name="<%=maxBLOBSize%>" id="<%=maxBLOBSize%>" size="10" value="<%=appProps.getMaxBLOBSize()%>"></td>
 </tr>
