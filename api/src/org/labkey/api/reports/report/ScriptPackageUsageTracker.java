@@ -15,8 +15,10 @@
  */
 package org.labkey.api.reports.report;
 
+import org.apache.logging.log4j.Logger;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +38,8 @@ import java.util.Set;
  */
 public class ScriptPackageUsageTracker
 {
+    private static final Logger LOG = LogHelper.getLogger(ScriptPackageUsageTracker.class, "Tracks R & Python package usage by server-side scripts");
+
     private static final String MODULE_NAME = "API";
     private static final String FEATURE_AREA_SUFFIX = "PackageUsage";
     private static final int MAX_METRIC_NAME_LENGTH = 255;
@@ -67,7 +71,14 @@ public class ScriptPackageUsageTracker
         if (packageName == null || packageName.isBlank() || isBasePackage(language, packageName))
             return;
 
-        SimpleMetricsService.get().increment(MODULE_NAME, language + FEATURE_AREA_SUFFIX, truncateMetricName(packageName));
+        try
+        {
+            SimpleMetricsService.get().increment(MODULE_NAME, language + FEATURE_AREA_SUFFIX, truncateMetricName(packageName));
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Failed to record {} package usage for '{}'", language, packageName, e);
+        }
     }
 
     /**

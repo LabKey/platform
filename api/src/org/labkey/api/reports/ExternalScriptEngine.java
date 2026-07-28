@@ -84,7 +84,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
-    private static final int MAX_PACKAGES_PER_RUN = 100;
+    private static final int MAX_PACKAGES_PER_RUN = 250;
 
     private FileLike _workingDirectory;
 
