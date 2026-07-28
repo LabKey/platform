@@ -24,7 +24,11 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.ontology.Concept;
@@ -64,6 +68,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
@@ -111,6 +116,10 @@ public abstract class DisplayColumn extends RenderColumn
     private RowSpanner _rowSpanner = DEFAULT_ROW_SPANNER;
     private String _description = null;
     private String _displayClass;
+
+    // GH Issue 1332: Throttle to one warning per column + value type per hour, across all renders.
+    private static final Throttle<String> FORMAT_MISMATCH_THROTTLE = new Throttle<>("DisplayColumn format mismatch", 1000, CacheManager.HOUR, key ->
+            LOG.warn("Unable to apply format to {}, likely a SQL type mismatch between XML metadata and actual ResultSet", key));
 
     private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();
 
@@ -488,7 +497,7 @@ public abstract class DisplayColumn extends RenderColumn
             }
             catch (IllegalArgumentException e)
             {
-                LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
+                warnFormatMismatch(value);
                 return value.toString();
             }
         }
@@ -496,6 +505,13 @@ public abstract class DisplayColumn extends RenderColumn
         return null;
     }
 
+
+    private void warnFormatMismatch(Object value)
+    {
+        ColumnInfo col = getColumnInfo();
+        String key = "column \"" + (col != null ? col.getFieldKey() : getName()) + "\" (value type " + value.getClass().getName() + ")";
+        FORMAT_MISMATCH_THROTTLE.execute(key);
+    }
 
     /**
      * Render the value as text using the <code>expr</code> or <code>format</code> if provided without
@@ -540,7 +556,7 @@ public abstract class DisplayColumn extends RenderColumn
             }
             catch (IllegalArgumentException e)
             {
-                LOG.warn("Unable to apply format to {} value \"{}\" for column \"{}\", likely a SQL type mismatch between XML metadata and actual ResultSet", value.getClass().getName(), value, getName());
+                warnFormatMismatch(value);
                 formattedString = ConvertUtils.convert(value);
             }
         }
@@ -1342,6 +1358,63 @@ public abstract class DisplayColumn extends RenderColumn
             {
                 setFormatString(Formats.getNumberFormatString(c));
             }
+        }
+    }
+
+    // GH Issue 1332: a type-mismatched column logs in format() on every cell; verify we warn once per column, not once per row
+    public static class TestCase extends Assert
+    {
+        // Unique per column so each test gets its own throttle key
+        private static final AtomicInteger UNIQUE = new AtomicInteger();
+        public static final String NOT_A_NUMBER_VALUE = "not-a-number";
+
+        // A column whose configured format rejects the value type, mimicking XML metadata that disagrees with the ResultSet.
+        private DisplayColumn columnThatFailsFormatting()
+        {
+            String name = "formatMismatchTestColumn-" + UNIQUE.incrementAndGet();
+            Format numberFormat = new DecimalFormat("0.00"); // format() throws IllegalArgumentException on a non-Number
+            return new SimpleDisplayColumn()
+            {
+                @Override
+                public Object getValue(RenderContext ctx)
+                {
+                    return NOT_A_NUMBER_VALUE;
+                }
+
+                @Override
+                public Format getFormat()
+                {
+                    return numberFormat;
+                }
+
+                @Override
+                public String getName()
+                {
+                    return name;
+                }
+            };
+        }
+
+        @Test
+        public void getFormattedTextWarnsOncePerColumn()
+        {
+            RenderContext ctx = new RenderContext(new ViewContext());
+            DisplayColumn dc = columnThatFailsFormatting();
+            long before = FORMAT_MISMATCH_THROTTLE.getExecutionCount();
+            for (int row = 0; row < 1000; row++)
+                assertEquals("Fallback must be the unformatted value", NOT_A_NUMBER_VALUE, dc.getFormattedText(ctx));
+            assertEquals("A format mismatch must warn once per column, not once per row", 1, FORMAT_MISMATCH_THROTTLE.getExecutionCount() - before);
+        }
+
+        @Test
+        public void formatValueWarnsOncePerColumn()
+        {
+            RenderContext ctx = new RenderContext(new ViewContext());
+            DisplayColumn dc = columnThatFailsFormatting();
+            long before = FORMAT_MISMATCH_THROTTLE.getExecutionCount();
+            for (int row = 0; row < 1000; row++)
+                assertEquals("Fallback must be the converted value", NOT_A_NUMBER_VALUE, dc.formatValue(ctx, NOT_A_NUMBER_VALUE, null, dc.getFormat(), null));
+            assertEquals("A format mismatch must warn once per column, not once per row", 1, FORMAT_MISMATCH_THROTTLE.getExecutionCount() - before);
         }
     }
 }
