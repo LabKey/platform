@@ -314,6 +314,11 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.info("Reusing RServe connection in use: {}", rh.isInUse());
         }
 
+        // GitHub Issue #1130
+        String epilog = getPackageCaptureEpilog(context);
+        if (epilog != null)
+            script = script + "\n" + epilog;
+
         FileLike scriptFile = prepareScriptFile(script, context, extensions);
 
         try
@@ -339,6 +344,16 @@ public class RserveScriptEngine extends RScriptEngine
             // no logging here, because this is a no-op by default
             copyWorkingDirectoryFromRemote(rconn);
 
+            // GitHub Issue #1130: Metric tracking must never affect script execution, so swallow any failure here
+            try
+            {
+                recordSuccessfulRun(context);
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to record successful script run", e);
+            }
+
             return output;
         }
         catch (IOException|RserveException x)
@@ -348,6 +363,16 @@ public class RserveScriptEngine extends RScriptEngine
         finally
         {
             closeConnection(rconn, rh);
+
+            // GitHub Issue #1130: Guard so a metric failure can't mask the script's result or a real exception
+            try
+            {
+                recordPackageUsage(context);
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Failed to record script package usage", e);
+            }
         }
     }
 
