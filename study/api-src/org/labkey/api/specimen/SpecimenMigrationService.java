@@ -15,6 +15,7 @@
  */
 package org.labkey.api.specimen;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -26,9 +27,11 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.vfs.FileLike;
@@ -74,4 +77,8 @@ public interface SpecimenMigrationService
      * Returns a specimen pivot TableInfo, if that's what was requested
      */
     @Nullable TableInfo getSpecimenPivotTable(UserSchema schema, String name, Study study, ContainerFilter cf);
+
+    @NotNull SafeToRender getStudySummaryLink(Container c, User user);
+
+    @NotNull Class<? extends Permission> getSpecimenEditDataPermission();
 }

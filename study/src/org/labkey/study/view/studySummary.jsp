@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.attachments.Attachment"%>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.attachments.Attachment" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.specimen.SpecimenMigrationService" %>
-<%@ page import="org.labkey.api.specimen.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -148,14 +147,13 @@
 
                     %><p><%=link("Manage Files", pipelineUrl)%></p><%
                 }
-                else if (c.hasPermission(user, ManageRequestSettingsPermission.class) &&
-                        SpecimenMigrationService.get().isEnableRequests(getContainer()))
+                else
                 {
-                    %><p><%=link("Manage Specimen Request Settings", url.setAction(StudyController.ManageStudyAction.class))%></p><%
-                }
-                else if (c.hasPermission(user, ManageRequestSettingsPermission.class))
-                {
-                    %><p><%=link("Manage Study", url.setAction(StudyController.ManageStudyAction.class))%></p><%
+                    SpecimenMigrationService sms = SpecimenMigrationService.get();
+                    if (sms != null)
+                    {
+                        %><%=sms.getStudySummaryLink(c, user)%><%
+                    }
                 }
             %>
         </td>
