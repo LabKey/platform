@@ -1928,17 +1928,27 @@ boxPlot.render();
             };
 
             if (prefixLabels.length > 0 && recentLabels.length > 0) {
-                // Prefix days -> ordinal slots 0..p-1, then one blank slot, then the window time-spaced from its first day.
+                // Prefix block, then a blank gap, then the window time-spaced from its first day.
                 ordinalPrefixApplied = true;
                 prefixLabels.sort(byDn);
                 recentLabels.sort(byDn);
-                for (let k = 0; k < prefixLabels.length; k++) {
-                    putOffset(prefixLabels[k], k);
-                }
-                const gapSlots = 1;
-                calendarBreakOffset = prefixLabels.length - 0.5 + (gapSlots / 2); // midpoint of the blank slot
+
+                const firstPrefixDn = labelInfo[prefixLabels[0]].dn;
                 const firstRecentDn = labelInfo[recentLabels[0]].dn;
-                const windowStartOffset = prefixLabels.length + gapSlots;
+                const prefixSpan = labelInfo[prefixLabels[prefixLabels.length - 1]].dn - firstPrefixDn;
+                const windowSpan = labelInfo[recentLabels[recentLabels.length - 1]].dn - firstRecentDn;
+
+                // Space the guide-set block by elapsed days as well, unless it would out-span the window badly enough
+                // to crowd it out (an old, sparse guide set) - then fall back to one ordinal slot per day.
+                const timeScalePrefix = prefixSpan <= windowSpan * 2;
+                for (let k = 0; k < prefixLabels.length; k++) {
+                    putOffset(prefixLabels[k], timeScalePrefix ? labelInfo[prefixLabels[k]].dn - firstPrefixDn : k);
+                }
+
+                const gapSlots = 2;
+                const prefixEndOffset = timeScalePrefix ? prefixSpan : prefixLabels.length - 1;
+                calendarBreakOffset = prefixEndOffset + (gapSlots / 2); // midpoint of the blank gap
+                const windowStartOffset = prefixEndOffset + gapSlots;
                 for (let k = 0; k < recentLabels.length; k++) {
                     putOffset(recentLabels[k], windowStartOffset + (labelInfo[recentLabels[k]].dn - firstRecentDn));
                 }

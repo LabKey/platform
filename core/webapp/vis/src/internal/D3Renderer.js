@@ -962,7 +962,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    // Mark where the calendar x-axis jumps from the ordinal guide-set block to the time-scaled date window.
+    // Mark where the calendar x-axis jumps the dead span between the guide-set block and the date window.
     var renderCalendarAxisBreak = function() {
         this.canvas.selectAll('g.calendar-axis-break').remove();
 
@@ -971,10 +971,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return;
         }
 
-        var x = xScale.scale(xScale.calendarBreakOffset), top = plot.grid.topEdge, bottom = plot.grid.bottomEdge;
+        var x = xScale.scale(xScale.calendarBreakOffset), bottom = plot.grid.bottomEdge;
         var g = this.canvas.append('g').attr('class', 'calendar-axis-break');
-        g.append('line').attr('x1', x).attr('x2', x).attr('y1', top).attr('y2', bottom)
-                .attr('stroke', '#B0B0B0').attr('stroke-width', 1).style('stroke-dasharray', '2,3');
         // the "//" glyph straddling the axis line
         [-3, 1].forEach(function(dx) {
             g.append('line').attr('x1', x + dx - 3).attr('x2', x + dx + 3)
