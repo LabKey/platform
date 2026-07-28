@@ -596,7 +596,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /** @deprecated switch to using DIB based method */
     @Deprecated
-    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
+                                                                  @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasInsertRowsPermission(user))
@@ -664,7 +665,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null, providedValues);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, configParameters, result, null, providedValues);
 
         return result;
     }
@@ -715,7 +716,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         try
         {
-            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, configParameters, extraScriptContext);
             afterInsertUpdate(null==ret?0:ret.size(), errors);
             if (errors.hasErrors())
                 return null;

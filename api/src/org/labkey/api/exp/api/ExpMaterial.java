@@ -85,6 +85,10 @@ public interface ExpMaterial extends ExpRunItem
 
     void setSampleStateId(Long stateId);
 
+    Long getSampleColorId();
+
+    void setSampleColorId(Long colorId);
+
     Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
