@@ -394,6 +394,7 @@ boxPlot.render();
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.timeBasedXTick = origScale.timeBasedXTick ? origScale.timeBasedXTick : null;
                 newScale.dayCount = origScale.dayCount !== undefined ? origScale.dayCount : null;
+                newScale.minDayGapOffsets = origScale.minDayGapOffsets !== undefined ? origScale.minDayGapOffsets : null;
                 newScale.dayNumberOffsetMap = origScale.dayNumberOffsetMap ? origScale.dayNumberOffsetMap : null;
                 newScale.calendarBreakOffset = origScale.calendarBreakOffset !== undefined ? origScale.calendarBreakOffset : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
@@ -1705,6 +1706,16 @@ boxPlot.render();
         return isNaN(d.getTime()) ? null : Math.round(d.getTime() / 86400000);
     };
 
+    // Width (px) of one calendar-axis day slot: the per-date slot width, capped by the closest actual day
+    // spacing so same-day jitter and highlight rects never spill into the neighbouring day.
+    LABKEY.vis.calendarSlotWidth = function(xScale, gridWidth) {
+        let width = gridWidth / Math.max(xScale.dayCount || 0, 10);
+        if (xScale.minDayGapOffsets > 0 && xScale.scale) {
+            width = Math.min(width, Math.abs(xScale.scale(xScale.minDayGapOffsets) - xScale.scale(0)));
+        }
+        return width;
+    };
+
     // Format a day number (days since epoch, UTC) back to a YYYY-MM-DD label for calendar-axis ticks.
     LABKEY.vis.dayNumberToDateLabel = function(dayNumber) {
         const d = new Date(dayNumber * 86400000);
@@ -1853,7 +1864,7 @@ boxPlot.render();
         const prefixValue = config.properties.calendarPrefixValue;
         const dayOffsetMap = {}, dayOffsetLabelMap = {}, dayNumberOffsetMap = {};
         let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null, ordinalPrefixApplied = false,
-                calendarBreakOffset = null;
+                calendarBreakOffset = null, minDayGapOffsets = 0;
         if (timeBasedXTick) {
             // One entry per distinct date label: day number, whether any row on it is tagged, whether any row on it is plottable.
             const labelInfo = {}, orderedLabels = [];
@@ -1939,6 +1950,18 @@ boxPlot.render();
                 }
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
+            for (let k = 1; k < uniqueDayOffsets.length; k++) {
+                const gap = uniqueDayOffsets[k] - uniqueDayOffsets[k - 1];
+                if (minDayGapOffsets === 0 || gap < minDayGapOffsets) {
+                    minDayGapOffsets = gap;
+                }
+            }
+
+            // a row whose date wouldn't parse has no place on a time-scaled axis, and faking an ordinal index for it
+            // would collide with a real day offset, so drop it rather than plant it mid-axis
+            config.data = config.data.filter(function(row) {
+                return dayOffsetMap[row[config.properties.xTickLabel]] !== undefined;
+            });
         }
 
         // create a sequential index to use for the x-axis value and keep a map from that index to the tick label
@@ -2329,10 +2352,7 @@ boxPlot.render();
                 };
 
                 if (timeBasedXTick) {
-                    index = dayOffsetMap[row[config.properties.xTickLabel]];
-                    if (index === undefined) {
-                        index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
-                    }
+                    index = dayOffsetMap[row[config.properties.xTickLabel]]; // unmapped rows were filtered out above
                 } else if (config.properties.groupMatchingXTick) {
                     index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
                 } else {
@@ -2455,6 +2475,7 @@ boxPlot.render();
             config.scales.x.trans = 'linear';
             config.scales.x.timeBasedXTick = true; // opt-in flag so the renderer only day-jitters this axis
             config.scales.x.dayCount = uniqueDayOffsets.length; // distinct-day count shared with jitter/bar/rect sizing
+            config.scales.x.minDayGapOffsets = minDayGapOffsets; // closest spacing between two plotted days, caps that slot width
             config.scales.x.dayNumberOffsetMap = dayNumberOffsetMap; // day number -> x offset, for annotation overlay alignment
             config.scales.x.calendarBreakOffset = calendarBreakOffset; // x offset of the guide-set/window break, or null when there is no split
             // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.

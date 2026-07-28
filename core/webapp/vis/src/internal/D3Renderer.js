@@ -2055,10 +2055,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 // Continuous (time-based) x-axis: size the same-day jitter band by the distinct-day count
                 // (mirroring the per-date slot half-width) so replicates fan out the same as per-date and
                 // aren't hidden when real-time spacing squeezes a day into a few pixels. Day centers stay
-                // at their true time position; only the same-day spread is normalized. dayCount is supplied by
-                // the time-based scale (plot.js) so the jitter band, bar width, and highlight rects share one count.
-                const slotCount = Math.max(geom.xScale.dayCount || 0, 10);
-                xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / slotCount) / 2;
+                // at their true time position; only the same-day spread is normalized. The shared helper caps
+                // that width at the closest actual day spacing so the fan can't reach the neighbouring day.
+                xBinWidth = LABKEY.vis.calendarSlotWidth(geom.xScale, plot.grid.rightEdge - plot.grid.leftEdge) / 2;
             }
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
