@@ -212,7 +212,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
             if (csp != null)
             {
-                if ("https".equals(req.getScheme()) && resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
+                if (resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
                 {
                     resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
                 }
