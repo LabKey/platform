@@ -629,7 +629,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
                 var field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
                 if (field != null)
                 {
-                    throw new IllegalArgumentException(String.format("Field %1$s has an import alias %2$s that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                    throw new IllegalArgumentException(String.format("Field '%1$s' has an import alias '%2$s' that conflicts with a parent alias header.", field.getName(), trimmedKey));
                 }
 
             }

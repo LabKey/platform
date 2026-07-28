@@ -1690,13 +1690,13 @@ public class DomainUtil
         // GH Issue 1257: import aliases must be unique across the domain and must not collide with a field name, since
         // ImportAliasable.Helper.createImportMap() resolves names, labels, and aliases into one case-insensitive map.
         importAliasMap.forEach((alias, fields) -> {
-            String names = fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining(", "));
+            String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
 
             if (fields.size() > 1)
-                addImportAliasErrors(exception, updates, fields, "Duplicate import alias " + alias + " for fields " + names + ".");
+                addImportAliasErrors(exception, updates, fields, "Duplicate import alias '" + alias + "' for fields " + names + ".");
 
             if (fieldNames.contains(alias))
-                addImportAliasErrors(exception, updates, fields, "Import alias " + alias + " on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+                addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
         });
 
         return exception;
