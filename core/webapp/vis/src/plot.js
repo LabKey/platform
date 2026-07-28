@@ -393,8 +393,9 @@ boxPlot.render();
                 newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.timeBasedXTick = origScale.timeBasedXTick ? origScale.timeBasedXTick : null;
-                newScale.dayCount = origScale.dayCount ? origScale.dayCount : null;
+                newScale.dayCount = origScale.dayCount !== undefined ? origScale.dayCount : null;
                 newScale.dayNumberOffsetMap = origScale.dayNumberOffsetMap ? origScale.dayNumberOffsetMap : null;
+                newScale.calendarBreakOffset = origScale.calendarBreakOffset !== undefined ? origScale.calendarBreakOffset : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
@@ -1851,25 +1852,51 @@ boxPlot.render();
         const prefixField = config.properties.calendarPrefixField;
         const prefixValue = config.properties.calendarPrefixValue;
         const dayOffsetMap = {}, dayOffsetLabelMap = {}, dayNumberOffsetMap = {};
-        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null, ordinalPrefixApplied = false;
+        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null, ordinalPrefixApplied = false,
+                calendarBreakOffset = null;
         if (timeBasedXTick) {
-            // Collect each distinct date label once (data order): its day number and whether it is a prefix row.
-            const labelInfo = {}, prefixLabels = [], recentLabels = [];
+            // One entry per distinct date label: day number, whether any row on it is tagged, whether any row on it is plottable.
+            const labelInfo = {}, orderedLabels = [];
+            const havePrefixCfg = prefixField !== undefined && prefixValue !== undefined;
             for (let i = 0; i < config.data.length; i++) {
-                const label = config.data[i][config.properties.xTickLabel];
-                if (labelInfo[label] !== undefined) {
-                    continue;
-                }
-                const dn = LABKEY.vis.dateToDayNumber(label);
-                const isPrefix = prefixField !== undefined && prefixValue !== undefined
-                        && config.data[i][prefixField] === prefixValue;
-                labelInfo[label] = { dn: dn, prefix: isPrefix };
-                if (dn !== null) {
-                    if (minDayNumber === null || dn < minDayNumber) {
-                        minDayNumber = dn;
+                const row = config.data[i], label = row[config.properties.xTickLabel];
+                let info = labelInfo[label];
+                if (info === undefined) {
+                    const dn = LABKEY.vis.dateToDayNumber(label);
+                    info = labelInfo[label] = { dn: dn, prefix: false, real: false };
+                    if (dn !== null) {
+                        orderedLabels.push(label);
+                        if (minDayNumber === null || dn < minDayNumber) {
+                            minDayNumber = dn;
+                        }
                     }
-                    (isPrefix ? prefixLabels : recentLabels).push(label);
                 }
+                if (row.type !== 'missing' && row.type !== 'empty') { // the two no-value filler row markers
+                    info.real = true;
+                }
+                if (havePrefixCfg && row[prefixField] === prefixValue) {
+                    info.prefix = true;
+                }
+            }
+
+            // Anchor the window at the first plottable day after the last tagged day; untagged filler days before it fold into the prefix block instead of re-stretching the axis over the dead span.
+            let lastPrefixDn = null, windowAnchorDn = null;
+            for (let k = 0; k < orderedLabels.length; k++) {
+                const info = labelInfo[orderedLabels[k]];
+                if (info.prefix && (lastPrefixDn === null || info.dn > lastPrefixDn)) {
+                    lastPrefixDn = info.dn;
+                }
+            }
+            for (let k = 0; lastPrefixDn !== null && k < orderedLabels.length; k++) {
+                const info = labelInfo[orderedLabels[k]];
+                if (info.real && info.dn > lastPrefixDn && (windowAnchorDn === null || info.dn < windowAnchorDn)) {
+                    windowAnchorDn = info.dn;
+                }
+            }
+            const prefixLabels = [], recentLabels = [];
+            for (let k = 0; k < orderedLabels.length; k++) {
+                const label = orderedLabels[k];
+                (windowAnchorDn !== null && labelInfo[label].dn >= windowAnchorDn ? recentLabels : prefixLabels).push(label);
             }
 
             const byDn = function(a, b) { return labelInfo[a].dn - labelInfo[b].dn; };
@@ -1883,24 +1910,25 @@ boxPlot.render();
             };
 
             if (prefixLabels.length > 0 && recentLabels.length > 0) {
-                // Prefix days -> ordinal slots 0..p-1; recent days -> p + elapsed days from the first recent day.
+                // Prefix days -> ordinal slots 0..p-1, then one blank slot, then the window time-spaced from its first day.
                 ordinalPrefixApplied = true;
                 prefixLabels.sort(byDn);
                 recentLabels.sort(byDn);
                 for (let k = 0; k < prefixLabels.length; k++) {
                     putOffset(prefixLabels[k], k);
                 }
+                const gapSlots = 1;
+                calendarBreakOffset = prefixLabels.length - 0.5 + (gapSlots / 2); // midpoint of the blank slot
                 const firstRecentDn = labelInfo[recentLabels[0]].dn;
+                const windowStartOffset = prefixLabels.length + gapSlots;
                 for (let k = 0; k < recentLabels.length; k++) {
-                    putOffset(recentLabels[k], prefixLabels.length + (labelInfo[recentLabels[k]].dn - firstRecentDn));
+                    putOffset(recentLabels[k], windowStartOffset + (labelInfo[recentLabels[k]].dn - firstRecentDn));
                 }
             }
             else {
                 // No prefix split: every day spaced by its offset from the earliest day.
-                for (const label in labelInfo) {
-                    if (labelInfo[label].dn !== null) {
-                        putOffset(label, labelInfo[label].dn - minDayNumber);
-                    }
+                for (let k = 0; k < orderedLabels.length; k++) {
+                    putOffset(orderedLabels[k], labelInfo[orderedLabels[k]].dn - minDayNumber);
                 }
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
@@ -2421,6 +2449,7 @@ boxPlot.render();
             config.scales.x.timeBasedXTick = true; // opt-in flag so the renderer only day-jitters this axis
             config.scales.x.dayCount = uniqueDayOffsets.length; // distinct-day count shared with jitter/bar/rect sizing
             config.scales.x.dayNumberOffsetMap = dayNumberOffsetMap; // day number -> x offset, for annotation overlay alignment
+            config.scales.x.calendarBreakOffset = calendarBreakOffset; // x offset of the guide-set/window break, or null when there is no split
             // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.
             // pos(0)=1/(slots+1), pos(maxOffset)=numDates/(slots+1).
             const numDates = uniqueDayOffsets.length;

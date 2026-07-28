@@ -962,6 +962,27 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    // Mark where the calendar x-axis jumps from the ordinal guide-set block to the time-scaled date window.
+    var renderCalendarAxisBreak = function() {
+        this.canvas.selectAll('g.calendar-axis-break').remove();
+
+        var xScale = plot.scales.x;
+        if (!xScale || !xScale.scale || xScale.calendarBreakOffset === null || xScale.calendarBreakOffset === undefined) {
+            return;
+        }
+
+        var x = xScale.scale(xScale.calendarBreakOffset), top = plot.grid.topEdge, bottom = plot.grid.bottomEdge;
+        var g = this.canvas.append('g').attr('class', 'calendar-axis-break');
+        g.append('line').attr('x1', x).attr('x2', x).attr('y1', top).attr('y2', bottom)
+                .attr('stroke', '#B0B0B0').attr('stroke-width', 1).style('stroke-dasharray', '2,3');
+        // the "//" glyph straddling the axis line
+        [-3, 1].forEach(function(dx) {
+            g.append('line').attr('x1', x + dx - 3).attr('x2', x + dx + 3)
+                    .attr('y1', bottom + 5).attr('y2', bottom - 5)
+                    .attr('stroke', '#666666').attr('stroke-width', 1.5);
+        });
+    };
+
     var renderXTopAxis = function() {
         if (!xTopAxis) {
             xTopAxis = LABKEY.vis.internal.Axis().orient('top');
@@ -1625,6 +1646,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (!plot.disableAxis.xTop) { renderXTopAxis.call(this); }
         if (!plot.disableAxis.yLeft) { renderYLeftAxis.call(this); }
         if (!plot.disableAxis.yRight) { renderYRightAxis.call(this); }
+        renderCalendarAxisBreak.call(this);
 
         addBrush.call(this);
     };
@@ -2285,6 +2307,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // tiled segments restart the dash each segment and read as solid where points are dense, so avoid that.
         if (geom.connectAdjacent) {
             const strokeColor = typeof colorAcc === 'function' ? (data.length ? colorAcc(data[0]) : '#000000') : colorAcc;
+            // pixel position of the calendar axis break, so no run spans the guide-set/window discontinuity
+            const breakOffset = geom.xScale.calendarBreakOffset;
+            const breakX = breakOffset === null || breakOffset === undefined ? null : geom.xScale.scale(breakOffset);
             // Build the line as flat horizontal runs at each constant level: connect consecutive same-y points
             // (so the dash spans no-data gaps within a level), but START A NEW SUBPATH whenever the level changes
             // (guide-set boundary) or y is undefined (e.g. log scale where mean +/- error <= 0). This avoids a
@@ -2302,6 +2327,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     const x = xAcc_(row), value = geom.yAes.getValue(row), error = geom.errorAes.getValue(row);
                     if (value == null || isNaN(x)) {
                         continue; // no data point that day (e.g. missing-fill row): bridge over it, don't break the level
+                    }
+                    if (breakX !== null && runY !== null && runEndX < breakX && x > breakX) { // crossing the axis break: end the run here
+                        flush();
+                        runStartX = runEndX = runY = null;
                     }
                     const y = geom.yScale.scale(value + sign * error);
                     if (y == null || isNaN(y)) { // defined value but unplottable (log scale, value +/- error <= 0): break here
@@ -2600,11 +2629,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var _renderPath = function(layer, data, geom, xAcc) {
+        // don't connect points across the calendar axis break (guide-set block -> date window)
+        var breakOffset = geom.xScale ? geom.xScale.calendarBreakOffset : null,
+            breakX = breakOffset === null || breakOffset === undefined ? null : geom.xScale.scale(breakOffset);
         var yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
             line = function(d) {
-                var path = LABKEY.vis.makePath(d.data, xAcc, yAcc);
+                var path = LABKEY.vis.makePath(d.data, xAcc, yAcc, breakX);
                 return path.length == 0 ? null : path;
             };
         if (geom.pathColorAes && geom.colorScale) {
