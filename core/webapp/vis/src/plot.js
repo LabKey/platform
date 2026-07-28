@@ -1858,13 +1858,16 @@ boxPlot.render();
         }
         uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
 
-        // Calendar (time-based) x-axis: space each day by elapsed time; with an ordinal prefix (guide-set "always show") the prefix rows collapse to ordinal slots and only the recent window is time-spaced.
+        // Calendar (time-based) x-axis: space each day by elapsed time; with a prefix block (guide-set "always show") the dead span between it and the date window collapses to a fixed gap.
         const timeBasedXTick = config.properties.timeBasedXTick === true;
         const prefixField = config.properties.calendarPrefixField;
         const prefixValue = config.properties.calendarPrefixValue;
         const dayOffsetMap = {}, dayOffsetLabelMap = {}, dayNumberOffsetMap = {};
-        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null, ordinalPrefixApplied = false,
+        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null,
                 calendarBreakOffset = null, minDayGapOffsets = 0;
+        // Contiguous stretches of the axis, each linear in day number (the collapsed gap sits between them):
+        // {startOffset, startDayNumber, span, linear}. Ticks are chosen per block so labels stay evenly spaced.
+        let calendarBlocks = [];
         if (timeBasedXTick) {
             // One entry per distinct date label: day number, whether any row on it is tagged, whether any row on it is plottable.
             const labelInfo = {}, orderedLabels = [];
@@ -1929,7 +1932,6 @@ boxPlot.render();
 
             if (prefixLabels.length > 0 && recentLabels.length > 0) {
                 // Prefix block, then a blank gap, then the window time-spaced from its first day.
-                ordinalPrefixApplied = true;
                 prefixLabels.sort(byDn);
                 recentLabels.sort(byDn);
 
@@ -1952,12 +1954,17 @@ boxPlot.render();
                 for (let k = 0; k < recentLabels.length; k++) {
                     putOffset(recentLabels[k], windowStartOffset + (labelInfo[recentLabels[k]].dn - firstRecentDn));
                 }
+                calendarBlocks = [
+                    { startOffset: 0, startDayNumber: firstPrefixDn, span: prefixEndOffset, linear: timeScalePrefix },
+                    { startOffset: windowStartOffset, startDayNumber: firstRecentDn, span: maxDayOffset - windowStartOffset, linear: true }
+                ];
             }
             else {
                 // No prefix split: every day spaced by its offset from the earliest day.
                 for (let k = 0; k < orderedLabels.length; k++) {
                     putOffset(orderedLabels[k], labelInfo[orderedLabels[k]].dn - minDayNumber);
                 }
+                calendarBlocks = [{ startOffset: 0, startDayNumber: minDayNumber, span: maxDayOffset, linear: true }];
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
             for (let k = 1; k < uniqueDayOffsets.length; k++) {
@@ -2519,32 +2526,43 @@ boxPlot.render();
                     return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
                 };
             }
-            else if (ordinalPrefixApplied) {
-                // Piecewise axis: offsets aren't linear in day number, so tick only on data days (thinned to fit) and label from the offset->date map.
-                const picked = [uniqueDayOffsets[0]];
-                for (let i = 1; i < uniqueDayOffsets.length; i++) {
-                    if (uniqueDayOffsets[i] - picked[picked.length - 1] >= minLabelGapOffsets) {
-                        picked.push(uniqueDayOffsets[i]);
-                    }
-                }
-                let thinned = picked;
-                if (picked.length > tickMax) {
-                    thinned = [];
-                    const step = Math.ceil(picked.length / tickMax);
-                    for (let i = 0; i < picked.length; i += step) {
-                        thinned.push(picked[i]);
-                    }
-                }
-                config.scales.x.tickValues = thinned;
-                config.scales.x.tickFormat = function(offset) {
-                    return dayOffsetLabelMap[offset] !== undefined ? dayOffsetLabelMap[offset] : '';
-                };
-            }
             else {
-                // Crowded: ticks at nice calendar intervals so labels stay evenly spaced and readable.
-                config.scales.x.tickValues = LABKEY.vis.calendarTickOffsets(minDayNumber, maxDayOffset, tickMax, minLabelGapOffsets);
+                // Crowded: ticks at nice calendar intervals within each block, so labels stay evenly spaced and a
+                // reader can interpolate the unlabelled days rather than seeing an arbitrary subset of data days.
+                const tickValues = [];
+                let totalSpan = 0;
+                calendarBlocks.forEach(function(block) { totalSpan += block.span; });
+                calendarBlocks.forEach(function(block) {
+                    const blockTickMax = Math.max(Math.round(tickMax * block.span / (totalSpan || 1)), 2);
+                    if (block.linear) {
+                        LABKEY.vis.calendarTickOffsets(block.startDayNumber, block.span, blockTickMax, minLabelGapOffsets)
+                                .forEach(function(off) { tickValues.push(block.startOffset + off); });
+                    }
+                    else {
+                        // ordinal block: offsets aren't linear in day number, so tick on its data days, thinned to fit
+                        let last = null;
+                        for (let i = 0; i < uniqueDayOffsets.length; i++) {
+                            const off = uniqueDayOffsets[i];
+                            if (off >= block.startOffset && off <= block.startOffset + block.span
+                                    && (last === null || off - last >= minLabelGapOffsets)) {
+                                tickValues.push(off);
+                                last = off;
+                            }
+                        }
+                    }
+                });
+                config.scales.x.tickValues = tickValues;
                 config.scales.x.tickFormat = function(offset) {
-                    return LABKEY.vis.dayNumberToDateLabel(offset + minDayNumber);
+                    if (dayOffsetLabelMap[offset] !== undefined) {
+                        return dayOffsetLabelMap[offset];
+                    }
+                    for (let i = 0; i < calendarBlocks.length; i++) {
+                        const block = calendarBlocks[i];
+                        if (block.linear && offset >= block.startOffset && offset <= block.startOffset + block.span) {
+                            return LABKEY.vis.dayNumberToDateLabel(block.startDayNumber + offset - block.startOffset);
+                        }
+                    }
+                    return '';
                 };
             }
         }

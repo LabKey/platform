@@ -962,25 +962,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    // Mark where the calendar x-axis jumps the dead span between the guide-set block and the date window.
-    var renderCalendarAxisBreak = function() {
-        this.canvas.selectAll('g.calendar-axis-break').remove();
-
-        var xScale = plot.scales.x;
-        if (!xScale || !xScale.scale || xScale.calendarBreakOffset === null || xScale.calendarBreakOffset === undefined) {
-            return;
-        }
-
-        var x = xScale.scale(xScale.calendarBreakOffset), bottom = plot.grid.bottomEdge;
-        var g = this.canvas.append('g').attr('class', 'calendar-axis-break');
-        // the "//" glyph straddling the axis line
-        [-3, 1].forEach(function(dx) {
-            g.append('line').attr('x1', x + dx - 3).attr('x2', x + dx + 3)
-                    .attr('y1', bottom + 5).attr('y2', bottom - 5)
-                    .attr('stroke', '#666666').attr('stroke-width', 1.5);
-        });
-    };
-
     var renderXTopAxis = function() {
         if (!xTopAxis) {
             xTopAxis = LABKEY.vis.internal.Axis().orient('top');
@@ -1644,7 +1625,6 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         if (!plot.disableAxis.xTop) { renderXTopAxis.call(this); }
         if (!plot.disableAxis.yLeft) { renderYLeftAxis.call(this); }
         if (!plot.disableAxis.yRight) { renderYRightAxis.call(this); }
-        renderCalendarAxisBreak.call(this);
 
         addBrush.call(this);
     };
