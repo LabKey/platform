@@ -212,7 +212,7 @@ public class ContentSecurityPolicyFilter implements Filter
 
             if (csp != null)
             {
-                if (resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
+                if ("https".equals(req.getScheme()) && resp.getHeader(REPORTING_ENDPOINTS_HEADER) == null)
                 {
                     resp.addHeader(REPORTING_ENDPOINTS_HEADER, _reportingEndpointsHeaderValue);
                 }
@@ -229,7 +229,15 @@ public class ContentSecurityPolicyFilter implements Filter
 
         if (getType() != ContentSecurityPolicyType.Enforce || !OptionalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
         {
-            return expression.eval(Map.of(NONCE_SUBST, getScriptNonceHeader(req)));
+            Map<String, String> map = Map.of(NONCE_SUBST, getScriptNonceHeader(req));
+            String csp = expression.eval(map);
+
+            if ("https".equals(req.getScheme()))
+            {
+                csp = csp + " report-to csp-report ;";
+            }
+
+            return csp;
         }
 
         return null;
