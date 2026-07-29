@@ -1146,21 +1146,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .filter(DataLoaderFactory::indexable)
             .forEach(ss::addDocumentParser);
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            AppProps.EXPERIMENTAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
-            false);
+            false,
+            false,
+            FeatureType.Optional
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
             "Block malicious clients",
             "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
             false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            FEATURE_FLAG_DISABLE_ENFORCE_CSP,
             "Disable enforce Content Security Policy",
             "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
             "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
-            false);
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
             "Data Region Async Total Rows",
             "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
@@ -1168,7 +1176,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
-        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (_, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
