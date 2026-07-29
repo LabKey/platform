@@ -24,8 +24,8 @@
     "@labkey/themes": "1.9.5-fb-update-nodejs.1"
   },
   "devDependencies": {
-    "@labkey/build": "10.0.0",
-    "@labkey/eslint-config": "1.2.2",
+    "@labkey/build": "10.0.1-fb-update-nodejs.1",
+    "@labkey/eslint-config": "1.2.3-fb-update-nodejs.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
@@ -35,11 +35,7 @@
     "jest-cli": "30.4.2",
     "jest-environment-jsdom": "30.4.1",
     "jest-teamcity-reporter": "0.9.0",
-    "ts-jest": "29.4.11",
-    "uuid": "14.0.1"
-  },
-  "overrides": {
-    "uuid": "14.0.1"
+    "ts-jest": "29.4.11"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
