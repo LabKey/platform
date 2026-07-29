@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.47.0"
+    "@labkey/components": "7.49.1-fb-update-nodejs.0"
   },
   "devDependencies": {
     "@labkey/build": "10.0.0",
