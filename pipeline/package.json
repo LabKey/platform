@@ -21,10 +21,10 @@
     "@labkey/eslint-config": "1.2.2",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
-    "uuid": "14.0.0"
+    "uuid": "14.0.1"
   },
   "overrides": {
-    "uuid": "14.0.0"
+    "uuid": "14.0.1"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
