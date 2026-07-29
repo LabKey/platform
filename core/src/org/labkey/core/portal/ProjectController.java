@@ -1278,8 +1278,8 @@ public class ProjectController extends SpringActionController
             catch (UnauthorizedException e)
             {
                 // Let Troubleshooters retrieve folder nav in root
-                //if (!isTroubleshooterRetrievingFolderNav())
-                //    throw e;
+                if (!isTroubleshooterRetrievingFolderNav())
+                    throw e;
             }
         }
 
