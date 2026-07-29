@@ -40,5 +40,11 @@
   },
   "overrides": {
     "uuid": "14.0.0"
+  },
+  "allowScripts": {
+    "@labkey/themes@1.9.4": true,
+    "@parcel/watcher@2.6.0": true,
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }
