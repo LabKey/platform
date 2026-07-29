@@ -86,8 +86,11 @@ public interface WorkflowService
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long actionId, @Nullable String userAuditComment);
     void onActionComplete(@NotNull Container container, @NotNull User user, @NotNull Long taskId, @NotNull ActionType actionType);
     boolean actionWillAddSamples(Long actionId);
+    boolean actionWillAddSources(Long actionId);
 
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
+
+    DataIteratorBuilder getSourceCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
     DataIteratorBuilder getActionAuditDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
