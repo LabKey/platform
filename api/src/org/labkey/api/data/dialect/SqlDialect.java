@@ -882,6 +882,17 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    /**
+     * Does the dialect natively support the standard "IS [NOT] DISTINCT FROM" predicate? PostgreSQL and Snowflake
+     * do; SQL Server, MySQL, and Oracle do not (SQL Server added GREATEST/LEAST in recent versions but has never
+     * added this predicate). Dialects that return false here get a portable CASE-based rewrite instead; see
+     * Method.IsDistinctFromMethodInfo.
+     */
+    public boolean supportsNativeIsDistinctFrom()
+    {
+        return false;
+    }
+
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         throw(new ServletException("Can't create database", e));
