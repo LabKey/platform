@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.QueryService;
@@ -224,46 +225,42 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
         return elements;
     }
 
-    /**
-     * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
-     * audit log timeline event even if the DataState row is later deleted.  Also, remove the aliquot rollup calculated
-     * fields from the data.
-     */
     @Override
     public void setOldRecordMap(String oldRecordMap, Container container)
     {
-        if (oldRecordMap != null)
-        {
-            Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(oldRecordMap));
-            EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
-            String label = getStatusLabel(row, container);
-            if (label != null)
-            {
-                row.put("samplestatelabel", label);
-                oldRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
-            }
-        }
-        super.setOldRecordMap(oldRecordMap);
+        super.setOldRecordMap(withResolvedLabels(oldRecordMap, container));
     }
 
-    /**
-     * If the sample state changed, explicitly add in the Status Label value to the map so that it will render in the
-     * audit log timeline event even if the DataState row is later deleted. Also, remove the aliquot rollup calculated
-     * fields from the data.
-     */
     @Override
     public void setNewRecordMap(String newRecordMap, Container container)
     {
-        if (newRecordMap != null)
+        super.setNewRecordMap(withResolvedLabels(newRecordMap, container), container);
+    }
+
+    /**
+     * If the sample state or color changed, explicitly add the resolved Status/Color label to the map so it renders in
+     * the audit log timeline event even if the DataState/DataColor row is later deleted. Also removes the aliquot rollup
+     * calculated fields from the data.
+     */
+    private String withResolvedLabels(String recordMap, Container container)
+    {
+        if (recordMap == null)
+            return null;
+
+        Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(recordMap));
+        EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
+
+        String statusLabel = getStatusLabel(row, container);
+        if (row.containsKey("samplestate"))
+            row.put("samplestatelabel", statusLabel);
+
+        if (row.containsKey(ExpMaterialColor.name()))
         {
-            Map<String, String> row = new CaseInsensitiveHashMap<>(AbstractAuditTypeProvider.decodeFromDataMap(newRecordMap));
-            EXCLUDED_DETAIL_FIELDS.forEach(row::remove);
-            String label = getStatusLabel(row, container);
-            if (label != null)
-                row.put("samplestatelabel", label);
-            newRecordMap = AbstractAuditTypeProvider.encodeForDataMap(row);
+            String colorLabel = getColorLabel(row, container);
+            row.put("expmaterialcolorlabel", colorLabel);
         }
-        super.setNewRecordMap(newRecordMap, container);
+
+        return AbstractAuditTypeProvider.encodeForDataMap(row);
     }
 
     private String getStatusLabel(Map<String, String> row, Container container)
@@ -274,6 +271,14 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
             if (status != null)
                 return status.getLabel();
         }
+        return null;
+    }
+
+    private String getColorLabel(Map<String, String> row, Container container)
+    {
+        String value = row.get(ExpMaterialColor.name());
+        if (!StringUtils.isBlank(value))
+            return ExperimentService.get().getDataColorLabel(container, Long.parseLong(value));
         return null;
     }
 }

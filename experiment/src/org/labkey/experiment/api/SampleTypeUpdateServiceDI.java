@@ -185,6 +185,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Expiration Date", "MaterialExpDate");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleColor", "ExpMaterialColor");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Color", "ExpMaterialColor");
     }
 
     public enum Options
@@ -1308,6 +1310,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isAliasHeader(name))
                         continue;
                     if (isExpMaterialColumn(SampleState, name))
+                        continue;
+                    if (isExpMaterialColumn(ExpMaterialColor, name))
                         continue;
                     if (isExpMaterialColumn(MaterialExpDate, name))
                         continue;

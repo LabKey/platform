@@ -692,6 +692,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         final Set<Object> allowableContainers = new HashSet<>();
 
+        // GH Issue 1332: a bad container value recurs on every row; warn once per distinct value, not per row
+        final Set<Object> loggedUnresolvedContainers = new HashSet<>();
+        final Set<Object> loggedRejectedContainers = new HashSet<>();
+
         public ContainerColumn(UserSchema us, TableInfo tableInfo, String containerId, int idx)
         {
             this.us = us;
@@ -723,7 +727,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
                     {
                         getRowError().addError(new SimpleValidationError("Row supplied container value: " + rowContainerVal + " cannot be used for actions against the container: " + us.getContainer().getPath()));
-                        LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
+                        if (loggedRejectedContainers.add(rowContainerVal))
+                            LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
                     }
                     else
                     {
@@ -734,8 +739,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
                 else
                 {
-                    // only log if the incoming value is GUID-like
-                    if (rowContainerVal instanceof String && GUID.isGUID((String)rowContainerVal))
+                    // only log if the incoming value is GUID-like, and only once per distinct value
+                    if (rowContainerVal instanceof String s && GUID.isGUID(s) && loggedUnresolvedContainers.add(rowContainerVal))
                     {
                         LOG.warn("Failed to resolve container value '{}' to container for import into {}.{}, defaulting to original target container of {}", rowContainerVal, us.getSchemaName(), tableInfo.getPublicSchemaName(), us.getContainer().getPath());
                     }

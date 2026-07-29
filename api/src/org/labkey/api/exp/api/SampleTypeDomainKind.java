@@ -535,6 +535,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         Map<String, Map<String, Object>> aliases = null;
         List<String> excludedContainerIds = null;
         List<String> excludedDashboardContainerIds = null;
+        List<Integer> excludedSampleColorIds = null;
+
 
         if (arguments != null)
         {
@@ -556,12 +558,13 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             aliases = arguments.getImportAliases();
             excludedContainerIds = arguments.getExcludedContainerIds();
             excludedDashboardContainerIds = arguments.getExcludedDashboardContainerIds();
+            excludedSampleColorIds = arguments.getDisabledSampleColorRowIds();
         }
         ExpSampleType st;
         try
         {
             st = SampleTypeService.get().createSampleType(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression,
-                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds, arguments != null ? arguments.getAuditRecordMap() : null);
+                    templateInfo, aliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, domain.getDisabledSystemFields(), excludedContainerIds, excludedDashboardContainerIds, excludedSampleColorIds, arguments != null ? arguments.getAuditRecordMap() : null);
         }
         catch (ExperimentException e)
         {

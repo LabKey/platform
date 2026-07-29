@@ -114,6 +114,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -906,6 +907,9 @@ class PullRequestsDisplayColumn extends DataColumn
 {
     private static final Pattern GITHUB_HTTP_PR_URL = Pattern.compile("https://github.com/(?<org>[^/]*)/(?<project>[^/]*)/pull/(?<pullId>\\d*)");
 
+    // GH Issue 1332: parseGithubUrl is a per-cell static call; warn once per distinct unparseable url, not once per row
+    private static final Set<String> LOGGED_BAD_PR_URLS = ConcurrentHashMap.newKeySet();
+
     public PullRequestsDisplayColumn(ColumnInfo col)
     {
         super(col);
@@ -976,13 +980,16 @@ class PullRequestsDisplayColumn extends DataColumn
             }
             catch (NumberFormatException e)
             {
-                // The issueId value can be null if it the column isn't included in the select for a custom query
-                @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
+                if (LOGGED_BAD_PR_URLS.add(url))
+                {
+                    // The issueId value can be null if it the column isn't included in the select for a custom query
+                    @Nullable Integer issueId = ctx.get(FieldKey.fromParts("IssueId"), Integer.class);
 
-                StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
-                if (issueId != null)
-                    sb.append(" for issue ").append(issueId);
-                IssuesTable.LOG.warn(sb.toString());
+                    StringBuilder sb = new StringBuilder("Failed to parse pull request url '" + url + "'");
+                    if (issueId != null)
+                        sb.append(" for issue ").append(issueId);
+                    IssuesTable.LOG.warn(sb.toString());
+                }
             }
         }
 
