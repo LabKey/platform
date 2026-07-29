@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@labkey/components": "7.49.1-fb-update-nodejs.0",
-    "@labkey/themes": "1.9.4"
+    "@labkey/themes": "1.9.5-fb-update-nodejs.1"
   },
   "devDependencies": {
     "@labkey/build": "10.0.0",
@@ -42,7 +42,6 @@
     "uuid": "14.0.1"
   },
   "allowScripts": {
-    "@labkey/themes@1.9.4": true,
     "@parcel/watcher@2.6.0": true,
     "fsevents@2.3.3": true,
     "unrs-resolver@1.12.2": true
