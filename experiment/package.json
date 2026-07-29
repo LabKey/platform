@@ -27,7 +27,7 @@
     "jest-environment-jsdom": "30.4.1",
     "jest-teamcity-reporter": "0.9.0",
     "mock-fs": "5.5.0",
-    "ts-jest": "29.4.11"
+    "ts-jest": "29.4.12"
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
