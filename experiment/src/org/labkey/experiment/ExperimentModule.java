@@ -65,6 +65,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -1192,6 +1193,7 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            DomainUtil.ImportAliasTestCase.class,
             GraphAlgorithms.TestCase.class,
             LSIDRelativizer.TestCase.class,
             Lsid.TestCase.class,
