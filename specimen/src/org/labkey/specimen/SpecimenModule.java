@@ -43,6 +43,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenQuerySchema;
@@ -53,10 +54,14 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyInternalService;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
 import org.labkey.api.study.importer.SimpleStudyImporterRegistry;
 import org.labkey.api.study.writer.SimpleStudyWriterRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.logging.LogHelper;
@@ -81,6 +86,8 @@ import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
+import org.labkey.specimen.security.permissions.EditSpecimenDataPermission;
+import org.labkey.specimen.security.permissions.ManageRequestSettingsPermission;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.settings.RepositorySettings;
@@ -234,6 +241,27 @@ public class SpecimenModule extends SpringModule
                     return new SpecimenPivotByRequestingLocation(schema, study, cf);
                 }
                 return null;
+            }
+
+            @Override
+            public @Nullable SafeToRender getSpecimenSettingsLink(Container c, User user)
+            {
+                // Must have ManageRequestSettingsPermission and requests enabled (otherwise non-admin will see a blank Manage Study page)
+                if (c.hasPermission(user, ManageRequestSettingsPermission.class) && isEnableRequests(c))
+                {
+                    return LinkBuilder.labkeyLink(
+                        "Manage Specimen Request Settings",
+                        PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(c)
+                    );
+                }
+
+                return null;
+            }
+
+            @Override
+            public @NotNull Class<? extends Permission> getEditSpecimenDataPermission()
+            {
+                return EditSpecimenDataPermission.class;
             }
         });
 

@@ -1146,7 +1146,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .filter(DataLoaderFactory::indexable)
             .forEach(ss::addDocumentParser);
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.OPTIONAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
             false);
