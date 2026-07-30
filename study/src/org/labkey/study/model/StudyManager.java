@@ -224,6 +224,7 @@ import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
@@ -354,9 +355,9 @@ public class StudyManager
         }
 
         @Override
-        protected VisitCollections createCollections(Collection<VisitImpl> collection)
+        protected VisitCollections createCollections(Stream<VisitImpl> stream)
         {
-            return new VisitCollections(collection);
+            return new VisitCollections(stream);
         }
 
         private static class VisitCollections extends StudyCacheCollections<Integer, VisitImpl>
@@ -364,9 +365,11 @@ public class StudyManager
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
 
-            private VisitCollections(Collection<VisitImpl> collection)
+            private VisitCollections(Stream<VisitImpl> stream)
             {
-                super(collection);
+                super(stream);
+
+                Collection<VisitImpl> collection = getCollection();
 
                 // I'd prefer to push comparators into Visit.Order, but Visit (in API) doesn't know about the display
                 // order field.
@@ -427,9 +430,9 @@ public class StudyManager
         }
 
         @Override
-        protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
+        protected DatasetCollections createCollections(Stream<DatasetDefinition> stream)
         {
-            return new DatasetCollections(collection);
+            return new DatasetCollections(stream);
         }
 
         protected DatasetCollections getCollections(Study study)
@@ -447,9 +450,11 @@ public class StudyManager
             private final Map<Integer, List<DatasetDefinition>> _cohortMap;
             private final List<DatasetDefinition> _nullCohortDatasets;
 
-            private DatasetCollections(Collection<DatasetDefinition> collection)
+            private DatasetCollections(Stream<DatasetDefinition> stream)
             {
-                super(collection);
+                super(stream);
+
+                Collection<DatasetDefinition> collection = getCollection();
 
                 // study.Dataset has constraints on LOWER(Name) and LOWER(Label), so this code path should never attempt
                 // to put duplicates into these maps. Use asserts to verify this.

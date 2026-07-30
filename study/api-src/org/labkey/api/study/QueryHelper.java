@@ -29,12 +29,14 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.User;
+import org.labkey.api.study.QueryHelper.StudyCacheCollections;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Stream;
 
-public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelper.StudyCacheCollections<K, T>>
+public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCacheCollections<K, T>>
 {
     private final BlockingCache<Container, SC> _cache;
     private final Class<T> _objectClass;
@@ -52,12 +54,13 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelpe
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
         TableInfo tableInfo = _tableInfoGetter.getTableInfo();
-        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, argument) ->
-            createCollections(
-                getTableSelector(key).stream(_objectClass)
-                    .peek(StudyCachable::lock)
-                    .toList()
-            ));
+        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
+        {
+            try (Stream<T> stream = getTableSelector(key).uncachedStream(_objectClass))
+            {
+                return createCollections(stream);
+            }
+        });
     }
 
     /**
@@ -83,9 +86,9 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelpe
         return _cache.get(c, null);
     }
 
-    protected SC createCollections(Collection<T> collection)
+    protected SC createCollections(Stream<T> stream)
     {
-        return (SC) new QueryHelper.StudyCacheCollections<>(collection);
+        return (SC) new StudyCacheCollections<>(stream);
     }
 
     public T create(User user, T obj)
@@ -133,11 +136,12 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends QueryHelpe
     {
         private final Map<K, V> _map;
 
-        // Receives a collection of locked T objects
-        public StudyCacheCollections(Collection<V> collection)
+        public StudyCacheCollections(Stream<V> stream)
         {
-            _map = Collections.unmodifiableMap(collection.stream()
-                .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v)));
+            _map = Collections.unmodifiableMap(stream
+                .peek(StudyCachable::lock)
+                .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v))
+            );
         }
 
         public @Nullable V get(K key)
