@@ -1874,6 +1874,27 @@ public class DomainUtil
         }
 
         @Test
+        public void multipleAliasesPerFieldWithDuplicatesAndTrickyChars()
+        {
+            String aliasWithBlanks = "with blanks";
+            String aliasWithComma = "with, comma";
+            String trickyChars = "\u00C5\u00E4"; // Angstrom + a-umlaut
+            ValidationException errors = validate(field(FIELD_ONE, trickyChars + "," + "\"" + aliasWithComma + "\"" + "," + aliasWithBlanks),
+                    field(FIELD_TWO,  "\"" + aliasWithComma + "\"" ), field(FIELD_THREE, trickyChars + " \"" + aliasWithComma + "\""));
+            List<String> expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE));
+            expected = List.of(
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO));
+            expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_THREE));
+        }
+
+        @Test
         public void blankFieldNameDoesNotBreakAliasChecking()
         {
             // A nameless field is reported on its own and must not reach the alias map, where it would have no name to report
