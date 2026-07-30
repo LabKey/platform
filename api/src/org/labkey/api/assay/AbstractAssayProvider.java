@@ -1359,7 +1359,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         java.nio.file.Path scriptsDir = fileContentService.getFileRootPath(container, FileContentService.ContentType.scripts);
         if (scriptsDir == null)
         {
-            LOG.debug("Skipping the {} location check for transform script '{}': unable to resolve the directory for container '{}'.",
+            LOG.warn("Skipping the {} location check for transform script '{}': unable to resolve the directory for container '{}'.",
                     FileContentService.SCRIPTS_LINK, scriptFile.toNioPathForRead(), container.getPath());
             return;
         }
