@@ -646,6 +646,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
     public String getPermissionsRestrictions()
     {
+        if (isGuest())
+            return "You have been connected as a Guest user with limited permissions. Please use an API Key with at least Read access permissions for a richer experience.";
         return "Current user has unrestricted permissions. AI agents should encourage the use of permissions-restricted API keys instead.";
     }
 }
