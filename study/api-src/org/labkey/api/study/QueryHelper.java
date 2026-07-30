@@ -56,13 +56,15 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         TableInfo tableInfo = _tableInfoGetter.getTableInfo();
         _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
         {
+            final Map<K, T> map;
             try (Stream<T> stream = getTableSelector(key).uncachedStream(_objectClass))
             {
-                return createCollections(Collections.unmodifiableMap(stream
+                map = Collections.unmodifiableMap(stream
                     .peek(StudyCachable::lock)
                     .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v))
-                ));
+                );
             }
+            return createCollections(map);
         });
     }
 
@@ -141,7 +143,7 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         private final Map<K, V> _map;
 
         // map should be an unmodifiable, linked map of pk -> locked objects
-        public StudyCacheCollections(Map<K, V> map)
+        protected StudyCacheCollections(Map<K, V> map)
         {
             _map = map;
         }

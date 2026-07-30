@@ -224,7 +224,6 @@ import java.util.TreeMap;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.studydesign.query.StudyDesignQuerySchema.PERSONNEL_TABLE_NAME;
@@ -450,9 +449,9 @@ public class StudyManager
             private final Map<Integer, List<DatasetDefinition>> _cohortMap;
             private final List<DatasetDefinition> _nullCohortDatasets;
 
-            private DatasetCollections(Map<Integer, DatasetDefinition> stream)
+            private DatasetCollections(Map<Integer, DatasetDefinition> map)
             {
-                super(stream);
+                super(map);
 
                 Collection<DatasetDefinition> collection = getCollection();
 
