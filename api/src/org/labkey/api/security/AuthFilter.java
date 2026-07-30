@@ -256,7 +256,7 @@ public class AuthFilter implements Filter
 
     public static User getGuestUser()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS))
             return User.nobody;
         else
             return User.guest;
