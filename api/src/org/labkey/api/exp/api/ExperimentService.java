@@ -617,16 +617,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
             if (updatedDomainDesign != null)
             {
-                if (!existingAliases.contains(trimmedKey))
+                var field = updatedDomainDesign.getFieldByName(trimmedKey);
+                if (field != null)
                 {
-                    var field = updatedDomainDesign.getFieldByName(trimmedKey);
-                    if (field != null)
-                    {
-                        throw new IllegalArgumentException(String.format("An existing %1$s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
-                    }
+                    throw new IllegalArgumentException(String.format("An existing %1$s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
                 }
                 // GH Issue 1257: If there are conflicts with import aliases, this should be an error since it produces ambiguity during import
-                var field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
+                field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
                 if (field != null)
                 {
                     throw new IllegalArgumentException(String.format("Field '%1$s' has an import alias '%2$s' that conflicts with a parent alias header.", field.getName(), trimmedKey));
