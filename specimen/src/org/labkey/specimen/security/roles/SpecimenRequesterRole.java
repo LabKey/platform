@@ -16,7 +16,7 @@
 package org.labkey.specimen.security.roles;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.specimen.security.permissions.RequestSpecimensPermission;
 
 import java.util.Collection;
 import java.util.Set;
