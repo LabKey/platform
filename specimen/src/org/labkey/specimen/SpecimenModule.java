@@ -16,7 +16,8 @@
 
 package org.labkey.specimen;
 
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -74,12 +75,12 @@ import org.labkey.specimen.importer.SpecimenSchemaImporter;
 import org.labkey.specimen.importer.SpecimenSettingsImporter;
 import org.labkey.specimen.model.SpecimenRequestEventType;
 import org.labkey.specimen.pipeline.SpecimenPipeline;
-import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.query.SpecimenPivotByDerivativeType;
 import org.labkey.specimen.query.SpecimenPivotByPrimaryType;
 import org.labkey.specimen.query.SpecimenPivotByRequestingLocation;
 import org.labkey.specimen.query.SpecimenQueryView;
 import org.labkey.specimen.query.SpecimenUpdateService;
+import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.security.roles.SpecimenCoordinatorRole;
 import org.labkey.specimen.security.roles.SpecimenRequesterRole;
 import org.labkey.specimen.settings.RepositorySettings;
@@ -272,7 +273,7 @@ public class SpecimenModule extends SpringModule
             {
                 svc.registerUsageMetrics(NAME, () -> {
                     // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
-                    HashBag<String> specimenBag = new HashBag<>();
+                    MultiSet<String> specimenMultiSet = new HashMultiSet<>();
                     MutableInt requestsEnabled = new MutableInt(0);
                     MutableInt hasLocations = new MutableInt(0);
 
@@ -283,19 +284,19 @@ public class SpecimenModule extends SpringModule
 
                             if (settings.isSimple())
                             {
-                                specimenBag.add("simple");
+                                specimenMultiSet.add("simple");
                                 TableInfo simpleSpecimens = schema.getTable(SpecimenTablesProvider.SIMPLE_SPECIMEN_TABLE_NAME);
-                                specimenBag.add("simpleSpecimens", (int) new TableSelector(simpleSpecimens).getRowCount());
+                                specimenMultiSet.add("simpleSpecimens", (int) new TableSelector(simpleSpecimens).getRowCount());
                             }
                             else
                             {
-                                specimenBag.add("advanced");
+                                specimenMultiSet.add("advanced");
                                 TableInfo events = schema.getTable(SpecimenTablesProvider.SPECIMEN_EVENT_TABLE_NAME);
                                 TableInfo vials = schema.getTable(SpecimenTablesProvider.SPECIMEN_DETAIL_TABLE_NAME);
                                 TableInfo specimens = schema.getTable(SpecimenTablesProvider.SPECIMEN_SUMMARY_TABLE_NAME);
-                                specimenBag.add("events", (int) new TableSelector(events).getRowCount());
-                                specimenBag.add("vials", (int) new TableSelector(vials).getRowCount());
-                                specimenBag.add("specimens", (int) new TableSelector(specimens).getRowCount());
+                                specimenMultiSet.add("events", (int) new TableSelector(events).getRowCount());
+                                specimenMultiSet.add("vials", (int) new TableSelector(vials).getRowCount());
+                                specimenMultiSet.add("specimens", (int) new TableSelector(specimens).getRowCount());
                             }
 
                             if (settings.isEnableRequests())
@@ -303,15 +304,15 @@ public class SpecimenModule extends SpringModule
 
                             TableInfo locations = schema.getTable(SpecimenQuerySchema.LOCATION_TABLE_NAME);
                             long locationCount = new TableSelector(locations).getRowCount();
-                            specimenBag.add("locations", (int) locationCount);
-                            specimenBag.add("locationsInUse", (int) new TableSelector(locations, new SimpleFilter(FieldKey.fromParts("In Use"), true), null).getRowCount());
+                            specimenMultiSet.add("locations", (int) locationCount);
+                            specimenMultiSet.add("locationsInUse", (int) new TableSelector(locations, new SimpleFilter(FieldKey.fromParts("In Use"), true), null).getRowCount());
                             if (locationCount > 0)
                                 hasLocations.increment();
 
-                            LOG.debug(specimenBag.toString());
+                            LOG.debug(specimenMultiSet.toString());
                         });
 
-                    Map<String, Object> specimensMap = specimenBag.uniqueSet().stream().collect(Collectors.toMap(s -> s, specimenBag::getCount));
+                    Map<String, Object> specimensMap = specimenMultiSet.uniqueSet().stream().collect(Collectors.toMap(s -> s, specimenMultiSet::getCount));
                     Map<String, Object> requestsMap = new SqlSelector(SpecimenSchema.get().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap(String.class);
                     requestsMap.put("enabled", requestsEnabled);
                     specimensMap.put("requests", requestsMap);

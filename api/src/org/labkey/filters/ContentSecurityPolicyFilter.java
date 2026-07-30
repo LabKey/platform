@@ -203,8 +203,6 @@ public class ContentSecurityPolicyFilter implements Filter
         }
     }
 
-    private static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {
