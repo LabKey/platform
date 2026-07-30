@@ -355,9 +355,9 @@ public class StudyManager
         }
 
         @Override
-        protected VisitCollections createCollections(Stream<VisitImpl> stream)
+        protected VisitCollections createCollections(Map<Integer, VisitImpl> map)
         {
-            return new VisitCollections(stream);
+            return new VisitCollections(map);
         }
 
         private static class VisitCollections extends StudyCacheCollections<Integer, VisitImpl>
@@ -365,9 +365,9 @@ public class StudyManager
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
 
-            private VisitCollections(Stream<VisitImpl> stream)
+            private VisitCollections(Map<Integer, VisitImpl> map)
             {
-                super(stream);
+                super(map);
 
                 Collection<VisitImpl> collection = getCollection();
 
@@ -430,9 +430,9 @@ public class StudyManager
         }
 
         @Override
-        protected DatasetCollections createCollections(Stream<DatasetDefinition> stream)
+        protected DatasetCollections createCollections(Map<Integer, DatasetDefinition> map)
         {
-            return new DatasetCollections(stream);
+            return new DatasetCollections(map);
         }
 
         protected DatasetCollections getCollections(Study study)
@@ -450,7 +450,7 @@ public class StudyManager
             private final Map<Integer, List<DatasetDefinition>> _cohortMap;
             private final List<DatasetDefinition> _nullCohortDatasets;
 
-            private DatasetCollections(Stream<DatasetDefinition> stream)
+            private DatasetCollections(Map<Integer, DatasetDefinition> stream)
             {
                 super(stream);
 

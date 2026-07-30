@@ -58,7 +58,10 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         {
             try (Stream<T> stream = getTableSelector(key).uncachedStream(_objectClass))
             {
-                return createCollections(stream);
+                return createCollections(Collections.unmodifiableMap(stream
+                    .peek(StudyCachable::lock)
+                    .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v))
+                ));
             }
         });
     }
@@ -86,9 +89,10 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         return _cache.get(c, null);
     }
 
-    protected SC createCollections(Stream<T> stream)
+    // map is an unmodifiable, linked map of pk -> locked object
+    protected SC createCollections(Map<K, T> map)
     {
-        return (SC) new StudyCacheCollections<>(stream);
+        return (SC) new StudyCacheCollections<>(map);
     }
 
     public T create(User user, T obj)
@@ -136,12 +140,10 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
     {
         private final Map<K, V> _map;
 
-        public StudyCacheCollections(Stream<V> stream)
+        // map should be an unmodifiable, linked map of pk -> locked objects
+        public StudyCacheCollections(Map<K, V> map)
         {
-            _map = Collections.unmodifiableMap(stream
-                .peek(StudyCachable::lock)
-                .collect(LabKeyCollectors.toLinkedMap(StudyCachable::getPrimaryKey, v -> v))
-            );
+            _map = map;
         }
 
         public @Nullable V get(K key)
