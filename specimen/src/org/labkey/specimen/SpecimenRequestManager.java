@@ -56,7 +56,6 @@ import org.labkey.api.specimen.importer.RollupHelper;
 import org.labkey.api.specimen.importer.RollupInstance;
 import org.labkey.api.specimen.importer.VialSpecimenRollup;
 import org.labkey.api.specimen.model.SpecimenTablesProvider;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.QueryHelper;
 import org.labkey.api.study.QueryHelper.StudyCacheCollections;
 import org.labkey.api.study.SpecimenUrls;
@@ -74,6 +73,7 @@ import org.labkey.specimen.requirements.SpecimenRequest;
 import org.labkey.specimen.requirements.SpecimenRequestRequirement;
 import org.labkey.specimen.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.specimen.settings.SettingsManager;
 
 import java.io.IOException;
