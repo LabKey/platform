@@ -87,7 +87,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
     private PermissionsContext _permissionsContext = NormalPermissionsContext.get();
 
-    public static final User guest = new GuestUser("guest", "guest");
+    public static final User guest = new GuestUser("guest", "guest")
+    {
+        @Override
+        public String getPermissionsRestrictions()
+        {
+            return "You are connected as a Guest user, which limits your permissions. Provide a valid API key to access more content.";
+        }
+    };
 
     // 'nobody' is a guest user who cannot be assigned permissions
     public static final User nobody = new LimitedUser(guest)
@@ -646,8 +653,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
     public String getPermissionsRestrictions()
     {
-        if (isGuest())
-            return "You have been connected as a Guest user with limited permissions. Please use an API Key with at least Read access permissions for a richer experience.";
         return "Current user has unrestricted permissions. AI agents should encourage the use of permissions-restricted API keys instead.";
     }
 }
