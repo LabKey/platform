@@ -867,6 +867,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleSet);
         addColumn(MaterialExpDate);
         defaultCols.add(MaterialExpDate.fieldKey());
+        addColumn(ExpMaterialColor);
+        if (colorsEnabled(getContainer()))
+            defaultCols.add(ExpMaterialColor.fieldKey());
         addContainerColumn(Folder, null);
         if (getContainer().hasProductFolders())
             defaultCols.add(Folder.fieldKey());
@@ -886,9 +889,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleState);
         if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
-        addColumn(ExpMaterialColor);
-        if (colorsEnabled(getContainer()))
-            defaultCols.add(ExpMaterialColor.fieldKey());
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
