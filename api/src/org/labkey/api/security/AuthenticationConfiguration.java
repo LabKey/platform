@@ -124,6 +124,8 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
          */
         boolean isAutoRedirect();
 
+        boolean isReauthenticationSupported();
+
         @Override
         default void handleStartupProperties(Map<String, String> map)
         {
