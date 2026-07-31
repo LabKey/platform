@@ -1229,4 +1229,15 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         ret.append(")");
         return ret;
     }
+
+    @Override
+    public SQLFragment array_element_like(SQLFragment a, String value)
+    {
+        SQLFragment sql = new SQLFragment("EXISTS (SELECT 1 FROM unnest(");
+        sql.append(a);
+        sql.append(") AS _elem WHERE _elem");
+        appendCaseInsensitiveLikeClause(sql, value);
+        sql.append(")");
+        return sql;
+    }
 }

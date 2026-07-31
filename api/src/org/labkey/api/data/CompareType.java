@@ -1283,7 +1283,8 @@ public abstract class CompareType
                         targetColumn = column;
 
                     // skip more uninteresting columns
-                    if (!targetColumn.isStringType() ||
+                    boolean isArray = targetColumn.getJdbcType() == JdbcType.ARRAY;
+                    if ((!targetColumn.isStringType() && !isArray) ||
                             targetColumn.getName().equalsIgnoreCase("lsid") ||
                             targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") ||
                             targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
@@ -1337,14 +1338,29 @@ public abstract class CompareType
                 if (mappedColumn == null)
                     continue;
 
+                SQLFragment columnSql;
+                if (mappedColumn.getJdbcType() == JdbcType.ARRAY)
+                {
+                    if (!dialect.supportsArrays())
+                        continue;
+
+                    SQLFragment aliasSql = new SQLFragment();
+                    aliasSql.appendIdentifier(mappedColumn.getAlias());
+                    columnSql = dialect.array_element_like(aliasSql, param);
+                }
+                else
+                {
+                    columnSql = new SQLFragment();
+                    columnSql.appendIdentifier(mappedColumn.getAlias());
+                    columnSql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
+                    columnSql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
+                    columnSql.append(LikeClause.sqlEscape());
+                }
+
                 hasResult = true;
                 sql.append(sep);
                 sep = " OR ";
-
-                sql.appendIdentifier(mappedColumn.getAlias());
-                sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
-                sql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
-                sql.append(LikeClause.sqlEscape());
+                sql.append(columnSql);
             }
 
             return hasResult ? sql : new SQLFragment("1=1");
