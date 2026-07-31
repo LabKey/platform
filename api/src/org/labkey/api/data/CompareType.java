@@ -1344,9 +1344,16 @@ public abstract class CompareType
                     if (!dialect.supportsArrays())
                         continue;
 
+                    String[] likeValues = Arrays.stream(param.split(","))
+                            .map(String::trim)
+                            .filter(v -> !v.isEmpty())
+                            .toArray(String[]::new);
+                    if (likeValues.length == 0)
+                        continue;
+
                     SQLFragment aliasSql = new SQLFragment();
                     aliasSql.appendIdentifier(mappedColumn.getAlias());
-                    columnSql = dialect.array_element_like(aliasSql, param);
+                    columnSql = dialect.array_element_like(aliasSql, likeValues);
                 }
                 else
                 {
