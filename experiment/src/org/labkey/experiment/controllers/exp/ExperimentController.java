@@ -156,6 +156,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.mcp.McpException;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.NavigablePage;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -312,6 +315,9 @@ import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
 import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -321,6 +327,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -350,6 +357,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -6851,7 +6859,10 @@ public class ExperimentController extends SpringActionController
      * User: jeckels
      * Date: Jan 27, 2008
      */
-    public static class ExperimentUrlsImpl implements ExperimentUrls
+    // Also implements McpImpl so this UrlProvider impl can be registered directly with McpService (see
+    // ModuleLoader's UrlProvider auto-registration sweep) -- no separate wrapper class or explicit
+    // registration call is needed. Must remain stateless: a single instance is shared across requests.
+    public static class ExperimentUrlsImpl implements ExperimentUrls, McpService.McpImpl
     {
         public ActionURL getOverviewURL(Container c)
         {
@@ -7244,6 +7255,157 @@ public class ExperimentController extends SpringActionController
         public ActionURL getDataClassAttachmentDownloadAction(Container c)
         {
             return new ActionURL(ExperimentController.DataClassAttachmentDownloadAction.class, c);
+        }
+
+        public enum ExperimentPage implements NavigablePage
+        {
+            OVERVIEW("Experiment module home page", BeginAction.class),
+            PROTOCOL_GRID("Grid of all protocols", ShowProtocolGridAction.class),
+            SAMPLE_TYPES_LIST("List of all sample types in this folder", ExperimentUrls::getShowSampleTypeListURL),
+            DATA_CLASSES_LIST("List of all data classes in this folder", ExperimentUrls::getDataClassListURL),
+            RUN_GROUPS_LIST("List of run groups (experiments) in this folder", ShowRunGroupsAction.class),
+            CREATE_SAMPLE_TYPE("Create a new sample type", ExperimentUrls::getCreateSampleTypeURL),
+            CREATE_DATA_CLASS("Create a new data class", ExperimentUrls::getCreateDataClassURL),
+            CREATE_RUN_GROUP("Create a new run group", CreateRunGroupAction.class),
+            REPAIR_TYPES("Repair sample type/data class definitions after a schema change", ExperimentUrls::getRepairTypeURL),
+            FILES("Browse the file repository for this folder", ExperimentUrls::getShowFileURL);
+
+            private final String _description;
+            private final BiFunction<ExperimentUrls, Container, ActionURL> _urlFn;
+
+            ExperimentPage(String description, BiFunction<ExperimentUrls, Container, ActionURL> urlFn)
+            {
+                _description = description;
+                _urlFn = urlFn;
+            }
+
+            // For pages with no other caller: build the ActionURL directly from the action class rather than
+            // adding a single-use method to ExperimentUrls. Only ever use this for HTML-returning GET actions
+            // (SimpleViewAction/FormViewAction and similar) -- never for MutatingApiAction/ReadOnlyApiAction/
+            // FormHandlerAction/ConfirmAction, which don't render a navigable page on GET.
+            ExperimentPage(String description, Class<? extends Controller> actionClass)
+            {
+                this(description, (_, container) -> new ActionURL(actionClass, container));
+            }
+
+            @Override
+            public @NotNull String description() { return _description; }
+
+            @Override
+            public ActionURL getUrl(@NotNull Container container)
+            {
+                return _urlFn.apply(PageFlowUtil.urlProvider(ExperimentUrls.class), container);
+            }
+        }
+
+        @Tool(name = "experiment_getPageUrl", description = "Get the URL for a well-known experiment/sample management page in the current container. " +
+            "Pages: OVERVIEW (module home page), PROTOCOL_GRID, SAMPLE_TYPES_LIST, DATA_CLASSES_LIST, RUN_GROUPS_LIST, " +
+            "CREATE_SAMPLE_TYPE, CREATE_DATA_CLASS, CREATE_RUN_GROUP, REPAIR_TYPES, FILES.")
+        @RequiresPermission(ReadPermission.class)
+        public String getPageUrl(ToolContext context, @ToolParam(description = "Which experiment page to link to") ExperimentPage page)
+        {
+            // KNOWN GAP: doesn't check whether the user actually has permission for the target page (e.g. the
+            // CREATE_* and REPAIR_TYPES pages require more than ReadPermission) -- the returned URL may 403 when
+            // clicked. See NavigablePage for the planned fix.
+            Container container = getContext(context).getContainer();
+            return requireUrl(page.getUrl(container), "That page isn't available in this container.");
+        }
+
+        private ExpSampleType resolveSampleType(Container container, String sampleTypeName)
+        {
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName);
+            if (sampleType == null)
+                throw new McpException("No sample type named \"" + sampleTypeName + "\" was found in this container.");
+            return sampleType;
+        }
+
+        private ExpDataClass resolveDataClass(Container container, String dataClassName)
+        {
+            ExpDataClass dataClass = ExperimentService.get().getDataClass(container, dataClassName);
+            if (dataClass == null)
+                throw new McpException("No data class named \"" + dataClassName + "\" was found in this container.");
+            return dataClass;
+        }
+
+        private ExpProtocol resolveProtocol(Container container, String protocolName)
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(container, protocolName);
+            if (protocol == null)
+                throw new McpException("No protocol/assay design named \"" + protocolName + "\" was found in this container.");
+            return protocol;
+        }
+
+        @Tool(name = "experiment_getSampleTypeUrl", description = "Get the URL for a sample type's grid view, given the sample type's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getSampleTypeUrl(ToolContext context, @ToolParam(description = "Sample type name") String sampleTypeName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpSampleType sampleType = resolveSampleType(container, sampleTypeName);
+            return requireUrl(getShowSampleTypeURL(sampleType, container), "Could not build a URL for that sample type.");
+        }
+
+        @Tool(name = "experiment_getDataClassUrl", description = "Get the URL for a data class's grid view, given the data class's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getDataClassUrl(ToolContext context, @ToolParam(description = "Data class name") String dataClassName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpDataClass dataClass = resolveDataClass(container, dataClassName);
+            return requireUrl(getShowDataClassURL(container, dataClass.getRowId()), "Could not build a URL for that data class.");
+        }
+
+        @Tool(name = "experiment_getAssayDesignUrl", description = "Get the URL for an assay design's (protocol's) details page, given its name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getAssayDesignUrl(ToolContext context, @ToolParam(description = "Assay design/protocol name") String protocolName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpProtocol protocol = resolveProtocol(container, protocolName);
+            return requireUrl(getProtocolDetailsURL(protocol), "Could not build a URL for that assay design.");
+        }
+
+        @Tool(name = "experiment_getImportSamplesUrl", description = "Get the URL to import/upload data into a sample type, given the sample type's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getImportSamplesUrl(ToolContext context, @ToolParam(description = "Sample type name") String sampleTypeName)
+        {
+            Container container = getContext(context).getContainer();
+            resolveSampleType(container, sampleTypeName);
+            return requireUrl(getImportSamplesURL(container, sampleTypeName), "Could not build an import URL for that sample type.");
+        }
+
+        @Tool(name = "experiment_getImportDataUrl", description = "Get the URL to import/upload data into a data class, given the data class's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getImportDataUrl(ToolContext context, @ToolParam(description = "Data class name") String dataClassName)
+        {
+            Container container = getContext(context).getContainer();
+            resolveDataClass(container, dataClassName);
+            return requireUrl(getImportDataURL(container, dataClassName), "Could not build an import URL for that data class.");
+        }
+
+        @Tool(name = "experiment_getSampleUrl", description = "Get the URL for a specific sample's details page, given its sample type and sample name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getSampleUrl(ToolContext context,
+            @ToolParam(description = "Sample type name") String sampleTypeName,
+            @ToolParam(description = "Sample name") String sampleName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpSampleType sampleType = resolveSampleType(container, sampleTypeName);
+            ExpMaterial sample = sampleType.getSample(container, sampleName);
+            if (sample == null)
+                throw new McpException("No sample named \"" + sampleName + "\" was found in sample type \"" + sampleTypeName + "\".");
+            return requireUrl(getMaterialDetailsURL(sample), "Could not build a URL for that sample.");
+        }
+
+        @Tool(name = "experiment_getDataUrl", description = "Get the URL for a specific data class item's details page, given its data class and item name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getDataUrl(ToolContext context,
+            @ToolParam(description = "Data class name") String dataClassName,
+            @ToolParam(description = "Data item name") String dataName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpDataClass dataClass = resolveDataClass(container, dataClassName);
+            ExpData data = ExperimentService.get().getExpData(dataClass, dataName);
+            if (data == null)
+                throw new McpException("No data item named \"" + dataName + "\" was found in data class \"" + dataClassName + "\".");
+            return requireUrl(getDataDetailsURL(data), "Could not build a URL for that data item.");
         }
 
     }

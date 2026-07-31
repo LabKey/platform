@@ -147,6 +147,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.NavigablePage;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
@@ -350,6 +351,9 @@ import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.vfs.FileLike;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -408,6 +412,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -648,7 +653,10 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static class AdminUrlsImpl implements AdminUrls
+    // Also implements McpService.McpImpl, same treatment as StudyController.StudyUrlsImpl -- see that class for
+    // the rationale (auto-registered by ModuleLoader's UrlProvider reflection sweep; must stay stateless since
+    // UrlProviderService instantiates this class fresh on every PageFlowUtil.urlProvider(AdminUrls.class) call).
+    public static class AdminUrlsImpl implements AdminUrls, McpService.McpImpl
     {
         @Override
         public ActionURL getModuleErrorsURL()
@@ -925,6 +933,77 @@ public class AdminController extends SpringActionController
         public static ActionURL getDeprecatedFeaturesURL()
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
+        }
+
+        public enum AdminPage implements NavigablePage
+        {
+            // Site-level pages; the container argument is accepted for a uniform NavigablePage shape but ignored
+            // since these AdminUrls methods always resolve relative to the root container.
+            ADMIN_CONSOLE("Admin console home page", (urls, _) -> urls.getAdminConsoleURL()),
+            MODULE_ERRORS("Module startup/loading errors", (urls, _) -> urls.getModuleErrorsURL()),
+            MODULES_DETAILS("List of installed modules and their details", (urls, _) -> urls.getModulesDetailsURL()),
+            CUSTOMIZE_SITE("Site settings/configuration", (urls, _) -> urls.getCustomizeSiteURL()),
+            SITE_LOOK_AND_FEEL_SETTINGS("Site-wide look and feel settings", (urls, _) -> urls.getSiteLookAndFeelSettingsURL()),
+            MEM_TRACKER("Memory tracker, for debugging object leaks", (urls, _) -> urls.getMemTrackerURL()),
+            FILES_SITE_SETTINGS("Site-wide file settings", (urls, _) -> urls.getFilesSiteSettingsURL()),
+            SESSION_LOGGING("Session logging configuration", (urls, _) -> urls.getSessionLoggingURL()),
+            TRACKED_ALLOCATIONS_VIEWER("Tracked memory allocations viewer", (urls, _) -> urls.getTrackedAllocationsViewerURL()),
+            SYSTEM_MAINTENANCE("Configure scheduled system maintenance tasks", (urls, _) -> urls.getSystemMaintenanceURL()),
+            ALLOWED_EXTERNAL_REDIRECT_HOSTS("Manage the allow-list of external redirect hosts", (urls, _) -> urls.getAllowedExternalRedirectHostsURL()),
+            CREATE_PROJECT("Create a new project", (urls, _) -> urls.getCreateProjectURL(null)),
+
+            // Container-scoped pages.
+            MANAGE_FOLDERS("Manage subfolders of this folder", AdminUrls::getManageFoldersURL),
+            FOLDER_TYPE("Configure this folder's type/tabs", AdminUrls::getFolderTypeURL),
+            NOTIFICATIONS("Configure notification settings for this folder", AdminUrls::getNotificationsURL),
+            MODULE_PROPERTIES("Configure module properties for this folder", AdminUrls::getModulePropertiesURL),
+            MISSING_VALUES("Configure missing value indicators for this folder", AdminUrls::getMissingValuesURL),
+            FILE_ROOTS("Configure file roots for this folder", AdminUrls::getFileRootsURL),
+            PROJECT_SETTINGS("Project-level settings", AdminUrls::getProjectSettingsURL),
+            PROJECT_SETTINGS_MENU("Project-level menu bar settings", AdminUrls::getProjectSettingsMenuURL),
+            PROJECT_SETTINGS_FILE("Project-level file settings", AdminUrls::getProjectSettingsFileURL),
+            FOLDER_SETTINGS("Folder-level settings", AdminUrls::getFolderSettingsURL),
+            LOOK_AND_FEEL_SETTINGS("Look and feel settings appropriate for this container (site, project, or folder)", AdminUrls::getLookAndFeelSettingsURL),
+            EXPORT_FOLDER("Export this folder's contents", AdminUrls::getExportFolderURL),
+            IMPORT_FOLDER("Import into this folder", AdminUrls::getImportFolderURL),
+            CREATE_FOLDER("Create a new subfolder here", (urls, c) -> urls.getCreateFolderURL(c, null));
+
+            private final String _description;
+            private final BiFunction<AdminUrls, Container, ActionURL> _urlFn;
+
+            AdminPage(String description, BiFunction<AdminUrls, Container, ActionURL> urlFn)
+            {
+                _description = description;
+                _urlFn = urlFn;
+            }
+
+            @Override
+            public @NotNull String description()
+            {
+                return _description;
+            }
+
+            @Override
+            public ActionURL getUrl(@NotNull Container container)
+            {
+                return _urlFn.apply(PageFlowUtil.urlProvider(AdminUrls.class), container);
+            }
+        }
+
+        @Tool(name = "admin_getPageUrl", description = "Get the URL for a well-known site or folder administration page. Pages: " +
+            "ADMIN_CONSOLE, MODULE_ERRORS, MODULES_DETAILS, CUSTOMIZE_SITE, SITE_LOOK_AND_FEEL_SETTINGS, MEM_TRACKER, " +
+            "FILES_SITE_SETTINGS, SESSION_LOGGING, TRACKED_ALLOCATIONS_VIEWER, SYSTEM_MAINTENANCE, ALLOWED_EXTERNAL_REDIRECT_HOSTS, " +
+            "CREATE_PROJECT, MANAGE_FOLDERS, FOLDER_TYPE, NOTIFICATIONS, MODULE_PROPERTIES, MISSING_VALUES, FILE_ROOTS, " +
+            "PROJECT_SETTINGS, PROJECT_SETTINGS_MENU, PROJECT_SETTINGS_FILE, FOLDER_SETTINGS, LOOK_AND_FEEL_SETTINGS, " +
+            "EXPORT_FOLDER, IMPORT_FOLDER, CREATE_FOLDER.")
+        @RequiresPermission(ReadPermission.class)
+        public String getPageUrl(ToolContext context, @ToolParam(description = "Which admin page to link to") AdminPage page)
+        {
+            // KNOWN GAP: doesn't check whether the user actually has permission for the target page (most of these
+            // require AdminPermission or site-admin while this tool only requires ReadPermission) -- the returned
+            // URL may 403 when clicked. See NavigablePage for the planned fix.
+            Container container = getContext(context).getContainer();
+            return requireUrl(page.getUrl(container), "That page isn't available in this container.");
         }
     }
 

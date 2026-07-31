@@ -19,12 +19,14 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
@@ -124,6 +126,14 @@ public interface McpService extends ToolCallbackProvider
         default void incrementResourceRequestCount(String resource)
         {
             get().incrementResourceRequestCount(resource);
+        }
+
+        /** Converts an ActionURL to a String for a @Tool method's return value, throwing McpException if null. */
+        default String requireUrl(@Nullable ActionURL url, String notFoundMessage)
+        {
+            if (url == null)
+                throw new McpException(notFoundMessage);
+            return url.getURIString();
         }
     }
 

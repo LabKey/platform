@@ -153,7 +153,9 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpContext;
+import org.labkey.api.mcp.McpException;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.NavigablePage;
 import org.labkey.api.mcp.PromptForm;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -262,6 +264,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.workflow.WorkflowService;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
@@ -305,6 +308,9 @@ import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.vfs.FileLike;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -316,6 +322,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
@@ -334,6 +341,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.function.BiFunction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -592,7 +600,10 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public static class QueryUrlsImpl implements QueryUrls
+    // Also implements McpImpl so this UrlProvider impl can be registered directly with McpService (see
+    // ModuleLoader's UrlProvider auto-registration sweep) -- no separate wrapper class or explicit
+    // registration call is needed. Must remain stateless: a single instance is shared across requests.
+    public static class QueryUrlsImpl implements QueryUrls, McpService.McpImpl
     {
         @Override
         public ActionURL urlSchemaBrowser(Container c)
@@ -707,6 +718,93 @@ public class QueryController extends SpringActionController
             return new ActionURL(MetadataQueryAction.class, c)
                 .addParameter(QueryParam.schemaName, schemaName)
                 .addParameter(QueryParam.queryName, queryName);
+        }
+
+        public enum QueryPage implements NavigablePage
+        {
+            SCHEMA_BROWSER("Query schema browser (browse all schemas and tables)", QueryUrls::urlSchemaBrowser),
+            EXTERNAL_SCHEMA_ADMIN("Manage external (linked) schemas for this folder", AdminAction.class),
+            INSERT_EXTERNAL_SCHEMA("Define a new external (linked) schema", InsertExternalSchemaAction.class),
+            NEW_QUERY("Create a new custom SQL query", NewQueryAction.class);
+
+            private final String _description;
+            private final BiFunction<QueryUrls, Container, ActionURL> _urlFn;
+
+            QueryPage(String description, BiFunction<QueryUrls, Container, ActionURL> urlFn)
+            {
+                _description = description;
+                _urlFn = urlFn;
+            }
+
+            // For pages with no other caller: build the ActionURL directly from the action class rather than
+            // adding a single-use method to QueryUrls. Only ever use this for HTML-returning GET actions
+            // (SimpleViewAction/FormViewAction and similar) -- never for MutatingApiAction/ReadOnlyApiAction/
+            // FormHandlerAction/ConfirmAction, which don't render a navigable page on GET.
+            QueryPage(String description, Class<? extends Controller> actionClass)
+            {
+                this(description, (_, container) -> new ActionURL(actionClass, container));
+            }
+
+            @Override
+            public @NotNull String description() { return _description; }
+
+            @Override
+            public ActionURL getUrl(@NotNull Container container)
+            {
+                return _urlFn.apply(PageFlowUtil.urlProvider(QueryUrls.class), container);
+            }
+        }
+
+        @Tool(name = "query_getPageUrl", description = "Get the URL for a well-known query management page in the current container. " +
+            "Pages: SCHEMA_BROWSER (browse all schemas/tables), EXTERNAL_SCHEMA_ADMIN, INSERT_EXTERNAL_SCHEMA, NEW_QUERY.")
+        @RequiresPermission(ReadPermission.class)
+        public String getPageUrl(ToolContext context, @ToolParam(description = "Which query page to link to") QueryPage page)
+        {
+            // KNOWN GAP: doesn't check whether the user actually has permission for the target page (e.g.
+            // EXTERNAL_SCHEMA_ADMIN/INSERT_EXTERNAL_SCHEMA require AdminPermission while this tool only requires
+            // ReadPermission) -- the returned URL may 403 when clicked. See NavigablePage for the planned fix.
+            Container container = getContext(context).getContainer();
+            return requireUrl(page.getUrl(container), "That page isn't available in this container.");
+        }
+
+        private void requireQuery(Container container, User user, String schemaName, String queryName)
+        {
+            QuerySchema schema = DefaultSchema.get(user, container, QueryMcp.getSchemaKey(schemaName));
+            if (!(schema instanceof UserSchema userSchema) || userSchema.getTable(queryName) == null)
+                throw new McpException("No query named \"" + queryName + "\" was found in schema \"" + schemaName + "\".");
+        }
+
+        @Tool(name = "query_getExecuteQueryUrl", description = "Get the URL for a query/table's grid view, given the schema and query name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getExecuteQueryUrl(ToolContext context,
+            @ToolParam(description = "Fully qualified schema name as it would appear in SQL, e.g. \"study\" or \"lists\"") String schemaName,
+            @ToolParam(description = "Query or table name") String queryName)
+        {
+            ContainerUser cu = getContext(context);
+            requireQuery(cu.getContainer(), cu.getUser(), schemaName, queryName);
+            return requireUrl(urlExecuteQuery(cu.getContainer(), schemaName, queryName), "Could not build a URL for that query.");
+        }
+
+        @Tool(name = "query_getMetadataUrl", description = "Get the URL to edit a query's XML metadata override, given the schema and query name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getMetadataUrl(ToolContext context,
+            @ToolParam(description = "Fully qualified schema name as it would appear in SQL") String schemaName,
+            @ToolParam(description = "Query or table name") String queryName)
+        {
+            ContainerUser cu = getContext(context);
+            requireQuery(cu.getContainer(), cu.getUser(), schemaName, queryName);
+            return requireUrl(urlMetadataQuery(cu.getContainer(), schemaName, queryName), "Could not build a metadata URL for that query.");
+        }
+
+        @Tool(name = "query_getExternalSchemaEditUrl", description = "Get the URL to edit an external (linked) schema's definition, given the schema's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getExternalSchemaEditUrl(ToolContext context, @ToolParam(description = "External schema name") String schemaName)
+        {
+            Container container = getContext(context).getContainer();
+            ExternalSchemaDef def = QueryManager.get().getExternalSchemaDef(container, schemaName);
+            if (def == null)
+                throw new McpException("No external schema named \"" + schemaName + "\" was found in this container.");
+            return requireUrl(urlUpdateExternalSchema(container, def), "Could not build a URL for that external schema.");
         }
     }
 

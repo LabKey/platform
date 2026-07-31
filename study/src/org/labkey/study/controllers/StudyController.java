@@ -105,8 +105,13 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.mcp.McpException;
+import org.labkey.api.mcp.McpService;
+import org.labkey.api.mcp.NavigablePage;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -287,6 +292,9 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.labkey.study.xml.DatasetsDocument;
 import org.labkey.vfs.FileLike;
+import org.springframework.ai.chat.model.ToolContext;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -313,6 +321,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -341,7 +350,11 @@ public class StudyController extends BaseStudyController
     public static final String DATASET_REPORT_ID_PARAMETER_NAME = "Dataset.reportId";
     public static final String DATASET_VIEW_NAME_PARAMETER_NAME = "Dataset.viewName";
 
-    public static class StudyUrlsImpl implements StudyUrls
+    // Also implements McpService.McpImpl so this class can double as the MCP-facing navigation tool surface for the
+    // study module, without a separate wrapper class. Registered once with McpService.get().register(...) in
+    // StudyModule.startupAfterSpringConfig(); UrlProviderService separately instantiates this class fresh on every
+    // PageFlowUtil.urlProvider(StudyUrls.class) call. Both are safe only because this class holds no instance state.
+    public static class StudyUrlsImpl implements StudyUrls, McpService.McpImpl
     {
         @Override
         public ActionURL getBeginURL(Container container)
@@ -479,6 +492,166 @@ public class StudyController extends BaseStudyController
         public ActionURL getVisitOrderURL(Container container)
         {
             return new ActionURL(VisitOrderAction.class, container);
+        }
+
+        public enum StudyPage implements NavigablePage
+        {
+            BEGIN("Study home page", StudyUrls::getBeginURL),
+            CREATE_STUDY("Create a new study in this folder", StudyUrls::getCreateStudyURL),
+            MANAGE_STUDY("Study administration/settings page", StudyUrls::getManageStudyURL),
+            STUDY_OVERVIEW("Study overview page", StudyUrls::getStudyOverviewURL),
+            DATASETS("List of all datasets in the study", StudyUrls::getDatasetsURL),
+            MANAGE_DATASETS("Manage dataset definitions", StudyUrls::getManageDatasetsURL),
+            MANAGE_COHORTS("Manage cohorts", StudyUrls::getManageCohortsURL),
+            MANAGE_LOCATIONS("Manage locations", StudyUrls::getManageLocationsURL),
+            MANAGE_VISITS("Manage visits", StudyUrls::getManageVisitsURL),
+            MANAGE_FILE_WATCHERS("Manage file watchers", StudyUrls::getManageFileWatchersURL),
+            MANAGE_REPORT_PERMISSIONS("Manage report permissions", StudyUrls::getManageReportPermissions),
+            VISIT_ORDER("Visit order/display settings", StudyUrls::getVisitOrderURL),
+
+            // These pages have no other caller in the codebase, so they build the ActionURL directly from the
+            // action class instead of adding single-use methods to the shared StudyUrls interface.
+            MANAGE_PARTICIPANTS("Manage/list study participants", ManageParticipantsAction.class),
+            MANAGE_PARTICIPANT_CATEGORIES("Manage participant groups/categories", ManageParticipantCategoriesAction.class),
+            CUSTOMIZE_PARTICIPANT_VIEW("Customize the participant view page", CustomizeParticipantViewAction.class),
+            STUDY_SCHEDULE("Study schedule grid (datasets x timepoints)", StudyScheduleAction.class),
+            MANAGE_STUDY_PROPERTIES("Edit study label/description/properties", ManageStudyPropertiesAction.class),
+            MANAGE_QC_STATES("Manage QC/data states", ManageQCStatesAction.class),
+            VISIT_VISIBILITY("Manage visit visibility", VisitVisibilityAction.class),
+            DATASET_VISIBILITY("Manage dataset visibility", DatasetVisibilityAction.class),
+            DEFINE_DATASET_TYPE("Define/create a new dataset", DefineDatasetTypeAction.class),
+            CREATE_VISIT("Create a new visit", CreateVisitAction.class),
+            CREATE_SNAPSHOT("Create a new study snapshot (ancillary/published study)", CreateSnapshotAction.class);
+
+            private final String _description;
+            private final BiFunction<StudyUrls, Container, ActionURL> _urlFn;
+
+            StudyPage(String description, BiFunction<StudyUrls, Container, ActionURL> urlFn)
+            {
+                _description = description;
+                _urlFn = urlFn;
+            }
+
+            // For pages with no other caller: build the ActionURL directly from the action class rather than
+            // adding a single-use method to StudyUrls. Only ever use this for HTML-returning GET actions
+            // (SimpleViewAction/FormViewAction and similar) -- never for MutatingApiAction/ReadOnlyApiAction/
+            // FormHandlerAction/ConfirmAction, which don't render a navigable page on GET.
+            StudyPage(String description, Class<? extends Controller> actionClass)
+            {
+                this(description, (_, container) -> new ActionURL(actionClass, container));
+            }
+
+            @Override
+            public @NotNull String description()
+            {
+                return _description;
+            }
+
+            @Override
+            public ActionURL getUrl(@NotNull Container container)
+            {
+                return _urlFn.apply(PageFlowUtil.urlProvider(StudyUrls.class), container);
+            }
+        }
+
+        @Tool(name = "study_getPageUrl", description = "Get the URL for a well-known study page in the current container. " +
+            "Pages: BEGIN (home page), CREATE_STUDY, MANAGE_STUDY (admin/settings), STUDY_OVERVIEW, DATASETS (list of datasets), " +
+            "MANAGE_DATASETS, MANAGE_COHORTS, MANAGE_LOCATIONS, MANAGE_VISITS, MANAGE_FILE_WATCHERS, MANAGE_REPORT_PERMISSIONS, VISIT_ORDER, " +
+            "MANAGE_PARTICIPANTS, MANAGE_PARTICIPANT_CATEGORIES, CUSTOMIZE_PARTICIPANT_VIEW, STUDY_SCHEDULE, MANAGE_STUDY_PROPERTIES, " +
+            "MANAGE_QC_STATES, VISIT_VISIBILITY, DATASET_VISIBILITY, DEFINE_DATASET_TYPE, CREATE_VISIT, CREATE_SNAPSHOT.")
+        @RequiresPermission(ReadPermission.class)
+        public String getPageUrl(ToolContext context, @ToolParam(description = "Which study page to link to") StudyPage page)
+        {
+            // KNOWN GAP: doesn't check whether the user actually has permission for the target page (e.g. several
+            // pages here require AdminPermission/ManageStudyPermission while this tool only requires ReadPermission)
+            // -- the returned URL may 403 when clicked. See NavigablePage for the planned fix.
+            Container container = getContext(context).getContainer();
+            return requireUrl(page.getUrl(container), "That page isn't available in this container.");
+        }
+
+        private Dataset resolveDataset(Container container, String datasetName)
+        {
+            StudyService studyService = StudyService.get();
+            Study study = studyService == null ? null : studyService.getStudy(container);
+            Dataset dataset = study == null ? null : study.getDatasetByName(datasetName);
+            if (dataset == null)
+                throw new McpException("No dataset named \"" + datasetName + "\" was found in this study.");
+            return dataset;
+        }
+
+        @Tool(name = "study_getDatasetUrl", description = "Get the URL for a dataset's grid view, given the dataset's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getDatasetUrl(ToolContext context, @ToolParam(description = "Dataset name, e.g. \"Demographics\"") String datasetName)
+        {
+            Container container = getContext(context).getContainer();
+            Dataset dataset = resolveDataset(container, datasetName);
+            return requireUrl(getDatasetURL(container, dataset.getDatasetId()), "Could not build a URL for that dataset.");
+        }
+
+        @Tool(name = "study_getParticipantUrl", description = "Get the URL for a specific participant/subject's page, given the participant ID.")
+        @RequiresPermission(ReadPermission.class)
+        public String getParticipantUrl(ToolContext context, @ToolParam(description = "Participant/subject ID") String participantId)
+        {
+            Container container = getContext(context).getContainer();
+            ActionURL url = new ActionURL(ParticipantAction.class, container).addParameter("participantId", participantId);
+            return requireUrl(url, "Could not build a URL for that participant.");
+        }
+
+        @Tool(name = "study_getEditDatasetTypeUrl", description = "Get the URL to edit a dataset's schema/field definitions, given the dataset's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getEditDatasetTypeUrl(ToolContext context, @ToolParam(description = "Dataset name") String datasetName)
+        {
+            Container container = getContext(context).getContainer();
+            Dataset dataset = resolveDataset(container, datasetName);
+            ActionURL url = new ActionURL(EditTypeAction.class, container).addParameter(Dataset.DATASET_KEY, dataset.getDatasetId());
+            return requireUrl(url, "Could not build a URL to edit that dataset's type.");
+        }
+
+        @Tool(name = "study_getImportDatasetUrl", description = "Get the URL to import/upload data into a dataset, given the dataset's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getImportDatasetUrl(ToolContext context, @ToolParam(description = "Dataset name") String datasetName)
+        {
+            Container container = getContext(context).getContainer();
+            Dataset dataset = resolveDataset(container, datasetName);
+            ActionURL url = new ActionURL(ImportAction.class, container).addParameter(Dataset.DATASET_KEY, dataset.getDatasetId());
+            return requireUrl(url, "Could not build an import URL for that dataset.");
+        }
+
+        @Tool(name = "study_getEditSnapshotUrl", description = "Get the URL to edit a study query snapshot's properties, given the snapshot's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getEditSnapshotUrl(ToolContext context, @ToolParam(description = "Study snapshot name") String snapshotName)
+        {
+            Container container = getContext(context).getContainer();
+            QuerySnapshotDefinition snapshot = QueryService.get().getSnapshotDef(container, "study", snapshotName);
+            if (snapshot == null)
+                throw new McpException("No study snapshot named \"" + snapshotName + "\" was found in this container.");
+
+            ActionURL url = new ActionURL(EditSnapshotAction.class, container).addParameter("schemaName", "study").addParameter("snapshotName", snapshotName);
+            return requireUrl(url, "Could not build a URL for that snapshot.");
+        }
+
+        @Tool(name = "study_getLinkToStudySampleTypeUrl", description = "Get the URL to link a sample type's data into this study, given the sample type's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getLinkToStudySampleTypeUrl(ToolContext context, @ToolParam(description = "Sample type name") String sampleTypeName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpSampleType sampleType = SampleTypeService.get().getSampleType(container, sampleTypeName);
+            if (sampleType == null)
+                throw new McpException("No sample type named \"" + sampleTypeName + "\" was found in this container.");
+
+            return requireUrl(getLinkToStudyURL(container, sampleType), "Could not build a link-to-study URL for that sample type.");
+        }
+
+        @Tool(name = "study_getLinkToStudyAssayUrl", description = "Get the URL to link an assay design's data into this study, given the assay design's name.")
+        @RequiresPermission(ReadPermission.class)
+        public String getLinkToStudyAssayUrl(ToolContext context, @ToolParam(description = "Assay design name") String assayDesignName)
+        {
+            Container container = getContext(context).getContainer();
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(container, assayDesignName);
+            if (protocol == null)
+                throw new McpException("No assay design named \"" + assayDesignName + "\" was found in this container.");
+
+            return requireUrl(getLinkToStudyURL(container, protocol), "Could not build a link-to-study URL for that assay design.");
         }
     }
 

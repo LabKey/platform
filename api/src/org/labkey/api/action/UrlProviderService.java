@@ -16,6 +16,7 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.Module;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
@@ -40,6 +41,10 @@ public class UrlProviderService
     public <P extends UrlProvider> void registerUrlProvider(Class<P> inter, Class<? extends UrlProvider> innerClass)
     {
         _urlProviderToImpl.put(inter, innerClass);
+        if (McpService.McpImpl.class.isAssignableFrom(innerClass))
+        {
+            McpService.get().register((McpService.McpImpl)getUrlProvider(inter));
+        }
     }
 
     @Nullable
@@ -52,7 +57,7 @@ public class UrlProviderService
 
         try
         {
-            return (P) clazz.getDeclaredConstructor().newInstance();
+            return inter.cast(clazz.getDeclaredConstructor().newInstance());
         }
         catch (InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
         {

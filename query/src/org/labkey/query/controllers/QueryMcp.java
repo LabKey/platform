@@ -429,7 +429,8 @@ public class QueryMcp implements McpService.McpImpl
         return table;
     }
 
-    private static SchemaKey getSchemaKey(String schemaName)
+    // Package-private so QueryController.QueryUrlsImpl can reuse this parsing logic rather than duplicating it.
+    static SchemaKey getSchemaKey(String schemaName)
     {
         final String[] parts;
 
