@@ -10,13 +10,13 @@ Everything else on this page (data-bound vs. not, authorization, UI vs. file-bas
 
 ## Report Type Landscape
 
-LabKey has several built-in report types: Query Report (renders a query view, no script), Attachment Report (uploaded static document), Link Report (URL pointer), JavaScript Report (runs in the *viewer's browser*, not server-side), R Report, Jupyter Report, and Query Snapshot (a persisted table, not really a "report"). Only **R Reports** and **Jupyter Reports** execute analyst-authored code server-side — this guide is about those two.
+LabKey has several built-in report types: Query Report (renders a query view, no script), Attachment Report (uploaded static document), Link Report (URL pointer), JavaScript Report (runs in the *viewer's browser*, not server-side), R Report, Jupyter Report, and Query Snapshot (a persisted table, not really a "report"). **R Reports** and **Jupyter Reports** are the two paths this guide covers for turning an analyst-authored script into a server-side report. (A generic `ExternalScriptEngineReport`/`InternalScriptEngineReport` mechanism also exists for other JSR223-compatible engines an admin configures — historically used for Perl — but there's no conversion track for it here.)
 
 ## Data-Bound vs. Not Data-Bound
 
 A report is "data-bound" if its descriptor has a `schemaName` property (usually with `queryName` and optionally `viewName`). This one property controls everything about whether a query result set gets piped into the script:
 
-- **Data-bound**: LabKey runs the query as the *viewing user* and streams the result set into the script's working directory before the script executes. R reads this automatically into `labkey.data` (see [R Report Track](#r-report-track)). Jupyter reports get it only if you call `get_report_data()`.
+- **Data-bound**: LabKey runs the query as the *viewing user*. For **R**, the result set is streamed into the script's working directory before the script executes, and read automatically into `labkey.data` (see [R Report Track](#r-report-track)). For **Jupyter**, nothing is pre-staged — LabKey only writes a *query descriptor* (schema/query/columns/filters) into `report_config.json`, and `get_report_data()` uses that descriptor to make its own HTTP call back to the server *at cell-execution time*. Don't assume calling it is "free" the way reading `labkey.data` is — it's a live query, subject to the viewing user's live permissions and to query latency, at whatever moment the cell runs (see [Python / Jupyter Report Track](#python--jupyter-report-track)).
 - **Not data-bound**: no query result set is ever provided. The script must fetch its own data at runtime (Rlabkey `labkey.selectRows()`, or Jupyter's `get_report_api_wrapper()`) — the same external-API model as `DataAnalysis_Python.md`/`DataAnalysis_R.md`.
 
 ### Setting it via the UI
@@ -72,9 +72,9 @@ Any live callback the script makes back into LabKey (an Rlabkey API call, or Jup
 - R: an in-script `labkey.apiKey` variable, resolved per-session.
 - Jupyter: `X-LABKEY-APIKEY` / `X-LABKEY-USERID` / `X-LABKEY-EMAIL` HTTP headers sent to the notebook execution service.
 
-**Authoring gate.** Creating or editing an R or Jupyter report requires the **Trusted Analyst** or **Platform Developer** role. If you're not a Platform Developer, the script engine must additionally be configured as **sandboxed** (an admin-declared isolation claim — LabKey does not verify it). This gate exists because script execution is **not sandboxed by default**: an R script can call `system()` and reach the OS shell with the LabKey server process's own privileges, bypassing LabKey's permission model entirely for anything outside the app (file access, network calls, etc.). Treat authoring a report as granting real code-execution capability, not just a data query.
+**Authoring gate.** Creating or editing an R or Jupyter report requires the **Trusted Analyst** (a Premium-only role — on a non-Premium build only Platform Developer/Site Admin can satisfy it) or **Platform Developer** role. For **R reports specifically**, if you're not a Platform Developer the script engine must additionally be configured as **sandboxed** (an admin-declared isolation claim — LabKey does not verify it). This gate exists because R script execution is **not sandboxed by default**: an R script can call `system()` and reach the OS shell with the LabKey server process's own privileges, bypassing LabKey's permission model entirely for anything outside the app (file access, network calls, etc.). Treat authoring an R report as granting real code-execution capability, not just a data query. **Jupyter reports have no equivalent sandbox check** — and don't need one, since a Jupyter report never executes in-process on the LabKey host; it always ships the notebook over HTTP to a separate, admin-configured execution service (see [Python / Jupyter Report Track](#python--jupyter-report-track)).
 
-**`runInBackground`** (a `<Prop>` on the report descriptor) routes execution through a pipeline job instead of the request thread. This changes *where* the script runs, not *whose* permissions it runs under.
+**`runInBackground`** (a `<Prop>` on the report descriptor) routes execution through a pipeline job instead of the request thread. This changes *where* the script runs, not *whose* permissions it runs under. **This only works for R reports.** Jupyter reports can't run in the background this way — the "Run in background" option is hidden in the designer for Jupyter reports, and setting the property another way has no effect (the code paths that would honor it all gate on the report being an R report first).
 
 ## R Report Track
 
@@ -97,7 +97,7 @@ labkey.resolveLSID(lsid)               # helper: builds a resolveLSID URL
 
 `quit()` is overridden to raise an error instead of killing the R session — a script that calls `quit()`/`q()` expecting to stop execution will instead see an error, by design.
 
-Column names in `labkey.data` are lower-cased and sanitized: spaces/slashes become underscores, and some special characters are spelled out (e.g. `CD4+` → `cd4_plus_`). Run `names(labkey.data)` early when porting a script — don't assume the original column names survive.
+Column names in `labkey.data` are lower-cased and sanitized: a bare space becomes an underscore, but most special characters are spelled out rather than collapsed to `_` — e.g. `CD4+` → `cd4_plus_`, and a slash is spelled out too (`Weight/Height` → `weight_fs_height`, not `weight_height`). Run `names(labkey.data)` early when porting a script — don't assume the original column names survive, and don't assume a slash just becomes an underscore.
 
 ### Substitution tokens
 
@@ -131,7 +131,9 @@ The older bare inline form (`${id:name}` with no leading `#`) still works but is
 
 Use `regex(...)` inside a token — e.g. `${fileout:regex(.*?\.gct)}` — when the script generates files whose exact names aren't known ahead of time; LabKey maps any file matching the pattern to that output slot.
 
-A separate set of tokens is substituted into the *engine invocation itself* (not the script body): `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${srcDirectory}`, `${rLabkeySessionId}`, `${httpSessionId}`, `${sessionCookieName}`, `${baseServerURL}`, `${containerPath}`.
+A separate set of tokens is substituted both into the engine invocation command line *and* — if you reference them directly — into the script body itself, since both substitution passes share the same replacement map: `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${rLabkeySessionId}`, `${httpSessionId}`, `${sessionCookieName}`, `${baseServerURL}`, `${containerPath}`.
+
+**`${srcDirectory}` does not work for Reports** despite being defined alongside this family — it's only ever populated for assay *transform* scripts, a different feature. If you reference it in a report script (e.g. `source("${srcDirectory}/util.R")`), it will not resolve, and — unlike the command-line substitution pass, which silently strips unmatched tokens — the script-body substitution pass writes it out **verbatim**, so the script fails at runtime trying to open a file literally named `${srcDirectory}/...`. Don't use it when porting a script into an R report.
 
 ### Knitr support (`.rhtml` / `.rmd`)
 
@@ -185,7 +187,8 @@ If a knitr report needs an external JS/CSS library, declare it in the `.report.x
 - Redirect every plot from an interactive window or `ggsave()` to `${imgout:...}`/`${pngout:...}` + explicit `dev.off()`.
 - Add explicit `print()` wherever the original script relied on top-level auto-printing inside a function or sourced file.
 - Audit and remove/justify any `system()` calls — they run with the LabKey server's OS privileges, not the viewer's.
-- Confirm column names via `names(labkey.data)` — don't assume the source data's original casing/characters survived sanitization.
+- Confirm column names via `names(labkey.data)` — don't assume the source data's original casing/characters survived sanitization, and remember slashes are spelled out (`_fs_`), not collapsed to `_`.
+- Don't reference `${srcDirectory}` in a ported script — it doesn't resolve for Reports and will be written verbatim into the generated script file, causing a runtime file-not-found error.
 
 ## Python / Jupyter Report Track
 
@@ -237,6 +240,7 @@ Since path-based auto-derivation doesn't apply to `.ipynb`, a data-bound Jupyter
 - Replace the notebook's original data-loading cell with `get_report_data()` (data-bound) or `get_report_api_wrapper()` + an explicit query call (not data-bound) — there's no automatic equivalent to R's `labkey.data`.
 - Confirm the Jupyter engine's Docker image actually has your notebook's package dependencies installed — there's no per-report package install step.
 - Don't port any `${imgout:...}`-style output-capture code from an R report you're referencing — it has no effect in a Jupyter report. Rely on normal notebook cell output.
+- Don't port `runInBackground`/"run as pipeline job" expectations from an R report — Jupyter reports can't run this way (the option is hidden in the designer, and setting it another way is simply ignored at execution time).
 - Remember this is a Premium feature — confirm a Jupyter Report Engine is configured (⚙ → Site → Admin Console → Views and Scripting) before assuming the report type is available.
 
 ## Saved via UI vs. Saved in a File-Based Module
