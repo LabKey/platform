@@ -1948,10 +1948,10 @@ public class AuthenticationManager
             else
             {
                 // Potential skip re-auth scenario. If we have a session but no token and the configuration has disabled
-                // re-auth, return the session user.
+                // re-auth, just return the session user.
                 PrimaryAuthenticationConfiguration<?> config = getConfiguration(session);
                 if (config instanceof AuthenticationConfiguration.SSOAuthenticationConfiguration<?> sso && !sso.isReauthenticationSupported())
-                    return sessionUser;
+                    return SecurityManager.getSessionUser(request);
             }
         }
 

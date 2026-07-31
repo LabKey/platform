@@ -39,8 +39,9 @@
                 document.getElementById("description").textContent = data.description + (skipReauth ? ', but that configuration has disabled reauthentication' : '');
                 if (skipReauth || !needReauth) {
                     document.getElementById("sign").style.display = "block";
-                    if (skipReauth)
+                    if (skipReauth && needReauth) {
                         document.getElementById("reauth").style.display = "none";
+                    }
                 }
                 else {
                     document.getElementById("link").href = data.reauthUrl;
