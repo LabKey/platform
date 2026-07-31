@@ -1914,6 +1914,7 @@ public class AuthenticationManager
     /**
      * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
      * context that's not expired and (if requested) the context user matches the provided user, then return the user.
+     * If there's no token and the user's authentication configuration has disabled re-auth, also return the user.
      * @param request      Request from which to retrieve the session
      * @param token        The reauth token to validate
      * @param sessionUser  If non-null, causes validation that this user matches the reauth user
@@ -1921,11 +1922,11 @@ public class AuthenticationManager
      */
     public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
-        if (token != null)
-        {
-            HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession(false);
 
-            if (session != null)
+        if (session != null)
+        {
+            if (token != null)
             {
                 @SuppressWarnings("unchecked")
                 Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
@@ -1943,6 +1944,14 @@ public class AuthenticationManager
                             return reauthUser;
                     }
                 }
+            }
+            else
+            {
+                // Potential skip re-auth scenario. If we have a session but no token and the configuration has disabled
+                // re-auth, return the session user.
+                PrimaryAuthenticationConfiguration<?> config = getConfiguration(session);
+                if (config instanceof AuthenticationConfiguration.SSOAuthenticationConfiguration<?> sso && !sso.isReauthenticationSupported())
+                    return sessionUser;
             }
         }
 
@@ -1968,7 +1977,7 @@ public class AuthenticationManager
             User admin = TestContext.get().getUser();
             Map<String, ReauthContext> map = getTokenMap(request);
             clearExpiredTokens(map);
-            // Might have some unexpired tokens stashed away. Assume they won't expired during this test run.
+            // Might have some unexpired tokens stashed away. Assume they won't expire during this test run.
             int initialCount = map.size();
             ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
 
@@ -1982,7 +1991,7 @@ public class AuthenticationManager
             assertEquals(admin, getAndClearReauthUser(request, token, admin));
             assertEquals(initialCount, map.size());
 
-            // Try same token again
+            // Try the same token again
             assertNull(getAndClearReauthUser(request, token, admin));
             // Try a bogus token
             assertNull(getAndClearReauthUser(request, "xyz", admin));
