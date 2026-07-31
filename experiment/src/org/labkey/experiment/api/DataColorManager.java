@@ -15,6 +15,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.DataColor;
 
 import java.util.ArrayList;
 import java.util.Collections;
