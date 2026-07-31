@@ -88,6 +88,9 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
     private FileLike _workingDirectory;
 
+    /** Set when runProcess() kills the script, so the kill's exit code isn't logged as a second, separate failure. */
+    private boolean _timedOut;
+
     protected ExternalScriptEngineDefinition _def;
     protected Writer _originalWriter;
 
@@ -116,6 +119,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public final Object eval(String script, ScriptContext context) throws ScriptException
     {
         // final so every engine in this hierarchy is timed from one place; subclasses override evalScript()
+        _timedOut = false;
         return ScriptInvocationLog.time(getClass().getSimpleName(), ScriptInvocationLog.label(context),
                 () -> evalScript(script, context));
     }
@@ -149,7 +153,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             int exitCode = runProcess(context, pb, output, timeout, TimeUnit.SECONDS);
             if (exitCode != 0)
             {
-                ScriptInvocationLog.nonZeroExit(getClass().getSimpleName(), ScriptInvocationLog.label(context), exitCode);
+                if (!_timedOut)
+                    ScriptInvocationLog.nonZeroExit(getClass().getSimpleName(), ScriptInvocationLog.label(context), exitCode);
                 throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ".\n" + output);
             }
             else
@@ -395,6 +400,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
                         String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
                         output.append(msg);
+                        _timedOut = true;
                         ScriptInvocationLog.timedOut(getClass().getSimpleName(), ScriptInvocationLog.label(context), timeout, timeoutUnit);
                         if (writer != null)
                             writer.write(msg);
