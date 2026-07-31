@@ -1,3 +1,15 @@
+/*
+ * jquery-dateFormat 18-05-2015
+ *
+ * LabKey patch - this file differs from the upstream release. Re-apply on upgrade, and keep it in sync with
+ * jquery-dateFormat.min.js.
+ *
+ * parseTime() split the whole time string on ':', so a timezone label containing a colon (Firefox renders
+ * Pacific/Honolulu as 'GMT-10:00') yielded four parts instead of three and the time fell back to 00:00. The
+ * label is now stripped before the split - see the comment at that line below.
+ *
+ * Covered by core/src/client/internal/jqueryDateFormat.test.ts.
+ */
 var DateFormat = {};
 
 (function($) {
@@ -65,7 +77,8 @@ var DateFormat = {};
                 millis = delimited[delimited.length - 1];
             }
 
-            timeArray = time.split(':');
+            // Strip trailing timezone label before splitting on ':' so a colon in the label (e.g. Honolulu's GMT-10:00) doesn't produce >3 parts and lose the time.
+            timeArray = time.replace(/\s.+/, '').split(':');
 
             if(timeArray.length === 3) {
                 hour   = timeArray[0];
