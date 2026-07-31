@@ -1926,7 +1926,7 @@ public class AuthenticationManager
 
         if (session != null)
         {
-            if (token != null)
+            if (StringUtils.isEmpty(token))
             {
                 @SuppressWarnings("unchecked")
                 Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
