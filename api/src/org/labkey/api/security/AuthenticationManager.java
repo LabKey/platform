@@ -1914,11 +1914,15 @@ public class AuthenticationManager
     /**
      * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
      * context that's not expired and (if requested) the context user matches the provided user, then return the user.
-     * If there's no token and the user's authentication configuration has disabled re-auth, also return the user.
+     * If there's no token, sessionUser is non-null, and the user's authentication configuration has disabled re-auth,
+     * return the session user.
      * @param request      Request from which to retrieve the session
-     * @param token        The reauth token to validate
-     * @param sessionUser  If non-null, causes validation that this user matches the reauth user
-     * @return             The re-auth user, if token is valid and session user check passes. Otherwise, null.
+     * @param token        Re-auth token to validate
+     * @param sessionUser  If non-null, causes validation that this user matches the reauth user. A null value also
+     *                     suppresses the skip-reauthentication exemption described above, so callers that require
+     *                     proof of an actual reauthentication (e.g. the CAS server's "renew" handling) must pass null.
+     * @return             The re-auth user, if the token is valid and the session user check passes, or the session
+     *                     user if reauthentication is disabled for the user's configuration. Otherwise, null.
      */
     public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
@@ -1945,7 +1949,7 @@ public class AuthenticationManager
                     }
                 }
             }
-            else
+            else if (sessionUser != null) // Skip the CAS IdP case where sessionUser is null
             {
                 // Potential skip re-auth scenario. If we have a session but no token and the configuration has disabled
                 // re-auth, just return the session user.
