@@ -563,7 +563,7 @@ public class AuthenticationManager
             if (errors.hasErrors() || !response.isAuthenticated())
             {
                 if (!errors.hasErrors())
-                    errors.addError(new LabKeyError("Bad credentials"));
+                    errors.addError(new LabKeyError(getFailureMessage(response)));
             }
             else
             {
@@ -593,6 +593,18 @@ public class AuthenticationManager
             getPageConfig().setIncludeSearch(false);
 
             return new SimpleErrorView(errors, false);
+        }
+
+        // Most failures can't distinguish a bad password from an unknown user, so they share a deliberately vague
+        // message. reauthNotConfirmed is different: the user's credentials were never in question, so say what actually
+        // went wrong and who can fix it.
+        private String getFailureMessage(AuthenticationResponse response)
+        {
+            return FailureReason.reauthNotConfirmed == response.getFailureReason() ?
+                "Reauthentication failed: your identity provider did not re-verify your credentials. Please contact your administrator. " +
+                "The identity provider may not support the ForceAuthn option that electronic signatures require; if it does not, " +
+                "the \"Skip Reauthentication\" option can be enabled in this SSO configuration." :
+                "Bad credentials";
         }
 
         // Reauthentication case for electronic signing and other sensitive operations. Check that reauthentication
