@@ -954,8 +954,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 {
                     Long actionId = (Long) context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId);
 
-                    if (workService.actionWillAddSamples(actionId))
-                        builder = workService.getSampleCreationDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
                     if (workService.actionWillAddSources(actionId))
                         builder = workService.getSourceCreationDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
 
