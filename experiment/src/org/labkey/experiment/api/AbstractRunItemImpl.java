@@ -25,6 +25,8 @@ import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.Results;
@@ -381,8 +383,8 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             if (skipColumns.contains(col.getName()))
                 return false;
 
-            // skip non-text and non-int columns or columns that aren't lookups
-            if (!(col.getJdbcType().isText() || col.getJdbcType().isInteger() || col.getFk() != null))
+            // skip non-text and non-int columns or columns that aren't lookups; allow ARRAY (multi-value text choice / MVTC) columns (Issue 929)
+            if (!(col.getJdbcType().isText() || col.getJdbcType().isInteger() || col.getJdbcType() == JdbcType.ARRAY || col.getFk() != null))
                 return false;
 
             // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
@@ -411,28 +413,46 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                 {
                     FieldKey fieldKey = entry.getKey();
                     ColumnInfo col = entry.getValue();
-                    if (!col.getJdbcType().isText() && !col.getJdbcType().isInteger())
+                    if (!col.getJdbcType().isText() && !col.getJdbcType().isInteger() && col.getJdbcType() != JdbcType.ARRAY)
                         continue;
 
                     if (col.getName().equalsIgnoreCase("lsid") || col.getSqlTypeName().equalsIgnoreCase("lsidtype") || col.getSqlTypeName().equalsIgnoreCase("entityid"))
                         continue;
 
                     Object o = map.get(fieldKey);
-                    String s;
-                    // Issue 52961: DataClass: Integer fields are not index for data class
-                    if (o instanceof String)
-                        s = (String)o;
-                    else if (isIntegral(o))
-                        s = String.valueOf(o);
-                    else
-                        continue;
 
                     List<String> values;
-
-                    if (col instanceof MultiValuedLookupColumn)
-                        values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
+                    // Issue 929: index each element of a multi-value text choice (MVTC / ARRAY) column
+                    if (col.getJdbcType() == JdbcType.ARRAY)
+                    {
+                        if (o == null)
+                            continue;
+                        o = col.convert(o);
+                        if (o instanceof MultiChoice.Array mca)
+                        {
+                            if (mca.isEmpty())
+                                continue;
+                            values = new ArrayList<>(mca);
+                        }
+                        else
+                            continue;
+                    }
                     else
-                        values = Arrays.asList(s);
+                    {
+                        String s;
+                        // Issue 52961: DataClass: Integer fields are not index for data class
+                        if (o instanceof String)
+                            s = (String)o;
+                        else if (isIntegral(o))
+                            s = String.valueOf(o);
+                        else
+                            continue;
+
+                        if (col instanceof MultiValuedLookupColumn)
+                            values = Arrays.asList(s.split(MultiValuedRenderContext.VALUE_DELIMITER_REGEX));
+                        else
+                            values = Arrays.asList(s);
+                    }
 
                     SearchService.PROPERTY searchProperty = table.getSearchIndexColumn(fieldKey);
                     if (searchProperty != null)
