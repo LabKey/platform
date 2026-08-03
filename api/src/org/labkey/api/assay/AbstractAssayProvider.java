@@ -102,6 +102,7 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -112,6 +113,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -1271,6 +1273,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             String ext = FileUtil.getExtension(scriptFile);
             if (scriptFile.isFile() && ext != null)
             {
+                validateScriptLocation(protocol.getContainer(), scriptFile, validationErrors);
+
                 ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {
@@ -1325,6 +1329,51 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     /** Property name suffix used when storing transform scripts on assay protocol objects */
     public static final String TRANSFORM_SCRIPT_PROPERTY_NAME = "TransformScript";
+
+    /**
+     * Deprecated feature flag. When enabled, transform scripts may live at arbitrary file system paths instead of
+     * being confined to the assay design container's @scripts directory. Registered by AssayModule.
+     */
+    public static final String DEPRECATED_ARBITRARY_TRANSFORM_SCRIPT_PATHS = "arbitraryTransformScriptPaths";
+
+    /**
+     * GitHub Issue #159: transform scripts configured on an assay design must reside in that design's container's
+     * {@code @scripts} directory, which only platform developers can write to. Module-provided scripts are supplied
+     * via {@link Scope#ASSAY_TYPE} and never reach this code path, so every script persisted with a design must be
+     * under {@code @scripts}.
+     */
+    private void validateScriptLocation(Container container, FileLike scriptFile, ValidationException validationErrors)
+    {
+        if (OptionalFeatureService.get().isFeatureEnabled(DEPRECATED_ARBITRARY_TRANSFORM_SCRIPT_PATHS))
+            return;
+
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+        {
+            LOG.warn("FileContentService is not available; unable to validate the location of transform script '{}'.", scriptFile.toNioPathForRead());
+            return;
+        }
+
+        // Returns null when there's no usable file root and for cloud roots, which have no @scripts directory at all
+        // (see ScriptsResourceProvider).
+        java.nio.file.Path scriptsDir = fileContentService.getFileRootPath(container, FileContentService.ContentType.scripts);
+        if (scriptsDir == null)
+        {
+            LOG.warn("Skipping the {} location check for transform script '{}': unable to resolve the directory for container '{}'.",
+                    FileContentService.SCRIPTS_LINK, scriptFile.toNioPathForRead(), container.getPath());
+            return;
+        }
+
+        // Normalize both sides (strip "." and "..", correct case on case-insensitive file systems) before comparing
+        File scriptsDirFile = FileUtil.getAbsoluteCaseSensitiveFile(scriptsDir.toFile());
+        File normalizedScriptFile = FileUtil.getAbsoluteCaseSensitiveFile(scriptFile.toNioPathForRead().toFile());
+
+        if (!URIUtil.isDescendant(scriptsDirFile.toURI(), normalizedScriptFile.toURI()))
+        {
+            validationErrors.addError(new SimpleValidationError("The transform script must exist within this folder's " +
+                    FileContentService.SCRIPTS_LINK + " directory.", null, SEVERITY.ERROR, new HelpTopic("programmaticQC")));
+        }
+    }
 
     @NotNull
     @Override

@@ -16,8 +16,8 @@
 
 package org.labkey.query.persist;
 
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -1058,23 +1058,23 @@ public class QueryManager
         if (null != svc)
         {
             svc.registerUsageMetrics(moduleName, () -> {
-                Bag<String> bag = DbScope.getDbScopes().stream()
-                        .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
-                        .collect(Collectors.toCollection(HashBag::new));
+                MultiSet<String> multiSet = DbScope.getDbScopes().stream()
+                    .filter(scope -> !scope.isLabKeyScope()).map(DbScope::getDatabaseProductName)
+                    .collect(Collectors.toCollection(HashMultiSet::new));
 
-                Map<String, Object> statsMap = bag.uniqueSet().stream()
-                        .collect(Collectors.toMap(Function.identity(), bag::getCount));
+                Map<String, Object> statsMap = multiSet.uniqueSet().stream()
+                    .collect(Collectors.toMap(Function.identity(), multiSet::getCount));
 
                 Map<String, Object> metrics = new HashMap<>();
                 metrics.put("externalDatasources", statsMap);
                 metrics.put(
-                        "customViewCounts",
-                        Map.of(
-                                "DataClasses", getSchemaCustomViewCounts("exp.data"),
-                                "SampleTypes", getSchemaCustomViewCounts("samples"),
-                                "Assays", getSchemaCustomViewCounts("assay"),
-                                "Inventory", getSchemaCustomViewCounts("inventory")
-                        )
+                    "customViewCounts",
+                    Map.of(
+                        "DataClasses", getSchemaCustomViewCounts("exp.data"),
+                        "SampleTypes", getSchemaCustomViewCounts("samples"),
+                        "Assays", getSchemaCustomViewCounts("assay"),
+                        "Inventory", getSchemaCustomViewCounts("inventory")
+                    )
                 );
                 metrics.put("customViewWithLineageColumn", getLineageCustomViewMetrics());
                 metrics.put("queryDefWithCalculatedFieldsCounts", getCalculatedFieldsCountsMetric());

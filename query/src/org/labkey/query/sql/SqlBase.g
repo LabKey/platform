@@ -630,6 +630,9 @@ negatedExpression
 // level 5 - EQ, NE
 equalityExpression
 	: EXISTS^ OPEN! subQuery CLOSE!
+	| lhs=relationalExpression IS (n=NOT)? DISTINCT FROM rhs=relationalExpression
+		-> {$n != null}? ^(METHOD_CALL IDENT["IS_NOT_DISTINCT_FROM"] ^(EXPR_LIST $lhs $rhs))
+		-> ^(METHOD_CALL IDENT["IS_DISTINCT_FROM"] ^(EXPR_LIST $lhs $rhs))
 	| relationalExpression (
 		( EQ^
 		| is=IS^ (NOT!  { $is.setType(IS_NOT); } )?
