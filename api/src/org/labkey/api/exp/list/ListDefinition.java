@@ -19,6 +19,7 @@ package org.labkey.api.exp.list;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.LookupResolutionType;
@@ -191,7 +192,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     @Override
                     public boolean accept(ColumnInfo column)
                     {
-                        return AllFields.accept(column) && column.isStringType();
+                        return AllFields.accept(column) && (column.isStringType() || column.getJdbcType() == JdbcType.ARRAY);
                     }
                 },
         AllFields(1)

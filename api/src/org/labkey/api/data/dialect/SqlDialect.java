@@ -2391,6 +2391,13 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    // true if the array a contains, for EACH given value, some element matching it with a case-insensitive substring
+    public SQLFragment array_element_like(SQLFragment a, String... values)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
 
     //
     // TESTS
