@@ -601,9 +601,7 @@ public class AuthenticationManager
         private String getFailureMessage(AuthenticationResponse response)
         {
             return FailureReason.reauthNotConfirmed == response.getFailureReason() ?
-                "Reauthentication failed: your identity provider did not re-verify your credentials. Please contact your administrator. " +
-                "The identity provider may not support the ForceAuthn option that electronic signatures require; if it does not, " +
-                "the \"Skip Reauthentication\" option can be enabled in this SSO configuration." :
+                "Reauthentication failed: your identity provider did not re-verify your credentials. Please contact your administrator." :
                 "Bad credentials";
         }
 
