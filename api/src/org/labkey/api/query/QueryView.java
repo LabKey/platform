@@ -146,8 +146,6 @@ import static org.labkey.api.util.DOM.cl;
  */
 public class QueryView extends WebPartView<Object> implements ContainerUser
 {
-    public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
-
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
@@ -3012,12 +3010,6 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         return null;
     }
 
-    private boolean isShowExperimentalGenericDetailsURL()
-    {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
-    }
-
-
     List<DisplayColumn> _queryDefDisplayColumns = null;
 
     public List<DisplayColumn> getDisplayColumns()
@@ -3050,7 +3042,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         if (isPrintView() || isExportView())
             return;
 
-        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
+        if (_showDetailsColumn && (null != _detailsURL || table.hasDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 

@@ -354,9 +354,9 @@ public class StudyManager
         }
 
         @Override
-        protected VisitCollections createCollections(Collection<VisitImpl> collection)
+        protected VisitCollections createCollections(Map<Integer, VisitImpl> map)
         {
-            return new VisitCollections(collection);
+            return new VisitCollections(map);
         }
 
         private static class VisitCollections extends StudyCacheCollections<Integer, VisitImpl>
@@ -364,9 +364,11 @@ public class StudyManager
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
 
-            private VisitCollections(Collection<VisitImpl> collection)
+            private VisitCollections(Map<Integer, VisitImpl> map)
             {
-                super(collection);
+                super(map);
+
+                Collection<VisitImpl> collection = getCollection();
 
                 // I'd prefer to push comparators into Visit.Order, but Visit (in API) doesn't know about the display
                 // order field.
@@ -427,9 +429,9 @@ public class StudyManager
         }
 
         @Override
-        protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
+        protected DatasetCollections createCollections(Map<Integer, DatasetDefinition> map)
         {
-            return new DatasetCollections(collection);
+            return new DatasetCollections(map);
         }
 
         protected DatasetCollections getCollections(Study study)
@@ -447,9 +449,11 @@ public class StudyManager
             private final Map<Integer, List<DatasetDefinition>> _cohortMap;
             private final List<DatasetDefinition> _nullCohortDatasets;
 
-            private DatasetCollections(Collection<DatasetDefinition> collection)
+            private DatasetCollections(Map<Integer, DatasetDefinition> map)
             {
-                super(collection);
+                super(map);
+
+                Collection<DatasetDefinition> collection = getCollection();
 
                 // study.Dataset has constraints on LOWER(Name) and LOWER(Label), so this code path should never attempt
                 // to put duplicates into these maps. Use asserts to verify this.
