@@ -259,6 +259,10 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 java.nio.file.Path dir = getFileRootPath(c);
                 return dir != null ? dir.resolve(folderName).toFile() : null;
 
+            case scripts:
+                java.nio.file.Path scriptsRoot = getFileRootPath(c, type);
+                return scriptsRoot != null ? scriptsRoot.toFile() : null;
+
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 return root != null ? root.getRootPath() : null;
@@ -277,6 +281,13 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))  // Don't add @files when we're in the cloud
                     fileRootPath = fileRootPath.resolve(getFolderName(type));
                 return fileRootPath;
+
+            case scripts:
+                // Return null rather than the bare file root so callers can't mistake the root itself for the @scripts directory.
+                java.nio.file.Path scriptsRootPath = getFileRootPath(c);
+                if (null == scriptsRootPath || FileUtil.hasCloudScheme(scriptsRootPath))
+                    return null;
+                return scriptsRootPath.resolve(getFolderName(type));
 
             case pipeline:
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);

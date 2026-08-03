@@ -23,9 +23,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -99,6 +102,7 @@ import org.labkey.data.xml.TableType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -1563,6 +1567,9 @@ public class DomainUtil
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         Map<String, String> altNameMap = new CaseInsensitiveHashMap<>();
+        // GH Issue 1257: import alias -> the fields declaring it.
+        Map<String, List<GWTPropertyDescriptor>> importAliasMap = new CaseInsensitiveLinkedHashMap<>();
+        Set<String> fieldNames = new CaseInsensitiveHashSet();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
 
@@ -1575,6 +1582,19 @@ public class DomainUtil
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates, "Please provide a name for each field.")));
                 continue;
+            }
+
+            fieldNames.add(name);
+
+            // GH Issue 1257: Collect alias to field list mapping. convertToSet() is case-sensitive, so dedupe the field's
+            // own aliases here to keep case variants ("abc, ABC") from looking like two fields claiming one alias. Iterate
+            // the parsed values rather than a CaseInsensitiveHashSet so the alias keeps the casing the user entered.
+            Set<String> fieldAliases = new CaseInsensitiveHashSet();
+            for (String alias : ColumnRenderPropertiesImpl.convertToSet(field.getImportAliases()))
+            {
+                // an alias that repeats the field's name is redundant but not ambiguous, so skip it
+                if (!alias.equalsIgnoreCase(name) && fieldAliases.add(alias))
+                    importAliasMap.computeIfAbsent(alias, k -> new ArrayList<>()).add(field);
             }
 
             if (ILLEGAL_PROPERTY_NAMES.contains(name.trim()))
@@ -1674,7 +1694,26 @@ public class DomainUtil
             }
         }
 
+        // GH Issue 1257: import aliases must be unique across the domain and must not collide with a field name, since
+        // ImportAliasable.Helper.createImportMap() resolves names, labels, and aliases into one case-insensitive map.
+        importAliasMap.forEach((alias, fields) -> {
+            String names = "'" + fields.stream().map(GWTPropertyDescriptor::getName).sorted().collect(Collectors.joining("', '")) + "'";
+
+            if (fields.size() > 1)
+                addImportAliasErrors(exception, updates, fields, "Duplicate import alias '" + alias + "' for fields " + names + ".");
+
+            if (fieldNames.contains(alias))
+                addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+        });
+
         return exception;
+    }
+
+    /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
+    private static void addImportAliasErrors(ValidationException exception, GWTDomain<?> updates, List<GWTPropertyDescriptor> fields, String message)
+    {
+        for (GWTPropertyDescriptor field : fields)
+            exception.addError(new PropertyValidationError(getDomainErrorMessage(updates, message), field.getName(), field.getPropertyId()));
     }
 
     @Nullable
@@ -1714,5 +1753,157 @@ public class DomainUtil
             values.add(label.replaceAll("\\s", ""));
         }
         return values;
+    }
+
+    /** GH Issue 1257: import alias validation in {@link #validateProperties}. */
+    public static class ImportAliasTestCase extends Assert
+    {
+        private static final String FIELD_ONE = "AliasFieldOne";
+        private static final String FIELD_TWO = "AliasFieldTwo";
+        private static final String FIELD_THREE = "AliasFieldThree";
+
+        private static GWTPropertyDescriptor field(String name, @Nullable String importAliases)
+        {
+            GWTPropertyDescriptor pd = new GWTPropertyDescriptor(name, PropertyType.STRING.getTypeUri());
+            pd.setImportAliases(importAliases);
+            return pd;
+        }
+
+        /**
+         * Validate with a null DomainKind and no original domain so the surrounding name/reserved-name checks stay out of
+         * the way, and with no domain name so messages carry no "&lt;domainName&gt; -- " prefix.
+         */
+        private static ValidationException validate(GWTPropertyDescriptor... fields)
+        {
+            GWTDomain<GWTPropertyDescriptor> domain = new GWTDomain<>();
+            domain.setFields(Arrays.asList(fields));
+            return validateProperties(null, domain, null, null, null);
+        }
+
+        @Test
+        public void aliasesWithNoOverlapAreAllowed()
+        {
+            ValidationException errors = validate(
+                    field(FIELD_ONE, "one, uno"),
+                    field(FIELD_TWO, "two"),
+                    field(FIELD_THREE, null));
+            assertFalse("Non-overlapping import aliases should validate: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void aliasRepeatingItsOwnFieldNameIsAllowed()
+        {
+            // Redundant, but resolves to the same field, so there is nothing ambiguous to reject
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_ONE), field(FIELD_TWO, FIELD_TWO.toLowerCase()));
+            assertFalse("A field's import alias may repeat its own name: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void caseVariantsWithinOneFieldCountOnce()
+        {
+            // convertToSet() is case-sensitive, so "dupe, DUPE" parses to two aliases that collapse to one for this check
+            ValidationException errors = validate(field(FIELD_ONE, "dupe, DUPE"), field(FIELD_TWO, null));
+            assertFalse("Case variants of one alias on a single field are not a duplicate: " + errors.getAllErrors(), errors.hasErrors());
+        }
+
+        @Test
+        public void messageEchoesTheAliasAsEntered()
+        {
+            // Reported back to the user, so it must not be normalized to the lower case the comparison uses
+            ValidationException errors = validate(field(FIELD_ONE, "MixedCaseAlias"), field(FIELD_TWO, "mixedcasealias"));
+            assertEquals(List.of("Duplicate import alias 'MixedCaseAlias' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void duplicateAliasAcrossFieldsIsRejected()
+        {
+            ValidationException errors = validate(field(FIELD_TWO, "shared"), field(FIELD_ONE, "shared"));
+            // Field names in the message are sorted, so they do not depend on the order the fields were declared in
+            String expected = "Duplicate import alias 'shared' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.";
+            assertEquals("Error should be anchored on the first field", List.of(expected), errors.getFieldErrors(FIELD_TWO));
+            assertEquals("Error should be anchored on the second field", List.of(expected), errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void duplicateAliasAcrossFieldsIgnoresCase()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, "shared"), field(FIELD_TWO, "SHARED"));
+            // The message reports the alias as first encountered, which is the earlier field's spelling
+            String expected = "Duplicate import alias 'shared' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.";
+            assertEquals(List.of(expected), errors.getFieldErrors(FIELD_ONE));
+            assertEquals(List.of(expected), errors.getFieldErrors(FIELD_TWO));
+        }
+
+        @Test
+        public void aliasConflictingWithFieldNameIsRejected()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_TWO), field(FIELD_TWO, null));
+            assertEquals(List.of("Import alias '" + FIELD_TWO + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+            assertTrue("The conflict belongs to the field declaring the alias, not the field being named",
+                    errors.getFieldErrors(FIELD_TWO).isEmpty());
+        }
+
+        @Test
+        public void aliasConflictingWithFieldNameIgnoresCase()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_TWO.toLowerCase()), field(FIELD_TWO, null));
+            assertEquals(List.of("Import alias '" + FIELD_TWO.toLowerCase() + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void aliasConflictingWithALaterFieldNameIsRejected()
+        {
+            // The alias is declared before the field it collides with, so the check cannot run field-by-field
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_THREE), field(FIELD_TWO, null), field(FIELD_THREE, null));
+            assertEquals(List.of("Import alias '" + FIELD_THREE + "' on field '" + FIELD_ONE + "' conflicts with a field name."),
+                    errors.getFieldErrors(FIELD_ONE));
+        }
+
+        @Test
+        public void aliasThatIsBothDuplicatedAndAFieldNameReportsBoth()
+        {
+            ValidationException errors = validate(field(FIELD_ONE, FIELD_THREE), field(FIELD_TWO, FIELD_THREE), field(FIELD_THREE, null));
+            List<String> expected = List.of(
+                    "Duplicate import alias '" + FIELD_THREE + "' for fields '" + FIELD_ONE + "', '" + FIELD_TWO + "'.",
+                    "Import alias '" + FIELD_THREE + "' on fields '" + FIELD_ONE + "', '" + FIELD_TWO + "' conflicts with a field name.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE));
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO));
+        }
+
+        @Test
+        public void multipleAliasesPerFieldWithDuplicatesAndTrickyChars()
+        {
+            String aliasWithBlanks = "with blanks";
+            String aliasWithComma = "with, comma";
+            String trickyChars = "\u00C5\u00E4"; // Angstrom + a-umlaut
+            ValidationException errors = validate(field(FIELD_ONE, trickyChars + "," + "\"" + aliasWithComma + "\"" + "," + aliasWithBlanks),
+                    field(FIELD_TWO,  "\"" + aliasWithComma + "\"" ), field(FIELD_THREE, trickyChars + " \"" + aliasWithComma + "\""));
+            List<String> expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_ONE));
+            expected = List.of(
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_TWO));
+            expected = List.of(
+                    "Duplicate import alias '" + trickyChars + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "'.",
+                    "Duplicate import alias '" + aliasWithComma + "' for fields '" + FIELD_ONE + "', '" + FIELD_THREE + "', '" + FIELD_TWO + "'.");
+            assertEquals(expected, errors.getFieldErrors(FIELD_THREE));
+        }
+
+        @Test
+        public void blankFieldNameDoesNotBreakAliasChecking()
+        {
+            // A nameless field is reported on its own and must not reach the alias map, where it would have no name to report
+            ValidationException errors = validate(field(null, "shared"), field("   ", "shared"), field(FIELD_ONE, "shared"));
+            assertEquals("Each nameless field should be reported once",
+                    List.of("Please provide a name for each field.", "Please provide a name for each field."),
+                    errors.getGlobalErrorStrings());
+            assertTrue("Only one named field declares the alias, so it is not a duplicate: " + errors.getAllErrors(),
+                    errors.getFieldErrors(FIELD_ONE).isEmpty());
+        }
     }
 }
