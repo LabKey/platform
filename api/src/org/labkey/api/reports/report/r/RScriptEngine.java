@@ -91,8 +91,10 @@ public class RScriptEngine extends ExternalScriptEngine
 
     /**
      * R appended to the end of the user script (running in the same R session) that writes the set of loaded packages,
-     * one per line, to a sidecar file for {@link #recordPackageUsage} to read back. Notes: tryCatch means a capture
-     * failure can never break the report or transform run.
+     * one per line, to a sidecar file for {@link #recordPackageUsage} to read back. Notes: the working directory is
+     * embedded as an absolute path rather than read from getwd() so that a script that calls setwd() still writes the
+     * sidecar where recordPackageUsage() looks for it, and tryCatch means a capture failure can never break the report
+     * or transform run.
      */
     @Override
     protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
@@ -104,8 +106,8 @@ public class RScriptEngine extends ExternalScriptEngine
 
         return """
                 # --- LabKey R package usage capture ---
-                tryCatch(writeLines(sort(loadedNamespaces()), file.path(getwd(), "%s")), error = function(e) invisible(NULL))
-                """.formatted(PACKAGES_FILE);
+                tryCatch(writeLines(sort(loadedNamespaces()), file.path(%s, "%s")), error = function(e) invisible(NULL))
+                """.formatted(RReport.toR(getRWorkingDir(context)), PACKAGES_FILE);
     }
 
     @Override
