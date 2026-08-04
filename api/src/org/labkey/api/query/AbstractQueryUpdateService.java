@@ -398,11 +398,6 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 boolean useTransactionAuditCache = Boolean.TRUE.equals(extraScriptContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
                 context.setUseTransactionAuditCache(useTransactionAuditCache);
             }
-            else if (context.isBackgroundJob() && !context.isUseTransactionAuditCache())
-            {
-                // explicitly set useTransactionAuditCache=false for async import, which is passed down to trigger steps
-                extraScriptContext.put(AbstractQueryImportAction.Params.useTransactionAuditCache.name(), false);
-            }
         }
 
         preImportDIBValidation(in, null);
