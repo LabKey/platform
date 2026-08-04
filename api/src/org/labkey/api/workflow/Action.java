@@ -39,7 +39,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Action extends CreatedModified
 {
@@ -391,49 +390,58 @@ public abstract class Action extends CreatedModified
 
             if (_inputParameters == null) return List.of(emptyMessage);
 
-            // don't allow more than one target source type
-            if (_inputParameters.isEmpty())
+            // We can't just check _inputParameters size because it may include sample status keys, so we extract the
+            // source type IDs and validate against those.
+            List<String> sourceTypeIds = new ArrayList<>();
+            _inputParameters.keys().forEachRemaining(id -> {
+                if (isSampleStatusKey(id)) return;
+                sourceTypeIds.add(id);
+            });
+
+            if (sourceTypeIds.isEmpty())
                 return List.of(emptyMessage);
-            else if (_inputParameters.length() > 1)
+
+            // don't allow more than one target source type
+            if (sourceTypeIds.size() > 1)
                 return List.of(prefix + "only one source type can be specified for action of type " + _type + ".");
 
-            ExperimentService experimentService = ExperimentService.get();
-            AtomicReference<String> invalidId = new AtomicReference<>();
-            AtomicReference<Object> invalidCount = new AtomicReference<>();
-            _inputParameters.keys().forEachRemaining(id -> {
+            List<String> messages = new ArrayList<>();
+            String sourceTypeId = sourceTypeIds.get(0);
+            boolean invalidId;
+            try
+            {
+                invalidId = ExperimentService.get().getDataClass(container, Long.parseLong(sourceTypeId), true) == null;
+            }
+            catch (NumberFormatException e)
+            {
+                invalidId = true;
+            }
+            if (invalidId)
+                messages.add(prefix + "invalid source type ID " + sourceTypeId + ".");
+
+            Object countObj = _inputParameters.get(sourceTypeId);
+            boolean invalidCount;
+            if (countObj instanceof String countStr)
+            {
                 try
                 {
-                    if (experimentService.getDataClass(Long.valueOf(id)) == null)
-                        invalidId.set(id);
+                    invalidCount = Integer.parseInt(countStr) < 0;
                 }
                 catch (NumberFormatException e)
                 {
-                    invalidId.set(id);
+                    invalidCount = true;
                 }
-                Object countObj = _inputParameters.get(id);
-                if (countObj instanceof String countStr)
-                    try
-                    {
-                        if (Integer.parseInt(countStr) < 0)
-                            invalidCount.set(countObj);
-                    }
-                    catch (NumberFormatException e)
-                    {
-                        invalidCount.set(countObj);
-                    }
-                else if (countObj instanceof Integer count)
-                {
-                    if (count < 0)
-                        invalidCount.set(countObj);
-                }
-                else
-                    invalidCount.set(countObj);
-            });
-            List<String> messages = new ArrayList<>();
-            if (invalidId.get() != null)
-                messages.add(prefix + "invalid source type ID " + invalidId + ".");
-            if (invalidCount.get() != null)
-                messages.add(prefix + "invalid source count value " + invalidCount + ".");
+            }
+            else if (countObj instanceof Integer count)
+                invalidCount = count < 0;
+            else
+                invalidCount = true;
+
+            if (invalidCount)
+                messages.add(prefix + "invalid source count value " + countObj + ".");
+
+            if (hasAnySampleStatusKey())
+                messages.add(prefix + "data about updating parent status not allowed for action of type " + _type + ".");
 
             return messages;
         }
