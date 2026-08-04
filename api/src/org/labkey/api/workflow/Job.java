@@ -63,6 +63,7 @@ public abstract class Job extends CreatedModified implements Identifiable
     protected Integer _assignee;
     protected List<Integer> _notifyList;
     protected boolean _isTemplate;
+    protected boolean _isArchived;
     protected Job _template;
     protected Integer _jobCount; // only applies to templates
     protected Integer _domainId;
@@ -252,6 +253,16 @@ public abstract class Job extends CreatedModified implements Identifiable
     public void setIsTemplate(boolean template)
     {
         _isTemplate = template;
+    }
+
+    public boolean getIsArchived()
+    {
+        return _isArchived;
+    }
+
+    public void setIsArchived(boolean archived)
+    {
+        _isArchived = archived;
     }
 
     public Integer getJobCount()
