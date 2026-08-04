@@ -43,7 +43,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
 
     protected String _description;
     protected String _entityFilter;
-    protected String _inputEntityType;
+    protected WorkEntity.EntityType _inputEntityType;
     protected Integer _status;
     protected Date _startDate;
     protected Date _endDate;
@@ -94,12 +94,12 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
         _entityFilter = entityFilter;
     }
 
-    public String getInputEntityType()
+    public WorkEntity.EntityType getInputEntityType()
     {
         return _inputEntityType;
     }
 
-    public void setInputEntityType(String inputEntityType)
+    public void setInputEntityType(WorkEntity.EntityType inputEntityType)
     {
         _inputEntityType = inputEntityType;
     }

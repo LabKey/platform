@@ -361,9 +361,14 @@ public abstract class Action extends CreatedModified
 
             if (hasAnySampleStatusKey())
             {
-                String statusMessage = validateStatus(container, prefix, true);
+                if (_type == WorkflowService.ActionType.DeriveSamplesFromSources)
+                    messages.add(prefix + "data about updating parent status not allowed for action of type " + _type + ".");
+                else
+                {
+                    String statusMessage = validateStatus(container, prefix, true);
 
-                if (statusMessage != null) messages.add(statusMessage);
+                    if (statusMessage != null) messages.add(statusMessage);
+                }
             }
 
             return messages;
@@ -382,7 +387,7 @@ public abstract class Action extends CreatedModified
         }
         else if (_type == WorkflowService.ActionType.DeriveSources)
         {
-            String emptyMessage = prefix + "data about sources types and source counts per parent is required for action of type " + _type + ".";
+            String emptyMessage = prefix + "data about source types and source counts per parent is required for action of type " + _type + ".";
 
             if (_inputParameters == null) return List.of(emptyMessage);
 

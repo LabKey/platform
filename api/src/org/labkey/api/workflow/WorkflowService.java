@@ -36,26 +36,28 @@ public interface WorkflowService
 
     enum ActionType
     {
-        AssayImport("assay types", "Imported assay data"),
-        DeriveSamples("derivation sample type parameters", "Derived samples"),
-        AliquotSamples("aliquot sample type parameters", "Aliquot samples"),
-        PoolSamples("pooling sample type parameters", "Pooled samples"),
-        AddToStorage("input parameters", "Added samples to storage"),
-        MoveInStorage("input parameters", "Moved samples in storage"),
-        CheckOut("input parameters", "Checked out samples"),
-        CheckIn("input parameters", "Checked in samples"),
-        RemoveFromStorage("sample status value", "Removed samples from storage"),
-        UpdateSampleStatus("sample status value", "Updated sample status"),
-        DeriveSamplesFromSources("derivation source type parameters", "Derived samples from sources"),
-        DeriveSources("derivation source type parameters", "Derives sources");
+        AssayImport("assay types", "Imported assay data", WorkEntity.EntityType.Sample),
+        DeriveSamples("derivation sample type parameters", "Derived samples", WorkEntity.EntityType.Sample),
+        AliquotSamples("aliquot sample type parameters", "Aliquot samples", WorkEntity.EntityType.Sample),
+        PoolSamples("pooling sample type parameters", "Pooled samples", WorkEntity.EntityType.Sample),
+        AddToStorage("input parameters", "Added samples to storage", WorkEntity.EntityType.Sample),
+        MoveInStorage("input parameters", "Moved samples in storage", WorkEntity.EntityType.Sample),
+        CheckOut("input parameters", "Checked out samples", WorkEntity.EntityType.Sample),
+        CheckIn("input parameters", "Checked in samples", WorkEntity.EntityType.Sample),
+        RemoveFromStorage("sample status value", "Removed samples from storage", WorkEntity.EntityType.Sample),
+        UpdateSampleStatus("sample status value", "Updated sample status", WorkEntity.EntityType.Sample),
+        DeriveSamplesFromSources("derivation source type parameters", "Derived samples from sources", WorkEntity.EntityType.Source),
+        DeriveSources("derivation source type parameters", "Derived sources", WorkEntity.EntityType.Source);
 
         private final String _inputDescription;
         private final String _auditMessage;
+        private final WorkEntity.EntityType _inputEntityType;
 
-        ActionType(String inputDescription, String auditMessage)
+        ActionType(String inputDescription, String auditMessage,  WorkEntity.EntityType inputEntityType)
         {
             _inputDescription = inputDescription;
             _auditMessage = auditMessage;
+            _inputEntityType = inputEntityType;
         }
 
         public String getInputDescription()
@@ -66,6 +68,11 @@ public interface WorkflowService
         public String getAuditMessage()
         {
             return _auditMessage;
+        }
+
+        public WorkEntity.EntityType getInputEntityType()
+        {
+            return _inputEntityType;
         }
     }
 
