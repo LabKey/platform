@@ -212,6 +212,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                 if (recorded >= MAX_PACKAGES_PER_RUN)
                 {
                     LOG.warn("Recorded the first {} {} packages for this script run and ignored the rest", MAX_PACKAGES_PER_RUN, language);
+                    ScriptPackageUsageTracker.record(language, "~~packageLimitReached~~");
                     break;
                 }
                 ScriptPackageUsageTracker.record(language, packageName);
