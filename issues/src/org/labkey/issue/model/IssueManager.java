@@ -122,9 +122,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class IssueManager
 {
@@ -240,14 +240,21 @@ public class IssueManager
     private static IssueObject _getIssue(@Nullable Container c, User user, int issueId)
     {
         IssueObject issue = _getRawIssue(c, issueId);
+        if (issue == null)
+            return null;
 
-        if (issue != null && issue.getIssueDefId() != null)
+        // container may initially be null if we don't care about a specific folder, but we need the
+        // correct domain for the provisioned table properties associated with the issue
+        if (c == null)
+            c = ContainerManager.getForId(issue.getContainerId());
+
+        // GitHub Issue 1317: explicitly check for read access on the target container before querying to
+        // avoid Submitter roles from accessing the table and then hitting an exception during the read.
+        if (c == null || !c.hasPermission(user, ReadPermission.class))
+            return null;
+
+        if (issue.getIssueDefId() != null)
         {
-            // container may initially be null if we don't care about a specific folder, but we need the
-            // correct domain for the provisioned table properties associated with the issue
-            if (c == null)
-                c = ContainerManager.getForId(issue.getContainerId());
-
             IssueListDef issueListDef = getIssueListDef(issue.getContainerFromId(), issue.getIssueDefId());
             UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
             TableInfo table = userSchema.getTable(issueListDef.getName());
