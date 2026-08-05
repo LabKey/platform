@@ -23,18 +23,22 @@ import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<TestSsoProvider>
 {
+    static final String SKIP_REAUTHENTICATION = "SkipReauthentication";
+
     private final String _domain;
+    private final boolean _skipReauthentication;
     private final LinkFactory _linkFactory = new LinkFactory(this);
 
     protected TestSsoConfiguration(TestSsoProvider provider, Map<String, Object> standardSettings, Map<String, Object> properties)
     {
         super(provider, standardSettings);
         _domain = (String)properties.get("domain");
+        _skipReauthentication = Boolean.TRUE.equals(properties.get(SKIP_REAUTHENTICATION));
     }
 
     @Override
@@ -65,8 +69,20 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
+    public boolean isReauthenticationSupported()
+    {
+        return !_skipReauthentication;
+    }
+
+    @Override
     public @NotNull Map<String, Object> getCustomProperties()
     {
-        return null != _domain ? Map.of("domain", _domain) : Collections.emptyMap();
+        Map<String, Object> map = new HashMap<>();
+        map.put(SKIP_REAUTHENTICATION, _skipReauthentication);
+
+        if (null != _domain)
+            map.put("domain", _domain);
+
+        return map;
     }
 }
