@@ -575,7 +575,9 @@ public class QueryPivot extends AbstractQueryRelation
 
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
-                        _columns.put(pivotName, pvt);
+                        // _makePivotedAggColumn() returns null when parse errors are present; don't store nulls
+                        if (null != pvt)
+                            _columns.put(pivotName, pvt);
                     }
                 }
             }
