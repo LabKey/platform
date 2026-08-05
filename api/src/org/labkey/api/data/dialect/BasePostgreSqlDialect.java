@@ -939,8 +939,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
-        return new SQLFragment("(CASE WHEN CAST((").append(expression)
-                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+        // Return a boolean predicate, matching SQL Server's contract, so callers that place this in a
+        // boolean context (CASE WHEN, WHERE) get valid Postgres syntax. In SELECT position Postgres
+        // returns it as a boolean column and JDBC's getInt() converts true/false to 1/0.
+        return new SQLFragment("(CAST((").append(expression)
+                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$')");
     }
 
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
