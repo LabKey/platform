@@ -9138,11 +9138,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId)
+    public @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId)
     {
         return DataColorManager.getInstance().getAllProjectColors(container).stream()
                 .filter(c -> c.getRowId() == colorRowId)
-                .map(DataColor::getLabel)
                 .findFirst()
                 .orElse(null);
     }

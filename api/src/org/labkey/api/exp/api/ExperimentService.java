@@ -1161,7 +1161,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container);
 
-    @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId);
+    @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId);
 
     boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
 
