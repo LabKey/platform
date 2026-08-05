@@ -423,7 +423,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
                 dib = LoggingDataIterator.wrap(new ExpDataIterators.AutoLinkToStudyDataIteratorBuilder(dib, getSchema(), userSchema.getContainer(), userSchema.getUser(), sampleType));
             WorkflowService workService = WorkflowService.get();
-            if (workService != null)
+            if (workService != null && !context.getInsertOption().allowUpdate)
             {
                 if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
                 {

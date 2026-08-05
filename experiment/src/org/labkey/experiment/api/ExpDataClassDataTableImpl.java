@@ -948,7 +948,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             UserSchema userSchema = getUserSchema();
             builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
             WorkflowService workService = WorkflowService.get();
-            if (workService != null)
+            if (workService != null && !context.getInsertOption().allowUpdate)
             {
                 if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
                 {
