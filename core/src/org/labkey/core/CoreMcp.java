@@ -222,4 +222,22 @@ public class CoreMcp implements McpService.McpImpl
                 )
         ));
     }
+
+    @McpResource(
+            uri = "resource://org/labkey/core/Reports.md",
+            mimeType = "application/markdown",
+            name = "LabKey Reports: Converting a Script Guide",
+            description = "Required reading before converting an R or Python/Jupyter analysis script into a saved LabKey Report. Covers data-bound vs standalone reports, the R substitution-token/knitr model, the Jupyter report_config.json/ReportConfig model, report authorization, and UI-saved vs file-based module reports.")
+    public ReadResourceResult getReportsGuide() throws IOException
+    {
+        incrementResourceRequestCount("Reports");
+        String markdown = IOUtils.resourceToString("org/labkey/core/Reports.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+                new McpSchema.TextResourceContents(
+                        "resource://org/labkey/core/Reports.md",
+                        "application/markdown",
+                        markdown
+                )
+        ));
+    }
 }

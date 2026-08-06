@@ -80,7 +80,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
-import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
@@ -3888,7 +3887,7 @@ public class DavController extends SpringActionController
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
         // Don't allow creating text/html via rename (circumventing script checking)
-        if (src.isFile() && !getContainer().hasPermission(getUser(), BrowserDeveloperPermission.class))
+        if (src.isFile() && !getUser().isTrustedBrowserDev())
         {
             String contentTypeSrc = Objects.toString(src.getContentType(),"");
             String contentTypeDest = Objects.toString(dest.getContentType(),"");
