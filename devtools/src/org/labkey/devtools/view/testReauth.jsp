@@ -34,8 +34,16 @@
             success: function(response) {
                 const needReauth = <%=form.reauthToken() == null%>;
                 const data = JSON.parse(response.responseText).data;
-                document.getElementById("description").textContent = data.description; // Setting textContent HTML encodes the value
-                if (needReauth) {
+                const skipReauth = (data.reauthUrl == null);
+                // Setting textContent HTML encodes the value
+                document.getElementById("description").textContent = data.description + (skipReauth ? ', but that configuration has disabled reauthentication' : '');
+                if (skipReauth || !needReauth) {
+                    document.getElementById("sign").style.display = "block";
+                    if (skipReauth && needReauth) {
+                        document.getElementById("reauth").style.display = "none";
+                    }
+                }
+                else {
                     document.getElementById("link").href = data.reauthUrl;
                 }
             },
@@ -56,14 +64,13 @@
 %>
 Looks like you successfully re-authenticated and received token: <%=h(form.reauthToken())%><br/>
 
-<labkey:form method="post">
-    <input type="hidden" name="reauthToken" value="<%=h(form.reauthToken())%>">
-    <input class="labkey-button primary" type="submit" value="Sign!">
-</labkey:form>
 <%
     }
     else
     {
+%>
+    <div id="reauth">
+<%
         if (form.errorMessage() != null)
         {
 %>
@@ -78,8 +85,17 @@ You need to re-authenticate.
         }
 %>
         <a id="link" href="">Click here</a>
+
+    </div>
 <%
     }
 %>
+    <div id="sign" style="display: none;">
+        <labkey:form method="post">
+            <input type="hidden" name="reauthToken" value="<%=h(form.reauthToken())%>">
+            <input class="labkey-button primary" type="submit" value="Sign!">
+        </labkey:form>
+    </div>
+</div>
 
 </div>
