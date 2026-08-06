@@ -25,24 +25,43 @@ import javax.script.ScriptContext;
 /**
  * Script engine for locally-executed Python scripts (Python assay transform scripts configured as an
  * external ".py" engine). Behaves like the base {@link ExternalScriptEngine} except that it appends a capture epilog to
- * track which Python packages each script loads; see
+ * track which Python packages each script imports; see
  * {@link org.labkey.api.reports.report.ScriptPackageUsageTracker}.
  */
 public class PythonScriptEngine extends ExternalScriptEngine
 {
     private static final String PACKAGES_FILE = "labkeyPythonPackages.txt";
 
-    // Python appended to a user script to capture the packages it loaded. The sidecar file's absolute path is embedded
-    // (see getPackageCaptureEpilog) rather than derived from os.getcwd(), so that a script that changes the working
-    // directory still writes the sidecar where recordPackageUsage() looks for it.
+    // Python appended to a user script to capture the modules it imports. The sidecar file's absolute path is
+    // embedded (see getPackageCaptureEpilog) rather than derived from os.getcwd(), so that a script that changes the
+    // working directory still writes the sidecar where recordPackageUsage() looks for it.
     // try/except means a capture failure can never break the script run.
+    // Note: we are tracking module names as written in the source, not installable distribution names - 'yaml', not 'PyYAML'.
     private static final String PACKAGE_CAPTURE_EPILOG = """
-            # --- LabKey Python package usage capture ---
             try:
-                import importlib.metadata as _lk_md, sys as _lk_sys
-                _lk_dists = _lk_md.packages_distributions()
-                _lk_tops = {m.split('.')[0] for m in list(_lk_sys.modules)} - set(_lk_sys.stdlib_module_names)
-                _lk_names = sorted({d for t in _lk_tops if t and not t.startswith('_') for d in _lk_dists.get(t, ())})
+                import ast as _lk_ast, sys as _lk_sys
+
+                def _lk_pkg(_lk_dotted):
+                    # Report the shortest prefix that is a real module
+                    _lk_parts = _lk_dotted.split('.')
+                    for _lk_i in range(1, len(_lk_parts)):
+                        _lk_prefix = '.'.join(_lk_parts[:_lk_i])
+                        if getattr(_lk_sys.modules.get(_lk_prefix), '__file__', None):
+                            return _lk_prefix
+                    # Nothing loaded under this name - an optional dependency this server lacks, or an import in a
+                    # branch that never ran - so record it as written.
+                    return _lk_dotted if _lk_parts[0] in _lk_sys.modules else _lk_parts[0]
+
+                with open(globals().get('__file__') or _lk_sys.argv[0], 'rb') as _lk_src:
+                    _lk_tree = _lk_ast.parse(_lk_src.read())
+                _lk_names = set()
+                for _lk_node in _lk_ast.walk(_lk_tree):
+                    if isinstance(_lk_node, _lk_ast.Import):
+                        _lk_names.update(_lk_pkg(_lk_a.name) for _lk_a in _lk_node.names)
+                    elif isinstance(_lk_node, _lk_ast.ImportFrom) and not _lk_node.level and _lk_node.module:
+                        _lk_names.update(_lk_pkg(_lk_node.module + '.' + _lk_a.name) for _lk_a in _lk_node.names)
+                _lk_std = set(getattr(_lk_sys, 'stdlib_module_names', ('ast', 'sys')))
+                _lk_names = sorted(n for n in _lk_names if n[:1] != '_' and n.split('.')[0] not in _lk_std)
                 with open('%s', 'w') as _lk_f:
                     _lk_f.write('\\n'.join(_lk_names))
             except Exception:

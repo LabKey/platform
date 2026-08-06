@@ -46,8 +46,8 @@ public class ScriptPackageUsageTracker
 
     /**
      * Packages that ship with a given language's runtime and are always present, so aren't interesting as "library
-     * usage". R's base packages are filtered here; Python needs no entry because the capture epilog only reports names
-     * that map to an installed distribution, which the standard library never does.
+     * usage". R's base packages are filtered here; Python needs no entry because its capture epilog already subtracts
+     * sys.stdlib_module_names.
      */
     private static final Map<String, Set<String>> BASE_PACKAGES = Map.of(
         "r", Set.of("base", "compiler", "datasets", "graphics", "grDevices", "grid", "methods", "parallel", "splines", "stats", "stats4", "tcltk", "tools", "utils")
