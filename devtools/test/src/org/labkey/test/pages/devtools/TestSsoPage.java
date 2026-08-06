@@ -25,7 +25,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 /**
- * Wraps testSso.jsp
+ * The devtools TestSSO provider's stand-in for an identity provider: type an email address to "authenticate" (or, when
+ * the browser was sent here to reauthenticate, "reauthenticate") as that user. No password required.
  */
 public class TestSsoPage extends LabKeyPage<TestSsoPage.ElementCache>
 {
@@ -34,6 +35,39 @@ public class TestSsoPage extends LabKeyPage<TestSsoPage.ElementCache>
         super(driver);
     }
 
+    /**
+     * Navigates to the sign-in page, which redirects to the TestSSO page when a TestSSO configuration has
+     * "Default to this TestSSO configuration" enabled.
+     */
+    public static TestSsoPage beginAtLogin(WebDriverWrapper webDriverWrapper)
+    {
+        webDriverWrapper.beginAt(WebTestHelper.buildURL("login", "login"));
+        return new TestSsoPage(webDriverWrapper.getDriver());
+    }
+
+    @Override
+    protected void waitForPage()
+    {
+        waitFor(() -> Locators.emailInput.existsIn(getDriver()), "TestSSO page did not load in time.", WAIT_FOR_PAGE);
+    }
+
+    /**
+     * The form's label, which identifies whether the browser was sent here to authenticate or to reauthenticate.
+     */
+    public String getLabel()
+    {
+        return elementCache().label.getText();
+    }
+
+    public TestSsoPage setEmail(String email)
+    {
+        elementCache().emailInput.set(email);
+        return this;
+    }
+
+    /**
+     * Authenticates as the given user, which leaves the browser wherever LabKey sends the user after signing in.
+     */
     public void authenticate(String email)
     {
         attemptToAuthenticate(email);
@@ -48,8 +82,20 @@ public class TestSsoPage extends LabKeyPage<TestSsoPage.ElementCache>
 
     public void attemptToAuthenticate(String email)
     {
-        elementCache().emailInput.set(email);
+        setEmail(email);
         clickAndWait(elementCache().authenticateButton);
+        clearCache();
+    }
+
+    /**
+     * Reauthenticates as the given user, which returns the browser to the page that requested reauthentication. Only
+     * available when the browser arrived here through a reauthentication redirect.
+     */
+    public void reauthenticate(String email)
+    {
+        setEmail(email);
+        clickAndWait(elementCache().reauthenticateButton);
+        clearCache();
     }
 
     @Override
@@ -60,8 +106,14 @@ public class TestSsoPage extends LabKeyPage<TestSsoPage.ElementCache>
 
     protected class ElementCache extends LabKeyPage<ElementCache>.ElementCache
     {
-        final Input emailInput = Input.Input(Locator.name("email"), getDriver()).findWhenNeeded(this);
-        // Might be "Authenticate" or "Reauthenticate"
-        final WebElement authenticateButton = Locator.lkButton().withClass("primary").findWhenNeeded(this);
+        final WebElement label = Locator.tagWithClass("label", "control-label").findWhenNeeded(this);
+        final Input emailInput = new Input(Locators.emailInput.findWhenNeeded(this), getDriver());
+        final WebElement authenticateButton = Locator.lkButton("Authenticate").findWhenNeeded(this);
+        final WebElement reauthenticateButton = Locator.lkButton("Reauthenticate").findWhenNeeded(this);
+    }
+
+    private static class Locators
+    {
+        static final Locator emailInput = Locator.name("email");
     }
 }

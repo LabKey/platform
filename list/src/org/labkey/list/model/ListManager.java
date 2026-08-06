@@ -679,6 +679,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
             FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
+            List<ColumnInfo> arrayColumns = getArrayColumns(listTable);
 
             FieldKey keyKey = new FieldKey(null, list.getKeyName());
             FieldKey entityIdKey = new FieldKey(null, "EntityId");
@@ -710,7 +711,7 @@ public class ListManager implements SearchService.DocumentProvider
                 if (map.get(modifiedKey) instanceof Date)
                     modified = (Date) map.get(modifiedKey);
 
-                String body = bodyTemplate.eval(map);
+                String body = bodyTemplate.eval(flattenArrayValues(map, arrayColumns));
 
                 ActionURL itemURL;
 
@@ -888,6 +889,7 @@ public class ListManager implements SearchService.DocumentProvider
                     {
                         body.append(sep);
                         FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+                        List<ColumnInfo> arrayColumns = getArrayColumns(ti);
 
                         // All columns, all rows, no filters, no sorts
                         new TableSelector(ti).setJdbcCaching(false).setForDisplay(true).forEachResults(new ForEachBlock<>()
@@ -895,7 +897,7 @@ public class ListManager implements SearchService.DocumentProvider
                             @Override
                             public void exec(Results results) throws StopIteratingException
                             {
-                                body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                                body.append(template.eval(flattenArrayValues(results.getFieldKeyRowMap(), arrayColumns))).append("\n");
                                 // Issue 25366: Short circuit for very large list
                                 if (body.length() > fileSizeLimit)
                                 {
@@ -1055,6 +1057,32 @@ public class ListManager implements SearchService.DocumentProvider
             throw new IllegalStateException(getTemplateErrorMessage(list, "auto-generated indexing template", error));
 
         return template;
+    }
+
+    private static List<ColumnInfo> getArrayColumns(TableInfo table)
+    {
+        return table.getColumns().stream().filter(ci -> ci.getJdbcType() == JdbcType.ARRAY).toList();
+    }
+
+    // GitHub Issue 929: search list by MVTC value.
+    private static Map<FieldKey, Object> flattenArrayValues(Map<FieldKey, Object> rowMap, List<ColumnInfo> arrayColumns)
+    {
+        if (arrayColumns.isEmpty())
+            return rowMap;
+
+        Map<FieldKey, Object> flattened = new HashMap<>(rowMap);
+        for (ColumnInfo arrayColumn : arrayColumns)
+        {
+            FieldKey fieldKey = arrayColumn.getFieldKey();
+            Object value = rowMap.get(fieldKey);
+            if (value == null)
+                continue;
+
+            Object converted = arrayColumn.convert(value);
+            if (converted instanceof MultiChoice.Array mca)
+                flattened.put(fieldKey, mca.toString());
+        }
+        return flattened;
     }
 
 

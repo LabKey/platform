@@ -859,8 +859,6 @@ public class SqlParser
                     return "CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses; use them as bare keywords.";
                 return null;
             case "distinct":
-                if ("is".equals(prev1) || "not".equals(prev1))
-                    return "IS [NOT] DISTINCT FROM is not supported. Use is_distinct_from(a, b) or is_not_distinct_from(a, b).";
                 if ("(".equals(prev1))
                     return "DISTINCT is only supported inside COUNT() and GROUP_CONCAT().";
                 return null;
@@ -2191,6 +2189,8 @@ public class SqlParser
         "SELECT 'text',1,-2,1000000L,1.0f,3.1415926535897932384626433832795,6.02214179e23,TRUE,FALSE,0x0ab12,NULL FROM R",
 
         "SELECT DISTINCT R.a, b AS B FROM rel R INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
+        "SELECT a FROM R WHERE a IS DISTINCT FROM b",
+        "SELECT a FROM R WHERE a IS NOT DISTINCT FROM b",
         "SELECT R.* FROM R",
 
         "SELECT \"a\",\"b\",AVG(x),COUNT(x),COUNT(*),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b ORDER BY a ASC, b DESC, SUM(x)",
@@ -2341,8 +2341,6 @@ public class SqlParser
         new Pair<>("SELECT a FROM R ORDER BY a NULLS LAST", "NULLS FIRST/LAST is not supported"),
         new Pair<>("SELECT a::INTEGER FROM R", "CAST(expr AS TYPE)"),
         new Pair<>("SELECT SUM(DISTINCT a) FROM R", "DISTINCT is only supported inside COUNT()"),
-        new Pair<>("SELECT a FROM R WHERE a IS DISTINCT FROM b", "is_distinct_from"),
-        new Pair<>("SELECT a FROM R WHERE a IS NOT DISTINCT FROM b", "is_distinct_from"),
         new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
         new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
         new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
@@ -2408,6 +2406,8 @@ public class SqlParser
             new Pair<>("a NOT BETWEEN 4 and 5", "(not between a 4 5)"),
             new Pair<>("a LIKE 'b'", "(like a 'b')"),
             new Pair<>("a NOT LIKE 'b'", "(not like a 'b')"),
+            new Pair<>("a IS DISTINCT FROM b", "(METHOD_CALL IS_DISTINCT_FROM (EXPR_LIST a b))"),
+            new Pair<>("a IS NOT DISTINCT FROM b", "(METHOD_CALL IS_NOT_DISTINCT_FROM (EXPR_LIST a b))"),
 
             new Pair<>("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
             new Pair<>("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
@@ -2443,6 +2443,8 @@ public class SqlParser
             new Pair<>("1 = 1", JdbcType.BOOLEAN),
             new Pair<>("'one' = 'two'", JdbcType.BOOLEAN),
             new Pair<>("1 = 'two'", JdbcType.BOOLEAN),
+            new Pair<>("1 IS DISTINCT FROM 2", JdbcType.BOOLEAN),
+            new Pair<>("1 IS NOT DISTINCT FROM 2", JdbcType.BOOLEAN),
             new Pair<>("'this ' || 'that'", JdbcType.VARCHAR),
             new Pair<>("1 || ' plus ' || 2", JdbcType.VARCHAR),
             new Pair<>("1 + 2", JdbcType.INTEGER),

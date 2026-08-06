@@ -64,6 +64,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
@@ -71,6 +72,7 @@ import org.labkey.api.survey.model.SurveyListener;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
@@ -268,16 +270,36 @@ public class SurveyManager
         }
     }
 
-    /** Checks that the user has read permission to the container that owns the design, but we accept cross-container references */
+    /**
+     * Checks that the user has read permission to the container that owns the design, but we accept cross-container references
+     */
     @Nullable
-    public SurveyDesign getSurveyDesign(Container container, User user, int surveyId)
+    public SurveyDesign getSurveyDesignForRead(Container container, User user, int surveyId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), surveyId);
-        SurveyDesign result = new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
-        if (result == null)
-            return null;
-        Container actualContainer = ContainerManager.getForId(result.getContainerId());
-        return actualContainer == null || !actualContainer.hasPermission(user, ReadPermission.class) ? null : result;
+        SurveyDesign surveyDesign = _getSurveyDesign(new SimpleFilter(), surveyId);
+
+        if (surveyDesign != null)
+        {
+            Container actualContainer = ContainerManager.getForId(surveyDesign.getContainerId());
+
+            // A survey design can be requested from a different folder provided the user has read permission.
+            return actualContainer == null || !actualContainer.hasPermission(user, ReadPermission.class) ? null : surveyDesign;
+        }
+        return null;
+    }
+
+    @Nullable
+    public SurveyDesign getSurveyDesignForWrite(Container container, User user, int surveyId)
+    {
+        // Container scoping is enforced when updating a survey design.
+        return _getSurveyDesign(SimpleFilter.createContainerFilter(container), surveyId);
+    }
+
+    @Nullable
+    private SurveyDesign _getSurveyDesign(SimpleFilter filter, int surveyId)
+    {
+        filter.addCondition(FieldKey.fromParts("rowId"), surveyId);
+        return new TableSelector(SurveySchema.getInstance().getSurveyDesignsTable(), filter, null).getObject(SurveyDesign.class);
     }
 
     /**
@@ -462,7 +484,7 @@ public class SurveyManager
     public static List<Throwable> fireDeleteSurvey(Container c, User user, Survey survey)
     {
         List<Throwable> errors = new ArrayList<>();
-        SurveyDesign design = SurveyManager.get().getSurveyDesign(c, user, survey.getSurveyDesignId());
+        SurveyDesign design = SurveyManager.get().getSurveyDesignForRead(c, user, survey.getSurveyDesignId());
 
         for (SurveyListener l : _surveyListeners)
         {
@@ -825,26 +847,59 @@ public class SurveyManager
             // 1. Same container: a user with read access in the design's container sees it.
             User readerA = createUserInRole(_projectA, ReaderRole.class);
             assertNotNull("Design should be visible from its own container to a user with read access",
-                    sm.getSurveyDesign(_projectA, readerA, designId));
+                    sm.getSurveyDesignForRead(_projectA, readerA, designId));
 
             // 2. Different container, caller can read the design's container: tolerated, design is returned.
             User readerAB = createUserInRole(_projectA, ReaderRole.class);
             grantRole(readerAB, _projectB, ReaderRole.class);
             assertNotNull("Design should be visible from another container when the caller can read the design's container",
-                    sm.getSurveyDesign(_projectB, readerAB, designId));
+                    sm.getSurveyDesignForRead(_projectB, readerAB, designId));
 
             // 3. Different container, caller cannot read the design's container: must return null.
             User readerB = createUserInRole(_projectB, ReaderRole.class);
             assertNull("Design must NOT be visible to a caller without read access to the design's container",
-                    sm.getSurveyDesign(_projectB, readerB, designId));
+                    sm.getSurveyDesignForRead(_projectB, readerB, designId));
 
             // A delete issued from the wrong container must not remove the design
             sm.deleteSurveyDesign(_projectB, _user, designId, true);
-            assertNotNull("Cross-container delete must be a no-op", sm.getSurveyDesign(_projectA, _user, designId));
+            assertNotNull("Cross-container delete must be a no-op", sm.getSurveyDesignForRead(_projectA, _user, designId));
 
             // A delete from the correct container removes it
             sm.deleteSurveyDesign(_projectA, _user, designId, true);
-            assertNull("Same-container delete should remove the design", sm.getSurveyDesign(_projectA, _user, designId));
+            assertNull("Same-container delete should remove the design", sm.getSurveyDesignForRead(_projectA, _user, designId));
+        }
+
+        // GH Issue 1308: SaveSurveyTemplateAction must not let a caller in one folder overwrite and reparent a survey
+        // design owned by another folder.
+        @Test
+        public void testSaveSurveyTemplateActionContainerScoping() throws Exception
+        {
+            SurveyManager sm = SurveyManager.get();
+
+            SurveyDesign design = new SurveyDesign();
+            design.setLabel("Design owned by A");
+            design.setDescription("original description");
+            design = sm.saveSurveyDesign(_projectA, _user, design);
+            int designId = design.getRowId();
+
+            User attacker = createUserInRole(_projectA, ReaderRole.class);
+            grantRole(attacker, _projectB, AuthorRole.class);
+
+            ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectB)
+                    .addParameter("rowId", designId)
+                    .addParameter("label", "STOLEN")
+                    .addParameter("description", "hijacked");
+            post(url, attacker);
+
+            // The design must still belong to folder A with its original field values: not reparented, not overwritten.
+            SurveyDesign after = sm.getSurveyDesignForRead(_projectA, _user, designId);
+            assertNotNull("Design must still exist after the cross-container save attempt", after);
+            assertEquals("Design must NOT be reparented into the attacker's container",
+                    _projectA.getId(), after.getContainerId());
+            assertEquals("Design label must NOT be overwritten from another container",
+                    "Design owned by A", after.getLabel());
+            assertEquals("Design description must NOT be overwritten from another container",
+                    "original description", after.getDescription());
         }
 
         @Test
@@ -854,7 +909,7 @@ public class SurveyManager
 
             SurveyDesign design = new SurveyDesign();
             design.setLabel("Scoping test design for survey");
-            design = sm.saveSurveyDesign(_projectA, _user, design);
+             design = sm.saveSurveyDesign(_projectA, _user, design);
 
             Survey survey = new Survey();
             survey.setLabel("Scoping test survey");

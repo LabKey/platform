@@ -122,7 +122,6 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         clickProject(getProjectName());
     }
 
-    //Sometimes fails intermittently GitHub Issue 1335.
     @Test
     public void testStudyProtocolDesigner()
     {
@@ -344,6 +343,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         List<String> actualHeaders = singleManagementTable.columnHeaders();
         for(String expectedHeader : EXPECTED_HEADERS)
         {
+            // Workaround GitHub Issue 1335
+            expectedHeader = expectedHeader.replace("\\", "");
             Assert.assertTrue("Did not find header '" + expectedHeader + "'", actualHeaders.contains(expectedHeader));
         }
 
