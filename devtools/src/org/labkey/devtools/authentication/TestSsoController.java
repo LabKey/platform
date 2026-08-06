@@ -38,6 +38,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestSsoController extends SpringActionController
@@ -124,16 +125,35 @@ public class TestSsoController extends SpringActionController
 
     public static class TestSsoSaveConfigurationForm extends SsoSaveConfigurationForm
     {
+        private boolean _skipReauthentication = false;
+
         @Override
         public String getProvider()
         {
             return TestSsoProvider.NAME;
         }
 
+        public boolean isSkipReauthentication()
+        {
+            return _skipReauthentication;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSkipReauthentication(boolean skipReauthentication)
+        {
+            _skipReauthentication = skipReauthentication;
+        }
+
         @Override
         public @NotNull Map<String, Object> getPropertyMap()
         {
-            return null != _domain ? Map.of("domain", _domain) : Map.of();
+            Map<String, Object> map = new HashMap<>();
+            map.put(TestSsoConfiguration.SKIP_REAUTHENTICATION, _skipReauthentication);
+
+            if (null != _domain)
+                map.put("domain", _domain);
+
+            return map;
         }
     }
 }

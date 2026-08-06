@@ -57,6 +57,7 @@ import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.InlineInClauseGenerator;
@@ -522,6 +523,7 @@ public class ApiModule extends CodeOnlyModule
             DbScope.SchemaNameTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
+                DisplayColumn.TestCase.class,
             DomTestCase.class,
             DomainTemplateGroup.TestCase.class,
             Encryption.TestCase.class,
