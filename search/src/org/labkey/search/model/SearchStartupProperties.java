@@ -63,6 +63,17 @@ public enum SearchStartupProperties implements StartupProperty
                 SearchPropertyManager.setCrawlerRunningState(null, state);
         }
     },
+    searchIconState("Hide or show the search icon in the page header. Valid values: " + Arrays.toString(SearchIconState.values())){
+        @Override
+        public void setProperty(@NotNull SearchService ss, SearchIndexStartupHandler indexStartupHandler, String value)
+        {
+            SearchIconState state = EnumUtils.getEnum(SearchIconState.class, value);
+            if (null == state)
+                LOG.error("Unrecognized value for \"searchIconState\": \"{}\"", value);
+            else
+                SearchPropertyManager.setSearchIconState(null, state);
+        }
+    },
     deleteIndex("Delete index and clear last indexed, after setting other properties"){
         @Override
         public void setProperty(@NotNull SearchService ss, SearchIndexStartupHandler indexStartupHandler, String value)

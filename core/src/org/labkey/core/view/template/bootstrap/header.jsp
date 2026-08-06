@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
@@ -83,7 +84,7 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ModuleLoader moduleLoader = ModuleLoader.getInstance();
     boolean isStartupComplete = moduleLoader.isStartupComplete();
-    boolean showSearch = isStartupComplete && PageFlowUtil.urlProviderOptional(SearchUrls.class) != null;
+    boolean showSearch = isStartupComplete && PageFlowUtil.urlProviderOptional(SearchUrls.class) != null && SearchService.get().isSearchIconVisible();
 
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
