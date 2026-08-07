@@ -969,6 +969,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
+    @Override
+    public boolean hasSampleIdsNotInScope(Container container, User user, Collection<Long> sampleIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoMaterial(), sampleIds);
+    }
+
+    @Override
+    public boolean hasSourceIdsNotInScope(Container container, User user, Collection<Long> sourceIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoData(), sourceIds);
+    }
+
+    // GitHub Issue 1309
+    private boolean hasEntityIdsNotInScope(Container container, User user, TableInfo entityTable, Collection<Long> entityIds)
+    {
+        if (entityIds.isEmpty())
+            return false;
+
+        ContainerFilter cf = container.getProductFoldersDataContainerFilter(user);
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), entityIds);
+        filter.addClause(cf.createFilterClause(entityTable.getSchema(), FieldKey.fromParts("Container")));
+
+        Set<Long> inScope = new HashSet<>(new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getArrayList(Long.class));
+        return entityIds.stream().anyMatch(id -> !inScope.contains(id));
+    }
+
     private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
     {
         return new TableSelector(getTinfoMaterial(), filter, sort).getArrayList(Material.class);

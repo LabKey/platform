@@ -1263,6 +1263,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void clearMaterialAncestors(Collection<Long> materialRowIds);
     void repopulateAncestors();
 
+    boolean hasSampleIdsNotInScope(Container container, User user, Collection<Long> sampleIds);
+
+    boolean hasSourceIdsNotInScope(Container container, User user, Collection<Long> sourceIds);
+
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
