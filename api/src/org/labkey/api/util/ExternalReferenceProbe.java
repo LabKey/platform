@@ -39,6 +39,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * <p>The probe only sees references it hosts, so a test proving "nothing external at all" must point every reference
  * in its fixture at {@link #url}. Not thread-safe across tests: start and close one per test.
+ *
+ * <p>Test-only, but here so that other modules can use it for their own testing.
  */
 public class ExternalReferenceProbe implements AutoCloseable
 {

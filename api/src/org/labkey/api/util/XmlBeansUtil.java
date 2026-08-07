@@ -226,7 +226,11 @@ public class XmlBeansUtil
         return result;
     }
 
-    /** A {@link SchemaFactory} hardened against XXE (CWE-611). Not thread-safe, so a fresh instance per call. */
+    /**
+     * A {@link SchemaFactory} hardened against XXE (CWE-611). Not thread-safe, so get a fresh instance per call.
+     * The schema document itself must still be trusted: local file: and jar: references stay enabled so bundled schemas
+     * can import their sibling
+     */
     public static SchemaFactory schemaFactory()
     {
         //noinspection SchemaFactory
@@ -301,13 +305,39 @@ public class XmlBeansUtil
             URI uri = URI.create(systemId);
             if (!uri.isAbsolute() && baseURI != null)
                 uri = URI.create(baseURI).resolve(uri);
-            String scheme = uri.getScheme();
-            return scheme == null || "file".equalsIgnoreCase(scheme) || "jar".equalsIgnoreCase(scheme);
+            return isLocalScheme(uri);
         }
         catch (IllegalArgumentException e)
         {
             return false; // unparseable, so not something we're willing to vouch for
         }
+    }
+
+    private static boolean isLocalScheme(URI uri)
+    {
+        String scheme = uri.getScheme();
+
+        if (scheme == null)
+            return true;
+
+        // A protocol-relative "//host/x.xsd" resolves against a file: base into file://host/x.xsd, which Windows maps
+        // to a UNC path and fetches over SMB. Java emits file:/path and file:///path, both of which parse to a null
+        // authority, so requiring that costs nothing.
+        if ("file".equalsIgnoreCase(scheme))
+        {
+            String authority = uri.getAuthority();
+            return authority == null || "localhost".equalsIgnoreCase(authority);
+        }
+
+        // jar:<url>!/<entry> is opaque, so the scheme above says nothing about what gets fetched -- the inner URL does
+        if ("jar".equalsIgnoreCase(scheme))
+        {
+            String ssp = uri.getSchemeSpecificPart();
+            int separator = ssp.indexOf("!/");
+            return isLocalScheme(URI.create(separator < 0 ? ssp : ssp.substring(0, separator)));
+        }
+
+        return false;
     }
 
     @FunctionalInterface
@@ -426,15 +456,27 @@ public class XmlBeansUtil
         {
             try (ExternalReferenceProbe probe = ExternalReferenceProbe.start())
             {
-                String remote = probe.url("/remote.xsd",
-                    "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' targetNamespace='urn:probe'/>");
-                String xsd = "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'>" +
-                    "<xs:import namespace='urn:probe' schemaLocation='" + remote + "'/>" +
-                    "<xs:element name='r' type='xs:string'/>" +
-                    "</xs:schema>";
-                compileIgnoringErrors(schemaFactory(), new StreamSource(new StringReader(xsd)));
+                compileIgnoringErrors(schemaFactory(), new StreamSource(new StringReader(remoteImportSchema(probe))));
 
                 probe.assertNotContacted("schemaFactory() must not fetch a remote xs:import");
+            }
+        }
+
+        /**
+         * Harness self-check for the two tests above, mirroring {@link #probeDetectsFetchWhenValidatorIsNotHardened}:
+         * a compile that aborts before it ever walks the import graph satisfies assertNotContacted while proving nothing.
+         */
+        @Test
+        public void probeDetectsFetchWhenSchemaFactoryIsNotHardened() throws Exception
+        {
+            try (ExternalReferenceProbe probe = ExternalReferenceProbe.start())
+            {
+                //noinspection SchemaFactory
+                SchemaFactory raw = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+                compileIgnoringErrors(raw, new StreamSource(new StringReader(remoteImportSchema(probe))));
+
+                assertTrue("Probe must observe a fetch from an unhardened factory, otherwise the schemaFactory() " +
+                    "tests in this class prove nothing", probe.wasContacted());
             }
         }
 
@@ -517,6 +559,18 @@ public class XmlBeansUtil
             catch (SAXException ignored)
             {
             }
+        }
+
+        /** A schema whose only external reference is a remote xs:import pointed at the probe. */
+        private String remoteImportSchema(ExternalReferenceProbe probe)
+        {
+            String remote = probe.url("/remote.xsd",
+                "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' targetNamespace='urn:probe'/>");
+
+            return "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'>" +
+                "<xs:import namespace='urn:probe' schemaLocation='" + remote + "'/>" +
+                "<xs:element name='r' type='xs:string'/>" +
+                "</xs:schema>";
         }
 
         /** Likewise: a refused reference may or may not surface as a compile error. */
