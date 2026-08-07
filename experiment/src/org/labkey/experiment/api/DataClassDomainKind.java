@@ -24,6 +24,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -193,7 +194,14 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     private ExpDataClassImpl getDataClass(Domain domain)
     {
-        return ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
+        return getDataClassByLsid(domain.getContainer(), domain.getTypeURI());
+    }
+
+    // Prefer the cached container-scoped lookup; fall back to the uncached global query for a DataClass outside that scope.
+    private static ExpDataClassImpl getDataClassByLsid(@Nullable Container c, String lsid)
+    {
+        ExpDataClassImpl dataClass = c == null ? null : ExperimentServiceImpl.get().getDataClassByLsid(c, lsid, true);
+        return dataClass != null ? dataClass : ExperimentServiceImpl.get().getDataClass(lsid);
     }
 
     @Override
@@ -470,7 +478,14 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public DataClassDomainKindProperties getDomainKindProperties(GWTDomain<?> domain, Container container, User user)
     {
-        ExpDataClass dc = domain != null ? ExperimentService.get().getDataClass(domain.getDomainURI()) : null;
+        ExpDataClass dc = null;
+        if (domain != null)
+        {
+            // domain.getContainer() is the definition container, but is unset on client-supplied domains, so fall back to the request container
+            Container domainContainer = ContainerManager.getForId(domain.getContainer());
+            dc = getDataClassByLsid(domainContainer == null ? container : domainContainer, domain.getDomainURI());
+        }
+
         return new DataClassDomainKindProperties(dc);
     }
 

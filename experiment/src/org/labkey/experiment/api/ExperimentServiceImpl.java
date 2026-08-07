@@ -1843,6 +1843,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
+    public @Nullable ExpDataClassImpl getDataClassByLsid(@NotNull Container c, @NotNull String lsid, boolean includeProjectAndShared)
+    {
+        return getDataClass(c, includeProjectAndShared, (dataClass -> lsid.equals(dataClass.getLSID())));
+    }
+
     private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
         List<String> containerIds = createContainerList(c, includeProjectAndShared);
