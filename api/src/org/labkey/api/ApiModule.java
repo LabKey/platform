@@ -180,6 +180,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FileServlet;
@@ -482,7 +483,8 @@ public class ApiModule extends CodeOnlyModule
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
             URIUtil.TestCase.class,
-            ValidEmail.TestCase.class
+            ValidEmail.TestCase.class,
+            XmlBeansUtil.TestCase.class
         );
     }
 
