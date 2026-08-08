@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -58,7 +59,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // Warn when this many (or more) rows are pulled into a Java collection; suggests switching to a streaming method
     private static final int LARGE_RESULT_THRESHOLD = 10_000;
 
-    // Keyed by call site, not by query or row count; see getStackKey()
+    // At most one warning per day per call site (not per query or row count), so a legitimately large but expected load doesn't flood the log; see getStackKey()
     private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
             w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
                     w.rowCount, w.elementClass, w.selectorClass, w.sql, w.stackTrace));
@@ -196,13 +197,21 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         return result;
     }
 
-    private static final List<String> PLUMBING_PACKAGES = List.of("org.labkey.api.data.", "org.labkey.api.cache.");
+    // The selector frames that can sit between the real call site and getArrayList(). A package prefix won't do:
+    // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
+    private static final Set<String> PLUMBING_CLASSES = Set.of(
+            "org.labkey.api.data.BaseSelector",
+            "org.labkey.api.data.NonSqlExecutingSelector",
+            "org.labkey.api.data.ResultSetSelector",
+            "org.labkey.api.data.SqlExecutingSelector",
+            "org.labkey.api.data.SqlSelector",
+            "org.labkey.api.data.TableSelector");
 
     // Guards against a stack that is nothing but plumbing frames
     private static final int MAX_KEY_FRAMES = 10;
 
     /**
-     * The stack through the first frame outside the selector/cache plumbing — the code that actually loaded the collection.
+     * The stack through the first frame outside the selector plumbing — the code that actually loaded the collection.
      * Don't extend this to the full stack: a cache loader is reached via many callers, each of which would then get its own warning.
      */
     private static String getStackKey(Throwable t)
@@ -218,11 +227,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     private static boolean isPlumbingStackFrame(StackTraceElement frame)
     {
-        return PLUMBING_PACKAGES.stream().anyMatch(p -> frame.getClassName().startsWith(p));
+        String className = frame.getClassName();
+        int nested = className.indexOf('$'); // Nested classes and lambdas belong to their enclosing selector
+
+        return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
     }
 
-    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call-stack signature
-    // so the throttle dedupes per unique call stack rather than per (stack + row count + SQL) combination.
+    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call-site signature
+    // so the throttle dedupes per unique call site rather than per (call site + row count + SQL) combination.
     private record LargeResultWarning(String stackKey, int rowCount, String elementClass, String selectorClass,
                                       String sql, Throwable stackTrace)
     {
@@ -751,6 +763,30 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             String otherKey = getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector", "org.labkey.assay.AssayManager")));
 
             assertNotEquals(key, otherKey);
+        }
+
+        // org.labkey.api.data holds ordinary callers as well as the selectors themselves
+        @Test
+        public void aCallerInTheSelectorPackageEndsTheKey()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector",
+                    "org.labkey.api.data.ContainerManager",
+                    "org.labkey.core.admin.AdminController")));
+
+            assertTrue("ContainerManager is a call site, not selector plumbing", key.endsWith("org.labkey.api.data.ContainerManager.method(Source.java:1)"));
+        }
+
+        @Test
+        public void nestedSelectorClassesAreStillPlumbing()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector$ArrayListResultSetHandler",
+                    "org.labkey.study.StudyManager")));
+
+            assertEquals(3, key.split("\n").length);
         }
 
         @Test
