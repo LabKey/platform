@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOCase;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -27,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import java.io.File;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -48,6 +51,7 @@ import java.util.Objects;
 public class FileType implements Serializable
 {
     private static final Detector DETECTOR = new DefaultDetector(MimeTypes.getDefaultMimeTypes());
+    private static final Logger LOG = LogHelper.getLogger(FileType.class, "file suffix matching");
 
     // For serialization
     protected FileType() {}
@@ -406,7 +410,8 @@ public class FileType implements Serializable
         {
             return s;
         }
-        return s.toLowerCase();
+        // ROOT, not the default locale: in Turkish 'I' lowercases to dotless 'ı', so ".MZID" would stop matching ".mzid"
+        return s.toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -444,7 +449,7 @@ public class FileType implements Serializable
             else if (_supportGZ.booleanValue()) // TPP treats .xml.gz as a native read format
             {
                 String sgz = s+".gz";
-                if (fileName.endsWith(sgz))
+                if (toLowerIfCaseInsensitive(fileName).endsWith(toLowerIfCaseInsensitive(sgz)))
                 {
                     if ((null==suffix) || (sgz.length()>suffix.length()))
                     {
@@ -453,7 +458,14 @@ public class FileType implements Serializable
                 }
             }
         }
-        assert suffix != null : "Could not find matching suffix even though types match";
+        if (suffix == null)
+        {
+            // Unreachable unless isType() and this loop disagree; warn so it stays visible with assertions disabled
+            String message = "Could not find matching suffix for " + fileName + " even though types match: " + this + ", supportGZ: " + _supportGZ;
+            assert false : message;
+            LOG.warn(message);
+            return fileName;
+        }
         return fileName.substring(0, fileName.length() - suffix.length());
     }
 
@@ -529,7 +541,7 @@ public class FileType implements Serializable
 
             if (contentType != null)
             {
-                contentType = contentType.toLowerCase().trim();
+                contentType = contentType.toLowerCase(Locale.ROOT).trim();
                 if (_contentTypes.contains(contentType))
                     return true;
             }
@@ -580,14 +592,16 @@ public class FileType implements Serializable
 
     public boolean isMatch(String name, String basename)
     {
+        String normalizedName = toLowerIfCaseInsensitive(name);
         for (String suffix : _suffixes)
         {
-            if (name.equalsIgnoreCase(basename + suffix))
+            String normalizedBase = toLowerIfCaseInsensitive(basename + suffix);
+            if (normalizedName.equals(normalizedBase))
             {
                 return true;
             }
             // TPP treats .xml.gz as a native format
-            if (_supportGZ.booleanValue() && name.equals(basename + suffix+".gz"))
+            if (_supportGZ.booleanValue() && normalizedName.equals(normalizedBase + ".gz"))
             {
                 return true;
             }
@@ -620,7 +634,7 @@ public class FileType implements Serializable
         if (!Objects.equals(_defaultSuffix, fileType._defaultSuffix))
             return false;
         if (!Objects.equals(_antiTypes, fileType._antiTypes)) return false;
-        return !(!Objects.equals(_suffixes, fileType._suffixes));
+        return Objects.equals(_suffixes, fileType._suffixes);
     }
 
     public String getDefaultSuffix()
@@ -754,7 +768,51 @@ public class FileType implements Serializable
             assertFalse(ftt.isType("test.foo.bar"));
             assertTrue(ftt.isType("test.foo"));
             assertTrue(ftt.isType("test.bar"));
+        }
 
+        @Test
+        public void testCaseInsensitiveBaseName()
+        {
+            FileType ft = new FileType(Arrays.asList(".foo", ".bar"), ".foo", gzSupportLevel.SUPPORT_GZ);
+
+            // getBaseName() must handle everything isType() accepts, including mixed case with .gz
+            assertEquals("test", ft.getBaseName(Path.of("test.foo")));
+            assertEquals("test", ft.getBaseName(Path.of("test.FOO")));
+            assertEquals("test", ft.getBaseName(Path.of("test.foo.gz")));
+            assertEquals("test", ft.getBaseName(Path.of("test.FOO.gz")));
+            assertEquals("test", ft.getBaseName(Path.of("test.bAr.gZ")));
+
+            // strongest match wins regardless of case
+            FileType ftPrefix = new FileType(Arrays.asList(".mzxml", ".msprefix.mzxml"), ".mzxml", gzSupportLevel.SUPPORT_GZ);
+            assertEquals("test", ftPrefix.getBaseName(Path.of("test.MSPREFIX.mzXML")));
+            assertEquals("test", ftPrefix.getBaseName(Path.of("test.MSPREFIX.mzXML.GZ")));
+
+            // the suffix itself may be mixed case, as massSpecDataFileType's ".mzXML" is
+            FileType ftMixedSuffix = new FileType(".mzXML", gzSupportLevel.SUPPORT_GZ);
+            assertEquals("test", ftMixedSuffix.getBaseName(Path.of("test.mzXML")));
+            assertEquals("test", ftMixedSuffix.getBaseName(Path.of("test.mzxml")));
+            assertEquals("test", ftMixedSuffix.getBaseName(Path.of("test.mzxml.gz")));
+            assertEquals("test", ftMixedSuffix.getBaseName(Path.of("test.MZXML.GZ")));
+            assertTrue(ftMixedSuffix.isMatch("test.mzxml.gz", "test"));
+
+            // no match at all still returns the original file name
+            assertEquals("test.unrelated", ft.getBaseName(Path.of("test.unrelated")));
+
+            // isMatch() follows the same case rules as isType(), for both the plain and the .gz forms
+            assertTrue(ft.isMatch("test.FOO", "test"));
+            assertTrue(ft.isMatch("test.FOO.gz", "test"));
+            assertTrue(ft.isMatch("test.bAr.gZ", "test"));
+            assertFalse(ft.isMatch("test.unrelated", "test"));
+
+            // A type that opts into case sensitivity still agrees with itself on either kind of file system:
+            // isType(), getBaseName() and isMatch() all accept the file, or none of them do
+            FileType ftCase = new FileType(".foo", gzSupportLevel.SUPPORT_GZ);
+            ftCase.setCaseSensitiveOnCaseSensitiveFileSystems(true);
+            String mixedCase = "test.FOO.gz";
+            boolean accepted = ftCase.isType(mixedCase);
+            assertEquals(accepted ? "test" : mixedCase, ftCase.getBaseName(Path.of(mixedCase)));
+            assertEquals(accepted, ftCase.isMatch(mixedCase, "test"));
+            assertTrue(ftCase.isMatch("test.foo.gz", "test"));
         }
     }
 }
