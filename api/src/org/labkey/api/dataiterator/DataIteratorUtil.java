@@ -60,6 +60,7 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -373,6 +374,29 @@ public class DataIteratorUtil
         }
     }
 
+    /**
+     * Builds `in` and hands it to `wrapper`, propagating a null input (which means the context has errors). If the
+     * wrapper throws or returns null, the built input is closed rather than abandoned/leaked.
+     */
+    public static @Nullable DataIterator wrapOrClose(DataIteratorBuilder in, DataIteratorContext context, UnaryOperator<DataIterator> wrapper)
+    {
+        DataIterator di = in.getDataIterator(context);
+        if (null == di)
+            return null;
+
+        try
+        {
+            DataIterator out = wrapper.apply(di);
+            if (null == out)
+                closeQuietly(di);
+            return out;
+        }
+        catch (RuntimeException | Error e)
+        {
+            closeQuietly(di);
+            throw e;
+        }
+    }
 
     /*
      * Wrapping functions to add functionality to existing DataIterators
