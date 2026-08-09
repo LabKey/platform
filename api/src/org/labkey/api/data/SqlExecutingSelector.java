@@ -201,13 +201,11 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
     private static final Set<String> PLUMBING_CLASSES = Set.of(
             "org.labkey.api.data.BaseSelector",
-            "org.labkey.api.data.NonSqlExecutingSelector",
-            "org.labkey.api.data.ResultSetSelector",
             "org.labkey.api.data.SqlExecutingSelector",
             "org.labkey.api.data.SqlSelector",
             "org.labkey.api.data.TableSelector");
 
-    // Guards against a stack that is nothing but plumbing frames
+    // Caps key length; a stack this deep in plumbing collapses to a single key
     private static final int MAX_KEY_FRAMES = 10;
 
     /**
@@ -233,21 +231,21 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
     }
 
-    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call-site signature
-    // so the throttle dedupes per unique call site rather than per (call site + row count + SQL) combination.
+    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element
+    // type, so the throttle dedupes on those rather than on the full (call site + row count + SQL) combination.
     private record LargeResultWarning(String stackKey, int rowCount, String elementClass, String selectorClass,
                                       String sql, Throwable stackTrace)
     {
         @Override
         public boolean equals(Object o)
         {
-            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey);
+            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey) && elementClass.equals(w.elementClass);
         }
 
         @Override
         public int hashCode()
         {
-            return stackKey.hashCode();
+            return 31 * stackKey.hashCode() + elementClass.hashCode();
         }
     }
 
@@ -801,6 +799,33 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         public void emptyStackTraceIsHandled()
         {
             assertEquals("", getStackKey(createThrowable(List.of())));
+        }
+
+        // The stack runs out before a call site is found, so the walk must stop on the last frame rather than past it
+        @Test
+        public void singlePlumbingFrameIsHandled()
+        {
+            assertEquals("org.labkey.api.data.SqlExecutingSelector.method(Source.java:1)",
+                    getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector"))));
+        }
+
+        private static LargeResultWarning createWarning(String stackKey, String elementClass)
+        {
+            return new LargeResultWarning(stackKey, LARGE_RESULT_THRESHOLD, elementClass, "TableSelector", "SELECT *", new Throwable());
+        }
+
+        @Test
+        public void warningsDedupeOnCallSiteAndElementType()
+        {
+            assertEquals(createWarning("key", "Container"), createWarning("key", "Container"));
+            assertNotEquals("A generic helper loads many types from one call site", createWarning("key", "Container"), createWarning("key", "User"));
+            assertNotEquals(createWarning("key", "Container"), createWarning("otherKey", "Container"));
+        }
+
+        @Test
+        public void equalWarningsShareAHashCode()
+        {
+            assertEquals(createWarning("key", "Container").hashCode(), createWarning("key", "Container").hashCode());
         }
     }
 }
