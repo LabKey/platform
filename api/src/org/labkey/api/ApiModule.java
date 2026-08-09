@@ -23,6 +23,7 @@ import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
+import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
@@ -412,6 +413,7 @@ public class ApiModule extends CodeOnlyModule
             ChecksumUtil.TestCase.class,
             CollectionUtils.TestCase.class,
             Compress.TestCase.class,
+            ConcurrencyLimiter.TestCase.class,
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
             CspCommentScanner.TestCase.class,

@@ -169,6 +169,13 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
 Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     singleton: true,
 
+    /**
+     * Maximum number of analyzeQueries.api requests to keep in flight at once. Each request builds the full
+     * TableInfo/ColumnInfo graph for one folder and holds it for the life of the request, so dispatching one
+     * request per folder can exhaust the server's request thread pool and its heap on a site-level analysis.
+     */
+    MAX_CONCURRENT_REQUESTS : 4,
+
     constructor : function() {
         this.callParent();
 
@@ -178,9 +185,17 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     clear : function() {
         this.queries = undefined;
         this.currentContainer = undefined;
+        this.analyzedContainerPath = undefined;
         this.totalContainers = 0;
         this.containers = [];
-        this.error = undefined;
+        this.activeContainers = {};
+        this.activeRequests = {};
+        this.activeCount = 0;
+        this.finishedCount = 0;
+        this.analysisComplete = false;
+        this.cancelled = false;
+        this.lastResponse = undefined;
+        this.errors = [];
     },
 
     getCacheKey : function(container, schemaName, queryName) {
@@ -191,11 +206,12 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         return this.queries[this.getCacheKey(container, schemaName, queryName)];
     },
 
-    load : function(containerPath, success, failure, scope) {
+    load : function(containerPath, success, failure, scope, containers) {
 
         if (!this.queries) {
             this.analyzeQueries({
                 containerPath : containerPath,
+                containers : containers,
                 success : function(resp, opts){
                     this.processDependencies(resp);
                     if (Ext4.isFunction(success)){
@@ -244,79 +260,154 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
     // hits the server endpoint (premium only) to create the dependency graph
     analyzeQueries : function(config) {
-        function fixupJsonResponse(json, response, options, container) {
+
+        // merge one container's response into the accumulated dependency lists
+        function accumulateResponse(container, json, response, options) {
+            // any response that isn't success:true failed, even when it carries no error message, and an unparseable
+            // one leaves json null; swallowing either makes the dependency report look empty rather than broken
+            if (!json || !json.success) {
+                this.errors.push({containerPath: container, response: response, options: options});
+                return;
+            }
+
+            var key,toKey,fromKey;
+            var objects = json.objects;
+
+            var dependantsMap = {};
+            var dependeesMap  = {};
+
+            for (var edge = 0; edge < json.graph.length; edge++) {
+                fromKey = json.graph[edge][0];
+                toKey = json.graph[edge][1];
+
+                // objects I am dependant on are my dependees
+                dependeesMap[fromKey] = dependeesMap[fromKey] || [];
+                dependeesMap[fromKey].push(objects[toKey]);
+
+                // objects are dependant on me are my dependants
+                dependantsMap[toKey] = dependantsMap[toKey] || [];
+                dependantsMap[toKey].push(objects[fromKey]);
+            }
+
+            for (key in dependeesMap) {
+                if (dependeesMap.hasOwnProperty(key)) {
+                    let from = objects[key];
+                    // limit dependants to only queries in the current folder
+                    if (LABKEY.container.id === from.containerId) {
+                        this.dependeesList.push({from: from, to: dependeesMap[key]});
+                    }
+                }
+            }
+
+            for (key in dependantsMap) {
+                if (dependantsMap.hasOwnProperty(key)) {
+                    let to = objects[key];
+                    // limit dependants to only queries in the current folder
+                    if (LABKEY.container.id === to.containerId) {
+                        this.dependantsList.push({to:to, from:dependantsMap[key]});
+                    }
+                }
+            }
+        }
+
+        // the analysis is finished only once the queue has drained AND every dispatched request has returned
+        function checkComplete() {
+            if (this.cancelled || this.analysisComplete || this.activeCount > 0 || this.containers.length > 0) {
+                return;
+            }
+            this.analysisComplete = true;
+
+            var failed = this.errors.length > 0;
+            var callback = failed ? LABKEY.Utils.getOnFailure(config) : LABKEY.Utils.getOnSuccess(config);
+            var last = this.lastResponse || {};
+            var resp = last.response;
+            var opts = last.options;
+            if (failed) {
+                resp = this.errors[0].response;
+                opts = this.errors[0].options;
+            }
+
+            if (callback) {
+                var success = failed ? false : (last.json ? last.json.success : false);
+                callback.call(this, {success: success, dependants: this.dependantsList, dependees: this.dependeesList}, resp, opts);
+            }
+        }
+
+        function requestComplete(container, json, response, options) {
+            // ignore the abort callbacks that cancel() triggers, and any duplicate callback for a container that has
+            // already been accounted for
+            if (this.cancelled || !this.activeContainers[container]) {
+                return;
+            }
+            delete this.activeContainers[container];
+            delete this.activeRequests[container];
+            this.activeCount--;
+            this.finishedCount++;
+            this.lastResponse = {response: response, options: options, json: json};
+
+            accumulateResponse.call(this, container, json, response, options);
+            pump.call(this);
+        }
+
+        function dispatch(container) {
+            this.activeContainers[container] = true;
+            this.activeCount++;
             this.currentContainer = container;
 
-            if (json) {
-                if (json.success) {
-
-                    var key,toKey,fromKey;
-                    var objects = json.objects;
-
-                    var dependantsMap = {};
-                    var dependeesMap  = {};
-
-                    for (var edge = 0; edge < json.graph.length; edge++) {
-                        fromKey = json.graph[edge][0];
-                        toKey = json.graph[edge][1];
-
-                        // objects I am dependant on are my dependees
-                        dependeesMap[fromKey] = dependeesMap[fromKey] || [];
-                        dependeesMap[fromKey].push(objects[toKey]);
-
-                        // objects are dependant on me are my dependants
-                        dependantsMap[toKey] = dependantsMap[toKey] || [];
-                        dependantsMap[toKey].push(objects[fromKey]);
+            this.activeRequests[container] = LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', container),
+                method: 'GET',
+                scope: this,
+                success: function(resp, options){
+                    var json = null;
+                    try {
+                        json = LABKEY.Utils.decode(resp.responseText);
                     }
+                    catch (e) {
+                        console.warn('Invalid JSON returned from analyzeQueries.api : ' + resp.responseText);
+                        console.warn('Response URL : ' + resp.responseURL);
 
-                    for (key in dependeesMap) {
-                        if (dependeesMap.hasOwnProperty(key)) {
-                            let from = objects[key];
-                            // limit dependants to only queries in the current folder
-                            if (LABKEY.container.id === from.containerId) {
-                                this.dependeesList.push({from: from, to: dependeesMap[key]});
-                            }
-                        }
+                        // leave json null and finish processing this container
                     }
-
-                    for (key in dependantsMap) {
-                        if (dependantsMap.hasOwnProperty(key)) {
-                            let to = objects[key];
-                            // limit dependants to only queries in the current folder
-                            if (LABKEY.container.id === to.containerId) {
-                                this.dependantsList.push({to:to, from:dependantsMap[key]});
-                            }
-                        }
-                    }
+                    requestComplete.call(this, container, json, resp, options);
+                },
+                failure: function(resp, options){
+                    console.warn('Analyze query request failed : ' + resp.responseText);
+                    requestComplete.call(this, container, {error: true}, resp, options);
                 }
-                else if (json.error) {
-                    // only save the first error (if multiple)
-                    if (!this.error)
-                        this.error = {response: response, options: options};
-                }
+            });
+        }
+
+        // keep up to MAX_CONCURRENT_REQUESTS requests in flight, then test for completion
+        function pump() {
+            while (this.activeCount < this.MAX_CONCURRENT_REQUESTS && this.containers.length > 0) {
+                dispatch.call(this, this.containers.shift());
             }
-
-            this.removeContainer(container);
-            if (this.containers.length === 0) {
-                var callback = this.error ? LABKEY.Utils.getOnFailure(config) : LABKEY.Utils.getOnSuccess(config);
-                var resp = response;
-                var opts = options;
-                if (this.error) {
-                    resp = this.error.response;
-                    opts = this.error.options;
-                }
-
-                if (callback) {
-                    var success = this.error ? false : (json ? json.success : false);
-                    callback.call(this, {success: success, dependants: this.dependantsList, dependees: this.dependeesList}, resp, opts);
-                }
-            }
+            checkComplete.call(this);
         }
 
         // initialize class data structures
         this.dependantsList = [];
         this.dependeesList = [];
-        this.containers = [];
+        this.containers = [];           // container paths queued but not yet requested
+        this.activeContainers = {};     // container path -> true for each request in flight
+        this.activeRequests = {};       // container path -> XMLHttpRequest, so cancel() can abort them
+        this.activeCount = 0;
+        this.finishedCount = 0;
+        this.analysisComplete = false;
+        this.cancelled = false;
+        this.lastResponse = undefined;
+        this.errors = [];
+        this.analyzedContainerPath = config.containerPath;
+
+        // the caller may have already resolved the scope via loadContainerCounts(), in which case there is nothing to look up
+        if (config.containers) {
+            this.containers = config.containers.slice();
+            this.totalContainers = this.containers.length;
+            pump.call(this);
+            return;
+        }
+
         this.containers.push(config.containerPath || LABKEY.container.path);
         let includeSubfolders = config.containerPath != null;
 
@@ -324,6 +415,9 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         LABKEY.Security.getContainers({
             containerPath : config.containerPath,
             includeSubfolders : includeSubfolders,
+            includeWorkbookChildren : false,
+            includeStandardProperties : false,
+            includeEffectivePermissions : false,
             scope : this,
             success : function(json){
                 if (includeSubfolders) {
@@ -332,31 +426,9 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                     }, this);
                 }
 
-                // analyze queries for each container
+                // analyze queries for each container, at most MAX_CONCURRENT_REQUESTS at a time
                 this.totalContainers = this.containers.length;
-                Ext4.each(this.containers, function(c){
-                    LABKEY.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', c),
-                        method: 'GET',
-                        scope: this,
-                        success: function(resp, options){
-                            try {
-                                fixupJsonResponse.call(this, LABKEY.Utils.decode(resp.responseText), resp, options, c);
-                            }
-                            catch (e) {
-                                console.warn('Invalid JSON returned from analyzeQueries.api : ' + resp.responseText);
-                                console.warn('Response URL : ' + resp.responseURL);
-
-                                // pass in a null json response and finish processing this container
-                                fixupJsonResponse.call(this, null, resp, options, c);
-                            }
-                        },
-                        failure: function(resp, options){
-                            console.warn('Analyze query request failed : ' + resp.responseText);
-                            fixupJsonResponse.call(this, {error: true}, resp, options, c);
-                        }
-                    });
-                }, this);
+                pump.call(this);
             },
             failure : function(json, resp, options) {
                 var callback = LABKEY.Utils.getOnFailure(config);
@@ -374,18 +446,98 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         }, this);
     },
 
-    removeContainer : function(container) {
-        let idx = this.containers.indexOf(container);
-        if (idx != -1) {
-            this.containers.splice(idx, 1);
+    /**
+     * Resolve, once per page load, the folders each analysis scope would process, so the UI can show the cost of an
+     * analysis before starting one and then hand the resolved list straight to analyzeQueries(). The site-level tree is
+     * a superset of the project-level one, so a single request covers both scopes.
+     *
+     * Workbooks are excluded: they hold no custom queries, but on some sites they outnumber real folders by orders of
+     * magnitude, and each one would otherwise cost an analyzeQueries.api request.
+     */
+    loadContainerCounts : function(success, failure, scope) {
+        if (this.containerScopes) {
+            success.call(scope || this, this.containerScopes);
+            return;
         }
+
+        LABKEY.Security.getContainers({
+            containerPath : '/',
+            includeSubfolders : true,
+            includeWorkbookChildren : false,
+            // only id/name/path are needed, and resolving effective permissions for every folder on the site is by far
+            // the most expensive part of this call
+            includeStandardProperties : false,
+            includeEffectivePermissions : false,
+            scope : this,
+            success : function(json) {
+                let site = [];
+
+                // a folder the user can't read is still in the tree if it has readable descendants, but analyzing it
+                // would just 403, so key off the id that toJSON() only emits when the user has read permission
+                function collect(container) {
+                    if (container.id && container.path) {
+                        site.push(container.path);
+                    }
+                    Ext4.each(container.children, collect);
+                }
+                collect(json);
+
+                this.containerScopes = {'/' : site};
+
+                if (LABKEY.project) {
+                    let projectPath = LABKEY.project.path.replace(/\/+$/, '');
+                    this.containerScopes[LABKEY.project.path] = Ext4.Array.filter(site, function(path) {
+                        return path === projectPath || path.indexOf(projectPath + '/') === 0;
+                    });
+                }
+
+                success.call(scope || this, this.containerScopes);
+            },
+            failure : function(json, resp, options) {
+                if (Ext4.isFunction(failure)) {
+                    failure.call(scope || this, json, resp, options);
+                }
+            }
+        });
+    },
+
+    // one entry per container whose analysis failed, in the order the responses came back
+    getErrors : function() {
+        return this.errors || [];
+    },
+
+    // what the cached dependency graph covers: a null containerPath means only the folder the analysis was run from
+    getAnalysisScope : function() {
+        return {containerPath: this.analyzedContainerPath, folderCount: this.totalContainers};
+    },
+
+    // the folders loadContainerCounts() resolved for an analysis scope, or undefined if it hasn't run
+    getScopeContainers : function(containerPath) {
+        return this.containerScopes ? this.containerScopes[containerPath] : undefined;
+    },
+
+    // abort an analysis in progress; responses that are already in flight are ignored rather than accumulated
+    cancel : function() {
+        this.cancelled = true;
+        this.containers = [];
+        this.activeContainers = {};
+        this.activeCount = 0;
+
+        let requests = this.activeRequests || {};
+        this.activeRequests = {};
+        Ext4.Object.each(requests, function(container, request) {
+            if (request && Ext4.isFunction(request.abort)) {
+                request.abort();
+            }
+        });
     },
 
     // return the current progress for this loader
     getProgress : function() {
         return {
             currentContainer: this.currentContainer,
-            progress: 1.0 - (this.containers.length / this.totalContainers)
+            // totalContainers isn't known until the getContainers() call returns
+            progress: this.totalContainers ? (this.finishedCount / this.totalContainers) : 0
         };
     }
 });

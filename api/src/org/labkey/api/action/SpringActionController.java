@@ -532,11 +532,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
-            beforeAction(controller);
-            ModelAndView mv = controller.handleRequest(request, response);
-            if (mv != null)
+            // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
+            // through rendering because the action's memory is live for that whole time.
+            try (ConcurrencyLimiter.Permit ignored = ConcurrencyLimiter.acquire(actionClass, context))
             {
-                renderInTemplate(context, controller, pageConfig, mv);
+                beforeAction(controller);
+                ModelAndView mv = controller.handleRequest(request, response);
+                if (mv != null)
+                {
+                    renderInTemplate(context, controller, pageConfig, mv);
+                }
             }
         }
         catch (HttpRequestMethodNotSupportedException x)
