@@ -44,9 +44,17 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * <code>FileType</code>
+ * Captures a file naming convention via an ordered list of suffixes (usually extensions, but any name-ending works).
+ * One is the canonical suffix used when creating new files. Optional constraints on MIME content type, directory-ness,
+ * and file header contents.
  *
- * @author brendanx
+ * Matching ignores case unless {@link #setCaseSensitiveOnCaseSensitiveFileSystems} is set.
+ *
+ * Because suffixes match by name-ending, a broad type swallows names belonging to a more specific one — pepXML's ".xml"
+ * also matches protXML's ".pep-prot.xml". Register the specific type via {@link #addAntiFileType} to exclude it.
+ *
+ * Subclasses distinguish types that share an extension (".txt", ".xml") by overriding {@link #isHeaderMatch}; the base
+ * implementation never matches on header alone.
  */
 public class FileType implements Serializable
 {
@@ -56,6 +64,7 @@ public class FileType implements Serializable
     // For serialization
     protected FileType() {}
     
+    /** Asks the job for a file under each suffix in priority order, falling back to {@link #getDefaultName} when none exist. */
     public FileLike findInputFile(FileAnalysisJobSupport support, String baseName)
     {
         if (_suffixes.size() > 1)
@@ -415,8 +424,8 @@ public class FileType implements Serializable
     }
 
     /**
-     * Finds the best suffix based on priority order, strips it off, and returns the remainder. If there is no matching
-     * suffix, returns the original file name.
+     * Strips the longest matching suffix and returns the remainder, or the original file name if nothing matches. Longest
+     * rather than first-in-list, so ".msprefix.mzXML" isn't reduced to "foo.msprefix".
      */
     public String getBaseName(File file)
     {
@@ -520,7 +529,9 @@ public class FileType implements Serializable
     }
 
     /**
-     * Checks if the path matches any of the suffixes and the file header if provided.
+     * Matches in order: reject if an anti-type matches, accept on content type (detected from the header via Tika when not
+     * supplied), accept on suffix (with the header, if given) and finally accept on header alone, that last only when
+     * the caller supplied no content type, since a caller-supplied type that didn't match is authoritative.
      */
     public boolean isType(@Nullable String filePath, @Nullable String contentType, byte @Nullable[] header)
     {
@@ -590,6 +601,7 @@ public class FileType implements Serializable
         }
     }
 
+    /** Whether the name is exactly basename plus one of the suffixes, unlike {@link #isType}, which accepts any name ending in a suffix. */
     public boolean isMatch(String name, String basename)
     {
         String normalizedName = toLowerIfCaseInsensitive(name);
@@ -663,6 +675,7 @@ public class FileType implements Serializable
         return (_dir == null || !_dir.booleanValue() ? _suffixes.toString() : _suffixes + "/");
     }
 
+    /** The subset of types that at least one of the files matches, in the order given by {@code types}. */
     @NotNull
     public static List<FileType> findTypes(@NotNull List<FileType> types, @NotNull List<FileLike> files)
     {
@@ -703,6 +716,7 @@ public class FileType implements Serializable
         _extensionsMutuallyExclusive = extensionsMutuallyExclusive;
     }
 
+    /** The default suffix with everything through the first dot removed (".pep.xml" yields "pep.xml"); used as a pipeline input/output role name. */
     public String getDefaultRole()
     {
         if (_defaultSuffix.contains("."))
@@ -717,6 +731,7 @@ public class FileType implements Serializable
         return _caseSensitiveOnCaseSensitiveFileSystems;
     }
 
+    /** Opt out of the default case-insensitive suffix matching, deferring to the file system: on a case-insensitive one (Windows, default macOS) matching stays case-insensitive. */
     public void setCaseSensitiveOnCaseSensitiveFileSystems(boolean caseSensitiveOnCaseSensitiveFileSystems)
     {
         _caseSensitiveOnCaseSensitiveFileSystems = caseSensitiveOnCaseSensitiveFileSystems;
