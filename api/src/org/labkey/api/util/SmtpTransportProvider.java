@@ -78,7 +78,10 @@ public class SmtpTransportProvider implements EmailTransportProvider
                     @Override
                     public void handle(Collection<StartupPropertyEntry> entries)
                     {
-                        throw new RuntimeException("Configuring SMTP via startup properties is no longer supported. Use application.properties.");
+                        if (!entries.isEmpty())
+                        {
+                            throw new ConfigurationException("Configuring SMTP via startup properties is no longer supported. Use application.properties.");
+                        }
                     }
                 });
 
