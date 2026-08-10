@@ -1894,8 +1894,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataClass = new ExpDataClassImpl(dc);
         }
 
-        if (null != dataClass && !dataClass.getContainer().getId().equals(containerId))
-            dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
+        if (null != dataClass)
+        {
+            Container dcContainer = dataClass.getContainer();
+            if (dcContainer != null && dcContainer.getId().equals(containerId))
+                dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
+        }
 
         return dataClass;
     }
@@ -8151,7 +8155,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                         GWTDomain<? extends GWTPropertyDescriptor> update,
                                         @Nullable String auditUserComment)
     {
-        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+        // Re-read so the mutations below don't write through to a DataClass bean shared via dataClassCache
+        ExpDataClassImpl dataClass = getDataClass(dc.getRowId());
+        if (dataClass == null)
+            return new ValidationException("Data class not found: " + dc.getName());
 
         Map<String, Object> oldProps = dataClass.getAuditRecordMap();
         Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
