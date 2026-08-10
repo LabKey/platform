@@ -69,22 +69,22 @@ public class SmtpTransportProvider implements EmailTransportProvider
     @Override
     public void loadConfiguration()
     {
+        // TODO: Startup failure if SMTP startup properties are present, for now. Remove in 26.11.
+        ModuleLoader.getInstance().handleStartupProperties(
+            new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
+            {
+                @Override
+                public void handle(Collection<StartupPropertyEntry> entries)
+                {
+                    if (!entries.isEmpty())
+                    {
+                        throw new ConfigurationException("Configuring SMTP via startup properties is no longer supported. Use application.properties.");
+                    }
+                }
+            });
+
         try
         {
-            // TODO: Leave in place for now to provide clear error if startup properties are present. Remove in 26.11.
-            ModuleLoader.getInstance().handleStartupProperties(
-                new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
-                {
-                    @Override
-                    public void handle(Collection<StartupPropertyEntry> entries)
-                    {
-                        if (!entries.isEmpty())
-                        {
-                            throw new ConfigurationException("Configuring SMTP via startup properties is no longer supported. Use application.properties.");
-                        }
-                    }
-                });
-
             // Load SMTP settings from ServletContext (populated from application.properties))
             ServletContext context = ModuleLoader.getServletContext();
             Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
