@@ -302,7 +302,6 @@ elseif
 empty
 enable
 enclosed
-enclosedescaped
 encoding
 encrypted
 encryption
@@ -326,7 +325,6 @@ event
 events
 every
 except
-exceptexists
 exception
 exchange
 exclude
@@ -384,7 +382,6 @@ freetext
 freetexttable
 freeze
 from
-fromfulltext
 fs
 full
 fulltext
@@ -480,7 +477,6 @@ int8
 integer
 integrity
 intersect
-intersectinterval
 intersection
 interval
 into
@@ -713,7 +709,6 @@ of
 off
 offline
 offset
-offseton
 offsets
 oids
 old
@@ -849,7 +844,6 @@ read_write
 reads
 readtext
 real
-realrecursive
 reassign
 rebuild
 recheck
@@ -940,7 +934,6 @@ row
 row_count
 row_format
 row_number
-row_numberrows
 rowcnt
 rowcount
 rowguidcol
@@ -1245,7 +1238,6 @@ while
 whitespace
 width_bucket
 window
-windowwith
 with
 within
 without
