@@ -56,7 +56,7 @@ public class SmtpTransportProvider implements EmailTransportProvider
         @Override
         public String getDescription()
         {
-            return "One property for each JavaMail SMTP setting, documented here: https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html";
+            return "No longer supported. Configure SMTP setting in application.properties.";
         }
     }
 
@@ -71,29 +71,25 @@ public class SmtpTransportProvider implements EmailTransportProvider
     {
         try
         {
-            // Load from startup properties group "mail_smtp"
+            // TODO: Leave in place for now to provide clear error if startup properties are present. Remove in 25.11.
             ModuleLoader.getInstance().handleStartupProperties(
                 new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
                 {
                     @Override
                     public void handle(Collection<StartupPropertyEntry> entries)
                     {
-                        entries.forEach(entry ->
-                            _properties.put("mail.smtp." + entry.getName(), entry.getValue()));
+                        throw new RuntimeException("Configuring SMTP via startup properties is no longer supported. Use application.properties.");
                     }
                 });
 
-            // Fallback: check ServletContext for SMTP settings
-            if (_properties.isEmpty())
+            // Load SMTP settings from ServletContext (populated from application.properties))
+            ServletContext context = ModuleLoader.getServletContext();
+            Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
+            while (names.hasMoreElements())
             {
-                ServletContext context = ModuleLoader.getServletContext();
-                Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
-                while (names.hasMoreElements())
-                {
-                    String name = names.nextElement();
-                    if (name.startsWith("mail.smtp."))
-                        _properties.put(name, context.getInitParameter(name));
-                }
+                String name = names.nextElement();
+                if (name.startsWith("mail.smtp."))
+                    _properties.put(name, context.getInitParameter(name));
             }
 
             // Create session if configured
