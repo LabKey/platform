@@ -1189,17 +1189,24 @@ public void testDataClassLsidCache() throws Exception
     // first lookup populates the mapping, second is served from the container's data class cache
     for (int i = 0; i < 2; i++)
     {
-        ExpDataClass fromProject = ExperimentService.get().getDataClass(projectLsid);
+        ExpDataClassImpl fromProject = ExperimentServiceImpl.get().getDataClass(projectLsid);
         assertNotNull("Lookup " + i + " by LSID should resolve the data class", fromProject);
         assertEquals("lsidCacheProject", fromProject.getName());
         assertEquals(projectDataClass.getRowId(), fromProject.getRowId());
         assertEquals(c.getId(), fromProject.getContainer().getId());
 
-        ExpDataClass fromSub = ExperimentService.get().getDataClass(subLsid);
+        ExpDataClassImpl fromSub = ExperimentServiceImpl.get().getDataClass(subLsid);
         assertNotNull("Lookup " + i + " by LSID should resolve the subfolder data class", fromSub);
         assertEquals("lsidCacheSub", fromSub.getName());
         assertEquals(sub.getId(), fromSub.getContainer().getId());
     }
+
+    assertSame("LSID lookup should be served from the data class cache",
+            ExperimentServiceImpl.get().getDataClass(c, "lsidCacheProject").getDataObject(),
+            ExperimentServiceImpl.get().getDataClass(projectLsid).getDataObject());
+    assertSame("Subfolder LSID lookup should be served from the data class cache",
+            ExperimentServiceImpl.get().getDataClass(sub, "lsidCacheSub").getDataObject(),
+            ExperimentServiceImpl.get().getDataClass(subLsid).getDataObject());
 
     projectDataClass.delete(_user);
     assertNull("Deleted data class should not resolve from a stale LSID mapping", ExperimentService.get().getDataClass(projectLsid));
@@ -1223,9 +1230,12 @@ public void testFailedDataClassUpdateDoesNotCorruptCache() throws Exception
     helper.insertRows(c, rows, child.getName());
 
     // warm the mapping so the second lookup comes back from the container's data class cache
-    assertNotNull(ExperimentService.get().getDataClass(child.getLSID()));
-    final ExpDataClass toUpdate = ExperimentService.get().getDataClass(child.getLSID());
+    final ExpDataClassImpl toUpdate = ExperimentServiceImpl.get().getDataClass(child.getLSID());
     assertNotNull(toUpdate);
+
+    assertSame("Update target should wrap the cached DataClass",
+            ExperimentServiceImpl.get().getDataClass(c, "failedUpdateChild").getDataObject(),
+            toUpdate.getDataObject());
 
     Map<String, Object> parentAlias = new HashMap<>();
     parentAlias.put("inputType", ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX + "failedUpdateParent");
