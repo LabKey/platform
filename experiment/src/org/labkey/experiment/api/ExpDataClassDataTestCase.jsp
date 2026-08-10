@@ -1230,6 +1230,7 @@ public void testFailedDataClassUpdateDoesNotCorruptCache() throws Exception
     helper.insertRows(c, rows, child.getName());
 
     // warm the mapping so the second lookup comes back from the container's data class cache
+    assertNotNull(ExperimentServiceImpl.get().getDataClass(child.getLSID()));
     final ExpDataClassImpl toUpdate = ExperimentServiceImpl.get().getDataClass(child.getLSID());
     assertNotNull(toUpdate);
 
