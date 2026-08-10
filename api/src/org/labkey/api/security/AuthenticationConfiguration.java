@@ -124,6 +124,11 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
          */
         boolean isAutoRedirect();
 
+        /**
+         * Currently SSO-only since SAML is the only production provider that needs the skip re-auth option
+         */
+        boolean isReauthenticationSupported();
+
         @Override
         default void handleStartupProperties(Map<String, String> map)
         {

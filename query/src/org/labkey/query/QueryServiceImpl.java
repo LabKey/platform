@@ -1905,29 +1905,23 @@ public class QueryServiceImpl implements QueryService
 
         if (filter != null)
         {
+            // Map fields to the single-field clauses that reference them, so resolveFieldKey() can detect a clause
+            // whose array-ness no longer matches its column (GitHUb Issue 946).
+            Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
             if (filter instanceof SimpleFilter simpleFilter)
             {
-                Map<FieldKey, List<SimpleFilter.FilterClause>> clausesByField = new HashMap<>();
                 for (SimpleFilter.FilterClause clause : simpleFilter.getClauses())
                 {
-                    for (FieldKey fk : clause.getFieldKeys())
-                        clausesByField.computeIfAbsent(fk, k -> new ArrayList<>()).add(clause);
-                }
-                for (FieldKey fieldKey : simpleFilter.getWhereParamFieldKeys())
-                {
-                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
-                    if (col != null)
-                        ret.putIfAbsent(col.getFieldKey(), col);
+                    if (clause.getFieldKeys().size() == 1) // GitHub Issue 929: Clauses spanning multiple fields (e.g. the "Q" search clause, which references every searchable column) are deliberately excluded here
+                        clausesByField.computeIfAbsent(clause.getFieldKeys().get(0), k -> new ArrayList<>()).add(clause);
                 }
             }
-            else
+
+            for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
             {
-                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
-                {
-                    ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, null);
-                    if (col != null)
-                        ret.putIfAbsent(col.getFieldKey(), col);
-                }
+                ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager, clausesByField.get(fieldKey));
+                if (col != null)
+                    ret.putIfAbsent(col.getFieldKey(), col);
             }
         }
 

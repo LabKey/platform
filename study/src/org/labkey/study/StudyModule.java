@@ -402,11 +402,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
             false);
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
-            "Allow merge of study dataset that uses server-managed additional key fields",
-            "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
-            false);
-
         OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
             "Allow query based dataset snapshots",
             "Allow unprovisioned, query-based dataset snapshots to be created.",

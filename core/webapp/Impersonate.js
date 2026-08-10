@@ -313,6 +313,13 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
 
         this.items = [this.getPanel()];
 
+        // The role grid's flex column can be laid out before this window has a final, on-screen width, leaving its
+        // width stuck at Ext's internal box-layout measurement value (a very large placeholder). Forcing a relayout
+        // once the window has actually been shown recalculates the column against the real, rendered width.
+        this.on('show', function() {
+            this.roleGrid.updateLayout();
+        }, this);
+
         this.callParent();
     },
 

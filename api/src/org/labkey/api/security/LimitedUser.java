@@ -173,12 +173,19 @@ public class LimitedUser extends ClonedUser
                 reconstitutedAdmin.getAssignedRoles(ContainerManager.getRoot()).collect(Collectors.toSet())
             );
 
-            // Serialize/deserialize search user
-            User user = User.getSearchUser();
+            // Test serialize/deserialize of some special users
+            testRoundTripping(User.getSearchUser());
+            testRoundTripping(User.guest);
+            testRoundTripping(User.nobody);
+        }
+
+        private void testRoundTripping(User user) throws JsonProcessingException
+        {
+            ObjectMapper mapper = PipelineJob.createObjectMapper();
             String json = mapper.writeValueAsString(user);
-            User limitedUser = mapper.readValue(json, LimitedUser.class);
-            assertEquals(user, limitedUser);
-            assertEquals(user.getEmail(), limitedUser.getEmail());
+            User reconstitutedUser = mapper.readValue(json, user.getClass());
+            assertEquals(user, reconstitutedUser);
+            assertEquals(user.getEmail(), reconstitutedUser.getEmail());
         }
     }
 }

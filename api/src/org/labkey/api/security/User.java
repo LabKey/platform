@@ -90,14 +90,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public static final User guest = new GuestUser("guest", "guest");
 
     // 'nobody' is a guest user who cannot be assigned permissions
-    public static final User nobody = new LimitedUser(guest)
-    {
-        @Override
-        public boolean isGuest()
-        {
-            return true;
-        }
-    };
+    public static final User nobody = new NobodyUser();
 
     private static User adminServiceUser;
 

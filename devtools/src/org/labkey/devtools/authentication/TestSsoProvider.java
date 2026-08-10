@@ -66,6 +66,7 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     {
         return List.of(
             SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false),
+            SettingsField.of(TestSsoConfiguration.SKIP_REAUTHENTICATION, SettingsField.FieldType.checkbox, "Skip Reauthentication", "Users who authenticate with this TestSSO configuration will not need to reauthenticate when signing electronically. This is not recommended since reauthentication is a requirement of 21 CFR Part 11.", false, false),
             SettingsField.getStandardDomainField()
         );
     }

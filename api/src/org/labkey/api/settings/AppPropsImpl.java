@@ -322,6 +322,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getScriptExecutionTimeout()
+    {
+        return lookupIntValue(scriptExecutionTimeout, DEFAULT_SCRIPT_EXECUTION_TIMEOUT);
+    }
+
+    @Override
     public int getMaxBLOBSize()
     {
         return lookupIntValue(maxBLOBSize, 50_000_000);

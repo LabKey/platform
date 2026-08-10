@@ -90,6 +90,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setReadOnlyHttpRequestTimeout(Integer.parseInt(value));
         }
     },
+    scriptExecutionTimeout("Timeout in seconds for server-side JavaScript such as trigger scripts. Measured in wall-clock time, including database and other Java operations invoked by the script. Set to 0 to disable.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setScriptExecutionTimeout(Integer.parseInt(value));
+        }
+    },
     maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
     {
         @Override

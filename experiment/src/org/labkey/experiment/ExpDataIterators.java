@@ -119,6 +119,8 @@ import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
+import org.labkey.experiment.api.DataColor;
+import org.labkey.experiment.api.DataColorManager;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
@@ -2446,6 +2448,9 @@ public class ExpDataIterators
                 // Add RootMaterialRowId if it does not exist
                 dib = getRootMaterialRowIdBuilder(dib);
 
+                if (_dataTypeObject != null && !DataColorManager.getInstance().getAllProjectColors(_container).isEmpty())
+                    dib = new SampleColorCheckIteratorBuilder(dib, _container, _dataTypeObject.getRowId());
+
                 if (isMergeOrUpdate)
                 {
                     dib = new SampleStatusCheckIteratorBuilder(dib, _container);
@@ -3344,6 +3349,80 @@ public class ExpDataIterators
 
             if (!newAllowsOp && _hasNonStatusChangeCol)
                 _context.getErrors().addRowError(new ValidationException(String.format("Updating sample data when status is %s is not allowed.", oldStatus.getLabel())));
+
+            return true;
+        }
+    }
+
+    public static class SampleColorCheckIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final long _sampleTypeRowId;
+
+        public SampleColorCheckIteratorBuilder(@NotNull DataIteratorBuilder in, Container container, long sampleTypeRowId)
+        {
+            _in = in;
+            _container = container;
+            _sampleTypeRowId = sampleTypeRowId;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            if (pre == null)
+                return null; // can happen if context has errors
+
+            // Colors excluded (disabled) for this sample type; if none, there's nothing to reject.
+            Set<Long> excludedColors = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, _sampleTypeRowId);
+            if (excludedColors.isEmpty())
+                return pre;
+
+             Integer colorCol = DataIteratorUtil.createColumnNameMap(pre).get(ExpMaterialColor.name());
+            if (colorCol == null)
+                return pre;
+
+            Map<Long, DataColor> byRowId = DataColorManager.getInstance().getAllProjectColors(_container).stream()
+                    .collect(Collectors.toMap(c -> (long) c.getRowId(), c -> c, (a, b) -> a));
+            Map<Long, String> excludedColorLabels = new HashMap<>();
+            for (Long rowId : excludedColors)
+            {
+                DataColor color = byRowId.get(rowId);
+                excludedColorLabels.put(rowId, color != null ? color.getLabel() : "rowId " + rowId);
+            }
+
+            return LoggingDataIterator.wrap(new SampleColorCheckDataIterator(pre, context, excludedColorLabels, colorCol));
+        }
+    }
+
+    private static class SampleColorCheckDataIterator extends WrapperDataIterator
+    {
+        private final DataIteratorContext _context;
+        private final Map<Long, String> _excludedColorLabels;
+        private final int _colorCol;
+
+        protected SampleColorCheckDataIterator(DataIterator di, DataIteratorContext context, Map<Long, String> excludedColorLabels, int colorCol)
+        {
+            super(di);
+            _context = context;
+            _excludedColorLabels = excludedColorLabels;
+            _colorCol = colorCol;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+            if (!hasNext)
+                return false;
+
+            if (_context.getErrors().hasErrors())
+                return true;
+
+            Long colorRowId = asLong(get(_colorCol));
+            if (colorRowId != null && _excludedColorLabels.containsKey(colorRowId))
+                _context.getErrors().addRowError(new ValidationException("The color '" + _excludedColorLabels.get(colorRowId) + "' is not valid for this sample type."));
 
             return true;
         }
