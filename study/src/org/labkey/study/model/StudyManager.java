@@ -626,7 +626,6 @@ public class StudyManager
             transaction.commit();
         }
         StudyDesignManager.get().ensureStudyDesignDomains(container, user);
-        QueryService.get().updateLastModified();
         ContainerManager.notifyContainerChange(container.getId(), ContainerManager.Property.StudyChange);
         return study;
     }
@@ -656,7 +655,6 @@ public class StudyManager
             String comment = "Dataset security type changed from " + oldStudy.getSecurityType() + " to " + study.getSecurityType();
             StudyService.get().addStudyAuditEvent(study.getContainer(), user, comment);
         }
-        QueryService.get().updateLastModified();
         return errors;
     }
 
@@ -688,8 +686,6 @@ public class StudyManager
             // we're open to a race condition if another thread tries to do something with the dataset's table
             // and ends up attempting to create the domain as well
             datasetDefinition.getStorageTableInfo(true);
-
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
         indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
@@ -872,7 +868,6 @@ public class StudyManager
 
             // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
             uncache(datasetDefinition);
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
         datasetDefinition.refreshDomain();

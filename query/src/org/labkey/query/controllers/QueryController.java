@@ -6604,12 +6604,6 @@ public class QueryController extends SpringActionController
     public static class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
         @Override
-        protected long getLastModified(GetSchemasForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
-        @Override
         public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
             final Container container = getContainer();
@@ -6755,12 +6749,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
-        @Override
-        protected long getLastModified(GetQueriesForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
@@ -6963,12 +6951,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
-        @Override
-        protected long getLastModified(GetQueryViewsForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {

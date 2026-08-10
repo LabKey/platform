@@ -201,37 +201,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             }
             else
             {
-                boolean cachable = false;
-
-                // ETag header
-                String eTag = getETag(form);
-                if (eTag != null)
-                {
-                    getViewContext().getResponse().setHeader("ETag", eTag);
-                    cachable = true;
-                }
-
-                // Last-Modified header
-                long lastModified = getLastModified(form);
-                if (lastModified != Long.MIN_VALUE)
-                {
-                    getViewContext().getResponse().addDateHeader("Last-Modified", lastModified);
-                    cachable = true;
-                }
-
-                if (cachable)
-                {
-                    // Include max-age to tell the browser to cache for a short duration before making another request to check "If-Modified-Since"
-                    ResponseHelper.setPrivate(getViewContext().getResponse(), Duration.ofSeconds(10));
-                }
-
-                // Check if the conditions specified in the optional If headers are satisfied.
-                if (!ResponseHelper.checkIfHeaders(getViewContext(), eTag, lastModified))
-                {
-                    assert getViewContext().getResponse().getStatus() != HttpServletResponse.SC_OK;
-                    return null;
-                }
-
                 Object response;
                 try (Timing ignored = MiniProfiler.step("execute"))
                 {
