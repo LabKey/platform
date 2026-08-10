@@ -56,7 +56,7 @@ public class SmtpTransportProvider implements EmailTransportProvider
         @Override
         public String getDescription()
         {
-            return "No longer supported. Configure SMTP setting in application.properties.";
+            return "No longer supported. Configure SMTP settings in application.properties.";
         }
     }
 
@@ -85,7 +85,7 @@ public class SmtpTransportProvider implements EmailTransportProvider
 
         try
         {
-            // Load SMTP settings from ServletContext (populated from application.properties))
+            // Load SMTP settings from ServletContext (populated from application.properties)
             ServletContext context = ModuleLoader.getServletContext();
             Enumeration<String> names = Objects.requireNonNull(context).getInitParameterNames();
             while (names.hasMoreElements())
