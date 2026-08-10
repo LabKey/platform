@@ -71,7 +71,7 @@ public class SmtpTransportProvider implements EmailTransportProvider
     {
         try
         {
-            // TODO: Leave in place for now to provide clear error if startup properties are present. Remove in 25.11.
+            // TODO: Leave in place for now to provide clear error if startup properties are present. Remove in 26.11.
             ModuleLoader.getInstance().handleStartupProperties(
                 new LenientStartupPropertyHandler<>("mail_smtp", new SmtpStartupProperty())
                 {
