@@ -65,9 +65,10 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * User: matthewb
- * Date: 2011-05-31
- * Time: 12:52 PM
+ * Static helpers for assembling DataIterator pipelines: matching a source iterator's columns to a target
+ * TableInfo's columns (by property URI, name, import alias, or JDBC-legal name) and copying or merging the
+ * result into that table. Also provides adapters that present an iterator as scrollable, map-based,
+ * map-transforming, or a Stream of maps.
  */
 public class DataIteratorUtil
 {
@@ -375,8 +376,7 @@ public class DataIteratorUtil
     }
 
     /**
-     * Builds `in` and hands it to `wrapper`, propagating a null input (which means the context has errors). If the
-     * wrapper throws or returns null, the built input is closed rather than abandoned/leaked.
+     * DataIteratorBuilder.getDataIterator() calls this to simplify implementing the success or close() input contract
      */
     public static @Nullable DataIterator wrapOrClose(DataIteratorBuilder in, DataIteratorContext context, UnaryOperator<DataIterator> wrapper)
     {
