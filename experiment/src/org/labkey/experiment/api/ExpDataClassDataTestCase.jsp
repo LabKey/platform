@@ -49,6 +49,7 @@
 <%@ page import="org.labkey.api.exp.api.DataClassDomainKindProperties" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.exp.list.ListItem" %>
@@ -94,6 +95,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.HashSet" %>
 <%@ page import="static java.util.Collections.emptyList" %>
 <%@ page import="static org.junit.Assert.*" %>
@@ -1173,6 +1175,79 @@ public void testUpdateAuditForLongField() throws Exception
         String oldRecordMap = ((DetailedAuditTypeEvent) events.getFirst()).getOldRecordMap();
         assertTrue("Old record map (" + oldRecordMap + ") does not contain expected field", oldRecordMap.contains(encodeURIComponent(fieldName) + "=Initial"));
     }
+}
+
+@Test
+public void testDataClassLsidCache() throws Exception
+{
+    final Container sub = ContainerManager.createContainer(c, "subLsidCache", _user);
+    ExpDataClassImpl projectDataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "lsidCacheProject", null, List.of(new GWTPropertyDescriptor("prop", "string")), emptyList(), null, null);
+    ExpDataClassImpl subDataClass = ExperimentServiceImpl.get().createDataClass(sub, _user, "lsidCacheSub", null, List.of(new GWTPropertyDescriptor("prop", "string")), emptyList(), null, null);
+    String projectLsid = projectDataClass.getLSID();
+    String subLsid = subDataClass.getLSID();
+
+    // first lookup populates the mapping, second is served from the container's data class cache
+    for (int i = 0; i < 2; i++)
+    {
+        ExpDataClass fromProject = ExperimentService.get().getDataClass(projectLsid);
+        assertNotNull("Lookup " + i + " by LSID should resolve the data class", fromProject);
+        assertEquals("lsidCacheProject", fromProject.getName());
+        assertEquals(projectDataClass.getRowId(), fromProject.getRowId());
+        assertEquals(c.getId(), fromProject.getContainer().getId());
+
+        ExpDataClass fromSub = ExperimentService.get().getDataClass(subLsid);
+        assertNotNull("Lookup " + i + " by LSID should resolve the subfolder data class", fromSub);
+        assertEquals("lsidCacheSub", fromSub.getName());
+        assertEquals(sub.getId(), fromSub.getContainer().getId());
+    }
+
+    projectDataClass.delete(_user);
+    assertNull("Deleted data class should not resolve from a stale LSID mapping", ExperimentService.get().getDataClass(projectLsid));
+    assertNotNull("Sibling data class should be unaffected", ExperimentService.get().getDataClass(subLsid));
+}
+
+@Test
+public void testFailedDataClassUpdateDoesNotCorruptCache() throws Exception
+{
+    ExperimentServiceImpl.get().createDataClass(c, _user, "failedUpdateParent", null, List.of(new GWTPropertyDescriptor("prop", "string")), emptyList(), null, null);
+
+    DataClassDomainKindProperties createOptions = new DataClassDomainKindProperties();
+    createOptions.setDescription("original description");
+    ExpDataClassImpl child = ExperimentServiceImpl.get().createDataClass(c, _user, "failedUpdateChild", createOptions, List.of(new GWTPropertyDescriptor("prop", "string")), emptyList(), null, null);
+
+    // hasMissingRequiredParent() short-circuits on an empty data class, so the rejection needs a parentless row
+    List<Map<String, Object>> rows = new ArrayList<>();
+    Map<String, Object> row = new CaseInsensitiveHashMap<>();
+    row.put("name", "failedUpdateChild-1");
+    rows.add(row);
+    helper.insertRows(c, rows, child.getName());
+
+    // warm the mapping so the second lookup comes back from the container's data class cache
+    assertNotNull(ExperimentService.get().getDataClass(child.getLSID()));
+    final ExpDataClass toUpdate = ExperimentService.get().getDataClass(child.getLSID());
+    assertNotNull(toUpdate);
+
+    Map<String, Object> parentAlias = new HashMap<>();
+    parentAlias.put("inputType", ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX + "failedUpdateParent");
+    parentAlias.put("required", true);
+
+    final DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+    options.setRowId(child.getRowId());
+    options.setName("failedUpdateChildRenamed");
+    options.setDescription("attempted description");
+    options.setImportAliases(Map.of("parentAlias", parentAlias));
+
+    final GWTDomain<GWTPropertyDescriptor> original = DomainUtil.getDomainDescriptor(_user, child.getDomain());
+    final GWTDomain<GWTPropertyDescriptor> update = DomainUtil.getDomainDescriptor(_user, child.getDomain());
+
+    ApiUsageException e = assertThrows(ApiUsageException.class,
+            () -> ExperimentService.get().updateDataClass(c, _user, toUpdate, options, original, update, null));
+    assertThat(e.getMessage(), containsString("cannot be required as a parent type"));
+
+    ExpDataClass reloaded = ExperimentService.get().getDataClass(c, "failedUpdateChild");
+    assertNotNull("Original name should still resolve after a rejected update", reloaded);
+    assertEquals("Description should not reflect the rejected update", "original description", reloaded.getDescription());
+    assertNull("Attempted name should not resolve after a rejected update", ExperimentService.get().getDataClass(c, "failedUpdateChildRenamed"));
 }
 
 private @NotNull TableInfo getDataClassTable(String dataClassName)
