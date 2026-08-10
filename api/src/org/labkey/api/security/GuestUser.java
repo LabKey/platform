@@ -59,4 +59,10 @@ class GuestUser extends User
     {
         // Don't clear out GuestUser's groups since they're set in its constructor
     }
+
+    @Override
+    public String getPermissionsRestrictions()
+    {
+        return "You are connected as a Guest user, which limits your permissions. Provide a valid API key to access more content.";
+    }
 }
