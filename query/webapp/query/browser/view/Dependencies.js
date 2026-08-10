@@ -117,6 +117,9 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
             this.setScopeCount('#lk-cfd-site-scope', undefined);
             this.setScopeCount('#lk-cfd-project-scope', undefined);
             this.down('#lk-cfd-scope-status').update('<span class="labkey-error">Unable to determine how many folders each option would analyze.</span>');
+
+            // still startable: analyzeQueries() walks the container tree itself when it isn't handed a folder list
+            this.down('#lk-cfd-start').enable();
         }, this);
     },
 

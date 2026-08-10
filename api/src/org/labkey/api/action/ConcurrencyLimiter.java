@@ -73,7 +73,14 @@ public class ConcurrencyLimiter
      */
     public static Permit acquire(@NotNull Class<?> actionClass, @Nullable ViewContext context)
     {
-        return LIMITERS.computeIfAbsent(actionClass, ConcurrencyLimiter::resolve).acquirePermit(context);
+        // This runs on every request, and computeIfAbsent() locks the bin even on a hit unless the key happens to be
+        // its first node, so take the lock-free get() whenever the limiter is already resolved.
+        ConcurrencyLimiter limiter = LIMITERS.get(actionClass);
+
+        if (null == limiter)
+            limiter = LIMITERS.computeIfAbsent(actionClass, ConcurrencyLimiter::resolve);
+
+        return limiter.acquirePermit(context);
     }
 
     private static ConcurrencyLimiter resolve(Class<?> actionClass)

@@ -212,14 +212,16 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             this.analyzeQueries({
                 containerPath : containerPath,
                 containers : containers,
-                success : function(resp, opts){
-                    this.processDependencies(resp);
+                // callbacks take the accumulated result plus the response and options of the request that ended the
+                // analysis; dropping either leaves the caller unable to report what actually went wrong
+                success : function(result, response, options){
+                    this.processDependencies(result);
                     if (Ext4.isFunction(success)){
-                        success.call(scope || this, resp, opts);
+                        success.call(scope || this, result, response, options);
                     }
                 },
-                failure : function(resp, opts) {
-                    failure.call(scope || this, resp, opts);
+                failure : function(result, response, options) {
+                    failure.call(scope || this, result, response, options);
                 },
                 scope : this
             });

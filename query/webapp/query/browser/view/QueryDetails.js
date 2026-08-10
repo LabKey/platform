@@ -865,6 +865,12 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     renderQueryDetails : function() {
         this.getContent().removeAll();
 
+        // analyzeQueries.api is backed by a premium service, and without it there is no graph to report on
+        if (!this.parent.hasQueryAnalysisService) {
+            this.getContent().add(this.formatQueryDetails(this.queryDetails));
+            return;
+        }
+
         // add a temporary placeholder for the query dependencies but don't block the entire page
         this.getContent().add(this.formatQueryDetails(this.queryDetails), {
             xtype : 'box',
@@ -875,14 +881,20 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                     scope : this,
                     fn : function(cmp) {
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(null, this.refreshQueryDependencies, LABKEY.Utils.getCallbackWrapper(function(error) {
+
+                        let onError = LABKEY.Utils.getCallbackWrapper(function(error) {
                             this.removeQueryDependencies();
                             this.getContent().add({
                                 xtype : 'box',
                                 itemId : 'lk-dependency-report',
                                 html : '<br/>Failed to load dependency information. ' + Ext4.htmlEncode(error.exception ? error.exception : ''),
                             });
-                       }, this, true), this);
+                        }, this, true);
+
+                        this.queriesCache.load(null, this.refreshQueryDependencies, function(result, response, options) {
+                            // load() leads with the accumulated result, but the server's message is on the response
+                            onError.call(this, response, options);
+                       }, this);
                     }
                 }
             }
