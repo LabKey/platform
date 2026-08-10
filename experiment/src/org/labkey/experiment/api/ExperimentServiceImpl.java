@@ -336,6 +336,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
+    /** DataClass LSID -> Container */
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+
+    /** ContainerId -> DataClasses */
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
     {
         Container c = ContainerManager.getForId(containerId);
@@ -1843,11 +1847,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(c, includeProjectAndShared, (dataClass -> dataClass.getRowId() == rowId));
     }
 
-    public @Nullable ExpDataClassImpl getDataClassByLsid(@NotNull Container c, @NotNull String lsid, boolean includeProjectAndShared)
-    {
-        return getDataClass(c, includeProjectAndShared, (dataClass -> lsid.equals(dataClass.getLSID())));
-    }
-
     private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
         List<String> containerIds = createContainerList(c, includeProjectAndShared);
@@ -1879,12 +1878,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
-            return null;
+        String containerId = dataClassLsidCache.get(lsid);
+        Container c = null;
+        if (containerId != null)
+            c = ContainerManager.getForId(containerId);
 
-        return new ExpDataClassImpl(dataClass);
+        ExpDataClassImpl dataClass = null;
+        if (null != c)
+            dataClass = getDataClass(c, false, dc -> lsid.equals(dc.getLSID()));
+        if (null == dataClass)
+        {
+            Filter filter = new SimpleFilter(ExpDataClassTable.Column.LSID.fieldKey(), lsid);
+            DataClass dc = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+            if (dc != null)
+                dataClass = new ExpDataClassImpl(dc);
+        }
+
+        if (null != dataClass && !dataClass.getContainer().getId().equals(containerId))
+            dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
+
+        return dataClass;
     }
 
     @Override
