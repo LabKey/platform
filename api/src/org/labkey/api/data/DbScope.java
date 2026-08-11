@@ -1202,6 +1202,11 @@ public class DbScope
 
             return 0 == _refCount;
         }
+
+        public synchronized int getRefCount()
+        {
+            return _refCount;
+        }
     }
 
     /**
@@ -1257,6 +1262,20 @@ public class DbScope
     private Connection getCurrentConnection(@Nullable Logger log) throws SQLException
     {
         return getConnectionHolder().get(log);
+    }
+
+    /**
+     * @return true if this thread already holds the shared, ref-counted thread connection — i.e., some code up the stack
+     * called {@link #getConnection()} and hasn't released it. Reports the existing {@link ConnectionHolder} ref count
+     * that governs {@link ConnectionType#Thread} sharing.
+     * <p>
+     * A caller that borrows the thread connection and temporarily changes its state (e.g. disabling JDBC caching for a
+     * streaming read) must do so only when this returns false, so it is the outermost borrower and can restore the
+     * original state via runOnClose, which {@link ConnectionType#Thread} fires when the last holder releases it.
+     */
+    public boolean isThreadConnectionActive()
+    {
+        return getConnectionHolder().getRefCount() > 0;
     }
 
     /**

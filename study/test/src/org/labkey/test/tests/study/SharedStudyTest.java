@@ -42,6 +42,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.TestDataGenerator;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -338,7 +339,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     @Test
     public void testInsertIntoSharedDemographicsFromFolder()
     {
-        final String insertedPtid = "insertedParticipant";
+        final String insertedPtid = TestDataGenerator.randomName("insertedParticipant", 4, 4, TRICKY_CHARACTERS, "\"").name();
 
         beginAt(WebTestHelper.buildURL("study", getProjectName() + "/" + STUDY2, "dataset", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
         assertElementNotPresent(Locator.linkWithText(insertedPtid));

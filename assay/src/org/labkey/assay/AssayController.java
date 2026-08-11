@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -77,6 +78,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
@@ -1479,6 +1481,58 @@ public class AssayController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             root.addChild("Change QC State");
+        }
+    }
+
+    // GH Issue 1214: Returns the QC state history (assay/experiment audit events with a QC state) for a single run,
+    // for consumption by the assay app's run details page. A QC Analyst can edit an assay run's QC state but is not
+    // otherwise granted audit-log read access, so this action elevates to CanSeeAuditLog just for the history query
+    // (mirroring the server-rendered QCStateAction above) after confirming the caller can read the run's container.
+    @RequiresPermission(AssayReadPermission.class)
+    public static class GetRunQCHistoryAction extends ReadOnlyApiAction<RunQCHistoryForm>
+    {
+        @Override
+        public ApiResponse execute(RunQCHistoryForm form, BindException errors)
+        {
+            if (form.getRunId() == null)
+                throw new NotFoundException("A runId is required.");
+
+            // Resolve the run and confirm the (non-elevated) user can read its container BEFORE elevating, so this
+            // action can't be used to read audit events from a container the user otherwise can't access.
+            ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
+            if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                throw new NotFoundException("Run " + form.getRunId() + " not found.");
+
+            Container runContainer = run.getContainer();
+            User auditUser = ElevatedUser.ensureCanSeeAuditLogRole(runContainer, getUser());
+            UserSchema schema = AuditLogService.getAuditLogSchema(auditUser, runContainer);
+            if (schema == null)
+                throw new NotFoundException("Audit log schema is not available.");
+
+            QuerySettings settings = new QuerySettings(getViewContext(), "qcHistory");
+            settings.setQueryName("ExperimentAuditEvent");
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());
+            filter.addCondition(FieldKey.fromParts("QCState"), null, CompareType.NONBLANK);
+            settings.setBaseFilter(filter);
+            settings.setBaseSort(new Sort("-Created"));
+
+            QueryView view = schema.createView(getViewContext(), settings, errors);
+            return new ExtendedApiQueryResponse(view, false, false, "auditLog", "ExperimentAuditEvent", 0, null, false, false, false);
+        }
+    }
+
+    public static class RunQCHistoryForm
+    {
+        private Long _runId;
+
+        public Long getRunId()
+        {
+            return _runId;
+        }
+
+        public void setRunId(Long runId)
+        {
+            _runId = runId;
         }
     }
 

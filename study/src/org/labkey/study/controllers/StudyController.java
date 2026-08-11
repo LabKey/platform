@@ -35,6 +35,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -163,7 +164,6 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
-import org.junit.Test;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -175,7 +175,6 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -323,7 +322,6 @@ import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
-import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 public class StudyController extends BaseStudyController
 {
@@ -2709,7 +2707,7 @@ public class StudyController extends BaseStudyController
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
-            boolean showImportOptions = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || _def.getKeyManagementType() == Dataset.KeyManagementType.None;
+            boolean showImportOptions = _def.getKeyManagementType() == Dataset.KeyManagementType.None;
             setShowMergeOption(showImportOptions);
             setShowUpdateOption(showImportOptions);
             setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"

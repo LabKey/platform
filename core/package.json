@@ -5,11 +5,11 @@
     "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
     "build-analyze": "cross-env ANALYZE=true npm run build",
-    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
-    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
+    "build-dev": "npm run copy-distributions && cross-env NODE_ENV=development rspack build --config node_modules/@labkey/build/configs/dev.config.js",
+    "build-prod": "npm run copy-distributions && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map rspack build --config node_modules/@labkey/build/configs/prod.config.js",
     "clean": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi && rimraf resources/views/gen && rimraf resources/web/gen",
     "copy-distributions": "npm run clean && node copy-distributions.js",
-    "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
+    "start": "cross-env NODE_ENV=development rspack serve --config node_modules/@labkey/build/configs/watch.config.js",
     "start-link": "cross-env LINK=true npm run start",
     "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint",
@@ -20,25 +20,26 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.46.3",
-    "@labkey/themes": "1.9.4"
+    "@labkey/components": "7.54.2",
+    "@labkey/themes": "1.9.5"
   },
   "devDependencies": {
-    "@labkey/build": "9.1.5",
-    "@labkey/eslint-config": "1.2.2",
+    "@labkey/build": "10.1.0",
+    "@labkey/eslint-config": "1.2.3",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
-    "execa": "9.6.1",
+    "execa": "10.0.1",
     "fs-extra": "11.3.5",
     "jest": "30.4.2",
     "jest-cli": "30.4.2",
     "jest-environment-jsdom": "30.4.1",
     "jest-teamcity-reporter": "0.9.0",
-    "ts-jest": "29.4.11",
-    "uuid": "14.0.0"
+    "ts-jest": "29.4.12"
   },
-  "overrides": {
-    "uuid": "14.0.0"
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
   }
 }

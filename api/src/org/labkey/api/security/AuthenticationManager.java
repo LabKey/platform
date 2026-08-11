@@ -563,7 +563,7 @@ public class AuthenticationManager
             if (errors.hasErrors() || !response.isAuthenticated())
             {
                 if (!errors.hasErrors())
-                    errors.addError(new LabKeyError("Bad credentials"));
+                    errors.addError(new LabKeyError(getFailureMessage(response)));
             }
             else
             {
@@ -593,6 +593,16 @@ public class AuthenticationManager
             getPageConfig().setIncludeSearch(false);
 
             return new SimpleErrorView(errors, false);
+        }
+
+        // Most failures can't distinguish a bad password from an unknown user, so they share a deliberately vague
+        // message. reauthNotConfirmed is different: the user's credentials were never in question, so say what actually
+        // went wrong and who can fix it.
+        private String getFailureMessage(AuthenticationResponse response)
+        {
+            return FailureReason.reauthNotConfirmed == response.getFailureReason() ?
+                "Reauthentication failed: your identity provider did not re-verify your credentials. Please contact your administrator." :
+                "Bad credentials";
         }
 
         // Reauthentication case for electronic signing and other sensitive operations. Check that reauthentication
@@ -662,6 +672,12 @@ public class AuthenticationManager
     {
         // Delete any logos attached to the configuration
         AuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
+
+        if (null == configuration)
+        {
+            throw new NotFoundException("Unable to delete authentication configuration");
+        }
+
         AttachmentService.get().deleteAttachments(configuration);
 
         // Delete configuration
@@ -746,6 +762,7 @@ public class AuthenticationManager
         if (isAcceptOnlyFicamProviders() != enable)
         {
             saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+            AuthenticationProviderCache.clear();
             AuthenticationConfigurationCache.clear();
         }
     }
@@ -1914,18 +1931,23 @@ public class AuthenticationManager
     /**
      * Retrieves and validates the re-auth context associated with the provided token. If the token has an associated
      * context that's not expired and (if requested) the context user matches the provided user, then return the user.
+     * If there's no token, sessionUser is non-null, and the user's authentication configuration has disabled re-auth,
+     * return the session user.
      * @param request      Request from which to retrieve the session
-     * @param token        The reauth token to validate
-     * @param sessionUser  If non-null, causes validation that this user matches the reauth user
-     * @return             The re-auth user, if token is valid and session user check passes. Otherwise, null.
+     * @param token        Re-auth token to validate
+     * @param sessionUser  If non-null, causes validation that this user matches the reauth user. A null value also
+     *                     suppresses the skip-reauthentication exemption described above, so callers that require
+     *                     proof of an actual reauthentication (e.g. the CAS server's "renew" handling) must pass null.
+     * @return             The re-auth user, if the token is valid and the session user check passes, or the session
+     *                     user if reauthentication is disabled for the user's configuration. Otherwise, null.
      */
     public static @Nullable User getAndClearReauthUser(HttpServletRequest request, @Nullable String token, @Nullable User sessionUser)
     {
-        if (token != null)
-        {
-            HttpSession session = request.getSession(false);
+        HttpSession session = request.getSession(false);
 
-            if (session != null)
+        if (session != null)
+        {
+            if (!StringUtils.isEmpty(token))
             {
                 @SuppressWarnings("unchecked")
                 Map<String, ReauthContext> tokenMap = (Map<String, ReauthContext>) session.getAttribute(REAUTH_TOKEN_MAP_NAME);
@@ -1943,6 +1965,14 @@ public class AuthenticationManager
                             return reauthUser;
                     }
                 }
+            }
+            else if (sessionUser != null) // Skip the CAS IdP case where sessionUser is null
+            {
+                // Potential skip re-auth scenario. If we have a session but no token and the configuration has disabled
+                // re-auth, just return the session user.
+                PrimaryAuthenticationConfiguration<?> config = getConfiguration(session);
+                if (config instanceof AuthenticationConfiguration.SSOAuthenticationConfiguration<?> sso && !sso.isReauthenticationSupported())
+                    return SecurityManager.getSessionUser(request);
             }
         }
 
@@ -1968,7 +1998,7 @@ public class AuthenticationManager
             User admin = TestContext.get().getUser();
             Map<String, ReauthContext> map = getTokenMap(request);
             clearExpiredTokens(map);
-            // Might have some unexpired tokens stashed away. Assume they won't expired during this test run.
+            // Might have some unexpired tokens stashed away. Assume they won't expire during this test run.
             int initialCount = map.size();
             ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
 
@@ -1982,7 +2012,7 @@ public class AuthenticationManager
             assertEquals(admin, getAndClearReauthUser(request, token, admin));
             assertEquals(initialCount, map.size());
 
-            // Try same token again
+            // Try the same token again
             assertNull(getAndClearReauthUser(request, token, admin));
             // Try a bogus token
             assertNull(getAndClearReauthUser(request, "xyz", admin));

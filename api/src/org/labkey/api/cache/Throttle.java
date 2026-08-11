@@ -15,6 +15,7 @@
  */
 package org.labkey.api.cache;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -36,15 +37,21 @@ import java.util.function.Consumer;
  *        THROTTLE.execute(user);
  * }
  * </pre>
+ *
+ * <p>Tracks how many times the consumer actually ran ({@link #getExecutionCount()}) versus was throttled
+ * ({@link #getThrottledCount()}), useful for metrics and for tests asserting the throttling behavior.</p>
  */
 public class Throttle<K>
 {
     private final BlockingCache<K, K> _cache;
+    private final AtomicLong _executionCount = new AtomicLong();
+    private final AtomicLong _requestCount = new AtomicLong();
 
     public Throttle(String name, int limit, long timeToLive, Consumer<K> consumer)
     {
         _cache = CacheManager.getBlockingCache(limit, timeToLive, "Throttle for " + name, (key, argument) ->
         {
+            _executionCount.incrementAndGet();
             consumer.accept(key);
             return key;
         });
@@ -52,6 +59,19 @@ public class Throttle<K>
 
     public void execute(K key)
     {
+        _requestCount.incrementAndGet();
         _cache.get(key);
+    }
+
+    /** @return the number of times the consumer actually ran (i.e., calls that were not throttled) */
+    public long getExecutionCount()
+    {
+        return _executionCount.get();
+    }
+
+    /** @return the number of {@link #execute} calls that were throttled (the consumer did not run) */
+    public long getThrottledCount()
+    {
+        return _requestCount.get() - _executionCount.get();
     }
 }

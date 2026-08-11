@@ -134,6 +134,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
+    String EXPERIMENTAL_SAMPLE_COLORS = "org.labkey.api.exp.api.ExperimentService#SAMPLE_COLORS";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -613,9 +615,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (updatedDomainDesign != null && !existingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
+            if (updatedDomainDesign != null)
             {
-                throw new IllegalArgumentException(String.format("An existing " + dataTypeNoun + " property conflicts with parent alias header: %1$s", trimmedKey));
+                var field = updatedDomainDesign.getFieldByName(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("An existing %1$s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
+                }
+                // GH Issue 1257: If there are conflicts with import aliases, this should be an error since it produces ambiguity during import
+                field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("Field '%1$s' has an import alias '%2$s' that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                }
+
             }
 
             if (!dupes.add(trimmedKey))
@@ -710,6 +723,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
+    TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter cf);
+
     ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
@@ -737,6 +752,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     DbScope.Transaction ensureTransaction(Lock... locks);
 
     ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
+
+    ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, @Nullable String dataRegionName);
 
     DbSchema getSchema();
 
@@ -1136,6 +1153,25 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void ensureDataTypeContainerExclusionsNonAdmin(@NotNull DataTypeForExclusion dataType, @NotNull Long dataTypeId, Container container, User user);
 
     String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Long> ids, boolean isUpdate);
+
+    @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId);
+
+    /** The data type rowIds (e.g. sample type rowIds) that currently exclude the given color. Inverse of {@link #getDataTypeExcludedColors}. */
+    @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId);
+
+    @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
+
+    @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId);
+
+    boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
+
+    @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user);
+
+    void removeDataColorExclusionsForColor(long colorRowId);
+
+    void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType);
+
+    void removeContainerDataColors(String containerId);
 
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 

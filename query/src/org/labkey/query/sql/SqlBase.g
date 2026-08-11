@@ -57,9 +57,6 @@ tokens
 @lexer::header
 {
 	package org.labkey.query.sql.antlr;
-
-    import org.apache.logging.log4j.Logger;
-    import org.apache.logging.log4j.LogManager;
 }
 
 
@@ -134,17 +131,14 @@ tokens
 
 @lexer::members
 {
-    Logger _log = LogManager.getLogger(org.labkey.query.sql.SqlParser.class);
-    
     protected void setPossibleID(boolean possibleID)
     {
     }
 
-    @Override
-    public void emitErrorMessage(String msg)
-    {
-        _log.debug(msg);
-    }
+    // NOTE: lexer errors are reported via reportError(), which SqlParser._SqlLexer overrides to collect
+    // them as parse errors. Always use _SqlLexer rather than instantiating SqlBaseLexer directly -- the
+    // default ANTLR emitErrorMessage() prints unmatchable input to System.err and then drops it, letting
+    // the remaining characters re-lex into a different, valid-looking query.
 }
 
 
@@ -180,6 +174,9 @@ REGR_SXY : 'regr_sxy';
 REGR_SYY : 'regr_syy';
 COUNT : 'count';
 CROSS : 'cross';
+CURRENT_DATE : 'current_date';
+CURRENT_TIME : 'current_time';
+CURRENT_TIMESTAMP : 'current_timestamp';
 DELETE : 'delete';
 DISTINCT : 'distinct';
 DOT : '.';
@@ -633,6 +630,9 @@ negatedExpression
 // level 5 - EQ, NE
 equalityExpression
 	: EXISTS^ OPEN! subQuery CLOSE!
+	| lhs=relationalExpression IS (n=NOT)? DISTINCT FROM rhs=relationalExpression
+		-> {$n != null}? ^(METHOD_CALL IDENT["IS_NOT_DISTINCT_FROM"] ^(EXPR_LIST $lhs $rhs))
+		-> ^(METHOD_CALL IDENT["IS_DISTINCT_FROM"] ^(EXPR_LIST $lhs $rhs))
 	| relationalExpression (
 		( EQ^
 		| is=IS^ (NOT!  { $is.setType(IS_NOT); } )?
@@ -761,6 +761,10 @@ starAtom
 primaryExpression
 	:   ARRAY exprList ']' -> ^(METHOD_CALL IDENT["ARRAY_CONSTRUCT"] exprList)
 	|   TEXTARRAY exprList ']' -> ^(METHOD_CALL IDENT["TEXTARRAY_CONSTRUCT"] exprList)
+	// SQL-standard niladic datetime keywords -- no parens allowed; sugar for curdate()/curtime()/now()
+	|   CURRENT_DATE -> ^(METHOD_CALL IDENT["CURDATE"] ^(EXPR_LIST))
+	|   CURRENT_TIME -> ^(METHOD_CALL IDENT["CURTIME"] ^(EXPR_LIST))
+	|   CURRENT_TIMESTAMP -> ^(METHOD_CALL IDENT["NOW"] ^(EXPR_LIST))
 	|   id=identPrimary
 	|   constant
 	|   OPEN! ( expression | subQuery) CLOSE!

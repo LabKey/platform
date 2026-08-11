@@ -22,7 +22,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
@@ -186,13 +189,23 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            // Default setting is to cache and share the connection
+            // Default (no explicit setJdbcCaching() call) now auto-disables JDBC caching when it's safe: a separate,
+            // uncached Connection on PostgreSQL (outside a transaction), but still the shared Connection on SQL Server.
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
             {
-                assertEquals(conn, conn2);
+                if (scope.getSqlDialect().isPostgreSQL())
+                {
+                    assertNotEquals(conn, conn2);
+                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
+                    assertFalse(conn2.getAutoCommit());
+                }
+                else
+                {
+                    assertEquals(conn, conn2);
+                }
             }
 
-            // Same as the default setting
+            // Explicitly requesting caching shares the connection, even on PostgreSQL
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
@@ -220,6 +233,102 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                     assertTrue(conn2.getAutoCommit());
                 }
             }
+        }
+
+        // A "self-contained" read (getArrayList(), forEach(), getRowCount(), etc., which fully consume and close the
+        // ResultSet within the call) borrows the thread's shared connection rather than a dedicated one, so nested
+        // queries reuse it and connection-local state stays visible. On PostgreSQL the outermost borrower puts it into
+        // no-caching mode and restores it on release; on SQL Server it's simply the shared connection.
+        Connection borrowed = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true);
+        try
+        {
+            // A plain thread-connection acquisition returns the very same object (it was borrowed, not dedicated)
+            try (Connection threadConn = scope.getConnection())
+            {
+                assertEquals(borrowed, threadConn);
+            }
+
+            // A nested self-contained read reuses the same connection rather than grabbing another one
+            try (Connection nested = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true))
+            {
+                assertEquals(borrowed, nested);
+            }
+
+            if (scope.getSqlDialect().isPostgreSQL())
+            {
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, borrowed.getTransactionIsolation());
+                assertFalse(borrowed.getAutoCommit());
+            }
+        }
+        finally
+        {
+            borrowed.close();
+        }
+
+        // Once the outermost borrower releases it, the thread connection is restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
+        }
+
+        // Inside a transaction, the default must NOT grab a separate Connection, even on PostgreSQL: the caller may be
+        // relying on reading its own uncommitted writes, so we fall back to the shared, transactional Connection.
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            {
+                assertEquals(scope.getConnection(), conn2);
+            }
+            tx.commit();
+        }
+    }
+
+    // Verify that nested DB access from a row callback reuses that same borrowed connection (rather than grabbing a
+    // second one), returns correct results while the outer ResultSet is still open, doesn't truncate the outer
+    // iteration, and leaves the thread connection fully restored once forEach() completes.
+    @Test
+    public void testNestedQueryDuringForEach() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+
+        // The borrow-and-disable-caching path only engages outside a transaction
+        assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
+
+        // core.Containers always has at least the root container
+        long expectedRows = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers")).getRowCount();
+        assertTrue("core.Containers should never be empty", expectedRows > 0);
+
+        MutableInt visited = new MutableInt(0);
+        Set<Connection> callbackConnections = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers ORDER BY RowId")).forEach(Integer.class, rowId -> {
+            visited.increment();
+
+            // The callback runs while the outer ResultSet is open. Acquiring the thread connection must return the same
+            // borrowed connection, in no-caching mode — proving nested code shares the transction/conncetion.
+            try (Connection nested = scope.getConnection())
+            {
+                callbackConnections.add(nested);
+
+                assertFalse("Nested access during forEach() should run on the uncached borrowed connection", nested.getAutoCommit());
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, nested.getTransactionIsolation());
+            }
+
+            // A nested self-contained query must return correct results even though the outer server-side cursor is open
+            // on the same connection — this is the interleaving that would fail if the nested statement clobbered it.
+            Integer nestedRowId = new SqlSelector(scope, new SQLFragment("SELECT RowId FROM core.Containers WHERE RowId = ?", rowId)).getObject(Integer.class);
+            assertEquals("Nested query should return exactly the matching row", rowId, nestedRowId);
+        });
+
+        assertEquals("forEach() should visit every row even with nested queries in the callback", expectedRows, visited.longValue());
+        assertEquals("Nested access should reuse the single borrowed connection across all rows", 1, callbackConnections.size());
+
+        // Once the outermost borrower (forEach) releases the connection, it must be restored to normal caching mode
+        try (Connection restored = scope.getConnection())
+        {
+            assertTrue(restored.getAutoCommit());
+            assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
         }
     }
 

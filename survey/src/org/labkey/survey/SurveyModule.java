@@ -227,7 +227,7 @@ public class SurveyModule extends DefaultModule
                 return new HtmlView("Surveys", HtmlString.of("There is no survey design selected to be displayed in this webpart."));
             else
             {
-                surveyDesign = SurveyManager.get().getSurveyDesign(context.getContainer(), context.getUser(), Integer.parseInt(designIdStr));
+                surveyDesign = SurveyManager.get().getSurveyDesignForRead(context.getContainer(), context.getUser(), Integer.parseInt(designIdStr));
 
                 if (surveyDesign == null)
                     return new HtmlView("Surveys", HtmlString.of("The survey design configured for this webpart cannot be found and may have been deleted."));

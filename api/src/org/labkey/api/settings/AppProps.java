@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.SupportedDatabase;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -44,7 +45,7 @@ public interface AppProps
     // Used for all optional features; "experimental" for historical reasons.
     String OPTIONAL_FEATURE_PREFIX = "experimentalFeature.";
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
-    String EXPERIMENTAL_NO_GUESTS = "disableGuestAccount";
+    String OPTIONAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP = "deriveSamplesNotInApp";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
@@ -74,6 +75,17 @@ public interface AppProps
 
     @Nullable
     String getEnlistmentId();
+
+    /**
+     * Returns the DevOps-assigned name of the tenant/customer this deployment belongs to (e.g., "Hooli",
+     * "WNPRC"), or {@code null} if none is configured. Not customer-facing; currently sourced from
+     * whichever active {@link org.labkey.api.secrets.SecretProvider} reports one.
+     * @see SecretService#getAppName()
+     */
+    default @Nullable String getAppName()
+    {
+        return SecretService.get().getAppName();
+    }
 
     boolean isCachingAllowed();
 
@@ -172,6 +184,11 @@ public interface AppProps
 
     /** Timeout in seconds for read-only HTTP requests, after which resources like DB connections and spawned processes will be killed. Set to 0 to disable. */
     int getReadOnlyHttpRequestTimeout();
+
+    int DEFAULT_SCRIPT_EXECUTION_TIMEOUT = 60;
+
+    /** Timeout in seconds for server-side JavaScript (e.g. trigger scripts), measured in wall-clock time including database and other Java operations invoked by the script. Set to 0 to disable. */
+    int getScriptExecutionTimeout();
 
     int getMaxBLOBSize();
 

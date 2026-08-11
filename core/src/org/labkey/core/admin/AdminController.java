@@ -1381,6 +1381,14 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
+            if (form.getScriptExecutionTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getScriptExecutionTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1415,6 +1423,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2384,6 +2393,7 @@ public class AdminController extends SpringActionController
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
+        private Integer _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2522,6 +2532,18 @@ public class AdminController extends SpringActionController
         public int getReadOnlyHttpRequestTimeout()
         {
             return _readOnlyHttpRequestTimeout;
+        }
+
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
+        @Nullable
+        public Integer getScriptExecutionTimeout()
+        {
+            return _scriptExecutionTimeout;
+        }
+
+        public void setScriptExecutionTimeout(@Nullable Integer timeout)
+        {
+            _scriptExecutionTimeout = timeout;
         }
 
         public void setReadOnlyHttpRequestTimeout(int timeout)
@@ -12299,8 +12321,8 @@ public class AdminController extends SpringActionController
         @Override
         protected ObjectMapper createRequestObjectMapper()
         {
-            // Annoyingly, Chrome posts an array of JSON objects but Safari posts individual JSON objects. Set a flag
-            // that ensures both cases deserialize into List<JSONObject>.
+            // Annoyingly, Chrome and Firefox post an array of JSON objects but Safari posts individual JSON objects.
+            // Set a flag that ensures both cases deserialize into List<JSONObject>.
             return JsonUtil.DEFAULT_MAPPER.copy().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
         }
     }

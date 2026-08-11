@@ -1652,18 +1652,24 @@ public class LoginController extends SpringActionController
             PrimaryAuthenticationConfiguration<?> configuration = AuthenticationManager.getConfiguration(getViewContext().getSession());
             if (configuration == null)
             {
-                throw new NotFoundException("No configuration found");
+                throw new NotFoundException("Configuration was not found" + CONFIGURATION_ADVICE);
+            }
+            if (!configuration.isEnabled())
+            {
+                throw new NotFoundException("Configuration is no longer active" + CONFIGURATION_ADVICE);
             }
             JSONObject resp = new JSONObject();
             resp.put("description", configuration.getDescription());
             LoginUrls urls = urlProvider(LoginUrls.class);
-            ActionURL reauthUrl = configuration instanceof SSOAuthenticationConfiguration<?> sso ?
-                urls.getSSOReauthURL(sso, form.getReturnActionURL()) :
+            @Nullable ActionURL reauthUrl = configuration instanceof SSOAuthenticationConfiguration<?> sso ?
+                (sso.isReauthenticationSupported() ? urls.getSSOReauthURL(sso, form.getReturnActionURL()) : null) :
                 urls.getForceReauthURL(getContainer(), true, form.getReturnActionURL());
-            resp.put("reauthUrl", reauthUrl.getLocalURIString());
+            resp.put("reauthUrl", reauthUrl != null ? reauthUrl.getLocalURIString() : null);
             return success(resp);
         }
     }
+
+    private static final String CONFIGURATION_ADVICE = ". Please Sign Out and Sign In again.";
 
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";

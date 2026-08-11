@@ -27,6 +27,7 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
@@ -62,6 +63,7 @@ public abstract class Job extends CreatedModified implements Identifiable
     protected Integer _assignee;
     protected List<Integer> _notifyList;
     protected boolean _isTemplate;
+    protected boolean _isArchived;
     protected Job _template;
     protected Integer _jobCount; // only applies to templates
     protected Integer _domainId;
@@ -253,6 +255,16 @@ public abstract class Job extends CreatedModified implements Identifiable
         _isTemplate = template;
     }
 
+    public boolean getIsArchived()
+    {
+        return _isArchived;
+    }
+
+    public void setIsArchived(boolean archived)
+    {
+        _isArchived = archived;
+    }
+
     public Integer getJobCount()
     {
         return _jobCount;
@@ -314,6 +326,12 @@ public abstract class Job extends CreatedModified implements Identifiable
 
     @JsonIgnore
     public abstract @NotNull List<String> getSampleNames();
+
+    @JsonIgnore
+    public abstract @NotNull List<? extends ExpData> getSources();
+
+    @JsonIgnore
+    public abstract @NotNull List<String> getSourceNames();
 
     public void setEntities(List<WorkEntity> entities)
     {

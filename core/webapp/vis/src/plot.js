@@ -393,9 +393,13 @@ boxPlot.render();
                 newScale.tickValues = origScale.tickValues ? origScale.tickValues : null;
                 newScale.tickFormat = origScale.tickFormat ? origScale.tickFormat : null;
                 newScale.timeBasedXTick = origScale.timeBasedXTick ? origScale.timeBasedXTick : null;
-                newScale.dayCount = origScale.dayCount ? origScale.dayCount : null;
+                newScale.dayCount = origScale.dayCount !== undefined ? origScale.dayCount : null;
+                newScale.minDayGapOffsets = origScale.minDayGapOffsets !== undefined ? origScale.minDayGapOffsets : null;
+                newScale.dayNumberOffsetMap = origScale.dayNumberOffsetMap ? origScale.dayNumberOffsetMap : null;
+                newScale.calendarBreakOffset = origScale.calendarBreakOffset !== undefined ? origScale.calendarBreakOffset : null;
                 newScale.tickDigits = origScale.tickDigits ? origScale.tickDigits : null;
                 newScale.tickMax = origScale.tickMax ? origScale.tickMax : null;
+                newScale.forceTicks = origScale.forceTicks ? origScale.forceTicks : null;
                 newScale.tickLabelMax = origScale.tickLabelMax ? origScale.tickLabelMax : null;
                 newScale.tickHoverText = origScale.tickHoverText ? origScale.tickHoverText : null;
                 newScale.tickCls = origScale.tickCls ? origScale.tickCls : null;
@@ -764,12 +768,12 @@ boxPlot.render();
             // adjust the plot range to reserve space for log gutter
             var mainPlotRangeAdjustment = 30;
             if (xLogGutter) {
-                if (scales.yLeft && Ext.isArray(scales.yLeft.range)) {
+                if (scales.yLeft && Array.isArray(scales.yLeft.range)) {
                     scales.yLeft.range = [scales.yLeft.range[0] + mainPlotRangeAdjustment, scales.yLeft.range[1]];
                 }
             }
             if (yLogGutter) {
-                if (scales.x && Ext.isArray(scales.x.range)) {
+                if (scales.x && Array.isArray(scales.x.range)) {
                     scales.x.range = [scales.x.range[0] - mainPlotRangeAdjustment, scales.x.range[1]];
                 }
             }
@@ -1703,6 +1707,16 @@ boxPlot.render();
         return isNaN(d.getTime()) ? null : Math.round(d.getTime() / 86400000);
     };
 
+    // Width (px) of one calendar-axis day slot: the per-date slot width, capped by the closest actual day
+    // spacing so same-day jitter and highlight rects never spill into the neighbouring day.
+    LABKEY.vis.calendarSlotWidth = function(xScale, gridWidth) {
+        let width = gridWidth / Math.max(xScale.dayCount || 0, 10);
+        if (xScale.minDayGapOffsets > 0 && xScale.scale) {
+            width = Math.min(width, Math.abs(xScale.scale(xScale.minDayGapOffsets) - xScale.scale(0)));
+        }
+        return width;
+    };
+
     // Format a day number (days since epoch, UTC) back to a YYYY-MM-DD label for calendar-axis ticks.
     LABKEY.vis.dayNumberToDateLabel = function(dayNumber) {
         const d = new Date(dayNumber * 86400000);
@@ -1845,37 +1859,161 @@ boxPlot.render();
         }
         uniqueXAxisLabels =  Object.keys(uniqueXAxisKeys).sort();
 
-        // Calendar (time-based) x-axis: position each day by its offset from the earliest day so spacing
-        // reflects elapsed time. Offsets are keyed by xTickLabel (the date) so same-day rows share a position.
+        // Calendar (time-based) x-axis: space each day by elapsed time; with a prefix block (guide-set "always show") the dead span between it and the date window collapses to a fixed gap.
         const timeBasedXTick = config.properties.timeBasedXTick === true;
-        const dayOffsetMap = {}, dayOffsetLabelMap = {};
-        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null;
+        const prefixField = config.properties.calendarPrefixField;
+        const prefixValue = config.properties.calendarPrefixValue;
+        const dayOffsetMap = {}, dayOffsetLabelMap = {}, dayNumberOffsetMap = {};
+        let uniqueDayOffsets = [], maxDayOffset = 0, minDayNumber = null,
+                calendarBreakOffset = null, minDayGapOffsets = 0;
+        // Contiguous stretches of the axis, each linear in day number (the collapsed gap sits between them):
+        // {startOffset, startDayNumber, span, linear}. Ticks are chosen per block so labels stay evenly spaced.
+        let calendarBlocks = [];
+        // Filler days (range-start separator, selected-range endpoints) outside a block's real data get a bare tick
+        // each; the dead span between them and the data is left unlabelled by clamping the block to its real extent.
+        let boundaryTickOffsets = [];
         if (timeBasedXTick) {
-            // Parse each distinct date label once, tracking the earliest day; then convert to offsets.
-            const labelToDn = {}, seenLabel = {};
+            // One entry per distinct date label: day number, whether any row on it is tagged, whether any row on it is plottable.
+            const labelInfo = {}, orderedLabels = [];
+            const havePrefixCfg = prefixField !== undefined && prefixValue !== undefined;
             for (let i = 0; i < config.data.length; i++) {
-                const label = config.data[i][config.properties.xTickLabel];
-                if (seenLabel[label]) {
-                    continue;
+                const row = config.data[i], label = row[config.properties.xTickLabel];
+                let info = labelInfo[label];
+                if (info === undefined) {
+                    const dn = LABKEY.vis.dateToDayNumber(label);
+                    info = labelInfo[label] = { dn: dn, prefix: false, real: false };
+                    if (dn !== null) {
+                        orderedLabels.push(label);
+                        if (minDayNumber === null || dn < minDayNumber) {
+                            minDayNumber = dn;
+                        }
+                    }
                 }
-                seenLabel[label] = true;
-                const dn = LABKEY.vis.dateToDayNumber(label);
-                if (dn !== null) {
-                    labelToDn[label] = dn;
-                    if (minDayNumber === null || dn < minDayNumber) {
-                        minDayNumber = dn;
+                if (row.type !== 'missing' && row.type !== 'empty') { // the two no-value filler row markers
+                    info.real = true;
+                }
+                if (havePrefixCfg && row[prefixField] === prefixValue) {
+                    info.prefix = true;
+                }
+            }
+
+            // Anchor the window at the first plottable day after the last tagged day; untagged filler days before it fold into the prefix block instead of re-stretching the axis over the dead span.
+            let lastPrefixDn = null, windowAnchorDn = null;
+            for (let k = 0; k < orderedLabels.length; k++) {
+                const info = labelInfo[orderedLabels[k]];
+                if (info.prefix && (lastPrefixDn === null || info.dn > lastPrefixDn)) {
+                    lastPrefixDn = info.dn;
+                }
+            }
+            // an explicitly named window start (the selected date range) anchors the split even when that day has no data
+            const windowStartDn = LABKEY.vis.dateToDayNumber(config.properties.calendarWindowStartDate);
+            if (lastPrefixDn !== null && windowStartDn !== null && windowStartDn > lastPrefixDn) {
+                windowAnchorDn = windowStartDn;
+            }
+            else {
+                for (let k = 0; lastPrefixDn !== null && k < orderedLabels.length; k++) {
+                    const info = labelInfo[orderedLabels[k]];
+                    if (info.real && info.dn > lastPrefixDn && (windowAnchorDn === null || info.dn < windowAnchorDn)) {
+                        windowAnchorDn = info.dn;
                     }
                 }
             }
-            for (const label in labelToDn) {
-                const offset = labelToDn[label] - minDayNumber;
+            const prefixLabels = [], recentLabels = [];
+            for (let k = 0; k < orderedLabels.length; k++) {
+                const label = orderedLabels[k];
+                (windowAnchorDn !== null && labelInfo[label].dn >= windowAnchorDn ? recentLabels : prefixLabels).push(label);
+            }
+
+            const byDn = function(a, b) { return labelInfo[a].dn - labelInfo[b].dn; };
+            const putOffset = function(label, offset) {
                 dayOffsetMap[label] = offset;
                 dayOffsetLabelMap[offset] = label;
+                dayNumberOffsetMap[labelInfo[label].dn] = offset;
                 if (offset > maxDayOffset) {
                     maxDayOffset = offset;
                 }
+            };
+
+            if (prefixLabels.length > 0 && recentLabels.length > 0) {
+                // Prefix block, then a blank gap, then the window time-spaced from its first day.
+                prefixLabels.sort(byDn);
+                recentLabels.sort(byDn);
+
+                const firstPrefixDn = labelInfo[prefixLabels[0]].dn;
+                const firstRecentDn = labelInfo[recentLabels[0]].dn;
+                const prefixSpan = labelInfo[prefixLabels[prefixLabels.length - 1]].dn - firstPrefixDn;
+                const windowSpan = labelInfo[recentLabels[recentLabels.length - 1]].dn - firstRecentDn;
+
+                // Space the guide-set block by elapsed days as well, unless it would out-span the window badly enough
+                // to crowd it out (an old, sparse guide set) - then fall back to one ordinal slot per day.
+                const timeScalePrefix = prefixSpan <= windowSpan * 2;
+                for (let k = 0; k < prefixLabels.length; k++) {
+                    putOffset(prefixLabels[k], timeScalePrefix ? labelInfo[prefixLabels[k]].dn - firstPrefixDn : k);
+                }
+
+                const gapSlots = 2;
+                const prefixEndOffset = timeScalePrefix ? prefixSpan : prefixLabels.length - 1;
+                calendarBreakOffset = prefixEndOffset + (gapSlots / 2); // midpoint of the blank gap
+                const windowStartOffset = prefixEndOffset + gapSlots;
+                for (let k = 0; k < recentLabels.length; k++) {
+                    putOffset(recentLabels[k], windowStartOffset + (labelInfo[recentLabels[k]].dn - firstRecentDn));
+                }
+                calendarBlocks = [
+                    { startOffset: 0, startDayNumber: firstPrefixDn, span: prefixEndOffset, linear: timeScalePrefix },
+                    { startOffset: windowStartOffset, startDayNumber: firstRecentDn, span: maxDayOffset - windowStartOffset, linear: true }
+                ];
+            }
+            else {
+                // No prefix split: every day spaced by its offset from the earliest day.
+                for (let k = 0; k < orderedLabels.length; k++) {
+                    putOffset(orderedLabels[k], labelInfo[orderedLabels[k]].dn - minDayNumber);
+                }
+                calendarBlocks = [{ startOffset: 0, startDayNumber: minDayNumber, span: maxDayOffset, linear: true }];
             }
             uniqueDayOffsets = Object.keys(dayOffsetLabelMap).map(Number).sort(function(a, b) { return a - b; });
+            for (let k = 1; k < uniqueDayOffsets.length; k++) {
+                const gap = uniqueDayOffsets[k] - uniqueDayOffsets[k - 1];
+                if (minDayGapOffsets === 0 || gap < minDayGapOffsets) {
+                    minDayGapOffsets = gap;
+                }
+            }
+
+            // Clamp each block's tick grid to its OWN real-data extent so leading/trailing filler days (the range-start
+            // separator, selected-range endpoints) neither shift the interval anchor nor get tiled; a trimmed filler day
+            // becomes a standalone labelled edge tick instead. Domain still spans the full range. Per-block, not global,
+            // so the recent window's grid anchors on its first real day even when the guide-set prefix is real data.
+            calendarBlocks.forEach(function(block) {
+                const blockEnd = block.startOffset + block.span;
+                let realLo = null, realHi = null;
+                for (const label in labelInfo) {
+                    const off = dayOffsetMap[label];
+                    if (!labelInfo[label].real || off === undefined || off < block.startOffset || off > blockEnd) {
+                        continue;
+                    }
+                    if (realLo === null || off < realLo) { realLo = off; }
+                    if (realHi === null || off > realHi) { realHi = off; }
+                }
+                if (realLo === null) {
+                    return; // block holds only filler days - leave its offsets to tick as-is
+                }
+                for (let i = 0; i < uniqueDayOffsets.length; i++) {
+                    const off = uniqueDayOffsets[i];
+                    if (off >= block.startOffset && off <= blockEnd && (off < realLo || off > realHi)) {
+                        boundaryTickOffsets.push(off); // a filler day trimmed off an end keeps a labelled tick
+                    }
+                }
+                if (block.linear) {
+                    block.startDayNumber += realLo - block.startOffset; // linear: one offset == one day
+                }
+                block.startOffset = realLo;
+                block.span = realHi - realLo;
+            });
+
+            // a row whose date wouldn't parse has no place on a time-scaled axis, and faking an ordinal index for it
+            // would collide with a real day offset, so drop it rather than plant it mid-axis
+            config.data = config.data.filter(function(row) {
+                return dayOffsetMap[row[config.properties.xTickLabel]] !== undefined;
+            });
         }
 
         // create a sequential index to use for the x-axis value and keep a map from that index to the tick label
@@ -2266,10 +2404,7 @@ boxPlot.render();
                 };
 
                 if (timeBasedXTick) {
-                    index = dayOffsetMap[row[config.properties.xTickLabel]];
-                    if (index === undefined) {
-                        index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
-                    }
+                    index = dayOffsetMap[row[config.properties.xTickLabel]]; // unmapped rows were filtered out above
                 } else if (config.properties.groupMatchingXTick) {
                     index = uniqueXAxisLabels.indexOf(row[config.properties.xTick]);
                 } else {
@@ -2326,16 +2461,18 @@ boxPlot.render();
             }
         }
 
-        // min x-axis tick length is 10 by default (not applied for a time-based axis, where the
-        // spacing is driven by real dates and padding would add empty days at the end)
-        const maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
-        for (let i = maxSeqValue; i < 10 && !timeBasedXTick; i++) {
-            var temp = {type: 'empty', seqValue: i};
-            temp[config.properties.xTickLabel] = "";
-            if (config.properties.color && config.data[0]) {
-                temp[config.properties.color] = config.data[0][config.properties.color];
+        // Previously the ordinal x-axis was padded out to a minimum of 10 slots; that left trailing dateless ticks
+        // when only a few days had data, so the axis now spans just the real (and selected-range) dates.
+
+        // Dateless range/separator markers (rangeTick) carry a meaningful label (selected-range endpoints, the guide-set
+        // "always show" separator) - distinct from the Issue-31678 missing-date FILL rows that share the axis across
+        // precursors. Tag only the range markers' seqValues so axis thinning keeps them, so a dense per-replicate axis
+        // shows the range-start tick like the sparser per-date/calendar axes already do.
+        const forceTickValues = [];
+        for (let j = 0; j < config.data.length; j++) {
+            if (config.data[j].rangeTick === true && forceTickValues.indexOf(config.data[j].seqValue) === -1) {
+                forceTickValues.push(config.data[j].seqValue);
             }
-            config.data.push(temp);
         }
 
         // we only need the color aes if there is > 1 distinct value in the color variable
@@ -2364,6 +2501,7 @@ boxPlot.render();
             x: {
                 scaleType: 'discrete',
                 tickMax: tickMax,
+                forceTicks: forceTickValues, // seqValues that must survive tick thinning (range/separator markers)
                 tickFormat: function(index) {
                     return tickLabelMap[index];
                 },
@@ -2392,17 +2530,19 @@ boxPlot.render();
             config.scales.x.trans = 'linear';
             config.scales.x.timeBasedXTick = true; // opt-in flag so the renderer only day-jitters this axis
             config.scales.x.dayCount = uniqueDayOffsets.length; // distinct-day count shared with jitter/bar/rect sizing
-            // Anchor endpoints like the per-date scale (min 10 slots); space the interior by elapsed time.
-            // pos(0)=1/(slots+1), pos(maxOffset)=numDates/(slots+1).
+            config.scales.x.minDayGapOffsets = minDayGapOffsets; // closest spacing between two plotted days, caps that slot width
+            config.scales.x.dayNumberOffsetMap = dayNumberOffsetMap; // day number -> x offset, for annotation overlay alignment
+            config.scales.x.calendarBreakOffset = calendarBreakOffset; // x offset of the guide-set/window break, or null when there is no split
+            // Anchor endpoints like the per-date scale and space the interior by elapsed time; slots == numDates so a
+            // few dates fill the width (matching per-date) rather than compressing to the left. pos(0)=1/(numDates+1).
             const numDates = uniqueDayOffsets.length;
             const avgStep = numDates > 1 ? maxDayOffset / (numDates - 1) : 1;
-            const slots = Math.max(numDates, 10);
+            const slots = numDates;
             config.scales.x.domain = [-avgStep, avgStep * slots];
 
             // A date label is ~80px; the domain maps avgStep*(slots+1) offset-units across ~the plot width, so
-            // require at least this many offset-units between adjacent ticks to avoid overlapping labels. This
-            // matters when few dates are close in time: the min-10-slot domain padding compresses them into the
-            // left of the axis, so consecutive-day labels collide unless we thin them.
+            // require at least this many offset-units between adjacent ticks to avoid overlapping labels (matters when
+            // several dates are close in time and their consecutive-day labels would otherwise collide).
             const labelPx = 80;
             const plotPx = Math.max(config.width - 110, 100); // approx grid width after margins
             const minLabelGapOffsets = (labelPx * avgStep * (slots + 1)) / plotPx;
@@ -2424,10 +2564,52 @@ boxPlot.render();
                 };
             }
             else {
-                // Crowded: ticks at nice calendar intervals so labels stay evenly spaced and readable.
-                config.scales.x.tickValues = LABKEY.vis.calendarTickOffsets(minDayNumber, maxDayOffset, tickMax, minLabelGapOffsets);
+                // Crowded: ticks at nice calendar intervals within each block, so labels stay evenly spaced and a
+                // reader can interpolate the unlabelled days rather than seeing an arbitrary subset of data days.
+                const tickValues = [];
+                let totalSpan = 0;
+                calendarBlocks.forEach(function(block) { totalSpan += block.span; });
+                calendarBlocks.forEach(function(block) {
+                    const blockTickMax = Math.max(Math.round(tickMax * block.span / (totalSpan || 1)), 2);
+                    if (block.linear) {
+                        LABKEY.vis.calendarTickOffsets(block.startDayNumber, block.span, blockTickMax, minLabelGapOffsets)
+                                .forEach(function(off) { tickValues.push(block.startOffset + off); });
+                    }
+                    else {
+                        // ordinal block: offsets aren't linear in day number, so tick on its data days, thinned to fit
+                        let last = null;
+                        for (let i = 0; i < uniqueDayOffsets.length; i++) {
+                            const off = uniqueDayOffsets[i];
+                            if (off >= block.startOffset && off <= block.startOffset + block.span
+                                    && (last === null || off - last >= minLabelGapOffsets)) {
+                                tickValues.push(off);
+                                last = off;
+                            }
+                        }
+                    }
+                });
+                // selected-range endpoints get a labelled tick even though their dead span stays unlabelled
+                boundaryTickOffsets.forEach(function(off) { tickValues.push(off); });
+                // keep the regular interval grid intact and just add the exact first/last day on the axis, so the last
+                // grid tick before the end date (e.g. 2015-10-19) still shows and the end date (2015-10-22) follows it
+                if (uniqueDayOffsets.length > 0) {
+                    [uniqueDayOffsets[0], uniqueDayOffsets[uniqueDayOffsets.length - 1]].forEach(function(end) {
+                        if (tickValues.indexOf(end) === -1) { tickValues.push(end); }
+                    });
+                }
+                tickValues.sort(function(a, b) { return a - b; });
+                config.scales.x.tickValues = tickValues;
                 config.scales.x.tickFormat = function(offset) {
-                    return LABKEY.vis.dayNumberToDateLabel(offset + minDayNumber);
+                    if (dayOffsetLabelMap[offset] !== undefined) {
+                        return dayOffsetLabelMap[offset];
+                    }
+                    for (let i = 0; i < calendarBlocks.length; i++) {
+                        const block = calendarBlocks[i];
+                        if (block.linear && offset >= block.startOffset && offset <= block.startOffset + block.span) {
+                            return LABKEY.vis.dayNumberToDateLabel(block.startDayNumber + offset - block.startOffset);
+                        }
+                    }
+                    return '';
                 };
             }
         }

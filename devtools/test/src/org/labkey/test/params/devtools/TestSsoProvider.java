@@ -15,13 +15,21 @@
  */
 package org.labkey.test.params.devtools;
 
+import org.labkey.test.TestFileUtils;
+import org.labkey.test.Locator;
+import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.pages.core.login.LoginConfigRow;
 import org.labkey.test.pages.core.login.SsoAuthDialogBase;
 import org.labkey.test.params.login.AuthenticationProvider;
 import org.openqa.selenium.WebDriver;
 
+import java.io.File;
+
 public class TestSsoProvider extends AuthenticationProvider<TestSsoProvider.TestSsoConfigureDialog>
 {
+    public static final File THUMBNAIL_COOL = TestFileUtils.getSampleData("thumbnails/Super Cool R Report/Thumbnail.png");
+    public static final File THUMBNAIL_UNCOOL = TestFileUtils.getSampleData("thumbnails/Want To Be Cool/Thumbnail.png");
+
     @Override
     public String getProviderName()
     {
@@ -58,11 +66,48 @@ public class TestSsoProvider extends AuthenticationProvider<TestSsoProvider.Test
             super(TestSsoProvider.this, driver);
         }
 
+        /**
+         * Sets "Default to this TestSSO configuration", which redirects the login page straight to the TestSSO page
+         * instead of requiring the user to click on a logo.
+         */
+        public TestSsoConfigureDialog setDefaultConfiguration(boolean isDefault)
+        {
+            elementCache().autoRedirectCheckbox.set(isDefault);
+            return this;
+        }
+
+        /**
+         * Sets "Skip Reauthentication", which exempts users who authenticated with this configuration from
+         * reauthenticating when signing electronically.
+         */
+        public TestSsoConfigureDialog setSkipReauthentication(boolean skipReauthentication)
+        {
+            elementCache().skipReauthenticationCheckbox.set(skipReauthentication);
+            return this;
+        }
+
         @Override
         protected TestSsoConfigureDialog getThis()
         {
             return this;
         }
 
+        @Override
+        protected ElementCache newElementCache()
+        {
+            return new ElementCache();
+        }
+
+        @Override
+        protected ElementCache elementCache()
+        {
+            return (ElementCache) super.elementCache();
+        }
+
+        protected class ElementCache extends SsoAuthDialogBase<TestSsoConfigureDialog>.ElementCache
+        {
+            Checkbox autoRedirectCheckbox = new Checkbox(Locator.tagWithId("input", "autoRedirect").findWhenNeeded(this));
+            Checkbox skipReauthenticationCheckbox = new Checkbox(Locator.tagWithId("input", "SkipReauthentication").findWhenNeeded(this));
+        }
     }
 }

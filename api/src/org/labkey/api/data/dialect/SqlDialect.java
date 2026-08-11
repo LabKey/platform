@@ -365,8 +365,11 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Return a ConnectionFactory only if the default behavior needs to be overridden
-    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    // Return a ConnectionFactory only if the default behavior needs to be overridden. selfContained indicates that the
+    // ResultSet will be fully consumed and closed within a single selector call (so the shared, ref-counted thread
+    // connection can be borrowed and its state restored on release); when false, the connection escapes to the caller
+    // as a live ResultSet/Stream and must therefore be an unshared connection whose lifetime the caller controls.
+    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         return null;
     }
@@ -880,6 +883,17 @@ public abstract class SqlDialect
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    /**
+     * Does the dialect natively support the standard "IS [NOT] DISTINCT FROM" predicate? PostgreSQL and Snowflake
+     * do; SQL Server, MySQL, and Oracle do not (SQL Server added GREATEST/LEAST in recent versions but has never
+     * added this predicate). Dialects that return false here get a portable CASE-based rewrite instead; see
+     * Method.IsDistinctFromMethodInfo.
+     */
+    public boolean supportsNativeIsDistinctFrom()
+    {
+        return false;
     }
 
     public void handleCreateDatabaseException(SQLException e) throws ServletException
@@ -2377,6 +2391,13 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    // true if the array a contains, for EACH given value, some element matching it with a case-insensitive substring
+    public SQLFragment array_element_like(SQLFragment a, String... values)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
 
     //
     // TESTS
@@ -2415,7 +2436,7 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE

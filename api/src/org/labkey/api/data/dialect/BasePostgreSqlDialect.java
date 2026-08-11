@@ -599,7 +599,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     String maxLength = rs.getString("character_maximum_length");
 
                     // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                    scale = Integer.parseInt(null != maxLength ? maxLength : rs.getString("character_octet_length"));
                 }
                 else
                 {
@@ -903,10 +903,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            int direction = paramInfo.getParamTraits().get(ParamTraits.direction).intValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype).intValue() == Types.INTEGER)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;
@@ -920,6 +920,12 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     @Override
     public boolean supportsNativeGreatestAndLeast()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportsNativeIsDistinctFrom()
     {
         return true;
     }
@@ -1009,7 +1015,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 }
             }
 
-            return scale.intValue();
+            return scale;
         }
 
         @Nullable
@@ -1039,7 +1045,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
         // and it's a read-only statement (a SELECT), so we won't mess up any state the caller is relying on.
@@ -1047,11 +1053,44 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             return null;
         }
+        else if (selfContained)
+        {
+            // Borrow the thread's shared, ref-counted connection via scope.getConnection() rather than a
+            // separate one, so nested queries reuse it (avoiding pool exhaustion) and connection-local state (temp tables,
+            // session settings, etc) stays visible. Only the outermost borrower — isThreadConnectionActive() ==
+            // false — disables JDBC caching and registers the restore via runOnClose (fired when the ref count returns to
+            // 0); nested borrows reuse it as-is.
+            return () -> {
+                boolean alreadyHeld = scope.isThreadConnectionActive();
+                Connection conn = scope.getConnection();
+
+                try
+                {
+                    if (!alreadyHeld && conn instanceof ConnectionWrapper cw && cw.getAutoCommit())
+                        cw.setRunOnClose(configureToDisableJdbcCaching(cw, scope));
+                }
+                catch (SQLException | RuntimeException e)
+                {
+                    // scope.getConnection() already bumped the ref count, so release it before propagating
+                    try
+                    {
+                        conn.close();
+                    }
+                    catch (SQLException suppressed)
+                    {
+                        e.addSuppressed(suppressed);
+                    }
+                    throw e;
+                }
+
+                return conn;
+            };
+        }
         else
         {
-            // Factory that gets a fresh, read-only connection directly from the pool (not shared with the thread) and
-            // configures it to not cache ResultSet data in the JDBC driver, making it suitable for streaming very large
-            // ResultSets. See #39753 and #39888.
+            // The connection escapes the selector call (a live, streaming ResultSet/Stream is handed back to the caller)
+            // or the caller explicitly disabled caching, so use a fresh, read-only connection directly from the pool
+            // (not shared with the thread) whose lifetime the caller controls. See #39753 and #39888.
             return () -> {
                 ConnectionWrapper conn = scope.getPooledConnection(DbScope.ConnectionType.Pooled, null);
                 Closer closer = configureToDisableJdbcCaching(conn, scope);

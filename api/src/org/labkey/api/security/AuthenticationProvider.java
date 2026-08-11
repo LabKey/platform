@@ -234,6 +234,12 @@ public interface AuthenticationProvider
          * @param isAdminCopy true for sending admin a copy of reset password email
          */
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
@@ -286,11 +292,23 @@ public interface AuthenticationProvider
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
         void resetUserDelay(String id);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface ExpireAccountProvider extends AuthenticationProvider
     {
         boolean isEnabled();
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     class AuthenticationResponse
@@ -468,6 +486,7 @@ public interface AuthenticationProvider
         userDoesNotExist(ReportType.onFailure, "user does not exist", null),
         badPassword(ReportType.onFailure, "incorrect password", null),
         badCredentials(ReportType.onFailure, "invalid credentials", null),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
+        reauthNotConfirmed(ReportType.onFailure, "identity provider did not reauthenticate the user", null),  // Credentials were fine; the IdP declined to reauthenticate (e.g. ignored SAML ForceAuthn)
         complexity(ReportType.onFailure, "password does not meet the complexity requirements", AuthenticationStatus.Complexity),
         expired(ReportType.onFailure, "password has expired", AuthenticationStatus.PasswordExpired),
         configurationError(ReportType.always, "configuration problem", null),

@@ -40,7 +40,7 @@ public interface EmailMessage
     // TODO: Only used by tests... delete?
     void setFiles(List<File> files);
     void addContent(MimeType type, String content);
-    void addContent(MimeType type, HttpServletRequest request, HttpView view) throws Exception;
+    void addContent(MimeType type, HttpServletRequest request, HttpView<?> view) throws Exception;
 
     /**
      * Sets the display name for the email sender, the actual sender email address will be the one configured via site or project settings

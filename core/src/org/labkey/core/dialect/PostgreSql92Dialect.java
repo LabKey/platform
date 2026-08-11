@@ -38,6 +38,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.dialect.BackslashEscapingStringHandler;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -190,7 +191,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         if (getStandardConformingStrings())
             return super.createStringHandler();
         else
-            return new PostgreSqlNonConformingStringHandler();
+            return new BackslashEscapingStringHandler();
     }
 
     /*
@@ -1227,5 +1228,24 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         ret.append(b);
         ret.append(")");
         return ret;
+    }
+
+    @Override
+    public SQLFragment array_element_like(SQLFragment a, String... values)
+    {
+        SQLFragment sql = new SQLFragment("(");
+        String sep = "";
+        for (String value : values)
+        {
+            sql.append(sep);
+            sql.append("EXISTS (SELECT 1 FROM unnest(");
+            sql.append(a);
+            sql.append(") AS _elem WHERE _elem");
+            appendCaseInsensitiveLikeClause(sql, value);
+            sql.append(")");
+            sep = " AND ";
+        }
+        sql.append(")");
+        return sql;
     }
 }

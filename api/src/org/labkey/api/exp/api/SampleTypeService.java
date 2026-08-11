@@ -123,6 +123,8 @@ public interface SampleTypeService
 
     Map<String, ExpSampleType> getSampleTypesForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type);
 
+    void auditSampleColorExclusion(Container container, long sampleTypeRowId, @Nullable String auditUserComment, User user);
+
     /**
      * Create a new SampleType with the provided properties.
      * If a 'Name' property exists in the list, it will be used as the 'id' property of the SampleType.
@@ -150,7 +152,7 @@ public interface SampleTypeService
     ExpSampleType createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable List<Integer> excludedSampleColorIds, @Nullable Map<String, Object> changeDetails)
             throws ExperimentException;
 
     @NotNull
