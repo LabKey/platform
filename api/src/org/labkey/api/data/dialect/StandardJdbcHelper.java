@@ -44,12 +44,11 @@ public class StandardJdbcHelper implements JdbcHelper
         if (-1 == dbEnd)
             dbEnd = url.length();
 
-        // Database name starts after the last '/' or ':' 
-        int slash = url.lastIndexOf('/', dbEnd);
-        int colon = url.lastIndexOf(':', dbEnd);
+        // Last '/' is the database delimiter, except for "jdbc:postgresql:database"
+        char dbDelimiter = url.contains("/") ? '/' : ':';
+        int dbDelimiterIndex = url.lastIndexOf(dbDelimiter, dbEnd);
 
-        int dbDelimiter = Math.max(slash, colon);
-
-        return url.substring(dbDelimiter + 1, dbEnd);
+        // dbDelimiterIndex == 1 means no database name, so return empty string in that case
+        return dbDelimiterIndex != 1 ? url.substring(dbDelimiterIndex + 1, dbEnd) : "";
     }
 }
