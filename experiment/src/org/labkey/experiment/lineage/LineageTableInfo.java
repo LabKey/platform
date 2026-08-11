@@ -45,7 +45,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
 public class LineageTableInfo extends VirtualTable
 {
@@ -117,11 +116,11 @@ public class LineageTableInfo extends VirtualTable
         setTitleColumn("Name");
     }
 
-    private ForeignKey createLsidLookup(ExpLineageOptions.LineageExpType expType, String cpasType)
+    private @NotNull ForeignKey createLsidLookup(ExpLineageOptions.LineageExpType expType, String cpasType)
     {
         ForeignKey fk = null;
         if (cpasType != null)
-            fk = createCpasTypeFK(cpasType);
+            fk = createCpasTypeFK(expType, cpasType);
         else if (expType != null)
             fk = createExpTypeFK(expType);
 
@@ -150,131 +149,155 @@ public class LineageTableInfo extends VirtualTable
         };
     }
 
-    private ForeignKey createExpTypeFK(ExpLineageOptions.LineageExpType expType)
+    private @Nullable ForeignKey createExpTypeFK(ExpLineageOptions.LineageExpType expType)
     {
-        switch (expType)
+        return switch (expType)
         {
-            case Data:
-                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Data", "LSID", "Name").build();
-            case Material:
-                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Materials", "LSID", "Name").build();
-            case ExperimentRun:
-                return QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Runs", "LSID", "Name").build();
-            default:
-                return null;
-        }
+            case Data ->
+                    QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Data", "LSID", "Name").build();
+            case Material ->
+                    QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Materials", "LSID", "Name").build();
+            case ExperimentRun ->
+                    QueryForeignKey.from(getUserSchema(), getContainerFilter()).schema("exp").to("Runs", "LSID", "Name").build();
+            default -> null;
+        };
     }
 
-    private ForeignKey createCpasTypeFK(String cpasType)
+    private @Nullable ForeignKey createCpasTypeFK(@Nullable ExpLineageOptions.LineageExpType expType, String cpasType)
+    {
+        // If we know the expType, then resolve directly rather than probing all the variants
+        if (expType != null)
+        {
+            switch (expType)
+            {
+                case Material -> { return createSampleTypeFK(cpasType); }
+                case Data -> { return createDataClassFK(cpasType); }
+                case ExperimentRun -> { return createProtocolFK(cpasType); }
+            }
+        }
+
+        ForeignKey fk = createSampleTypeFK(cpasType);
+        if (fk == null)
+            fk = createDataClassFK(cpasType);
+        if (fk == null)
+            fk = createProtocolFK(cpasType);
+        return fk;
+    }
+
+    private @Nullable ForeignKey createSampleTypeFK(String cpasType)
     {
         // TODO: check in scope and has permission
         ExpSampleType st = SampleTypeService.get().getSampleType(cpasType);
-        if (st != null)
+        if (st == null)
+            return null;
+
+        return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
         {
-            return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
+            TableInfo _table = null;
+
+            @Override
+            public TableInfo getLookupTableInfo()
             {
-                TableInfo _table = null;
-
-                @Override
-                public TableInfo getLookupTableInfo()
+                if (null == _table)
                 {
-                    if (null == _table)
+                    Path cacheKey = new Path(getClass().getName(), "Samples", String.valueOf(st.getRowId()), st.getName());
+                    _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                     {
-                        Path cacheKey = new Path(getClass().getName(), "Samples", String.valueOf(st.getRowId()), st.getName());
-                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
-                        {
-                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
-                            return samplesSchema.getTable(st, getLookupContainerFilter());
-                        });
-                    }
-                    return _table;
+                        SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
+                        return samplesSchema.getTable(st, getLookupContainerFilter());
+                    });
                 }
+                return _table;
+            }
 
-                @Override
-                public StringExpression getURL(ColumnInfo parent)
-                {
-                    return super.getURL(parent, true);
-                }
-            };
-        }
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
+            }
+        };
+    }
 
+    private @Nullable ForeignKey createDataClassFK(String cpasType)
+    {
         // TODO: check in scope and has permission
-        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(cpasType);
-        if (dc != null)
+        ExpDataClass dc = ExperimentService.get().getDataClass(cpasType);
+        if (dc == null)
+            return null;
+
+        return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
         {
-            return new LookupForeignKey(getContainerFilter(), "lsid", "Name")
+            TableInfo _table = null;
+
+            @Override
+            public TableInfo getLookupTableInfo()
             {
-                TableInfo _table = null;
-
-                @Override
-                public TableInfo getLookupTableInfo()
+                if (null == _table)
                 {
-                    if (null == _table)
+                    Path cacheKey = new Path(getClass().getName(), "DataClass", String.valueOf(dc.getRowId()), dc.getName());
+                    _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                     {
-                        Path cacheKey = new Path(getClass().getName(), "DataClass", String.valueOf(dc.getRowId()), dc.getName());
-                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
-                        {
-                            DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
-                            return dcus.getTable(dc.getName(), getLookupContainerFilter());
-                        });
-                    }
-                    return _table;
+                        DataClassUserSchema dcus = new DataClassUserSchema(_userSchema.getContainer(), _userSchema.getUser());
+                        return dcus.getTable(dc.getName(), getLookupContainerFilter());
+                    });
                 }
+                return _table;
+            }
 
-                @Override
-                public StringExpression getURL(ColumnInfo parent)
-                {
-                    return super.getURL(parent, true);
-                }
-            };
-        }
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
+            }
+        };
+    }
 
+    private @Nullable ForeignKey createProtocolFK(String cpasType)
+    {
         // TODO: check in scope and has permission
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(cpasType);
-        if (protocol != null)
+        if (protocol == null)
+            return null;
+
+        AssayService service = AssayService.get();
+        AssayProvider provider = service == null ? null : service.getProvider(protocol);
+        return new LookupForeignKey("lsid", "Name")
         {
-            AssayService service = AssayService.get();
-            AssayProvider provider = service == null ? null : service.getProvider(protocol);
-            return new LookupForeignKey("lsid", "Name")
+            TableInfo _table;
+
+            @Override
+            public TableInfo getLookupTableInfo()
             {
-                TableInfo _table;
-
-                @Override
-                public TableInfo getLookupTableInfo()
+                if (null == _table)
                 {
-                    if (null == _table)
+                    Path cacheKey = new Path(getClass().getName(), "Runs", String.valueOf(protocol.getRowId()), protocol.getName());
+                    _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
                     {
-                        Path cacheKey = new Path(getClass().getName(), "Runs", String.valueOf(protocol.getRowId()), protocol.getName());
-                        _table = getUserSchema().getCachedLookupTableInfo(cacheKey.toString(), () ->
+                        if (provider != null)
                         {
-                            if (provider != null)
+                            AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
+                            if (schema != null)
                             {
-                                AssayProtocolSchema schema = provider.createProtocolSchema(_userSchema.getUser(), _userSchema.getContainer(), protocol, null);
-                                if (schema != null)
-                                {
-                                    var runsTable = schema.createRunsTable(null);
-                                    runsTable.setLocked(true);
-                                    return runsTable;
-                                }
+                                var runsTable = schema.createRunsTable(null);
+                                runsTable.setLocked(true);
+                                return runsTable;
                             }
-                            var ret = new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString(), null);
-                            assert null != ret;
-                            ret.setLocked(true);
-                            return ret;
-                        });
-                    }
-                    return _table;
+                        }
+                        var ret = new ExpSchema(getUserSchema().getUser(), getUserSchema().getContainer()).getTable(ExpSchema.TableType.Runs.toString(), null);
+                        assert null != ret;
+                        ret.setLocked(true);
+                        return ret;
+                    });
                 }
+                return _table;
+            }
 
-                @Override
-                public StringExpression getURL(ColumnInfo parent)
-                {
-                    return super.getURL(parent, true);
-                }
-            };
-        }
-
-        return null;
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return super.getURL(parent, true);
+            }
+        };
     }
 
     @NotNull
@@ -293,7 +316,7 @@ public class LineageTableInfo extends VirtualTable
             options.setDepth(_depth);
 
         options.setUseObjectIds(true);
-        SQLFragment tree = ExperimentServiceImpl.get().generateExperimentTreeSQL(_objectIds, options);
+        SQLFragment tree = ExperimentService.get().generateExperimentTreeSQL(_objectIds, options);
 
         String comment = String.format("<LineageTableInfo parents=%b, depth=%d, expType=%s, cpasType=%s, runProtocolLsid=%s>\n", _parents, _depth, _expType, _cpasType, _runProtocolLsid);
 
