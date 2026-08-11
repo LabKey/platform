@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -38,9 +40,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
 
@@ -54,11 +59,10 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // Warn when this many (or more) rows are pulled into a Java collection; suggests switching to a streaming method
     private static final int LARGE_RESULT_THRESHOLD = 10_000;
 
-    // Throttles the large-result warning to at most once per day per unique call stack, so a legitimately large (but
-    // expected) load doesn't flood the log. Keyed by a signature of the call stack; see getArrayList().
+    // At most one warning per day per call site (not per query or row count), so a legitimately large but expected load doesn't flood the log; see getStackKey()
     private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
-            w -> LOGGER.warn("{} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
-                    w.rowCount, w.selectorClass, w.sql, w.stackTrace));
+            w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
+                    w.rowCount, w.elementClass, w.selectorClass, w.sql, w.stackTrace));
 
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
@@ -187,33 +191,61 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             // Log the parameterized SQL only so bound parameter values stay out of the log
             SQLFragment sql = getSqlFactory(false).getSql();
             LARGE_RESULT_WARNING_THROTTLE.execute(new LargeResultWarning(getStackKey(stackTrace), result.size(),
-                    getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
+                    clazz.getSimpleName(), getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
         }
 
         return result;
     }
 
-    // Builds a stable key from a Throwable's stack trace so identical call stacks map to the same throttle entry
+    // The selector frames that can sit between the real call site and getArrayList(). A package prefix won't do:
+    // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
+    private static final Set<String> PLUMBING_CLASSES = Set.of(
+            "org.labkey.api.data.BaseSelector",
+            "org.labkey.api.data.SqlExecutingSelector",
+            "org.labkey.api.data.SqlSelector",
+            "org.labkey.api.data.TableSelector");
+
+    // Caps key length; a stack this deep in plumbing collapses to a single key
+    private static final int MAX_KEY_FRAMES = 10;
+
+    /**
+     * The stack through the first frame outside the selector plumbing — the code that actually loaded the collection.
+     * Don't extend this to the full stack: a cache loader is reached via many callers, each of which would then get its own warning.
+     */
     private static String getStackKey(Throwable t)
     {
-        return Arrays.stream(t.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+        StackTraceElement[] frames = t.getStackTrace();
+        int lastFrame = 0;
+
+        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
+            lastFrame++;
+
+        return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
     }
 
-    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call-stack signature
-    // so the throttle dedupes per unique call stack rather than per (stack + row count + SQL) combination.
-    private record LargeResultWarning(String stackKey, int rowCount, String selectorClass, String sql,
-                                      Throwable stackTrace)
+    private static boolean isPlumbingStackFrame(StackTraceElement frame)
+    {
+        String className = frame.getClassName();
+        int nested = className.indexOf('$'); // Nested classes and lambdas belong to their enclosing selector
+
+        return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
+    }
+
+    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element
+    // type, so the throttle dedupes on those rather than on the full (call site + row count + SQL) combination.
+    private record LargeResultWarning(String stackKey, int rowCount, String elementClass, String selectorClass,
+                                      String sql, Throwable stackTrace)
     {
         @Override
         public boolean equals(Object o)
         {
-            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey);
+            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey) && elementClass.equals(w.elementClass);
         }
 
         @Override
         public int hashCode()
         {
-            return stackKey.hashCode();
+            return 31 * stackKey.hashCode() + elementClass.hashCode();
         }
     }
 
@@ -676,6 +708,124 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             RuntimeException translated = getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
             ExceptionUtil.copyDecorations(e, translated);
             throw translated;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        // Mirrors the frames of a real DatabaseCache loader
+        private static final List<String> LOADER_PREFIX = List.of(
+                "org.labkey.api.data.SqlExecutingSelector",
+                "org.labkey.api.data.BaseSelector",
+                "org.labkey.inventory.model.InventoryLocation",   // first frame outside the plumbing
+                "org.labkey.api.cache.BlockingCache",
+                "org.labkey.api.data.DatabaseCache");
+
+        private static Throwable createThrowable(List<String> classNames)
+        {
+            Throwable t = new Throwable();
+            t.setStackTrace(classNames.stream()
+                    .map(className -> new StackTraceElement(className, "method", "Source.java", 1))
+                    .toArray(StackTraceElement[]::new));
+            return t;
+        }
+
+        // A stack that reaches the standard loader via the given callers
+        private static Throwable createLoaderThrowable(String... callers)
+        {
+            return createThrowable(Stream.concat(LOADER_PREFIX.stream(), Stream.of(callers)).toList());
+        }
+
+        @Test
+        public void keyStopsAtFirstFrameOutsideThePlumbing()
+        {
+            String key = getStackKey(createLoaderThrowable("org.labkey.inventory.InventoryManager"));
+
+            assertEquals("Key should cover the leading plumbing frames plus the first frame outside them", 3, key.split("\n").length);
+            assertTrue("Key should end at the loader frame", key.endsWith("org.labkey.inventory.model.InventoryLocation.method(Source.java:1)"));
+        }
+
+        @Test
+        public void differentCallersOfTheSameLoaderShareAKey()
+        {
+            String menuKey = getStackKey(createLoaderThrowable("org.labkey.inventory.FreezersMenuSection", "org.labkey.core.products.ProductController"));
+            String auditKey = getStackKey(createLoaderThrowable("org.labkey.inventory.InventoryServiceImpl", "org.labkey.query.controllers.QueryController"));
+
+            assertEquals(menuKey, auditKey);
+        }
+
+        @Test
+        public void differentCallSitesGetDifferentKeys()
+        {
+            String key = getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector", "org.labkey.study.StudyManager")));
+            String otherKey = getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector", "org.labkey.assay.AssayManager")));
+
+            assertNotEquals(key, otherKey);
+        }
+
+        // org.labkey.api.data holds ordinary callers as well as the selectors themselves
+        @Test
+        public void aCallerInTheSelectorPackageEndsTheKey()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector",
+                    "org.labkey.api.data.ContainerManager",
+                    "org.labkey.core.admin.AdminController")));
+
+            assertTrue("ContainerManager is a call site, not selector plumbing", key.endsWith("org.labkey.api.data.ContainerManager.method(Source.java:1)"));
+        }
+
+        @Test
+        public void nestedSelectorClassesAreStillPlumbing()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector$ArrayListResultSetHandler",
+                    "org.labkey.study.StudyManager")));
+
+            assertEquals(3, key.split("\n").length);
+        }
+
+        @Test
+        public void allPlumbingStackIsCapped()
+        {
+            List<String> allPlumbing = Collections.nCopies(MAX_KEY_FRAMES + 5, "org.labkey.api.data.SqlExecutingSelector");
+
+            assertEquals(MAX_KEY_FRAMES, getStackKey(createThrowable(allPlumbing)).split("\n").length);
+        }
+
+        @Test
+        public void emptyStackTraceIsHandled()
+        {
+            assertEquals("", getStackKey(createThrowable(List.of())));
+        }
+
+        // The stack runs out before a call site is found, so the walk must stop on the last frame rather than past it
+        @Test
+        public void singlePlumbingFrameIsHandled()
+        {
+            assertEquals("org.labkey.api.data.SqlExecutingSelector.method(Source.java:1)",
+                    getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector"))));
+        }
+
+        private static LargeResultWarning createWarning(String stackKey, String elementClass)
+        {
+            return new LargeResultWarning(stackKey, LARGE_RESULT_THRESHOLD, elementClass, "TableSelector", "SELECT *", new Throwable());
+        }
+
+        @Test
+        public void warningsDedupeOnCallSiteAndElementType()
+        {
+            assertEquals(createWarning("key", "Container"), createWarning("key", "Container"));
+            assertNotEquals("A generic helper loads many types from one call site", createWarning("key", "Container"), createWarning("key", "User"));
+            assertNotEquals(createWarning("key", "Container"), createWarning("otherKey", "Container"));
+        }
+
+        @Test
+        public void equalWarningsShareAHashCode()
+        {
+            assertEquals(createWarning("key", "Container").hashCode(), createWarning("key", "Container").hashCode());
         }
     }
 }
