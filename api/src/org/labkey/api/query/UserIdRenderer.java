@@ -78,13 +78,13 @@ public class UserIdRenderer extends DataColumn
             return null;
         boolean isDeletedUser = UserManager.getUser(displayedUserId) == null;
 
-        if (!isDeletedUser && displayedUserId != null)
+        if (!isDeletedUser)
         {
-               ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
-               if (url != null)
-               {
-                   return url.toString();
-               }
+           ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
+           if (url != null)
+           {
+               return url.toString();
+           }
         }
 
         return null;
