@@ -129,6 +129,35 @@ else
     }
     %>
         </table>
+    </labkey:form></p>
+
+    <p><labkey:form method="POST" action="<%=urlFor(AdminAction.class)%>">
+        <table><%
+
+    if (ss.isSearchIconVisible())
+    {
+        %><tr><td>The search icon is shown in the page header.</td></tr><%
+
+        if (hasAdminOpsPerms)
+        {
+        %>
+        <tr><td><input type="hidden" name="hideSearchIcon" value="1"></td></tr>
+        <tr><td><%= button("Hide Search Icon").submit(true) %></td></tr><%
+        }
+    }
+    else
+    {
+        %><tr><td>The search icon is hidden in the page header.</td></tr><%
+
+        if (hasAdminOpsPerms)
+        {
+        %>
+        <tr><td><input type="hidden" name="showSearchIcon" value="1"></td></tr>
+        <tr><td><%= button("Show Search Icon").submit(true) %></td></tr><%
+        }
+    }
+    %>
+        </table>
     </labkey:form></p><%
     if (hasAdminOpsPerms)
     {
