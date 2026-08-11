@@ -72,6 +72,7 @@ import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutingSelector;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.SqlSelectorTestCase;
 import org.labkey.api.data.StatementUtils;
@@ -473,6 +474,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
+            SqlExecutingSelector.TestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
             StringExpressionFactory.TestCase.class,
