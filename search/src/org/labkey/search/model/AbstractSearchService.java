@@ -963,6 +963,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+    @Override
+    public boolean isSearchIconVisible()
+    {
+        return SearchPropertyManager.getSearchIconState();
+    }
 
     @Override
     public void updateIndex(String reason)

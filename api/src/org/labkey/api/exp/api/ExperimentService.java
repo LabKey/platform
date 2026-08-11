@@ -82,7 +82,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -1383,17 +1382,5 @@ public interface ExperimentService extends ExperimentRunTypeSource
             _strictValidateExistingSampleType = strictValidateExistingSampleType;
             return this;
         }
-    }
-
-    @Deprecated // Use IntegerUtils.asLong() instead
-    static Long asLong(Object o)
-    {
-        return IntegerUtils.asLong(o);
-    }
-
-    @Deprecated // Use IntegerUtils.asInteger() instead
-    static Integer asInteger(Object o)
-    {
-        return IntegerUtils.asInteger(o);
     }
 }
