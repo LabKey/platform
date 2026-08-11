@@ -1894,12 +1894,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 dataClass = new ExpDataClassImpl(dc);
         }
 
-        if (null != dataClass)
-        {
-            Container dcContainer = dataClass.getContainer();
-            if (dcContainer != null && dcContainer.getId().equals(containerId))
-                dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
-        }
+        if (null != dataClass && null == containerId)
+            dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
 
         return dataClass;
     }
