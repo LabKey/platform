@@ -131,20 +131,6 @@ public class RScriptEngine extends ExternalScriptEngine
             ScriptPackageUsageTracker.record("r", "rmarkdown");
     }
 
-//    @Override
-//    protected Object evalScript(String script, ScriptContext context) throws ScriptException
-//    {
-//        List<String> extensions = getFactory().getExtensions();
-//
-//        if (!extensions.isEmpty())
-//        {
-//            FileLike scriptFile = prepareScriptFile(script, context, extensions);
-//            return eval(scriptFile, context);
-//        }
-//        else
-//            throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
-//    }
-
     private boolean isPandocEnabled()
     {
         return _def.isPandocEnabled();
