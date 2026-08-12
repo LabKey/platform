@@ -19,12 +19,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
@@ -37,7 +39,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
@@ -50,13 +51,10 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.SocketTimeoutException;
-import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -201,37 +199,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             }
             else
             {
-                boolean cachable = false;
-
-                // ETag header
-                String eTag = getETag(form);
-                if (eTag != null)
-                {
-                    getViewContext().getResponse().setHeader("ETag", eTag);
-                    cachable = true;
-                }
-
-                // Last-Modified header
-                long lastModified = getLastModified(form);
-                if (lastModified != Long.MIN_VALUE)
-                {
-                    getViewContext().getResponse().addDateHeader("Last-Modified", lastModified);
-                    cachable = true;
-                }
-
-                if (cachable)
-                {
-                    // Include max-age to tell the browser to cache for a short duration before making another request to check "If-Modified-Since"
-                    ResponseHelper.setPrivate(getViewContext().getResponse(), Duration.ofSeconds(10));
-                }
-
-                // Check if the conditions specified in the optional If headers are satisfied.
-                if (!ResponseHelper.checkIfHeaders(getViewContext(), eTag, lastModified))
-                {
-                    assert getViewContext().getResponse().getStatus() != HttpServletResponse.SC_OK;
-                    return null;
-                }
-
                 Object response;
                 try (Timing ignored = MiniProfiler.step("execute"))
                 {

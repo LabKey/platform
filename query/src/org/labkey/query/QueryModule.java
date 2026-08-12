@@ -237,9 +237,6 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
-            "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
-            "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update",
             "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
@@ -308,7 +305,6 @@ public class QueryModule extends DefaultModule
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
-        CacheManager.addListener(new QueryServiceImpl.CacheListener());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
             if (container.hasPermission(user, ReadPermission.class))
