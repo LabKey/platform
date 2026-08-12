@@ -23,6 +23,7 @@ import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
+import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.AssayResultsFileWriter;
@@ -72,6 +73,7 @@ import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlExecutingSelector;
 import org.labkey.api.data.SqlScanner;
 import org.labkey.api.data.SqlSelectorTestCase;
 import org.labkey.api.data.StatementUtils;
@@ -182,6 +184,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FileServlet;
@@ -414,6 +417,7 @@ public class ApiModule extends CodeOnlyModule
             ChecksumUtil.TestCase.class,
             CollectionUtils.TestCase.class,
             Compress.TestCase.class,
+            ConcurrencyLimiter.TestCase.class,
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
             CspCommentScanner.TestCase.class,
@@ -473,6 +477,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
+            SqlExecutingSelector.TestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
             StringExpressionFactory.TestCase.class,
@@ -485,7 +490,8 @@ public class ApiModule extends CodeOnlyModule
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
             URIUtil.TestCase.class,
-            ValidEmail.TestCase.class
+            ValidEmail.TestCase.class,
+            XmlBeansUtil.TestCase.class
         );
     }
 

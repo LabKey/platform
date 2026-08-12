@@ -30,11 +30,6 @@ import org.labkey.search.SearchModule;
 import java.io.File;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Apr 20, 2010
- * Time: 7:01:16 PM
- */
 public class SearchPropertyManager
 {
     private static final String CATEGORY = SearchModule.class.getName();
@@ -42,6 +37,7 @@ public class SearchPropertyManager
     private static final String INDEX_PATH = "primaryIndexPath";  // Note: don't change this legacy name
     private static final String DIRECTORY_TYPE = "directoryType";
     private static final String FILE_SIZE_LIMIT = "fileSizeLimitMB";
+    private static final String SEARCH_ICON_STATE = "searchIconState";
 
 
     public static boolean getCrawlerRunningState()
@@ -57,6 +53,19 @@ public class SearchPropertyManager
     public static void setCrawlerRunningState(User user, CrawlerRunningState state)
     {
         setProperty(CRAWLER_RUNNING_STATE, String.valueOf(state.isRunning()));
+        audit(user, state.getAuditMessage());
+    }
+
+    /** @return true unless an admin has explicitly hidden the search icon */
+    public static boolean getSearchIconState()
+    {
+        String state = getProperty(SEARCH_ICON_STATE);
+        return null == state || "true".equals(state);
+    }
+
+    public static void setSearchIconState(User user, SearchIconState state)
+    {
+        setProperty(SEARCH_ICON_STATE, String.valueOf(state.isVisible()));
         audit(user, state.getAuditMessage());
     }
 

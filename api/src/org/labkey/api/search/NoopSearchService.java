@@ -366,6 +366,13 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public boolean isSearchIconVisible()
+    {
+        // No persisted setting to consult, so don't be the reason the header hides the icon
+        return true;
+    }
+
+    @Override
     public @Nullable Throwable getConfigurationError()
     {
         return null;
