@@ -47,10 +47,12 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.RequestBasicAuthException;
+import org.labkey.api.view.TooManyRequestsException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -972,6 +974,20 @@ public class ExceptionUtil
                 if (isGET)
                     message = "You must log in to view this content.";
             }
+
+            unhandledException = null;
+        }
+        // Must come after the more specific HttpStatusException subclasses (BadRequestException, NotFoundException,
+        // UnauthorizedException)
+        else if (ex instanceof HttpStatusException hse)
+        {
+            responseStatus = hse.getStatus();
+            errorType = ErrorRenderer.ErrorType.notFound;
+            message = ex.getMessage();
+            responseStatusMessage = message;
+
+            if (ex instanceof TooManyRequestsException tmre)
+                headers.put("Retry-After", String.valueOf(tmre.getRetryAfterSeconds()));
 
             unhandledException = null;
         }
