@@ -170,6 +170,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().toString());
 
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, _wd.getDir().toNioPathForRead().toString());
+            bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "pipeline task=" + _factory.getId()
+                    + " job=" + getJob().getJobGUID()
+                    + " container=" + container.getPath());
 
             // Thread the timeout option through to the external script engine
             if (_factory.getTimeout() != null && _factory.getTimeout() > 0)

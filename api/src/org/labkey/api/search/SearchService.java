@@ -442,6 +442,9 @@ public interface SearchService extends SearchMXBean
     void resetIndex();
     void startCrawler();
     void pauseCrawler();
+
+    /** @return should the search icon be shown in the page header; controlled from the Full-Text Search admin page */
+    boolean isSearchIconVisible();
     void updateIndex(String reason);
     void refreshNow();
 

@@ -290,7 +290,7 @@ public class RserveScriptEngine extends RScriptEngine
 
 
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    protected Object evalScript(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
         RConnection rconn = null;
