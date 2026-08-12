@@ -410,10 +410,10 @@ public class LineageForeignKey extends AbstractForeignKey
             return new MultiValuedLookupColumn(parent, childKey, junctionKey, fk, lookupColumn)
             {
                 @Override
-                protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+                protected SQLFragment getLookupSql(TableInfo lookupTable, String alias, String baseAlias)
                 {
                     // NOTE: We used to cache the lookup fk sql as a materialized query for performance
-                    return super.getLookupSql(lookupTable, alias);
+                    return super.getLookupSql(lookupTable, alias, baseAlias);
                 }
 
                 @Override

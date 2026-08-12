@@ -137,13 +137,22 @@ public class MultiValuedLookupColumn extends LookupColumn
         return new SQLFragment(getTableAlias(tableAliasName)).append(".").appendIdentifier(_display.getAlias());
     }
 
+    // Without this the aggregate groups the entire junction table and is only then matched to the outer row, so paging
+    // the outer query saves nothing. Correlating it turns the scan into a per-row lookup.
     @Override
-    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
+    protected boolean isLateralJoin()
     {
-        strJoin.append(getLookupSql(lookupTable, alias));
+        return getSqlDialect().isPostgreSQL();
     }
 
-    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+    @Override
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias, String baseAlias)
+    {
+        strJoin.append(getLookupSql(lookupTable, alias, baseAlias));
+    }
+
+    /** @param baseAlias outer table alias for a lateral join to correlate to, or null to aggregate uncorrelated */
+    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias, @Nullable String baseAlias)
     {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
@@ -255,7 +264,13 @@ public class MultiValuedLookupColumn extends LookupColumn
             }
         }
 
-        // TODO: Add ORDER BY?
+        // Restrict the aggregate to the outer row. The GROUP BY then covers at most one group, and no matching junction
+        // rows means no row at all -- which the enclosing LEFT JOIN turns into the nulls the caller already expects.
+        if (null != baseAlias && isLateralJoin())
+        {
+            strJoin.append("\n\t\tWHERE ");
+            strJoin.append(getLateralCorrelation(fromAlias, baseAlias));
+        }
 
         strJoin.append("\n\t\tGROUP BY ");
         strJoin.append(_lookupKey.getValueSql(fromAlias));
@@ -264,6 +279,29 @@ public class MultiValuedLookupColumn extends LookupColumn
         return strJoin;
     }
     
+    /**
+     * The equivalent of {@link #getJoinCondition(String)} for a lateral join, with the junction side resolved against
+     * the subquery's own FROM rather than the derived table it produces.
+     */
+    private SQLFragment getLateralCorrelation(String fromAlias, String baseAlias)
+    {
+        SQLFragment outerSql = _foreignKey.getValueSql(baseAlias);
+        SQLFragment junctionSql = _lookupKey.getValueSql(fromAlias);
+        boolean addCast = _foreignKey.getJdbcType() != _lookupKey.getJdbcType() && getSqlDialect().isPostgreSQL();
+
+        SQLFragment condition = new SQLFragment();
+        if (addCast)
+            condition.append("CAST((").append(outerSql).append(") AS VARCHAR)");
+        else
+            condition.append(outerSql);
+        condition.append(" = ");
+        if (addCast)
+            condition.append("CAST((").append(junctionSql).append(") AS VARCHAR)");
+        else
+            condition.append(junctionSql);
+        return condition;
+    }
+
     @Override
     // The multivalued column joins take place within the aggregate function sub-select; we don't want super class
     // including these columns as top-level joins.

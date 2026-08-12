@@ -228,10 +228,13 @@ public class LookupColumn extends BaseColumnInfo
             SQLFragment strJoin = new SQLFragment("\n\t");
             strJoin.append(_joinType.getSQL());
             strJoin.append(" JOIN ");
+            if (isLateralJoin())
+                strJoin.append("LATERAL ");
 
-            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
+            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias, baseAlias);
             strJoin.append(" ON ");
-            strJoin.append(getJoinCondition(baseAlias));
+            // A lateral join carries its own correlation in the joined-in SQL, so there is nothing left to match on
+            strJoin.append(isLateralJoin() ? new SQLFragment("TRUE") : getJoinCondition(baseAlias));
             SQLFragment sqlJoinPrev = map.get(colTableAlias);
             if (null != sqlJoinPrev)
             {
@@ -245,9 +248,20 @@ public class LookupColumn extends BaseColumnInfo
     }
 
 
-    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
+    /** @param baseAlias alias of the table on the "left-hand side", which a lateral join may correlate to */
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias, String baseAlias)
     {
         strJoin.append(lookupTable.getFromSQL(alias));
+    }
+
+
+    /**
+     * Whether the joined-in SQL references the outer row, letting a subquery filter itself to that row rather than
+     * computing over the whole table and matching afterwards. Requires the joined-in SQL to carry its own correlation.
+     */
+    protected boolean isLateralJoin()
+    {
+        return false;
     }
 
 
