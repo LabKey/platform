@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseIdentifier;
@@ -287,6 +288,16 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     @Override
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
+        return getGroupConcat(sql, distinct, sorted, delimiterSQL, includeNulls, null);
+    }
+
+    @Override
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls, @Nullable SQLFragment orderBySql)
+    {
+        // Postgres only accepts ORDER BY alongside DISTINCT when it repeats the aggregated expression, which an arbitrary
+        // ordering key won't. A caller asking to sort by value and by an explicit key at once is likewise contradictory.
+        assert null == orderBySql || (!distinct && !sorted) : "An explicit ORDER BY cannot be combined with distinct or sorted";
+
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
         SQLFragment result = new SQLFragment();
@@ -338,6 +349,11 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
         result.append(", ");
         result.append(delimiterSQL);
+        if (null != orderBySql && !useSortFunction)
+        {
+            result.append(" ORDER BY ");
+            result.append(orderBySql);
+        }
         result.append(")"); // array_to_string | string_agg
 
         return result;

@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
@@ -123,7 +124,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends Class<?>> getJUnitTests()
     {
-        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
+        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class, GroupConcatTestCase.class);
     }
 
     @Override
@@ -169,6 +170,53 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             good("PostgreSQL", 18.0, 19.0, "", connectionUrl, null, PostgreSql_18_Dialect.class);
             good("PostgreSQL", 19.0, 20.0, "", connectionUrl, null, PostgreSql_19_Dialect.class);
             good("PostgreSQL", 20.0, 21.0, "", connectionUrl, null, PostgreSql_19_Dialect.class);
+        }
+    }
+
+    public static class GroupConcatTestCase extends Assert
+    {
+        private static final SQLFragment VALUE = new SQLFragment("t.name");
+        private static final SQLFragment DELIMITER = new SQLFragment("'{@~^'");
+
+        private String groupConcat(@Nullable SQLFragment orderBySql)
+        {
+            return getOldestSupportedDialect().getGroupConcat(VALUE, false, false, DELIMITER, true, orderBySql).getSQL();
+        }
+
+        @Test
+        public void testNoOrderByMatchesLegacyOverload()
+        {
+            assertEquals(getOldestSupportedDialect().getGroupConcat(VALUE, false, false, DELIMITER, true).getSQL(), groupConcat(null));
+        }
+
+        @Test
+        public void testOrderByFollowsDelimiter()
+        {
+            // Postgres wants the ORDER BY after every aggregate argument, so it lands between the delimiter and the
+            // closing paren -- not after the aggregated expression.
+            String unordered = groupConcat(null);
+            String expected = StringUtils.removeEnd(unordered, ")") + " ORDER BY j.targetLsid)";
+            assertEquals(expected, groupConcat(new SQLFragment("j.targetLsid")));
+        }
+
+        @Test
+        public void testSortedIgnoresOrderBy()
+        {
+            // core.sort() sorts by value, so an explicit key is meaningless there and must not reach the SQL
+            SqlDialect dialect = getOldestSupportedDialect();
+            assertEquals(dialect.getGroupConcat(VALUE, false, true, DELIMITER, true).getSQL(),
+                    dialect.getGroupConcat(VALUE, false, true, DELIMITER, true, null).getSQL());
+        }
+
+        @Test
+        public void testOrderByIsIdenticalAcrossCalls()
+        {
+            // MultiValuedLookupColumn relies on this: separately generated aggregates over the same rows must agree
+            // positionally, which only holds if they emit the same ORDER BY.
+            SQLFragment orderBy = new SQLFragment("j.targetLsid");
+            String first = getOldestSupportedDialect().getGroupConcat(new SQLFragment("t.a"), false, false, DELIMITER, true, orderBy).getSQL();
+            String second = getOldestSupportedDialect().getGroupConcat(new SQLFragment("t.b"), false, false, DELIMITER, true, orderBy).getSQL();
+            assertEquals(StringUtils.substringAfter(first, "t.a"), StringUtils.substringAfter(second, "t.b"));
         }
     }
 

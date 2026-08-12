@@ -752,6 +752,17 @@ public abstract class SqlDialect
      */
     public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls);
 
+    /**
+     * @param orderBySql SQL expression to order the concatenated values by, or null to leave the order unspecified.
+     * Unlike the {@code sorted} flag, which sorts by value, this orders by an arbitrary expression -- so several
+     * aggregates over the same rows can be made to agree positionally. Dialects that can't order within an aggregate
+     * ignore it and return an arbitrary order.
+     */
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls, @Nullable SQLFragment orderBySql)
+    {
+        return getGroupConcat(sql, distinct, sorted, delimiterSQL, includeNulls);
+    }
+
     public boolean supportsGroupConcatSubSelect()
     {
         return true;

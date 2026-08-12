@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 
@@ -112,6 +113,12 @@ public class MultiValuedLookupColumn extends LookupColumn
                 : joins.keySet().iterator().next();
         assert joins.containsKey(baseJoinTarget) : "Join target '" + baseJoinTarget + "' was not declared; found " + joins.keySet();
 
+        // Every aggregate below must see the same row order, or MultiValuedRenderContext can't line the parallel columns
+        // up. Ties are only possible between junction rows sharing a target, whose aggregated values are identical, so
+        // the junction's target key orders deeply enough. Any joins it needs were declared above, as _lookupColumn's FK.
+        // The select_concat path aggregates each column in its own correlated subselect and can't take an ORDER BY here.
+        SQLFragment orderBySql = groupConcat ? _junctionKey.getValueSql(joinAlias) : null;
+
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
         {
@@ -145,7 +152,7 @@ public class MultiValuedLookupColumn extends LookupColumn
             col.declareJoins(baseJoinTarget, joins);
             if (groupConcat)
             {
-                strJoin.append(getAggregateFunction(valueSql));
+                strJoin.append(getAggregateFunction(valueSql, orderBySql));
             }
             else
             {
@@ -208,10 +215,10 @@ public class MultiValuedLookupColumn extends LookupColumn
 
     // By default, use GROUP_CONCAT aggregate function, which returns a comma-separated list of values.  Override this
     // and (for non-varchar aggregate function) getSqlTypeName() to apply a different aggregate.
-    protected SQLFragment getAggregateFunction(SQLFragment sql)
+    protected SQLFragment getAggregateFunction(SQLFragment sql, @Nullable SQLFragment orderBySql)
     {
-        // Can't sort because we need to make sure that all the multi-value columns come back in the same order
-        return getSqlDialect().getGroupConcat(sql, false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true);
+        // Sorting by value would order each column independently and break alignment; orderBySql keeps them in step.
+        return getSqlDialect().getGroupConcat(sql, false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true, orderBySql);
     }
 
     @Override
