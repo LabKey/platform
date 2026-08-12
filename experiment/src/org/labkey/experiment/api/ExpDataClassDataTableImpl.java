@@ -32,7 +32,6 @@ import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -145,7 +144,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
@@ -1513,7 +1511,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         protected int truncateRows(User user, Container container)
         {
-            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container);
+            return ExperimentServiceImpl.get().truncateDataClass(_dataClass, user, container, null);
         }
 
         @Override

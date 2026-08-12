@@ -625,7 +625,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c, @Nullable String auditUserComment)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -649,7 +649,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
             sqlFilter.add(source.getLSID());
             sqlFilter.add(toDelete);
-            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true, auditUserComment);
         }
         return count;
     }
@@ -668,9 +668,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
+            if (transaction.getAuditEvent() == null)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(c, QueryService.AuditAction.DELETE, null);
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
-            truncateSampleType(source, user, null);
+            truncateSampleType(source, user, null, auditUserComment);
 
             StudyService studyService = StudyService.get();
             if (studyService != null)

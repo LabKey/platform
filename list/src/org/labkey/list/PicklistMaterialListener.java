@@ -15,6 +15,7 @@
  */
 package org.labkey.list;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 public class PicklistMaterialListener implements ExperimentListener
 {
     @Override
-    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
+    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user, @Nullable String auditUserComment)
     {
         Collection<ListDef> picklists = ListManager.get().getPicklists(container);
         List<Long> materialIds = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
