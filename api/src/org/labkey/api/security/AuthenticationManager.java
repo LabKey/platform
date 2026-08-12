@@ -1960,15 +1960,15 @@ public class AuthenticationManager
     }
 
     /**
-     * Records that a reauthentication happened; 21 CFR Part 11 wants proof of it. SSO reauth never reaches
-     * finalizePrimaryAuthentication(), so it left no server-side record at all, and local and signing reauth recorded
-     * themselves as logins. Mirrors the "logged in" event's phrasing so the two read alike in the audit log.
+     * Records that a reauthentication happened. SSO reauth never reaches finalizePrimaryAuthentication(), so it left
+     * no server-side record at all, and local and signing reauth recorded themselves as logins. Mirrors the "logged
+     * in" event's phrasing so the two read alike in the audit log.
      */
     public static void auditReauthSuccess(@NotNull User reauthUser, @NotNull AuthenticationResponse response)
     {
-        // Deliberately not addAuditEvent(), which throttles repeats of an identical message from the same user and
-        // address. Signing several records in a row produces exactly that, and dropping the second signature's
-        // reauthentication is the opposite of what an audit trail is for.
+        // Calls UserManager.addAuditEvent() directly rather than this class's addAuditEvent(), which drops a message
+        // identical to the previous one from the same user and address. Signing several records in a row produces
+        // exactly those identical messages, and dropping them would leave real reauthentications unrecorded.
         UserManager.addAuditEvent(reauthUser, ContainerManager.getRoot(), reauthUser,
             reauthUser.getEmail() + " " + UserManager.UserAuditEvent.REAUTHENTICATED + " successfully via " + response.getSuccessDetails() + ".");
     }
