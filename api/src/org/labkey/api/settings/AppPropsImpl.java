@@ -703,7 +703,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public @NotNull String getDistributionName()
     {
-        return Objects.requireNonNullElse(ModuleLoader.getInstance().getDistributionName(), DISTRIBUTION_NAME);
+        return Objects.requireNonNullElse(ModuleLoader.getInstance().getDistributionNameOverride(), DISTRIBUTION_NAME);
     }
 
     @Override

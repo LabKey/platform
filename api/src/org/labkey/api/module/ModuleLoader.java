@@ -246,7 +246,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
 
     // If non-null (set by a startup property), overrides the name specified in the distribution.properties file
-    private String _distributionName = null;
+    private String _distributionNameOverride = null;
 
     private ModuleLoader()
     {
@@ -2067,14 +2067,17 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
-    public @Nullable String getDistributionName()
+    public @Nullable String getDistributionNameOverride()
     {
-        return _distributionName;
+        return _distributionNameOverride;
     }
 
-    public void setDistributionName(String distributionName)
+    void setDistributionNameOverride(String distributionNameOverride)
     {
-        _distributionName = distributionName;
+        if (isStartupComplete())
+            throw new IllegalStateException("Distribution name override must be set during startup");
+
+        _distributionNameOverride = distributionNameOverride;
     }
 
     // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
