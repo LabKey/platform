@@ -106,9 +106,11 @@ public class MultiValuedLookupColumn extends LookupColumn
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         _lookupColumn.declareJoins(joinAlias, joins);
 
-        // UNDONE: Why does MVFK not work for Experiments.ParentExperiments ?
-        //assert joins.size() == 1 : "Expected exactly one join to be declared, but found " + joins.size();
-        String baseJoinTarget = joins.keySet().iterator().next();
+        // declareJoins() recurses leftward first, so the map's first entry is the leftmost join in a chain, not the target table.
+        String baseJoinTarget = _lookupColumn instanceof LookupColumn lookupCol
+                ? lookupCol.getTableAlias(joinAlias)
+                : joins.keySet().iterator().next();
+        assert joins.containsKey(baseJoinTarget) : "Join target '" + baseJoinTarget + "' was not declared; found " + joins.keySet();
 
         // Select and aggregate all columns in the far right table for now.  TODO: Select only required columns.
         for (ColumnInfo col : _rightFk.getLookupTableInfo().getColumns())
