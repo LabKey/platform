@@ -42,6 +42,14 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         {
             return "Comma-separated list of modules to disable during this server session. Note: Respected only when the \"startup\" modifier is specified.";
         }
+    },
+    distributionName
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Distribution name to show in the admin console and the export diagnostics zip file. This name overrides the value provided in the distribution.properties file that's bundled with the distribution.";
+        }
     };
 
     private final LinkedList<String> _list = new LinkedList<>();
@@ -57,10 +65,19 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
             @Override
             public void handle(Map<ModuleLoaderStartupProperties, StartupPropertyEntry> map)
             {
-                map.forEach((sp, cp)-> Arrays.stream(StringUtils.split(cp.getValue(), ","))
-                    .map(StringUtils::trimToNull)
-                    .filter(Objects::nonNull)
-                    .forEach(sp._list::add));
+                map.forEach((sp, cp)-> {
+                    if (sp == distributionName)
+                    {
+                        ModuleLoader.getInstance().setDistributionName(cp.getValue());
+                    }
+                    else
+                    {
+                        Arrays.stream(StringUtils.split(cp.getValue(), ","))
+                            .map(StringUtils::trimToNull)
+                            .filter(Objects::nonNull)
+                            .forEach(sp._list::add);
+                    }
+                });
             }
         });
     }

@@ -245,6 +245,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
 
+    // If non-null (set by a startup property), overrides the name specified in the distribution.properties file
+    private String _distributionName = null;
+
     private ModuleLoader()
     {
         MemTracker.getInstance().register(this);
@@ -2062,6 +2065,16 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             return UpgradeState.UpgradeInProgress == _upgradeState;
         }
+    }
+
+    public @Nullable String getDistributionName()
+    {
+        return _distributionName;
+    }
+
+    public void setDistributionName(String distributionName)
+    {
+        _distributionName = distributionName;
     }
 
     // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
