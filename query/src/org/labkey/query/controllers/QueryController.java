@@ -19,8 +19,6 @@ package org.labkey.query.controllers;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.genai.errors.ClientException;
-import com.google.genai.errors.ServerException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -153,6 +151,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.ChatException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
@@ -8684,7 +8683,7 @@ public class QueryController extends SpringActionController
                     responses = McpService.get().sendMessageEx(chatSession, prompt);
                     sqlResponse = extractSql(responses);
                 }
-                catch (ServerException x)
+                catch (ChatException x)
                 {
                     return new JSONObject(Map.of(
                             "error", x.getMessage(),
@@ -8733,7 +8732,7 @@ public class QueryController extends SpringActionController
                     ret.put("html", sqlResponse.html());
                 return ret;
             }
-            catch (ClientException ex)
+            catch (ChatException ex)
             {
                 return errorResponse(ex);
             }
