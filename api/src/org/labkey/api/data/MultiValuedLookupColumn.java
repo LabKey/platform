@@ -37,6 +37,10 @@ public class MultiValuedLookupColumn extends LookupColumn
     private final ColumnInfo _display;
     private final ForeignKey _rightFk;
     private final ColumnInfo _junctionKey;
+    /** The column _rightFk hangs off: the junction's target key at the first hop, the previous hop's display column beyond it. */
+    private final ColumnInfo _rightFkParent;
+    /** The hop this column was reached through, or null at the first hop. Each hop aggregates in its own subquery. */
+    private final MultiValuedLookupColumn _previousHop;
 
     public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
@@ -44,6 +48,8 @@ public class MultiValuedLookupColumn extends LookupColumn
         _display = display;
         _rightFk = fk;
         _junctionKey = junctionKey;
+        _rightFkParent = junctionKey;
+        _previousHop = null;
 
         // Issue 47311: Rewrite the lookup FieldKey to remove the intermediate table/query
         setFieldKey(parentPkColumn.getFieldKey().append(display.getFieldKey().getName()));
@@ -54,11 +60,62 @@ public class MultiValuedLookupColumn extends LookupColumn
         //setJdbcType(JdbcType.VARCHAR);
     }
 
-    // We don't traverse FKs from a multi-valued column
+    /**
+     * Continue a lookup past a multi-valued column, aggregating a column of the table {@code rightFk} points at.
+     * The extra join lives inside this column's own aggregate subquery, so the values stay one-per-junction-row.
+     */
+    protected MultiValuedLookupColumn(MultiValuedLookupColumn previousHop, ForeignKey rightFk, ColumnInfo display)
+    {
+        super(previousHop._foreignKey, previousHop._lookupKey, display);
+        _display = display;
+        _rightFk = rightFk;
+        _junctionKey = previousHop._junctionKey;
+        _rightFkParent = previousHop._display;
+        _previousHop = previousHop;
+
+        // Keep the whole traversed path; appending to the declaring column would collide with the first hop's columns.
+        setFieldKey(previousHop.getFieldKey().append(display.getFieldKey().getName()));
+
+        copyAttributesFrom(display);
+        copyURLFrom(display, previousHop.getFieldKey(), null);
+    }
+
     @Override
     public ForeignKey getFk()
     {
-        return null;
+        // The value here is an aggregate of many rows, so a plain lookup can't join from it. MultiValuedPassthroughForeignKey
+        // pushes the next join inside the subquery instead. super.getFk() is the target column's own FK, copied by
+        // copyAttributesFrom() in the constructor.
+        ForeignKey fk = super.getFk();
+        return null == fk ? null : new MultiValuedPassthroughForeignKey(this, fk);
+    }
+
+    ColumnInfo getDisplayColumn()
+    {
+        return _display;
+    }
+
+    int getHopCount()
+    {
+        return null == _previousHop ? 1 : _previousHop.getHopCount() + 1;
+    }
+
+    // Each hop aggregates in its own subquery, so it needs its own alias. Sibling columns reached through the same hop
+    // (Organism/Name and Organism/Genus) produce the same alias and the same SQL, so declareJoins() still dedupes them.
+    @Override
+    public String getTableAlias(String baseAlias)
+    {
+        if (null == _previousHop)
+            return super.getTableAlias(baseAlias);
+        return getTableAlias(_previousHop.getTableAlias(baseAlias), _rightFkParent.getAlias().getId(), getSqlDialect());
+    }
+
+    // A sort would order by the delimited aggregate rather than the individual values. The first hop stays as it was;
+    // only the columns this change makes reachable opt out.
+    @Override
+    public boolean isSortable()
+    {
+        return null == _previousHop && super.isSortable();
     }
 
     @Override
@@ -126,7 +183,9 @@ public class MultiValuedLookupColumn extends LookupColumn
             if (col.isLongTextType() || col.getJdbcType() == BINARY)
                 continue;
 
-            ColumnInfo lc = _rightFk.createLookupColumn(_junctionKey, col.getName());
+            ColumnInfo lc = _rightFk.createLookupColumn(_rightFkParent, col.getName());
+            if (null == lc)
+                continue;
             strJoin.append(", \n\t\t\t");
             SQLFragment valueSql = new SQLFragment();
             boolean needsCast = "entityid".equalsIgnoreCase(lc.getSqlTypeName()) || "lsidtype".equalsIgnoreCase(lc.getSqlTypeName()) || "userid".equalsIgnoreCase(lc.getSqlTypeName());
