@@ -123,6 +123,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.workflow.WorkflowService;
 import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.ExpDataIterators.AliasDataIteratorBuilder;
@@ -940,8 +941,24 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
             }, DbScope.CommitTaskOption.POSTCOMMIT));
 
+
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
-            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
+            UserSchema userSchema = getUserSchema();
+            builder = LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser(), ExperimentService.get().getTinfoDataAliasMap(), _dataClass, false));
+            WorkflowService workService = WorkflowService.get();
+            if (workService != null && !context.getInsertOption().allowUpdate)
+            {
+                if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
+                {
+                    Long actionId = (Long) context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId);
+
+                    if (workService.actionWillAddSources(actionId))
+                        builder = workService.getSourceCreationDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
+
+                    builder = workService.getActionAuditDataIteratorBuilder(builder, userSchema.getContainer(), userSchema.getUser());
+                }
+            }
+            return builder;
         }
         catch (IOException e)
         {
