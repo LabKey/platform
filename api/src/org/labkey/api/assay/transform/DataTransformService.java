@@ -157,6 +157,11 @@ public class DataTransformService
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
                         bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().getAbsolutePath());
+                        bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "transform protocol=" + context.getProtocol().getRowId()
+                                + " name='" + context.getProtocol().getName() + "'"
+                                + " operation=" + operation.name()
+                                + " script='" + scriptFile.getName() + "'"
+                                + " container=" + context.getContainer().getPath());
 
                         Map<String, String> paramMap = new HashMap<>();
 

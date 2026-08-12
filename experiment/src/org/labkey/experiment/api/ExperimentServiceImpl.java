@@ -337,6 +337,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
+    /** DataClass LSID -> Container */
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+
+    /** ContainerId -> DataClasses */
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
     {
         Container c = ContainerManager.getForId(containerId);
@@ -968,6 +972,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return SampleTypeService.get().getSamplesNotPermitted(candidates, operation)
                 .stream()
                 .map(ExpObject::getRowId).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean hasSampleIdsNotInScope(Container container, User user, Collection<Long> sampleIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoMaterial(), sampleIds);
+    }
+
+    @Override
+    public boolean hasSourceIdsNotInScope(Container container, User user, Collection<Long> sourceIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoData(), sourceIds);
+    }
+
+    // GitHub Issue 1309
+    private boolean hasEntityIdsNotInScope(Container container, User user, TableInfo entityTable, Collection<Long> entityIds)
+    {
+        if (entityIds.isEmpty())
+            return false;
+
+        ContainerFilter cf = container.getProductFoldersDataContainerFilter(user);
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), entityIds);
+        filter.addClause(cf.createFilterClause(entityTable.getSchema(), FieldKey.fromParts("Container")));
+
+        Set<Long> inScope = new HashSet<>(new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getArrayList(Long.class));
+        return entityIds.stream().anyMatch(id -> !inScope.contains(id));
     }
 
     private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
@@ -1875,12 +1905,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
-            return null;
+        String containerId = dataClassLsidCache.get(lsid);
+        Container c = null;
+        if (containerId != null)
+            c = ContainerManager.getForId(containerId);
 
-        return new ExpDataClassImpl(dataClass);
+        ExpDataClassImpl dataClass = null;
+        if (null != c)
+            dataClass = getDataClass(c, false, dc -> lsid.equals(dc.getLSID()));
+        if (null == dataClass)
+        {
+            Filter filter = new SimpleFilter(ExpDataClassTable.Column.LSID.fieldKey(), lsid);
+            DataClass dc = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+            if (dc != null)
+                dataClass = new ExpDataClassImpl(dc);
+        }
+
+        if (null != dataClass && null == containerId)
+            dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
+
+        return dataClass;
     }
 
     @Override
@@ -8134,7 +8178,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                         GWTDomain<? extends GWTPropertyDescriptor> update,
                                         @Nullable String auditUserComment)
     {
-        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+        // Re-read so the mutations below don't write through to a DataClass bean shared via dataClassCache
+        ExpDataClassImpl dataClass = getDataClass(dc.getRowId());
+        if (dataClass == null)
+            return new ValidationException("Data class not found: " + dc.getName());
 
         Map<String, Object> oldProps = dataClass.getAuditRecordMap();
         Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
