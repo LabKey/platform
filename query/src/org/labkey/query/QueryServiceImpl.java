@@ -83,7 +83,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
-import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.pipeline.PipelineJob;
@@ -191,7 +190,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -207,7 +205,6 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -235,45 +232,10 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryDef>> MODULE_QUERY_DEF_CACHE = ModuleResourceCaches.create("Module query definitions", new QueryDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
-
-    private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
-    {
-        @Override
-        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            QueryService.get().updateLastModified();
-        }
-
-        @Override
-        public void overflow()
-        {
-        }
-
-        @Override
-        public void moduleChanged(Module module)
-        {
-            QueryService.get().updateLastModified();
-        }
-    };
-
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module, String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
 
     private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
-
-    private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -696,30 +658,6 @@ public class QueryServiceImpl implements QueryService
         return (QueryServiceImpl) QueryService.get();
     }
 
-    static class CacheListener implements org.labkey.api.cache.CacheListener
-    {
-        @Override
-        public void clearCaches()
-        {
-            QueryServiceImpl.get().updateLastModified();
-        }
-    }
-
-    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
-    @Override
-    public long metadataLastModified()
-    {
-        return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
-                _metadataLastModified.get() : Long.MIN_VALUE;
-    }
-
-    /** Invalidate the value used for the "Last-Modified" time stamp. */
-    @Override
-    public void updateLastModified()
-    {
-        _metadataLastModified.set(new Date().getTime());
-    }
-
     @Override
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
@@ -984,7 +922,6 @@ public class QueryServiceImpl implements QueryService
         MODULE_QUERY_DEF_CACHE.onModuleChanged(module);
         MODULE_QUERY_METADATA_DEF_CACHE.onModuleChanged(module);
         MODULE_CUSTOM_VIEW_CACHE.onModuleChanged(module);
-        INVALIDATE_QUERY_METADATA_HANDLER.moduleChanged(module);
     }
 
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
@@ -996,12 +933,6 @@ public class QueryServiceImpl implements QueryService
                     .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                     .map(resource -> new ModuleQueryDef(module, resource))
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
-        }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -1433,12 +1364,6 @@ public class QueryServiceImpl implements QueryService
                     .filter(resource -> Strings.CI.endsWith(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                     .map(ModuleCustomViewDef::new)
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
-        }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -2554,12 +2479,6 @@ public class QueryServiceImpl implements QueryService
                     .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                     .map(ModuleQueryMetadataDef::new)
                     .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
-        }
-
-        @Override
-        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
-        {
-            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 

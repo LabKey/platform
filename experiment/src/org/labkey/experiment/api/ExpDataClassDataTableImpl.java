@@ -995,10 +995,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             _context = context;
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_in, context, input -> build(input, context));
+        }
 
+        /** Returning null here (after adding an error) or throwing leaves `input` to be closed by wrapOrClose. */
+        private DataIterator build(DataIterator input, DataIteratorContext context)
+        {
             boolean isMerge = context.getInsertOption() == QueryUpdateService.InsertOption.MERGE;
             boolean isUpdate = context.getInsertOption() == QueryUpdateService.InsertOption.UPDATE;
 
