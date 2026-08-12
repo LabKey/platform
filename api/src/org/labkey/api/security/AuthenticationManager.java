@@ -632,6 +632,10 @@ public class AuthenticationManager
 
             AuthenticationManager.setReauthUser(reauthUser, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
 
+            // A token on the URL means setReauthUser() accepted the reauthentication.
+            if (null != reauthUser && null != url.getParameter(REAUTH_TOKEN_NAME))
+                AuthenticationManager.auditReauthSuccess(reauthUser, response);
+
             throw new RedirectException(url);
         }
 
@@ -1092,13 +1096,23 @@ public class AuthenticationManager
 
     public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
     {
+        return authenticate(request, id, password, returnUrl, logFailures, false);
+    }
+
+
+    /**
+     * @param reauth True when reauthenticating an already signed-in user rather than logging one in. See
+     *               {@link #finalizePrimaryAuthentication(HttpServletRequest, AuthenticationResponse, boolean)}.
+     */
+    public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnUrl, boolean logFailures, boolean reauth) throws InvalidEmailException
+    {
         PrimaryAuthenticationResult result = null;
         try
         {
             result = _beforeAuthenticate(request, id, password);
             if (null != result)
                 return result;
-            result = _authenticate(request, id, password, returnUrl, logFailures);
+            result = _authenticate(request, id, password, returnUrl, logFailures, reauth);
             return result;
         }
         finally
@@ -1108,7 +1122,7 @@ public class AuthenticationManager
     }
 
 
-    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnUrl, boolean logFailures) throws InvalidEmailException
+    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnUrl, boolean logFailures, boolean reauth) throws InvalidEmailException
     {
         if (areNotBlank(id, password))
         {
@@ -1132,7 +1146,7 @@ public class AuthenticationManager
 
                 if (authResponse.isAuthenticated())
                 {
-                    return finalizePrimaryAuthentication(request, authResponse);
+                    return finalizePrimaryAuthentication(request, authResponse, reauth);
                 }
                 else
                 {
@@ -1230,6 +1244,18 @@ public class AuthenticationManager
     @NotNull
     public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response)
     {
+        return finalizePrimaryAuthentication(request, response, false);
+    }
+
+    /**
+     * @param reauth True when reauthenticating an already signed-in user rather than logging one in. Suppresses the
+     *               "logged in" audit event: no session is created and the user was already signed in, so recording a
+     *               login misstates what happened. Callers passing true are responsible for recording the
+     *               reauthentication via {@link #auditReauthSuccess(User, AuthenticationResponse)}.
+     */
+    @NotNull
+    public static PrimaryAuthenticationResult finalizePrimaryAuthentication(HttpServletRequest request, AuthenticationResponse response, boolean reauth)
+    {
         User user = response.getUser();
         final String emailAddress;
 
@@ -1288,7 +1314,8 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, emailAddress + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
+        if (!reauth)
+            addAuditEvent(user, request, emailAddress + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }
@@ -1714,6 +1741,11 @@ public class AuthenticationManager
             session.removeAttribute(getReauthFlowSessionKey());
             URLHelper url = getAfterReauthURL(c, getLoginReturnProperties(request), primaryAuthUser);
             setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+
+            // A token on the URL means setReauthUser() accepted the reauthentication.
+            if (null != url.getParameter(REAUTH_TOKEN_NAME))
+                auditReauthSuccess(primaryAuthUser, primaryAuthResult.getResponse());
+
             return new AuthenticationResult(primaryAuthUser, url);
         }
 
@@ -1884,11 +1916,33 @@ public class AuthenticationManager
      * @param errorMessage Pre-existing error message to add to the URL
      * @param redirectUrl  URL to which the token (on success) or error message (on failure) gets added
      */
-    public static void setReauthUser(User reauthUser, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
+    public static void setReauthUser(@Nullable User reauthUser, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
     {
         if (errorMessage == null && sessionUser != null && !sessionUser.equals(reauthUser))
         {
-            errorMessage = "Reauthentication failed: wrong user reauthenticated";
+            // One condition in code, but three different problems in practice -- sign in as the right user, fix the
+            // IdP's claim mapping, or fix the session cookie -- so each gets a message that says which one it is.
+            if (sessionUser.isGuest())
+            {
+                // The SSO validate actions are @RequiresNoPermission, so getUser() returns guest whenever the request
+                // carries no signed-in session -- typically because the session cookie didn't accompany the IdP's
+                // cross-site POST to the validate action, or because the session timed out mid-flow.
+                errorMessage = "Reauthentication failed: this browser is no longer signed in; please sign in again";
+                _log.warn("Reauthentication failed for \"{}\": the request carried no signed-in session. Check that the session cookie accompanies the identity provider's response to the validate action -- a JSESSIONID with no explicit SameSite value is withheld from that cross-site POST once it is more than a couple of minutes old.", null != reauthUser ? reauthUser.getEmail() : "an unrecognized identity");
+            }
+            else if (null == reauthUser)
+                // Narrow, but sign-in and reauthentication resolve users differently: finalizePrimaryAuthentication()
+                // can auto-create an account, and reauthentication never does. Reaching here means the asserted
+                // identity has no account by the time reauth runs -- deleted or renamed mid-session, or the IdP
+                // asserting a different identifier than it did at sign-in.
+                errorMessage = "Reauthentication failed: the reauthenticated identity does not match a LabKey user account";
+            else
+            {
+                errorMessage = "Reauthentication failed: wrong user reauthenticated";
+                // The only place that knows both identities. The audit log records neither, since no reauthentication
+                // completed, so without this the pairing can't be reconstructed afterward.
+                _log.warn("Reauthentication failed for \"{}\": \"{}\" reauthenticated instead.", sessionUser.getEmail(), reauthUser.getEmail());
+            }
         }
 
         if (errorMessage != null)
@@ -1903,6 +1957,20 @@ public class AuthenticationManager
             // (browser redirects with no user interaction). Five minute expiration should be more than ample.
             addToken(request, reauthUser, reauthToken, Instant.now().plus(5, ChronoUnit.MINUTES));
         }
+    }
+
+    /**
+     * Records that a reauthentication happened; 21 CFR Part 11 wants proof of it. SSO reauth never reaches
+     * finalizePrimaryAuthentication(), so it left no server-side record at all, and local and signing reauth recorded
+     * themselves as logins. Mirrors the "logged in" event's phrasing so the two read alike in the audit log.
+     */
+    public static void auditReauthSuccess(@NotNull User reauthUser, @NotNull AuthenticationResponse response)
+    {
+        // Deliberately not addAuditEvent(), which throttles repeats of an identical message from the same user and
+        // address. Signing several records in a row produces exactly that, and dropping the second signature's
+        // reauthentication is the opposite of what an audit trail is for.
+        UserManager.addAuditEvent(reauthUser, ContainerManager.getRoot(), reauthUser,
+            reauthUser.getEmail() + " " + UserManager.UserAuditEvent.REAUTHENTICATED + " successfully via " + response.getSuccessDetails() + ".");
     }
 
     // Separate method to allow unit testing
