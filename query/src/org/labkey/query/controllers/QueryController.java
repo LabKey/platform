@@ -60,6 +60,7 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ConcurrencyLimit;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExportException;
@@ -2719,9 +2720,7 @@ public class QueryController extends SpringActionController
             return true;
         if ("sort".equals(check))
             return true;
-        if (check.equals("containerFilterName"))
-            return true;
-        return false;
+        return check.equals("containerFilterName");
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -5649,7 +5648,7 @@ public class QueryController extends SpringActionController
             if (o == null || getClass() != o.getClass()) return false;
 
             DataSourceInfo that = (DataSourceInfo) o;
-            return sourceName != null ? sourceName.equals(that.sourceName) : that.sourceName == null;
+            return Objects.equals(sourceName, that.sourceName);
         }
 
         @Override
@@ -6604,12 +6603,6 @@ public class QueryController extends SpringActionController
     public static class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
         @Override
-        protected long getLastModified(GetSchemasForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
-        @Override
         public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
             final Container container = getContainer();
@@ -6755,12 +6748,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
-        @Override
-        protected long getLastModified(GetQueriesForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
@@ -6963,12 +6950,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
-        @Override
-        protected long getLastModified(GetQueryViewsForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {
@@ -7576,11 +7557,16 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * Analyzing a folder holds the full TableInfo/ColumnInfo graph for every query in it for the life of the request,
+     * so avoid running to many concurrently to avoid overwhelming the heap.
+     */
+    @ConcurrencyLimit(value = 10, message = "Too many query dependency analyses are already running. Please retry in a few moments.")
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             JSONObject ret = new JSONObject();
 
@@ -7614,7 +7600,9 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    ret.put("success", false);
+                    // must be an error rather than an empty graph, which the client reports as "no dependencies"
+                    errors.reject(ERROR_MSG, "Query dependency analysis is not available on this server.");
+                    return null;
                 }
                 return ret;
             }

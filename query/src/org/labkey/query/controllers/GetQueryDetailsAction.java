@@ -88,12 +88,6 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
     private static final Logger LOG = LogManager.getLogger(GetQueryDetailsAction.class);
 
     @Override
-    protected long getLastModified(Form form)
-    {
-        return QueryService.get().metadataLastModified();
-    }
-
-    @Override
     public ApiResponse execute(Form form, BindException errors)
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();

@@ -112,6 +112,7 @@ import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SubmitterRole;
 import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
@@ -2546,6 +2547,61 @@ public class IssuesController extends SpringActionController
                     ContainerManager.deleteAll(c, admin);
             }
             _projectA = null;
+        }
+    }
+
+    /**
+     * GitHub Issue 1317 regression test.
+     */
+    public static class GetIssuePermissionTestCase extends AbstractContainerScopingTest
+    {
+        private static final String ISSUE_TITLE = "getIssue() permission test issue";
+
+        @Test
+        public void testSubmitterCannotReadIssue() throws Exception
+        {
+            Container c = createIssuesContainer("Submitter");
+            int issueId = createIssue(c);
+
+            // A reader should be able to access the issue
+            User reader = createUserInRole(c, ReaderRole.class);
+            IssueObject asReader = IssueManager.getIssue(c, reader, issueId);
+            assertNotNull("Reader should be able to read the issue", asReader);
+            assertEquals(ISSUE_TITLE, asReader.getTitle());
+
+            // A submitter holds InsertPermission but not ReadPermission, so the issue shouldn't be accessible.
+            User submitter = createUserInRole(c, SubmitterRole.class);
+            assertNull("Submitter should not be able to read an issue", IssueManager.getIssue(c, submitter, issueId));
+            assertNull("Submitter should not be able to read an issue in an unspecified container", IssueManager.getIssue(null, submitter, issueId));
+        }
+
+        private Container createIssuesContainer(String name)
+        {
+            Container c = createContainer(name, ModuleLoader.getInstance().getModule(IssuesModule.NAME));
+
+            IssueListDef def = new IssueListDef();
+            def.setName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            def.setLabel(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            def.setKind(IssueDefDomainKind.NAME);
+            def.beforeInsert(getAdmin(), c.getId());
+            def.save(getAdmin());
+
+            return c;
+        }
+
+        private int createIssue(Container c)
+        {
+            User admin = getAdmin();
+            IssueObject issue = new IssueObject();
+            issue.open(c, admin);
+            issue.setAssignedTo(admin.getUserId());
+            issue.setTitle(ISSUE_TITLE);
+            issue.setPriority("3");
+            issue.setIssueDefName(IssueListDef.DEFAULT_ISSUE_LIST_NAME);
+            ObjectFactory.Registry.getFactory(IssueObject.class).toMap(issue, issue.getProperties());
+            IssueManager.saveIssue(admin, c, issue);
+
+            return issue.getIssueId();
         }
     }
 }
