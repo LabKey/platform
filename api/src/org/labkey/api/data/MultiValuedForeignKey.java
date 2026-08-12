@@ -286,6 +286,16 @@ public class MultiValuedForeignKey implements ForeignKey
         return true;
     }
 
+    /**
+     * Whether a field key can continue past the columns this key produces. False for subclasses that hand back columns
+     * with no foreign key of their own -- lineage does this, resolving its values through a display column instead of
+     * SQL -- so callers can avoid offering a lookup that will not resolve.
+     */
+    public boolean isTraversable()
+    {
+        return true;
+    }
+
     @Override
     public boolean isShowAsPublicDependency()
     {

@@ -436,6 +436,9 @@ public class JsonWriter
                         : AbstractTableInfo.MultiValuedFkType.value.name());
                 if (junctionLookup != null)
                     lookupInfo.put("junctionLookup", junctionLookup);
+                // Only emitted when false, so clients that don't know the property keep treating lookups as traversable
+                if (!mvfk.isTraversable())
+                    lookupInfo.put("traversable", false);
             }
 
             if (!fk.getFilters().isEmpty())

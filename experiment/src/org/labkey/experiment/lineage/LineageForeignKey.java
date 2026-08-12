@@ -381,6 +381,13 @@ public class LineageForeignKey extends AbstractForeignKey
         }
 
         @Override
+        public boolean isTraversable()
+        {
+            // The columns handed back below have their FK cleared, so nothing resolves past them
+            return !_useLineageDisplayColumn;
+        }
+
+        @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
             if (_useLineageDisplayColumn)
