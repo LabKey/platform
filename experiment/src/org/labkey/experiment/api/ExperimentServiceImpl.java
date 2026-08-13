@@ -6251,11 +6251,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (transaction.getAuditEvent() == null)
-            {
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(c, QueryService.AuditAction.DELETE, null);
-                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
-            }
             truncateDataClass(dataClass, user, null, auditUserComment);
 
             d.delete(user, auditUserComment);

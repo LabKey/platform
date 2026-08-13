@@ -668,11 +668,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (transaction.getAuditEvent() == null)
-            {
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(c, QueryService.AuditAction.DELETE, null);
-                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
-            }
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
             truncateSampleType(source, user, null, auditUserComment);
