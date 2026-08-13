@@ -58,10 +58,15 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 //  rules. Uncomment this line and the corresponding bean class below.
 //        testTableSelector(DbSchema.get("oracle.granite", DbSchemaType.Bare).getTable("account"), Account.class);
 
-        // Test MySQL database, if present
-        DbSchema sakila = DbSchema.get("mySql.sakila", DbSchemaType.Bare);
-        if (sakila.existsInDatabase())
-            testTableSelector(sakila.getTable("country"), Country.class);
+        // Test MySQL or MariaDB database, if present
+        List<DbScope> mySqlScopes = Stream.of("mySql", "mariadb")
+                .map(DbScope::getDbScope).filter(Objects::nonNull).toList();
+        for (DbScope mySqlScope: mySqlScopes)
+        {
+            DbSchema sakila = mySqlScope.getSchema("sakila", DbSchemaType.Bare);
+            if (sakila.existsInDatabase())
+                testTableSelector(sakila.getTable("country"), Country.class);
+        }
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
     }
