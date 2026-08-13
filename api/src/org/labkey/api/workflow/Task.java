@@ -43,6 +43,7 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
 
     protected String _description;
     protected String _entityFilter;
+    protected WorkEntity.EntityType _inputEntityType;
     protected Integer _status;
     protected Date _startDate;
     protected Date _endDate;
@@ -91,6 +92,16 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
     public void setEntityFilter(String entityFilter)
     {
         _entityFilter = entityFilter;
+    }
+
+    public WorkEntity.EntityType getInputEntityType()
+    {
+        return _inputEntityType;
+    }
+
+    public void setInputEntityType(WorkEntity.EntityType inputEntityType)
+    {
+        _inputEntityType = inputEntityType;
     }
 
     @JsonProperty("assignee")
@@ -278,6 +289,8 @@ public abstract class Task extends CreatedModified implements Comparable<Task>
             map.put("dueDate", getDueDate());
         if (getEntityId() != null)
             map.put("entityId", getEntityId().toString());
+        if (getInputEntityType() != null)
+            map.put("inputEntityType", getInputEntityType());
         map.put("ordinal", getOrdinal());
         int actionIndex = 1;
         for (Action action : getActions())

@@ -429,7 +429,6 @@ public class QueryManager
     // changes in any way (insert/update/delete).
     public void updateExternalSchemas(Container c)
     {
-        QueryService.get().updateLastModified();
         if (null != c)
         {
             ExternalSchemaDefCache.uncache(c);
@@ -559,14 +558,12 @@ public class QueryManager
 
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
-        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryCreated(user, container, scope, schema, queries);
     }
 
     public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange<?>> changes)
     {
-        QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryChanged(user, container, scope, schema, property, changes);
@@ -605,7 +602,6 @@ public class QueryManager
 
     public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
-        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryDeleted(user, container, scope, schema, queries);
     }
@@ -630,21 +626,18 @@ public class QueryManager
 
     public void fireViewCreated(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewCreated(view);
     }
 
     public void fireViewChanged(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewChanged(view);
     }
 
     public void fireViewDeleted(CustomView view)
     {
-        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewDeleted(view);
     }

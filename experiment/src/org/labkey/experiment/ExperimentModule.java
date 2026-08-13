@@ -135,6 +135,7 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
@@ -1179,6 +1180,7 @@ public class ExperimentModule extends SpringModule
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
+            ImportAbortResourceTestCase.class,
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,

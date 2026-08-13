@@ -290,7 +290,7 @@ public class RserveScriptEngine extends RScriptEngine
 
 
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    protected Object evalScript(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
         RConnection rconn = null;
@@ -314,7 +314,10 @@ public class RserveScriptEngine extends RScriptEngine
             LOG.info("Reusing RServe connection in use: {}", rh.isInUse());
         }
 
-        FileLike scriptFile = prepareScriptFile(script, context, extensions);
+        // GitHub Issue #1130: capture the packages the script loaded (see RScriptEngine.getPackageCaptureEpilog). This
+        // has to run inside the script rather than as an exit hook, because the R session on the remote outlives the
+        // script and so wouldn't shut down until after copyWorkingDirectoryFromRemote() below.
+        FileLike scriptFile = prepareScriptFile(appendPackageCaptureEpilog(script, context), context, extensions);
 
         try
         {
@@ -338,6 +341,10 @@ public class RserveScriptEngine extends RScriptEngine
 
             // no logging here, because this is a no-op by default
             copyWorkingDirectoryFromRemote(rconn);
+
+            // GitHub Issue #1130: only reached when the script succeeded, and has to follow the copy above so the
+            // sidecar file the epilog wrote on the remote is available locally
+            recordPackageUsage(context);
 
             return output;
         }

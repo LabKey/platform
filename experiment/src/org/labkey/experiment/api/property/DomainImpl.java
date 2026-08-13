@@ -922,8 +922,6 @@ public class DomainImpl implements Domain
                     getDomainKind().invalidate(this);
             };
             transaction.addCommitTask(afterDomainCommitOrRollback, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
-
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
     }

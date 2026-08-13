@@ -660,7 +660,6 @@ public class AssayDomainServiceImpl implements AssayDomainService, ContainerUser
                     QueryService.get().saveCalculatedFieldsMetadata(domainDescriptor.getSchemaName(), domainDescriptor.getQueryName(), null, domain.getCalculatedFields(), hasExistingCalcFields, getUser(), protocol.getContainer());
                 }
 
-                QueryService.get().updateLastModified();
                 transaction.commit();
                 AssayManager.get().clearProtocolCache();
                 return getAssayDefinition(assay.getProtocolId(), false);

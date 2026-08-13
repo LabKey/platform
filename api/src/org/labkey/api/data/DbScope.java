@@ -1624,7 +1624,6 @@ public class DbScope
      */
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
-        QueryService.get().updateLastModified();
         _schemaCache.remove(schemaName, type);
         invalidateAllTables(schemaName, type);
     }
@@ -1641,7 +1640,6 @@ public class DbScope
     // DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
-        QueryService.get().updateLastModified();
         getTableInfoCache(type).remove(schemaName, tableName, type);
         _schemaCache.remove(schemaName, type);
     }
