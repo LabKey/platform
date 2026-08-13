@@ -135,7 +135,6 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         public DomainAuditEvent()
         {
             super();
-            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
         }
 
         public DomainAuditEvent(Container container, String comment)
