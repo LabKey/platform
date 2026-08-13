@@ -4426,17 +4426,6 @@ public class ExperimentController extends SpringActionController
                 tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(this), null);
                 updateService = tInfo.getUpdateService();
             }
-            if (WorkflowService.get() != null)
-            {
-                try
-                {
-                    WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
-                }
-                catch (ValidationException e)
-                {
-                    errors.addRowError(e);
-                }
-            }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
@@ -4551,6 +4540,21 @@ public class ExperimentController extends SpringActionController
         protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment)
         {
             _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), getLookupResolutionType(), auditBehaviorType, auditUserComment, errors, null, getContainer());
+
+            // Both samples and data classes can be created via a workflow job action, so the action and job ids need to
+            // be available to the update service for either type. The background import path populates these separately
+            // via AbstractQueryImportAction.getImportContextBuilder().
+            if (WorkflowService.get() != null)
+            {
+                try
+                {
+                    WorkflowService.get().populateConfigParams(getViewContext().getRequest(), _context.getConfigParameters());
+                }
+                catch (ValidationException e)
+                {
+                    errors.addRowError(e);
+                }
+            }
         }
 
         @Override

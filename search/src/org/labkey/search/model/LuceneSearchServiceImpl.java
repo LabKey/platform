@@ -2110,7 +2110,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
             add(map, "dll_sample.dll", 0);
             add(map, "doc_sample.doc", 3585, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add(map, "docx_sample.docx", 3580, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "docx_sample.docx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dot_sample.dot", 3589, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "exe_sample.exe", 0);
@@ -2127,7 +2127,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 122, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 118, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");

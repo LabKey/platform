@@ -295,7 +295,9 @@ public abstract class Action extends CreatedModified
 
             return messages;
         }
-        else if (_type == WorkflowService.ActionType.DeriveSamples || _type == WorkflowService.ActionType.PoolSamples)
+        else if (_type == WorkflowService.ActionType.DeriveSamples
+                || _type == WorkflowService.ActionType.PoolSamples
+                || _type == WorkflowService.ActionType.DeriveSamplesFromSources)
         {
             String emptyMessage = prefix + "data about sample types and sample counts per parent is required for action of type " + _type + ".";
 
@@ -358,9 +360,14 @@ public abstract class Action extends CreatedModified
 
             if (hasAnySampleStatusKey())
             {
-                String statusMessage = validateStatus(container, prefix, true);
+                if (_type == WorkflowService.ActionType.DeriveSamplesFromSources)
+                    messages.add(prefix + "data about updating parent status not allowed for action of type " + _type + ".");
+                else
+                {
+                    String statusMessage = validateStatus(container, prefix, true);
 
-                if (statusMessage != null) messages.add(statusMessage);
+                    if (statusMessage != null) messages.add(statusMessage);
+                }
             }
 
             return messages;
@@ -376,6 +383,67 @@ public abstract class Action extends CreatedModified
             if (statusMessage != null) return List.of(statusMessage);
 
             return Collections.emptyList();
+        }
+        else if (_type == WorkflowService.ActionType.DeriveSources)
+        {
+            String emptyMessage = prefix + "data about source types and source counts per parent is required for action of type " + _type + ".";
+
+            if (_inputParameters == null) return List.of(emptyMessage);
+
+            // We can't just check _inputParameters size because it may include sample status keys, so we extract the
+            // source type IDs and validate against those.
+            List<String> sourceTypeIds = new ArrayList<>();
+            _inputParameters.keys().forEachRemaining(id -> {
+                if (isSampleStatusKey(id)) return;
+                sourceTypeIds.add(id);
+            });
+
+            if (sourceTypeIds.isEmpty())
+                return List.of(emptyMessage);
+
+            // don't allow more than one target source type
+            if (sourceTypeIds.size() > 1)
+                return List.of(prefix + "only one source type can be specified for action of type " + _type + ".");
+
+            List<String> messages = new ArrayList<>();
+            String sourceTypeId = sourceTypeIds.get(0);
+            boolean invalidId;
+            try
+            {
+                invalidId = ExperimentService.get().getDataClass(container, Long.parseLong(sourceTypeId), true) == null;
+            }
+            catch (NumberFormatException e)
+            {
+                invalidId = true;
+            }
+            if (invalidId)
+                messages.add(prefix + "invalid source type ID " + sourceTypeId + ".");
+
+            Object countObj = _inputParameters.get(sourceTypeId);
+            boolean invalidCount;
+            if (countObj instanceof String countStr)
+            {
+                try
+                {
+                    invalidCount = Integer.parseInt(countStr) < 0;
+                }
+                catch (NumberFormatException e)
+                {
+                    invalidCount = true;
+                }
+            }
+            else if (countObj instanceof Integer count)
+                invalidCount = count < 0;
+            else
+                invalidCount = true;
+
+            if (invalidCount)
+                messages.add(prefix + "invalid source count value " + countObj + ".");
+
+            if (hasAnySampleStatusKey())
+                messages.add(prefix + "data about updating parent status not allowed for action of type " + _type + ".");
+
+            return messages;
         }
         else
         {
