@@ -56,12 +56,13 @@ import org.labkey.audit.query.AuditQuerySchema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 public class AuditLogImpl implements AuditLogService, StartupListener
 {
@@ -248,7 +249,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
-    public record TransactionRowIds(List<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
+    public record TransactionRowIds(Set<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
 
     public TransactionRowIds getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
@@ -268,7 +269,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                     .toList();
         }
         Map<Long, Long> dataTypeRowCounts = new HashMap<>();
-        List<Long> sampleIds = new ArrayList<>();
+        // Return distinct set of sampleIds, since there might be multiple events in transaction for the same sample
+        // For example: job derive action creates one registration event, one add to job event.
+        Set<Long> sampleIds = new HashSet<>();
         events.forEach(event -> {
             dataTypeRowCounts.merge(event.getSampleTypeId(), 1L, Long::sum);
             sampleIds.add(event.getSampleId());
@@ -279,7 +282,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     public TransactionRowIds getTransactionSourceIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         List<String> lsids = new ArrayList<>();
-        List<Long> sourceIds = new ArrayList<>();
+        Set<Long> sourceIds = new HashSet<>();
         Map<Long, Long> dataTypeRowCounts = new HashMap<>();
         List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
         List<DetailedAuditTypeEvent> detailedEvents = transactionEvents.isEmpty()
