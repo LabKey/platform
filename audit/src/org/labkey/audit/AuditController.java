@@ -383,9 +383,8 @@ public class AuditController extends SpringActionController
         {
             AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
-            // Issue 1307: scope strictly to the current container. 26.7 removed cross-folder imports, so a
-            // transaction's rows live in the same container as the transaction
-            ContainerFilter cf = ContainerFilter.Type.Current.create(getContainer(), elevatedUser);
+            // GitHub Issue 1307: use product folder data CF
+            ContainerFilter cf = getContainer().getProductFoldersDataContainerFilter(elevatedUser);
             if (form.isSampleType())
                 results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
             else
