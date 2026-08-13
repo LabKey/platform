@@ -3592,7 +3592,7 @@ public class ExperimentController extends SpringActionController
                 {
                     if (tx.getAuditEvent() == null)
                     {
-                        TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), QueryService.AuditAction.DELETE, null);
+                        TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), QueryService.AuditAction.DELETE, getTransactionAuditDetails());
                         AbstractQueryUpdateService.addTransactionAuditEvent(tx, getUser(), auditEvent);
                     }
                     tx.addCommitTask(deleteForm::clearSelected, POSTCOMMIT);
