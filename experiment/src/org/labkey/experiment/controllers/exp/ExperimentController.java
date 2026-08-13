@@ -7743,7 +7743,7 @@ public class ExperimentController extends SpringActionController
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
                         "S.MaterialExpDate AS ExpirationDate",
-                        "S.ExpMaterialColor", // TODO should this be conditional?
+                        "S.ExpMaterialColor",
                         "S.SampleSet as SampleType",
                         "S.SampleState",
                         "S.isAliquot",
@@ -7756,7 +7756,7 @@ public class ExperimentController extends SpringActionController
                 sampleColumns.addAll(Arrays.asList(
                         "S.Name AS SampleID",
                         "S.MaterialExpDate AS ExpirationDate",
-                        "S.ExpMaterialColor", // TODO should this be conditional?
+                        "S.ExpMaterialColor",
                         "S.LabelColor",
                         "S.SampleSet",
                         "S.SampleState",
