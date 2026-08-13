@@ -93,12 +93,6 @@ public class DataColorManager
     }
 
     @NotNull
-    public List<DataColor> getActiveColors(Container container)
-    {
-        return getColors(container).stream().filter(c -> !c.isArchived()).toList();
-    }
-
-    @NotNull
     public List<DataColor> getAllProjectColors(Container container)
     {
         List<DataColor> colors = new ArrayList<>(getColors(container));

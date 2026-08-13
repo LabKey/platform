@@ -9187,7 +9187,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId)
     {
-        return DataColorManager.getInstance().getAllProjectColors(container).stream()
+        return getAllProjectColors(container).stream()
                 .filter(c -> c.getRowId() == colorRowId)
                 .findFirst()
                 .orElse(null);
@@ -9207,6 +9207,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container)
     {
         return DataColorManager.getInstance().getActiveProjectColors(container);
+    }
+
+    @Override
+    public @NotNull List<DataColor> getAllProjectColors(@NotNull Container container)
+    {
+        return DataColorManager.getInstance().getAllProjectColors(container);
     }
 
     // Applies a reconciled set of exclusion changes to exp.DataTypeColorExclusion in one transaction: one key column is
