@@ -2889,6 +2889,15 @@ if (!LABKEY.DataRegions) {
             session: true
         });
 
+        // GitHub Issue 1219: the 'fields' column-metadata for the view is never used on the server-side save action
+        // so it can be removed from the payload. Also, only fieldKey/title are read per column so we can trim down that as well.
+        delete viewConfig.fields;
+        if (LABKEY.Utils.isArray(viewConfig.columns)) {
+            viewConfig.columns = $.map(viewConfig.columns, function(col) {
+                return col.title ? { fieldKey: col.fieldKey, title: col.title } : { fieldKey: col.fieldKey };
+            });
+        }
+
         LABKEY.Query.saveQueryViews({
             containerPath: this.containerPath,
             schemaName: this.schemaName,
