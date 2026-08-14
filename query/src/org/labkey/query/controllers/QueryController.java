@@ -4651,6 +4651,10 @@ public class QueryController extends SpringActionController
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
+
+            if (extraContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
+                configParameters.put(AbstractQueryImportAction.Params.useTransactionAuditCache, extraContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
+
             if (WorkflowService.get() != null)
                 WorkflowService.get().populateConfigParams(extraContext, configParameters);
 
