@@ -268,6 +268,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                     .map(SampleTimelineAuditEvent.class::cast)
                     .toList();
         }
+        // Drop the secondary "added/removed sample to/from job" events; the same sample has a primary registration/update event in the transaction, so counting these would double-count it.
+        events = events.stream()
+                .filter(event -> SampleTimelineAuditEvent.SampleTimelineEventType.INSERT.getComment().equals(event.getComment()) || SampleTimelineAuditEvent.SampleTimelineEventType.MERGE.getComment().equals(event.getComment()))
+                .toList();
+
         Map<Long, Long> dataTypeRowCounts = new HashMap<>();
         // Return distinct set of sampleIds, since there might be multiple events in transaction for the same sample
         // For example: job derive action creates one registration event, one add to job event.
