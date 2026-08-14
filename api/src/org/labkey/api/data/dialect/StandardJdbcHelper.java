@@ -36,7 +36,7 @@ public class StandardJdbcHelper implements JdbcHelper
         return parseDatabase(url.substring(_prefix.length()));
     }
 
-    protected String parseDatabase(String url)
+    protected String parseDatabase(String url) throws ServletException
     {
         // Database name ends with '?' or end of the URL
         int dbEnd = url.indexOf('?');
