@@ -2362,8 +2362,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             const drawLine = function(cls, sign) {
                 const lineSel = layer.selectAll('path.' + cls).data([data]);
                 lineSel.enter().append('path').attr('class', cls);
+                // only the dashed layers get a pattern - the mean line stays solid, as in the per-point path below
                 lineSel.attr('d', buildPath(sign)).attr('stroke', strokeColor).attr('fill', 'none')
-                    .attr('stroke-width', 1).style('stroke-dasharray', '6, 3');
+                    .attr('stroke-width', 1).style('stroke-dasharray', geom.dashed ? '6, 3' : null);
                 lineSel.exit().remove();
             };
             drawLine('error-bar-top', 1);

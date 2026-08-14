@@ -2702,8 +2702,9 @@ boxPlot.render();
             config.layers = [];
         }
         else {
-            // Size bars by distinct-day count (per-date slot count, floored at 9), not the day span.
-            const barWidthDenom = timeBasedXTick ? Math.max(uniqueDayOffsets.length - 1, 9) : config.data[config.data.length-1].seqValue;
+            // Slot count floored at 9 - the ordinal axis is no longer padded to 10 slots, so one slot would divide by zero.
+            const lastRow = config.data.length > 0 ? config.data[config.data.length - 1] : undefined;
+            const barWidthDenom = Math.max(timeBasedXTick ? uniqueDayOffsets.length - 1 : (lastRow ? lastRow.seqValue : 0), 9);
             const barWidth = Math.max(config.width / barWidthDenom / 4, 3);
             // the below if-else sections add the mean/SD/error bars to the plots
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings) {
