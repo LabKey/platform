@@ -243,7 +243,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     // Whether this startup ran any schema scripts, used by the system upgrade audit event
     private volatile boolean _hasSchemaUpgrade = false;
-    private volatile boolean _hasExternalSchemaUpgrade = false;
 
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
@@ -782,7 +781,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         _hasSchemaUpgrade = coreUpgraded || !modulesRequiringUpgrade.isEmpty();
-        _hasExternalSchemaUpgrade = !additionalSchemasRequiringUpgrade.isEmpty();
 
         if (!modulesRequiringUpgrade.isEmpty())
             _log.info("Modules requiring upgrade: {}", modulesRequiringUpgrade);
@@ -2083,12 +2081,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public boolean hasSchemaUpgrade()
     {
         return _hasSchemaUpgrade;
-    }
-
-    /** Did any schema in an external data source get installed or upgraded during this startup? */
-    public boolean hasExternalSchemaUpgrade()
-    {
-        return _hasExternalSchemaUpgrade;
     }
 
     private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)

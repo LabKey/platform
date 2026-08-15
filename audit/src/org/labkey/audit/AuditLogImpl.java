@@ -238,9 +238,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf, int maxRows)
     {
-        return LogManager.get().getAuditEvents(container, user, eventType, filter, sort, cf);
+        return LogManager.get().getAuditEvents(container, user, eventType, filter, sort, cf, maxRows);
     }
 
     @Override

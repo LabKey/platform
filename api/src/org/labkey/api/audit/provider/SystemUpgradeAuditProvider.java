@@ -16,6 +16,7 @@
 package org.labkey.api.audit.provider;
 
 import jakarta.servlet.ServletContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -64,7 +65,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
     public static final String COLUMN_NAME_PREVIOUS_BUILD_TIME = "PreviousBuildTime";
     public static final String COLUMN_NAME_CHANGE_TYPE = "ChangeType";
     public static final String COLUMN_NAME_HAS_SCHEMA_UPGRADE = "HasSchemaUpgrade";
-    public static final String COLUMN_NAME_HAS_EXTERNAL_SCHEMA_UPGRADE = "HasExternalSchemaUpgrade";
 
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
@@ -76,7 +76,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_RELEASE_VERSION));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_BUILD_TIME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_HAS_SCHEMA_UPGRADE));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_HAS_EXTERNAL_SCHEMA_UPGRADE));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -125,7 +124,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         Downgrade,
         /** Same release/snapshot version, different build */
         Rebuild,
-        /** Baseline for a server that predates this feature, or a version string we can't parse */
+        /** Baseline for a server that predates this feature, a version we can't parse, or a change with no knowable direction */
         Unknown
     }
 
@@ -142,34 +141,47 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         if (Objects.equals(prevVersion, newVersion) && Objects.equals(prevBuildTime, newBuildTime))
             return null;
 
-        Integer comparison = compareVersions(prevVersion, newVersion);
+        VersionNumber prev = parseVersion(prevVersion);
+        VersionNumber current = parseVersion(newVersion);
 
-        if (comparison == null)
+        if (null == prev || null == current)
             return ChangeType.Unknown;
-        if (comparison < 0)
-            return ChangeType.Upgrade;
-        if (comparison > 0)
-            return ChangeType.Downgrade;
 
-        return ChangeType.Rebuild;
+        int comparison = prev.compareTo(current);
+
+        if (0 == comparison)
+            return ChangeType.Rebuild;
+
+        // A releaseXX.Y-SNAPSHOT build keeps that version string for the entire patch line, so it can be either older
+        // or newer than a given XX.Y.Z release and the strings alone establish no direction.
+        if (prev.getMajor() == current.getMajor() && prev.getMinor() == current.getMinor()
+                && isSnapshot(prevVersion) != isSnapshot(newVersion))
+            return ChangeType.Unknown;
+
+        return comparison < 0 ? ChangeType.Upgrade : ChangeType.Downgrade;
     }
 
     /**
-     * @return the sign of prevVersion compared to newVersion, or null if either is missing or unparseable
+     * @return the parsed version, or null if it's missing or unparseable
      */
-    private static @Nullable Integer compareVersions(@Nullable String prevVersion, @Nullable String newVersion)
+    private static @Nullable VersionNumber parseVersion(@Nullable String version)
     {
-        if (prevVersion == null || newVersion == null)
+        if (null == version)
             return null;
 
         try
         {
-            return new VersionNumber(prevVersion).compareTo(new VersionNumber(newVersion));
+            return new VersionNumber(version);
         }
         catch (RuntimeException e)
         {
             return null;
         }
+    }
+
+    private static boolean isSnapshot(String version)
+    {
+        return StringUtils.containsIgnoreCase(version, "SNAPSHOT");
     }
 
     static String buildComment(ChangeType changeType, @Nullable String prevVersion, @Nullable String newVersion)
@@ -227,7 +239,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         User user = User.getAdminServiceUser();
         Container root = ContainerManager.getRoot();
 
-        List<SystemUpgradeAuditEvent> priorEvents = auditLog.getAuditEvents(root, user, AUDIT_EVENT_TYPE, null, new Sort("-Created,-RowId"));
+        List<SystemUpgradeAuditEvent> priorEvents = auditLog.getAuditEvents(root, user, AUDIT_EVENT_TYPE, null, new Sort("-Created,-RowId"), null, 1);
         SystemUpgradeAuditEvent prior = priorEvents.isEmpty() ? null : priorEvents.getFirst();
 
         String prevVersion = null != prior ? prior.getReleaseVersion() : null;
@@ -248,7 +260,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         event.setBuildTime(newBuildTime);
         event.setPreviousBuildTime(prevBuildTime);
         event.setHasSchemaUpgrade(moduleLoader.hasSchemaUpgrade());
-        event.setHasExternalSchemaUpgrade(moduleLoader.hasExternalSchemaUpgrade());
 
         auditLog.addEvent(user, event);
         LOG.info(event.getComment());
@@ -262,7 +273,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         private String _previousBuildTime;
         private String _changeType;
         private boolean _hasSchemaUpgrade;
-        private boolean _hasExternalSchemaUpgrade;
 
         /** Important for reflection-based instantiation */
         @SuppressWarnings("unused")
@@ -333,16 +343,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
             _hasSchemaUpgrade = hasSchemaUpgrade;
         }
 
-        public boolean isHasExternalSchemaUpgrade()
-        {
-            return _hasExternalSchemaUpgrade;
-        }
-
-        public void setHasExternalSchemaUpgrade(boolean hasExternalSchemaUpgrade)
-        {
-            _hasExternalSchemaUpgrade = hasExternalSchemaUpgrade;
-        }
-
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -354,7 +354,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
             elements.put("previousBuildTime", getPreviousBuildTime());
             elements.put("buildTime", getBuildTime());
             elements.put("hasSchemaUpgrade", isHasSchemaUpgrade());
-            elements.put("hasExternalSchemaUpgrade", isHasExternalSchemaUpgrade());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -378,7 +377,6 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
             fields.add(createPropertyDescriptor(COLUMN_NAME_PREVIOUS_BUILD_TIME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_CHANGE_TYPE, PropertyType.STRING));
             fields.add(createPropertyDescriptor(COLUMN_NAME_HAS_SCHEMA_UPGRADE, PropertyType.BOOLEAN));
-            fields.add(createPropertyDescriptor(COLUMN_NAME_HAS_EXTERNAL_SCHEMA_UPGRADE, PropertyType.BOOLEAN));
             _fields = Collections.unmodifiableSet(fields);
         }
 
@@ -426,7 +424,10 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
             assertEquals(ChangeType.Upgrade, determineChangeType("26.7.1", BUILD_1, "26.9.0", BUILD_2, false));
             assertEquals(ChangeType.Upgrade, determineChangeType("26.9.0", BUILD_1, "26.9.1", BUILD_2, false));
             assertEquals(ChangeType.Upgrade, determineChangeType("25.11.0", BUILD_1, "26.3.0", BUILD_2, false));
-            assertEquals(ChangeType.Upgrade, determineChangeType("26.9-SNAPSHOT", BUILD_1, "26.9.0", BUILD_2, false));
+
+            // Crossing a release number is unambiguous even when one side is a snapshot
+            assertEquals(ChangeType.Upgrade, determineChangeType("26.7.1", BUILD_1, "26.9-SNAPSHOT", BUILD_2, false));
+            assertEquals(ChangeType.Upgrade, determineChangeType("26.7-SNAPSHOT", BUILD_1, "26.9-SNAPSHOT", BUILD_2, false));
         }
 
         @Test
@@ -434,7 +435,16 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         {
             assertEquals(ChangeType.Downgrade, determineChangeType("26.9.0", BUILD_1, "26.7.1", BUILD_2, false));
             assertEquals(ChangeType.Downgrade, determineChangeType("26.9.1", BUILD_1, "26.9.0", BUILD_2, false));
-            assertEquals(ChangeType.Downgrade, determineChangeType("26.9.0", BUILD_1, "26.9-SNAPSHOT", BUILD_2, false));
+            assertEquals(ChangeType.Downgrade, determineChangeType("26.9-SNAPSHOT", BUILD_1, "26.7.1", BUILD_2, false));
+        }
+
+        /** release26.9-SNAPSHOT keeps that version string for the whole patch line, so it may precede or follow 26.9.0 */
+        @Test
+        public void testSnapshotWithinRelease()
+        {
+            assertEquals(ChangeType.Unknown, determineChangeType("26.9-SNAPSHOT", BUILD_1, "26.9.0", BUILD_2, false));
+            assertEquals(ChangeType.Unknown, determineChangeType("26.9.0", BUILD_1, "26.9-SNAPSHOT", BUILD_2, false));
+            assertEquals(ChangeType.Unknown, determineChangeType("26.9-SNAPSHOT", BUILD_1, "26.9.4", BUILD_2, false));
         }
 
         /** Regression guard for VersionNumber.getVersionInt(), which maps both 26.11 and 26.1 to 261 */

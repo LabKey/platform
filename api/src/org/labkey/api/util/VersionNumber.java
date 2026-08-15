@@ -156,7 +156,7 @@ public class VersionNumber implements Serializable, Comparable<VersionNumber>
     /**
      * Orders by major, then minor, then revision, so unlike {@link #getVersionInt()} this is safe for minor versions
      * above 9. A missing revision sorts first, which puts "26.9-SNAPSHOT" (parsed as 26.9 with no revision) ahead of
-     * the released "26.9.0".
+     * the released "26.9.0"; a non-numeric revision sorts last.
      * <p>
      * Not consistent with equals(), which this class does not override.
      */
@@ -182,10 +182,13 @@ public class VersionNumber implements Serializable, Comparable<VersionNumber>
             return -1;
         if (null == revision2)
             return 1;
-        if (revision1 instanceof Integer int1 && revision2 instanceof Integer int2)
-            return Integer.compare(int1, int2);
+        // Non-numeric revisions, e.g. PostgreSQL's "4beta1", all sort after the numeric ones. Comparing them lexically
+        // against numbers instead would be intransitive: 2 > "1x" > 10 > 2.
+        if (revision1 instanceof Integer int1)
+            return revision2 instanceof Integer int2 ? Integer.compare(int1, int2) : -1;
+        if (revision2 instanceof Integer)
+            return 1;
 
-        // Mixed or non-numeric revisions, e.g. PostgreSQL's "4beta1"
         return revision1.toString().compareTo(revision2.toString());
     }
 
@@ -211,6 +214,16 @@ public class VersionNumber implements Serializable, Comparable<VersionNumber>
             assertBefore("26.1.0", "26.11.0");
             assertEquals(261, new VersionNumber("26.1").getVersionInt());
             assertEquals(261, new VersionNumber("26.11").getVersionInt());
+        }
+
+        /** Lexical comparison against numeric revisions would be intransitive, so non-numeric revisions sort last */
+        @Test
+        public void testNonNumericRevision()
+        {
+            assertBefore("8.4.2", "8.4.4beta1");
+            assertBefore("8.4.10", "8.4.1x");
+            assertBefore("8.4.4beta1", "8.4.4rc1");
+            assertEquals(0, new VersionNumber("8.4.4beta1").compareTo(new VersionNumber("8.4.4beta1")));
         }
 
         /** getVersionInt() used to divide the minor version in place, which would corrupt later comparisons */
