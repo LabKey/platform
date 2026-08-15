@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.formSchema.CheckboxField;
@@ -94,6 +95,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,6 +112,8 @@ public class PipelineJobServiceImpl implements PipelineJobService
     public static final String MODULE_PIPELINE_DIR = "pipeline";
 
     public static final Logger LOG = LogManager.getLogger(PipelineJobServiceImpl.class);
+    /** How long to let a cancelled job wind down its queries before terminating its database sessions outright */
+    private static final Duration CANCEL_GRACE_PERIOD = Duration.ofSeconds(2);
     private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
     private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
     private static final String MODULE_TASKS_DIR = "tasks";
@@ -287,42 +291,50 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         killProcessesForThread(jobThread);
 
-        if (PipelineSchema.getInstance().getSqlDialect().isPostgreSQL())
-        {
-            // Issue 50131
-            // Closing a Connection doesn't terminate all pending statements on SQL Server. Calling close
-            // and returning to the pool results in another thread getting a Connection that's still busy and
-            // blocks it.
+        // Issue 50131: the job thread may be blocked in a query that never returns, so we can't wait for it to notice
+        // the cancellation. Ask the database to abort its queries instead, which makes its JDBC calls throw so it
+        // unwinds and releases its own connections on its own thread. Closing them from this thread hands a connection
+        // that's still in use back to the pool, where another request picks it up mid-transaction.
+        Map<DbScope, Set<Integer>> spidsByScope = ConnectionWrapper.getSPIDsByScopeForThread(jobThread);
 
-            // If we need to support query cancellation on SQL Server, we'd have to start tracking the Statements
-            // the Connection hands out and kill them individually.
-
-            // Piggyback on the job thread so we can shut down open connections on its behalf
-            try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(jobThread, Thread.currentThread()))
+        spidsByScope.forEach((scope, spids) -> {
+            if (!scope.getSqlDialect().cancelQueries(scope, spids, false))
             {
-                DbScope.DifferentConnectionException lastException;
-                int retry = 0;
-                do
-                {
-                    try
-                    {
-                        DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-                        lastException = null;
-                    }
-                    catch (DbScope.DifferentConnectionException e)
-                    {
-                        // The connection we tried to close has already been closed and the thread has already
-                        // started using a different connection. Try again
-                        lastException = e;
-                        retry++;
-                    }
-                }
-                while (lastException != null && retry < 3);
+                LOG.warn("{} can't cancel queries out of band; job {} may run until its current query returns", scope.getSqlDialect(), jobGuid);
+            }
+        });
 
-                if (lastException != null)
-                {
-                    throw lastException;
-                }
+        // Escalate for anything that ignored the cancel, such as a task that swallows the exception and retries
+        waitForSPIDsToClear(jobThread, spidsByScope).forEach((scope, spids) -> {
+            LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), spids);
+            scope.getSqlDialect().cancelQueries(scope, spids, true);
+        });
+    }
+
+    /** @return the subset of the original SPIDs that the thread still holds after the grace period, grouped by scope */
+    private Map<DbScope, Set<Integer>> waitForSPIDsToClear(Thread jobThread, Map<DbScope, Set<Integer>> original)
+    {
+        long deadline = System.currentTimeMillis() + CANCEL_GRACE_PERIOD.toMillis();
+
+        while (true)
+        {
+            Map<DbScope, Set<Integer>> current = ConnectionWrapper.getSPIDsByScopeForThread(jobThread);
+            current.forEach((scope, spids) -> spids.retainAll(original.getOrDefault(scope, Set.of())));
+            current.values().removeIf(Set::isEmpty);
+
+            if (current.isEmpty() || System.currentTimeMillis() >= deadline)
+            {
+                return current;
+            }
+
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+                return current;
             }
         }
     }

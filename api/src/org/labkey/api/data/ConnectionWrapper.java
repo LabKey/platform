@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -347,6 +348,27 @@ public class ConnectionWrapper implements java.sql.Connection
                 if (c._allocatingThread == t)
                 {
                     result.add(c._spid);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * SPIDs are only meaningful to the scope that handed them out, so group them for callers that need to issue
+     * commands against the right database.
+     */
+    public static Map<DbScope, Set<Integer>> getSPIDsByScopeForThread(Thread t)
+    {
+        Map<DbScope, Set<Integer>> result = new HashMap<>();
+        synchronized(_openConnections)
+        {
+            for (ConnectionWrapper c : _openConnections)
+            {
+                // A null or negative SPID means the dialect couldn't determine one, so there's nothing to cancel
+                if (c._allocatingThread == t && c._spid != null && c._spid >= 0)
+                {
+                    result.computeIfAbsent(c._scope, k -> new HashSet<>()).add(c._spid);
                 }
             }
         }

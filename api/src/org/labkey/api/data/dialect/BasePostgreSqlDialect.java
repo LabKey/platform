@@ -37,6 +37,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -58,6 +59,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -136,6 +138,37 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment getDatabaseSizeSql(String databaseName)
     {
         return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
+    @Override
+    public boolean cancelQueries(DbScope scope, Collection<Integer> spids, boolean terminate)
+    {
+        // Postgres delivers these on a side channel, so they land even when the target backend is mid-query. Run them
+        // on our own connection; the target's belongs to the thread we're interrupting.
+        String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            SqlExecutor executor = new SqlExecutor(scope, conn);
+            for (Integer spid : spids)
+            {
+                try
+                {
+                    executor.execute(new SQLFragment("SELECT " + function + "(?)", spid));
+                }
+                catch (RuntimeSQLException e)
+                {
+                    // The backend may have exited between the SPID lookup and this call
+                    LOG.debug("{}({}) failed", function, spid, e);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return true;
     }
 
     @Override
