@@ -51,8 +51,9 @@ LABKEY.vis.makeLine = function(x1, y1, x2, y2){
     return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
 };
 
-LABKEY.vis.makePath = function(data, xAccessor, yAccessor){
-    var pathString = '';
+// breakX (optional): x pixel of an axis break; the path starts a new subpath rather than drawing across it
+LABKEY.vis.makePath = function(data, xAccessor, yAccessor, breakX){
+    var pathString = '', prevX = null;
 
     for(var i = 0; i < data.length; i++){
         var x = xAccessor(data[i]);
@@ -60,12 +61,15 @@ LABKEY.vis.makePath = function(data, xAccessor, yAccessor){
         if(!LABKEY.vis.isValid(x) || !LABKEY.vis.isValid(y)){
             continue;
         }
-        
+
         if(pathString == ''){
             pathString = pathString + 'M' + x + ' ' + y;
+        } else if(breakX != null && prevX < breakX && x > breakX){
+            pathString = pathString + ' M' + x + ' ' + y;
         } else {
             pathString = pathString + ' L' + x + ' ' + y;
         }
+        prevX = x;
     }
     return pathString;
 };
