@@ -106,6 +106,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 public class PipelineJobServiceImpl implements PipelineJobService
 {
@@ -295,31 +296,41 @@ public class PipelineJobServiceImpl implements PipelineJobService
         // the cancellation. Ask the database to abort its queries instead, which makes its JDBC calls throw so it
         // unwinds and releases its own connections on its own thread. Closing them from this thread hands a connection
         // that's still in use back to the pool, where another request picks it up mid-transaction.
-        Map<DbScope, Set<Integer>> spidsByScope = ConnectionWrapper.getSPIDsByScopeForThread(jobThread);
+        Map<DbScope, Set<ConnectionWrapper>> connectionsByScope = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
 
-        spidsByScope.forEach((scope, spids) -> {
-            if (!scope.getSqlDialect().cancelQueries(scope, spids, false))
+        connectionsByScope.forEach((scope, connections) -> {
+            if (!scope.getSqlDialect().cancelQueries(scope, getSPIDs(connections), false))
             {
                 LOG.warn("{} can't cancel queries out of band; job {} may run until its current query returns", scope.getSqlDialect(), jobGuid);
             }
         });
 
         // Escalate for anything that ignored the cancel, such as a task that swallows the exception and retries
-        waitForSPIDsToClear(jobThread, spidsByScope).forEach((scope, spids) -> {
+        waitForConnectionsToClose(jobThread, connectionsByScope).forEach((scope, connections) -> {
+            Set<Integer> spids = getSPIDs(connections);
             LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), spids);
             scope.getSqlDialect().cancelQueries(scope, spids, true);
         });
     }
 
-    /** @return the subset of the original SPIDs that the thread still holds after the grace period, grouped by scope */
-    private Map<DbScope, Set<Integer>> waitForSPIDsToClear(Thread jobThread, Map<DbScope, Set<Integer>> original)
+    private static Set<Integer> getSPIDs(Collection<ConnectionWrapper> connections)
+    {
+        return connections.stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet());
+    }
+
+    /**
+     * Tracks wrappers rather than SPIDs so a thread that caught the cancel and borrowed a fresh connection doesn't look
+     * like one that never let go; the pool hands the same physical connection, and its SPID, straight back out.
+     * @return the subset of the original connections the thread still holds after the grace period, grouped by scope
+     */
+    private Map<DbScope, Set<ConnectionWrapper>> waitForConnectionsToClose(Thread jobThread, Map<DbScope, Set<ConnectionWrapper>> original)
     {
         long deadline = System.currentTimeMillis() + CANCEL_GRACE_PERIOD.toMillis();
 
         while (true)
         {
-            Map<DbScope, Set<Integer>> current = ConnectionWrapper.getSPIDsByScopeForThread(jobThread);
-            current.forEach((scope, spids) -> spids.retainAll(original.getOrDefault(scope, Set.of())));
+            Map<DbScope, Set<ConnectionWrapper>> current = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
+            current.forEach((scope, connections) -> connections.retainAll(original.getOrDefault(scope, Set.of())));
             current.values().removeIf(Set::isEmpty);
 
             if (current.isEmpty() || System.currentTimeMillis() >= deadline)

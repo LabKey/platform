@@ -30,6 +30,7 @@ import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -149,7 +150,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         try (Connection conn = scope.getPooledConnection())
         {
-            SqlExecutor executor = new SqlExecutor(scope, conn);
+            // Spring's translator would hand back a DataAccessException, which the per-SPID catch below can't narrow on
+            SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
             for (Integer spid : spids)
             {
                 try

@@ -355,12 +355,13 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     /**
-     * SPIDs are only meaningful to the scope that handed them out, so group them for callers that need to issue
-     * commands against the right database.
+     * Connections whose SPID the dialect could determine, grouped by scope because a SPID is only meaningful to the
+     * scope that handed it out. Compare these wrappers, not their SPIDs, to tell whether a connection is still in use:
+     * the pool re-hands the same physical connection back out under its cached SPID.
      */
-    public static Map<DbScope, Set<Integer>> getSPIDsByScopeForThread(Thread t)
+    public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForThread(Thread t)
     {
-        Map<DbScope, Set<Integer>> result = new HashMap<>();
+        Map<DbScope, Set<ConnectionWrapper>> result = new HashMap<>();
         synchronized(_openConnections)
         {
             for (ConnectionWrapper c : _openConnections)
@@ -368,7 +369,7 @@ public class ConnectionWrapper implements java.sql.Connection
                 // A null or negative SPID means the dialect couldn't determine one, so there's nothing to cancel
                 if (c._allocatingThread == t && c._spid != null && c._spid >= 0)
                 {
-                    result.computeIfAbsent(c._scope, k -> new HashSet<>()).add(c._spid);
+                    result.computeIfAbsent(c._scope, k -> new HashSet<>()).add(c);
                 }
             }
         }
