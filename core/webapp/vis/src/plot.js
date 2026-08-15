@@ -1697,6 +1697,9 @@ boxPlot.render();
         TrailingCV: 'TrailingCV'
     };
 
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const DAYS_PER_MONTH = 30.4; // average, only used to convert a minimum label gap into whole months
+
     // Whole-day number (days since epoch) for a date string, or null if unparseable. Shared so overlay
     // code positions calendar-mode points using the same day offsets as this plot.
     LABKEY.vis.dateToDayNumber = function(dateStr) {
@@ -1704,7 +1707,7 @@ boxPlot.render();
             return null;
         }
         const d = new Date(dateStr);
-        return isNaN(d.getTime()) ? null : Math.round(d.getTime() / 86400000);
+        return isNaN(d.getTime()) ? null : Math.round(d.getTime() / MS_PER_DAY);
     };
 
     // Width (px) of one calendar-axis day slot: the per-date slot width, capped by the closest actual day
@@ -1719,7 +1722,7 @@ boxPlot.render();
 
     // Format a day number (days since epoch, UTC) back to a YYYY-MM-DD label for calendar-axis ticks.
     LABKEY.vis.dayNumberToDateLabel = function(dayNumber) {
-        const d = new Date(dayNumber * 86400000);
+        const d = new Date(dayNumber * MS_PER_DAY);
         const pad = function(n) { return n < 10 ? '0' + n : '' + n; };
         return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
     };
@@ -1743,12 +1746,12 @@ boxPlot.render();
         }
 
         // Larger spans: tick on the 1st of the month, stepping whole months so the count fits.
-        const minDate = new Date(minDayNumber * 86400000);
-        const maxDate = new Date((minDayNumber + maxDayOffset) * 86400000);
+        const minDate = new Date(minDayNumber * MS_PER_DAY);
+        const maxDate = new Date((minDayNumber + maxDayOffset) * MS_PER_DAY);
         const totalMonths = (maxDate.getUTCFullYear() - minDate.getUTCFullYear()) * 12
                 + (maxDate.getUTCMonth() - minDate.getUTCMonth());
         const monthLadder = [1, 2, 3, 6, 12, 24, 60, 120];
-        const minGapMonths = minGap > 0 ? minGap / 30.4 : 0; // ~days per month
+        const minGapMonths = minGap > 0 ? minGap / DAYS_PER_MONTH : 0;
         let stepMonths = monthLadder[monthLadder.length - 1];
         for (let i = 0; i < monthLadder.length; i++) {
             if (monthLadder[i] >= minGapMonths && Math.floor(totalMonths / monthLadder[i]) + 1 <= limit) {
@@ -1763,7 +1766,7 @@ boxPlot.render();
             if (month > 11) { month = 0; year++; }
         }
         while (true) {
-            const off = Math.round(Date.UTC(year, month, 1) / 86400000) - minDayNumber;
+            const off = Math.round(Date.UTC(year, month, 1) / MS_PER_DAY) - minDayNumber;
             if (off > maxDayOffset) {
                 break;
             }
