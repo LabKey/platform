@@ -607,7 +607,19 @@ public class DbScope
                 _databaseName = (null != _dialect ? _dialect.getDatabaseName(getDataSourceProperties()) : null);
 
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
-                LOG.info("Initializing DbScope with the following configuration:\n    DataSource Name:          {}\n    Server URL:               {}\n    Database Name:            {}\n    Database Product Name:    {}\n    Database Product Version: {}\n    JDBC Driver Name:         {}\n    JDBC Driver Version:      {}{}{}{}", getDbScopeLoader().getDsName(), dbmd.getURL(), _databaseName, _databaseProductName, null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion, _driverName, _driverVersion, null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "", null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "", null != additionalLogging ? additionalLogging : "");
+                LOG.info(
+                        "Initializing DbScope with the following configuration:" +
+                                "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
+                                "\n    Server URL:               " + filterUrl(dbmd.getURL()) +
+                                "\n    Database Name:            " + _databaseName +
+                                "\n    Database Product Name:    " + _databaseProductName +
+                                "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
+                                "\n    JDBC Driver Name:         " + _driverName +
+                                "\n    JDBC Driver Version:      " + _driverVersion +
+                                (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
+                                (null != maxTotal ? "\n    Connection Pool Size:     " + maxTotal : "") +
+                                (null != additionalLogging ? additionalLogging : "")
+                );
             }
 
             _driverLocation = determineDriverLocation(dataSource.getDriverClass());
@@ -620,6 +632,19 @@ public class DbScope
             // Issue 50488: Pre-register this data source's SQL error codes in Spring to prevent deadlocks
             SQLErrorCodesFactory.getInstance().registerDatabase(dataSource.getDataSource(), _databaseProductName);
         }
+    }
+
+    // MariaDB driver adds username and password to the URL. This masks the password so we don't log it.
+    private String filterUrl(String url)
+    {
+        int start = url.indexOf("password=");
+        if (start != -1)
+        {
+            start = start + 9;
+            int end = Math.max(url.length(), url.indexOf('&', start));
+            url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
+        }
+        return url;
     }
 
     private String determineDriverLocation(Class<Driver> driverClass)
