@@ -131,6 +131,14 @@ public interface AppProps
     String getReleaseVersion();
 
     /**
+     * Returns the core module's build time. Null if the module was built without one, which is why this has no
+     * "unknown" sentinel like {@link #getReleaseVersion()}: callers compare build times across restarts, and a sentinel
+     * would compare equal to a genuinely unknown build.
+     */
+    @Nullable
+    String getBuildTime();
+
+    /**
      * Convenience method for getting the core schema version, returning 0.0 instead of null
      */
     double getSchemaVersion();

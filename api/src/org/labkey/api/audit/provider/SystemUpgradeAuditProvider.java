@@ -245,7 +245,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         String prevVersion = null != prior ? prior.getReleaseVersion() : null;
         String prevBuildTime = null != prior ? prior.getBuildTime() : null;
         String newVersion = AppProps.getInstance().getReleaseVersion();
-        String newBuildTime = moduleLoader.getCoreModule().getBuildTime();
+        String newBuildTime = AppProps.getInstance().getBuildTime();
 
         ChangeType changeType = determineChangeType(prevVersion, prevBuildTime, newVersion, newBuildTime, moduleLoader.isNewInstall());
 
