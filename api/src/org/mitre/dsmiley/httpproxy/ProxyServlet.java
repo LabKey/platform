@@ -489,9 +489,6 @@ public class ProxyServlet extends HttpServlet {
         // control the Accept-Encoding header, not the client
         if (doHandleCompression && headerName.equals(HttpHeaders.ACCEPT_ENCODING))
             return;
-        // In Apache HttpClient <5.6.4, these headers were automatically removed. Now we need to remove them manually.
-        if (doHandleCompression && (headerName.equals(HttpHeaders.CONTENT_ENCODING) || headerName.equals(HttpHeaders.CONTENT_MD5)))
-            return;
 
         @SuppressWarnings("unchecked")
         Enumeration<String> headers = servletRequest.getHeaders(headerName);
@@ -552,6 +549,13 @@ public class ProxyServlet extends HttpServlet {
                                       HttpServletResponse servletResponse, Header header) {
         String headerName = header.getName();
         if (hopByHopHeaders.containsHeader(headerName))
+            return;
+        // In Apache HttpClient <5.6.4, these headers were automatically removed after the client transparently
+        // decompressed the entity. Now we need to remove them manually, or the stale values reach the browser
+        // alongside the already-decompressed body.
+        if (doHandleCompression && (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_ENCODING) ||
+                headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) ||
+                headerName.equalsIgnoreCase(HttpHeaders.CONTENT_MD5)))
             return;
         String headerValue = header.getValue();
         if (headerName.equalsIgnoreCase(SM.SET_COOKIE) ||
