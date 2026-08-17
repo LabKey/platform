@@ -773,7 +773,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private boolean colorsEnabled(Container c)
     {
-        if (_ss != null)
+        if (_ss != null && !_ss.isMedia())
             return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
         return !DataColorManager.getInstance().getActiveProjectColors(c).isEmpty();
     }
