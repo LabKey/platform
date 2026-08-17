@@ -187,7 +187,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
     static String buildComment(ChangeType changeType, @Nullable String prevVersion, @Nullable String newVersion)
     {
         if (ChangeType.Install == changeType)
-            return "Server installed at version " + newVersion;
+            return "Server bootstrapped at version " + newVersion;
         if (ChangeType.Rebuild == changeType)
             return "Server rebuilt at version " + newVersion;
         if (null == prevVersion)
