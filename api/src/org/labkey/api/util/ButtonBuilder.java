@@ -233,7 +233,7 @@ public class ButtonBuilder extends DisplayElementBuilder<ButtonBuilder.Button, B
 
             if (isSubmit())
             {
-                // Grab the id of a form element vial the data.submitid attribute on the button.  This is used to navigate to the form.
+                // Grab the id of a form element via the data.submitid attribute on the button.  This is used to navigate to the form.
                 // This attribute is set in getHtmlString() using .data() in the attributes builder.
                 final String submitCode = "submitForm(document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form);";
 
