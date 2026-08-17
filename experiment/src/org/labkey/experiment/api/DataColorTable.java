@@ -73,10 +73,8 @@ public class DataColorTable extends FilteredTable<ExpSchema>
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
-            if ("Container".equalsIgnoreCase(name))
-                continue;
             var col = addWrapColumn(baseColumn);
-            if ("RowId".equalsIgnoreCase(name))
+            if ("RowId".equalsIgnoreCase(baseColumn.getName()) || "Container".equalsIgnoreCase(name))
                 col.setHidden(true);
         }
     }
