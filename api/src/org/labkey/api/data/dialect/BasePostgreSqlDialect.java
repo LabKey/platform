@@ -145,8 +145,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
-        // Postgres delivers these on a side channel, so they land even when the target backend is mid-query. Run them
-        // on our own connection; the target's belongs to the thread we're interrupting.
+        // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
         String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
 
         try (Connection conn = scope.getPooledConnection())

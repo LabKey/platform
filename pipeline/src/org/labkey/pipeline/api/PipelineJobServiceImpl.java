@@ -292,10 +292,9 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
         killProcessesForThread(jobThread);
 
-        // Issue 50131: the job thread may be blocked in a query that never returns, so we can't wait for it to notice
+        // Issue 50131: the job thread may be blocked in a slow query, so we can't wait for it to notice
         // the cancellation. Ask the database to abort its queries instead, which makes its JDBC calls throw so it
-        // unwinds and releases its own connections on its own thread. Closing them from this thread hands a connection
-        // that's still in use back to the pool, where another request picks it up mid-transaction.
+        // unwinds and releases its own connections on its own thread.
         Map<DbScope, Set<ConnectionWrapper>> connectionsByScope = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
 
         connectionsByScope.forEach((scope, connections) -> cancelQueries(scope, connections, false, jobGuid));

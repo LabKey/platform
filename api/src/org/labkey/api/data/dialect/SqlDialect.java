@@ -1510,10 +1510,8 @@ public abstract class SqlDialect
 
     /**
      * Stop work in progress on the sessions behind the given connections, which typically belong to a thread that's
-     * blocked in JDBC and can't respond to a request to stop. Cancelling makes that thread's call throw so it unwinds
+     * blocked in JDBC and can't respond to a request to stop. Cancelling throws an exception so the thread unwinds
      * and releases its own connection; terminating kills the session outright, leaving its pooled connection dead.
-     * Implementations must re-check {@link ConnectionWrapper#isAllocated()} immediately before signalling each one:
-     * once the thread lets go, the pool can hand the same physical connection, under the same SPID, to someone else.
      * @return false if this dialect can't stop queries out of band
      */
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
