@@ -1,13 +1,13 @@
 package org.mitre.dsmiley.httpproxy;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.PageFlowUtil;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import java.net.HttpCookie;
 import java.util.Objects;
 
@@ -25,7 +25,6 @@ public class LabKeyProxyServlet extends ProxyServlet
 
     protected String sourcePath;
     private boolean flexRedirectProtocol;
-    private boolean _allowProtocolUpgrade;
 
     @Override
     protected void initTarget() throws ServletException
@@ -40,9 +39,6 @@ public class LabKeyProxyServlet extends ProxyServlet
             this.flexRedirectProtocol = Boolean.parseBoolean(flexRedirectProtocolString);
         }
 
-        // httpclient5 v5.4 protocolUpgradeEnabled default to true
-        // https://github.com/apache/httpcomponents-client/commit/3235f00
-        this._allowProtocolUpgrade = readBooleanConfigParam(ALLOW_PROTOCOL_UPGRADE_PARAM_NAME, true);
     }
 
     protected String getSourcePath(HttpServletRequest request)
@@ -76,12 +72,6 @@ public class LabKeyProxyServlet extends ProxyServlet
                 return requestURI.substring(sourcePath.length() - (sourcePath.endsWith("/")?1:0));
         }
         return request.getPathInfo();
-    }
-
-    @Override
-    protected boolean skipXForwardedProto()
-    {
-        return true;
     }
 
     @Override
@@ -168,12 +158,6 @@ public class LabKeyProxyServlet extends ProxyServlet
 
         }
         return theUrl;
-    }
-
-    @Override
-    protected boolean allowProtocolUpgrade()
-    {
-        return _allowProtocolUpgrade;
     }
 
 }
