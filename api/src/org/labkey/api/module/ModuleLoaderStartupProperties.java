@@ -60,7 +60,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Distribution name to show in the admin console, include in the export diagnostics zip file, and " +
+            return "Distribution name to show in the Admin Console, include in the export diagnostics zip file, and " +
                 "report to mothership. This name overrides the value provided in the distribution.properties file " +
                 "that's bundled with the distribution. Note: Respected only when the \"startup\" modifier is specified.";
         }
