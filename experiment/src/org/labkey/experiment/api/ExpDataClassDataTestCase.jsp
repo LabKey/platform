@@ -329,7 +329,7 @@ private void testTruncateRows(ExpDataClassImpl dataClass, TableInfo table, Strin
     {
         // TODO: truncate rows API doesn't support truncating from all containers
         //count = table.getUpdateService().truncateRows(user, c, null, null);
-        count = ExperimentServiceImpl.get().truncateDataClass(dataClass, _user, null);
+        count = ExperimentServiceImpl.get().truncateDataClass(dataClass, _user, null, null);
         tx.commit();
     }
 

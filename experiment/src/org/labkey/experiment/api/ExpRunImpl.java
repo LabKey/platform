@@ -548,7 +548,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         deleteProtocolApplicationProvenance();
 
-        svc.beforeDeleteData(user, getContainer(), datasToDelete);
+        svc.beforeDeleteData(user, getContainer(), datasToDelete, null);
 
         deleteInputObjects(svc, dialect);
 

@@ -165,6 +165,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.DuplicateKeyException;
@@ -3589,6 +3590,11 @@ public class ExperimentController extends SpringActionController
             {
                 try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
                 {
+                    if (tx.getAuditEvent() == null)
+                    {
+                        TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(getContainer(), QueryService.AuditAction.DELETE, getTransactionAuditDetails());
+                        AbstractQueryUpdateService.addTransactionAuditEvent(tx, getUser(), auditEvent);
+                    }
                     tx.addCommitTask(deleteForm::clearSelected, POSTCOMMIT);
 
                     deleteObjects(deleteForm);

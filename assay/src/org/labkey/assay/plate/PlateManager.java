@@ -5125,7 +5125,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
+    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user, @Nullable String auditUserComment)
     {
         if (materials == null || materials.isEmpty())
             return;
