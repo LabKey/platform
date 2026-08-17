@@ -6570,10 +6570,16 @@ public class AdminController extends SpringActionController
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
     {
-        // test permissions. only site admins are able to turn on a custom file root for a folder
-        // this is only relevant if the folder is either being switched to a custom file root,
-        // or if the file root is changed.
-        if (!service.isUseDefaultRoot(ctx.getContainer()))
+        // Only site admins (AdminOperationsPermission) are able to switch a folder to a custom file root, or
+        // change an existing custom root's path -- doing so lets a folder admin point file storage anywhere the
+        // server process can read/write. Resubmitting the folder's own current custom root unchanged is a no-op
+        // and does not require the elevated permission.
+        boolean hasAdminOpsPermission = ctx.getUser().hasRootPermission(AdminOperationsPermission.class);
+        boolean isUseDefaultRoot = service.isUseDefaultRoot(ctx.getContainer());
+        String requestedRoot;
+        String currentRoot;
+
+        if (form.isCloudFileRoot())
         {
             requestedRoot = form.getCloudRootName();
             currentRoot = (!isUseDefaultRoot && service.isCloudRoot(ctx.getContainer())) ? service.getCloudRootName(ctx.getContainer()) : null;
