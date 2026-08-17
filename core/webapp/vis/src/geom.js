@@ -348,6 +348,9 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
     this.topOnly = config.topOnly ?? false;
     this.errorShowVertical = config.showVertical ?? false;
+    // when true, each segment spans to its neighbors' midpoints so the line reads as one dashed line
+    // across no-data gaps (calendar axis) instead of disjoint per-point dashes
+    this.connectAdjacent = config.connectAdjacent ?? false;
 
     return this;
 };
