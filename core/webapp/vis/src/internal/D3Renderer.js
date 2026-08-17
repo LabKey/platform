@@ -13,7 +13,7 @@ LABKEY.vis.internal.Axis = function() {
     // different colored tick & gridlines, etc.
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, tickMouseOver, tickMouseOut,
         tickRectCls, tickRectHeightOffset = 12, tickRectWidthOffset = 8, tickClick, axisSel, tickSel, textSel, gridLineSel,
-        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax,
+        borderSel, grid, scalesList = [], gridLinesVisible = 'both', tickDigits, tickValues, tickMax, tickLabelMax, forceTicks,
         tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000',
         tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation, gridLineWidth = 1, borderWidth = 1,
         fontFamily = 'Roboto, arial, helvetica, sans-serif', fontSize = 11, adjustedStarts, adjustedEnds, xLogGutterBorder = 0, yLogGutterBorder = 0,
@@ -38,6 +38,21 @@ LABKEY.vis.internal.Axis = function() {
             var nth = Math.max(Math.floor( data.length / tickMax), 1);
             for (var i = 0; i < data.length; i=i+nth) {
                 nthDataArr.push(data[i]);
+            }
+            // keep the final (end-of-range) tick even when the stride misses it
+            if (nthDataArr[nthDataArr.length - 1] !== data[data.length - 1]) {
+                nthDataArr[nthDataArr.length - 1] = data[data.length - 1];
+            }
+            // merge back any must-keep ticks (range / guide-set-separator markers) the stride skipped; rather than
+            // drop the data ticks they crowd, the axis steepens its label rotation below so everything condenses
+            // together without overlapping
+            if (forceTicks && forceTicks.length) {
+                for (var fi = 0; fi < forceTicks.length; fi++) {
+                    if (nthDataArr.indexOf(forceTicks[fi]) === -1) {
+                        nthDataArr.push(forceTicks[fi]);
+                    }
+                }
+                nthDataArr.sort(function(a, b) { return a - b; });
             }
             data = nthDataArr;
         }
@@ -464,6 +479,20 @@ LABKEY.vis.internal.Axis = function() {
             // if we have a large number of ticks, rotate the text by the specified amount, else wrap text
             if (hasTickAction || tickOverlapRotation !== undefined || textEls[0].length > 10) {
                 if (!tickOverlapRotation) tickOverlapRotation = 35;
+                // Steepen the angle enough that the closest pair of labels clears each other: two labels spaced s px
+                // apart don't overlap once s*sin(theta) >= label height. Lets a dense axis (e.g. a forced range tick
+                // right beside the first data date) condense the labels together instead of overlapping or dropping
+                // any. Only steepens when needed; sparse axes keep the shallow default.
+                var minTickGap = Infinity, labelHeight = 12;
+                for (var gi = 0; gi < data.length - 1; gi++) {
+                    var tickGap = Math.abs(scale(data[gi + 1]) - scale(data[gi]));
+                    if (tickGap > 0 && tickGap < minTickGap) { minTickGap = tickGap; }
+                }
+                if (textEls[0].length > 0) { labelHeight = textEls[0][0].getBBox().height || 12; }
+                if (isFinite(minTickGap) && minTickGap > 0) {
+                    var neededAngle = Math.ceil(Math.asin(Math.min((labelHeight * 1.2) / minTickGap, 1)) * 180 / Math.PI);
+                    tickOverlapRotation = Math.max(tickOverlapRotation, Math.min(neededAngle, 82));
+                }
                 const rotate = (v) => `rotate(${tickOverlapRotation}, ${textXFn(v)}, ${textYFn(v)})`;
 
                 textEls.attr('transform', rotate).attr('text-anchor', 'start');
@@ -542,6 +571,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickDigits = function(h) {tickDigits = h; return axis;};
     axis.tickValues = function(h) {tickValues = h; return axis;};
     axis.tickMax = function(h) {tickMax = h; return axis;};
+    axis.forceTicks = function(h) {forceTicks = h; return axis;};
     axis.tickLabelMax = function(h) {tickLabelMax = h; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
     axis.tickCls = function(c) {tickCls = c; return axis;};
@@ -883,6 +913,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales[name].tickMax) {
                 indAxis.tickMax(plot.scales[name].tickMax);
+            }
+
+            if (plot.scales[name].forceTicks) {
+                indAxis.forceTicks(plot.scales[name].forceTicks);
             }
 
             if (plot.scales[name].tickLabelMax) {
@@ -2021,8 +2055,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // For sequential jitters, keep track of the current count for a given x value
         var jitters = {};
 
-        if (geom.xScale.scaleType === scaleType.discrete && (geom.position === position.jitter || geom.position === position.sequential)) {
-            xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        const jitterPosition = geom.position === position.jitter || geom.position === position.sequential;
+        // Only the opt-in time-based continuous axis (calendar mode) gets day-jittered; other
+        // continuous-x callers (e.g. CDS scatter) keep their prior no-horizontal-jitter behavior.
+        const timeBasedContinuous = geom.xScale.scaleType === scaleType.continuous && geom.xScale.timeBasedXTick === true;
+        if (jitterPosition && (geom.xScale.scaleType === scaleType.discrete || timeBasedContinuous)) {
+            if (geom.xScale.scaleType === scaleType.discrete) {
+                xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+            }
+            else {
+                // Continuous (time-based) x-axis: size the same-day jitter band by the distinct-day count
+                // (mirroring the per-date slot half-width) so replicates fan out the same as per-date and
+                // aren't hidden when real-time spacing squeezes a day into a few pixels. Day centers stay
+                // at their true time position; only the same-day spread is normalized. The shared helper caps
+                // that width at the closest actual day spacing so the fan can't reach the neighbouring day.
+                xBinWidth = LABKEY.vis.calendarSlotWidth(geom.xScale, plot.grid.rightEdge - plot.grid.leftEdge) / 2;
+            }
             xAcc = function(row) {
                 var x = geom.xAes.getValue(row);
                 var value = geom.getX(row);
@@ -2264,6 +2312,67 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             if (typeof colorAcc == 'function') { colorAcc(d); }
             return (isNaN(x) || x == null || isNaN(y) || y == null || isNaN(error) || error == null);
         });
+
+        // connectAdjacent: render each level (top/bottom) as ONE continuous polyline through the points so a
+        // dash pattern runs evenly across the whole line, including no-data gaps ("---- ---- ----"). Per-point
+        // tiled segments restart the dash each segment and read as solid where points are dense, so avoid that.
+        if (geom.connectAdjacent) {
+            const strokeColor = typeof colorAcc === 'function' ? (data.length ? colorAcc(data[0]) : '#000000') : colorAcc;
+            // pixel position of the calendar axis break, so no run spans the guide-set/window discontinuity
+            const breakOffset = geom.xScale.calendarBreakOffset;
+            const breakX = breakOffset === null || breakOffset === undefined ? null : geom.xScale.scale(breakOffset);
+            // Build the line as flat horizontal runs at each constant level: connect consecutive same-y points
+            // (so the dash spans no-data gaps within a level), but START A NEW SUBPATH whenever the level changes
+            // (guide-set boundary) or y is undefined (e.g. log scale where mean +/- error <= 0). This avoids a
+            // diagonal connector between levels and avoids bridging over undefined points, matching the per-point
+            // bars. Each run extends +/- errorLineWidth at its ends, like the per-date segments.
+            const buildPath = function(sign) {
+                let d = '', runStartX = null, runEndX = null, runY = null;
+                const flush = function() {
+                    if (runY !== null) {
+                        d += 'M' + (runStartX - errorLineWidth) + ',' + runY + ' L' + (runEndX + errorLineWidth) + ',' + runY + ' ';
+                    }
+                };
+                for (let k = 0; k < data.length; k++) {
+                    const row = data[k];
+                    const x = xAcc_(row), value = geom.yAes.getValue(row), error = geom.errorAes.getValue(row);
+                    if (value == null || isNaN(x)) {
+                        continue; // no data point that day (e.g. missing-fill row): bridge over it, don't break the level
+                    }
+                    if (breakX !== null && runY !== null && runEndX < breakX && x > breakX) { // crossing the axis break: end the run here
+                        flush();
+                        runStartX = runEndX = runY = null;
+                    }
+                    const y = geom.yScale.scale(value + sign * error);
+                    if (y == null || isNaN(y)) { // defined value but unplottable (log scale, value +/- error <= 0): break here
+                        flush();
+                        runStartX = runEndX = runY = null;
+                    } else if (runY === null) { // start a new run
+                        runStartX = runEndX = x; runY = y;
+                    } else if (y === runY) { // same level: extend the run across the gap
+                        runEndX = x;
+                    } else { // level changed (guide-set boundary): close run, start a new one (no diagonal)
+                        flush();
+                        runStartX = runEndX = x; runY = y;
+                    }
+                }
+                flush();
+                return d;
+            };
+            const drawLine = function(cls, sign) {
+                const lineSel = layer.selectAll('path.' + cls).data([data]);
+                lineSel.enter().append('path').attr('class', cls);
+                // only the dashed layers get a pattern - the mean line stays solid, as in the per-point path below
+                lineSel.attr('d', buildPath(sign)).attr('stroke', strokeColor).attr('fill', 'none')
+                    .attr('stroke-width', 1).style('stroke-dasharray', geom.dashed ? '6, 3' : null);
+                lineSel.exit().remove();
+            };
+            drawLine('error-bar-top', 1);
+            if (!geom.topOnly) {
+                drawLine('error-bar-bottom', -1);
+            }
+            return;
+        }
 
         const selection = layer.selectAll('.error-bar').data(data);
         selection.exit().remove();
@@ -2532,11 +2641,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var _renderPath = function(layer, data, geom, xAcc) {
+        // don't connect points across the calendar axis break (guide-set block -> date window)
+        var breakOffset = geom.xScale ? geom.xScale.calendarBreakOffset : null,
+            breakX = breakOffset === null || breakOffset === undefined ? null : geom.xScale.scale(breakOffset);
         var yAcc = function(d) {var val = geom.getY(d); return val == null ? null : val;},
             size = geom.sizeAes && geom.sizeScale ? geom.sizeScale.scale(geom.sizeAes.getValue(data)) : function() {return geom.size},
             color = geom.color,
             line = function(d) {
-                var path = LABKEY.vis.makePath(d.data, xAcc, yAcc);
+                var path = LABKEY.vis.makePath(d.data, xAcc, yAcc, breakX);
                 return path.length == 0 ? null : path;
             };
         if (geom.pathColorAes && geom.colorScale) {
