@@ -550,13 +550,6 @@ public class ProxyServlet extends HttpServlet {
         String headerName = header.getName();
         if (hopByHopHeaders.containsHeader(headerName))
             return;
-        // In Apache HttpClient <5.6.4, these headers were automatically removed after the client transparently
-        // decompressed the entity. Now we need to remove them manually, or the stale values reach the browser
-        // alongside the already-decompressed body.
-        if (doHandleCompression && (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_ENCODING) ||
-                headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) ||
-                headerName.equalsIgnoreCase(HttpHeaders.CONTENT_MD5)))
-            return;
         String headerValue = header.getValue();
         if (headerName.equalsIgnoreCase(SM.SET_COOKIE) ||
                 headerName.equalsIgnoreCase(SM.SET_COOKIE2)) {
