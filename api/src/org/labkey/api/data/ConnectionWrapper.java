@@ -376,6 +376,16 @@ public class ConnectionWrapper implements java.sql.Connection
         return result;
     }
 
+    /**
+     * @return whether this wrapper is still open, and so whether its SPID still refers to the session it was handed out
+     * for. Removal happens before the underlying connection returns to the pool, so a true answer can't be stale in the
+     * dangerous direction.
+     */
+    public boolean isAllocated()
+    {
+        return _openConnections.contains(this);
+    }
+
     public Integer getSPID()
     {
         return _spid;

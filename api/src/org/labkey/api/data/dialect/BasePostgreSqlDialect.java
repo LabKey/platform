@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -142,7 +143,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean cancelQueries(DbScope scope, Collection<Integer> spids, boolean terminate)
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
         // Postgres delivers these on a side channel, so they land even when the target backend is mid-query. Run them
         // on our own connection; the target's belongs to the thread we're interrupting.
@@ -150,18 +151,34 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         try (Connection conn = scope.getPooledConnection())
         {
-            // Spring's translator would hand back a DataAccessException, which the per-SPID catch below can't narrow on
+            // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
             SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
-            for (Integer spid : spids)
+            for (ConnectionWrapper connection : connections)
             {
+                Integer spid = connection.getSPID();
+
+                // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                // may have handed that physical connection, and this SPID, straight back out to someone else
+                if (!connection.isAllocated())
+                {
+                    LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                    continue;
+                }
+
                 try
                 {
-                    executor.execute(new SQLFragment("SELECT " + function + "(?)", spid));
+                    // Reports an already-exited backend by returning false, not by throwing
+                    boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                    if (!signalled)
+                    {
+                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                        LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                    }
                 }
                 catch (RuntimeSQLException e)
                 {
-                    // The backend may have exited between the SPID lookup and this call
-                    LOG.debug("{}({}) failed", function, spid, e);
+                    LOG.warn("{}({}) failed", function, spid, e);
                 }
             }
         }

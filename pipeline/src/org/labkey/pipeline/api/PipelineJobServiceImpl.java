@@ -298,19 +298,30 @@ public class PipelineJobServiceImpl implements PipelineJobService
         // that's still in use back to the pool, where another request picks it up mid-transaction.
         Map<DbScope, Set<ConnectionWrapper>> connectionsByScope = ConnectionWrapper.getConnectionsByScopeForThread(jobThread);
 
-        connectionsByScope.forEach((scope, connections) -> {
-            if (!scope.getSqlDialect().cancelQueries(scope, getSPIDs(connections), false))
-            {
-                LOG.warn("{} can't cancel queries out of band; job {} may run until its current query returns", scope.getSqlDialect(), jobGuid);
-            }
-        });
+        connectionsByScope.forEach((scope, connections) -> cancelQueries(scope, connections, false, jobGuid));
 
         // Escalate for anything that ignored the cancel, such as a task that swallows the exception and retries
         waitForConnectionsToClose(jobThread, connectionsByScope).forEach((scope, connections) -> {
-            Set<Integer> spids = getSPIDs(connections);
-            LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), spids);
-            scope.getSqlDialect().cancelQueries(scope, spids, true);
+            LOG.warn("Job thread {} still holds SPIDs {} after cancel; terminating those sessions", jobThread.getName(), getSPIDs(connections));
+            cancelQueries(scope, connections, true, jobGuid);
         });
+    }
+
+    /** Isolated per scope so that one failure, such as waiting out maxWaitMillis for a connection, doesn't skip the remaining scopes or the escalation */
+    private static void cancelQueries(DbScope scope, Set<ConnectionWrapper> connections, boolean terminate, String jobGuid)
+    {
+        try
+        {
+            // A dialect that can't do this on the cancel pass can't do it on the terminate pass either, so only warn once
+            if (!scope.getSqlDialect().cancelQueries(scope, connections, terminate) && !terminate)
+            {
+                LOG.warn("{} can't cancel queries out of band; job {} may run until its current query returns", scope.getSqlDialect(), jobGuid);
+            }
+        }
+        catch (RuntimeException e)
+        {
+            LOG.error("Failed to {} queries on {} for job {}", terminate ? "terminate" : "cancel", scope.getDisplayName(), jobGuid, e);
+        }
     }
 
     private static Set<Integer> getSPIDs(Collection<ConnectionWrapper> connections)
