@@ -296,13 +296,14 @@ public class ProxyServlet extends HttpServlet {
                 .setProtocolUpgradeEnabled(allowProtocolUpgrade()) // LKS override
                 .build();
 
-        return HttpClientBuilder.create()
-            .useSystemProperties()
-            .setDefaultRequestConfig(config)
-            // httpclient5 5.6+ leaves stale Content-Encoding/Content-Length headers after auto-decompressing a response
-            // (5.5.x stripped them), so copyResponseHeaders() would forward a mismatched header/body pair to the client
-            .disableContentCompression()
-            .build();
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
+                .useSystemProperties()
+                .setDefaultRequestConfig(config);
+
+        if (!doHandleCompression)
+            httpClientBuilder.disableContentCompression();
+
+        return httpClientBuilder.build();
     }
 
     // LKS override
