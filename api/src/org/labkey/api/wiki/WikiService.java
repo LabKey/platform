@@ -28,8 +28,10 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.zip.ZipOutputStream;
 
 public interface WikiService
 {
@@ -131,4 +133,9 @@ public interface WikiService
      * @return the number of documents added
      */
     int populateVectorStore(Container container);
+
+    /**
+     * same as populateVectorStore, but write to a ZipArchive (for testing and investigation purposes)
+     */
+    int populateMarkdownArchive(Container container, ZipOutputStream zip) throws IOException;
 }

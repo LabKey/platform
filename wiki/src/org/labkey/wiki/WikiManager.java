@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,6 +82,7 @@ import org.labkey.wiki.query.WikiSchema;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -95,6 +97,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.security.WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME;
@@ -1011,6 +1015,87 @@ public class WikiManager implements WikiService
         return count.get();
     }
 
+
+    // AWS Bedrock Knowledge Base rejects a sidecar file larger than this; see populateMarkdownArchive()
+    private static final int BEDROCK_METADATA_SIDECAR_MAX_BYTES = 10 * 1024;
+
+    @Override
+    public int populateMarkdownArchive(Container container, ZipOutputStream zip) throws IOException
+    {
+        Path containerPath = container.getParsedPath();
+        ActionURL wikiBase = new ActionURL("wiki", "page", container);
+        AtomicInteger count = new AtomicInteger();
+
+        for (String name : getNames(container))
+        {
+            Wiki wiki = WikiSelectManager.getWiki(container, name);
+            if (null == wiki)
+                continue;
+            WikiVersion version = wiki.getLatestVersion();
+            if (null == version)
+                continue;
+
+            String body = version.getBody();
+            String markdown = version.getRendererTypeEnum().bestAttemptConvertToMarkdown(null == body ? "" : body);
+            List<String> ancestorTitles = getAncestorTitles(wiki);
+            List<String> titlePath = new ArrayList<>(ancestorTitles);
+            titlePath.add(name + ".md");
+            Path fullPath = containerPath.append(titlePath.toArray(new String[0]));
+            String entryName = fullPath.toString("", "");
+
+            var entry = new ZipEntry(entryName);
+            zip.putNextEntry(entry);
+            zip.write(markdown.getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+
+            String source = wikiBase.clone().addParameter("name", name).getURIString();
+            byte[] sidecar = buildBedrockMetadataSidecar(version.getTitle(), source, ancestorTitles)
+                .getBytes(StandardCharsets.UTF_8);
+            if (sidecar.length > BEDROCK_METADATA_SIDECAR_MAX_BYTES)
+                LogManager.getLogger(WikiManager.class).warn("Bedrock metadata sidecar for '" + name + "' is " +
+                    sidecar.length + " bytes, exceeding Bedrock's 10 KB limit; it will be ignored during ingestion.");
+
+            var metadataEntry = new ZipEntry(entryName + ".metadata.json");
+            zip.putNextEntry(metadataEntry);
+            zip.write(sidecar);
+            zip.closeEntry();
+
+            count.incrementAndGet();
+        }
+
+        return count.get();
+    }
+
+    /**
+     * Builds an AWS Bedrock Knowledge Base metadata sidecar (".metadata.json") for a single markdown source file.
+     * See <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/s3-data-source-connector.html#ds-s3-metadata-fields">Document metadata fields</a>.
+     */
+    private static String buildBedrockMetadataSidecar(String title, String sourceUrl, List<String> ancestorTitles)
+    {
+        JSONObject attributes = new JSONObject();
+        attributes.put("title", bedrockStringAttribute(title, true));
+        attributes.put("source_url", bedrockStringAttribute(sourceUrl, false));
+        if (!ancestorTitles.isEmpty())
+            attributes.put("path", bedrockStringAttribute(String.join(" / ", ancestorTitles), true));
+
+        JSONObject root = new JSONObject();
+        root.put("metadataAttributes", attributes);
+        return root.toString();
+    }
+
+    private static JSONObject bedrockStringAttribute(String value, boolean includeForEmbedding)
+    {
+        JSONObject valueObj = new JSONObject();
+        valueObj.put("type", "STRING");
+        valueObj.put("stringValue", value);
+
+        JSONObject attribute = new JSONObject();
+        attribute.put("value", valueObj);
+        attribute.put("includeForEmbedding", includeForEmbedding);
+        return attribute;
+    }
+
+
     private List<String> getAncestorTitles(Wiki wiki)
     {
         List<String> titles = new ArrayList<>();
@@ -1018,7 +1103,7 @@ public class WikiManager implements WikiService
         while (current != null)
         {
             WikiVersion version = current.getLatestVersion();
-            titles.add(0, version != null ? version.getTitle() : current.getName());
+            titles.addFirst(version != null ? version.getTitle() : current.getName());
             current = current.getParentWiki();
         }
         return titles;
