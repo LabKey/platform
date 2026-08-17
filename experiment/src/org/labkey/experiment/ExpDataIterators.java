@@ -2355,10 +2355,7 @@ public class ExpDataIterators
         {
             // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
             if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
-            {
-                if (Boolean.FALSE != context.getConfigParameter(AbstractQueryImportAction.Params.useTransactionAuditCache))
-                    context.setUseTransactionAuditCache(true);
-            }
+                context.setUseTransactionAuditCache(context.getConfigParameterBoolean(AbstractQueryImportAction.Params.useTransactionAuditCache));
 
             // add FileLink DataIterator if any input columns are of type FILE_LINK
             if (null != _fileLinkDirectory)
