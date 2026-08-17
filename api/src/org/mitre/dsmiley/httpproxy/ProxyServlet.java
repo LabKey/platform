@@ -489,6 +489,9 @@ public class ProxyServlet extends HttpServlet {
         // control the Accept-Encoding header, not the client
         if (doHandleCompression && headerName.equals(HttpHeaders.ACCEPT_ENCODING))
             return;
+        // In Apache HttpClient <5.6.4, these headers were automatically removed. Now we need to remove them manually.
+        if (doHandleCompression && (headerName.equals(HttpHeaders.CONTENT_ENCODING) || headerName.equals(HttpHeaders.CONTENT_MD5)))
+            return;
 
         @SuppressWarnings("unchecked")
         Enumeration<String> headers = servletRequest.getHeaders(headerName);
