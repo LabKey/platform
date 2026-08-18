@@ -1,6 +1,8 @@
 package org.mitre.dsmiley.httpproxy;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.PageFlowUtil;
@@ -8,6 +10,7 @@ import org.labkey.api.util.PageFlowUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.HttpCookie;
 import java.util.Objects;
 
@@ -82,6 +85,23 @@ public class LabKeyProxyServlet extends ProxyServlet
     protected boolean skipXForwardedProto()
     {
         return true;
+    }
+
+    @Override
+    protected void copyResponseHeader(HttpServletRequest servletRequest, HttpServletResponse servletResponse, Header header)
+    {
+        // In Apache HttpClient <5.6.4, these headers were automatically removed after the client transparently
+        // decompressed the entity. Now we need to remove them manually, or the stale values reach the browser
+        // alongside the already-decompressed body.
+        if (doHandleCompression)
+        {
+            String headerName = header.getName();
+            if (headerName.equalsIgnoreCase(HttpHeaders.CONTENT_ENCODING) ||
+                    headerName.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH) ||
+                    headerName.equalsIgnoreCase(HttpHeaders.CONTENT_MD5))
+                return;
+        }
+        super.copyResponseHeader(servletRequest, servletResponse, header);
     }
 
     @Override
