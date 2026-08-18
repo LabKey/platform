@@ -241,7 +241,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      */
     private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
 
-    // Whether this startup ran any schema scripts, used by the system upgrade audit event
+    // Whether this startup ran any schema scripts. Used by the system upgrade audit event
     private volatile boolean _hasSchemaUpgrade = false;
 
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
