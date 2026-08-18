@@ -156,7 +156,7 @@ public class VersionNumber implements Serializable, Comparable<VersionNumber>
     /**
      * Orders by major, then minor, then revision, so unlike {@link #getVersionInt()} this is safe for minor versions
      * above 9. A missing revision sorts first, which puts "26.9-SNAPSHOT" (parsed as 26.9 with no revision) ahead of
-     * the released "26.9.0"; a non-numeric revision sorts last.
+     * the released "26.9.0". A non-numeric revision sorts last.
      * <p>
      * Not consistent with equals(), which this class does not override.
      */
