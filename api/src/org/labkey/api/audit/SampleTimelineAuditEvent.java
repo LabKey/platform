@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.DataColor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
@@ -278,7 +279,11 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         String value = row.get(ExpMaterialColor.name());
         if (!StringUtils.isBlank(value))
-            return ExperimentService.get().getDataColorLabel(container, Long.parseLong(value));
+        {
+            DataColor dataColor = ExperimentService.get().getDataColor(container, Long.parseLong(value));
+            if (dataColor != null)
+                return dataColor.getLabel();
+        }
         return null;
     }
 }
