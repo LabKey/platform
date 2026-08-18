@@ -226,7 +226,6 @@ public class VersionNumber implements Serializable, Comparable<VersionNumber>
             assertEquals(0, new VersionNumber("8.4.4beta1").compareTo(new VersionNumber("8.4.4beta1")));
         }
 
-        /** getVersionInt() used to divide the minor version in place, which would corrupt later comparisons */
         @Test
         public void testGetVersionIntDoesNotMutate()
         {

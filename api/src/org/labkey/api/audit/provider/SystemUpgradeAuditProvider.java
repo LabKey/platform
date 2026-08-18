@@ -16,7 +16,7 @@
 package org.labkey.api.audit.provider;
 
 import jakarta.servlet.ServletContext;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -181,7 +181,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
 
     private static boolean isSnapshot(String version)
     {
-        return StringUtils.containsIgnoreCase(version, "SNAPSHOT");
+        return Strings.CI.endsWith(version, "-SNAPSHOT");
     }
 
     static String buildComment(ChangeType changeType, @Nullable String prevVersion, @Nullable String newVersion)
@@ -423,6 +423,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         {
             assertEquals(ChangeType.Upgrade, determineChangeType("26.7.1", BUILD_1, "26.9.0", BUILD_2, false));
             assertEquals(ChangeType.Upgrade, determineChangeType("26.9.0", BUILD_1, "26.9.1", BUILD_2, false));
+            assertEquals(ChangeType.Upgrade, determineChangeType("26.9.0", BUILD_1, "26.9.1", BUILD_1, false));
             assertEquals(ChangeType.Upgrade, determineChangeType("25.11.0", BUILD_1, "26.3.0", BUILD_2, false));
 
             // Crossing a release number is unambiguous even when one side is a snapshot
@@ -435,6 +436,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         {
             assertEquals(ChangeType.Downgrade, determineChangeType("26.9.0", BUILD_1, "26.7.1", BUILD_2, false));
             assertEquals(ChangeType.Downgrade, determineChangeType("26.9.1", BUILD_1, "26.9.0", BUILD_2, false));
+            assertEquals(ChangeType.Downgrade, determineChangeType("26.10.0", BUILD_1, "26.9.0", BUILD_2, false));
             assertEquals(ChangeType.Downgrade, determineChangeType("26.9-SNAPSHOT", BUILD_1, "26.7.1", BUILD_2, false));
         }
 
@@ -474,7 +476,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
         @Test
         public void testComments()
         {
-            assertEquals("Server installed at version 26.9.0", buildComment(ChangeType.Install, null, "26.9.0"));
+            assertEquals("Server bootstrapped at version 26.9.0", buildComment(ChangeType.Install, null, "26.9.0"));
             assertEquals("Server running version 26.9.0", buildComment(ChangeType.Unknown, null, "26.9.0"));
             assertEquals("Server rebuilt at version 26.9.0", buildComment(ChangeType.Rebuild, "26.9.0", "26.9.0"));
             assertEquals("Server version changed from 26.7.1 to 26.9.0", buildComment(ChangeType.Upgrade, "26.7.1", "26.9.0"));
