@@ -123,6 +123,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
+import org.labkey.api.exp.api.DataColor;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -9186,11 +9187,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId)
+    public @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId)
     {
-        return DataColorManager.getInstance().getAllProjectColors(container).stream()
+        return getAllProjectColors(container).stream()
                 .filter(c -> c.getRowId() == colorRowId)
-                .map(DataColor::getLabel)
                 .findFirst()
                 .orElse(null);
     }
@@ -9203,6 +9203,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .map(c -> (long) c.getRowId())
                 .filter(rowId -> !disabled.contains(rowId))
                 .collect(toSet());
+    }
+
+    @Override
+    public @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container)
+    {
+        return DataColorManager.getInstance().getActiveProjectColors(container);
+    }
+
+    @Override
+    public @NotNull List<DataColor> getAllProjectColors(@NotNull Container container)
+    {
+        return DataColorManager.getInstance().getAllProjectColors(container);
     }
 
     // Applies a reconciled set of exclusion changes to exp.DataTypeColorExclusion in one transaction: one key column is
