@@ -26,6 +26,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.DataColor;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -72,10 +73,8 @@ public class DataColorTable extends FilteredTable<ExpSchema>
         for (ColumnInfo baseColumn : _rootTable.getColumns())
         {
             String name = baseColumn.getName();
-            if ("Container".equalsIgnoreCase(name))
-                continue;
             var col = addWrapColumn(baseColumn);
-            if ("RowId".equalsIgnoreCase(name))
+            if ("RowId".equalsIgnoreCase(baseColumn.getName()) || "Container".equalsIgnoreCase(name))
                 col.setHidden(true);
         }
     }

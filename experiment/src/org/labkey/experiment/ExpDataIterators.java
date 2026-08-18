@@ -119,7 +119,7 @@ import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpRunItemTableImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
-import org.labkey.experiment.api.DataColor;
+import org.labkey.api.exp.api.DataColor;
 import org.labkey.experiment.api.DataColorManager;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeServiceImpl;

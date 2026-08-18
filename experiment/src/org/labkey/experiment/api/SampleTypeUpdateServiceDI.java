@@ -760,7 +760,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (_sampleType == null)
             return 0;
 
-        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container);
+        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container, null);
         if (ret > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
