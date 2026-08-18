@@ -80,10 +80,16 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     /** Timeout in seconds. */
     public static final String TIMEOUT = "external.script.engine.timeout";
 
+    /** Caller-supplied identity for the invocation log; the engine knows the duration but not which report or assay design it ran for. */
+    public static final String INVOCATION_LABEL = "external.script.engine.invocationLabel";
+
     public static final String DEFAULT_WORKING_DIRECTORY = "ExternalScript";
     private static final Pattern scriptCmdPattern = Pattern.compile("'([^']+)'|\\\"([^\\\"]+)\\\"|(^[^\\s]+)|(\\s[^\\s^'^\\\"]+)");
 
     private FileLike _workingDirectory;
+
+    /** Set when runProcess() kills the script, so the kill's exit code isn't logged as a second, separate failure. */
+    private boolean _timedOut;
 
     protected ExternalScriptEngineDefinition _def;
     protected Writer _originalWriter;
@@ -110,7 +116,15 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     }
 
     @Override
-    public Object eval(String script, ScriptContext context) throws ScriptException
+    public final Object eval(String script, ScriptContext context) throws ScriptException
+    {
+        // final so every engine in this hierarchy is timed from one place; subclasses override evalScript()
+        _timedOut = false;
+        return ScriptInvocationLog.time(getClass().getSimpleName(), ScriptInvocationLog.label(context),
+                () -> evalScript(script, context));
+    }
+
+    protected Object evalScript(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
 
@@ -139,6 +153,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             int exitCode = runProcess(context, pb, output, timeout, TimeUnit.SECONDS);
             if (exitCode != 0)
             {
+                if (!_timedOut)
+                    ScriptInvocationLog.nonZeroExit(getClass().getSimpleName(), ScriptInvocationLog.label(context), exitCode);
                 throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ".\n" + output);
             }
             else
@@ -384,6 +400,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
 
                         String msg = "Process killed after exceeding timeout of " + timeout + " " + timeoutUnit.name().toLowerCase() + "\n";
                         output.append(msg);
+                        _timedOut = true;
+                        ScriptInvocationLog.timedOut(getClass().getSimpleName(), ScriptInvocationLog.label(context), timeout, timeoutUnit);
                         if (writer != null)
                             writer.write(msg);
                     }

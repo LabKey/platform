@@ -1267,10 +1267,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = builder.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(builder, context, di -> build(di, context));
+        }
 
+        /** Returning null here (after adding an error) or throwing leaves `di` to be closed by wrapOrClose. */
+        private DataIterator build(DataIterator di, DataIteratorContext context)
+        {
             boolean isMerge = context.getInsertOption() == InsertOption.MERGE;
             boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 

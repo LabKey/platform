@@ -212,60 +212,58 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_in, context, pre -> {
+                SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
+                counterTranslator.setDebugName("Counter Def");
+                Set<String> skipColumns = new CaseInsensitiveHashSet();
+                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
 
-            SimpleTranslator counterTranslator = new SimpleTranslator(pre, context);
-            counterTranslator.setDebugName("Counter Def");
-            Set<String> skipColumns = new CaseInsensitiveHashSet();
-            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
-
-            for (CounterDefinition counterDefinition : _expTable.getCounterDefinitions())
-            {
-                Set<String> attachedColumnNames = counterDefinition.getAttachedColumnNames();
-                skipColumns.addAll(attachedColumnNames);
-
-                // validate we have all the paired columns
-                List<Integer> pairedIndexes = new IntArrayList();
-                for (String pairedColumnName : counterDefinition.getPairedColumnNames())
+                for (CounterDefinition counterDefinition : _expTable.getCounterDefinitions())
                 {
-                    Integer i = columnNameMap.get(pairedColumnName);
-                    if (i == null)
+                    Set<String> attachedColumnNames = counterDefinition.getAttachedColumnNames();
+                    skipColumns.addAll(attachedColumnNames);
+
+                    // validate we have all the paired columns
+                    List<Integer> pairedIndexes = new IntArrayList();
+                    for (String pairedColumnName : counterDefinition.getPairedColumnNames())
                     {
-                        // immediately return error iterator tied to the input DataIterator instead of counterTranslator
-                        ValidationException setupError = new ValidationException();
-                        setupError.addGlobalError("Paired column '" + pairedColumnName + "' is required for counter '" + counterDefinition.getCounterName() + "'");
-                        return ErrorIterator.wrap(pre, context, true, setupError);
+                        Integer i = columnNameMap.get(pairedColumnName);
+                        if (i == null)
+                        {
+                            // immediately return error iterator tied to the input DataIterator instead of counterTranslator
+                            ValidationException setupError = new ValidationException();
+                            setupError.addGlobalError("Paired column '" + pairedColumnName + "' is required for counter '" + counterDefinition.getCounterName() + "'");
+                            return ErrorIterator.wrap(pre, context, true, setupError);
+                        }
+                        else
+                        {
+                            pairedIndexes.add(i);
+                        }
                     }
-                    else
+
+                    // add a sequence column for each of the attached columns
+                    for (String columnName : attachedColumnNames)
                     {
-                        pairedIndexes.add(i);
+                        Integer i = columnNameMap.get(columnName);
+                        ColumnInfo column;
+                        if (null != i)
+                        {
+                            column = pre.getColumnInfo(i);
+                            skipColumns.add(columnName);
+                        }
+                        else
+                        {
+                            column = _expTable.getColumn(columnName);
+                        }
+
+                        counterTranslator.addPairedSequenceColumn(column, i, _container, counterDefinition, pairedIndexes, _sequencePrefix, _id, 100);
                     }
                 }
 
-                // add a sequence column for each of the attached columns
-                for (String columnName : attachedColumnNames)
-                {
-                    Integer i = columnNameMap.get(columnName);
-                    ColumnInfo column;
-                    if (null != i)
-                    {
-                        column = pre.getColumnInfo(i);
-                        skipColumns.add(columnName);
-                    }
-                    else
-                    {
-                        column = _expTable.getColumn(columnName);
-                    }
+                counterTranslator.selectAll(skipColumns);
 
-                    counterTranslator.addPairedSequenceColumn(column, i, _container, counterDefinition, pairedIndexes, _sequencePrefix, _id, 100);
-                }
-            }
-
-            counterTranslator.selectAll(skipColumns);
-
-            return LoggingDataIterator.wrap(counterTranslator);
+                return LoggingDataIterator.wrap(counterTranslator);
+            });
         }
     }
 
@@ -347,11 +345,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _container));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    pre -> LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _container)));
         }
     }
 
@@ -510,11 +505,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _in.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new AliasDataIterator(di, context, _container, _user, _expAliasTable, _dataType, _isSample));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    di -> LoggingDataIterator.wrap(new AliasDataIterator(di, context, _container, _user, _expAliasTable, _dataType, _isSample)));
         }
     }
 
@@ -631,11 +623,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), _schema, _container, _user, _sampleType));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    pre -> LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), _schema, _container, _user, _sampleType)));
         }
     }
 
@@ -754,11 +743,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user, _isSample, _expObject, _container));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    pre -> LoggingDataIterator.wrap(new FlagDataIterator(pre, context, _user, _isSample, _expObject, _container)));
         }
     }
 
@@ -895,21 +881,19 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _pre.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_pre, context, di -> {
+                if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
+                    return di;
 
-            if (context.getConfigParameters().containsKey(SampleTypeUpdateServiceDI.Options.SkipDerivation))
-                return di;
+                if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
+                    di = new DerivationDataIterator(di, context, _container, _user, _currentDataType, _isSample, _skipAliquot);
+                else if (_isSample)
+                    di = new SampleUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
+                else
+                    di = new DataUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
 
-            if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
-                di = new DerivationDataIterator(di, context, _container, _user, _currentDataType, _isSample, _skipAliquot);
-            else if (_isSample)
-                di = new SampleUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
-            else
-                di = new DataUpdateDerivationDataIterator(di, context, _container, _user, _currentDataType, _checkRequiredParents);
-
-            return LoggingDataIterator.wrap(di);
+                return LoggingDataIterator.wrap(di);
+            });
         }
     }
 
@@ -2124,11 +2108,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _pre.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new SearchIndexIterator(pre, context, _indexFunction));
+            return DataIteratorUtil.wrapOrClose(_pre, context,
+                    pre -> LoggingDataIterator.wrap(new SearchIndexIterator(pre, context, _indexFunction)));
         }
     }
 
@@ -2365,10 +2346,11 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator input = _in.getDataIterator(context);
-            if (null == input)
-                return null;           // Can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_in, context, input -> build(input, context));
+        }
 
+        private DataIterator build(DataIterator input, DataIteratorContext context)
+        {
             // useTransactionAuditCache already set for import and merge in AbstractQueryImportAction.createDataIteratorContext
             if (context.getInsertOption() == QueryUpdateService.InsertOption.INSERT)
             {
@@ -2536,26 +2518,21 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _in.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(_in, context, di -> {
+                ValidatorIterator validate = new ValidatorIterator(di, context, _container, _user);
+                Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(validate);
 
-            ValidatorIterator validate = new ValidatorIterator(di, context, _container, _user);
-            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(validate);
+                Integer index = map.get(Name.name());
+                if (index != null)
+                {
+                    ColumnInfo column = di.getColumnInfo(index);
+                    validate.addValidator(index, new RequiredValidator(column.getColumnName(), column.getJdbcType(), false, false, "Sample name cannot be blank"));
+                }
 
-            Integer index = map.get(Name.name());
-            if (index != null)
-            {
-                ColumnInfo column = di.getColumnInfo(index);
-                validate.addValidator(index, new RequiredValidator(column.getColumnName(), column.getJdbcType(), false, false, "Sample name cannot be blank"));
-            }
+                // Add other column validators here...
 
-            // Add other column validators here...
-
-            if (validate.hasValidators())
-                di = validate;
-
-            return LoggingDataIterator.wrap(di);
+                return LoggingDataIterator.wrap(validate.hasValidators() ? validate : di);
+            });
         }
     }
 
@@ -2575,11 +2552,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _in.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _user, _canUpdateNames));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    di -> LoggingDataIterator.wrap(new SampleNameChangeDataIterator(di, context, _user, _canUpdateNames)));
         }
     }
 
@@ -3202,11 +3176,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = _in.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(di, context, _container, _user, _isCrossType, _dataType, _isSamples));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    di -> LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(di, context, _container, _user, _isCrossType, _dataType, _isSamples)));
         }
     }
 
@@ -3232,11 +3203,8 @@ public class ExpDataIterators
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _in.getDataIterator(context);
-            if (pre == null)
-                return null; // can happen if context has errors
-
-            return LoggingDataIterator.wrap(new SampleStatusCheckDataIterator(pre, context, _container));
+            return DataIteratorUtil.wrapOrClose(_in, context,
+                    pre -> LoggingDataIterator.wrap(new SampleStatusCheckDataIterator(pre, context, _container)));
         }
     }
 

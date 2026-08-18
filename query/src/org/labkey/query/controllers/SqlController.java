@@ -140,6 +140,8 @@ public class SqlController extends SpringActionController
         private String sql;
         private String sep = null;
         private String eol = null;
+        private Integer offset = null;
+        private Integer limit = null;
         private final Parameters parameters = new Parameters();
 
         public Double getApiVersion()
@@ -233,6 +235,26 @@ public class SqlController extends SpringActionController
         {
             if (compact)
                 this.format = Format.compact;
+        }
+
+        public Integer getOffset()
+        {
+            return offset;
+        }
+
+        public void setOffset(Integer offset)
+        {
+            this.offset = offset;
+        }
+
+        public Integer getLimit()
+        {
+            return limit;
+        }
+
+        public void setLimit(Integer limit)
+        {
+            this.limit = limit;
         }
     }
 
@@ -510,6 +532,7 @@ public class SqlController extends SpringActionController
     /// Execute a LabKey SQL query and return results as plain text. Designed for lightweight programmatic access without the overhead of QueryView/JSON API responses.
     /// This action routes value rendering through DisplayColumn.getTsvFormattedValue() for correct
     /// type dispatch (e.g. dates as ISO-8601, multi-value columns via their DisplayColumn subclass).
+    /// Accepts optional `offset`/`limit` parameters to page through large result sets; omitting both returns every row (unbounded).
     @RequiresPermission(ReadPermission.class)
     @Marshal(Marshaller.Jackson)
     public static class ExecuteAction extends ReadOnlyApiAction<SqlForm>
@@ -555,11 +578,17 @@ public class SqlController extends SpringActionController
 
             var format = form.getFormat();
             getViewContext().getResponse().setContentType(format.getContentType());
+
+            // No offset/limit specified means unbounded, matching this action's original (pre-paging) behavior.
+            int offset = null == form.getOffset() || form.getOffset() < 0 ? 0 : form.getOffset();
+            int limit = null == form.getLimit() || form.getLimit() <= 0 ? Integer.MAX_VALUE : form.getLimit();
+
             try
             {
                 new SqlExecute(getViewContext(), userSchema, form.getSql())
                         .format(format, form.getSep(), form.getEol())
                         .parameters(form.getParameterMap())
+                        .page(offset, limit)
                         .execute(getViewContext().getResponse().getWriter());
             }
             catch (QueryParseException x)
@@ -629,6 +658,11 @@ public class SqlController extends SpringActionController
 
         private MockHttpServletResponse executeSql(String schemaName, String sql, Format format) throws Exception
         {
+            return executeSql(schemaName, sql, format, null, null);
+        }
+
+        private MockHttpServletResponse executeSql(String schemaName, String sql, Format format, Integer offset, Integer limit) throws Exception
+        {
             ActionURL url = new ActionURL("sql", "execute", _folder);
             if (schemaName != null)
                 url.addParameter("schemaName", schemaName);
@@ -636,6 +670,10 @@ public class SqlController extends SpringActionController
                 url.addParameter("sql", sql);
             if (null != format)
                 url.addParameter("format", format.name());
+            if (null != offset)
+                url.addParameter("offset", offset.toString());
+            if (null != limit)
+                url.addParameter("limit", limit.toString());
             return ViewServlet.GET(url, TestContext.get().getUser(), null);
         }
 
@@ -892,6 +930,65 @@ public class SqlController extends SpringActionController
             var result = executeWithLimit(10);
             assertEquals(3, result.rows());
             assertTrue("Expected result to be complete", result.complete());
+        }
+
+        @Test
+        public void testExecuteAction_limit() throws Exception
+        {
+            // 3 rows in table (Alice, Bob, Carol ordered by Name), limit=2 → only the first 2 rows
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name FROM " + LIST_NAME + " ORDER BY Name", Format.tsv, null, 2);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String[] lines = response.getContentAsString().split("\n");
+            assertEquals(3, lines.length);   // header + 2 data rows
+            assertEquals("Name", lines[0]);
+            assertEquals("Alice", lines[1]);
+            assertEquals("Bob", lines[2]);
+        }
+
+        @Test
+        public void testExecuteAction_offset() throws Exception
+        {
+            // offset=1 → skip Alice, return Bob and Carol
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name FROM " + LIST_NAME + " ORDER BY Name", Format.tsv, 1, null);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String[] lines = response.getContentAsString().split("\n");
+            assertEquals(3, lines.length);   // header + 2 data rows
+            assertEquals("Name", lines[0]);
+            assertEquals("Bob", lines[1]);
+            assertEquals("Carol", lines[2]);
+        }
+
+        @Test
+        public void testExecuteAction_offsetAndLimit() throws Exception
+        {
+            // offset=1, limit=1 → skip Alice, return just Bob
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name FROM " + LIST_NAME + " ORDER BY Name", Format.tsv, 1, 1);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String[] lines = response.getContentAsString().split("\n");
+            assertEquals(2, lines.length);   // header + 1 data row
+            assertEquals("Name", lines[0]);
+            assertEquals("Bob", lines[1]);
+        }
+
+        @Test
+        public void testExecuteAction_noLimitReturnsAll() throws Exception
+        {
+            // Omitting offset/limit entirely must preserve the original unbounded behavior.
+            MockHttpServletResponse response = executeSql("lists",
+                "SELECT Name FROM " + LIST_NAME + " ORDER BY Name", Format.tsv);
+            assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+
+            String[] lines = response.getContentAsString().split("\n");
+            assertEquals(4, lines.length);   // header + 3 data rows
+            assertEquals("Alice", lines[1]);
+            assertEquals("Bob", lines[2]);
+            assertEquals("Carol", lines[3]);
         }
     }
 }
