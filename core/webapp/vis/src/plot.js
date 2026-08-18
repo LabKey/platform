@@ -2464,8 +2464,7 @@ boxPlot.render();
             }
         }
 
-        // min x-axis tick length is 10 by default; the calendar axis floors its own domain at 10 slots instead, so
-        // filler rows there would land on real day offsets
+        // pad the ordinal axis to a 10-slot minimum; on the calendar axis a filler's synthetic seqValue would read as a real day offset, so it floors its slot width (not its domain) at 10 instead
         if (!timeBasedXTick) {
             const maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
             for (let i = maxSeqValue; i < 10; i++) {
