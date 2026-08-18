@@ -4884,7 +4884,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SQLFragment rowIdSQL = new SQLFragment("RowId ");
         rowIdSQL.appendInClause(selectedMaterialIds, getSchema().getSqlDialect());
-        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer);
+        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer, null);
     }
 
     /**
@@ -4893,7 +4893,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     *
      * @param truncateContainer delete all rows for this container. Not a real DB truncate because there may be rows in other containers.
+     * @param auditUserComment
      */
     public int deleteMaterialBySqlFilter(
         User user,
@@ -4903,8 +4905,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         boolean deleteFromAllSampleTypes,
         @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
-        boolean truncateContainer
-    )
+        boolean truncateContainer,
+        @Nullable String auditUserComment)
     {
         if (stDeleteFrom != null && deleteFromAllSampleTypes)
             throw new IllegalArgumentException("Can only delete from multiple sample types when no sample type is provided");
@@ -4984,7 +4986,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 try (Timing ignored = MiniProfiler.step("beforeDelete"))
                 {
-                    beforeDeleteMaterials(user, container, materials);
+                    beforeDeleteMaterials(user, container, materials, auditUserComment);
                 }
 
                 try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
@@ -5394,12 +5396,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds)
+    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, @Nullable String auditUserComment)
     {
-        deleteDataByRowIds(user, container, selectedDataIds, true);
+        deleteDataByRowIds(user, container, selectedDataIds, true, auditUserComment);
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, boolean deleteRunsUsingData)
+    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, boolean deleteRunsUsingData, @Nullable String auditUserComment)
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -5425,7 +5427,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             List<ExpDataImpl> expDatas = ExpDataImpl.fromDatas(datas);
-            beforeDeleteData(user, container, expDatas);
+            beforeDeleteData(user, container, expDatas, auditUserComment);
 
             // Delete any runs using the data if the ProtocolImplementation allows it
             if (deleteRunsUsingData)
@@ -5656,13 +5658,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all the run-scoped Materials that were
             // deleted already
-            deleteMaterialBySqlFilter(user, c, new SQLFragment("Container = ?", c), true, true, null, true, true);
+            deleteMaterialBySqlFilter(user, c, new SQLFragment("Container = ?", c), true, true, null, true, true, null);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
             LOG.debug("Deleting {} dataIds {} ", dataIds.size(), dataIds);
-            deleteDataByRowIds(user, c, dataIds);
+            deleteDataByRowIds(user, c, dataIds, null);
 
             LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
@@ -5729,7 +5731,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas)
+    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas, @Nullable String auditUserComment)
     {
         try
         {
@@ -5752,7 +5754,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeDataDelete(container, user, datas);
+            listener.beforeDataDelete(container, user, datas, auditUserComment);
         }
     }
 
@@ -5764,12 +5766,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials)
+    public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials, @Nullable String auditUserComment)
     {
         // Notify that a deletion is about to happen
         for (ExperimentListener materialListener : _listeners)
         {
-            materialListener.beforeMaterialDelete(materials, container, user);
+            materialListener.beforeMaterialDelete(materials, container, user, auditUserComment);
         }
     }
 
@@ -6205,7 +6207,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClassImpl dataClass, User user, @Nullable Container c)
+    public int truncateDataClass(ExpDataClassImpl dataClass, User user, @Nullable Container c, @Nullable String auditUserComment)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -6222,7 +6224,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (Map.Entry<String, Collection<Long>> entry : byContainer.asMap().entrySet())
         {
             Container container = ContainerManager.getForId(entry.getKey());
-            deleteDataByRowIds(user, container, entry.getValue());
+            deleteDataByRowIds(user, container, entry.getValue(), auditUserComment);
             count += entry.getValue().size();
         }
         return count;
@@ -6250,7 +6252,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            truncateDataClass(dataClass, user, null);
+            truncateDataClass(dataClass, user, null, auditUserComment);
 
             d.delete(user, auditUserComment);
 
