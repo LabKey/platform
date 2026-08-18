@@ -979,6 +979,8 @@ public class ExperimentModule extends SpringModule
                 results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
+                results.put("domainFieldsWithContainerAlias", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE LOWER(importaliases) = 'container' OR importaliases ILIKE '%, container' OR importaliases ILIKE 'container, %' OR importaliases ILIKE '%, container, %'").getObject(Long.class));
+
                 results.putAll(ExperimentService.get().getDomainMetrics());
 
                 return results;
