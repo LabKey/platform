@@ -13,10 +13,10 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.58.1-fb-remove-bootstrap.0"
+    "@labkey/components": "7.58.1-fb-remove-bootstrap.1"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.0",
+    "@labkey/build": "10.1.2-fb-remove-bootstrap.0",
     "@labkey/eslint-config": "1.2.3",
     "@labkey/test": "1.14.2",
     "@types/jest": "30.0.0",

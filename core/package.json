@@ -20,11 +20,11 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.58.1-fb-remove-bootstrap.0",
+    "@labkey/components": "7.58.1-fb-remove-bootstrap.1",
     "@labkey/themes": "1.9.5"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.0",
+    "@labkey/build": "10.1.2-fb-remove-bootstrap.0",
     "@labkey/eslint-config": "1.2.3",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
