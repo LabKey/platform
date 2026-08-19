@@ -624,17 +624,18 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
         {
-
-            String table = domain.getStorageTableName();
-            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
-                    .append("SELECT RowId FROM ").append(getStorageSchemaName()).append(".").append(table)
-                    .append(")");
+            String scope = prop.getDerivationDataScope();
             // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
             // GH Issue 1472: Include aliquot rows when checking for a property that is editable for both aliquots and samples
-            if (ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(prop.getDerivationDataScope()))
-                nonAliquotRowsSQL.append(" AND RootMaterialRowId = RowId");
+            if (StringUtils.isEmpty(scope) || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(scope))
+            {
+                String table = domain.getStorageTableName();
+                allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
+                        .append("SELECT RowId FROM ").append(getStorageSchemaName()).append(".").append(table)
+                        .append(") AND RootMaterialRowId = RowId");
+            }
 
-            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
             return totalRows != nonBlankRows;
         }
