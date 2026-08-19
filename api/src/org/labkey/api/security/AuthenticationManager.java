@@ -2098,6 +2098,47 @@ public class AuthenticationManager
             assertEquals("Reauthentication failed: wrong user reauthenticated", clone.getParameter(ERROR_MESSAGE));
             assertEquals(initialCount, map.size());
 
+            // The remaining cases all fail the same way -- no token, no map entry -- but each reports a different
+            // problem, so assert the exact text. These messages are what an administrator greps for.
+            String noSessionMessage = "Reauthentication failed: this request did not include your signed-in session. Try signing in again; if the problem persists, contact your administrator.";
+            String noAccountMessage = "Reauthentication failed: the reauthenticated identity does not match a LabKey user account";
+
+            // Guest session: the request carried no signed-in session, so getUser() returned guest
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), User.guest, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noSessionMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Same, with nothing to name in the warning -- covers the "unrecognized identity" fallback, which is
+            // impractical to reach against a live identity provider
+            clone = url.clone();
+            setReauthUser(null, null, User.guest, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noSessionMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Asserted identity resolves to no LabKey account
+            clone = url.clone();
+            setReauthUser(null, "nobody@labkey.test", admin, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noAccountMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // Same, with no asserted identity to report
+            clone = url.clone();
+            setReauthUser(null, null, admin, request, null, clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals(noAccountMessage, clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
+            // A pre-existing error message short-circuits the branch entirely, so the caller's text survives
+            clone = url.clone();
+            setReauthUser(admin, admin.getEmail(), new User(), request, "Reauthentication failed", clone);
+            assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
+            assertEquals("Reauthentication failed", clone.getParameter(ERROR_MESSAGE));
+            assertEquals(initialCount, map.size());
+
             // Wrong user on get case
             clone = url.clone();
             setReauthUser(admin, admin.getEmail(), admin, request, null, clone);
