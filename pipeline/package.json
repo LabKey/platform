@@ -14,10 +14,10 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production rspack build --config node_modules/@labkey/build/configs/prod.config.js"
   },
   "dependencies": {
-    "@labkey/components": "7.58.1-fb-remove-bootstrap.1"
+    "@labkey/components": "7.58.1"
   },
   "devDependencies": {
-    "@labkey/build": "10.1.2-fb-remove-bootstrap.0",
+    "@labkey/build": "10.1.2",
     "@labkey/eslint-config": "1.2.3",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7"
