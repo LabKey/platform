@@ -63,6 +63,7 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
@@ -750,7 +751,8 @@ public class WikiController extends SpringActionController
         public abstract Set<WikiTree> getWikiTrees(FORM form, Container c);
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintAllAction extends PrintMultipleAction<Object>
     {
         @Override
@@ -766,7 +768,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintBranchAction extends PrintMultipleAction<WikiNameForm>
     {
         private Wiki _rootWiki;
@@ -792,7 +795,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
     {
         private String _name;

@@ -31,6 +31,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.BaseWikiPermissions;
 import org.labkey.wiki.WikiController;
+import org.labkey.wiki.WikiController.PrintBranchAction;
 import org.labkey.wiki.WikiSelectManager;
 
 import java.util.Map;
@@ -51,8 +52,7 @@ public abstract class BaseWikiView extends JspView<Object>
     public ActionURL manageURL;
     public ActionURL customizeURL;
     public ActionURL printURL;
-
-    protected WikiVersion wikiVersion = null; // TODO: Used internally only?  Pass to init()?
+    public ActionURL printBranchURL;
 
     protected int _webPartId = 0;
 
@@ -62,7 +62,7 @@ public abstract class BaseWikiView extends JspView<Object>
     }
 
 
-    protected void init(Container c, String name)
+    protected void init(Container c, String name, WikiVersion wikiVersion)
     {
         ViewContext context = getViewContext();
         User user = context.getUser();
@@ -190,9 +190,13 @@ public abstract class BaseWikiView extends JspView<Object>
             }
         }
 
-        if (null == context.getRequest().getParameter(ActionURL.Param._print.name()))
+        if (null == context.getRequestOrThrow().getParameter(ActionURL.Param._print.name()))
         {
             printURL = wiki.getPageURL().addParameter(ActionURL.Param._print, 1);
+            if (wiki.hasChildren() && perms.allowUpdate(wiki))
+            {
+                printBranchURL = new ActionURL(PrintBranchAction.class, getContextContainer()).addParameter("name", wiki.getName());
+            }
         }
 
         // Initialize Custom Menus
@@ -273,9 +277,8 @@ public abstract class BaseWikiView extends JspView<Object>
                 NavTree print = new NavTree("Print", printURL);
                 print.setNoFollow(true);
                 menu.addChild(print);
-                if (wiki.hasChildren())
-                    menu.addChild("Print Branch", new ActionURL(WikiController.PrintBranchAction.class,
-                            getContextContainer()).addParameter("name", wiki.getName()));
+                if (null != printBranchURL)
+                    menu.addChild("Print Branch", printBranchURL);
             }
         }
         else if (!(isEmbedded() && getFrame() == WebPartView.FrameType.NONE))
