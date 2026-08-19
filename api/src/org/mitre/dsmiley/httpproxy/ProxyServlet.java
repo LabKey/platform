@@ -296,10 +296,14 @@ public class ProxyServlet extends HttpServlet {
                 .setProtocolUpgradeEnabled(allowProtocolUpgrade()) // LKS override
                 .build();
 
-        return HttpClientBuilder.create()
-            .useSystemProperties()
-            .setDefaultRequestConfig(config)
-            .build();
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create()
+                .useSystemProperties()
+                .setDefaultRequestConfig(config);
+
+        if (!doHandleCompression)
+            httpClientBuilder.disableContentCompression();
+
+        return httpClientBuilder.build();
     }
 
     // LKS override
