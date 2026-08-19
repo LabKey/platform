@@ -795,8 +795,7 @@ public class WikiController extends SpringActionController
         }
     }
 
-    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(ReadPermission.class)
     public class PrintRawAction extends SimpleViewAction<WikiNameForm>
     {
         private String _name;
@@ -827,7 +826,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class PrintAllRawAction extends SimpleViewAction<Object>
     {
         @Override
@@ -2751,7 +2751,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
+    // Require update to prevent bots from excessive crawling of expensive action, GitHub Issue #1415
+    @RequiresPermission(UpdatePermission.class)
     public class BackLinksAction extends SimpleViewAction<Object>
     {
         @Override
