@@ -630,7 +630,7 @@ public class AuthenticationManager
 
             @Nullable User reauthUser = response.isAuthenticated() ? UserManager.getUser(response.getValidEmail()) : null;
 
-            AuthenticationManager.setReauthUser(reauthUser, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
+            AuthenticationManager.setReauthUser(reauthUser, response.isAuthenticated() ? response.getValidEmail().getEmailAddress() : null, getUser(), getViewContext().getRequestOrThrow(), errorMessage, url);
 
             // A token on the URL means setReauthUser() accepted the reauthentication.
             if (null != reauthUser && null != url.getParameter(REAUTH_TOKEN_NAME))
@@ -1740,7 +1740,7 @@ public class AuthenticationManager
         {
             session.removeAttribute(getReauthFlowSessionKey());
             URLHelper url = getAfterReauthURL(c, getLoginReturnProperties(request), primaryAuthUser);
-            setReauthUser(primaryAuthUser, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
+            setReauthUser(primaryAuthUser, null != primaryAuthUser ? primaryAuthUser.getEmail() : null, reauthFlow.local() ? SecurityManager.getSessionUser(request) : null, request, null, url);
 
             // A token on the URL means setReauthUser() accepted the reauthentication.
             if (null != url.getParameter(REAUTH_TOKEN_NAME))
@@ -1910,13 +1910,16 @@ public class AuthenticationManager
     public static final String REAUTH_TOKEN_MAP_NAME = "reauthTokenSet";    // Session attribute name for token map
 
     /**
-     * @param reauthUser   Re-auth user to stash in session with the re-auth token
-     * @param sessionUser  If not null, validate that this user and reauthUser are the same
-     * @param request      Request from which to retrieve the session
-     * @param errorMessage Pre-existing error message to add to the URL
-     * @param redirectUrl  URL to which the token (on success) or error message (on failure) gets added
+     * @param reauthUser    Re-auth user to stash in session with the re-auth token
+     * @param assertedEmail Identity asserted by the authentication provider, which is not always resolvable to a user.
+     *                      Only used for diagnostics: when reauthUser is null this is the sole record of what was
+     *                      asserted, since the caller has already discarded the response by the time reauth fails.
+     * @param sessionUser   If not null, validate that this user and reauthUser are the same
+     * @param request       Request from which to retrieve the session
+     * @param errorMessage  Pre-existing error message to add to the URL
+     * @param redirectUrl   URL to which the token (on success) or error message (on failure) gets added
      */
-    public static void setReauthUser(@Nullable User reauthUser, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
+    public static void setReauthUser(@Nullable User reauthUser, @Nullable String assertedEmail, @Nullable User sessionUser, HttpServletRequest request, @Nullable String errorMessage, URLHelper redirectUrl)
     {
         if (errorMessage == null && sessionUser != null && !sessionUser.equals(reauthUser))
         {
@@ -1927,15 +1930,25 @@ public class AuthenticationManager
                 // The SSO validate actions are @RequiresNoPermission, so getUser() returns guest whenever the request
                 // carries no signed-in session -- typically because the session cookie didn't accompany the IdP's
                 // cross-site POST to the validate action, or because the session timed out mid-flow.
-                errorMessage = "Reauthentication failed: this browser is no longer signed in; please sign in again";
-                _log.warn("Reauthentication failed for \"{}\": the request carried no signed-in session. Check that the session cookie accompanies the identity provider's response to the validate action -- a JSESSIONID with no explicit SameSite value is withheld from that cross-site POST once it is more than a couple of minutes old.", null != reauthUser ? reauthUser.getEmail() : "an unrecognized identity");
+                // Deliberately does not claim the browser is signed out: the signed-in session usually still exists and
+                // works for same-site requests -- it just didn't accompany this one. Offers both remedies because the
+                // two causes (withheld cookie, expired session) are indistinguishable from here.
+                errorMessage = "Reauthentication failed: this request did not include your signed-in session. Try signing in again; if the problem persists, contact your administrator.";
+                // Names the remedy, not just the symptom: the only person who can act on this reads the server log,
+                // and the property is the same in dev and production even though the file's location is not.
+                _log.warn("Reauthentication failed for \"{}\": the identity provider's cross-site POST to the validate action carried no JSESSIONID, so the request had no signed-in session. Chromium-based browsers withhold a session cookie that has no explicit SameSite value from that POST once the cookie is more than a couple of minutes old. To fix, set server.servlet.session.cookie.same-site=none and server.servlet.session.cookie.secure=true in application.properties -- these require HTTPS -- and restart the server.", null != reauthUser ? reauthUser.getEmail() : "an unrecognized identity");
             }
             else if (null == reauthUser)
+            {
                 // Narrow, but sign-in and reauthentication resolve users differently: finalizePrimaryAuthentication()
                 // can auto-create an account, and reauthentication never does. Reaching here means the asserted
                 // identity has no account by the time reauth runs -- deleted or renamed mid-session, or the IdP
                 // asserting a different identifier than it did at sign-in.
                 errorMessage = "Reauthentication failed: the reauthenticated identity does not match a LabKey user account";
+                // The asserted identity is the whole diagnosis here and it appears nowhere else: no user resolved, so
+                // the audit log records nothing and the user-facing message can't name an account that doesn't exist.
+                _log.warn("Reauthentication failed for \"{}\": the identity provider asserted \"{}\", which matches no LabKey user account.", sessionUser.getEmail(), null != assertedEmail ? assertedEmail : "an unrecognized identity");
+            }
             else
             {
                 errorMessage = "Reauthentication failed: wrong user reauthenticated";
@@ -2064,7 +2077,7 @@ public class AuthenticationManager
             ActionURL url = new ActionURL("core", "begin.view", ContainerManager.getRoot());
 
             ActionURL clone = url.clone();
-            setReauthUser(admin, admin, request, null, clone);
+            setReauthUser(admin, admin.getEmail(), admin, request, null, clone);
             assertEquals(initialCount + 1, map.size());
             String token = clone.getParameter(REAUTH_TOKEN_NAME);
             ReauthContext ctx = map.get(token);
@@ -2080,14 +2093,14 @@ public class AuthenticationManager
 
             // Wrong user on set case
             clone = url.clone();
-            setReauthUser(admin, new User(), request, null, clone);
+            setReauthUser(admin, admin.getEmail(), new User(), request, null, clone);
             assertNull(clone.getParameter(REAUTH_TOKEN_NAME));
             assertEquals("Reauthentication failed: wrong user reauthenticated", clone.getParameter(ERROR_MESSAGE));
             assertEquals(initialCount, map.size());
 
             // Wrong user on get case
             clone = url.clone();
-            setReauthUser(admin, admin, request, null, clone);
+            setReauthUser(admin, admin.getEmail(), admin, request, null, clone);
             assertEquals(initialCount + 1, map.size());
             token = clone.getParameter(REAUTH_TOKEN_NAME);
             ctx = map.get(token);
