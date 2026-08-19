@@ -28,6 +28,7 @@ module.exports = {
     // and then there is no test summary when failures happen, which means that you'll almost never see what tests
     // failed unless they were the last tests to run.
     reporters: [['default', { summaryThreshold: 10 }]],
+    setupFiles: ['./test/js/jest.polyfills.ts'],
     setupFilesAfterEnv: ['./test/js/setup.ts'],
     testEnvironment: 'jsdom',
     testRegex: '(\\.(test))\\.(ts|tsx)$',
