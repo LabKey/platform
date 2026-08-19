@@ -15,6 +15,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.api.DataColor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,12 +90,6 @@ public class DataColorManager
     public List<DataColor> getColors(Container container)
     {
         return CACHE.get(container)._colors;
-    }
-
-    @NotNull
-    public List<DataColor> getActiveColors(Container container)
-    {
-        return getColors(container).stream().filter(c -> !c.isArchived()).toList();
     }
 
     @NotNull

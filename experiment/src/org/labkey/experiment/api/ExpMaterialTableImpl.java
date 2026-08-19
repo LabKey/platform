@@ -118,7 +118,6 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
@@ -774,9 +773,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private boolean colorsEnabled(Container c)
     {
-        if (!OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS))
-            return false;
-        if (_ss != null)
+        if (_ss != null && !_ss.isMedia())
             return !ExperimentService.get().getActiveDataTypeColors(c, ExperimentService.DataTypeForExclusion.SampleType, _ss.getRowId()).isEmpty();
         return !DataColorManager.getInstance().getActiveProjectColors(c).isEmpty();
     }
@@ -867,6 +864,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleSet);
         addColumn(MaterialExpDate);
         defaultCols.add(MaterialExpDate.fieldKey());
+        addColumn(ExpMaterialColor);
+        if (colorsEnabled(getContainer()))
+            defaultCols.add(ExpMaterialColor.fieldKey());
         addContainerColumn(Folder, null);
         if (getContainer().hasProductFolders())
             defaultCols.add(Folder.fieldKey());
@@ -886,9 +886,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(SampleState);
         if (isStatusEnabled(getContainer()))
             defaultCols.add(SampleState.fieldKey());
-        addColumn(ExpMaterialColor);
-        if (colorsEnabled(getContainer()))
-            defaultCols.add(ExpMaterialColor.fieldKey());
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))

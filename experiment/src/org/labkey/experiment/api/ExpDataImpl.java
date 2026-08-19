@@ -351,7 +351,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public void delete(User user, boolean deleteRunsUsingData)
     {
-        ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()), deleteRunsUsingData);
+        ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()), deleteRunsUsingData, null);
     }
 
     public String getMimeType()
