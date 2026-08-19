@@ -1222,10 +1222,9 @@ public class DbScope
     }
 
     /**
-     * Special case for when the connection that we expected to close has already been closed and another connection
-
-     * is in use instead.
-     * Makes it easier to retry in cases that are prone to race conditions, like killing pipeline jobs.
+     * Special case for when the connection that we expected to close has already been closed and another connection is
+     * in use instead. Expected rather than a bug because TransactionFilter's read-only request timeout closes a
+     * thread's connections from a different thread.
      */
     public static class DifferentConnectionException extends IllegalStateException implements SkipMothershipLogging
     {

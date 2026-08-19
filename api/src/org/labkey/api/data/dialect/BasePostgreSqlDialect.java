@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -30,6 +31,7 @@ import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -37,6 +39,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -58,6 +61,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -136,6 +140,53 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment getDatabaseSizeSql(String databaseName)
     {
         return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
+    @Override
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    {
+        // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
+        String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
+            SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
+            for (ConnectionWrapper connection : connections)
+            {
+                Integer spid = connection.getSPID();
+
+                // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                // may have handed that physical connection, and this SPID, straight back out to someone else
+                if (!connection.isAllocated())
+                {
+                    LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                    continue;
+                }
+
+                try
+                {
+                    // Reports an already-exited backend by returning false, not by throwing
+                    boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                    if (!signalled)
+                    {
+                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                        LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                    }
+                }
+                catch (RuntimeSQLException e)
+                {
+                    LOG.warn("{}({}) failed", function, spid, e);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return true;
     }
 
     @Override
