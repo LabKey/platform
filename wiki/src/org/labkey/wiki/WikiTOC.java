@@ -103,9 +103,10 @@ public class WikiTOC extends NavTreeMenu
 
         //output "New" if wiki contains no pages
         boolean hasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
-        boolean hasUpdate = _cToc.hasPermission("WikiTOC.getNavMenu()", user, UpdatePermission.class);
         boolean hasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && !getElements().isEmpty();
-        boolean hasPrint = hasUpdate && !isInWebPart(context) && !getElements().isEmpty();
+        // Must have update in the container since this is a folder-wide, potentially expensive operation. GitHub Issue #1415.
+        boolean hasUpdate = _cToc.hasPermission("WikiTOC.getNavMenu()", user, UpdatePermission.class);
+        boolean hasPrintAll = hasUpdate && !isInWebPart(context) && !getElements().isEmpty();
 
         NavTree menu = new NavTree();
         if (hasInsert)
@@ -121,7 +122,7 @@ public class WikiTOC extends NavTreeMenu
             copyUrl.addParameter("sourceContainer", _cToc.getPath());
             menu.addChild("Copy", copyUrl.toString());
         }
-        if (hasPrint)
+        if (hasPrintAll)
         {
             menu.addChild("Print all", new ActionURL(WikiController.PrintAllAction.class, _cToc).toString());
         }

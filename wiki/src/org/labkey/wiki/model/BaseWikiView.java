@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -193,7 +194,9 @@ public abstract class BaseWikiView extends JspView<Object>
         if (null == context.getRequestOrThrow().getParameter(ActionURL.Param._print.name()))
         {
             printURL = wiki.getPageURL().addParameter(ActionURL.Param._print, 1);
-            if (wiki.hasChildren() && perms.allowUpdate(wiki))
+            // Must have update in the container, not just owner update on the wiki, since this is a folder-wide,
+            // potentially expensive operation. GitHub Issue #1415
+            if (wiki.hasChildren() && c.hasPermission(user, UpdatePermission.class))
             {
                 printBranchURL = new ActionURL(PrintBranchAction.class, getContextContainer()).addParameter("name", wiki.getName());
             }
