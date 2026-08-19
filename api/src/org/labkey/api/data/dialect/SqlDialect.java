@@ -1508,6 +1508,17 @@ public abstract class SqlDialect
         }
     }
 
+    /**
+     * Stop work in progress on the sessions behind the given connections, which typically belong to a thread that's
+     * blocked in JDBC and can't respond to a request to stop. Cancelling throws an exception so the thread unwinds
+     * and releases its own connection; terminating kills the session outright, leaving its pooled connection dead.
+     * @return false if this dialect can't stop queries out of band
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    {
+        return false;
+    }
+
     public boolean updateStatistics(TableInfo table)
     {
         SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());

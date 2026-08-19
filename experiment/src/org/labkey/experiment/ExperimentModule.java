@@ -299,8 +299,6 @@ public class ExperimentModule extends SpringModule
                 "Support for querying lineage of experiment objects", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
                 "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS, "Sample Colors",
-                "Enable assigning custom colors to individual samples, with an app-level color palette configurable per sample type.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
@@ -979,6 +977,8 @@ public class ExperimentModule extends SpringModule
                 results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 
+                results.put("domainFieldsWithContainerAlias", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE LOWER(importaliases) = 'container' OR importaliases ILIKE '%, container' OR importaliases ILIKE 'container, %' OR importaliases ILIKE '%, container, %'").getObject(Long.class));
+
                 results.putAll(ExperimentService.get().getDomainMetrics());
 
                 return results;
@@ -1241,7 +1241,6 @@ public class ExperimentModule extends SpringModule
     {
         JSONObject json = super.getPageContextJson(context);
         json.put(SAMPLE_FILES_TABLE, OptionalFeatureService.get().isFeatureEnabled(SAMPLE_FILES_TABLE));
-        json.put("SampleColors", OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_SAMPLE_COLORS));
         return json;
     }
 }

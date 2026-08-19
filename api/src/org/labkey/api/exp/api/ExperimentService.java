@@ -133,8 +133,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
 
-    String EXPERIMENTAL_SAMPLE_COLORS = "org.labkey.api.exp.api.ExperimentService#SAMPLE_COLORS";
-
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -1160,7 +1158,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
 
-    @Nullable String getDataColorLabel(@NotNull Container container, long colorRowId);
+    @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container);
+
+    @NotNull List<DataColor> getAllProjectColors(@NotNull Container container);
+
+    @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId);
 
     boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
 
