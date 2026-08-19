@@ -15,8 +15,6 @@
  */
 package org.labkey.api.mcp;
 
-import com.google.genai.errors.ClientException;
-import com.google.genai.errors.ServerException;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -167,16 +165,12 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
             }
             return ret;
         }
-        catch (ServerException x)
+        catch (ChatException x)
         {
             return new JSONObject(Map.of(
                     "error", x.getMessage(),
                     "text", "ERROR: " + x.getMessage(),
                     "success", Boolean.FALSE));
-        }
-        catch (ClientException ex)
-        {
-            return errorResponse(ex);
         }
     }
 
