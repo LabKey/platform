@@ -428,7 +428,7 @@ public class AuditController extends SpringActionController
 
         public Boolean isInsertOnly()
         {
-            return  Boolean.TRUE.equals(_insertOnly);
+            return Boolean.TRUE.equals(_insertOnly);
         }
 
         public void setInsertOnly(Boolean insertOnly)
