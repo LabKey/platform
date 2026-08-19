@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.55.2"
+    "@labkey/components": "7.58.1-fb-remove-bootstrap.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.0",
