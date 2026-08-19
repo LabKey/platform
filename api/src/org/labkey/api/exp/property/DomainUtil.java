@@ -1704,6 +1704,10 @@ public class DomainUtil
 
             if (fieldNames.contains(alias))
                 addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a field name.");
+
+            // GH Issue 1474: 'Container' should not be allowed as valid Import Alias
+            if (reservedNames.contains(alias))
+                addImportAliasErrors(exception, updates, fields, "Import alias '" + alias + "' on field" + (fields.size() == 1 ? " " : "s ") + names + " conflicts with a reserved field name.");
         });
 
         return exception;
