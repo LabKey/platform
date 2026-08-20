@@ -191,6 +191,10 @@ public class QueryImporter implements FolderImporter
 
             fireQueryEvents(ctx, createdQueries, changedQueries);
 
+            // Only FolderImportTask calls postProcess(); subfolder import and create-folder-from-template drop these
+            if (!qic.deferredMetadataFiles.isEmpty())
+                ctx.getLogger().warn("{} metadata xml override(s) deferred to post-processing; they are skipped by imports that don't post-process", qic.deferredMetadataFiles.size());
+
             ctx.getLogger().info("{} quer{} imported", sqlFileNames.size(), 1 == sqlFileNames.size() ? "y" : "ies");
             ctx.getLogger().info("Done importing {}", getDescription());
         }
@@ -237,17 +241,18 @@ public class QueryImporter implements FolderImporter
             UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
             if (schema == null)
             {
-                ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
+                ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
                 continue;
             }
 
             if (!schema.getTableNames().contains(queryName))
-                ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
+                ctx.getLogger().warn("Importing: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
 
             createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, null, null);
             importedCount++;
         }
 
+        qic.deferredMetadataFiles.clear();
         fireQueryEvents(ctx, createdQueries, changedQueries);
 
         ctx.getLogger().info("{} deferred metadata quer{} imported", importedCount, 1 == importedCount ? "y" : "ies");
