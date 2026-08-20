@@ -53,6 +53,7 @@
 function startChatting(chatEndpoint)
 {
     var elPrompt = document.getElementById('chatPrompt');
+    var conversationId;
 
     function scrollToBottom()
     {
@@ -94,7 +95,10 @@ function startChatting(chatEndpoint)
         if (req.readyState === 4) {
             if (req.status >= 200 && req.status < 300)
             {
-                appendResponse(JSON.parse(req.responseText));
+                const res = JSON.parse(req.responseText);
+                if (res.conversationId !== conversationId)
+                    conversationId = res.conversationId;
+                appendResponse(res);
             }
             else
             {
@@ -110,6 +114,8 @@ function startChatting(chatEndpoint)
     {
         var url = new URL(chatEndpoint);
         url.searchParams.set('prompt', prompt);
+        if (conversationId !== undefined)
+            url.searchParams.set('conversationId', conversationId);
         var req = new XMLHttpRequest();
         req.open('GET', url.toString(), true);
         req.onreadystatechange = handleChatResponse;
