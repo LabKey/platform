@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -194,46 +195,66 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         MarkdownService md = MarkdownService.get();
         StringBuilder htmlBuf = new StringBuilder();
 
-        for (var response : responses)
-        {
-            String text = response.text();
-            if (isBlank(text))
-                continue;
+        // Scan the turns as one document: tool calling can split a single assistant turn so that a
+        // fence opens in one MessageResponse and closes in the next.
+        String text = responses.stream()
+                .map(McpService.MessageResponse::text)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.joining("\n"));
 
-            String[] lines = text.split("\n", -1);
-            int i = 0;
-            while (i < lines.length)
+        LOG.debug("Expression assistant raw response:\n{}", text);
+
+        String[] lines = text.split("\n", -1);
+        int i = 0;
+        while (i < lines.length)
+        {
+            Fence f = readFence(lines, i);
+            if (f != null && f.terminated && ("sql".equals(f.tag) || "expression".equals(f.tag)))
             {
-                Fence f = readFence(lines, i);
-                if (f != null && f.terminated && ("sql".equals(f.tag) || "expression".equals(f.tag)))
-                {
-                    flushHtmlSegment(segments, htmlBuf, md);
-                    segments.put(buildSqlSegment(f.tag, f.body));
-                    i = f.nextIndex;
-                }
-                else if (f != null && !f.terminated)
-                {
-                    // Unterminated fence — fold the body back into prose so we don't drop content,
-                    // but skip the opening fence line itself so the user doesn't see a stray
-                    // "```expression" rendered as a code marker.
-                    if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-                    htmlBuf.append(f.body);
-                    break;
-                }
-                else
-                {
-                    // Either not a fence opener or an unknown tag (e.g., python). In the unknown-tag
-                    // case we leave the fence intact in prose so the Markdown renderer turns it into
-                    // a code block.
-                    if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-                    htmlBuf.append(lines[i]);
-                    i++;
-                }
+                flushHtmlSegment(segments, htmlBuf, md);
+                segments.put(buildSqlSegment(f.tag, f.body));
+                i = f.nextIndex;
+            }
+            else if (f != null && !f.terminated)
+            {
+                // Unterminated fence — fold the body back into prose so we don't drop content,
+                // but skip the opening fence line itself so the user doesn't see a stray
+                // "```expression" rendered as a code marker.
+                if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
+                htmlBuf.append(f.body);
+                break;
+            }
+            else
+            {
+                // Either not a fence opener or an unknown tag (e.g., python). In the unknown-tag
+                // case we leave the fence intact in prose so the Markdown renderer turns it into
+                // a code block.
+                if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
+                htmlBuf.append(lines[i]);
+                i++;
             }
         }
 
         flushHtmlSegment(segments, htmlBuf, md);
+
+        // A payload in prose means the model broke the fence protocol, so the user is reading raw JSON
+        // instead of being offered an Apply Expression action. Log the response that caused it.
+        if (hasLeakedPayload(segments))
+            LOG.warn("Expression assistant leaked a validator payload into prose:\n{}", text);
+
         return segments;
+    }
+
+    /** True when a validateCalculatedColumnExpression payload reached prose instead of an `expression` fence. */
+    private static boolean hasLeakedPayload(JSONArray segments)
+    {
+        for (int i = 0; i < segments.length(); i++)
+        {
+            JSONObject segment = segments.getJSONObject(i);
+            if ("html".equals(segment.optString("type")) && segment.optString("html", "").contains("jdbcType"))
+                return true;
+        }
+        return false;
     }
 
     /**
@@ -277,19 +298,38 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
     private record Fence(String tag, String body, int nextIndex, boolean terminated) {}
 
+    /** Length of the leading backtick run if {@code trimmed} is long enough to delimit a fence, else 0. */
+    private static int backtickRun(String trimmed)
+    {
+        int n = 0;
+        while (n < trimmed.length() && trimmed.charAt(n) == '`')
+            n++;
+        return n >= 3 ? n : 0;
+    }
+
+    /** Per CommonMark a closing fence is backticks only, and at least as long as the opener. */
+    private static boolean isFenceClose(String line, int openLength)
+    {
+        String trimmed = line.trim();
+        int n = backtickRun(trimmed);
+        return n == trimmed.length() && n >= openLength;
+    }
+
     private static Fence readFence(String[] lines, int i)
     {
         String trimmed = lines[i].trim();
-        if (!trimmed.startsWith("```"))
+        int openLength = backtickRun(trimmed);
+        if (openLength == 0)
             return null;
-        String rest = trimmed.substring(3).trim();
+        String rest = trimmed.substring(openLength).trim();
         if (rest.isEmpty())
             return null;
-        String tag = rest.toLowerCase();
+        // Only the first word of the info string is the tag; models pad it ("expression json").
+        String tag = rest.split("\\s+", 2)[0].toLowerCase();
 
         int j = i + 1;
         StringBuilder body = new StringBuilder();
-        while (j < lines.length && !"```".equals(lines[j].trim()))
+        while (j < lines.length && !isFenceClose(lines[j], openLength))
         {
             if (!body.isEmpty()) body.append("\n");
             body.append(lines[j]);
@@ -346,6 +386,24 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             json.put("jdbcType", jdbcType);
             json.put("expression", sql);
             return json.toString();
+        }
+
+        private static void assertExpressionSegment(JSONArray segments, int i, String sql, String jdbcType)
+        {
+            assertEquals("expression", segment(segments, i).getString("type"));
+            assertEquals(sql, segment(segments, i).getString("sql"));
+            assertEquals(jdbcType, segment(segments, i).getString("jdbcType"));
+        }
+
+        /** The validator payload is transport between the tool and this action; it must never reach the user as text. */
+        private static void assertNoPayloadInProse(JSONArray segments)
+        {
+            for (int i = 0; i < segments.length(); i++)
+            {
+                JSONObject seg = segments.getJSONObject(i);
+                if ("html".equals(seg.optString("type")))
+                    assertFalse("validator payload leaked into prose: " + seg, seg.getString("html").contains("jdbcType"));
+            }
         }
 
         @Test
@@ -488,6 +546,93 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("expression", segment(segments, 0).getString("type"));
             assertEquals("SELECT 1", segment(segments, 0).getString("sql"));
             assertEquals("INTEGER", segment(segments, 0).getString("jdbcType"));
+        }
+
+        @Test
+        public void expressionFenceIsRecognizedAtAnyBacktickLength()
+        {
+            for (int n = 3; n <= 6; n++)
+            {
+                String delim = "`".repeat(n);
+                String md = delim + "expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n" + delim;
+                JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+                assertEquals("fence length " + n, 1, segments.length());
+                assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
+                assertNoPayloadInProse(segments);
+            }
+        }
+
+        @Test
+        public void longerClosingFenceTerminatesShorterOpener()
+        {
+            String md = "```expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n````";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
+        }
+
+        @Test
+        public void shorterClosingFenceDoesNotTerminateLongerOpener()
+        {
+            // Per CommonMark the short line is fence content, not a closer, so the block never terminates.
+            String md = "````expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+        }
+
+        @Test
+        public void leakedPayloadDetectedWhenFenceIsMissing()
+        {
+            // No opening fence, so the payload lands in prose and the user gets no Apply affordance.
+            String md = "Adding Int7 and Int6.\n\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertTrue("prose payload should be reported as a leak", hasLeakedPayload(segments));
+        }
+
+        @Test
+        public void wellFormedExpressionSegmentIsNotALeak()
+        {
+            // "jdbcType" is a key on the expression segment itself, so only prose can leak.
+            String md = "```expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
+            assertFalse("a parsed expression segment is not a leak", hasLeakedPayload(segments));
+        }
+
+        @Test
+        public void proseWithoutPayloadIsNotALeak()
+        {
+            JSONArray segments = buildSegments(List.of(markdownResponse("Which date field should be used?")));
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertFalse(hasLeakedPayload(segments));
+        }
+
+        @Test
+        public void expressionFenceWithExtraInfoStringTokenIsRecognized()
+        {
+            // The tag is matched against the whole info string, so any trailing token defeats it.
+            String md = "```expression json\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
+            assertNoPayloadInProse(segments);
+        }
+
+        @Test
+        public void expressionFenceSplitAcrossResponsesIsRecognized()
+        {
+            // Fence state does not survive the per-response scan, so a turn-split mid-fence loses the payload.
+            String payload = expressionPayload("Int7 + Int6", "INTEGER");
+            var r1 = markdownResponse("Adding Int7 and Int6.\n\n```expression\n" + payload);
+            var r2 = markdownResponse("```");
+            JSONArray segments = buildSegments(List.of(r1, r2));
+            assertEquals(2, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertExpressionSegment(segments, 1, "Int7 + Int6", "INTEGER");
+            assertNoPayloadInProse(segments);
         }
 
         @Test
