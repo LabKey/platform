@@ -245,6 +245,14 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
 
+    // All three are set by startup properties during doInitWithSourceModule() and read later from other threads
+
+    // If non-null, overrides the name specified in the distribution.properties file
+    private volatile String _distributionNameOverride;
+    // Modules to include and exclude in this server session; consumed by loadModules()
+    private volatile List<String> _moduleIncludeList = List.of();
+    private volatile List<String> _moduleExcludeList = List.of();
+
     private ModuleLoader()
     {
         MemTracker.getInstance().register(this);
@@ -1185,8 +1193,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         // filter by startup properties if they were specified
-        LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
-        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(ModuleLoaderStartupProperties.exclude.getList());
+        LinkedList<String> includeList = getModuleIncludeList();
+        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(getModuleExcludeList());
 
         List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
@@ -2062,6 +2070,46 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             return UpgradeState.UpgradeInProgress == _upgradeState;
         }
+    }
+
+    public @Nullable String getDistributionNameOverride()
+    {
+        return _distributionNameOverride;
+    }
+
+    void setDistributionNameOverride(@Nullable String distributionNameOverride)
+    {
+        checkStartupPropertyState("Distribution name override");
+        _distributionNameOverride = distributionNameOverride;
+    }
+
+    // Returns a mutable copy because loadModules() consumes the list destructively
+    LinkedList<String> getModuleIncludeList()
+    {
+        return new LinkedList<>(_moduleIncludeList);
+    }
+
+    void setModuleIncludeList(List<String> moduleIncludeList)
+    {
+        checkStartupPropertyState("Module include list");
+        _moduleIncludeList = List.copyOf(moduleIncludeList);
+    }
+
+    List<String> getModuleExcludeList()
+    {
+        return _moduleExcludeList;
+    }
+
+    void setModuleExcludeList(List<String> moduleExcludeList)
+    {
+        checkStartupPropertyState("Module exclude list");
+        _moduleExcludeList = List.copyOf(moduleExcludeList);
+    }
+
+    private void checkStartupPropertyState(String description)
+    {
+        if (isStartupComplete())
+            throw new IllegalStateException(description + " must be set during startup");
     }
 
     // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
