@@ -79,6 +79,10 @@ public class QueryImporter implements FolderImporter
         // Map of metadata xml files that didn't resolve to a built-in table during import.
         // The map of files will be validated during postProcess
         Map<String, QueryDocument> unresolvedMetadataFiles = new LinkedHashMap<>();
+
+        // GitHub Issue #1037: Map of metadata xml files whose schema didn't exist yet during import.
+        // The map of files will be imported during postProcess
+        Map<String, QueryDocument> deferredMetadataFiles = new LinkedHashMap<>();
     }
 
     @Override
@@ -168,7 +172,10 @@ public class QueryImporter implements FolderImporter
                 UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
                 if (schema == null)
                 {
-                    ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
+                    // Schemas whose existence depends on data imported by a later importer, such as an assay protocol
+                    // schema created by the XAR importer, can only be resolved once every importer has run
+                    ctx.getLogger().info("Deferring import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist yet."));
+                    qic.deferredMetadataFiles.put(metaFileName, queryDoc);
                     continue;
                 }
 
@@ -182,26 +189,68 @@ public class QueryImporter implements FolderImporter
                 createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, null, null);
             }
 
-            // fire query created events (one set of changes per container/schema)
-            for (Map.Entry<SchemaKey, List<String>> entry : createdQueries.entrySet())
-            {
-                SchemaKey schemaKey = entry.getKey();
-                List<String> queries = entry.getValue();
-                QueryService.get().fireQueryCreated(ctx.getUser(), ctx.getContainer(), null, schemaKey, queries);
-            }
-
-            // fire query changed events (one set of changes per container/schema/queryproperty)
-            for (Map.Entry<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> entry : changedQueries.entrySet())
-            {
-                SchemaKey schemaKey = entry.getKey().first;
-                QueryProperty property = entry.getKey().second;
-                List<QueryPropertyChange<?>> changes = entry.getValue();
-                QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, schemaKey, property, changes);
-            }
+            fireQueryEvents(ctx, createdQueries, changedQueries);
 
             ctx.getLogger().info("{} quer{} imported", sqlFileNames.size(), 1 == sqlFileNames.size() ? "y" : "ies");
             ctx.getLogger().info("Done importing {}", getDescription());
         }
+    }
+
+    private void fireQueryEvents(FolderImportContext ctx,
+                                 Map<SchemaKey, List<String>> createdQueries,
+                                 Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries)
+    {
+        // fire query created events (one set of changes per container/schema)
+        for (Map.Entry<SchemaKey, List<String>> entry : createdQueries.entrySet())
+        {
+            SchemaKey schemaKey = entry.getKey();
+            List<String> queries = entry.getValue();
+            QueryService.get().fireQueryCreated(ctx.getUser(), ctx.getContainer(), null, schemaKey, queries);
+        }
+
+        // fire query changed events (one set of changes per container/schema/queryproperty)
+        for (Map.Entry<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> entry : changedQueries.entrySet())
+        {
+            SchemaKey schemaKey = entry.getKey().first;
+            QueryProperty property = entry.getKey().second;
+            List<QueryPropertyChange<?>> changes = entry.getValue();
+            QueryService.get().fireQueryChanged(ctx.getUser(), ctx.getContainer(), null, schemaKey, property, changes);
+        }
+    }
+
+    // Import the metadata xml overrides whose schema didn't exist when process() ran
+    private void importDeferredMetadataFiles(FolderImportContext ctx, QueryImportContext qic) throws SQLException
+    {
+        Map<SchemaKey, List<String>> createdQueries = new LinkedHashMap<>();
+        Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries = new LinkedHashMap<>();
+        int importedCount = 0;
+
+        for (Map.Entry<String, QueryDocument> entry : qic.deferredMetadataFiles.entrySet())
+        {
+            String metaFileName = entry.getKey();
+            QueryDocument queryDoc = entry.getValue();
+            QueryType queryXml = queryDoc.getQuery();
+
+            String queryName = queryXml.getName();
+            String schemaName = queryXml.getSchemaName();
+            SchemaKey schemaKey = SchemaKey.fromString(schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
+            if (schema == null)
+            {
+                ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
+                continue;
+            }
+
+            if (!schema.getTableNames().contains(queryName))
+                ctx.getLogger().error(queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
+
+            createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, null, null);
+            importedCount++;
+        }
+
+        fireQueryEvents(ctx, createdQueries, changedQueries);
+
+        ctx.getLogger().info("{} deferred metadata quer{} imported", importedCount, 1 == importedCount ? "y" : "ies");
     }
 
     private void createQueryDef(FolderImportContext ctx,
@@ -317,12 +366,18 @@ public class QueryImporter implements FolderImporter
 
     @Override
     @NotNull
-    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root)
+    public Collection<PipelineJobWarning> postProcess(FolderImportContext ctx, VirtualFile root) throws SQLException
     {
         List<PipelineJobWarning> warnings = new ArrayList<>();
 
         //validate all queries in all schemas in the container
         ctx.getLogger().info("Post-processing {}", getDescription());
+
+        QueryImportContext qic = ctx.getContext(QueryImportContext.class);
+
+        // import deferred metadata regardless of isSkipQueryValidation() -- skipping validation must not skip an import
+        if (qic != null && !qic.deferredMetadataFiles.isEmpty())
+            importDeferredMetadataFiles(ctx, qic);
 
         if (ctx.isSkipQueryValidation())
         {
@@ -331,7 +386,6 @@ public class QueryImporter implements FolderImporter
         else
         {
             // check that each meta xml file was applied to a built-in table after import of all data structures has completed
-            QueryImportContext qic = ctx.getContext(QueryImportContext.class);
             if (qic != null)
             {
                 for (Map.Entry<String, QueryDocument> entry : qic.unresolvedMetadataFiles.entrySet())
