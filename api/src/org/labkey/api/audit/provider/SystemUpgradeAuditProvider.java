@@ -93,7 +93,7 @@ public class SystemUpgradeAuditProvider extends AbstractAuditTypeProvider implem
     @Override
     public String getLabel()
     {
-        return "System Upgrade events";
+        return "System Upgrade Events";
     }
 
     @Override
