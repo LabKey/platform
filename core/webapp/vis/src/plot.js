@@ -2464,8 +2464,18 @@ boxPlot.render();
             }
         }
 
-        // Previously the ordinal x-axis was padded out to a minimum of 10 slots; that left trailing dateless ticks
-        // when only a few days had data, so the axis now spans just the real (and selected-range) dates.
+        // pad the ordinal axis to a 10-slot minimum; on the calendar axis a filler's synthetic seqValue would read as a real day offset, so it floors its slot width (not its domain) at 10 instead
+        if (!timeBasedXTick) {
+            const maxSeqValue = config.data.length > 0 ? config.data[config.data.length - 1].seqValue + 1 : 0;
+            for (let i = maxSeqValue; i < 10; i++) {
+                const temp = {type: 'empty', seqValue: i};
+                temp[config.properties.xTickLabel] = "";
+                if (config.properties.color && config.data[0]) {
+                    temp[config.properties.color] = config.data[0][config.properties.color];
+                }
+                config.data.push(temp);
+            }
+        }
 
         // Dateless range/separator markers (rangeTick) carry a meaningful label (selected-range endpoints, the guide-set
         // "always show" separator) - distinct from the Issue-31678 missing-date FILL rows that share the axis across
@@ -2705,7 +2715,7 @@ boxPlot.render();
             config.layers = [];
         }
         else {
-            // Slot count floored at 9 - the ordinal axis is no longer padded to 10 slots, so one slot would divide by zero.
+            // Slot count floored at 9 - the calendar axis has no filler rows, so a single-day plot would divide by zero.
             const lastRow = config.data.length > 0 ? config.data[config.data.length - 1] : undefined;
             const barWidthDenom = Math.max(timeBasedXTick ? uniqueDayOffsets.length - 1 : (lastRow ? lastRow.seqValue : 0), 9);
             const barWidth = Math.max(config.width / barWidthDenom / 4, 3);
