@@ -22,7 +22,6 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,6 +59,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -69,11 +69,14 @@ import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
@@ -131,7 +134,7 @@ import java.util.stream.Collectors;
 
 public class WikiController extends SpringActionController
 {
-    private static final Logger LOG = LogManager.getLogger(WikiController.class);
+    private static final Logger LOG = LogHelper.getLogger(WikiController.class, "Wiki action debugging");
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(WikiController.class);
 
     public WikiController()
@@ -2977,7 +2980,35 @@ public class WikiController extends SpringActionController
             // Positive control: an Editor passes the UpdatePermission guard.
             User editor = createUserInRole(folder, EditorRole.class);
             assertNotEquals("An editor must pass the attachment UpdatePermission guard, not be blocked at 403",
-                    HttpServletResponse.SC_FORBIDDEN, post(url, editor).getStatus());
+                HttpServletResponse.SC_FORBIDDEN, post(url, editor).getStatus());
+        }
+    }
+
+    @TestWhen(TestWhen.When.BVT)
+    public static class PermissionTestCase extends AbstractActionPermissionTest
+    {
+        @Override
+        @Test
+        public void testActionPermissions()
+        {
+            User user = TestContext.get().getUser();
+            assertTrue(user.hasSiteAdminPermission());
+            WikiController controller = new WikiController();
+
+            // TODO: Check more actions
+
+            // @RequiresPermission(ReadPermission.class)
+            assertForReadPermission(user, false,
+                controller.new PageAction(),
+                controller.new PrintRawAction()
+            );
+
+            // @RequiresPermission(UpdatePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                controller.new PrintAllAction(),
+                controller.new PrintAllRawAction(),
+                controller.new PrintBranchAction()
+            );
         }
     }
 }
