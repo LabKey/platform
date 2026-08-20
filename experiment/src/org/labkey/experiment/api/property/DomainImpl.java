@@ -83,6 +83,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -757,7 +758,9 @@ public class DomainImpl implements Domain
                             // If this field is newly required, or it's required and we're disabling MV indicators on
                             // it, make sure that all the rows have values for it
                             if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
-                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
+                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()) ||
+                                    (impl._pdOld.isRequired() && derivationDataScopeChanged(impl._pdOld.getDerivationDataScope(), impl._pd.getDerivationDataScope()))
+                            )
                             {
                                 checkRequiredStatus.add(impl);
                             }
@@ -933,6 +936,13 @@ public class DomainImpl implements Domain
             transaction.addCommitTask(afterDomainCommitOrRollback, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
         }
+    }
+
+    private boolean derivationDataScopeChanged(String oldScope, String newScope)
+    {
+        ExpSchema.DerivationDataScopeType oldType = oldScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(oldScope);
+        ExpSchema.DerivationDataScopeType newType = newScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(newScope);
+        return oldType != newType;
     }
 
     record CalculatedFieldsUpdate(@Nullable List<MetadataColumnJSON> added, @Nullable List<MetadataColumnJSON> removed, @Nullable List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updated)
