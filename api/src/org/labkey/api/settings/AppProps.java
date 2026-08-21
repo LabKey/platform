@@ -279,4 +279,9 @@ public interface AppProps
     @NotNull List<String> getAllowedExtensions();
 
     @NotNull String getAllowedExternalResourceHosts();
+
+    default @Nullable String getDocumentationServer()
+    {
+        return "https://www.labkey.org";
+    }
 }

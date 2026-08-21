@@ -24,6 +24,9 @@ import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.mcp.DocumentationService;
+import org.labkey.api.mcp.McpException;
+import org.labkey.api.mcp.McpToolProxy;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
@@ -35,6 +38,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
@@ -42,14 +46,107 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
+    // Lazily created, then reused for the lifetime of this instance -- see McpToolProxy's class javadoc.
+    private volatile McpToolProxy documentationProxy;
+
+    public CoreMcp()
+    {
+    }
+
+    private static boolean isDocumentationSourceRemote()
+    {
+        if (DocumentationService.get() instanceof DocumentationService s && s.isEnabled())
+            return false;
+        var documentationServer = AppProps.getInstance().getDocumentationServer();
+        if (isBlank(documentationServer))
+            return false;
+
+        var baseServerUrl = AppProps.getInstance().getBaseServerUrl();
+        try
+        {
+            return !(new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(baseServerUrl).getHost()));
+        }
+        catch (URISyntaxException x)
+        {
+            return false;
+        }
+    }
+
+    private McpToolProxy getDocumentationProxy()
+    {
+        McpToolProxy proxy = documentationProxy;
+        if (proxy == null)
+        {
+            synchronized (this)
+            {
+                proxy = documentationProxy;
+                if (proxy == null)
+                {
+                    proxy = new McpToolProxy(AppProps.getInstance().getDocumentationServer());
+                    documentationProxy = proxy;
+                }
+            }
+        }
+        return proxy;
+    }
+
+    private String forward(String remoteToolName, Map<String, Object> arguments)
+    {
+        return getDocumentationProxy().forward(remoteToolName, arguments);
+    }
+
+
+    @Tool(description = "Search the LabKey documentation for chunks of text semantically similar to a natural language query. " +
+            "Each result is an excerpt from a larger document, not the full document -- multiple results may come from the same " +
+            "source document. Returns each chunk's content, metadata (title, source URL, content type), a similarity score, and " +
+            "an id identifying the source document; pass that id to retrieveDocument to fetch the entire document.")
+    @RequiresNoPermission
+    String searchDocumentation(
+            @ToolParam(description = "Natural language search query describing what you're looking for") String query,
+            @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") Integer topK)
+    {
+        if (isDocumentationSourceRemote())
+        {
+            Map<String, Object> arguments = new HashMap<>();
+            arguments.put("query", query);
+            if (topK != null)
+                arguments.put("topK", topK);
+            return forward("searchDocumentation", arguments);
+        }
+
+        DocumentationService svc = DocumentationService.get();
+        if (svc == null || !svc.isEnabled())
+            throw new McpException("Documentation search is not available on this server.");
+        return svc.searchDocumentation(query, topK);
+    }
+
+    @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
+    @RequiresNoPermission
+    String retrieveDocument(
+            @ToolParam(description = "Id of the document to return") String id)
+    {
+        if (isDocumentationSourceRemote())
+        {
+            return forward("retrieveDocument", Map.of("id", id));
+        }
+
+        DocumentationService svc = DocumentationService.get();
+        if (svc == null || !svc.isEnabled())
+            throw new McpException("Documentation retrieval is not available on this server.");
+        return svc.retrieveDocument(id);
+    }
+
     @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +
         "(name, url, description), and current container/folder (name, path, url, description) once the container is set via setContainer.")
     @RequiresPermission(ReadPermission.class)
