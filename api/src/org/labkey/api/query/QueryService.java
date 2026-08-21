@@ -69,6 +69,8 @@ public interface QueryService
 
     String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 
+    String EXTRA_CONTEXT = "extraContext";
+
     static QueryService get()
     {
         return ServiceRegistry.get().getService(QueryService.class);

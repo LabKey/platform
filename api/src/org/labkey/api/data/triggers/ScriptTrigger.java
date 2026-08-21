@@ -23,6 +23,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.security.User;
@@ -258,7 +259,7 @@ public class ScriptTrigger implements Trigger
                 Map<String, Object> bindings = new HashMap<>();
                 if (extraContext == null)
                     extraContext = new HashMap<>();
-                bindings.put("extraContext", extraContext);
+                bindings.put(QueryService.EXTRA_CONTEXT, extraContext);
                 bindings.put("schemaName", _table.getPublicSchemaName());
                 bindings.put("tableName", _table.getPublicName());
 
