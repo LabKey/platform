@@ -241,9 +241,20 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      */
     private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
 
+    // Whether this startup ran any schema scripts. Used by the system upgrade audit event
+    private volatile boolean _hasSchemaUpgrade = false;
+
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
+
+    // All three are set by startup properties during doInitWithSourceModule() and read later from other threads
+
+    // If non-null, overrides the name specified in the distribution.properties file
+    private volatile String _distributionNameOverride;
+    // Modules to include and exclude in this server session; consumed by loadModules()
+    private volatile List<String> _moduleIncludeList = List.of();
+    private volatile List<String> _moduleExcludeList = List.of();
 
     private ModuleLoader()
     {
@@ -663,7 +674,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // Now that we know if this is a new install...
         setDatabaseMigrationConfiguration(labkeyRoot);
-        upgradeCoreModule(lockFile);
+        // Core is upgraded before modulesRequiringUpgrade is built, so a core-only upgrade shows up nowhere else
+        boolean coreUpgraded = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
@@ -775,6 +787,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 }
             });
         }
+
+        _hasSchemaUpgrade = coreUpgraded || !modulesRequiringUpgrade.isEmpty();
 
         if (!modulesRequiringUpgrade.isEmpty())
             _log.info("Modules requiring upgrade: {}", modulesRequiringUpgrade);
@@ -1185,8 +1199,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         // filter by startup properties if they were specified
-        LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
-        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(ModuleLoaderStartupProperties.exclude.getList());
+        LinkedList<String> includeList = getModuleIncludeList();
+        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(getModuleExcludeList());
 
         List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
@@ -2064,11 +2078,57 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
+    public @Nullable String getDistributionNameOverride()
+    {
+        return _distributionNameOverride;
+    }
+
+    void setDistributionNameOverride(@Nullable String distributionNameOverride)
+    {
+        checkStartupPropertyState("Distribution name override");
+        _distributionNameOverride = distributionNameOverride;
+    }
+
+    // Returns a mutable copy because loadModules() consumes the list destructively
+    LinkedList<String> getModuleIncludeList()
+    {
+        return new LinkedList<>(_moduleIncludeList);
+    }
+
+    void setModuleIncludeList(List<String> moduleIncludeList)
+    {
+        checkStartupPropertyState("Module include list");
+        _moduleIncludeList = List.copyOf(moduleIncludeList);
+    }
+
+    List<String> getModuleExcludeList()
+    {
+        return _moduleExcludeList;
+    }
+
+    void setModuleExcludeList(List<String> moduleExcludeList)
+    {
+        checkStartupPropertyState("Module exclude list");
+        _moduleExcludeList = List.copyOf(moduleExcludeList);
+    }
+
+    private void checkStartupPropertyState(String description)
+    {
+        if (isStartupComplete())
+            throw new IllegalStateException(description + " must be set during startup");
+    }
+
     // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
         return _newInstall;
+    }
+
+    /** Did any module, including core, run schema scripts during this startup? */
+    public boolean hasSchemaUpgrade()
+    {
+        return _hasSchemaUpgrade;
     }
 
     private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)

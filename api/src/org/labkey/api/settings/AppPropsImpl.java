@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -533,6 +534,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), UNKNOWN_VERSION);
     }
 
+    @Nullable
+    @Override
+    public String getBuildTime()
+    {
+        return ModuleLoader.getInstance().getCoreModule().getBuildTime();
+    }
+
     @Override
     public double getSchemaVersion()
     {
@@ -702,7 +710,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public @NotNull String getDistributionName()
     {
-        return DISTRIBUTION_NAME;
+        return Objects.requireNonNullElse(ModuleLoader.getInstance().getDistributionNameOverride(), DISTRIBUTION_NAME);
     }
 
     @Override

@@ -386,7 +386,7 @@ public class AuditController extends SpringActionController
             // GitHub Issue 1307: use product folder data CF
             ContainerFilter cf = getContainer().getProductFoldersDataContainerFilter(elevatedUser);
             if (form.isSampleType())
-                results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
+                results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), form.isInsertOnly(), elevatedUser, getContainer(), cf);
             else
                 results = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
 
@@ -404,6 +404,7 @@ public class AuditController extends SpringActionController
         private Long _transactionAuditId;
         private String _dataType;
         private boolean _isSampleType;
+        private Boolean _insertOnly;
 
         public Long getTransactionAuditId()
         {
@@ -423,6 +424,16 @@ public class AuditController extends SpringActionController
         public void setDataType(String dataType)
         {
             _dataType = dataType;
+        }
+
+        public Boolean isInsertOnly()
+        {
+            return Boolean.TRUE.equals(_insertOnly);
+        }
+
+        public void setInsertOnly(Boolean insertOnly)
+        {
+            _insertOnly = insertOnly;
         }
 
         public boolean isSampleType()

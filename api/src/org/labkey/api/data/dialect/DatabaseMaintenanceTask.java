@@ -59,12 +59,14 @@ public class DatabaseMaintenanceTask implements MaintenanceTask
             log.error("Exception retrieving url", e);
         }
 
-        String sql = scope.getSqlDialect().getDatabaseMaintenanceSql();
+        SqlDialect dialect = scope.getSqlDialect();
+        SQLFragment sql = dialect.getDatabaseMaintenanceSql();
         if (null != sql)
         {
             try
             {
-                new SqlExecutor(scope).execute(SQLFragment.unsafe(sql));
+                log.info("Executing {}", sql.toDebugString(dialect));
+                new SqlExecutor(scope).execute(sql);
             }
             catch (BadSqlGrammarException e)
             {
