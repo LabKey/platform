@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ConcurrencyLimit;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.ExportException;
@@ -96,7 +97,6 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AnalyticsProviderItem;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.CachedResultSetBuilder;
 import org.labkey.api.data.ColumnHeaderType;
@@ -318,6 +318,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.net.ssl.SSLException;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -555,8 +556,18 @@ public class QueryController extends SpringActionController
             }
             catch (Exception e)
             {
-                errors.addError(new LabKeyError("The listed credentials for this remote connection failed to connect."));
-                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm);
+                LOG.warn("Failed to connect for remote connection '{}' to {}", name, url, e);
+                // SelectRowsStreamHack wraps the underlying failure in a RuntimeException; unwrap to categorize it
+                Throwable cause = ExceptionUtil.unwrapException(e);
+                String message;
+                if (cause instanceof SSLException)
+                    message = "A secure (TLS) connection to the remote server could not be established. This is often caused by an untrusted, self-signed, or expired certificate. ";
+                else if (cause instanceof IOException)
+                    message = "A connection to the remote server could not be established. ";
+                else
+                    message = "The listed credentials for this remote connection failed to connect. ";
+                errors.addError(new LabKeyError(message + RemoteConnections.getBriefMessage(cause)));
+                return new JspView<>("/org/labkey/query/view/testRemoteConnectionsFailure.jsp", remoteConnectionForm, errors);
             }
 
             return new JspView<>("/org/labkey/query/view/testRemoteConnectionsSuccess.jsp", remoteConnectionForm);
@@ -2709,9 +2720,7 @@ public class QueryController extends SpringActionController
             return true;
         if ("sort".equals(check))
             return true;
-        if (check.equals("containerFilterName"))
-            return true;
-        return false;
+        return check.equals("containerFilterName");
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -3815,7 +3824,7 @@ public class QueryController extends SpringActionController
                 response = new ApiQueryResponse(view, isEditable,
                         false, schemaName, form.isSaveInSession() ? settings.getQueryName() : "sql", offset, null,
                         metaDataOnly, form.isIncludeDetailsColumn(), form.isIncludeUpdateColumn(),
-                        form.isIncludeDisplayValues());
+                        form.isIncludeDisplayValues(), form.isIncludeMetadata());
             }
             response.includeStyle(form.isIncludeStyle());
 
@@ -4605,6 +4614,7 @@ public class QueryController extends SpringActionController
             if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
                 f = new RowMapFactory<>();
             CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
+            boolean loggedConflictingCasing = false;
 
             for (int idx = 0; idx < rows.length(); ++idx)
             {
@@ -4622,9 +4632,10 @@ public class QueryController extends SpringActionController
                     Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
                     // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
                     boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
-                    if (conflictingCasing)
+                    if (conflictingCasing && !loggedConflictingCasing)
                     {
-                        // Issue 52616
+                        loggedConflictingCasing = true;
+                        // Issue 52616; GH Issue 1332: log once per request, not once per conflicting row
                         LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
                     }
                     if (allowRowAttachments())
@@ -4640,6 +4651,10 @@ public class QueryController extends SpringActionController
             Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
+
+            if (extraContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
+                configParameters.put(AbstractQueryImportAction.Params.useTransactionAuditCache, extraContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
+
             if (WorkflowService.get() != null)
                 WorkflowService.get().populateConfigParams(extraContext, configParameters);
 
@@ -5637,7 +5652,7 @@ public class QueryController extends SpringActionController
             if (o == null || getClass() != o.getClass()) return false;
 
             DataSourceInfo that = (DataSourceInfo) o;
-            return sourceName != null ? sourceName.equals(that.sourceName) : that.sourceName == null;
+            return Objects.equals(sourceName, that.sourceName);
         }
 
         @Override
@@ -6592,12 +6607,6 @@ public class QueryController extends SpringActionController
     public static class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
         @Override
-        protected long getLastModified(GetSchemasForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
-        @Override
         public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
             final Container container = getContainer();
@@ -6743,12 +6752,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
-        @Override
-        protected long getLastModified(GetQueriesForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
@@ -6951,12 +6954,6 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public static class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
-        @Override
-        protected long getLastModified(GetQueryViewsForm form)
-        {
-            return QueryService.get().metadataLastModified();
-        }
-
         @Override
         public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {
@@ -7564,69 +7561,16 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(ReadPermission.class)
-    public static class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class NamedSetForm
-    {
-        String setName;
-        String[] setList;
-
-        public String getSetName()
-        {
-            return setName;
-        }
-
-        public void setSetName(String setName)
-        {
-            this.setName = setName;
-        }
-
-        public String[] getSetList()
-        {
-            return setList;
-        }
-
-        public void setSetList(String[] setList)
-        {
-            this.setList = setList;
-        }
-
-        public List<String> parseSetList()
-        {
-            return Arrays.asList(setList);
-        }
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
-    public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
-    {
-
-        @Override
-        public Object execute(NamedSetForm namedSetForm, BindException errors)
-        {
-            QueryService.get().deleteNamedSet(namedSetForm.getSetName());
-            return new ApiSimpleResponse("success", true);
-        }
-    }
-
+    /**
+     * Analyzing a folder holds the full TableInfo/ColumnInfo graph for every query in it for the life of the request,
+     * so avoid running to many concurrently to avoid overwhelming the heap.
+     */
+    @ConcurrencyLimit(value = 10, message = "Too many query dependency analyses are already running. Please retry in a few moments.")
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public Object execute(Object o, BindException errors) throws Exception
+        public Object execute(Object o, BindException errors)
         {
             JSONObject ret = new JSONObject();
 
@@ -7660,7 +7604,9 @@ public class QueryController extends SpringActionController
                 }
                 else
                 {
-                    ret.put("success", false);
+                    // must be an error rather than an empty graph, which the client reports as "no dependencies"
+                    errors.reject(ERROR_MSG, "Query dependency analysis is not available on this server.");
+                    return null;
                 }
                 return ret;
             }
@@ -7845,8 +7791,9 @@ public class QueryController extends SpringActionController
         Map<FieldKey, JdbcType> columnMap = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
         JSONArray domainFields;
-        String fieldExpression;
+        JSONObject field;
         String fieldError;
+        String fieldExpression;
 
         Map<FieldKey, JdbcType> getColumnMap()
         {
@@ -7881,6 +7828,16 @@ public class QueryController extends SpringActionController
         public void setDomainFields(JSONArray domainFields)
         {
             this.domainFields = domainFields;
+        }
+
+        public JSONObject getField()
+        {
+            return field;
+        }
+
+        public void setField(JSONObject field)
+        {
+            this.field = field;
         }
 
         public String getFieldExpression()
@@ -7931,6 +7888,8 @@ public class QueryController extends SpringActionController
                 setConversationId(json.getString("conversationId"));
             if (json.has("domainFields"))
                 setDomainFields(json.getJSONArray("domainFields"));
+            if (json.has("field"))
+                setField(json.getJSONObject("field"));
             if (json.has("fieldExpression"))
                 setFieldExpression(json.getString("fieldExpression"));
             if (json.has("fieldError"))
@@ -8401,8 +8360,6 @@ public class QueryController extends SpringActionController
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
                 new ExportTablesAction(),
-                new SaveNamedSetAction(),
-                new DeleteNamedSetAction(),
                 new ApiTestAction(),
                 new GetDefaultVisibleColumnsAction()
             );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2110,7 +2110,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "csv_sample.csv", 690, "NpodDonorSamplesTest.testWizardCustomizationAndDataEntry");
             add(map, "dll_sample.dll", 0);
             add(map, "doc_sample.doc", 3585, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
-            add(map, "docx_sample.docx", 3580, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "docx_sample.docx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dot_sample.dot", 3589, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "exe_sample.exe", 0);
@@ -2127,12 +2127,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
-            add(map, "pptx_sample.pptx", 122, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
+            add(map, "pptx_sample.pptx", 118, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
-            add(map, "tgz_sample.tgz", 7823, "assertthat is an extension", "Custom failure messages");
+
+
+            add(map, "tgz_sample.tgz", 7682, "assertthat is an extension", "Custom failure messages");
             add(map, "tif_sample.tif", 0);
             add(map, "tsv_sample.tsv", 2986, "1264.5", "10JAN07_plate_1.xls");
             add(map, "vsd_sample.vsd", 982, "Contoso Pharmaceuticals, Inc.", "Trial Continuation Process", "events depicted herein are fictitious");

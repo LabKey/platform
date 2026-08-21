@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -164,6 +165,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -173,7 +175,6 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -321,7 +322,6 @@ import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
-import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 public class StudyController extends BaseStudyController
 {
@@ -1577,7 +1577,8 @@ public class StudyController extends BaseStudyController
         {
             try
             {
-                SQLFragment sql = new SQLFragment("DELETE FROM study.participantgroupmap WHERE participantid = ?", participantId);
+                // Scope the raw DELETE to the request container (DeletePermission is only proven there)
+                SQLFragment sql = new SQLFragment("DELETE FROM study.participantgroupmap WHERE participantid = ? AND container = ?", participantId, getContainer().getId());
                 new SqlExecutor(ti.getSchema()).execute(sql);
             }
             catch (Exception e)
@@ -2706,7 +2707,7 @@ public class StudyController extends BaseStudyController
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
-            boolean showImportOptions = OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || _def.getKeyManagementType() == Dataset.KeyManagementType.None;
+            boolean showImportOptions = _def.getKeyManagementType() == Dataset.KeyManagementType.None;
             setShowMergeOption(showImportOptions);
             setShowUpdateOption(showImportOptions);
             setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
@@ -2903,12 +2904,16 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(SourceLsidForm form, BindException errors)
         {
-            ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
-            if (url == null)
+            // getDisplayURL() resolves LSIDs globally with no permission check,
+            // so re-check permissions on the object's container before redirecting
+            if (LsidManager.get().hasPermission(form.getSourceLsid(), getUser(), ReadPermission.class))
             {
-                return HtmlView.of("The assay run that produced the data has been deleted.");
+                ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
+                if (url != null)
+                    return HttpView.redirect(url);
             }
-            return HttpView.redirect(url);
+
+            return HtmlView.of("The assay run that produced the data has been deleted.");
         }
 
         @Override
@@ -6657,7 +6662,7 @@ public class StudyController extends BaseStudyController
                 if (group != null)
                 {
                     ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
-                    if (category != null && category.canRead(getContainer(), getUser()))
+                    if (category != null)
                     {
                         form.setLabel(group.getLabel());
                         return new JspView<>("/org/labkey/study/view/sendParticipantGroup.jsp", form, errors);
@@ -7357,7 +7362,7 @@ public class StudyController extends BaseStudyController
                 cols.add(ti.getColumn("dateoffset"));
                 SimpleFilter filter = new SimpleFilter();
                 filter.addCondition(ti.getColumn("container"), getContainer());
-                ResultsFactory factory = ()->QueryService.get().select(ti, cols, filter, new Sort("participantid"));
+                ResultsFactory factory = ()->QueryService.get().getSelectBuilder(ti).columns(cols).filter(filter).sort(new Sort("participantid")).select();
 
                 // NOTE: TSVGridWriter closes PrintWriter and ResultSet
                 try (TSVGridWriter writer = new TSVGridWriter(factory))
@@ -7818,6 +7823,56 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             root.addChild(_study != null ? "Overview: " + _study.getLabel() : "No Study");
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testDeleteParticipantContainerScoping() throws Exception
+        {
+            // DeleteParticipantAction removes a participant's dataset rows AND its participant-group memberships. The
+            // group-map DELETE was keyed only by participantId, so deleting a participant through folder A also wiped
+            // that participant's group memberships in OTHER folders. The fix scopes the DELETE to the request container.
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            StudyService.get().createStudy(folderA, getAdmin(), "Study A", TimepointType.VISIT, true);
+            StudyService.get().createStudy(folderB, getAdmin(), "Study B", TimepointType.VISIT, true);
+
+            // P1 must be a known participant in folder B before it can be added to a group there
+            insertParticipant(folderB, "P1");
+
+            // Put P1 into a participant group in folder B (creates a study.participantgroupmap row scoped to B)
+            ParticipantCategoryImpl cat = new ParticipantCategoryImpl();
+            cat.setContainer(folderB.getId());
+            cat.setLabel("scoping-category");
+            cat.setType("list");
+            ParticipantGroupManager.getInstance().setParticipantCategory(folderB, getAdmin(), cat, new String[]{"P1"}, null, "scoping");
+            assertEquals("Setup: P1 must be in a group in folder B", 1, groupMapCount(folderB, "P1"));
+
+            // Delete P1 through folder A. Folder A has its own study, so the action runs; without the fix its group-map
+            // DELETE (keyed only by participantId) would also remove P1's membership in folder B.
+            ActionURL url = new ActionURL(DeleteParticipantAction.class, folderA).addParameter("participantId", "P1");
+            post(url, getAdmin());
+
+            // P1's group membership in folder B must survive a delete issued through folder A.
+            assertEquals("P1's group membership in folder B must survive a cross-container participant delete",
+                    1, groupMapCount(folderB, "P1"));
+        }
+
+        private void insertParticipant(Container c, String ptid)
+        {
+            Map<String, Object> row = new HashMap<>();
+            row.put("Container", c.getId());
+            row.put("ParticipantId", ptid);
+            Table.insert(getAdmin(), StudySchema.getInstance().getTableInfoParticipant(), row);
+        }
+
+        private long groupMapCount(Container c, String ptid)
+        {
+            SimpleFilter f = new SimpleFilter(FieldKey.fromParts("ParticipantId"), ptid);
+            f.addCondition(FieldKey.fromParts("Container"), c.getId());
+            return new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), f, null).getRowCount();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ import java.util.Set;
  */
 public class FastaDataLoader extends DataLoader
 {
-    public static FileType FILE_TYPE = new FileType(Arrays.asList(".fna", ".fasta"), ".fna");
+    public static FileType FILE_TYPE = new FileType(Arrays.asList(".fna", ".fasta", ".fa"), ".fna");
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }

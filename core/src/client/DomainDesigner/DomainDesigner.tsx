@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import {
     FormButtons,
     LoadingSpinner,
     Modal,
+    redirect,
     resolveErrorMessage,
     saveDomain,
 } from '@labkey/components';
@@ -161,9 +162,7 @@ class DomainDesigner extends React.PureComponent<any, Partial<IAppState>> {
 
     navigate = (): void => {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
+        redirect(ActionURL.getReturnUrl() || ActionURL.buildURL('project', 'begin', getServerContext().container.path));
     };
 
     renderWarningConfirm() {

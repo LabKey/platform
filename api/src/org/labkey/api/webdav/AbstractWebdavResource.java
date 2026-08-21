@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -401,6 +401,15 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
             return false;
         Set<Class<? extends Permission>> perms = getPermissions(user);
         return perms.contains(DeletePermission.class);
+    }
+
+    @Override
+    public boolean canMove(User user)
+    {
+        // A MOVE removes the resource from its source location, so by default it requires the same rights
+        // as deleting it from there. Resource types where moving and deleting differ (see FileSystemResource)
+        // override this.
+        return canDelete(user, true, null);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -90,6 +89,7 @@ import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -148,6 +148,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.security.PermissionsRestrictedUser.ALLOWED_PERMISSIONS_KEY;
 import static org.labkey.api.util.IntegerUtils.asInteger;
 
 /**
@@ -517,8 +518,13 @@ public class SecurityManager
 
                 if (null != factory)
                 {
-                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                    sessionUser.setPermissionsContext(factory.getImpersonationContext());
                 }
+
+                //noinspection unchecked
+                Set<Class<? extends Permission>> allowedPermissions = (Set<Class<? extends Permission>>) session.getAttribute(ALLOWED_PERMISSIONS_KEY);
+                if (allowedPermissions != null)
+                    sessionUser = new PermissionsRestrictedUser(sessionUser, allowedPermissions);
             }
         }
 
@@ -558,6 +564,9 @@ public class SecurityManager
                     {
                         Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
                         sessionCookie.setPath("/");
+                        sessionCookie.setHttpOnly(true);
+                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                            sessionCookie.setSecure(true);
                         response.addCookie(sessionCookie);
                         request = new SessionReplacingRequest(request, session);
                     }
@@ -583,7 +592,7 @@ public class SecurityManager
 
                 if (!sessionUser.isImpersonated() && "true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
                 {
-                    sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
+                    sessionUser.setPermissionsContext(DisallowPrivilegedRolesContext.get());
                 }
 
                 HttpSession session = request.getSession(false);
@@ -813,6 +822,7 @@ public class SecurityManager
             newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
             newSession.setAttribute(USER_ATTRIBUTES_KEY, response.getUserAttributeMap());
             newSession.setAttribute(AUTHENTICATION_PROPERTIES, response.getAuthenticationProperties());
+            user.getPermissionsContext().modifySession(newSession);
         }
 
         return newSession;
@@ -1118,7 +1128,7 @@ public class SecurityManager
 
         // Issue 25813: if two users are being inserted at the same time through the addUser method above, we can get deadlock on SQLServer so we
         // actively lock when doing this select to prevent it from promoting a lock up the chain.
-        SQLFragment select = new SQLFragment("SELECT UserId FROM " + core.getTableInfoUsersData());
+        SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
         if (core.getSchema().getScope().getSqlDialect().isSqlServer())
             select.append(" WITH (UPDLOCK)");
         select.append(" WHERE DisplayName = ? AND UserId != ?");
@@ -1640,11 +1650,6 @@ public class SecurityManager
         }
     }
 
-    public static @NotNull List<User> getProjectUsers(Container c)
-    {
-        return getProjectUsers(c, false);
-    }
-
     /**
      * Returns a list of Group objects to which the user belongs in the specified container.
      * @param c The container
@@ -1884,128 +1889,6 @@ public class SecurityManager
             sb.append("<BR/>");
         }
         return sb.toString();
-    }    
-
-    // TODO: Redundant with getProjectUsers() -- this approach should be more efficient for simple cases
-    // TODO: Also redundant with getFolderUserids()
-    // TODO: Cache this set
-    public static Set<Integer> getProjectUsersIds(Container c)
-    {
-        SQLFragment sql = getProjectUsersSQL(c.getProject());
-        sql.insert(0, "SELECT DISTINCT members.UserId ");
-
-        Selector selector = new SqlSelector(core.getSchema(), sql);
-        return new HashSet<>(selector.getCollection(Integer.class));
-    }
-
-    // True fragment -- need to prepend SELECT DISTINCT() or IN () for this to be valid SQL
-    public static SQLFragment getProjectUsersSQL(Container c)
-    {
-        return new SQLFragment("FROM " + core.getTableInfoMembers() + " members INNER JOIN " + core.getTableInfoUsers() + " users ON members.UserId = users.UserId\n" +
-                                    "INNER JOIN " + core.getTableInfoPrincipals() + " groups ON members.GroupId = groups.UserId\n" +
-                                    "WHERE (groups.Container = ?)", c);
-    }
-
-    // TODO: Should return a set
-    // TODO: Why is the includeGlobal flag necessary?
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
-    {
-       return getProjectUsers(c, includeGlobal, true);
-    }
-
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
-    {
-        if (c != null && !c.isProject())
-            c = c.getProject();
-
-        List<Group> groups = getGroups(c, includeGlobal);
-        Set<String> emails = new HashSet<>();
-
-        //get members for each group
-        ArrayList<User> projectUsers = new ArrayList<>();
-        Set<User> members;
-
-        for (Group g : groups)
-        {
-            if (g.isGuests() || g.isUsers())
-                continue;
-
-            // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, includeInactive ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
-
-            //add this group's members to hashset
-            if (!members.isEmpty())
-            {
-                //get list of users from email
-                for (UserPrincipal member : members)
-                {
-                    User user = UserManager.getUser(member.getUserId());
-                    if (null != user && emails.add(user.getEmail()))
-                        projectUsers.add(user);
-                }
-            }
-        }
-
-        return projectUsers;
-    }
-
-    public static Collection<Integer> getFolderUserids(Container c)
-    {
-        Container project = (c.isProject() || c.isRoot()) ? c : c.getProject();
-        SecurityPolicy policy = c.getPolicy();
-
-        //don't filter if all site users is playing a role
-        Group allSiteUsers = getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).findAny().isPresent())
-        {
-            // Just select all users
-            SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
-            sql.append(core.getTableInfoPrincipals(), "u");
-            sql.append(" WHERE u.type='u'");
-
-            return new SqlSelector(core.getSchema(), sql).getCollection(Integer.class);
-        }
-
-        //users "in the project" consists of:
-        // - users who are members of a project group
-        // - users who belong to a site group that has a role assignment in the policy for the specified folder
-        // - users who have a direct role assignment in the policy for the specified folder
-
-        Set<Integer> userIds = new HashSet<>();
-
-        // Add all project groups
-        Set<Group> groupsToExpand = new HashSet<>(getGroups(project, false));
-
-        // Look for users and site groups that have direct assignment to the container
-        for (RoleAssignment roleAssignment : c.getPolicy().getAssignments())
-        {
-            User user = UserManager.getUser(roleAssignment.getUserId());
-            if (user != null)
-            {
-                userIds.add(user.getUserId());
-            }
-            else
-            {
-                Group assignedGroup = getGroup(roleAssignment.getUserId());
-                if (assignedGroup != null && !assignedGroup.isProjectGroup())
-                {
-                    // Add all site groups
-                    groupsToExpand.add(assignedGroup);
-                }
-            }
-        }
-
-        // Find the users who are members of all the relevant site groups
-        for (Group group : groupsToExpand)
-        {
-            Set<User> groupMembers = getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-            for (User groupMember : groupMembers)
-            {
-                userIds.add(groupMember.getUserId());
-            }
-        }
-
-        return userIds;
     }
 
     /**
@@ -2014,7 +1897,7 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        return UserManager.getUsers(false).stream()
+        return UserManager.getActiveUsers().stream()
             .filter(user -> hasAllPermissions(null, c, user, perms, Set.of()))
             .toList();
     }
@@ -3467,7 +3350,7 @@ public class SecurityManager
             final User testUser = TestContext.get().getUser();
             // this user is subsetted to only permit read permissions (see AllowedForReadOnlyUser)
             User user = addUser(new ValidEmail("impersonate@test.net"), null, false).getUser();
-            user.setImpersonationContext(new ReadOnlyPermissionsContext());
+            user.setPermissionsContext(new ReadOnlyPermissionsContext());
 
             Container testFolder = null;
 

@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@
     boolean canEdit = queryDef.canEdit(getUser());
     boolean canEditMetadata = queryDef.canEditMetadata(getUser());
     boolean canDelete = queryDef.canDelete(getUser());
-    boolean isChatReady = canEdit && McpService.get().isReady();
+    boolean isChatReady = false && canEdit && McpService.get().isAIFeaturesReady();
 %>
 <style type="text/css">
 

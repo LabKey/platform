@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.TransactionAuditProvider;
@@ -79,7 +78,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
         if (command.isBulkUpdate())
             command.setValidateRequired(false);
-        BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
+        BindException errors = command.createErrors();
         command.validateBind(errors);
         return errors;
     }

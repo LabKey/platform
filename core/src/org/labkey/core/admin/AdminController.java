@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -93,6 +94,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheStats;
 import org.labkey.api.cache.TrackingCache;
@@ -144,6 +146,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider.EmailConfigFormImpl;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
@@ -188,6 +191,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
+import org.labkey.api.secrets.SecretStatus;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -217,6 +222,7 @@ import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
@@ -236,6 +242,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SharedViewEditorRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -265,6 +272,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.LabKeyProcessBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
@@ -313,8 +321,8 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.EmptyView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
@@ -339,6 +347,7 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.filters.ContentSecurityPolicyFilter;
+import org.labkey.filters.ContentSecurityPolicyFilter.ContentSecurityPolicyType;
 import org.labkey.security.xml.GroupEnumType;
 import org.labkey.vfs.FileLike;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -423,10 +432,13 @@ import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.P;
+import static org.labkey.api.util.DOM.PRE;
 import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.STRONG;
 import static org.labkey.api.util.DOM.STYLE;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TH;
 import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
@@ -505,6 +517,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
+        AdminConsole.addLink(Diagnostics, "secrets", new ActionURL(SecretsAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "site validation", new ActionURL(ConfigureSiteValidationAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "sql scripts", new ActionURL(SqlScriptController.ScriptsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "suspicious activity", new ActionURL(SuspiciousAction.class, root));
@@ -1368,6 +1381,14 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
             }
+            if (form.getScriptExecutionTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getScriptExecutionTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1402,9 +1423,8 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
+            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
-            props.setExt3Required(form.isExt3Required());
-            props.setExt3APIRequired(form.isExt3APIRequired());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
@@ -1461,14 +1481,9 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String frameOption = StringUtils.trimToEmpty(form.getXFrameOption());
-            if (!frameOption.equals("DENY") && !frameOption.equals("SAMEORIGIN") && !frameOption.equals("ALLOW"))
-            {
-                errors.reject(ERROR_MSG, "XFrameOption must equal DENY, or SAMEORIGIN, or ALLOW");
-                return false;
-            }
-            props.setXFrameOption(frameOption);
             props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
+
+            props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
 
             props.save(getViewContext().getUser());
             UsageReportingLevel.reportNow();
@@ -1489,6 +1504,37 @@ public class AdminController extends SpringActionController
             {
                 return new AdminUrlsImpl().getAdminConsoleURL();
             }
+        }
+    }
+
+    // Note: records don't work with JSON binding yet
+    public static class TermsFrequency
+    {
+        public int getSeconds()
+        {
+            return _seconds;
+        }
+
+        public void setSeconds(int seconds)
+        {
+            _seconds = seconds;
+        }
+
+        private int _seconds;
+    }
+
+    // For SiteWideTermsOfUseTest - must be invoked in root, as with CustomizeSiteAction
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class SetTermsOfUseFrequencyAction extends MutatingApiAction<TermsFrequency>
+    {
+        @Override
+        public Object execute(TermsFrequency tf, BindException errors) throws Exception
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setTermsOfUseFrequencySeconds(tf.getSeconds());
+            props.save(getUser());
+
+            return null;
         }
     }
 
@@ -2341,14 +2387,13 @@ public class AdminController extends SpringActionController
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
         private boolean _showRibbonMessage;
-        private boolean _ext3Required;
-        private boolean _ext3APIRequired;
         private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
         private String _ribbonMessage;
         private int _sslPort;
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
+        private Integer _scriptExecutionTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2361,8 +2406,8 @@ public class AdminController extends SpringActionController
         private boolean _allowSessionKeys;
         private boolean _navAccessOpen;
 
-        private String _XFrameOption;
         private boolean _includeServerHttpHeader;
+        private int _termsOfUseFrequencySeconds;
 
         public String getPipelineToolsDirectory()
         {
@@ -2392,26 +2437,6 @@ public class AdminController extends SpringActionController
         public void setSslRequired(boolean sslRequired)
         {
             _sslRequired = sslRequired;
-        }
-
-        public boolean isExt3Required()
-        {
-            return _ext3Required;
-        }
-
-        public void setExt3Required(boolean ext3Required)
-        {
-            _ext3Required = ext3Required;
-        }
-
-        public boolean isExt3APIRequired()
-        {
-            return _ext3APIRequired;
-        }
-
-        public void setExt3APIRequired(boolean ext3APIRequired)
-        {
-            _ext3APIRequired = ext3APIRequired;
         }
 
         public int getSslPort()
@@ -2509,6 +2534,18 @@ public class AdminController extends SpringActionController
             return _readOnlyHttpRequestTimeout;
         }
 
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
+        @Nullable
+        public Integer getScriptExecutionTimeout()
+        {
+            return _scriptExecutionTimeout;
+        }
+
+        public void setScriptExecutionTimeout(@Nullable Integer timeout)
+        {
+            _scriptExecutionTimeout = timeout;
+        }
+
         public void setReadOnlyHttpRequestTimeout(int timeout)
         {
             _readOnlyHttpRequestTimeout = timeout;
@@ -2594,16 +2631,6 @@ public class AdminController extends SpringActionController
             _allowSessionKeys = allowSessionKeys;
         }
 
-        public String getXFrameOption()
-        {
-            return _XFrameOption;
-        }
-
-        public void setXFrameOption(String XFrameOption)
-        {
-            _XFrameOption = XFrameOption;
-        }
-
         public boolean isIncludeServerHttpHeader()
         {
             return _includeServerHttpHeader;
@@ -2612,6 +2639,16 @@ public class AdminController extends SpringActionController
         public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
         {
             _includeServerHttpHeader = includeServerHttpHeader;
+        }
+
+        public int getTermsOfUseFrequencySeconds()
+        {
+            return _termsOfUseFrequencySeconds;
+        }
+
+        public void setTermsOfUseFrequencySeconds(int termsOfUseFrequencySeconds)
+        {
+            _termsOfUseFrequencySeconds = termsOfUseFrequencySeconds;
         }
     }
 
@@ -3441,7 +3478,9 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new JspView<>("/org/labkey/core/admin/properties.jsp", System.getenv());
+            Map<String, String> env = new LinkedHashMap<>(System.getenv());
+            env.replaceAll((name, value) -> LabKeyProcessBuilder.isSecret(name) ? "[REDACTED]" : value);
+            return new JspView<>("/org/labkey/core/admin/properties.jsp", env);
         }
 
         @Override
@@ -3466,6 +3505,67 @@ public class AdminController extends SpringActionController
             addAdminNavTrail(root, "System Properties", this.getClass());
         }
     }
+
+    @RequiresSiteAdmin
+    public class SecretsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            List<SecretStatus> statuses = SecretService.get().getSecretStatuses();
+
+            List<Renderable> rows = new ArrayList<>();
+
+            if (statuses.isEmpty())
+            {
+                return new HtmlView(DIV("No secrets have been registered with SecretService."));
+            }
+
+            MutableInt rowIndex = new MutableInt(0);
+
+            Renderable table = DOM.TABLE(cl("table-condensed labkey-data-region table-bordered").at(style, "border:none"),
+                    TR(
+                        TH(at(style, "border:none; width:220px;"), STRONG("Secret Name")),
+                        TH(at(style, "border:none; width:300px;"), STRONG("Description")),
+                        TH(at(style, "border:none;"), STRONG("Source"))
+                    ),
+                    statuses.stream().map(status ->
+                        TR(
+                            cl(rowIndex.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                            TD(status.name()),
+                            TD(status.description()),
+                            status.isSet()
+                                    ? TD(status.source())
+                                    : TD(SPAN(cl("labkey-error"), "Not configured"))
+                        )));
+            return new HtmlView(table);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Secrets", this.getClass());
+        }
+    }
+
+    // NOTE let the Professional Module register this action (there is no ProfessionalController)
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class AssistantStatusAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return McpService.get().getAssistantStatusView();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+        }
+    }
+
 
 
     public static class ConfigureSystemMaintenanceForm
@@ -3530,8 +3630,8 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors)
         {
-            SystemMaintenance.setTimeDisabled(!form.isEnableSystemMaintenance());
-            SystemMaintenance.setProperties(form.getEnable(), form.getMaintenanceTime());
+            SystemMaintenance.setTimeDisabled(getContainer(), getUser(), !form.isEnableSystemMaintenance());
+            SystemMaintenance.setProperties(getContainer(), getUser(), form.getEnable(), form.getMaintenanceTime());
 
             return true;
         }
@@ -4887,17 +4987,26 @@ public class AdminController extends SpringActionController
         @Override
         public boolean handlePost(MissingValuesForm form, BindException errors)
         {
+            Container c = getContainer();
+            SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(c, "The missing value indicators were changed (see details).");
+            StringBuilder html = new StringBuilder("<table>");
             if (form.isInheritMvIndicators())
             {
-                MvUtil.inheritMvIndicators(getContainer());
-                return true;
+                MvUtil.inheritMvIndicators(c);
+                AbstractWriteableSettingsGroup.appendDiffRow(html, "Inherit settings", null, "TRUE");
             }
             else
             {
                 // Javascript should have enforced any constraints
-                MvUtil.assignMvIndicators(getContainer(), form.getMvIndicators(), form.getMvLabels());
-                return true;
+                MvUtil.assignMvIndicators(c, form.getMvIndicators(), form.getMvLabels());
+                for (int i=0; i < form.getMvIndicators().length; i++)
+                    AbstractWriteableSettingsGroup.appendDiffRow(html, form.getMvIndicators()[i], null, form.getMvLabels()[i]);
             }
+            html.append("</table>");
+            event.setChanges(html.toString());
+            AuditLogService.get().addEvent(getUser(), event);
+
+            return true;
         }
     }
 
@@ -5436,6 +5545,10 @@ public class AdminController extends SpringActionController
             if (!StringUtils.isEmpty(form.getSourceTemplateFolder()))
             {
                 fiConfig = getFolderImportConfigFromTemplateFolder(form, pipelineUnzipDir, errors);
+                if (fiConfig == null || errors.hasErrors())
+                {
+                    return false;
+                }
             }
             else
             {
@@ -5530,10 +5643,16 @@ public class AdminController extends SpringActionController
 
         private FolderImportConfig getFolderImportConfigFromTemplateFolder(final ImportFolderForm form, final FileLike pipelineUnzipDir, final BindException errors) throws Exception
         {
-            // user choose to import from a template source folder
+            // user chose to import from a template source folder
             Container sourceContainer = form.getSourceTemplateFolderContainer();
 
-            // In order to support the Advanced import options to import into multiple target folders we need to zip
+            if (sourceContainer == null || !sourceContainer.hasPermission(getUser(), AdminPermission.class))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to import from the specified source folder.");
+                return null;
+            }
+
+            // To support the Advanced import options to import into multiple target folders we need to zip
             // the source template folder so that the zip file can be passed to the pipeline processes.
             FolderExportContext ctx = new FolderExportContext(getUser(), sourceContainer,
                     getRegisteredFolderWritersForImplicitExport(sourceContainer), "new", false,
@@ -8031,6 +8150,8 @@ public class AdminController extends SpringActionController
                     {
                         throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
+                    if (!source.hasPermission(getUser(), AdminPermission.class))
+                        throw new UnauthorizedException("You do not have permission to copy permissions from the specified project.");
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c, getUser());
 
                     //copy role assignments
@@ -8453,6 +8574,9 @@ public class AdminController extends SpringActionController
             Container revertContainer = ContainerManager.getForPath(form.getContainerPath());
             if (null != revertContainer)
             {
+                if (!revertContainer.hasPermission(getUser(), AdminPermission.class))
+                    throw new UnauthorizedException();
+
                 if (revertContainer.isContainerTab())
                 {
                     FolderTab tab = revertContainer.getParent().getFolderType().findTab(revertContainer.getName());
@@ -9340,7 +9464,7 @@ public class AdminController extends SpringActionController
                                         if (null != module.getZippedPath())
                                             p = module.getZippedPath().toPath();
                                         if (isDevMode && ModuleEditorService.get().canEditSourceModule(module))
-                                            if (!module.getExplodedPath().getPath().equals(module.getSourcePath()))
+                                            if (!isBlank(module.getSourcePath()) && !module.getExplodedPath().getPath().equals(module.getSourcePath()))
                                                 p = Paths.get(module.getSourcePath());
                                         fullPathToModule = p.toString();
                                         shortPathToModule = fullPathToModule;
@@ -10380,10 +10504,10 @@ public class AdminController extends SpringActionController
             if (isBlank(form.getContainerPath()))
                 throw new NotFoundException();
             Container container = ContainerManager.getForPath(form.getContainerPath());
+            if (container == null)
+                throw new NotFoundException();
             if (!container.hasPermission(getUser(), AdminPermission.class))
-            {
                 throw new UnauthorizedException();
-            }
             for (String tabName : form.getResurrectFolders())
             {
                 ContainerManager.clearContainerTabDeleted(container, tabName, form.getNewFolderType());
@@ -11060,9 +11184,10 @@ public class AdminController extends SpringActionController
             res.put("server", AdminBean.getPropertyMap());
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
-            new SqlSelector(CoreSchema.getInstance().getScope(),
-                new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n" +
-                    "WHERE objectid = ? AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'", ContainerManager.getRoot())).forEachMap(m ->
+            var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
+                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+            new SqlSelector(CoreSchema.getInstance().getScope(), sql)
+                    .forEachMap(m ->
                 {
                     String category = (String)m.get("category");
                     String name = (String)m.get("name");
@@ -11558,16 +11683,54 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ExternalSourcesForm form, boolean reshow, BindException errors)
         {
-            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
+            VBox vbox = new VBox();
+
+            String template = formatCsp(ContentSecurityPolicyFilter.getStashedTemplate(ContentSecurityPolicyType.Enforce), null);
+            if (template != null)
+            {
+                String substituted = formatCsp(ContentSecurityPolicyFilter.getSubstitutedCsp(ContentSecurityPolicyType.Enforce, getViewContext().getRequest()), "Enforce CSP is disabled!");
+                vbox.addView(new HtmlView("Current Enforce CSP",
+                    TABLE(
+                        TR(
+                            TH(STRONG("With Substitution Placeholders")), TH(STRONG("With Substituted Values"))
+                        ),
+                        TR(
+                            TD(at(style, "padding-right: 20px;"), PRE(template)), TD(PRE(substituted))
+                        )
+                    )
+                ));
+            }
 
             JspView<ExternalSourcesForm> newView = new JspView<>("/org/labkey/core/admin/addNewExternalSource.jsp", form, errors);
+            boolean isTroubleshooter = !getContainer().hasPermission(getUser(), ApplicationAdminPermission.class);
             newView.setTitle(isTroubleshooter ? "Overview" : "Register New External Resource Host");
             newView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(newView);
+
             JspView<ExternalSourcesForm> existingView = new JspView<>("/org/labkey/core/admin/existingExternalSources.jsp", form, errors);
             existingView.setTitle("Existing External Resource Hosts");
             existingView.setFrame(WebPartView.FrameType.PORTAL);
+            vbox.addView(existingView);
 
-            return new VBox(newView, existingView);
+            return vbox;
+        }
+
+        private static final String UPGRADE_INSECURE_REQUESTS = "${UPGRADE.INSECURE.REQUESTS}";
+
+        private String formatCsp(@Nullable String csp, String defaultValue)
+        {
+            if (csp != null)
+            {
+                // There's no semicolon at the end of this substitution, but we want it to show it on its own line
+                csp = csp.replace(UPGRADE_INSECURE_REQUESTS + " ", UPGRADE_INSECURE_REQUESTS + "\n");
+                return Arrays.stream(csp.split(";"))
+                    .map(String::trim)
+                    .collect(Collectors.joining(" ;\n"));
+            }
+            else
+            {
+                return defaultValue;
+            }
         }
 
         private static final Object HOST_LOCK = new Object();
@@ -11695,7 +11858,7 @@ public class AdminController extends SpringActionController
         setProperty(form.isThemeNameInherited(), props::clearThemeName, () -> props.setThemeName(form.getThemeName()));
         setProperty(form.isFolderDisplayModeInherited(), props::clearFolderDisplayMode, () -> props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode())));
         setProperty(form.isApplicationMenuDisplayModeInherited(), props::clearApplicationMenuDisplayMode, () -> props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode())));
-        setProperty(form.isHelpMenuEnabledInherited(), props::clearHelpMenuEnabled, () -> props.setHelpMenuEnabled(form.isHelpMenuEnabled()));
+        setProperty(form.isHelpMenuEnabledInherited(), props::clearDocumentationMenuEnabled, () -> props.setDocumentationMenuEnabled(form.isHelpMenuEnabled()));
 
         // a few properties on this page should be restricted to operational permissions (i.e. site admin)
         if (hasAdminOpsPerm)
@@ -12158,8 +12321,8 @@ public class AdminController extends SpringActionController
         @Override
         protected ObjectMapper createRequestObjectMapper()
         {
-            // Annoyingly, Chrome posts an array of JSON objects but Safari posts individual JSON objects. Set a flag
-            // that ensures both cases deserialize into List<JSONObject>.
+            // Annoyingly, Chrome and Firefox post an array of JSON objects but Safari posts individual JSON objects.
+            // Set a flag that ensures both cases deserialize into List<JSONObject>.
             return JsonUtil.DEFAULT_MAPPER.copy().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
         }
     }
@@ -12460,6 +12623,7 @@ public class AdminController extends SpringActionController
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
                 controller.new EnvironmentVariablesAction(),
+                controller.new SecretsAction(),
                 controller.new SystemMaintenanceAction(),
                 controller.new SystemPropertiesAction(),
                 new GetPendingRequestCountAction(),
@@ -12587,6 +12751,91 @@ public class AdminController extends SpringActionController
                 User u = UserManager.getUser(new ValidEmail(TEST_EMAIL));
                 UserManager.deleteUser(u.getUserId());
             }
+        }
+    }
+
+    public static class ImportFolderSourceScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testImportFromTemplateRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdminOnly = createUserInRole(dest, FolderAdminRole.class);
+
+            ActionURL url = new ActionURL(ImportFolderAction.class, dest)
+                    .addParameter("sourceTemplateFolder", source.getPath())
+                    .addParameter("sourceTemplateFolderId", source.getId());
+            MockHttpServletResponse resp = post(url, destAdminOnly);
+
+            // The fix rejects the import and reshows the form (200) rather than redirecting to success (302), with a
+            // source-permission error message in the rendered content.
+            assertStatus(HttpServletResponse.SC_OK, resp);
+            assertTrue("Expected a source-permission rejection message, content was: " + resp.getContentAsString(),
+                    resp.getContentAsString().contains("permission to import from the specified source folder"));
+
+            // Positive control performed in S3ImportTest.testS3Import(). Difficult to mock here due to pipeline job
+        }
+    }
+
+    public static class RevertFolderScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testRevertFolderRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(RevertFolderAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath());
+
+            // Cross-container attempt by a caller who is not an admin of the target -> 403, before any mutation.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (who IS an admin of the target) is allowed through even cross-container,
+            // proving the fix re-checks AdminPermission on the target rather than locking to the request container.
+            // folderB is a plain folder with no container tabs, so the action makes no change and returns success:false
+            // at status 200 -- the point is that the guard does not reject an authorized caller.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testClearDeletedTabFoldersRequiresTargetAdmin() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            ActionURL foreignUrl = new ActionURL(ClearDeletedTabFoldersAction.class, folderA)
+                    .addParameter("containerPath", folderB.getPath())
+                    .addParameter("resurrectFolders", "anyTab");
+
+            // A folder admin in A only must not clear deleted-tab markers in folder B (resolved by containerPath) -> 403.
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(foreignUrl, adminA));
+
+            // Positive control: a site admin (admin of the target) is allowed through -> 200.
+            assertStatus(HttpServletResponse.SC_OK, post(foreignUrl, admin));
+        }
+
+        @Test
+        public void testSetFolderPermissionsCopyRequiresSourceAdmin() throws Exception
+        {
+            Container dest = createContainer("Dest");
+            Container source = createContainer("Source");
+            User destAdmin = createUserInRole(dest, FolderAdminRole.class);
+
+            // Copying groups/role assignments from a project the caller does not administer must be rejected. The
+            // action's @RequiresPermission(AdminPermission.class) only proves admin on the destination container, so a
+            // dest-only admin supplying another project's id as targetProject must get 403, not a copy of its security
+            // configuration. (Positive control omitted: a successful copy needs real project group/policy fixtures.)
+            ActionURL url = new ActionURL(SetFolderPermissionsAction.class, dest)
+                    .addParameter("permissionType", "CopyExistingProject")
+                    .addParameter("targetProject", source.getId());
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, destAdmin));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,6 +234,12 @@ public interface AuthenticationProvider
          * @param isAdminCopy true for sending admin a copy of reset password email
          */
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
@@ -286,11 +292,23 @@ public interface AuthenticationProvider
         void addUserDelay(HttpServletRequest request, String id, int addCount);
 
         void resetUserDelay(String id);
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     interface ExpireAccountProvider extends AuthenticationProvider
     {
         boolean isEnabled();
+
+        @Override
+        default boolean isFicamApproved()
+        {
+            return true;
+        }
     }
 
     class AuthenticationResponse
@@ -307,6 +325,7 @@ public interface AuthenticationProvider
         private @NotNull Map<String, String> _userAttributeMap = Collections.emptyMap();  // A case-insensitive map of attribute names and values associated with the user
         private @NotNull Map<String, Object> _authenticationProperties = Collections.emptyMap();
         private boolean _requireSecondary = true;                                         // Require secondary authentication
+        private boolean _reauth = false;
         private @Nullable String _successDetails = null;                                  // An optional string describing how successful authentication took place, which will
                                                                                           // appear in the audit log. If null, the configuration's description will be used.
 
@@ -447,6 +466,17 @@ public interface AuthenticationProvider
             _requireSecondary = requireSecondary;
             return this;
         }
+
+        public boolean isReauth()
+        {
+            return _reauth;
+        }
+
+        public AuthenticationResponse setReauth(boolean reauth)
+        {
+            _reauth = reauth;
+            return this;
+        }
     }
 
     // FailureReasons are only reported to administrators (in the audit log and/or server log), NOT to users (and potential
@@ -456,6 +486,7 @@ public interface AuthenticationProvider
         userDoesNotExist(ReportType.onFailure, "user does not exist", null),
         badPassword(ReportType.onFailure, "incorrect password", null),
         badCredentials(ReportType.onFailure, "invalid credentials", null),  // Use for cases where we can't distinguish between userDoesNotExist and badPassword
+        reauthNotConfirmed(ReportType.onFailure, "identity provider did not reauthenticate the user", null),  // Credentials were fine; the IdP declined to reauthenticate (e.g. ignored SAML ForceAuthn)
         complexity(ReportType.onFailure, "password does not meet the complexity requirements", AuthenticationStatus.Complexity),
         expired(ReportType.onFailure, "password has expired", AuthenticationStatus.PasswordExpired),
         configurationError(ReportType.always, "configuration problem", null),

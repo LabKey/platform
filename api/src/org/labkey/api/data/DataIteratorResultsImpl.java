@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -141,8 +142,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     @Override
     public Map<String, Object> getRowMap()
     {
-        // TODO
-        return null;
+        throw new UnauthorizedException();
     }
 
     @Override
@@ -154,8 +154,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     @Override
     public @NotNull Iterator<Map<String, Object>> iterator()
     {
-        // TODO
-        return null;
+        throw new UnauthorizedException();
     }
 
     @Override
@@ -362,8 +361,7 @@ public class DataIteratorResultsImpl implements Results, TableResultSet
     @Override
     public boolean wasNull()
     {
-        // TODO
-        return false;
+        throw new UnauthorizedException();
     }
 
     @Override

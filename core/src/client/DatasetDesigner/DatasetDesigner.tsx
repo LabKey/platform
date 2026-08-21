@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import {
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
@@ -66,9 +67,7 @@ class DatasetDesigner extends PureComponent<any, State> {
 
     navigate(defaultUrl: string): void {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     navigateOnComplete(model: DatasetModel): void {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,6 +91,10 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         String[] emailsToDelete = form.getDelete();
         SpecimenRequestActor actor = getActor(form);
         LocationImpl location = getLocation(form);
+
+        // getActor is container-scoped; null means the actorId doesn't belong to this folder
+        if (actor == null)
+            throw new NotFoundException();
 
         if (emailsToDelete != null && emailsToDelete.length > 0)
         {

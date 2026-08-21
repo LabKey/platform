@@ -1,7 +1,11 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 import React from 'react';
 import { userEvent } from '@testing-library/user-event';
-import { renderWithAppContext } from '@labkey/components'
-import { getServerContext } from '@labkey/api';
+import { renderWithAppContext } from '@labkey/components';
 
 import { ErrorHandlerImpl } from './ErrorHandler';
 import { ErrorDetails, ErrorType } from './model';
@@ -14,13 +18,13 @@ describe('ErrorHandlerImpl', () => {
             message: 'This is a not found exception',
         };
         renderWithAppContext(<ErrorHandlerImpl context={{ errorDetails }} />);
-        expect(document.querySelector('.labkey-error-heading').innerHTML.includes(errorDetails.message)).toBeTruthy();
+        expect(document.querySelector('.labkey-error-heading').textContent.includes(errorDetails.message)).toBeTruthy();
         expect(document.querySelectorAll('.error-details-container')).toHaveLength(0);
 
         await userEvent.click(document.querySelectorAll('.error-page-button')[2]);
         const question = document.querySelector('.error-details-container');
-        expect(question.innerHTML.includes('What went wrong?')).toBeTruthy();
-        expect(question.innerHTML.includes('Incorrect URL:')).toBeTruthy();
+        expect(question.textContent.includes('What went wrong?')).toBeTruthy();
+        expect(question.textContent.includes('Incorrect URL:')).toBeTruthy();
     });
 
     test('Configuration exception', async () => {
@@ -28,14 +32,19 @@ describe('ErrorHandlerImpl', () => {
             errorType: ErrorType.configuration,
             message: 'This is a configuration exception',
         };
-        const subheading = 'The requested page cannot be found.';
         renderWithAppContext(<ErrorHandlerImpl context={{ errorDetails }} />);
-        expect(document.querySelector('.labkey-error-subheading').innerHTML.includes(subheading)).toBeTruthy();
+        expect(document.querySelector('.labkey-error-subheading').textContent).toEqual(
+            'This is a configuration exception.'
+        );
         expect(document.querySelectorAll('.error-details-container')).toHaveLength(0);
 
         await userEvent.click(document.querySelectorAll('.error-page-button')[2]);
-        expect(document.querySelector('.labkey-error-details-question').innerHTML.includes('What went wrong?')).toBeTruthy();
-        expect(document.querySelector('div.labkey-error-details').innerHTML.includes('Server Configuration Errors')).toBeTruthy();
+        expect(
+            document.querySelector('.labkey-error-details-question').textContent.includes('What went wrong?')
+        ).toBeTruthy();
+        expect(
+            document.querySelector('div.labkey-error-details').textContent.includes('Server Configuration Errors')
+        ).toBeTruthy();
     });
 
     test('Permission exception', async () => {
@@ -51,14 +60,19 @@ describe('ErrorHandlerImpl', () => {
             serverContext: {
                 impersonatingUser: { displayName: impersonatedUser },
                 user: { displayName: realUser, isSignedIn: true } as any,
-            }
+            },
         });
-        expect(document.querySelector('.labkey-error-subheading').innerHTML.includes(errorDetails.message)).toBeTruthy();
+        expect(
+            document.querySelector('.labkey-error-subheading').textContent.includes(errorDetails.message)
+        ).toBeTruthy();
         expect(document.querySelectorAll('.error-details-container')).toHaveLength(0);
 
         await userEvent.click(document.querySelectorAll('.error-page-button')[2]);
-        const question = document.querySelector('.error-details-container');
-        expect(document.querySelector('.labkey-error-details-question').innerHTML.startsWith('What is a permission error?')).toBeTruthy();
+        expect(
+            document
+                .querySelector('.labkey-error-details-question')
+                .textContent.startsWith('What is a permission error?')
+        ).toBeTruthy();
 
         // FIXME: the following cases are commented out because nearly the entire ErrorHandler component uses
         //  non-component functions to render the contents, which prevents the code from being able to properly use the
@@ -74,7 +88,9 @@ describe('ErrorHandlerImpl', () => {
             message: 'This is a execution exception',
         };
         renderWithAppContext(<ErrorHandlerImpl context={{ errorDetails }} />);
-        expect(document.querySelector('.labkey-error-subheading').innerHTML.includes(errorDetails.message)).toBeTruthy();
+        expect(
+            document.querySelector('.labkey-error-subheading').textContent.includes(errorDetails.message)
+        ).toBeTruthy();
         expect(document.querySelectorAll('.error-details-container')).toHaveLength(0);
 
         await userEvent.click(document.querySelectorAll('.error-page-button')[2]);

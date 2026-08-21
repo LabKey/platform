@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.mcp;
 
 import com.google.genai.errors.ClientException;
@@ -70,9 +85,18 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
+        if (!McpService.get().isAIFeaturesEnabled())
+        {
+            errors.reject(ERROR_GENERIC, "Agent actions are not available.");
+            return;
+        }
+
         String prompt = form.getPrompt();
         if (prompt != null && prompt.length() > MAX_PROMPT_CHAR_LENGTH)
+        {
             errors.rejectValue("prompt", ERROR_GENERIC, "Prompt cannot exceed " + MAX_PROMPT_CHAR_LENGTH + " characters.");
+            return;
+        }
 
         // Only honor a client-supplied conversationId if this agent previously issued this session that
         // id. Otherwise, generate a fresh one. This prevents a same-session caller from splicing into
@@ -189,15 +213,20 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     private Set<GUID> getIssuedConversationIds(HttpSession session)
     {
-        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), () ->
-                Collections.synchronizedSet(Collections.newSetFromMap(
-                        new LinkedHashMap<>(16, 0.75f, false)
-                        {
-                            @Override
-                            protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
-                            {
-                                return size() > MAX_ISSUED_CONVERSATION_IDS;
-                            }
-                        })));
+        return SessionHelper.getAttribute(session, getIssuedConversationIdsKey(), AbstractAgentAction::newIssuedConversationIdSet);
+    }
+
+    private static Set<GUID> newIssuedConversationIdSet()
+    {
+        return Collections.synchronizedSet(Collections.newSetFromMap(
+            new LinkedHashMap<>(16, 0.75f, false)
+            {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<GUID, Boolean> eldest)
+                {
+                    return size() > MAX_ISSUED_CONVERSATION_IDS;
+                }
+            }
+        ));
     }
 }

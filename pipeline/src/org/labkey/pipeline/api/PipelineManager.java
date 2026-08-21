@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -698,8 +698,15 @@ public class PipelineManager
         String pipelineId = config.getPipelineId();
         boolean isEnabled = config.isEnabled();
 
+        // validate that the file regular expression is not blank
+        if (StringUtils.isBlank(config.getFilePattern()))
+        {
+            errors.rejectValue("FilePattern", null, "File Pattern cannot be blank.");
+            return;
+        }
+
         // validate that the config name is unique for this container
-        if (StringUtils.isNotEmpty(name))
+        if (StringUtils.isNotBlank(name))
         {
             if (name.length() > 255)
                 errors.rejectValue("Name", null, "Name must be less than 256 characters");

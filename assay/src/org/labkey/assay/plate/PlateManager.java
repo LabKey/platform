@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1699,7 +1699,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     {
         return _plateLayoutHandlers.get(plateTypeName);
     }
-    
+
     public UserSchema getPlateUserSchema(Container container, User user)
     {
         return QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
@@ -1837,7 +1837,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return false;
         }
     }
-    
+
     public void registerLsidHandlers()
     {
         if (_lsidHandlersRegistered)
@@ -2662,7 +2662,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         TableInfo wellTable = getWellTable(plate.getContainer(), user);
         Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
-        try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columnMap.values()).filter(filter).select())
         {
             while (r.next())
             {
@@ -3322,6 +3322,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             }
             else
             {
+                // Verify the caller has UpdatePermission on the container of every hit row being removed
+                SimpleFilter hitFilter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
+                hitFilter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
+                Set<String> hitContainerIds = new HashSet<>(new TableSelector(hitTable, Collections.singleton("Container"), hitFilter, null).getArrayList(String.class));
+                for (String hitContainerId : hitContainerIds)
+                {
+                    Container hitContainer = ContainerManager.getForId(hitContainerId);
+                    if (hitContainer == null || !hitContainer.hasPermission(user, UpdatePermission.class))
+                        throw new UnauthorizedException("Failed to unmark hits. You do not have permissions to update hits in this folder.");
+                }
+
                 deleteHits(protocolId, rowIds);
             }
 
@@ -4248,7 +4259,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             FROM plate.Well WHERE PlateId.PlateSet.RowId = %s AND ReplicateGroup IS NOT NULL
         """, plateSetRowId);
 
-        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector().getRowCount();
     }
 
     private String getReplicateGroupLabKeySql(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
@@ -4296,7 +4307,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         var sql = getReplicateGroupLabKeySql(plateSchema, plateSetRowId);
-        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select())
+        // Pass true for a cached result set so getSize() can report the row count without iterating
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sql).select(true))
         {
             if (replicateWellGroupCount == results.getSize())
                 return;
@@ -4349,7 +4361,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private long getSampleGroupCount(@NotNull UserSchema plateSchema, @NotNull Long plateSetRowId)
     {
         String labkeySql = getSampleGroupLabKeySql(plateSetRowId, false);
-        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector(null).getRowCount();
+        return QueryService.get().getSelectBuilder(plateSchema, labkeySql).buildSqlSelector().getRowCount();
     }
 
     private void validatePlateSetSampleGroups(Container container, User user, @NotNull Long plateSetRowId) throws ValidationException
@@ -4361,7 +4373,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         var sampleGroupLabKeySql = getSampleGroupLabKeySql(plateSetRowId, true);
-        try (var results = QueryService.get().getSelectBuilder(plateSchema, sampleGroupLabKeySql).select())
+        // Pass true for a cached result set so getSize() can report the row count without iterating
+        try (var results = QueryService.get().getSelectBuilder(plateSchema, sampleGroupLabKeySql).select(true))
         {
             if (sampleGroupCount == results.getSize())
                 return;
@@ -5112,7 +5125,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
-    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
+    public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user, @Nullable String auditUserComment)
     {
         if (materials == null || materials.isEmpty())
             return;

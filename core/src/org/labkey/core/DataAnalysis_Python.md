@@ -3,6 +3,7 @@
 This project is for performing data analysis against a LabKey Server instance using AI assistance.
 
 **Connection defaults:** The LabKey server URL and API key can be inferred from `.mcp.json` in this directory. The `url` field (minus the `/mcp` path) provides the server endpoint, and the `apikey` header value provides the authentication token.
+AI agents should encourage users to create and provide "permissions-restricted API keys" (e.g., limited to a specific role such as Reader or Editor at API key creation time) instead of providing an unrestricted API key.
 
 **Do not embed API keys in generated scripts.** Instead, ensure a `.netrc` file (Linux/Mac) or `_netrc` file (Windows) exists in the user's home directory with the server credentials. If the file does not exist, offer to create it using the API key from `.mcp.json`. The format is:
 

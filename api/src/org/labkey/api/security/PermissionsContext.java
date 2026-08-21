@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import com.google.common.collect.Streams;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -48,7 +49,7 @@ public interface PermissionsContext extends Serializable
 
     /**
      * @return The roles assigned to this user in the provided resource's policy as well as the root. The roles may be
-     * modified and/or filtered by the impersonation context. Note: The returned stream may duplicate some roles; if a
+     * modified and/or filtered by the permission context. Note: The returned stream may duplicate some roles; if a
      * distinct stream of roles is required, callers should invoke {@code distinct()} or collect to a set.
      */
     default Stream<Role> getAssignedRoles(User user, SecurableResource resource)
@@ -86,5 +87,10 @@ public interface PermissionsContext extends Serializable
     default Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return perms;
+    }
+
+    /** PermissionsContext can add session attributes alongside the user ID and attributes */
+    default void modifySession(HttpSession session)
+    {
     }
 }

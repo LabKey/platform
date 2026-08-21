@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.query.controllers;
 
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
@@ -29,9 +44,9 @@ import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.query.QueryServiceImpl;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.SqlParser;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
@@ -39,12 +54,14 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.util.StringUtilsLabKey.pluralize;
 
 public class QueryMcp implements McpService.McpImpl
 {
@@ -52,7 +69,7 @@ public class QueryMcp implements McpService.McpImpl
         uri = "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
         mimeType = "application/markdown",
         name = "LabKey SQL",
-        description = "Provide documentation for LabKey SQL specific syntax")
+        description = "Required reading before writing or debugging LabKey SQL. Covers lookup traversal, PIVOT, parameterized queries, cross-folder queries, and all available functions.")
     public ReadResourceResult getLabKeySQLDocumentation() throws IOException
     {
         incrementResourceRequestCount("LabKey SQL");
@@ -181,14 +198,66 @@ public class QueryMcp implements McpService.McpImpl
 
         try
         {
-            QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+            QueryServiceImpl.CalculatedColumnParseResult result = QueryServiceImpl.get().parseCalculatedColumn(context.getContainer(), context.getUser(), expression, columnMap, phiColumns);
+
+            JSONObject json = new JSONObject();
+            json.put("jdbcType", result.jdbcType().name());
+            json.put("expression", expression);
+
+            return json.toString();
         }
         catch (QueryException x)
         {
             return "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below:\n```\n" + x.getMessage() + "\n```";
         }
+    }
 
-        return "success";
+
+    @Tool(description =
+            "Execute a LabKey SQL query and return results as tab-separated values (RFC 4180 TSV). " +
+                    "Use this to inspect actual query results while writing or debugging SQL. " +
+                    "Prefer validateSQL when you only need to check syntax without running the query. " +
+                    "Returns up to 100 rows by default, or up to 1,000 rows when using limit; use offset and limit to page through larger result sets. " +
+                    "Response format: a header row of column names, then one data row per newline, fields tab-separated. " +
+                    "Fields containing tabs, newlines, or double-quotes are RFC 4180 quoted. " +
+                    "On SQL error, the error message is returned as plain text rather than throwing. " +
+                    "For data analysis or bulk retrieval, use the LabKey Python or R client APIs instead of this tool. " +
+                    "**Important** This tool does not yet support queries with named parameters.")
+    @RequiresPermission(ReadPermission.class)
+    String executeSQL(
+            ToolContext toolContext,
+            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+            @ToolParam(description = "LabKey SQL to execute") String sql,
+            @ToolParam(description = "Rows to skip before returning results.", required=false) Integer offset,
+            @ToolParam(description = "Number of rows to return (limit <= 1000, default=100)", required=false) Integer limit
+    )
+    {
+        var cu = getContext(toolContext);
+        var schema = DefaultSchema.get(cu.getUser(), cu.getContainer(), getSchemaKey(schemaName));
+        if (!(schema instanceof UserSchema userSchema))
+            return "Could not find schema " + schemaName;
+
+        offset = null==offset ? 0 : offset < 0 ? 0 : offset;
+        limit = (limit == null || limit < 0) ? 100 : Math.min(1000, limit);
+        var execute = new SqlController.SqlExecute(cu, userSchema, sql)
+                .page(offset, limit)
+                .truncation(500, "…[truncated]");
+
+        try
+        {
+            StringWriter sw = new StringWriter(2000);
+            SqlController.SqlExecute.ExecuteResult result = execute.execute(sw);
+            String message = "\n-- " + pluralize(result.rows(), "row", "rows") + " returned";
+            if (result.complete())
+                message += ".";
+            else
+                message += ", more may be available (use offset and limit to page).";
+             return sw + message;
+        }
+        catch (Exception x)
+        {
+            return x.getMessage() != null ? x.getMessage() : x.getClass().getSimpleName();
+        }
     }
 
     /* For now, list all schemas. CONSIDER support incremental querying. */

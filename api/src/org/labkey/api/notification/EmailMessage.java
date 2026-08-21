@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2017 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public interface EmailMessage
     // TODO: Only used by tests... delete?
     void setFiles(List<File> files);
     void addContent(MimeType type, String content);
-    void addContent(MimeType type, HttpServletRequest request, HttpView view) throws Exception;
+    void addContent(MimeType type, HttpServletRequest request, HttpView<?> view) throws Exception;
 
     /**
      * Sets the display name for the email sender, the actual sender email address will be the one configured via site or project settings

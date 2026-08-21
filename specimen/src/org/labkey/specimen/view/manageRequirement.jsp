@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@
                 </tr>
                 <tr>
                     <th align="left">Description</th>
-                    <td><%= unsafe(requirement.getDescription()) %></td>
+                    <td><%= h(requirement.getDescription()) %></td>
                 </tr>
                 <%
                     if (!bean.isRequestManager())

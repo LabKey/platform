@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,14 +212,6 @@
         and cannot be granted access through this view. If the checkbox is selected, the group has been given explicit
         access through this view.
     </p>
-
-    <% if (bean.allowShareButton(getUser(), getContainer())) { %>
-    <p>
-        This report type allows for sharing with individual users. Any users that this report has already been shared with
-        will be listed in the "Specific Users" section above. To add additional users, click the button below.<br/>
-        <%= button("Share Report").href(urlProvider(ReportUrls.class).urlShareReport(getContainer(), bean)) %>
-    </p>
-    <% } %>
 
     <p>
         For more information on study security, consult the main documentation:

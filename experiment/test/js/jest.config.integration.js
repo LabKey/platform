@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 module.exports = {
     globals: {
         LABKEY: {
@@ -9,15 +14,15 @@ module.exports = {
     },
     moduleFileExtensions: ['js', 'ts', 'tsx'],
     moduleDirectories: ['node_modules'],
-    setupFiles: ['@labkey/test/dist/config/integration.setup.js'],
-    setupFilesAfterEnv: ['@labkey/test/dist/config/integration.setup.afterenv.js'],
+    setupFiles: ['./node_modules/@labkey/test/dist/config/integration.setup.js'],
+    setupFilesAfterEnv: ['./node_modules/@labkey/test/dist/config/integration.setup.afterenv.js'],
     testEnvironment: 'jsdom',
     testPathIgnorePatterns: ['/node_modules/'],
     transform: {
         '^.+\\.tsx?$': [
             'ts-jest',
             {
-                tsconfig: 'node_modules/@labkey/build/webpack/tsconfig.test.json',
+                tsconfig: 'node_modules/@labkey/build/configs/tsconfig.test.json',
             }
         ]
     },

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -80,6 +81,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -95,6 +98,9 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 // Isolate the big SQL differences between database servers. A new SqlDialect instance is created for each DbScope; the
 // dialect holds state specific to each database, for example, reserved words, user defined type information, etc.
@@ -102,7 +108,7 @@ public abstract class SqlDialect
 {
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
-    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1000;
+    public static final int TEMP_TABLE_GENERATOR_MIN_SIZE = 1001; // 1001 so that lists up to the App UI selection limit of 1000 use the consistent inline path; temp tables are used only for larger lists.
 
     protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
@@ -166,7 +172,7 @@ public abstract class SqlDialect
     {
         StringBuilder sb = new StringBuilder();
 
-        // Per 18789, also include threads without db connections.
+        // Per Issue 18789, also include threads without db connections.
         List<Thread> dbThreads = new ArrayList<>();
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
@@ -354,13 +360,16 @@ public abstract class SqlDialect
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
-    protected @Nullable String getDatabaseMaintenanceSql()
+    protected @Nullable SQLFragment getDatabaseMaintenanceSql()
     {
         return null;
     }
 
-    // Return a ConnectionFactory only if the default behavior needs to be overridden
-    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    // Return a ConnectionFactory only if the default behavior needs to be overridden. selfContained indicates that the
+    // ResultSet will be fully consumed and closed within a single selector call (so the shared, ref-counted thread
+    // connection can be borrowed and its state restored on release); when false, the connection escapes to the caller
+    // as a live ResultSet/Stream and must therefore be an unshared connection whose lifetime the caller controls.
+    public @Nullable ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         return null;
     }
@@ -607,7 +616,7 @@ public abstract class SqlDialect
     /**
      * Composes the fragments into a SQL query that will be limited by rowCount
      * starting at the given 0-based offset.
-     * 
+     *
      * @param select must not be null
      * @param from must not be null
      * @param filter may be null
@@ -623,9 +632,40 @@ public abstract class SqlDialect
 
     public abstract boolean supportsComments();
 
-    public abstract String execute(DbSchema schema, String procedureName, String parameters);
+    /**
+     * Build a SQL statement that invokes a stored procedure. The schema and procedure names are safely
+     * quoted and escaped via {@link #getProcedureSelectName} before delegating to the dialect-specific
+     * {@link #doExecute}, so it is safe to pass less-trusted names. Names with special characters or
+     * reserved words are quoted; plain legal identifiers are emitted bare. Throws
+     * {@link IllegalArgumentException} if a name contains a control character or is otherwise malformed.
+     */
+    public final SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
+    {
+        return doExecute(getProcedureSelectName(schema.getName(), procedureName), parameters);
+    }
 
-    public abstract SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters);
+    /**
+     * Dialect-specific worker for {@link #execute} that builds the procedure invocation SQL around the
+     * already-quoted, schema-qualified {@code qualifiedProcName}. Always invoke {@code execute()}, never this method.
+     */
+    protected abstract SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters);
+
+    /**
+     * Build a safely quoted, schema-qualified name for invoking a stored procedure/function in a CALL/EXEC/SELECT statement.
+     */
+    protected SQLFragment getProcedureSelectName(String schemaName, String procName)
+    {
+        return new SQLFragment().appendDottedIdentifiers(quoteProcedureIdentifier(schemaName), quoteProcedureIdentifier(procName));
+    }
+
+    private String quoteProcedureIdentifier(String id)
+    {
+        // The schema and procedure names are separate parameters, so a single component may not itself
+        // contain a '.' -- a dotted name is an ambiguous (possibly smuggled) schema-qualified reference.
+        if (id.indexOf('.') >= 0)
+            throw new IllegalArgumentException("Procedure schema/name may not contain '.': " + id);
+        return shouldQuoteIdentifier(id) ? quoteIdentifier(id) : id;
+    }
 
     public abstract String concatenate(String... args);
 
@@ -711,8 +751,6 @@ public abstract class SqlDialect
      * @param includeNulls whether to include null values as empty strings between delimiters
      */
     public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls);
-
-    public abstract boolean supportsSelectConcat();
 
     public boolean supportsGroupConcatSubSelect()
     {
@@ -837,6 +875,27 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    public boolean supportsIsNumeric()
+    {
+        return false;
+    }
+
+    public SQLFragment isNumericExpr(SQLFragment expression)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    /**
+     * Does the dialect natively support the standard "IS [NOT] DISTINCT FROM" predicate? PostgreSQL and Snowflake
+     * do; SQL Server, MySQL, and Oracle do not (SQL Server added GREATEST/LEAST in recent versions but has never
+     * added this predicate). Dialects that return false here get a portable CASE-based rewrite instead; see
+     * Method.IsDistinctFromMethodInfo.
+     */
+    public boolean supportsNativeIsDistinctFrom()
+    {
+        return false;
+    }
+
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         throw(new ServletException("Can't create database", e));
@@ -902,7 +961,7 @@ public abstract class SqlDialect
         if (LOG.isTraceEnabled())
         {
             final var me = this;
-            return _validatedIds.computeIfAbsent(id.getId(), key ->
+            return _validatedIds.computeIfAbsent(id.getId(), _ ->
             {
                 var optScope = DbScope.getDbScopesToTest().stream().filter(s -> s.getSqlDialect().getClass() == me.getClass()).findFirst();
                 if (optScope.isPresent())
@@ -996,6 +1055,17 @@ public abstract class SqlDialect
     // Escape quotes and quote the identifier
     public String quoteIdentifier(String id)
     {
+        // Be defensive: NUL/CR/LF, DEL, and other non-printable control characters in an identifier
+        // would either be silently truncated by the driver (SQL Server on NUL) or surface as an
+        // opaque JDBC error. Reject them here with a clear message before any bytes leave the JVM.
+        // Character.isISOControl covers the C0 (0x00-0x1F) and C1 (0x7F-0x9F) control ranges; tab is
+        // the one control character we tolerate.
+        for (int i = 0, len = id.length(); i < len; i++)
+        {
+            char c = id.charAt(i);
+            if (Character.isISOControl(c) && c != '\t')
+                throw new IllegalArgumentException("Identifier contains illegal control character (0x" + Integer.toHexString(c) + "): " + id);
+        }
         return "\"" + Strings.CS.replace(id, "\"", "\"\"") + "\"";
     }
 
@@ -1318,19 +1388,19 @@ public abstract class SqlDialect
             }
             else if (Integer.class.equals(componentType))
             {
-                typeName = getJDBCArrayType(Integer.valueOf(0));
+                typeName = getJDBCArrayType(0);
             }
             else if (Long.class.equals(componentType))
             {
-                typeName = getJDBCArrayType(Long.valueOf(0L));
+                typeName = getJDBCArrayType(0L);
             }
             else if (Double.class.equals(componentType))
             {
-                typeName = getJDBCArrayType(Double.valueOf(0.0d));
+                typeName = getJDBCArrayType(0.0d);
             }
             else if (Float.class.equals(componentType))
             {
-                typeName = getJDBCArrayType(Float.valueOf(0.0f));
+                typeName = getJDBCArrayType(0.0f);
             }
             else if (Boolean.class.equals(componentType))
             {
@@ -1438,6 +1508,17 @@ public abstract class SqlDialect
         }
     }
 
+    /**
+     * Stop work in progress on the sessions behind the given connections, which typically belong to a thread that's
+     * blocked in JDBC and can't respond to a request to stop. Cancelling throws an exception so the thread unwinds
+     * and releases its own connection; terminating kills the session outright, leaving its pooled connection dead.
+     * @return false if this dialect can't stop queries out of band
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    {
+        return false;
+    }
+
     public boolean updateStatistics(TableInfo table)
     {
         SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
@@ -1452,7 +1533,7 @@ public abstract class SqlDialect
 
 
     public abstract String getBooleanDataType();
-    
+
     public String getBooleanTRUE()
     {
         return "CAST(1 AS " + getBooleanDataType() + ")";
@@ -1501,12 +1582,12 @@ public abstract class SqlDialect
 
     /**
      * Drop a schema if it exists.
-     * Throws an exception if schema exists, and could not be dropped. 
+     * Throws an exception if schema exists and could not be dropped.
      */
     public void dropSchema(DbSchema schema, String schemaName)
     {
-        String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
-        new SqlExecutor(schema).execute(sql, "*", schemaName, "SCHEMA", null);
+        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", "*", schemaName, "SCHEMA", null));
+        new SqlExecutor(schema).execute(sql);
     }
 
     /**
@@ -1519,14 +1600,14 @@ public abstract class SqlDialect
      */
     public void dropIfExists(DbSchema schema, String objectName, String objectType, @Nullable String subObjectName)
     {
-        String sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", "?, ?, ?, ?");
         String schemaName = schema.getName();
         if (Strings.CS.contains(objectName,".") && Strings.CS.startsWith(objectName,getGlobalTempTablePrefix()))
         {
             schemaName = objectName.substring(0,objectName.indexOf("."));
             objectName = objectName.substring(objectName.indexOf(".")+1);
         }
-        new SqlExecutor(schema).execute(sql, objectName, schemaName, objectType, subObjectName);
+        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", objectName, schemaName, objectType, subObjectName));
+        new SqlExecutor(schema).execute(sql);
     }
 
     /**
@@ -1829,7 +1910,7 @@ public abstract class SqlDialect
         if (serverInfo.startsWith("Apache Tomcat/"))
         {
             String[] versionParts = serverInfo.substring(14).split("\\.");
-            int majorVersion = Integer.valueOf(versionParts[0]);
+            int majorVersion = Integer.parseInt(versionParts[0]);
 
             if (majorVersion >= 6)
                 version = 4;
@@ -1938,10 +2019,59 @@ public abstract class SqlDialect
     // Add any database configuration warnings (e.g., missing aggregate function or deprecated database server version)
     // to display in the page header for administrators. This will be called:
     // - Only on the LabKey DataSource's dialect instance (not external data sources)
-    // - After the core module has been upgraded and the dialect has been prepared for the last time, meaning the dialect
+    // - After the core module has been upgraded, and the dialect has been prepared for the last time, meaning the dialect
     //   should reflect the final database configuration
     public void addAdminWarningMessages(Warnings warnings, boolean showAllWarnings)
     {
+    }
+
+    public static final long TIME_DIFFERENCE_WARNING_SECONDS = 10;
+
+    public static ServerDatabaseTimeDifference getServerDatabaseTimeDifference(DbScope scope)
+    {
+        // Compare LocalDateTime to capture any difference in server and database times (skew or timezone).
+        LocalDateTime serverTime = LocalDateTime.now();
+        LocalDateTime databaseTime = new SqlSelector(scope, "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
+
+        return new ServerDatabaseTimeDifference(serverTime, databaseTime);
+    }
+
+    public record ServerDatabaseTimeDifference(LocalDateTime serverTime, LocalDateTime databaseTime)
+    {
+        public long getSeconds()
+        {
+            return Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
+        }
+
+        public boolean exceedsWarningThreshold()
+        {
+            return getSeconds() > TIME_DIFFERENCE_WARNING_SECONDS;
+        }
+    }
+
+    // GH Issue #1223: Add a site configuration warning for administrators if the server and database clocks differ.
+    protected void addTimeDifferenceWarning(Warnings warnings, boolean showAllWarnings)
+    {
+        try
+        {
+            ServerDatabaseTimeDifference difference = getServerDatabaseTimeDifference(DbScope.getLabKeyScope());
+
+            if (difference.exceedsWarningThreshold())
+                warnings.add(getTimeDifferenceWarning(difference.getSeconds()));
+            else if (showAllWarnings)
+                warnings.add(getTimeDifferenceWarning(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Unable to compare web server and database server times", e);
+        }
+    }
+
+    private HtmlString getTimeDifferenceWarning(long seconds)
+    {
+        return HtmlString.of("The web server and database server times differ by " + seconds + " seconds. " +
+            "LabKey Server often relies on comparing timestamps stored in the database with timestamps generated by " +
+            "the web server, so this difference can lead to data integrity issues. Synchronize the clocks on these servers.");
     }
 
     public abstract List<SQLFragment> getChangeStatements(TableChange change);
@@ -1965,7 +2095,7 @@ public abstract class SqlDialect
     // Defragment an index, if necessary
     public void defragmentIndex(DbSchema schema, String tableSelectName, String indexName)
     {
-        // By default do nothing
+        // By default, do nothing
     }
 
     public boolean isTableExists(DbScope scope, String schema, String name)
@@ -1993,7 +2123,7 @@ public abstract class SqlDialect
 
     /**
      *
-     * @return true If the dialect is one supported for the backend LabKey database. ie, Postgres or SQL Server
+     * @return true If the dialect is one supported for the backend LabKey database. i.e., Postgres or SQL Server
      */
     public boolean isLabKeyDbDialect()
     {
@@ -2065,11 +2195,23 @@ public abstract class SqlDialect
     public abstract Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
 
     /**
-     * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
+     * Build the string to call the procedure, with the correct number and placement of parameter placeholders.
+     * The schema and procedure names are safely quoted and escaped via {@link #getProcedureSelectName} before
+     * delegating to the dialect-specific {@link #doBuildProcedureCall}, so it is safe to pass less-trusted names.
+     * Throws {@link IllegalArgumentException} if a name contains a control character or is otherwise malformed.
      *
      * @param assignResult true if the call string should include an assignment (e.g., "? = CALL...) Some dialects always need this; for others it is dependent on return type
      */
-    public abstract String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
+    public final SQLFragment buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    {
+        return doBuildProcedureCall(getProcedureSelectName(procSchema, procName), paramCount, hasReturn, assignResult, procScope);
+    }
+
+    /**
+     * Dialect-specific worker for {@link #buildProcedureCall} that builds the call syntax around the already-quoted,
+     * schema-qualified {@code qualifiedProcName}. Always invoke {@code buildProcedureCall()}, never this method.
+     */
+    protected abstract SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope);
 
     /**
      * Register and set the input value for each INPUT or INPUT/OUTPUT parameter from the parameters map into the CallableStatement, and register
@@ -2260,6 +2402,13 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    // true if the array a contains, for EACH given value, some element matching it with a case-insensitive substring
+    public SQLFragment array_element_like(SQLFragment a, String... values)
+    {
+        assert !supportsArrays();
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
 
     //
     // TESTS
@@ -2298,7 +2447,7 @@ public abstract class SqlDialect
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
-                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
             //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
@@ -2326,6 +2475,66 @@ public abstract class SqlDialect
             assertEquals(1, sequences.size());
             Sequence seq = sequences.stream().findFirst().orElseThrow();
             assertEquals("rowid", seq.columnName().toLowerCase());
+        }
+
+        @Test
+        public void testProcedureIdentifierQuoting()
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            SqlDialect dialect = scope.getSqlDialect();
+            DbSchema core = CoreSchema.getInstance().getSchema();
+
+            // Plain legal names are emitted bare (no behavior change), through both execute() and buildProcedureCall()
+            assertTrue(dialect.execute(core, "fn_dropifexists", new SQLFragment("?, ?, ?, ?")).getSQL().contains("core.fn_dropifexists"));
+            assertTrue(dialect.buildProcedureCall(core.getName(), "fn_dropifexists", 0, false, false, scope).getSQL().contains("core.fn_dropifexists"));
+
+            // Names with special characters are quoted and embedded quotes are doubled (cannot break out of the quoted identifier)
+            assertTrue(dialect.execute(core, "a\"b", new SQLFragment("?")).getSQL().contains("\"a\"\"b\""));
+            assertTrue(dialect.buildProcedureCall(core.getName(), "weird name", 0, false, false, scope).getSQL().contains("\"weird name\""));
+
+            // A reserved word is quoted
+            assertTrue(dialect.buildProcedureCall(core.getName(), "select", 0, false, false, scope).getSQL().contains("\"select\""));
+
+            // A special-character schema name is quoted
+            assertTrue(dialect.buildProcedureCall("weird schema", "proc", 0, false, false, scope).getSQL().contains("\"weird schema\""));
+
+            // Control characters are hard failures
+            assertThrows(IllegalArgumentException.class, () -> dialect.execute(core, "a\0b", new SQLFragment("?")));
+            assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a\0b", 0, false, false, scope));
+            // A dotted name is rejected: schema and procedure are separate parameters, so a '.' in a single component is an ambiguous schema-qualified reference
+            assertThrows(IllegalArgumentException.class, () -> dialect.buildProcedureCall(core.getName(), "a.b", 0, false, false, scope));
+        }
+
+        // GH Issue #1223: Verify the server/database clock-skew arithmetic and warning threshold
+        @Test
+        public void testServerDatabaseTimeDifference()
+        {
+            LocalDateTime base = LocalDateTime.of(2026, 7, 6, 12, 0, 0);
+
+            // Identical times: zero difference, no warning
+            ServerDatabaseTimeDifference equal = new ServerDatabaseTimeDifference(base, base);
+            assertEquals(0, equal.getSeconds());
+            assertFalse(equal.exceedsWarningThreshold());
+
+            // Comfortably below the threshold: no warning
+            ServerDatabaseTimeDifference below = new ServerDatabaseTimeDifference(base, base.plusSeconds(5));
+            assertEquals(5, below.getSeconds());
+            assertFalse(below.exceedsWarningThreshold());
+
+            // Exactly at the threshold: no warning (comparison is strictly greater-than)
+            ServerDatabaseTimeDifference atThreshold = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS, atThreshold.getSeconds());
+            assertFalse(atThreshold.exceedsWarningThreshold());
+
+            // Just past the threshold: warning
+            ServerDatabaseTimeDifference over = new ServerDatabaseTimeDifference(base, base.plusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, over.getSeconds());
+            assertTrue(over.exceedsWarningThreshold());
+
+            // Difference is absolute: database clock behind the web server is treated the same as ahead
+            ServerDatabaseTimeDifference behind = new ServerDatabaseTimeDifference(base, base.minusSeconds(TIME_DIFFERENCE_WARNING_SECONDS + 1));
+            assertEquals(TIME_DIFFERENCE_WARNING_SECONDS + 1, behind.getSeconds());
+            assertTrue(behind.exceedsWarningThreshold());
         }
     }
 }

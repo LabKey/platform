@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -754,6 +754,8 @@ public class ExperimentJSONConverter
             isDerivative = material.getRunId() != null && material.getRunId() > 0;
 
         jsonObject.put("materialLineageType", isAliquot ? "Aliquot" : (isDerivative ? "Derivative" : "RootMaterial"));
+        if (material.getSampleStateId() != null)
+            jsonObject.put("sampleStatus", material.getSampleStateId());
 
         return jsonObject;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import {
     getWebDavUrl,
     inferDomainFromFile,
     LoadingSpinner,
+    redirect,
     setDomainFields,
 } from '@labkey/components';
 
@@ -136,8 +137,7 @@ class AssayDesigner extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-
-        window.location.href = this.state.returnUrl || defaultUrl;
+        redirect(this.state.returnUrl || defaultUrl);
     }
 
     onCancel = (): void => {

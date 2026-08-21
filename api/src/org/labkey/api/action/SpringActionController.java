@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -47,6 +46,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -55,6 +55,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -97,9 +98,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -128,7 +131,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     private static final Map<Class<? extends Controller>, ActionDescriptor> _classToDescriptor = new HashMap<>();
 
-    private static final Logger _log = LogManager.getLogger(SpringActionController.class);
+    private static final Logger _log = LogHelper.getLogger(SpringActionController.class, "Problems with actions and template");
 
     public void setActionResolver(ActionResolver actionResolver)
     {
@@ -143,7 +146,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected static void registerAction(ActionDescriptor ad)
     {
         ActionDescriptor prev = _classToDescriptor.put(ad.getActionClass(), ad);
-        assert null == prev || prev == ad;
+        if (null != prev)
+            throw new IllegalStateException("Action class '" + prev.getActionClass() + "' has already registered with a controller");
     }
 
     @Nullable
@@ -265,14 +269,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected static <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
         return PageFlowUtil.urlProvider(inter);
-    }
-
-    protected void requiresLogin()
-    {
-        if (getUser().isGuest())
-        {
-            throw new UnauthorizedException();
-        }
     }
 
     protected ViewBackgroundInfo getViewBackgroundInfo()
@@ -536,11 +532,16 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
-            beforeAction(controller);
-            ModelAndView mv = controller.handleRequest(request, response);
-            if (mv != null)
+            // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
+            // through rendering because the action's memory is live for that whole time.
+            try (ConcurrencyLimiter.Permit ignored = ConcurrencyLimiter.acquire(actionClass, context))
             {
-                renderInTemplate(context, controller, pageConfig, mv);
+                beforeAction(controller);
+                ModelAndView mv = controller.handleRequest(request, response);
+                if (mv != null)
+                {
+                    renderInTemplate(context, controller, pageConfig, mv);
+                }
             }
         }
         catch (HttpRequestMethodNotSupportedException x)
@@ -756,16 +757,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (action instanceof NavTrailAction)
         {
             ((NavTrailAction)action).addNavTrail(root);
-            assert isValidNavTree(root, action) : action.getClass().getName() + " is generating a malformed NavTree";
+            if (!isValidNavTree(root))
+                throw new IllegalStateException(action.getClass().getName() + " is generating a malformed NavTree");
         }
     }
 
     // NavTrail renders only the first level children, so flag the NavTree as invalid if any child has children. This
     // most likely means that addNavTrail() chained calls to addChild(), which adds nodes that will never render.
-    private boolean isValidNavTree(NavTree tree, Controller action)
+    private boolean isValidNavTree(NavTree tree)
     {
-        return tree.getChildren().stream()   // Very temporary exception for RespondAction. TODO: Remove once 20.7.2 changes are merged to develop.
-            .noneMatch(NavTree::hasChildren) || "org.labkey.announcements.AnnouncementsController$RespondAction".equals(action.getClass().getName());
+        return tree.getChildren().stream()
+            .noneMatch(NavTree::hasChildren);
     }
 
     protected void beforeAction(Controller action) throws ServletException
@@ -1222,10 +1224,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void setActionForThread(Class<?> c)
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            currentAction.get().add(c);
-        }
+        currentAction.get().add(c);
     }
 
     public static void clearActionForThread(Controller c)
@@ -1236,72 +1235,77 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static void clearActionForThread(Class<?> c)
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            ArrayList<Class<?>> list = currentAction.get();
-            assert !list.isEmpty();
-            assert list.getLast() == c;
-            list.removeLast();
-        }
-    }
-
-    private static boolean assertsEnabled()
-    {
-        boolean enableasserts = false;
-        //noinspection AssertWithSideEffects
-        assert (enableasserts = true);
-        return enableasserts;
+        ArrayList<Class<?>> list = currentAction.get();
+        Class<?> last = list.removeLast();
+        if (last != c)
+            throw new IllegalStateException("Unexpected last action class: " + last.getName() + " vs. " + c.getName());
     }
 
     @Nullable
     public static Class<?> getActionForThread()
     {
-        if (assertsEnabled() && AppProps.getInstance().isDevMode())
-        {
-            ArrayList<Class<?>> list = currentAction.get();
-            if (!list.isEmpty())
-                return list.getLast();
-        }
+        ArrayList<Class<?>> list = currentAction.get();
+        if (!list.isEmpty())
+            return list.getLast();
         return null;
     }
 
-    public static void executingMutatingSql(String sql)
+    public static void checkForMutatingSql(Supplier<String> mutatingSqlSupplier)
     {
-        if (!assertsEnabled())
-            return;
         if (ignoreUpdates.get())
             return;
-        Class<?> c = getActionForThread();
-        if (null == c)
+        Class<?> actionClass = getActionForThread();
+        if (null == actionClass)
+            return;
+        if (actionClass.getName().contains("JunitController"))
             return;
 
         ViewContext vc = HttpView.currentContext();
         boolean readonly = false;
 
-        if (ReadOnlyApiAction.class.isAssignableFrom(c))
+        // Action classes listed below have a single code path that responds to GET and POST, so check for mutating SQL
+        // regardless of the current method
+        if (
+            ReadOnlyApiAction.class.isAssignableFrom(actionClass) ||
+            SimpleAction.class.isAssignableFrom(actionClass) ||
+            SimpleRedirectAction.class.isAssignableFrom(actionClass) ||
+            SimpleViewAction.class.isAssignableFrom(actionClass)
+        )
         {
             readonly = true;
         }
-        else if (SimpleRedirectAction.class.isAssignableFrom(c) || SimpleViewAction.class.isAssignableFrom(c))
+        else
         {
-            readonly = true;
-        }
-        else if (null != vc && "GET".equals(vc.getRequest().getMethod()))
-        {
-            readonly = true;
-            _log.warn("Action {} accepted GET unexpectedly... might need to update executingMutatingSql()", c.getName());
+            if (null != vc && "GET".equals(vc.getRequest().getMethod()))
+            {
+                readonly = true;
+                // Action classes listed below have different code paths for GET vs. POST. Treat them as read-only when
+                // current method is GET.
+                if (AppProps.getInstance().isDevMode() && !(
+                    ConfirmAction.class.isAssignableFrom(actionClass) ||
+                    FormViewAction.class.isAssignableFrom(actionClass)
+                ))
+                    _log.warn("Action {} accepted GET unexpectedly... might need to update checkForMutatingSql()", actionClass.getName());
+            }
         }
 
         if (readonly)
         {
-            if (c.getName().contains("JunitController"))
-                return;
+            // Supplier allows the quick checks above us to short-circuit the mutating SQL parsing & detection work
+            String mutatingSql = mutatingSqlSupplier.get();
+            if (mutatingSql != null)
+            {
+                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
+                // reentrancy when querying this optional feature flag's value when it's not already cached.
+                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
+                    return;
 
-            boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(c.getName());
-            String message = "MUTATING SQL executed as part of handling action: " +
-                    (null == vc ? "" : vc.getRequest().getMethod()) + " " +
-                    c.getName() + (verbose ? ("\n" + sql) : "");
-            throw new IllegalStateException(message);
+                boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
+                String message = "MUTATING SQL executed as part of handling action: " +
+                        (null == vc ? "" : vc.getRequest().getMethod()) + " " +
+                        actionClass.getName() + (verbose ? ("\n" + mutatingSql) : "");
+                throw new IllegalStateException(message);
+            }
         }
     }
 

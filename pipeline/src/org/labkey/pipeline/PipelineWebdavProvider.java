@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,6 +103,14 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         public boolean canDelete(User user, boolean forDelete, List<String> msg)
         {
+            return false;
+        }
+
+        @Override
+        public boolean canMove(User user)
+        {
+            // The pipeline folder node is never deletable (see canDelete()), so it must not be movable either.
+            // FileSystemResource.canMove() relaxes only the assay-import restriction, not this categorical block.
             return false;
         }
 

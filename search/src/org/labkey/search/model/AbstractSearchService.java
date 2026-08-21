@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -55,6 +57,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
@@ -252,7 +255,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
             return false;
         }
-        
+
 
         @Override
         public void setReady()
@@ -960,6 +963,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
+    @Override
+    public boolean isSearchIconVisible()
+    {
+        return SearchPropertyManager.getSearchIconState();
+    }
 
     @Override
     public void updateIndex(String reason)
@@ -1043,7 +1051,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         ContextListener.addShutdownListener(this);
     }
-    
+
     private void startThread(Thread t)
     {
         t.setDaemon(true);
@@ -1153,15 +1161,18 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             catch (Throwable x)
             {
                 success = false;
-                try
+                if (!(_shuttingDown || x instanceof ShuttingDownException))
                 {
-                    ExceptionUtil.logExceptionToMothership(null, x);
+                    try
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, x);
+                    }
+                    catch (Throwable t)
+                    {
+                        /* */
+                    }
+                    _log.error("Error running {}", null != i ? i._id : "", x);
                 }
-                catch (Throwable t)
-                {
-                    /* */
-                }
-                _log.error("Error running {}", null != i ? i._id : "", x);
             }
             finally
             {
@@ -1181,7 +1192,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
     };
-    
+
     Item getItemToIndex() throws InterruptedException
     {
         Item i = null;
@@ -1207,7 +1218,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             throw x;
         }
     }
-    
+
 
     final Object _commitLock = new Object(){ public String toString() { return "COMMIT LOCK"; } };
     int _countIndexedSinceCommit = 0;
@@ -1437,7 +1448,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         if (categories == null)
             return null;
-        
+
         List<SearchCategory> cats = _readonlyCategories;
         List<SearchCategory> usedCats = new ArrayList<>();
         String[] requestedCats = categories.split("\\+");
@@ -1546,7 +1557,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _current.accumulate(category);
     }
 
-    
+
     private static class IndexerRateAccumulator extends MultisetRateAccumulator<String>
     {
         public IndexerRateAccumulator(long start)
@@ -1684,5 +1695,123 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     public long getFileSizeLimit()
     {
         return SearchPropertyManager.getFileSizeLimitMB() * (1024*1024);
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testAdvanceTracksMaxRowId()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            assertEquals(0L, cursor.getMaxRowId());
+
+            cursor.advance(1);
+            assertEquals(1L, cursor.getMaxRowId());
+
+            cursor.advance(5);
+            assertEquals(5L, cursor.getMaxRowId());
+        }
+
+        @Test
+        public void testMinRowIdIsInitialMaxRowId()
+        {
+            var cursor = new SearchService.IndexBatchCursor(100);
+            assertEquals(100L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceDuplicateRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            cursor.advance(5);
+            cursor.advance(5);
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceOutOfOrderRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            cursor.advance(5);
+            cursor.advance(3);
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testAdvanceAtMinRowIdThrows()
+        {
+            var cursor = new SearchService.IndexBatchCursor(100);
+            cursor.advance(100); // equal is not strictly greater
+        }
+
+        @Test
+        public void testWasFullFalseInitially()
+        {
+            assertFalse(new SearchService.IndexBatchCursor(0).wasFull());
+        }
+
+        @Test
+        public void testWasFullFalseForPartialBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            for (int i = 1; i < SearchService.INDEXING_LIMIT; i++)
+                cursor.advance(i);
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testWasFullTrueForExactlyFullBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            for (int i = 1; i <= SearchService.INDEXING_LIMIT; i++)
+                cursor.advance(i);
+            assertTrue(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachNormalBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            List<Long> processed = new ArrayList<>();
+            cursor.forEach(List.of(10L, 20L, 30L), v -> v, processed::add);
+            assertEquals(List.of(10L, 20L, 30L), processed);
+            assertEquals(30L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachEmptyList()
+        {
+            var cursor = new SearchService.IndexBatchCursor(42);
+            cursor.forEach(List.of(), v -> (long) v, v -> fail("action must not be called for empty list"));
+            assertEquals(42L, cursor.getMaxRowId());
+            assertFalse(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachFullBatch()
+        {
+            var cursor = new SearchService.IndexBatchCursor(0);
+            var items = new ArrayList<Long>(SearchService.INDEXING_LIMIT);
+            for (long i = 1; i <= SearchService.INDEXING_LIMIT; i++)
+                items.add(i);
+            cursor.forEach(items, v -> v, v -> {});
+            assertEquals((long) SearchService.INDEXING_LIMIT, cursor.getMaxRowId());
+            assertTrue(cursor.wasFull());
+        }
+
+        @Test
+        public void testForEachCountsItemEvenWhenActionThrows()
+        {
+            // advance is called before action, so the RowId is counted even if action throws
+            var cursor = new SearchService.IndexBatchCursor(0);
+            try
+            {
+                cursor.forEach(List.of(10L, 20L), v -> v, v -> { throw new RuntimeException("simulated failure"); });
+                fail("Expected RuntimeException");
+            }
+            catch (RuntimeException ignored) {}
+            assertEquals(10L, cursor.getMaxRowId());
+        }
     }
 }

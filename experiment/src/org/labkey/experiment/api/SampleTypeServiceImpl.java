@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -174,7 +175,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
 
-public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
+public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService, DataColorManager.DataColorHandler
 {
     public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
@@ -200,6 +201,19 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public static SampleTypeServiceImpl get()
     {
         return (SampleTypeServiceImpl) SampleTypeService.get();
+    }
+
+    @Override
+    public String getHandlerType()
+    {
+        return "SampleColorMaterial";
+    }
+
+    @Override
+    public boolean isColorInUse(long colorRowId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ExpMaterialColor"), colorRowId);
+        return new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).exists();
     }
 
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
@@ -346,11 +360,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 impl.index(q, null);
             }
 
-            indexSampleTypeMaterials(sampleType, q);
+            indexSampleTypeMaterials(sampleType, q, 0);
         });
     }
 
-    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue)
+    private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.TaskIndexingQueue queue, long minRowId)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
@@ -359,17 +373,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
                 .append(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
+                .append(" AND m.RowId > ?").add(minRowId)
                 .append(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
                 .append(" ORDER BY m.RowId") // Issue 51263: order by RowId to reduce deadlock
                 .add(sampleType.getModified());
+        sql = getExpSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getExpSchema().getScope(), sql);
+        selector.setJdbcCaching(false);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
-        new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
-            for (Material m : batch)
-            {
-                ExpMaterialImpl impl = new ExpMaterialImpl(m);
-                impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
-            }
+        // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
+            ExpMaterialImpl impl = new ExpMaterialImpl(m);
+            impl.index(queue, null /* null tableInfo since samples may belong to multiple containers*/);
         });
+
+        if (tracker.wasFull())
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            queue.addRunnable((q) -> indexSampleTypeMaterials(sampleType, q, tracker.getMaxRowId()));
     }
 
 
@@ -604,7 +625,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c, @Nullable String auditUserComment)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -628,7 +649,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
             sqlFilter.add(source.getLSID());
             sqlFilter.add(toDelete);
-            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true, auditUserComment);
         }
         return count;
     }
@@ -649,7 +670,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         {
             // TODO: option to skip deleting rows from the materialized table since we're about to delete it anyway
             // TODO do we need both truncateSampleType() and deleteDomainObjects()?
-            truncateSampleType(source, user, null);
+            truncateSampleType(source, user, null, auditUserComment);
 
             StudyService studyService = StudyService.get();
             if (studyService != null)
@@ -678,6 +699,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
+            ExperimentService.get().removeDataColorExclusionsForDataType(rowId, ExperimentService.DataTypeForExclusion.SampleType);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -749,7 +771,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null, null, null);
     }
 
     @NotNull
@@ -757,7 +779,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, Map<String, Object>> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
                                               @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
-                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable Map<String, Object> changeDetails)
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds, @Nullable List<Integer> excludedSampleColorIds, @Nullable Map<String, Object> changeDetails)
         throws ExperimentException
     {
         validateSampleTypeName(c, u, name, false);
@@ -827,7 +849,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
         DomainKind<?> kind = domain.getDomainKind();
         if (kind != null)
+        {
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
+            domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c)); // GitHub Issue 1117
+        }
+
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);
         Set<String> reservedPrefixes = kind.getReservedPropertyNamePrefixes();
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(Collectors.toSet());
@@ -942,6 +968,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
                     else
                         ExperimentService.get().ensureDataTypeContainerExclusionsNonAdmin(ExperimentService.DataTypeForExclusion.DashboardSampleType, st.getRowId(), c, u);
+                    if (excludedSampleColorIds != null && !excludedSampleColorIds.isEmpty())
+                    {
+                        List<Long> disabledColorRowIds = excludedSampleColorIds.stream().map(Integer::longValue).toList();
+                        boolean hasColorChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, c, u);
+                        if (hasColorChange)
+                            auditSampleColorExclusion(c, st, null, u);
+                    }
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     transaction.addCommitTask(() -> indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
 
@@ -1188,6 +1221,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 oldProps.put("DashboardContainerExclusions", exclusionChanges.first);
                 newProps.put("DashboardContainerExclusions", exclusionChanges.second);
             }
+            if (options != null && options.getDisabledSampleColorRowIds() != null)
+            {
+                List<Long> disabledColorRowIds = options.getDisabledSampleColorRowIds().stream().map(Integer::longValue).toList();
+                boolean hasChange = ExperimentService.get().ensureDataColorExclusions(st.getRowId(), ExperimentService.DataTypeForExclusion.SampleType, disabledColorRowIds, container, user);
+                if (hasChange)
+                    auditSampleColorExclusion(container, st, auditUserComment, user);
+            }
 
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, changeDetails.toString(), auditUserComment, oldProps, newProps);
 
@@ -1198,7 +1238,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (hasNameChange)
                     ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
-                transaction.addCommitTask(() -> SampleTypeServiceImpl.get().indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
+                transaction.addCommitTask(() -> indexSampleType(st, SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified)), POSTCOMMIT);
                 transaction.commit();
                 refreshSampleTypeMaterializedView(st, SampleChangeType.schema);
             }
@@ -1211,6 +1251,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return errors;
     }
+
+    @Override
+    public void auditSampleColorExclusion(Container container, long materialSourceId, @Nullable String auditUserComment, User user)
+    {
+        auditSampleColorExclusion(container, getSampleType(container, materialSourceId), auditUserComment, user);
+    }
+
+    public void auditSampleColorExclusion(Container container, ExpSampleType sampleType, @Nullable String auditUserComment, User user)
+    {
+        Set<Long> disabled = ExperimentService.get().getDataTypeExcludedColors(ExperimentService.DataTypeForExclusion.SampleType, sampleType.getRowId());
+        String msg = "Sample color exclusion was updated for sample type (rowId " + sampleType.getRowId() + "). "
+                + (disabled.isEmpty() ? "All colors enabled." : "Excluded color rowIds: " + StringUtils.join(disabled, ", ") + ".");
+        addSampleTypeAuditEvent(user, container, sampleType, msg, auditUserComment, "update colors");
+    }
+
 
     public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
     {
@@ -1964,6 +2019,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         updateCounts.put("sampleAuditEvents", 0);
         Map<Long, List<FileFieldRenameData>> fileMovesBySampleId = new LongHashMap<>();
         ExperimentService expService = ExperimentService.get();
+        Timestamp changedSince = SampleTypeUpdateServiceDI.captureChangedSince();
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
@@ -1974,7 +2030,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
-            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
+            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry : sampleTypesMap.entrySet())
             {
                 ExpSampleType sampleType = entry.getKey();
                 SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
@@ -2048,10 +2104,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
                 {
                     // force refresh of materialized view
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update);
+                    refreshSampleTypeMaterializedView(sampleType, SampleChangeType.update, changedSince);
                     // update search index for moved samples via indexSampleType() helper, it filters for samples to index
                     // based on the modified date
-                    SampleTypeServiceImpl.get().indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
+                    indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
@@ -2392,13 +2448,22 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    public enum SampleChangeType { insert, update, delete, rollup /* aliquot count */, schema }
+    public enum SampleChangeType { insert, update, merge, delete, rollup /* aliquot count */, schema }
 
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason);
+        refreshSampleTypeMaterializedView(st, reason, null);
     }
 
+    /**
+     * @param changedSince a database-clock watermark captured before the update's writes, at or after which the changed
+     *                     samples were modified (only meaningful for update); null means the caller could not capture a
+     *                     watermark, forcing a full re-sync on the next read.
+     */
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Timestamp changedSince)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
+    }
 
     public static class TestCase extends Assert
     {

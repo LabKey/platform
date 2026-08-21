@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -276,13 +277,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared)
     {
-        List<Domain> result = new ArrayList<>();
-        for (DomainDescriptor dd : OntologyManager.getDomainDescriptors(container, user, includeProjectAndShared))
-        {
-            result.add(new DomainImpl(dd));
-        }
-
-        return Collections.unmodifiableList(result);
+        return streamDomains(container, user, includeProjectAndShared, _ -> true).toList();
     }
 
     @Override
@@ -294,27 +289,33 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     @Override
     public List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared)
     {
-        // Domain.getDomainKind() can be slow. Instead just ask the passed-in dk if the domain matches or not.
-        return getDomains(container, user, includeProjectAndShared)
-                .stream()
-                .filter(d -> dk.getPriority(d.getTypeURI()) != null)
-                .collect(Collectors.toList());
+        // Domain.getDomainKind() can be slow. Instead, just ask the passed-in dk if the domain matches or not.
+        return streamDomains(container, user, includeProjectAndShared, dd -> dk.getPriority(dd.getDomainURI()) != null).toList();
     }
 
     @Override
     public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, @Nullable Set<String> domainNames, boolean includeProjectAndShared)
     {
-        Stream<? extends Domain> stream = getDomains(container, user, includeProjectAndShared)
-                .stream()
-                .filter(d -> d.getDomainKind() != null);
+        Predicate<DomainDescriptor> filter = dd -> dd.getDomainKind() != null;
 
         if (domainKinds != null && !domainKinds.isEmpty())
-            stream = stream.filter(d -> domainKinds.contains(d.getDomainKind().getKindName()));
+            filter = filter.and(dd -> domainKinds.contains(dd.getDomainKind().getKindName()));
 
         if (domainNames != null && !domainNames.isEmpty())
-            stream = stream.filter(d -> domainNames.contains(d.getName()));
+            filter = filter.and(dd -> domainNames.contains(dd.getName()));
 
-        return stream;
+        return streamDomains(container, user, includeProjectAndShared, filter);
+    }
+
+    /**
+     * Filter runs on the DomainDescriptor because constructing a DomainImpl loads and clones the domain's
+     * PropertyDescriptors, so materializing one per domain in the container is very expensive.
+     */
+    private Stream<DomainImpl> streamDomains(Container container, User user, boolean includeProjectAndShared, Predicate<DomainDescriptor> filter)
+    {
+        return OntologyManager.getDomainDescriptors(container, user, includeProjectAndShared).stream()
+                .filter(filter)
+                .map(DomainImpl::new);
     }
 
     @Override

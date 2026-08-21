@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -488,9 +488,9 @@ public class PropertyManager
             if (null == name)
                 return;
 
-            String sql = SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue", "?, ?, ?");
-
-            new SqlExecutor(SCHEMA.getSchema()).execute(sql, getSet(), name, _store.getSaveValue(this, value));
+            new SqlExecutor(SCHEMA.getSchema()).execute(
+                    SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue",
+                            new SQLFragment("?, ?, ?", getSet(), name, _store.getSaveValue(this, value))));
         }
 
         public void save()
@@ -501,7 +501,7 @@ public class PropertyManager
             // Flag all property map saves here to catch the unmodified case (those code paths are likely to mutate in
             // other scenarios). Also, we want to flag updates to existing property maps, but that path invokes a stored
             // procedure that StatementWrapper doesn't recognize as mutating SQL.
-            SpringActionController.executingMutatingSql("Saving a PropertyMap");
+            SpringActionController.checkForMutatingSql(() -> "Saving a PropertyMap");
 
             if (!isModified())
             {

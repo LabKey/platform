@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -243,16 +243,16 @@ public class MiniProfilerController extends SpringActionController
                 throw new UnauthorizedException();
 
             RequestInfo req = MemTracker.getInstance().getRequest(form.getId());
+            if (req != null && !getUser().equals(req.getUser()) && !getUser().hasApplicationAdminPermission())
+            {
+                throw new UnauthorizedException();
+            }
+
             MemTracker.get().setViewed(getUser(), form.getId());
 
             // Reset the X-MiniProfiler-Ids header to only include remaining unviewed (without the id we are returning)
             LinkedHashSet<Long> ids = new LinkedHashSet<>(MemTracker.get().getUnviewed(getUser()));
             getViewContext().getResponse().setHeader("X-MiniProfiler-Ids", ids.toString());
-
-            if (req != null && !getUser().equals(req.getUser()) && !getUser().hasApplicationAdminPermission())
-            {
-                throw new UnauthorizedException();
-            }
 
             return req;
         }

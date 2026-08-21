@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -351,6 +352,38 @@ public class ConnectionWrapper implements java.sql.Connection
             }
         }
         return result;
+    }
+
+    /**
+     * Connections whose SPID the dialect could determine, grouped by scope because a SPID is only meaningful to the
+     * scope that handed it out. Compare these wrappers, not their SPIDs, to tell whether a connection is still in use:
+     * the pool re-hands the same physical connection back out under its cached SPID.
+     */
+    public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForThread(Thread t)
+    {
+        Map<DbScope, Set<ConnectionWrapper>> result = new HashMap<>();
+        synchronized(_openConnections)
+        {
+            for (ConnectionWrapper c : _openConnections)
+            {
+                // A null or negative SPID means the dialect couldn't determine one, so there's nothing to cancel
+                if (c._allocatingThread == t && c._spid != null && c._spid >= 0)
+                {
+                    result.computeIfAbsent(c._scope, k -> new HashSet<>()).add(c);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @return whether this wrapper is still open, and so whether its SPID still refers to the session it was handed out
+     * for. Removal happens before the underlying connection returns to the pool, so a true answer can't be stale in the
+     * dangerous direction.
+     */
+    public boolean isAllocated()
+    {
+        return _openConnections.contains(this);
     }
 
     public Integer getSPID()

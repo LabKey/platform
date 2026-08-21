@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
@@ -60,7 +60,6 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.CustomView;
@@ -383,7 +382,7 @@ public class VisualizationController extends SpringActionController
                             }
 
                             QueryLogging queryLogging = new QueryLogging();
-                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+                            SQLFragment sql = QueryService.get().getSelectBuilder(tinfo).columns(Collections.singleton(col)).filter(filter).queryLogging(queryLogging).buildSqlFragment();
                             SQLFragment distinctSql = new SQLFragment(sql);
                             int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
                             if (i >= 0)
@@ -1613,7 +1612,7 @@ public class VisualizationController extends SpringActionController
             }
 
             Map<String, Integer> values = new HashMap<>();
-            try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(userSchema, provider.getSourceCountSql(sources, members, colName)).select())
             {
                 while (rs.next())
                 {
@@ -1661,7 +1660,7 @@ public class VisualizationController extends SpringActionController
             ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class)
                     .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             String measure1 = "{\"allowNullResults\":true, \"aggregate\":\"MAX\", \"alias\":\"table_column\", " +
-                    "\"inNotNullSet\":true, \"name\":\"column\", \"nsvalues\":\"whatisthis\"," +
+                    "\"inNotNullSet\":true, \"name\":\"column\", " +
                     "\"queryName\":\"table\", \"requireLeftJoin\":true, \"schemaName\":\"schema\", \"values\":[1,2,3]}";
             String measure2 = "{\"allowNullResults\":false, \"aggregate\":\"MAX\", \"alias\":\"table_column2\", " +
                     "\"inNotNullSet\":false, \"name\":\"column2\"," +
@@ -1708,11 +1707,10 @@ public class VisualizationController extends SpringActionController
                 assertEquals("table_column", m.getAlias());
                 assertTrue(m.getInNotNullSet());
                 assertEquals("column", m.getName());
-                assertEquals("whatisthis", m.getNsvalues());
                 assertEquals("table", m.getQueryName());
                 assertTrue(m.getRequireLeftJoin());
                 assertEquals("schema", m.getSchemaName());
-                List<Object> values = m.getValues();
+                List<?> values = m.getValues();
                 assertNotNull(values);
                 assertEquals(3, values.size());
                 assertEquals("1", values.get(0).toString());

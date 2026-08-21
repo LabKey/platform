@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
@@ -104,6 +105,8 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 }
                 else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
                     col.setLabel("User Comment");
+                else if (COLUMN_NAME_TRANSACTION_ID.equalsIgnoreCase(col.getName()))
+                    col.setLabel("Transaction ID");
             }
         };
 
@@ -137,6 +140,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         public DomainAuditEvent(Container container, String comment)
         {
             super(EVENT_TYPE, container, comment);
+            setTransactionEvent(TransactionAuditProvider.getCurrentTransactionAuditEvent(), EVENT_TYPE);
         }
 
         public String getDomainUri()
@@ -166,6 +170,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             elements.put("domainUri", getDomainUri());
             elements.put("domainName", getDomainName());
             elements.putAll(super.getAuditLogMessageElements());
+            elements.put("transactionId", getTransactionId());
             return elements;
         }
     }
@@ -187,6 +192,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             fields.add(createOldDataMapPropertyDescriptor());
             fields.add(createNewDataMapPropertyDescriptor());
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(COLUMN_NAME_TRANSACTION_ID, PropertyType.BIGINT));
             _fields = Collections.unmodifiableSet(fields);
         }
 

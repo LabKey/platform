@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DomainAuditProvider;
+import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -96,6 +97,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.GUID;
@@ -117,11 +119,15 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.DataColorManager;
+import org.labkey.experiment.api.DataColorTable;
+import org.labkey.experiment.api.EdgeDiagnosticsTestCase;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataClassTableImpl;
 import org.labkey.experiment.api.ExpDataClassType;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpDataTableImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
@@ -129,6 +135,7 @@ import org.labkey.experiment.api.ExpSampleTypeTableImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.ExperimentStressTest;
 import org.labkey.experiment.api.GraphAlgorithms;
+import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
@@ -206,7 +213,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.006;
+        return 26.008;
     }
 
     @Nullable
@@ -233,6 +240,8 @@ public class ExperimentModule extends SpringModule
         UsageMetricsService.get().registerUsageMetrics(getName(), propertyServiceImpl);
 
         UsageMetricsService.get().registerUsageMetrics(getName(), FileLinkMetricsProvider.getInstance());
+
+        UsageMetricsService.get().registerUsageMetrics(getName(), SpecialCharacterMetricsProvider.getInstance());
 
         ExperimentProperty.register();
         SamplesSchema.register(this);
@@ -262,6 +271,13 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+                AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
+                "Derive Samples in LabKey Server UI",
+                "Enables the UI for deriving samples in LabKey Server UI from either the samples grids or a sample lineage page. This option will be removed in LabKey Server 26.11",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
             "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
@@ -541,6 +557,8 @@ public class ExperimentModule extends SpringModule
         AuditLogService.get().registerAuditType(new SampleTypeAuditProvider());
         AuditLogService.get().registerAuditType(new SampleTimelineAuditProvider());
 
+        DataColorManager.getInstance().registerHandler(SampleTypeServiceImpl.get());
+
         FileContentService fileContentService = FileContentService.get();
         if (null != fileContentService)
         {
@@ -590,6 +608,7 @@ public class ExperimentModule extends SpringModule
         WebdavService.get().addProvider(new ScriptsResourceProvider());
 
         SystemMaintenance.addTask(new FileLinkMetricsMaintenanceTask());
+        SystemMaintenance.addTask(new SpecialCharacterMetricsMaintenanceTask());
 
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -645,6 +664,18 @@ public class ExperimentModule extends SpringModule
                             AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
                             ExpProtocol.Status.Active.toString(),
                             "%\"" + DataTransformService.TransformOperation.INSERT + "\"%"
+                    ).getObject(Long.class));
+
+                    // GitHub Issue #159: approximate count of assay designs whose transform scripts aren't in an
+                    // @scripts directory. This is done in SQL instead of parsing each script so there are some caveats
+                    // for cases that aren't counted:
+                    // 1. Any path containing "@scripts" matches, so a script in a sibling container's @scripts looks compliant here but is rejected on save.
+                    // 2. Undercounts designs with a MIX of compliant and non-compliant scripts
+                    assayMetrics.put("protocolsWithTransformScriptNotInScriptsDirCount", new SqlSelector(schema,
+                            "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = ? AND status = ? AND OP.stringvalue NOT LIKE ?",
+                            AbstractAssayProvider.TRANSFORM_SCRIPT_PROPERTY_NAME,
+                            ExpProtocol.Status.Active.toString(),
+                            "%" + FileContentService.SCRIPTS_LINK + "%"
                     ).getObject(Long.class));
 
                     assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
@@ -779,6 +810,27 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleTypesWithMassTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('kg', 'g', 'mg', 'ug', 'ng')").getObject(Long.class));
                 results.put("sampleTypesWithVolumeTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit IN ('L', 'mL', 'uL')").getObject(Long.class));
                 results.put("sampleTypesWithCountTypeUnit", new SqlSelector(schema, "SELECT COUNT(*) from exp.materialSource WHERE category IS NULL AND metricunit = ?", "unit").getObject(Long.class));
+
+                Map<String, Object> sampleColorMetrics = new HashMap<>();
+                Long colorCount = new SqlSelector(schema, "SELECT COUNT(*) FROM exp.datacolors").getObject(Long.class);
+                sampleColorMetrics.put("colorCount", colorCount);
+                if (colorCount > 0)
+                {
+                    Long archivedColorCount = new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.datacolors WHERE archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class);
+                    sampleColorMetrics.put("archivedColorCount", archivedColorCount);
+                    sampleColorMetrics.put("samplesWithColorCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE expmaterialcolor IS NOT NULL").getObject(Long.class));
+                    sampleColorMetrics.put("samplesWithArchivedColorCount", new SqlSelector(schema, new SQLFragment("SELECT COUNT(*) FROM exp.material m JOIN exp.datacolors dc ON m.expmaterialcolor = dc.rowid WHERE dc.archived = " + schema.getSqlDialect().getBooleanTRUE())).getObject(Long.class));
+
+                    sampleColorMetrics.put("sampleTypesWithColorsEnabledCount", new SqlSelector(schema, new SQLFragment(
+                            "SELECT COUNT(*) FROM exp.materialsource ms WHERE EXISTS (" +
+                                    "SELECT 1 FROM exp.datacolors dc WHERE dc.container = ms.container AND dc.archived = " + schema.getSqlDialect().getBooleanFALSE() + " AND NOT EXISTS (" +
+                                    "SELECT 1 FROM exp.datatypecolorexclusion e WHERE e.datatype = ? AND e.datatyperowid = ms.rowid AND e.colorrowid = dc.rowid))")
+                            .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class));
+                    sampleColorMetrics.put("sampleTypesWithColorsDisabledCount", new SqlSelector(schema, new SQLFragment(
+                            "SELECT COUNT(DISTINCT datatyperowid) FROM exp.datatypecolorexclusion WHERE datatype = ?")
+                            .add(ExperimentService.DataTypeForExclusion.SampleType.name())).getObject(Long.class));
+                }
+                results.put("sampleColors", sampleColorMetrics);
 
                 results.put("duplicateSampleMaterialNameCount", new SqlSelector(schema, "SELECT COUNT(*) as duplicateCount FROM " +
                         "(SELECT name, cpastype FROM exp.material WHERE cpastype <> 'Material' GROUP BY name, cpastype HAVING COUNT(*) > 1) d").getObject(Long.class));
@@ -924,6 +976,8 @@ public class ExperimentModule extends SpringModule
 
                 results.put("maxObjectObjectId", new SqlSelector(schema, "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(schema, "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
+
+                results.put("domainFieldsWithContainerAlias", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.propertydescriptor WHERE LOWER(importaliases) = 'container' OR importaliases ILIKE '%, container' OR importaliases ILIKE 'container, %' OR importaliases ILIKE '%, container, %'").getObject(Long.class));
 
                 results.putAll(ExperimentService.get().getDomainMetrics());
 
@@ -1114,19 +1168,25 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            EdgeDiagnosticsTestCase.class,
+            ExperimentController.ContainerScopingTestCase.class,
+            DataColorTable.TestCase.class,
             DomainImpl.TestCase.class,
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
+            ExpMaterialTableImpl.IncrementalUpdateTestCase.class,
             ExperimentServiceImpl.AuditDomainUriTest.class,
             ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentServiceImpl.ParseInputOutputAliasTestCase.class,
             ExperimentServiceImpl.TestCase.class,
             ExperimentStressTest.class,
+            ImportAbortResourceTestCase.class,
             LineagePerfTest.class,
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
             SampleTypeServiceImpl.TestCase.class,
+            SpecialCharacterMetricsMaintenanceTask.TestCase.class,
             StorageNameGenerator.TestCase.class,
             StorageProvisionerImpl.TestCase.class,
             UniqueValueCounterTestCase.class,
@@ -1147,6 +1207,7 @@ public class ExperimentModule extends SpringModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            DomainUtil.ImportAliasTestCase.class,
             GraphAlgorithms.TestCase.class,
             LSIDRelativizer.TestCase.class,
             Lsid.TestCase.class,

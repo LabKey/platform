@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -216,12 +216,9 @@ public class LookupColumn extends BaseColumnInfo
     @SuppressWarnings({"ConstantConditions"})
     public void declareJoins(String baseAlias, Map<String, SQLFragment> map)
     {
-        boolean assertEnabled = false; // needed to generate SQL for logging
-        assert assertEnabled = true;
-
         String colTableAlias = getTableAlias(baseAlias);
 
-        if (assertEnabled || !map.containsKey(colTableAlias))
+        if (!map.containsKey(colTableAlias))
         {
             _foreignKey.declareJoins(baseAlias, map);
             for (ColumnInfo columnInfo : _additionalJoins.keySet())

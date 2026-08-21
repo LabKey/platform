@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ public class AuthFilter implements Filter
     private static final Object FIRST_REQUEST_LOCK = new Object();
 
     public static final String STRICT_TRANSPORT_SECURITY_HEADER_NAME = "Strict-Transport-Security";
-    public static final String X_FRAME_OPTIONS_HEADER_NAME = "X-Frame-Options";
     public static final String X_CONTENT_TYPE_OPTIONS_HEADER_NAME = "X-Content-Type-Options";
     public static final String REFERRER_POLICY_HEADER_NAME = "Referrer-Policy";
     public static final String SERVER_HEADER_NAME = "Server";
@@ -87,8 +86,6 @@ public class AuthFilter implements Filter
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            if (!"ALLOW".equals(AppProps.getInstance().getXFrameOption()))
-                resp.setHeader(X_FRAME_OPTIONS_HEADER_NAME, AppProps.getInstance().getXFrameOption());
             resp.setHeader(X_CONTENT_TYPE_OPTIONS_HEADER_NAME, "nosniff");
             resp.setHeader(REFERRER_POLICY_HEADER_NAME, "origin-when-cross-origin" );
 
@@ -259,7 +256,7 @@ public class AuthFilter implements Filter
 
     public static User getGuestUser()
     {
-        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS))
+        if (AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS))
             return User.nobody;
         else
             return User.guest;

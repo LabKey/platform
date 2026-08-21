@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,12 +86,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
 {
     private static final Logger LOG = LogManager.getLogger(GetQueryDetailsAction.class);
-
-    @Override
-    protected long getLastModified(Form form)
-    {
-        return QueryService.get().metadataLastModified();
-    }
 
     @Override
     public ApiResponse execute(Form form, BindException errors)

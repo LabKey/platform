@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -81,6 +82,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 public class SurveyController extends SpringActionController implements SurveyUrls
@@ -176,7 +178,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     form.setResponsesPk(survey.getResponsesPk());
                     form.setSubmitted(survey.getSubmitted() != null);
 
-                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), form.getSurveyDesignId());
                     if (surveyDesign != null)
                     {
                         _title = (form.isSubmitted() ? "Review: " : "Update: ") + surveyDesign.getLabel();
@@ -185,7 +187,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
             }
             else if (form.getSurveyDesignId() != null)
             {
-                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), form.getSurveyDesignId());
                 if (surveyDesign == null)
                 {
                     errors.reject(ERROR_MSG, "Error: No SurveyDesign record found for rowId " + form.getSurveyDesignId() + ".");
@@ -220,7 +222,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         {
             if (form.getRowId() != 0)
             {
-                SurveyDesign survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
+                SurveyDesign survey = SurveyManager.get().getSurveyDesignForWrite(getContainer(), getUser(), form.getRowId());
                 if (survey != null)
                     _title = "Update Survey Design : " + survey.getLabel();
             }
@@ -339,10 +341,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            SurveyDesign survey = getSurveyDesign(form);
+            // Updating the survey design. Resolve the design with container scoping.
+            SurveyDesign survey = getSurveyDesign(form, id -> SurveyManager.get().getSurveyDesignForWrite(getContainer(), getUser(), id));
             Map<String, Object> errorInfo = new HashMap<>();
 
-            try {
+            try
+            {
                 // try to validate the metadata
                 String metadata = StringUtils.trimToNull(form.getMetadata());
 
@@ -415,16 +419,23 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    private SurveyDesign getSurveyDesign(SurveyDesignForm form)
+    private SurveyDesign getSurveyDesign(SurveyDesignForm form, IntFunction<SurveyDesign> designResolver)
     {
         SurveyDesign survey = new SurveyDesign();
         if (form.getRowId() != 0)
-            survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getRowId());
+        {
+            survey = designResolver.apply(form.getRowId());
+            // null here means the rowId isn't accessible for this operation (e.g. a write from the wrong folder)
+            if (survey == null)
+                throw new NotFoundException("No survey design found for rowId " + form.getRowId() + " in this folder");
+        }
         else if (form.getDesignId() != null)
         {
             if (NumberUtils.isDigits(form.getDesignId()))
             {
-                survey = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), NumberUtils.toInt(form.getDesignId()));
+                survey = designResolver.apply(NumberUtils.toInt(form.getDesignId()));
+                if (survey == null)
+                    throw new NotFoundException("No survey design found for designId " + form.getDesignId() + " in this folder");
             }
             else
             {
@@ -454,7 +465,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
     {
         Survey survey = new Survey();
         if (form.getRowId() != null)
+        {
             survey = SurveyManager.get().getSurvey(getContainer(), getUser(), form.getRowId());
+            // getSurvey is container-scoped; null here means the rowId doesn't belong to this folder
+            if (survey == null)
+                throw new NotFoundException("No survey found for rowId " + form.getRowId() + " in this folder");
+        }
 
         if (survey != null)
         {
@@ -479,7 +495,8 @@ public class SurveyController extends SpringActionController implements SurveyUr
         public ApiResponse execute(SurveyDesignForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            SurveyDesign survey = getSurveyDesign(form);
+            // Reading tolerates a cross-container reference as long as the caller can read the design's own container.
+            SurveyDesign survey = getSurveyDesign(form, id -> SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), id));
 
             if (survey != null)
             {
@@ -506,7 +523,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
             SurveyDesign surveyDesign = null;
 
             if (form.getSurveyDesignId() != null)
-                surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), form.getSurveyDesignId());
+                surveyDesign = SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), form.getSurveyDesignId());
 
             if (surveyDesign != null)
             {
@@ -720,7 +737,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
 
             if (survey != null && !survey.isNew())
             {
-                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), survey.getSurveyDesignId());
+                SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), survey.getSurveyDesignId());
 
                 if (surveyDesign != null)
                 {
@@ -844,7 +861,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                 List<AttachmentFile> files = getAttachmentFileList();
                 if (!files.isEmpty())
                 {
-                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesign(getContainer(), getUser(), survey.getSurveyDesignId());
+                    SurveyDesign surveyDesign = SurveyManager.get().getSurveyDesignForRead(getContainer(), getUser(), survey.getSurveyDesignId());
 
                     if (surveyDesign != null)
                     {

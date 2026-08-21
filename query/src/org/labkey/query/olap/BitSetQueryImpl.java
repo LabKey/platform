@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1786,7 +1786,7 @@ public class BitSetQueryImpl
             try
             {
                 QuerySchema qs = DefaultSchema.get(user, container, Objects.toString(rolap.getQuerySchemaName(), "core"));
-                return QueryService.get().select(qs, query, null, true, false);
+                return QueryService.get().getSelectBuilder(qs, query, true).select();
             }
             catch (QueryParseException|AssertionError x)
             {

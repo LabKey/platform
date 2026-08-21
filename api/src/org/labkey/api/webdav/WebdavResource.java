@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -194,6 +194,14 @@ public interface WebdavResource extends Resource
      */
     boolean canDelete(User user, boolean forDelete);
     boolean canDelete(User user, boolean forDelete, /* OUT */ List<String> message);
+    /**
+     * A MOVE removes the resource from its source location, so it requires Delete permission there.
+     * Unlike {@link #canDelete}, it does not require the resource to be eligible for outright deletion
+     * (for example, a file that has been imported by an assay may still be relocated within the file root).
+     * @param user authenticated user
+     * @return true if the user has permission and server has capability
+     */
+    boolean canMove(User user);
     /**
      * @param user authenticated user
      * @param forRename  true if user wants to rename, false if checking capabilities (affects logging)

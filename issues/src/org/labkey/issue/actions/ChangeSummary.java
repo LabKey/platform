@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,7 +168,8 @@ public class ChangeSummary
                     summary += " of " + duplicateOf.getIssueId();
             }
 
-            sbHTMLChanges.append("<b>").append(summary);
+            // GitHub Kanban #1946: encode summary, which includes the issue resolution text
+            sbHTMLChanges.append("<b>").append(PageFlowUtil.filter(summary));
             sbHTMLChanges.append("</b><br>\n");
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,12 @@ public class MothershipModule extends DefaultModule
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return PageFlowUtil.set(ExceptionStackTrace.TestCase.class);
+    }
+
+    @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return PageFlowUtil.set(MothershipController.ContainerScopingTestCase.class);
     }
 
     @Override

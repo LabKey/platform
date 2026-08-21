@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,11 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLoginURL(URLHelper returnUrl);
     ActionURL getRegisterURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getLoginURL(Container c, @Nullable URLHelper returnUrl);
-    ActionURL getForceReauthURL(Container c, @Nullable URLHelper returnUrl);
+    ActionURL getForceReauthURL(Container c, boolean local, @Nullable URLHelper returnUrl);
     ActionURL getLogoutURL(Container c);
     ActionURL getLogoutURL(Container c, URLHelper returnUrl);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnUrl);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnUrl);
     ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl, boolean skipProfile);
+    ActionURL getSSOReauthURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnUrl);
 }

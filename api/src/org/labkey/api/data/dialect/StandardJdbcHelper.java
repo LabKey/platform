@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2011 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public class StandardJdbcHelper implements JdbcHelper
         return parseDatabase(url.substring(_prefix.length()));
     }
 
-    protected String parseDatabase(String url)
+    protected String parseDatabase(String url) throws ServletException
     {
         // Database name ends with '?' or end of the URL
         int dbEnd = url.indexOf('?');
@@ -44,12 +44,11 @@ public class StandardJdbcHelper implements JdbcHelper
         if (-1 == dbEnd)
             dbEnd = url.length();
 
-        // Database name starts after the last '/' or ':' 
-        int slash = url.lastIndexOf('/', dbEnd);
-        int colon = url.lastIndexOf(':', dbEnd);
+        // Last '/' is the database delimiter, except for "jdbc:postgresql:database"
+        char dbDelimiter = url.contains("/") ? '/' : ':';
+        int dbDelimiterIndex = url.lastIndexOf(dbDelimiter, dbEnd);
 
-        int dbDelimiter = Math.max(slash, colon);
-
-        return url.substring(dbDelimiter + 1, dbEnd);
+        // dbDelimiterIndex == 1 means no database name, so return empty string in that case
+        return dbDelimiterIndex != 1 ? url.substring(dbDelimiterIndex + 1, dbEnd) : "";
     }
 }

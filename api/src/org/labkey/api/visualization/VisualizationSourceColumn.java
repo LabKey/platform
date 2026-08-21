@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -167,17 +167,11 @@ public class VisualizationSourceColumn
         if (StringUtils.isNotEmpty(measure.getAxisName()))
             _axisName = measure.getAxisName();
 
-        List<Object> values = measure.getValues();
+        List<?> values = measure.getValues();
         _clientAlias = measure.getAlias();
         if (values != null)
         {
             _values.addAll(values);
-        }
-        String namedSetValue = measure.getNsvalues();
-        if (namedSetValue != null)
-        {
-            List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);
-            _values.addAll(namedSet);
         }
     }
 

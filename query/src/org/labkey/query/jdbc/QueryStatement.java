@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class QueryStatement implements Statement
         if (_log.isTraceEnabled())
             cached = true;
 
-        _rs = QueryService.get().select(schema, s, null, true, cached);
+        _rs = QueryService.get().getSelectBuilder(schema, s, true).select(cached);
 
         if (_log.isTraceEnabled() && _rs instanceof CachedResultSet)
         {

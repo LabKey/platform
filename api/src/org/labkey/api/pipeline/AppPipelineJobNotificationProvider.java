@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
@@ -167,7 +182,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
-                    .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
+                    .append(queryImportPipelineJob.getImportSourceDescription());
 
             if (job.getContainer().hasProductFolders())
             {
@@ -199,7 +214,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         return null;
     }
 
-    private String getJobErrorMsg(PipelineJob job, String rawErrorMsg)
+    private String getJobErrorMsg(PipelineJob job, @NotNull String errorMsg)
     {
         if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
@@ -209,16 +224,14 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             return "Failed to import " +
                     type +
                     " from " +
-                    queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;// resolveErrorMessage on client
+                    queryImportPipelineJob.getImportSourceDescription() +
+                    errorMsg;// resolveErrorMessage on client
         }
         else if (job instanceof AssayUploadPipelineJob<?> assayJob)
         {
             return "Failed to import assay run from " +
                     assayJob.getPrimaryFile().getName() +
-                    "\n" +
-                    rawErrorMsg;
+                    errorMsg;
         }
 
         return null;
@@ -317,7 +330,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         }
         else
         {
-            n.setContent(getJobErrorMsg(job, msgContent), "text/plain");
+            n.setContent(getJobErrorMsg(job, msgContent == null ? "" : "\n" + msgContent), "text/plain");
             n.setActionLinkURL(getJobErrorUrl(job));
             n.setActionLinkText("view error details");
         }

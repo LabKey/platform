@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -717,11 +717,6 @@ public class SimpleFilter implements Filter
             super(fieldKey, negated ? NOT_IN : IN, params, negated);
 
             _needsTypeConversion = urlClause;
-        }
-
-        public InClause(FieldKey fieldKey, String namedSet, boolean urlClause)
-        {
-            this(fieldKey, QueryService.get().getNamedSet(namedSet), urlClause, false);
         }
 
         @Override

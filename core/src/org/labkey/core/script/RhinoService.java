@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,15 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.mozilla.javascript.ClassShutter;
@@ -197,6 +201,44 @@ public final class RhinoService
         public void reportTest() throws Exception
         {
             test("reportTest");
+        }
+
+        @Test
+        public void timeoutTest() throws Exception
+        {
+            int original = AppProps.getInstance().getScriptExecutionTimeout();
+            User user = TestContext.get().getUser();
+
+            try
+            {
+                // Busy-loop bounded at 15 seconds of wall-clock time; the 1-second watchdog should abort it long before that. HeartBeat ticks once per second, so the abort lands after 2-3 real seconds.
+                setScriptExecutionTimeout(1, user);
+                try
+                {
+                    RhinoService.RHINO_FACTORY.getScriptEngine().eval("var start = new Date().getTime(); while (new Date().getTime() - start < 15000) {}");
+                    fail("Expected script to be terminated by the execution timeout");
+                }
+                catch (Exception e)
+                {
+                    assertTrue("Unexpected script error: " + e.getMessage(), e.getMessage().contains("Script execution exceeded 1 seconds"));
+                }
+
+                // 0 disables the watchdog: a loop that runs well past the 1-second timeout above should complete normally
+                setScriptExecutionTimeout(0, user);
+                Object result = RhinoService.RHINO_FACTORY.getScriptEngine().eval("var start = new Date().getTime(); while (new Date().getTime() - start < 2500) {} 'completed';");
+                assertEquals("completed", result);
+            }
+            finally
+            {
+                setScriptExecutionTimeout(original, user);
+            }
+        }
+
+        private void setScriptExecutionTimeout(int seconds, User user)
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setScriptExecutionTimeout(seconds);
+            props.save(user);
         }
 
         private void test(String scriptName) throws ScriptException, NoSuchMethodException
@@ -1006,9 +1048,8 @@ class SandboxContextFactory extends ContextFactory
     {
         SandboxContext ctx = (SandboxContext)cx;
         long currentTime = HeartBeat.currentTimeMillis();
-        final int timeout = 60;
-        if (currentTime - ctx.startTime > timeout*1000)
-            Context.reportError("Script execution exceeded " + timeout + " seconds.");
+        if (ctx.timeoutSeconds > 0 && currentTime - ctx.startTime > ctx.timeoutSeconds * 1000L)
+            Context.reportError("Script execution exceeded " + ctx.timeoutSeconds + " seconds.");
     }
 
     @Override
@@ -1044,12 +1085,15 @@ class SandboxContextFactory extends ContextFactory
     private static class SandboxContext extends Context
     {
         private final long startTime;
+        // resolved once per context; observeInstructionCount runs far too often for a property lookup
+        private final int timeoutSeconds;
 
         private SandboxContext(SandboxContextFactory factory)
         {
             super(factory);
             setLanguageVersion(Context.VERSION_1_8);
             startTime = HeartBeat.currentTimeMillis();
+            timeoutSeconds = AppProps.getInstance().getScriptExecutionTimeout();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ public class RolapCachedCubeFactory
         CaseInsensitiveHashMap<CachedCube._Member> uniqueNameMap = new CaseInsensitiveHashMap<>();
 
         String hierarchySql = rolap.getMembersSQL(hdef);
-        try (ResultSet rs = QueryService.get().select(schema, hierarchySql, null, true, false))
+        try (ResultSet rs = QueryService.get().getSelectBuilder(schema, hierarchySql, true).select())
         {
             // compute jdbcType for all key columns
             for (int l = 1; l < levelCount; l++)

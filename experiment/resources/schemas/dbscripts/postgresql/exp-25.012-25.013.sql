@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 -- Not needed since it's redundant with exp.DataInput's PK
 DROP INDEX exp.IX_DataInput_DataId;
 

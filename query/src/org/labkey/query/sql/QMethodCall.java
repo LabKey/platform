@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,9 @@ public class QMethodCall extends QExpr
     {
         if (getMethod(d) == null)
         {
-            return new QueryParseException("Unknown method " + getField().getName(), null, getLine(), getColumn());
+            String name = getField().getName();
+            String hint = SqlParser.forUnknownMethod(name, d);
+            return new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, getLine(), getColumn());
         }
         return null;
     }

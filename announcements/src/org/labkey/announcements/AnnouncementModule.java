@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,7 +242,8 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            AnnouncementManager.TestCase.class
+            AnnouncementManager.TestCase.class,
+            AnnouncementsController.ContainerScopingTestCase.class
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.PostgresOnlyTest;
+import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -92,9 +93,10 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         new BaseManageVaccineDesignVisitPage.Visit("Visit 3", 3.0, 3.0),
         new BaseManageVaccineDesignVisitPage.Visit("Visit 4", 4.0, 4.0)
     );
+
     private static final List<BaseManageVaccineDesignVisitPage.Visit> NEW_VISITS = Arrays.asList(
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit1", 6.0, 7.0),
-        new BaseManageVaccineDesignVisitPage.Visit("NewVisit2", 8.0, 8.0)
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit1", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 6.0, 7.0),
+            new BaseManageVaccineDesignVisitPage.Visit(TestDataGenerator.randomName("NewVisit2", 3, 3, TestDataGenerator.CHARSET_STRING, "").name(), 8.0, 8.0)
     );
 
 
@@ -288,7 +290,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
     {
         ManageTreatmentsSingleTablePage singleManagementTable;
         TreatmentDialog treatmentDialog;
-        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"));
+        List<String> EXPECTED_HEADERS = new ArrayList<>(Arrays.asList("Group / Cohort", "Participant Count", "Enrollment", "Visit 1", "Visit 2", NEW_VISITS.get(0).getLabel(), NEW_VISITS.get(1).getLabel()));
         String tempText;
 
         // These are the expected Immunogen options:
@@ -341,6 +343,8 @@ public class StudyProtocolDesignerTest extends BaseWebDriverTest implements Post
         List<String> actualHeaders = singleManagementTable.columnHeaders();
         for(String expectedHeader : EXPECTED_HEADERS)
         {
+            // Workaround GitHub Issue 1335
+            expectedHeader = expectedHeader.replace("\\", "");
             Assert.assertTrue("Did not find header '" + expectedHeader + "'", actualHeaders.contains(expectedHeader));
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenQuerySchema;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
@@ -44,6 +43,7 @@ import org.labkey.specimen.actions.SpecimenController.DeleteRequestAction;
 import org.labkey.specimen.actions.SpecimenController.ManageRequestAction;
 import org.labkey.specimen.actions.SpecimenController.SubmitRequestAction;
 import org.labkey.specimen.security.permissions.ManageRequestsPermission;
+import org.labkey.specimen.security.permissions.RequestSpecimensPermission;
 import org.labkey.specimen.settings.SettingsManager;
 
 import java.util.Set;

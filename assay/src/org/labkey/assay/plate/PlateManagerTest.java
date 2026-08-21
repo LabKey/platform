@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.assay.plate;
 
 import org.apache.commons.collections4.MapUtils;
@@ -469,7 +484,7 @@ public final class PlateManagerTest
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
         // verify plate metadata property updates
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -516,7 +531,7 @@ public final class PlateManagerTest
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
         filter.addCondition(FieldKey.fromParts("Row"), 0);
-        try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
+        try (Results r = QueryService.get().getSelectBuilder(wellTable).columns(columns.values()).filter(filter).sort(new Sort("Col")).select())
         {
             int row = 0;
             while (r.next())
@@ -2083,7 +2098,7 @@ public final class PlateManagerTest
         filter.addCondition(FieldKey.fromParts("PlateId"), plateRowId);
 
         var wellTable = getWellTable();
-        return QueryService.get().select(wellTable, getWellTableColumns(wellTable).values(), filter, new Sort("RowId"));
+        return QueryService.get().getSelectBuilder(wellTable).columns(getWellTableColumns(wellTable).values()).filter(filter).sort(new Sort("RowId")).select();
     }
 
     private Map<String, Object> getWellRow(long plateRowId, @NotNull String position)
@@ -2096,7 +2111,7 @@ public final class PlateManagerTest
         return QueryService.get().getSelectBuilder(wellTable)
                 .columns(getWellTableColumns(wellTable).values())
                 .filter(filter)
-                .buildSqlSelector(null)
+                .buildSqlSelector()
                 .getMap();
     }
 

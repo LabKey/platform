@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.secrets.SecretService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
@@ -141,6 +142,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
@@ -253,8 +255,8 @@ import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
-import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.DbLoginManager;
+import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
@@ -283,6 +285,7 @@ import org.labkey.core.reader.DataLoaderServiceImpl;
 import org.labkey.core.reports.DocumentConversionServiceImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 import org.labkey.core.script.RhinoService;
+import org.labkey.core.secrets.SecretServiceImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
 import org.labkey.core.security.ApiKeyViewProvider;
 import org.labkey.core.security.SecurityApiActions;
@@ -366,6 +369,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -418,6 +422,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected void init()
     {
+        SecretServiceImpl secretService = new SecretServiceImpl();
+        SecretService.setInstance(secretService);
+        ContextListener.addShutdownListener(ShutdownListener.of("SecretService", null, secretService::shutdown));
+
         ContainerService.setInstance(new ContainerServiceImpl());
         FolderSerializationRegistry.setInstance(new FolderSerializationRegistryImpl());
         ExternalToolsViewService.setInstance(new ExternalToolsViewServiceImpl());
@@ -533,10 +541,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
             "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
             "search to find the other select values.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-            "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false, true);
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
+            "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
@@ -966,6 +972,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         checkForMissingDbViews();
 
+        ((SecretServiceImpl)SecretService.get()).handleStartupProperties();
         ProductConfiguration.handleStartupProperties();
 
         // This listener deletes all properties; make sure it executes after most of the other listeners
@@ -1139,21 +1146,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             .filter(DataLoaderFactory::indexable)
             .forEach(ss::addDocumentParser);
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_GUESTS,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            AppProps.OPTIONAL_NO_GUESTS,
             "No Guest Account",
             "Disable the guest account",
-            false);
+            false,
+            false,
+            FeatureType.Optional
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
             "Block malicious clients",
             "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
             false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+            FEATURE_FLAG_DISABLE_ENFORCE_CSP,
             "Disable enforce Content Security Policy",
             "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
             "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
             "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
             "(e.g., if an enforce CSP breaks critical functionality).",
-            false);
+            false,
+            false,
+            FeatureType.Deprecated
+        ));
         OptionalFeatureService.get().addExperimentalFeatureFlag(DataRegion.EXPERIMENTAL_DATA_REGION_ASYNC_TOTAL_ROWS,
             "Data Region Async Total Rows",
             "Enable asynchronous calculation of total rows for data regions. This can improve performance for large datasets.",
@@ -1161,7 +1176,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
             "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true, FeatureType.Experimental));
-        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+        OptionalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (_, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
             UsageReportingLevel.reportNow();
@@ -1285,6 +1300,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
+        RoleManager.registerPermission(new EditModuleResourcesPermission(), false);
         MarkdownService.setInstance(new MarkdownServiceImpl());
 
         // initialize email preference service and listeners
@@ -1441,11 +1457,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AdminController.WorkbookDeleteTestCase.class,
+            AdminController.ImportFolderSourceScopingTestCase.class,
+            AdminController.RevertFolderScopingTestCase.class,
             AllowListType.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
             CoreController.TestCase.class,
+            CoreController.MoveContainerTestCase.class,
             DataRegion.TestCase.class,
             DavController.TestCase.class,
+            DavController.MoveActionContainerScopingTestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
             LoggerController.TestCase.class,
@@ -1495,6 +1515,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
+            SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,
 
 
@@ -1544,7 +1565,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             CoreSchema.getInstance().getSchemaName(),       // core
             PropertySchema.getInstance().getSchemaName(),   // prop
             TestSchema.getInstance().getSchemaName(),       // test
-            DbSchema.TEMP_SCHEMA_NAME                       // temp
+            DbSchema.TEMP_SCHEMA_NAME,                      // temp
+            VECTOR_SCHEMA                                   // used by pgvector - see core-26.005-26.006.sql
         );
     }
 
@@ -1663,7 +1685,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     SiteResourceHandler handler = getResourceHandler(entry.getKey());
                     if (handler != null)
-                        incrementRevision |= setSiteResource(handler, entry.getValue(), User.guest);
+                        incrementRevision |= setSiteResource(handler, entry.getValue());
                 }
 
                 // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
@@ -1692,7 +1714,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         StartupPropertyEntry resetPermissionsEntry = props.get(homeProjectResetPermissions);
-        if (null != resetPermissionsEntry && Boolean.valueOf(resetPermissionsEntry.getValue()))
+        if (null != resetPermissionsEntry && Boolean.parseBoolean(resetPermissionsEntry.getValue()))
         {
             // reset the home project permissions to remove the default assignments given at server install
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
@@ -1734,14 +1756,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return LookAndFeelPropertiesManager.get().getResourceHandler(type);
     }
 
-    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop, User user)
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, StartupPropertyEntry prop)
     {
         Resource resource = getModuleResourceFromPropValue(prop.getValue());
         if (resource != null)
         {
             try
             {
-                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
+                resourceHandler.accept(resource, ContainerManager.getRoot(), User.guest);
                 return true;
             }
             catch(Exception e)

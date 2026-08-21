@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2012 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.labkey.specimen.security.roles;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.specimen.security.permissions.RequestSpecimensPermission;
+import org.labkey.specimen.security.permissions.RequestSpecimensPermission;
 
 import java.util.Collection;
 import java.util.Set;

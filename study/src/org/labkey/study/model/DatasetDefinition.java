@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2495,7 +2495,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // duplicate keys found in error
             final LinkedHashMap<String,Object[]> noDeleteMap = new LinkedHashMap<>();
 
-            StringBuilder sbIn = new StringBuilder();
+            ArrayList<String> idList = new ArrayList<>();
             final Map<String, Object[]> uriMap = new HashMap<>();
             int count = 0;
             while (rows.next())
@@ -2527,12 +2527,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     noDeleteMap.put(uniq,key);
 
                 // partial fix for 16647, we should handle the replace case differently (do we ever replace?)
-                String sep = "";
                 if (uriMap.size() < 10000 || Boolean.TRUE==replace)
                 {
-                    if (uniq.contains(("'")))
-                        uniq = uniq.replaceAll("'","''");
-                    sbIn.append(sep).append("'").append(uniq).append("'");
+                    idList.add(uniq);
                 }
                 count++;
             }
@@ -2549,7 +2546,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                     return null;
             }
             else // also check target dataset
-                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, sbIn, uriMap);
+                return checkTargetDupesAndDelete(isDemographic, noDeleteMap, idList, uriMap);
         }
         catch (BatchValidationException vex)
         {
@@ -2569,14 +2566,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
     }
 
-    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, StringBuilder sbIn, final Map<String, Object[]> uriMap)
+    private HashMap<String, Object[]> checkTargetDupesAndDelete(final boolean demographic, final LinkedHashMap<String, Object[]> noDeleteMap, ArrayList<String> idList, final Map<String, Object[]> uriMap)
     {
         // duplicate keys found that should be deleted
         final Set<String> deleteSet = new HashSet<>();
 
         TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause((demographic ?"ParticipantId":"LSID") + " IN (" + sbIn + ")", new Object[]{});
+        SQLFragment checkInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment(demographic ?"ParticipantId":"LSID"), idList);
+        filter.addWhereClause(checkInClause);
         if (isShared())
         {
             Container rowsContainer = getContainer();
@@ -2610,16 +2608,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();
-        StringBuilder sbDelete = new StringBuilder();
-        String sep = "";
-        for (String s : deleteSet)
-        {
-            if (s.contains(("'")))
-                s = s.replaceAll("'","''");
-            sbDelete.append(sep).append("'").append(s).append("'");
-            sep = ", ";
-        }
-        deleteFilter.addWhereClause("LSID IN (" + sbDelete + ")", new Object[]{});
+        SQLFragment deleteInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment("LSID"), deleteSet);
+        deleteFilter.addWhereClause(deleteInClause);
         Table.delete(tinfo, deleteFilter);
 
         return null;

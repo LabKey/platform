@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,6 @@ public class QIfDefined extends QExpr
     @Override
     public FieldKey getFieldKey()
     {
-        assert null != select;
         return ((QExpr)getFirstChild()).getFieldKey();
     }
 

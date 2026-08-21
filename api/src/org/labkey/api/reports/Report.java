@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,8 +45,6 @@ import java.util.Map;
 
 public interface Report extends AttachmentParent, ThumbnailProvider
 {
-    String SHARE_REPORT_TYPE = "Report.ShareReport";
-
     Report clone();
     String getType();
     String getTypeDescription();
@@ -83,11 +81,6 @@ public interface Report extends AttachmentParent, ThumbnailProvider
      */
     boolean canShare(User user, Container container);
     boolean canShare(User user, Container container, List<ValidationError> errors);
-
-    /**
-     * Determine if this report type allows sharing via the shareReport action.
-     */
-    boolean allowShareButton(User user, Container container);
 
     /**
      * Determines whether the user can delete this report

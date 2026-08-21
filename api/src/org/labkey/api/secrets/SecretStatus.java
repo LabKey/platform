@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.specimen.security.permissions;
+package org.labkey.api.secrets;
 
-
-import org.labkey.api.security.permissions.AbstractPermission;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * User: davebradlee
- * Date: 6/10/13
- * Time: 2:53 PM
+ * Read-only status of a registered secret — suitable for admin UI display.
+ * Never contains the secret value itself.
+ *
+ * @param source description of the provider that holds this secret
+ *               (e.g. "Startup property file", "Environment variable"), or
+ *               {@code null} if no provider has a value for it
  */
-public class EditSpecimenDataPermission extends AbstractPermission
+public record SecretStatus(String name, String description, @Nullable String source)
 {
-    public EditSpecimenDataPermission()
+    public boolean isSet()
     {
-        super("Edit Specimen Data", "Allows editing of specimen data");
+        return source != null;
     }
 }

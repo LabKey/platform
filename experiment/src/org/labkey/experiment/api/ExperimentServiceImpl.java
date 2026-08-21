@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.mutable.MutableLong;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -123,6 +123,7 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
+import org.labkey.api.exp.api.DataColor;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -152,6 +153,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -291,7 +293,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -337,6 +338,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
+    /** DataClass LSID -> Container */
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+
+    /** ContainerId -> DataClasses */
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
     {
         Container c = ContainerManager.getForId(containerId);
@@ -388,9 +393,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpRunImpl getExpRun(long rowId)
     {
+        return getExpRun(rowId, null);
+    }
+
+    @Override
+    public @Nullable ExpRunImpl getExpRun(long rowId, @Nullable Container container)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
         ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        return run == null ? null : new ExpRunImpl(run);
+        if (run == null)
+            return null;
+
+        // GitHub Issue #1892: if container provided, ensure the run belongs to the container
+        if (container != null && !run.getContainer().equals(container))
+            return null;
+
+        return new ExpRunImpl(run);
     }
 
     private List<ExpRunImpl> getExpRuns(SimpleFilter filter)
@@ -564,7 +582,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.add(childProtocol.getLSID());
         }
 
-        return getExpRuns(sql, filterFn, container);
+        return getExpRuns(sql, filterFn, container, Table.ALL_ROWS);
     }
 
     @Override
@@ -582,22 +600,41 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container)
+    public List<ExpRunImpl> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit)
     {
-        SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                + " FROM exp.ExperimentRun ER "
-                + " WHERE ER.Container = ? ");
+        SQLFragment sql = new SQLFragment("SELECT ER.* FROM exp.ExperimentRun ER WHERE ER.Container = ?");
         sql.add(container.getId());
-
         if (null != filterSQL && !filterSQL.isEmpty())
-            sql.append(" AND " ).append(filterSQL);
-
-        sql.append(" ORDER BY ER.RowId ");
+            sql.append(" AND ").append(filterSQL);
+        sql.append(" ORDER BY ER.RowId");
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
 
         try (Stream<ExperimentRun> runs = new SqlSelector(getSchema(), sql).setJdbcCaching(false).uncachedStream(ExperimentRun.class))
         {
             return runs.map(ExpRunImpl::new).filter(filterFn).toList();
         }
+    }
+
+    @Override
+    public List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol,
+                                                       @Nullable Date modifiedSince, long minRowId, int limit)
+    {
+        SQLFragment sql = new SQLFragment("SELECT E.* FROM ").append(getTinfoExperiment(), "E")
+                .append(" WHERE E.Container = ?").add(container.getId())
+                .append(" AND E.BatchProtocolId = ?").add(batchProtocol.getRowId())
+                .append(" AND E.RowId > ?").add(minRowId);
+        if (modifiedSince != null)
+            sql.append(" AND E.Modified > ?").add(modifiedSince);
+        sql.append(" ORDER BY E.RowId");
+        if (limit > 0)
+        {
+            sql = getSchema().getSqlDialect().limitRows(sql, limit);
+        }
+
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(getSchema(), sql).setJdbcCaching(false).getArray(Experiment.class));
     }
 
     @Override
@@ -745,7 +782,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
         if (name != null)
             filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Name.name()), name);
 
@@ -756,7 +793,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunId"), runRowId);
         if (type != null)
-            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID.name(), type.getNamespacePrefix()), null);
+            filter.addWhereClause(Lsid.namespaceFilter(ExpDataTable.Column.LSID, type.getNamespacePrefix()));
 
         return getExpDatas(filter);
     }
@@ -938,6 +975,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .map(ExpObject::getRowId).collect(Collectors.toList());
     }
 
+    @Override
+    public boolean hasSampleIdsNotInScope(Container container, User user, Collection<Long> sampleIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoMaterial(), sampleIds);
+    }
+
+    @Override
+    public boolean hasSourceIdsNotInScope(Container container, User user, Collection<Long> sourceIds)
+    {
+        return hasEntityIdsNotInScope(container, user, getTinfoData(), sourceIds);
+    }
+
+    // GitHub Issue 1309
+    private boolean hasEntityIdsNotInScope(Container container, User user, TableInfo entityTable, Collection<Long> entityIds)
+    {
+        if (entityIds.isEmpty())
+            return false;
+
+        ContainerFilter cf = container.getProductFoldersDataContainerFilter(user);
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), entityIds);
+        filter.addClause(cf.createFilterClause(entityTable.getSchema(), FieldKey.fromParts("Container")));
+
+        Set<Long> inScope = new HashSet<>(new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getArrayList(Long.class));
+        return entityIds.stream().anyMatch(id -> !inScope.contains(id));
+    }
+
     private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
     {
         return new TableSelector(getTinfoMaterial(), filter, sort).getArrayList(Material.class);
@@ -991,7 +1054,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpMaterials(filter);
     }
 
-    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         if (objectIds.isEmpty())
             return emptyList();
@@ -1017,8 +1080,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         result.setName(name);
         return result;
     }
-
-    private static final int INDEXING_LIMIT = 1_000;
 
     @Override
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, final Date modifiedSince)
@@ -1076,24 +1137,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Material> materials = selector.getArrayList(Material.class);
-        materials.forEach(m -> {
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             expMaterial.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expMaterial.getRowId()));
         });
 
-        if (materials.size() == INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexMaterials(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexData(final @NotNull SearchService.TaskIndexingQueue queue, final Date modifiedSince, long minRowId)
@@ -1114,24 +1171,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
 
-        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        sql = getSchema().getSqlDialect().limitRows(sql, SearchService.INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
-        MutableLong maxRowIdProcessed = new MutableLong(minRowId);
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        List<Data> data = selector.getArrayList(Data.class);
-        data.forEach(d -> {
+        tracker.forEach(selector.getArrayList(Data.class), Data::getRowId, d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             expData.index(queue, null);
-            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.longValue(), expData.getRowId()));
         });
 
-        if (data.size() == INDEXING_LIMIT)
-        {
+        if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            queue.addRunnable((q) -> indexData(q, modifiedSince, maxRowIdProcessed.longValue()));
-        }
+            queue.addRunnable((q) -> indexData(q, modifiedSince, tracker.getMaxRowId()));
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
@@ -1644,6 +1697,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter containerFilter)
+    {
+        return new DataColorTable(expSchema, containerFilter);
+    }
+
+    @Override
     public ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf)
     {
         return new ExpUnreferencedSampleFilesTableImpl(expSchema, cf);
@@ -1847,12 +1906,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @Nullable ExpDataClassImpl getDataClass(@NotNull String lsid)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        DataClass dataClass = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
-        if (dataClass == null)
-            return null;
+        String containerId = dataClassLsidCache.get(lsid);
+        Container c = null;
+        if (containerId != null)
+            c = ContainerManager.getForId(containerId);
 
-        return new ExpDataClassImpl(dataClass);
+        ExpDataClassImpl dataClass = null;
+        if (null != c)
+            dataClass = getDataClass(c, false, dc -> lsid.equals(dc.getLSID()));
+        if (null == dataClass)
+        {
+            Filter filter = new SimpleFilter(ExpDataClassTable.Column.LSID.fieldKey(), lsid);
+            DataClass dc = new TableSelector(getTinfoDataClass(), filter, null).getObject(DataClass.class);
+            if (dc != null)
+                dataClass = new ExpDataClassImpl(dc);
+        }
+
+        if (null != dataClass && null == containerId)
+            dataClassLsidCache.put(lsid, dataClass.getContainer().getId());
+
+        return dataClass;
     }
 
     @Override
@@ -1871,7 +1944,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
 
-    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
@@ -2096,7 +2169,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!exp.isEmpty())
         {
             // We're not actually mutating in this case, but we would be if some action hadn't already cached this run group. Flag it as if we're mutating.
-            SpringActionController.executingMutatingSql("Creating an experiment run group");
+            SpringActionController.checkForMutatingSql(() -> "Creating an experiment run group");
 
             // We don't care which one we use. It's possible to have multiple matches if a run was deleted that was
             // already part of a hidden run group.
@@ -2124,7 +2197,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type)
     {
-        ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
+        return createExperimentRunWebPart(context, type, null);
+    }
+
+    @Override
+    public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, @Nullable String dataRegionName)
+    {
+        ExperimentRunListView view = ExperimentRunListView.createView(context, type, dataRegionName, true);
         view.setShowDeleteButton(true);
         view.setShowAddToRunGroupButton(true);
         view.setShowMoveRunsButton(true);
@@ -3951,6 +4030,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("DataTypeExclusion");
     }
 
+    public TableInfo getTinfoDataColors()
+    {
+        return getExpSchema().getTable("DataColors");
+    }
+
+    public TableInfo getTinfoDataTypeColorExclusion()
+    {
+        return getExpSchema().getTable("DataTypeColorExclusion");
+    }
+
     /**
      * return the object of any known experiment type that is identified with the LSID
      *
@@ -4796,7 +4885,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         SQLFragment rowIdSQL = new SQLFragment("RowId ");
         rowIdSQL.appendInClause(selectedMaterialIds, getSchema().getSqlDialect());
-        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer);
+        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer, null);
     }
 
     /**
@@ -4805,7 +4894,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     *
      * @param truncateContainer delete all rows for this container. Not a real DB truncate because there may be rows in other containers.
+     * @param auditUserComment
      */
     public int deleteMaterialBySqlFilter(
         User user,
@@ -4815,8 +4906,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         boolean deleteFromAllSampleTypes,
         @Nullable ExpSampleType stDeleteFrom,
         boolean ignoreStatus,
-        boolean truncateContainer
-    )
+        boolean truncateContainer,
+        @Nullable String auditUserComment)
     {
         if (stDeleteFrom != null && deleteFromAllSampleTypes)
             throw new IllegalArgumentException("Can only delete from multiple sample types when no sample type is provided");
@@ -4896,7 +4987,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 try (Timing ignored = MiniProfiler.step("beforeDelete"))
                 {
-                    beforeDeleteMaterials(user, container, materials);
+                    beforeDeleteMaterials(user, container, materials, auditUserComment);
                 }
 
                 try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
@@ -5055,6 +5146,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Use null as container because we want deletes to run even if the container is deleted
                 () -> SearchService.get().deleteResources(docids),
                 POSTCOMMIT);
+
+            // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
+            // Deletes don't go through onSamplesChanged, so the notification is fired here.
+            transaction.addCommitTask(() -> SampleChangeNotify.fireSampleDataChanged(container), POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)
@@ -5306,12 +5401,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds)
+    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, @Nullable String auditUserComment)
     {
-        deleteDataByRowIds(user, container, selectedDataIds, true);
+        deleteDataByRowIds(user, container, selectedDataIds, true, auditUserComment);
     }
 
-    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, boolean deleteRunsUsingData)
+    public void deleteDataByRowIds(User user, Container container, Collection<Long> selectedDataIds, boolean deleteRunsUsingData, @Nullable String auditUserComment)
     {
         if (selectedDataIds.isEmpty())
             return;
@@ -5337,7 +5432,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             List<ExpDataImpl> expDatas = ExpDataImpl.fromDatas(datas);
-            beforeDeleteData(user, container, expDatas);
+            beforeDeleteData(user, container, expDatas, auditUserComment);
 
             // Delete any runs using the data if the ProtocolImplementation allows it
             if (deleteRunsUsingData)
@@ -5568,16 +5663,19 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // now delete starting materials that were not associated with a MaterialSource upload.
             // we get this list now so that it doesn't include all the run-scoped Materials that were
             // deleted already
-            deleteMaterialBySqlFilter(user, c, new SQLFragment("Container = ?", c), true, true, null, true, true);
+            deleteMaterialBySqlFilter(user, c, new SQLFragment("Container = ?", c), true, true, null, true, true, null);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
             Collection<Long> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Long.class);
-            LOG.info("Deleting {} dataIds {} ", dataIds.size(), dataIds);
-            deleteDataByRowIds(user, c, dataIds);
+            LOG.debug("Deleting {} dataIds {} ", dataIds.size(), dataIds);
+            deleteDataByRowIds(user, c, dataIds, null);
 
-            LOG.info("Deleting objects from container {}", c);
+            LOG.debug("Deleting objects from container {}", c);
             OntologyManager.deleteAllObjects(c, user);
+
+            removeContainerDataTypeExclusions(c.getId());
+            removeContainerDataColors(c.getId());
 
             transaction.commit();
         }
@@ -5638,7 +5736,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas)
+    public void beforeDeleteData(User user, Container container, List<ExpDataImpl> datas, @Nullable String auditUserComment)
     {
         try
         {
@@ -5661,7 +5759,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         for (ExperimentListener listener : _listeners)
         {
-            listener.beforeDataDelete(container, user, datas);
+            listener.beforeDataDelete(container, user, datas, auditUserComment);
         }
     }
 
@@ -5673,12 +5771,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials)
+    public void beforeDeleteMaterials(User user, Container container, List<? extends ExpMaterial> materials, @Nullable String auditUserComment)
     {
         // Notify that a deletion is about to happen
         for (ExperimentListener materialListener : _listeners)
         {
-            materialListener.beforeMaterialDelete(materials, container, user);
+            materialListener.beforeMaterialDelete(materials, container, user, auditUserComment);
         }
     }
 
@@ -5711,7 +5809,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Long> objectIds)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
@@ -6114,7 +6212,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClassImpl dataClass, User user, @Nullable Container c)
+    public int truncateDataClass(ExpDataClassImpl dataClass, User user, @Nullable Container c, @Nullable String auditUserComment)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -6131,7 +6229,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         for (Map.Entry<String, Collection<Long>> entry : byContainer.asMap().entrySet())
         {
             Container container = ContainerManager.getForId(entry.getKey());
-            deleteDataByRowIds(user, container, entry.getValue());
+            deleteDataByRowIds(user, container, entry.getValue(), auditUserComment);
             count += entry.getValue().size();
         }
         return count;
@@ -6159,7 +6257,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            truncateDataClass(dataClass, user, null);
+            truncateDataClass(dataClass, user, null, auditUserComment);
 
             d.delete(user, auditUserComment);
 
@@ -7550,13 +7648,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterialRowId); // add self's root to cache
 
                         sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterialRowId, parent.getLSID(), outputAliquot.getRowId());
-                        
+
                         new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
                 }
             }
         }
-        
+
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)
         {
             for (ProtocolAppRecord rec : protAppRecords)
@@ -8087,7 +8185,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                         GWTDomain<? extends GWTPropertyDescriptor> update,
                                         @Nullable String auditUserComment)
     {
-        ExpDataClassImpl dataClass = (ExpDataClassImpl) dc;
+        // Re-read so the mutations below don't write through to a DataClass bean shared via dataClassCache
+        ExpDataClassImpl dataClass = getDataClass(dc.getRowId());
+        if (dataClass == null)
+            return new ValidationException("Data class not found: " + dc.getName());
 
         Map<String, Object> oldProps = dataClass.getAuditRecordMap();
         Map<String, Object> newProps = properties != null ? properties.getAuditRecordMap() : dataClass.getAuditRecordMap() /* no update */;
@@ -9078,6 +9179,168 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 builder.append("Excluded ").append(type.name()).append(": ").append(StringUtils.join(ids, ", ")).append(".\n");
         }
         return builder.toString();
+    }
+
+    @Override
+    public @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT ColorRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId)
+    {
+        return getAllProjectColors(container).stream()
+                .filter(c -> c.getRowId() == colorRowId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId)
+    {
+        Set<Long> disabled = getDataTypeExcludedColors(dataType, dataTypeId);
+        return DataColorManager.getInstance().getActiveProjectColors(container).stream()
+                .map(c -> (long) c.getRowId())
+                .filter(rowId -> !disabled.contains(rowId))
+                .collect(toSet());
+    }
+
+    @Override
+    public @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container)
+    {
+        return DataColorManager.getInstance().getActiveProjectColors(container);
+    }
+
+    @Override
+    public @NotNull List<DataColor> getAllProjectColors(@NotNull Container container)
+    {
+        return DataColorManager.getInstance().getAllProjectColors(container);
+    }
+
+    // Applies a reconciled set of exclusion changes to exp.DataTypeColorExclusion in one transaction: one key column is
+    // held fixed (fixedColumn = fixedValue), the other varies. Rows in toAdd are inserted; rows in toRemove are deleted.
+    // Shared by ensureDataColorExclusions (fixes DataTypeRowId, varies ColorRowId) and updateColorDataTypeExclusions
+    // (fixes ColorRowId, varies DataTypeRowId). The column names are code constants, not caller input.
+    private void applyExclusionChanges(String fixedColumn, long fixedValue, String varyingColumn, Set<Long> toAdd, Set<Long> toRemove, DataTypeForExclusion dataType, Container container, User user)
+    {
+        try (DbScope.Transaction tx = getExpSchema().getScope().ensureTransaction())
+        {
+            for (Long id : toAdd)
+            {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("Container", container.getId());
+                fields.put("DataType", dataType.name());
+                fields.put(fixedColumn, fixedValue);
+                fields.put(varyingColumn, id);
+                Table.insert(user, getTinfoDataTypeColorExclusion(), fields);
+            }
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(getTinfoDataTypeColorExclusion())
+                        .append(" WHERE ").append(fixedColumn).append(" = ? AND DataType = ?")
+                        .add(fixedValue).add(dataType.name())
+                        .append(" AND ").append(varyingColumn).append(" ");
+                sql.appendInClause(toRemove, getExpSchema().getSqlDialect());
+                new SqlExecutor(getExpSchema()).execute(sql);
+            }
+            tx.commit();
+        }
+    }
+
+    @Override
+    public boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user)
+    {
+        if (disabledColorRowIds == null)
+            return false;
+
+        Set<Long> previous = getDataTypeExcludedColors(dataType, dataTypeId);
+        Set<Long> updated = new HashSet<>(disabledColorRowIds);
+
+        Set<Long> toAdd = new HashSet<>(updated);
+        toAdd.removeAll(previous);
+
+        Set<Long> toRemove = new HashSet<>(previous);
+        toRemove.removeAll(updated);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return false;
+
+        applyExclusionChanges("DataTypeRowId", dataTypeId, "ColorRowId", toAdd, toRemove, dataType, container, user);
+        return true;
+    }
+
+    @Override
+    public @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DataTypeRowId FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ? AND DataType = ?")
+                .add(colorRowId).add(dataType.name());
+        return new HashSet<>(new SqlSelector(getExpSchema(), sql).getArrayList(Long.class));
+    }
+
+    @Override
+    public @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user)
+    {
+        Set<Long> toAdd = newlyDisabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyDisabledDataTypeIds);
+        Set<Long> toRemove = newlyEnabledDataTypeIds == null ? new HashSet<>() : new HashSet<>(newlyEnabledDataTypeIds);
+        toRemove.removeAll(toAdd);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        Set<Long> existing = getDataTypesExcludingColor(dataType, colorRowId);
+        toAdd.removeAll(existing);
+        toRemove.retainAll(existing);
+
+        if (toAdd.isEmpty() && toRemove.isEmpty())
+            return Set.of();
+
+        applyExclusionChanges("ColorRowId", colorRowId, "DataTypeRowId", toAdd, toRemove, dataType, container, user);
+
+        Set<Long> affected = new HashSet<>(toAdd);
+        affected.addAll(toRemove);
+        return affected;
+    }
+
+    @Override
+    public void removeDataColorExclusionsForColor(long colorRowId)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE ColorRowId = ?").add(colorRowId);
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType)
+    {
+        SQLFragment sql = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE DataTypeRowId = ? AND DataType = ?")
+                .add(dataTypeId).add(dataType.name());
+        new SqlExecutor(getExpSchema()).execute(sql);
+    }
+
+    @Override
+    public void removeContainerDataColors(String containerId)
+    {
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
+        SQLFragment delExclusions = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataTypeColorExclusion())
+                .append(" WHERE Container = ?").add(containerId);
+        executor.execute(delExclusions);
+
+        SQLFragment delColors = new SQLFragment("DELETE FROM ")
+                .append(getTinfoDataColors())
+                .append(" WHERE Container = ?").add(containerId);
+        executor.execute(delColors);
     }
 
     @Override

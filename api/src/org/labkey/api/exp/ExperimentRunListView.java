@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,12 @@ public class ExperimentRunListView extends QueryView
 
     public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, boolean allowCustomizations)
     {
-        QuerySettings settings = schema.getSettings(model, tableName, tableName);
+        return getRunListQuerySettings(schema, model, tableName, null, allowCustomizations);
+    }
+
+    public static QuerySettings getRunListQuerySettings(UserSchema schema, ViewContext model, String tableName, @Nullable String dataRegionName, boolean allowCustomizations)
+    {
+        QuerySettings settings = schema.getSettings(model, dataRegionName != null ? dataRegionName : tableName, tableName);
         settings.getQueryDef(schema);
         settings.setBaseSort(new Sort("-RowId"));
         settings.setAllowChooseView(allowCustomizations);
@@ -108,6 +113,11 @@ public class ExperimentRunListView extends QueryView
 
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
     {
+        return createView(model, selectedType, null, allowCustomizations);
+    }
+
+    public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, @Nullable String dataRegionName, boolean allowCustomizations)
+    {
         UserSchema schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
         if (schema == null)
         {
@@ -115,7 +125,8 @@ public class ExperimentRunListView extends QueryView
             selectedType = ExperimentRunType.ALL_RUNS_TYPE;
             schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
         }
-        return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, selectedType.getTableName(), allowCustomizations), selectedType);
+        String tableName = selectedType.getTableName();
+        return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, tableName, dataRegionName, allowCustomizations), selectedType);
     }
 
     public void setShowUploadAssayRunsButton(boolean showUploadAssayRunsButton)

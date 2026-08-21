@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,17 +92,6 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         }
 
         return links;
-    }
-
-    public static String getDeleteOnClick(ExpProtocol protocol, Container currentContainer)
-    {
-        ActionURL deleteURL = PageFlowUtil.urlProvider(AssayUrls.class).getDeleteDesignURL(protocol);
-        String extraWarning = "";
-        if (!protocol.getContainer().equals(currentContainer))
-        {
-            extraWarning = " It is defined in " + protocol.getContainer().getPath() + " and deleting it will remove it from all subfolders.";
-        }
-        return "if (window.confirm('Are you sure you want to delete this assay design and all of its runs?" + extraWarning + "')) { window.location = '" + deleteURL + "' }";
     }
 
     public ExpProtocol getProtocol()

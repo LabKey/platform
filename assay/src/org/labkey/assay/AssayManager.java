@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -710,33 +710,45 @@ public class AssayManager implements AssayService
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
         {
             if (shouldIndexProtocolBatches(protocol))
-                indexAssayBatches(queue, protocol, modifiedSince);
+                queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, 0));
         }
     }
 
-    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayBatches(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                    @Nullable Date modifiedSince, long minRowId)
     {
-        if (shouldIndexProtocolBatches(protocol))
-        {
-            for (ExpExperiment batch : protocol.getBatches(queue.getContainer()))
-            {
-                if (modifiedSince == null || modifiedSince.before(batch.getModified()))
-                    indexAssayBatch(queue, batch);
-            }
-        }
+        List<? extends ExpExperiment> batches = ExperimentService.get().getExpBatches(
+                queue.getContainer(), protocol, modifiedSince, minRowId, SearchService.INDEXING_LIMIT);
+
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(batches, ExpExperiment::getRowId, b -> indexAssayBatch(queue, b));
+
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayBatches(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     public void indexAssayRuns(SearchService.TaskIndexingQueue queue, @Nullable Date modifiedSince)
     {
         for (ExpProtocol protocol : getAssayProtocols(queue.getContainer()))
-            indexAssayRuns(queue, protocol, modifiedSince);
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, 0));
     }
 
-    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol, @Nullable Date modifiedSince)
+    private void indexAssayRuns(SearchService.TaskIndexingQueue queue, ExpProtocol protocol,
+                                 @Nullable Date modifiedSince, long minRowId)
     {
-        ExperimentService.get().getExpRuns(queue.getContainer(), protocol, null, run ->
-                modifiedSince == null || modifiedSince.before(run.getModified())
-        ).forEach(r -> indexAssayRun(queue, r));
+        SQLFragment filterSQL = new SQLFragment("ER.ProtocolLSID = ? AND ER.RowId > ?")
+                .add(protocol.getLSID())
+                .add(minRowId);
+        if (modifiedSince != null)
+            filterSQL.append(" AND ER.Modified > ?").add(modifiedSince);
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(filterSQL, _ -> true, queue.getContainer(), SearchService.INDEXING_LIMIT);
+
+        SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
+        tracker.forEach(runs, ExpRun::getRowId, r -> indexAssayRun(queue, r));
+
+        if (tracker.wasFull())
+            queue.addRunnable((q) -> indexAssayRuns(q, protocol, modifiedSince, tracker.getMaxRowId()));
     }
 
     @Override
@@ -745,7 +757,7 @@ public class AssayManager implements AssayService
         ExpRun expRun = ExperimentService.get().getExpRun(expRunRowId);
         if (expRun == null)
             return;
-        
+
         if (shouldIndexRun(expRun))
             indexAssayRun(queue, ExperimentService.get().getExpRun(expRunRowId));
     }

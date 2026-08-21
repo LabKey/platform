@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
@@ -121,10 +122,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
+import static org.labkey.api.util.IntegerUtils.asInteger;
 
 public class IssueManager
 {
@@ -240,14 +243,21 @@ public class IssueManager
     private static IssueObject _getIssue(@Nullable Container c, User user, int issueId)
     {
         IssueObject issue = _getRawIssue(c, issueId);
+        if (issue == null)
+            return null;
 
-        if (issue != null && issue.getIssueDefId() != null)
+        // container may initially be null if we don't care about a specific folder, but we need the
+        // correct domain for the provisioned table properties associated with the issue
+        if (c == null)
+            c = ContainerManager.getForId(issue.getContainerId());
+
+        // GitHub Issue 1317: explicitly check for read access on the target container before querying to
+        // avoid Submitter roles from accessing the table and then hitting an exception during the read.
+        if (c == null || !c.hasPermission(user, ReadPermission.class))
+            return null;
+
+        if (issue.getIssueDefId() != null)
         {
-            // container may initially be null if we don't care about a specific folder, but we need the
-            // correct domain for the provisioned table properties associated with the issue
-            if (c == null)
-                c = ContainerManager.getForId(issue.getContainerId());
-
             IssueListDef issueListDef = getIssueListDef(issue.getContainerFromId(), issue.getIssueDefId());
             UserSchema userSchema = QueryService.get().getUserSchema(user, c, IssuesQuerySchema.SCHEMA_NAME);
             TableInfo table = userSchema.getTable(issueListDef.getName());
@@ -257,7 +267,7 @@ public class IssueManager
             if (table != null)
             {
                 var select = QueryService.get().getSelectBuilder(table).filter(filter);
-                try (Results rs = select.select(Map.of(), false))
+                try (Results rs = select.select(false))
                 {
                     Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
                     if (rs.next())
@@ -324,8 +334,7 @@ public class IssueManager
     }
 
     /**
-     * Determine if the parameter issue has related issues.  Returns true if the issue has related
-     * issues and false otherwise.
+     * Determine if the parameter issue has related issues. Returns true if the issue has related issues and false otherwise.
      *
      * @param issue The issue to query
      * @return boolean return value
@@ -472,6 +481,12 @@ public class IssueManager
             return Collections.emptyList();
     }
 
+    private static final Class<? extends Permission> ASSIGNED_TO_PERMISSION = UpdatePermission.class;
+
+    private static boolean canAssignTo(Container c, User u)
+    {
+        return c.hasPermission(u, ASSIGNED_TO_PERMISSION);
+    }
 
     public static @NotNull Collection<User> getAssignedToList(Container c, @Nullable String issueDefName, @Nullable IssueObject issue)
     {
@@ -494,7 +509,6 @@ public class IssueManager
         return initialAssignedTo;
     }
 
-
     private static final BlockingCache<String, Set<User>> ASSIGNED_TO_CACHE = DatabaseCache.get(IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists", (key, argument) ->
     {
         assert argument != null;
@@ -504,14 +518,37 @@ public class IssueManager
 
         Group group = getAssignedToGroup(c, issueDefName);
 
-        if (null != group)
-            return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
-        else
-            return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
+        // Stream active users from the selected group or from all users. Set is filtered for update permissions in this container.
+        // Then collect users into an unmodifiable TreeSet with our special comparator.
+        return getUsersForGroup(c, group)
+            .collect(Collectors.collectingAndThen(
+                Collectors.toCollection(() -> new TreeSet<>(USER_DISPLAY_NAME_COMPARATOR)),
+                Collections::unmodifiableSet
+            ));
     });
 
-    // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
-    // across requests.  The collection is unmodifiable.
+    public static Stream<User> getUsersForGroup(Container c, @Nullable Group group)
+    {
+        return  null != group ?
+            SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true).stream().filter(u -> c.hasPermission(u, ASSIGNED_TO_PERMISSION)) :
+            SecurityManager.getUsersWithPermissions(c, Set.of(ASSIGNED_TO_PERMISSION)).stream();
+    }
+
+    static @Nullable Integer validateAssignedTo(Container c, Integer candidate)
+    {
+        if (null != candidate)
+        {
+            User user = UserManager.getUser(candidate);
+
+            if (null != user && c.hasPermission(user, ASSIGNED_TO_PERMISSION))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    // Returns the assigned to list that is used for every new issue in this container. We can cache it and share it
+    // across requests. The collection is unmodifiable.
     private static @NotNull Collection<User> getInitialAssignedToList(final Container c, @Nullable String issueDefName)
     {
         issueDefName = issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME;
@@ -520,46 +557,11 @@ public class IssueManager
         return ASSIGNED_TO_CACHE.get(cacheKey, Pair.of(c, issueDefName));
     }
 
-
     public static String getCacheKey(@Nullable Container c, String issueDefName)
     {
         String key = "AssignedTo-" + issueDefName;
         return null != c ? key + c.getId() : key;
     }
-
-
-    private static Set<User> createAssignedToList(Container c, Collection<User> candidates)
-    {
-        Set<User> assignedTo = new TreeSet<>(USER_DISPLAY_NAME_COMPARATOR);
-
-        for (User candidate : candidates)
-            if (canAssignTo(c, candidate))
-                assignedTo.add(candidate);
-
-        // Cache an unmodifiable version
-        return Collections.unmodifiableSet(assignedTo);
-    }
-
-
-    private static boolean canAssignTo(Container c, @NotNull User user)
-    {
-        return user.isActive() && c.hasPermission(user, UpdatePermission.class);
-    }
-
-
-    static @Nullable Integer validateAssignedTo(Container c, Integer candidate)
-    {
-        if (null != candidate)
-        {
-            User user = UserManager.getUser(candidate);
-
-            if (null != user && canAssignTo(c, user))
-                return candidate;
-        }
-
-        return null;
-    }
-
 
     public static int getUserEmailPreferences(Container c, Integer userId)
     {

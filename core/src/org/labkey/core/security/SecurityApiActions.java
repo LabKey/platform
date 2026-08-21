@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1089,7 +1089,7 @@ public class SecurityApiActions
         {
             Container container = getContainer();
             if (!container.isRoot() && !container.isProject())
-                throw new IllegalArgumentException("You may not create groups at the folder level. Call this API at the project or root level.");
+                throw new IllegalArgumentException("You may not manage groups at the folder level. Call this API at the project or root level.");
 
             if (_group == null && getContainer().isRoot() && !getUser().hasRootPermission(UpdateUserPermission.class) )
             {
@@ -1104,6 +1104,12 @@ public class SecurityApiActions
             if (_group.getContainer() == null && !getUser().hasRootPermission(UpdateUserPermission.class))
             {
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
+            }
+
+            // A project group must belong to the current container
+            if (_group.getContainer() != null && !container.getId().equals(_group.getContainer()))
+            {
+                throw new UnauthorizedException("The specified group does not belong to this project.");
             }
 
             SecurityController.verifyUserCanModifyGroup(_group, getUser());
@@ -1219,6 +1225,11 @@ public class SecurityApiActions
 
                     if (principal == null && member.getEmail() != null) // create the user
                     {
+                        if (!getContainer().hasPermission(getUser(), AddUserPermission.class))
+                        {
+                            memberErrors.put(member.getEmail(), "You do not have permission to create new users.");
+                            continue;
+                        }
                         try
                         {
                             SecurityManager.NewUserStatus status = SecurityManager.addUser(new ValidEmail(member.getEmail()), getUser());
@@ -1558,6 +1569,9 @@ public class SecurityApiActions
         }
     }
 
+    /**
+     * Note: DeleteUserPermission is granted to Application Admins and above, so Project Admins can never delete a user
+     */
     @RequiresPermission(DeleteUserPermission.class)
     public static class DeleteUserAction extends MutatingApiAction<IdForm>
     {
@@ -1578,8 +1592,7 @@ public class SecurityApiActions
             Container c = getContainer();
             if (!c.isRoot())
             {
-                List<User> projectUsers = SecurityManager.getProjectUsers(c);
-                if (!projectUsers.contains(user))
+                if (!c.hasPermission(user, ReadPermission.class))
                     throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
             }
 
@@ -1912,7 +1925,8 @@ public class SecurityApiActions
     }
 
     /**
-     * Invalidate existing password and send new password link
+     * Invalidate existing password and send new password link. Note: UpdateUserPermission is granted to Application
+     * Admins and above, so Project Admins can never rotate a user's password.
      */
     @RequiresPermission(UpdateUserPermission.class)
     public static class AdminRotatePasswordAction extends MutatingApiAction<UserForm>

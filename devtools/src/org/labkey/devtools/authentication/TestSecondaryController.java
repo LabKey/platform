@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SaveConfigurationAction;
@@ -98,6 +99,7 @@ public class TestSecondaryController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresTermsOfUse
     public static class TestSecondaryAction extends FormViewAction<TestSecondaryForm>
     {
         @Override

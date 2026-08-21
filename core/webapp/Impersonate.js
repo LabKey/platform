@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -312,6 +312,13 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         }, this.impersonateButton];
 
         this.items = [this.getPanel()];
+
+        // The role grid's flex column can be laid out before this window has a final, on-screen width, leaving its
+        // width stuck at Ext's internal box-layout measurement value (a very large placeholder). Forcing a relayout
+        // once the window has actually been shown recalculates the column against the real, rendered width.
+        this.on('show', function() {
+            this.roleGrid.updateLayout();
+        }, this);
 
         this.callParent();
     },

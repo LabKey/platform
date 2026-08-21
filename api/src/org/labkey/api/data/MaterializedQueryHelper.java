@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -29,6 +30,8 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.JobRunner;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 
@@ -40,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,6 +59,9 @@ import static org.labkey.api.test.TestWhen.When.BVT;
  */
 public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 {
+    private static final Logger LOG = LogHelper.getLogger(MaterializedQueryHelper.class, "Materialized query helper");
+    private static final JobRunner _materializationRunner = new JobRunner("MaterializedQueryHelper", 1);
+
     public static class Materialized
     {
         MaterializedQueryHelper _mqh;
@@ -106,6 +112,19 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 i.stillValid(now);
         }
 
+        /**
+         * Returns true if calling getFromSql() performs synchronous DB work (full rebuild via SELECT INTO,
+         * or incremental update SQL). This check is non-destructive: it does not consume the invalidation state.
+         */
+        public boolean needsSynchronousWork()
+        {
+            for (Invalidator i : _invalidators)
+            {
+                if (!i.peekValid(_created))
+                    return true;
+            }
+            return false;
+        }
 
         /** return false if we did not acquire the loadingLock */
         boolean load(SQLFragment selectQuery, boolean isSelectInto)
@@ -143,7 +162,10 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 }
                 else
                 {
-                    selectInto = new SQLFragment("SELECT * INTO ").appendIdentifier("\"" + temp.getName() + "\"").append(".").appendIdentifier("\"" + _tableName + "\"").append("\nFROM (\n");
+                    // UNLOGGED skips WAL when populating and indexing the table; only supported in PostgreSQL.
+                    selectInto = new SQLFragment("SELECT * INTO ")
+                            .append(_mqh._unlogged && _mqh._scope.getSqlDialect().isPostgreSQL() ? "UNLOGGED " : "")
+                            .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");
                 }
@@ -205,6 +227,16 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return CacheCheck.COALESCE;
         }
         public abstract boolean stillValid(long createdTime);
+
+        /**
+         * Non-destructive validity check. Returns false if the entry should be considered stale without updating
+         * any stored state. Use this in read-only probes (e.g. {@link Materialized#needsSynchronousWork()}) to avoid
+         * consuming invalidation state before the actual update logic has run.
+         */
+        public boolean peekValid(long createdTime)
+        {
+            return true;
+        }
     }
 
 
@@ -248,6 +280,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             return _maxTime != -1 && createdTime + _maxTime > HeartBeat.currentTimeMillis();
         }
+
+        @Override
+        public boolean peekValid(long createdTime)
+        {
+            return stillValid(createdTime); // pure time arithmetic; non-destructive
+        }
     }
 
 
@@ -271,19 +309,55 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             _result.set(newResult);
             return false;
         }
-    }
 
+        /**
+         * Non-destructive validity check: returns false if the supplier value has changed since the last
+         * {@link #stillValid} call, without updating the stored snapshot.
+         * Use this in read-only staleness checks (e.g. {@code needsSynchronousWork()}) to avoid consuming
+         * the invalidation before the incremental-update logic has had a chance to run.
+         */
+        public boolean peekValid()
+        {
+            return Strings.CS.equals(_result.get(), _supplier.get());
+        }
+
+        @Override
+        public boolean peekValid(long createdTime)
+        {
+            return peekValid();
+        }
+
+        /**
+         * Current supplier value, with no change to the stored snapshot. Capture this before doing work,
+         * then pass it to {@link #markValidAs} once the work has committed.
+         */
+        public String current()
+        {
+            return _supplier.get();
+        }
+
+        /**
+         * Accept a previously {@link #current() captured} supplier value as the new snapshot, marking the
+         * entry valid up to that point. Call this only after the work the invalidation represents has actually
+         * committed, so that a concurrent {@link #peekValid()} reports stale (not valid) for the entire duration
+         * of the work.
+         */
+        public void markValidAs(String token)
+        {
+            _result.set(token);
+        }
+    }
 
     private String makeKey(DbScope.Transaction t)
     {
         return (null == t ? "-" : t.getId());
     }
 
-
     protected final String _prefix;
     protected final DbScope _scope;
     private final SQLFragment _selectQuery;
     private final boolean _isSelectIntoSql;
+    private final boolean _unlogged;
     protected final SQLFragment _uptodateQuery;
     protected final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
@@ -304,11 +378,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private final AtomicInteger _countGetFromSql = new AtomicInteger();
     private final AtomicInteger _countSelectInto = new AtomicInteger();
     private final AtomicLong _lastUsed = new AtomicLong(HeartBeat.currentTimeMillis());
+    private final AtomicBoolean _backgroundTaskRunning = new AtomicBoolean(false);
 
     private boolean _closed = false;
 
     protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
-                                    boolean isSelectIntoSql)
+                                    boolean isSelectIntoSql, boolean unlogged)
     {
         _prefix = Objects.toString(prefix,"mat");
         _scope = scope;
@@ -319,6 +394,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         if (null != indexes)
             _indexes.addAll(indexes);
         _isSelectIntoSql = isSelectIntoSql;
+        _unlogged = unlogged;
         assert MemTracker.get().put(this);
     }
 
@@ -336,6 +412,53 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     public void clearCaches()
     {
         _map.clear();
+    }
+
+    /**
+     * Submits a background task to build or incrementally update the materialized view.
+     * Only one background task runs at a time per MQH instance (guarded by CAS on _backgroundTaskRunning).
+     */
+    public void materializeAsync()
+    {
+        if (_backgroundTaskRunning.compareAndSet(false, true))
+        {
+            _materializationRunner.execute(() -> {
+                try
+                {
+                    getFromSql("_bg_");
+                }
+                catch (Exception e)
+                {
+                    LOG.warn("Background materialization failed.", e);
+                }
+                finally
+                {
+                    _backgroundTaskRunning.set(false);
+                }
+            });
+        }
+    }
+
+    /**
+     * Non-blocking variant of {@link #getFromSql(String)}: returns a SQL fragment referencing the cached materialized
+     * temp table only if the view is currently LOADED with no pending synchronous work, without triggering any rebuild
+     * or incremental-update SQL. Returns {@code null} if the view is not available (not yet built, still loading, or
+     * stale), so the caller can fall back immediately without blocking.
+     */
+    public @Nullable SQLFragment tryGetFromSqlIfLoaded(String tableAlias)
+    {
+        Materialized m = _map.get(makeKey(null));
+        if (m == null || m._loadingState.get() != Materialized.LoadingState.LOADED)
+            return null;
+        if (m.needsSynchronousWork())
+            return null;
+        _lastUsed.set(HeartBeat.currentTimeMillis());
+        _countGetFromSql.incrementAndGet();
+        SQLFragment sqlf = new SQLFragment(m._fromSql);
+        if (!StringUtils.isBlank(tableAlias))
+            sqlf.append(" ").append(tableAlias);
+        sqlf.addTempToken(m);
+        return sqlf;
     }
 
     /**
@@ -360,9 +483,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             materializeLock.unlock();
         }
     }
-
-
-    private final Set<Integer> _pending = null;
 
     // this is a method so you can subclass MaterializedQueryHelper
     protected String getUpToDateKey()
@@ -408,13 +528,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     /* used by FLow directly for some reason */
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias)
     {
         return getFromSql(selectQuery, false, tableAlias);
     }
-
 
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
@@ -430,11 +548,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return sqlf;
     }
 
-
     protected void incrementalUpdateBeforeSelect(Materialized m)
     {
     }
-
 
     /**
      * A Materialized represents a particular instance of materialized view (stored in a temp table).
@@ -516,7 +632,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
     }
 
-
     private Materialized getMaterializedAndLoad(SQLFragment selectQuery, boolean isSelectIntoSql)
     {
         Materialized materialized = getMaterialized(false);
@@ -565,16 +680,15 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false);
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false, false);
     }
 
 
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false);
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false, false);
     }
-
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
     {
@@ -583,6 +697,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         protected final SQLFragment _select;
 
         protected boolean _isSelectInto = false;
+        protected boolean _unlogged = false;
         protected long _max = CacheManager.UNLIMITED;
         protected SQLFragment _uptodate = null;
         protected Supplier<String> _supplier = null;
@@ -599,6 +714,16 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public Builder setIsSelectInto(boolean b)
         {
             _isSelectInto = b;
+            return this;
+        }
+
+        /**
+         * Request that the materialized table be created UNLOGGED, skipping WAL when populating and indexing it.
+         * Honored only on PostgreSQL and only for the helper-generated SELECT INTO (not setIsSelectInto).
+         */
+        public Builder unlogged(boolean b)
+        {
+            _unlogged = b;
             return this;
         }
 
@@ -629,10 +754,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
         }
     }
-
 
     @TestWhen(BVT)
     public static class TestCase extends Assert
@@ -736,6 +860,64 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private void _join(List<Thread> list)
         {
             list.forEach((t) -> {try{t.join();}catch(InterruptedException x){/* */}});
+        }
+
+        @Test
+        public void testPeekValidNonDestructive()
+        {
+            // Arrange: supplier starts at "A", reset stores "A"
+            AtomicReference<String> supplierValue = new AtomicReference<>("A");
+            SupplierInvalidator inv = new SupplierInvalidator(supplierValue::get);
+            inv.stillValid(0); // seed the stored snapshot to "A"
+
+            // Verify valid when unchanged
+            assertTrue("peekValid should return true when supplier unchanged", inv.peekValid());
+            assertTrue("peekValid(long) should return true when supplier unchanged", inv.peekValid(0));
+
+            // Change supplier without calling stillValid
+            supplierValue.set("B");
+
+            // peekValid should detect the change
+            assertFalse("peekValid should return false after supplier changes", inv.peekValid());
+            assertFalse("peekValid(long) should return false after supplier changes", inv.peekValid(0));
+
+            // Critically: calling peekValid must NOT have consumed the invalidation.
+            // stillValid should still return false (snapshot is still "A", supplier is "B").
+            assertFalse("stillValid must still return false after peekValid — invalidation was not consumed", inv.stillValid(0));
+        }
+
+        @Test
+        public void testNeedsSynchronousWorkNonDestructive()
+        {
+            DbSchema temp = DbSchema.getTemp();
+            DbScope s = temp.getScope();
+            AtomicReference<String> supplierValue = new AtomicReference<>("v1");
+            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
+
+            try (MaterializedQueryHelper mqh = new Builder("test", s, select)
+                    .addInvalidCheck(supplierValue::get)
+                    .build())
+            {
+                // Materialize once so m is LOADED and snapshot is "v1"
+                mqh.getFromSql("_");
+
+                Materialized m = mqh._map.get(mqh.makeKey(null));
+                assertNotNull(m);
+                assertFalse("should not need synchronous work right after materialization", m.needsSynchronousWork());
+
+                // Invalidate by changing the supplier
+                supplierValue.set("v2");
+                assertTrue("should need synchronous work after supplier changes", m.needsSynchronousWork());
+
+                // Call needsSynchronousWork a second time — must still report stale (state was not consumed)
+                assertTrue("needsSynchronousWork must remain true; state must not have been consumed", m.needsSynchronousWork());
+
+                // Consuming the state via getFromSql triggers a rebuild; afterwards no synchronous work needed
+                mqh.getFromSql("_");
+                Materialized m2 = mqh._map.get(mqh.makeKey(null));
+                assertNotNull(m2);
+                assertFalse("no synchronous work needed after rebuild", m2.needsSynchronousWork());
+            }
         }
     }
 }

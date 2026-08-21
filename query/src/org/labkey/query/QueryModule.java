@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -133,11 +132,13 @@ import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
+import org.labkey.query.sql.QNumber;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
+import org.labkey.remoteapi.RemoteConnections;
 import org.labkey.remoteapi.SelectRowsStreamHack;
 
 import java.util.ArrayList;
@@ -147,7 +148,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-import static org.labkey.api.reports.ReportService.R_REPORT_CUSTOM_SHARING;
 
 public class QueryModule extends DefaultModule
 {
@@ -237,11 +237,6 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
-            "This feature will turn on generating a generic [details] URL link in most grids.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
-            "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
-            "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update",
             "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
@@ -310,7 +305,6 @@ public class QueryModule extends DefaultModule
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
-        CacheManager.addListener(new QueryServiceImpl.CacheListener());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
             if (container.hasPermission(user, ReadPermission.class))
@@ -350,14 +344,6 @@ public class QueryModule extends DefaultModule
         if (null != trustedAnalystRole)
             trustedAnalystRole.addPermission(EditQueriesPermission.class);
 
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(R_REPORT_CUSTOM_SHARING,
-            "Restore custom R report sharing",
-            "Allows R reports to be shared on a per user basis. This option will be removed in LabKey Server 26.7.",
-            false,
-            false,
-            OptionalFeatureService.FeatureType.Deprecated)
-        );
-
         McpService.get().register(new QueryMcp());
         QueryUserSchema.register(this);
     }
@@ -395,13 +381,15 @@ public class QueryModule extends DefaultModule
         return Set.of(
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
+            OlapController.ContainerScopingTestCase.class,
             QueryController.SaveRowsTestCase.class,
             QueryController.TestCase.class,
             QueryServiceImpl.TestCase.class,
             RolapReader.RolapTest.class,
             RolapTestCase.class,
             SelectRowsStreamHack.TestCase.class,
-            ServerManager.TestCase.class
+            ServerManager.TestCase.class,
+            SqlController.TestCase.class
         );
     }
 
@@ -432,7 +420,9 @@ public class QueryModule extends DefaultModule
             Method.TestCase.class,
             ExpressionAssistantAgentAction.TestCase.class,
             QNode.TestCase.class,
+            QNumber.TestCase.class,
             Query.TestCase.class,
+            RemoteConnections.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
             TableWriter.TestCase.class,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.labkey.api.data.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -103,12 +102,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean supportsSelectConcat()
-    {
-        return false;
-    }
-
-    @Override
     public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
         return false;
@@ -154,11 +147,6 @@ public abstract class SimpleSqlDialect extends SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
-    @Override
-    public String execute(DbSchema schema, String procedureName, String parameters)
-    {
-        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
-    }
 
     @NotNull
     @Override
@@ -190,7 +178,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
+    protected SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters)
     {
         return null;
     }
@@ -513,7 +501,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         throw new UnsupportedOperationException();
     }

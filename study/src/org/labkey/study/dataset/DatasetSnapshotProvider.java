@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -341,7 +341,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 colMap.put(col.getFieldKey(), col);
             }
         }
-        return QueryService.get().select(tinfo, colMap.values(), filter, null);
+        return QueryService.get().getSelectBuilder(tinfo).columns(colMap.values()).filter(filter).select();
     }
 
     @Nullable

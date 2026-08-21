@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -13,10 +13,14 @@
         // on document ready
         $('.signin-btn').click(authenticateUser);
         $('.loginSubmitButton').click(authenticateUser);
-        init();
-        getTermsOfUse();
-        getOtherLoginMechanisms();
-        toggleRegistrationLink();
+        const reauth = LABKEY.ActionURL.getParameter("forceReauth");
+        init(reauth);
+        if (!reauth)
+        {
+            getTermsOfUse();
+            getOtherLoginMechanisms();
+            toggleRegistrationLink();
+        }
     }
 
     function authenticateUser() {
@@ -44,7 +48,8 @@
                 returnUrl: returnUrlElement && returnUrlElement.value ? returnUrlElement.value : LABKEY.ActionURL.getParameter("returnUrl"),
                 skipProfile: LABKEY.ActionURL.getParameter("skipProfile") || 0,
                 urlhash: document.getElementById('urlhash').value,
-                forceReauth: LABKEY.ActionURL.getParameter("forceReauth") || false
+                forceReauth: LABKEY.ActionURL.getParameter("forceReauth") || false,
+                local: LABKEY.ActionURL.getParameter("local") || false
             },
             success: LABKEY.Utils.getCallbackWrapper(function(response) {
                 setSubmitting(false, [{msg: ''}]);
@@ -172,7 +177,7 @@
                         }
                         else
                         {
-                            termsSecitons[0].hidden = true;
+                            termsSections[0].hidden = true;
                         }
                     }
                     if (document.getElementById('termsOfUseType') && response && response.termsOfUseType)
@@ -232,12 +237,12 @@
         }
     }
 
-    function init() {
+    function init(reauth) {
         // Provide support for persisting the url hash through a login redirect
         if (window && window.location && window.location.hash) {
-            var h = document.getElementById('urlhash');
-            if (h) {
-                h.value = window.location.hash;
+            const hash = document.getElementById('urlhash');
+            if (hash) {
+                hash.value = window.location.hash;
             }
         }
 
@@ -268,12 +273,24 @@
         }
 
         // examine cookies to determine if user wants the email pre-populated on form
-        var h = document.getElementById('email');
-        if (h && LABKEY.Utils.getCookie("email")) {
-            h.value = decodeURIComponent(LABKEY.Utils.getCookie("email"));
+        const email = document.getElementById('email');
+        if (email && LABKEY.Utils.getCookie("email")) {
+            email.value = decodeURIComponent(LABKEY.Utils.getCookie("email"));
         }
-        h = document.getElementById('remember');
-        h.checked = h && LABKEY.Utils.getCookie("email");
+        const remember = document.getElementById('remember');
+        if (reauth) {
+            remember.hidden = true;
+            document.getElementById('remember-label').hidden = true;
+            const forgot = document.getElementsByClassName("forgot-password-link")
+            if (forgot && forgot.length > 0) {
+                forgot[0].style = "display: none";
+            }
+            document.getElementById("header").textContent = "Reauthenticate"
+            document.getElementById("sign-in-button").textContent = "Reauthenticate";
+        }
+        else {
+            remember.checked = remember && LABKEY.Utils.getCookie("email");
+        }
 
         // set autofocus to email field if email is blank otherwise set it to password field
         if (!document.getElementById('email').value) {

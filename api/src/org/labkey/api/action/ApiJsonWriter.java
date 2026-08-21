@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -485,7 +485,9 @@ public class ApiJsonWriter extends ApiResponseWriter
             var responseText = ((MockHttpServletResponse)writer.getResponse()).getContentAsString();
             var json = new JSONObject(responseText);
             assertEquals("throwing up", json.getString("exception"));
-            assertTrue(json.has("stackTrace"));
+            assertFalse(json.getBoolean("success"));
+            assertEquals("java.lang.IllegalStateException", json.get("exceptionClass"));
+            assertFalse(json.has("stackTrace"));
             assertFalse(json.has("schemaName"));
         }
 

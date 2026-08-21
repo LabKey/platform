@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,84 +38,92 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
-* User: adam
-* Date: 1/19/12
-* Time: 5:54 PM
-*/
 public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
 {
     @Test
     public void testTableSelector() throws SQLException
     {
-//  Calls below can be used to test that Oracle and MySQL dialects behave as expected, following our maxRows, offset,
-//  and other rules. Uncomment these lines and their corresponding bean classes below.
+
+//  Call below can be used to test that Oracle dialect behaves as expected, following our maxRows, offset, and other
+//  rules. Uncomment this line and the corresponding bean class below.
 //        testTableSelector(DbSchema.get("oracle.granite", DbSchemaType.Bare).getTable("account"), Account.class);
-//        testTableSelector(DbSchema.get("mySql.sakila", DbSchemaType.Bare).getTable("country"), Country.class);
+
+        // Test MySQL or MariaDB database, if present
+        List<DbScope> mySqlScopes = Stream.of("mySql", "mariadb")
+                .map(DbScope::getDbScope).filter(Objects::nonNull).toList();
+        for (DbScope mySqlScope: mySqlScopes)
+        {
+            DbSchema sakila = mySqlScope.getSchema("sakila", DbSchemaType.Bare);
+            if (sakila.existsInDatabase())
+                testTableSelector(sakila.getTable("country"), Country.class);
+        }
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
     }
 
-//    public static class Country
-//    {
-//        private int _country_id;
-//        private String _country;
-//        private Date _last_update;
-//
-//        public int getCountry_id()
-//        {
-//            return _country_id;
-//        }
-//
-//        public void setCountry_id(int country_id)
-//        {
-//            _country_id = country_id;
-//        }
-//
-//        public String getCountry()
-//        {
-//            return _country;
-//        }
-//
-//        public void setCountry(String country)
-//        {
-//            _country = country;
-//        }
-//
-//        public Date getLast_update()
-//        {
-//            return _last_update;
-//        }
-//
-//        public void setLast_update(Date last_update)
-//        {
-//            _last_update = last_update;
-//        }
-//
-//        @Override
-//        public boolean equals(Object o)
-//        {
-//            if (this == o) return true;
-//            if (o == null || getClass() != o.getClass()) return false;
-//            Country country = (Country) o;
-//            return _country_id == country._country_id && Objects.equals(_country, country._country) && Objects.equals(_last_update, country._last_update);
-//        }
-//
-//        @Override
-//        public int hashCode()
-//        {
-//            return Objects.hash(_country_id, _country, _last_update);
-//        }
-//    }
-//
+    @SuppressWarnings("unused")
+    public static class Country
+    {
+        private int _country_id;
+        private String _country;
+        private Date _last_update;
+
+        public int getCountry_id()
+        {
+            return _country_id;
+        }
+
+        public void setCountry_id(int country_id)
+        {
+            _country_id = country_id;
+        }
+
+        public String getCountry()
+        {
+            return _country;
+        }
+
+        public void setCountry(String country)
+        {
+            _country = country;
+        }
+
+        public Date getLast_update()
+        {
+            return _last_update;
+        }
+
+        public void setLast_update(Date last_update)
+        {
+            _last_update = last_update;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Country country = (Country) o;
+            return _country_id == country._country_id && Objects.equals(_country, country._country) && Objects.equals(_last_update, country._last_update);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_country_id, _country, _last_update);
+        }
+    }
+
 //    public static class Account
 //    {
 //        private int _account_id;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -354,9 +354,9 @@ public class StudyManager
         }
 
         @Override
-        protected VisitCollections createCollections(Collection<VisitImpl> collection)
+        protected VisitCollections createCollections(Map<Integer, VisitImpl> map)
         {
-            return new VisitCollections(collection);
+            return new VisitCollections(map);
         }
 
         private static class VisitCollections extends StudyCacheCollections<Integer, VisitImpl>
@@ -364,9 +364,11 @@ public class StudyManager
             private final Collection<VisitImpl> _sequenceNumVisits;
             private final Collection<VisitImpl> _chronologicalVisits;
 
-            private VisitCollections(Collection<VisitImpl> collection)
+            private VisitCollections(Map<Integer, VisitImpl> map)
             {
-                super(collection);
+                super(map);
+
+                Collection<VisitImpl> collection = getCollection();
 
                 // I'd prefer to push comparators into Visit.Order, but Visit (in API) doesn't know about the display
                 // order field.
@@ -427,9 +429,9 @@ public class StudyManager
         }
 
         @Override
-        protected DatasetCollections createCollections(Collection<DatasetDefinition> collection)
+        protected DatasetCollections createCollections(Map<Integer, DatasetDefinition> map)
         {
-            return new DatasetCollections(collection);
+            return new DatasetCollections(map);
         }
 
         protected DatasetCollections getCollections(Study study)
@@ -447,9 +449,11 @@ public class StudyManager
             private final Map<Integer, List<DatasetDefinition>> _cohortMap;
             private final List<DatasetDefinition> _nullCohortDatasets;
 
-            private DatasetCollections(Collection<DatasetDefinition> collection)
+            private DatasetCollections(Map<Integer, DatasetDefinition> map)
             {
-                super(collection);
+                super(map);
+
+                Collection<DatasetDefinition> collection = getCollection();
 
                 // study.Dataset has constraints on LOWER(Name) and LOWER(Label), so this code path should never attempt
                 // to put duplicates into these maps. Use asserts to verify this.
@@ -575,6 +579,19 @@ public class StudyManager
         return Collections.unmodifiableSet(result);
     }
 
+    /** Helper to populate a test study with reasonable defaults */
+    public StudyImpl createTestStudy(User user, StudyImpl study)
+    {
+        if (StringUtils.isBlank(study.getSubjectNounSingular()))
+            study.setSubjectNounSingular("Subject");
+        if (StringUtils.isBlank(study.getSubjectNounPlural()))
+            study.setSubjectNounPlural("Subjects");
+        if (StringUtils.isBlank(study.getSubjectColumnName()))
+            study.setSubjectColumnName("SubjectID");
+
+        return createStudy(user, study);
+    }
+
     public StudyImpl createStudy(User user, StudyImpl study)
     {
         Container container = study.getContainer();
@@ -609,7 +626,6 @@ public class StudyManager
             transaction.commit();
         }
         StudyDesignManager.get().ensureStudyDesignDomains(container, user);
-        QueryService.get().updateLastModified();
         ContainerManager.notifyContainerChange(container.getId(), ContainerManager.Property.StudyChange);
         return study;
     }
@@ -639,7 +655,6 @@ public class StudyManager
             String comment = "Dataset security type changed from " + oldStudy.getSecurityType() + " to " + study.getSecurityType();
             StudyService.get().addStudyAuditEvent(study.getContainer(), user, comment);
         }
-        QueryService.get().updateLastModified();
         return errors;
     }
 
@@ -671,8 +686,6 @@ public class StudyManager
             // we're open to a race condition if another thread tries to do something with the dataset's table
             // and ends up attempting to create the domain as well
             datasetDefinition.getStorageTableInfo(true);
-
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
         indexDataset(SearchService.get().defaultTask().getQueue(datasetDefinition.getContainer(), SearchService.PRIORITY.modified), datasetDefinition);
@@ -855,7 +868,6 @@ public class StudyManager
 
             // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
             uncache(datasetDefinition);
-            QueryService.get().updateLastModified();
             transaction.commit();
         }
         datasetDefinition.refreshDomain();

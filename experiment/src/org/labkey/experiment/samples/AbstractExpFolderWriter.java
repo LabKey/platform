@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.experiment.samples;
 
 import org.labkey.api.admin.BaseFolderWriter;
@@ -92,7 +107,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
 
     protected void writeTsv(TableInfo tinfo, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, VirtualFile dir, String baseName) throws IOException
     {
-        ResultsFactory factory = ()->QueryService.get().select(tinfo, columns, filter, sort);
+        ResultsFactory factory = ()->QueryService.get().getSelectBuilder(tinfo).columns(columns).filter(filter).sort(sort).select();
         try (TSVGridWriter tsvWriter = new TSVGridWriter(factory))
         {
             tsvWriter.setApplyFormats(false);
@@ -253,7 +268,7 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             for (ColumnInfo col : attachmentCols)
                 uniquifiers.put(col.getName(), new FileNameUniquifier());
 
-            try (ResultSet rs = QueryService.get().select(tinfo, selectColumns, null, null))
+            try (ResultSet rs = QueryService.get().getSelectBuilder(tinfo).columns(selectColumns).select())
             {
                 while (rs.next())
                 {

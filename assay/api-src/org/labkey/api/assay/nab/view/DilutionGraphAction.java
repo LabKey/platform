@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2013-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,8 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
     {
         if (form.getRowId() == -1)
             throw new NotFoundException("Run ID not specified.");
-        ExpRun run = ExperimentService.get().getExpRun(form.getRowId());
+        // GitHub Issue #1892: Resolve the run scoped to the current container
+        ExpRun run = ExperimentService.get().getExpRun(form.getRowId(), getContainer());
         if (run == null)
             throw new NotFoundException("Run " + form.getRowId() + " does not exist.");
 

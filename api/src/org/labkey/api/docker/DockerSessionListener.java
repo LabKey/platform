@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2018-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class DockerSessionListener implements HttpSessionBindingListener
 
         try
         {
-            DockerService.get().stop(_containerId);
+            stopContainer(_containerId);
         }
         catch (Exception ex)
         {
@@ -57,4 +57,13 @@ public class DockerSessionListener implements HttpSessionBindingListener
     }
 
     protected void preStop() {}
+
+    /**
+     * Override to route the stop through a service-specific manager (e.g. DockerRStudioManager) when one tracks
+     * its own cache of containers; the default here stops via DockerService directly, leaving such a cache stale.
+     */
+    protected void stopContainer(@NotNull String containerId)
+    {
+        DockerService.get().stop(containerId);
+    }
 }

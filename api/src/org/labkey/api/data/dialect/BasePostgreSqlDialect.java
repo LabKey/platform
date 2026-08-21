@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -30,6 +31,7 @@ import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MetadataSqlSelector;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -37,6 +39,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutingSelector.ConnectionFactory;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -58,6 +61,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -136,6 +140,53 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment getDatabaseSizeSql(String databaseName)
     {
         return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
+    @Override
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    {
+        // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
+        String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
+            SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
+            for (ConnectionWrapper connection : connections)
+            {
+                Integer spid = connection.getSPID();
+
+                // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                // may have handed that physical connection, and this SPID, straight back out to someone else
+                if (!connection.isAllocated())
+                {
+                    LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                    continue;
+                }
+
+                try
+                {
+                    // Reports an already-exited backend by returning false, not by throwing
+                    boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                    if (!signalled)
+                    {
+                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                        LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                    }
+                }
+                catch (RuntimeSQLException e)
+                {
+                    LOG.warn("{}({}) failed", function, spid, e);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+
+        return true;
     }
 
     @Override
@@ -292,15 +343,11 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String execute(DbSchema schema, String procedureName, String parameters)
+    protected SQLFragment doExecute(SQLFragment qualifiedProcName, SQLFragment parameters)
     {
-        return "SELECT " + schema.getName() + "." + procedureName + "(" + parameters + ")";
-    }
-
-    @Override
-    public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
-    {
-        SQLFragment select = new SQLFragment("SELECT " + schema.getName() + "." + procedureName + "(");
+        SQLFragment select = new SQLFragment("SELECT ");
+        select.append(qualifiedProcName);
+        select.append("(");
         select.append(parameters);
         select.append(")");
         return select;
@@ -603,7 +650,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                     String maxLength = rs.getString("character_maximum_length");
 
                     // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
-                    scale = Integer.valueOf(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                    scale = Integer.parseInt(null != maxLength ? maxLength : rs.getString("character_octet_length"));
                 }
                 else
                 {
@@ -696,9 +743,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    protected @Nullable String getDatabaseMaintenanceSql()
+    protected SQLFragment getDatabaseMaintenanceSql()
     {
-        return "VACUUM ANALYZE;";
+        return new SQLFragment("VACUUM ANALYZE");
     }
 
     @Override
@@ -858,15 +905,15 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
+    protected SQLFragment doBuildProcedureCall(SQLFragment qualifiedProcName, int paramCount, boolean hasReturn, boolean assignResult, DbScope procScope)
     {
         if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
-        StringBuilder sb = new StringBuilder();
+        SQLFragment sb = new SQLFragment();
         sb.append("{");
         if (assignResult)
             sb.append("? = ");
-        sb.append("CALL ").append(procSchema).append(".").append(procName).append("(");
+        sb.append("CALL ").append(qualifiedProcName).append("(");
         String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
@@ -875,7 +922,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             comma = ",";
         }
         sb.append(")}");
-        return sb.toString();
+        return sb;
     }
 
     @Override
@@ -907,10 +954,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             String paramName = parameter.getKey();
             MetadataParameterInfo paramInfo = parameter.getValue();
-            int direction = paramInfo.getParamTraits().get(ParamTraits.direction).intValue();
+            int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype).intValue() == Types.INTEGER)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;
@@ -926,6 +973,25 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public boolean supportsNativeGreatestAndLeast()
     {
         return true;
+    }
+
+    @Override
+    public boolean supportsNativeIsDistinctFrom()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean supportsIsNumeric()
+    {
+        return true;
+    }
+
+    @Override
+    public SQLFragment isNumericExpr(SQLFragment expression)
+    {
+        return new SQLFragment("(CASE WHEN CAST((").append(expression)
+                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
     }
 
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
@@ -1000,7 +1066,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 }
             }
 
-            return scale.intValue();
+            return scale;
         }
 
         @Nullable
@@ -1030,7 +1096,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, DbScope scope, SQLFragment sql)
+    public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
         // and it's a read-only statement (a SELECT), so we won't mess up any state the caller is relying on.
@@ -1038,11 +1104,44 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         {
             return null;
         }
+        else if (selfContained)
+        {
+            // Borrow the thread's shared, ref-counted connection via scope.getConnection() rather than a
+            // separate one, so nested queries reuse it (avoiding pool exhaustion) and connection-local state (temp tables,
+            // session settings, etc) stays visible. Only the outermost borrower — isThreadConnectionActive() ==
+            // false — disables JDBC caching and registers the restore via runOnClose (fired when the ref count returns to
+            // 0); nested borrows reuse it as-is.
+            return () -> {
+                boolean alreadyHeld = scope.isThreadConnectionActive();
+                Connection conn = scope.getConnection();
+
+                try
+                {
+                    if (!alreadyHeld && conn instanceof ConnectionWrapper cw && cw.getAutoCommit())
+                        cw.setRunOnClose(configureToDisableJdbcCaching(cw, scope));
+                }
+                catch (SQLException | RuntimeException e)
+                {
+                    // scope.getConnection() already bumped the ref count, so release it before propagating
+                    try
+                    {
+                        conn.close();
+                    }
+                    catch (SQLException suppressed)
+                    {
+                        e.addSuppressed(suppressed);
+                    }
+                    throw e;
+                }
+
+                return conn;
+            };
+        }
         else
         {
-            // Factory that gets a fresh, read-only connection directly from the pool (not shared with the thread) and
-            // configures it to not cache ResultSet data in the JDBC driver, making it suitable for streaming very large
-            // ResultSets. See #39753 and #39888.
+            // The connection escapes the selector call (a live, streaming ResultSet/Stream is handed back to the caller)
+            // or the caller explicitly disabled caching, so use a fresh, read-only connection directly from the pool
+            // (not shared with the thread) whose lifetime the caller controls. See #39753 and #39888.
             return () -> {
                 ConnectionWrapper conn = scope.getPooledConnection(DbScope.ConnectionType.Pooled, null);
                 Closer closer = configureToDisableJdbcCaching(conn, scope);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -320,7 +320,10 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String name = getStringFromRow(oldRowMap, "Name");
             PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
-            PipelineTriggerRegistry.get().purgeTriggeredEntries(config);
+            if (config != null)
+            {
+                PipelineTriggerRegistry.get().purgeTriggeredEntries(config);
+            }
             Map<String, Object> deleteRow = super.deleteRow(user, container, oldRowMap);
 
             // call the stop() method for this config if it was successfully deleted

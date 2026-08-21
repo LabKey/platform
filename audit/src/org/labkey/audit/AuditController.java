@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -383,9 +383,10 @@ public class AuditController extends SpringActionController
         {
             AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
-            ContainerFilter cf = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), elevatedUser);
+            // GitHub Issue 1307: use product folder data CF
+            ContainerFilter cf = getContainer().getProductFoldersDataContainerFilter(elevatedUser);
             if (form.isSampleType())
-                results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
+                results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), form.isInsertOnly(), elevatedUser, getContainer(), cf);
             else
                 results = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), elevatedUser, getContainer(), cf);
 
@@ -403,7 +404,7 @@ public class AuditController extends SpringActionController
         private Long _transactionAuditId;
         private String _dataType;
         private boolean _isSampleType;
-        String _containerFilter;
+        private Boolean _insertOnly;
 
         public Long getTransactionAuditId()
         {
@@ -425,19 +426,19 @@ public class AuditController extends SpringActionController
             _dataType = dataType;
         }
 
+        public Boolean isInsertOnly()
+        {
+            return Boolean.TRUE.equals(_insertOnly);
+        }
+
+        public void setInsertOnly(Boolean insertOnly)
+        {
+            _insertOnly = insertOnly;
+        }
+
         public boolean isSampleType()
         {
             return _isSampleType;
-        }
-
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
         }
 
         public void validate(Errors errors)

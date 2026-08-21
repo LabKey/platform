@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package org.labkey.pipeline;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
@@ -45,6 +48,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.files.FileContentService;
@@ -62,6 +66,7 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUrls;
@@ -75,17 +80,20 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.NetworkDrive;
@@ -94,6 +102,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
@@ -115,6 +124,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -134,6 +144,7 @@ import java.util.Set;
 public class PipelineController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
+    private static final Logger LOG = LogHelper.getLogger(PipelineController.class, "Pipeline controller actions, including job cancellation");
 
     public enum Params { path, rootset, overrideRoot }
 
@@ -1079,6 +1090,8 @@ public class PipelineController extends SpringActionController
             catch (PipelineProvider.HandlerException e)
             {
                 _successURL = StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
+                // Help diagnose rare but recurring test failure in PipelineCancelTest
+                LOG.info("CancelJobAction.handlePost: cancel rejected for rowId {} ({}); _successURL set to details page {}", form.getRowId(), e.getMessage(), _successURL);
             }
             return true;
         }
@@ -1086,6 +1099,14 @@ public class PipelineController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(StatusController.RowIdForm rowIdForm)
         {
+            if (_successURL == null)
+            {
+                // Diagnostic (PipelineCancelTest intermittent blank page after cancel): capture the redirect target and the response state at the moment the framework
+                // decides between issuing the redirect and rendering an (empty) view. A null _successURL here, or a response
+                // that is already committed, would explain the observed 200/empty-body response instead of a 302.
+                HttpServletResponse response = getViewContext().getResponse();
+                LOG.info("CancelJobAction.getSuccessURL: returning _successURL={}, response.isCommitted={}, response.status={}", _successURL, response.isCommitted(), response.getStatus());
+            }
             return _successURL;
         }
     }
@@ -1456,6 +1477,15 @@ public class PipelineController extends SpringActionController
         @Override
         public void validateForm(PipelineTriggerForm form, Errors errors)
         {
+            // Confirm the configuration belongs to this container
+            if (form.getRowId() != null)
+            {
+                SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
+                filter.addCondition(FieldKey.fromParts("RowId"), form.getRowId());
+                if (!new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), filter, null).exists())
+                    throw new NotFoundException("Pipeline trigger configuration not found in this folder");
+            }
+
             if (StringUtils.isBlank(form.getLocation()))
                 form.setLocation("./");
 
@@ -1507,7 +1537,7 @@ public class PipelineController extends SpringActionController
                     _customParamKey.add(String.valueOf(o));
             }
 
-            JSONArray paramValueJson = json.getJSONArray("customParamValue");
+            JSONArray paramValueJson = json.optJSONArray("customParamValue");
             if (paramValueJson != null)
             {
                 for (Object o : paramValueJson.toList())
@@ -1722,6 +1752,55 @@ public class PipelineController extends SpringActionController
                 controller.new UpdateRootPermissionsAction(),
                 controller.new SetupAction()
             );
+        }
+    }
+
+    public static class ContainerScopingTestCase extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testSavePipelineTriggerContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A pipeline trigger configuration that lives in folder B (Type/PipelineId are NOT NULL columns; their
+            // values need not be valid registered names for the container guard to apply).
+            // uq_triggerconfigurations_name is unique on (container, name); a GUID keeps a leftover row from an
+            // interrupted prior run (which reuses the same container path) from colliding with this insert.
+            String triggerName = "scoping-test-trigger-" + GUID.makeGUID();
+            TriggerConfiguration config = new TriggerConfiguration();
+            config.beforeInsert(admin, folderB.getId());
+            config.setName(triggerName);
+            config.setType(FileAnalysisTaskPipeline.class.getName());
+            config.setPipelineId("scoping-test-pipeline");
+            config = Table.insert(admin, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), config);
+            int rowId = config.getRowId();
+
+            // A folder admin in A only (no rights in B). @RequiresPermission(AdminPermission.class) passes in folder A,
+            // so without the validateForm guard the save -- keyed only by RowId -- would reconfigure/re-home B's trigger.
+            User adminA = createUserInRole(folderA, FolderAdminRole.class);
+
+            // Reconfiguring B's trigger through folder A must 404 rather than overwrite/re-home it.
+            ActionURL foreignUrl = new ActionURL(SavePipelineTriggerAction.class, folderA);
+            JSONObject attack = new JSONObject().put("rowId", rowId).put("name", "hacked").put("type", "x").put("pipelineId", "y");
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, postJson(foreignUrl, adminA, attack));
+            // A site admin (who CAN administer folder B) still gets 404 through folder A (no cross-container write).
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, postJson(foreignUrl, admin, attack));
+
+            // The configuration must be untouched in its own container
+            TriggerConfiguration after = new TableSelector(PipelineSchema.getInstance().getTableInfoTriggerConfigurations())
+                    .getObject(rowId, TriggerConfiguration.class);
+            assertNotNull("Trigger configuration must still exist", after);
+            assertEquals("Name must be unchanged after a cross-container save", triggerName, after.getName());
+            assertEquals("Container must be unchanged after a cross-container save", folderB.getId(), after.getContainerId());
+
+            // Positive control: a same-container request passes the container guard and proceeds to content validation.
+            // The submitted form omits a name/type, so the action returns a validation error (400) rather than 404 --
+            // proving the guard rejects only the cross-container case, not legitimate same-container edits.
+            ActionURL ownUrl = new ActionURL(SavePipelineTriggerAction.class, folderB);
+            JSONObject ownEdit = new JSONObject().put("rowId", rowId);
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, postJson(ownUrl, admin, ownEdit));
         }
     }
 }

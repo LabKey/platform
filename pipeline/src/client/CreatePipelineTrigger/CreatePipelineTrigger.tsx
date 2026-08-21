@@ -1,6 +1,11 @@
-import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useState, useReducer } from 'react';
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useReducer, useState } from 'react';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { naturalSort, FormSchema, AutoForm, Alert, cancelEvent } from '@labkey/components';
+import { Alert, AutoForm, cancelEvent, FormSchema, naturalSort, redirect } from '@labkey/components';
 
 // eslint-disable-next-line import/no-unassigned-import
 import './CreatePipelineTrigger.scss';
@@ -733,7 +738,7 @@ export const CreatePipelineTrigger: FC<Props> = props => {
 
     useEffect(() => {
         if (saveSuccessful) {
-            window.setTimeout(() => (window.location.href = returnUrl), 1000);
+            window.setTimeout(() => redirect(returnUrl), 1000);
         }
     }, [returnUrl, saveSuccessful]);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2023 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -974,7 +974,14 @@ public class ListController extends SpringActionController
             if (eventRowId == null || eventRowId <= 0)
                 return HtmlView.of("Unable to resolve event details. An event \"rowId\" must be specified.");
 
-            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), ListManager.LIST_AUDIT_EVENT, eventRowId);
+            ListAuditProvider.ListAuditEvent event = AuditLogService.get().getAuditEvent(
+                getUser(), ListManager.LIST_AUDIT_EVENT, eventRowId, ContainerFilter.current(_list.getContainer(), getUser()));
+
+            // Tie the loaded event to the URL-requested listId — rowId is user-controlled (CWE-639).
+            if (!ListAuditProvider.auditEventMatchesList(event, _list.getListId(), _list.getContainer()))
+            {
+                event = null;
+            }
 
             if (event != null)
             {

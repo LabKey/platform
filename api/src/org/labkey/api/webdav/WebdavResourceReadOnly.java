@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2019 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,6 +287,12 @@ public class WebdavResourceReadOnly implements WebdavResource
 
     @Override
     public boolean canDelete(User user, boolean forDelete, List<String> message)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean canMove(User user)
     {
         return false;
     }

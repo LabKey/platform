@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import {
     getSampleSet,
     getSampleTypeDetails,
     LoadingSpinner,
+    redirect,
     SampleTypeDesigner,
     SampleTypeModel,
 } from '@labkey/components';
@@ -144,9 +145,7 @@ class SampleTypeDesignerWrapper extends React.PureComponent<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     render() {

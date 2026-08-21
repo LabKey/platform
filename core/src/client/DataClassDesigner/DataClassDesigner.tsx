@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import {
     DataClassModel,
     fetchDataClass,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -66,9 +67,7 @@ class DataClassDesignerWrapper extends React.Component<any, State> {
 
     navigate(defaultUrl: string) {
         this._dirty = false;
-
-        const returnUrl = ActionURL.getReturnUrl();
-        window.location.href = returnUrl || defaultUrl;
+        redirect(ActionURL.getReturnUrl() || defaultUrl);
     }
 
     onCancel = () => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1122,7 +1122,7 @@ public class SqlScriptController extends SpringActionController
         protected void renderButtons(SqlScript script, PrintWriter out)
         {
             out.println(PageFlowUtil.button("Reorder Script").href(getScriptURL(ReorderScriptAction.class, script)));
-            if (McpService.get().isReady())
+            if (McpService.get().isAIFeaturesReady())
             {
                 out.println(
                     PageFlowUtil.button("Clean Up Script")
@@ -1259,7 +1259,7 @@ public class SqlScriptController extends SpringActionController
         protected ModelAndView getScriptView(SqlScript script)
         {
             McpService mcpService = McpService.get();
-            if (mcpService.isReady())
+            if (mcpService.isAIFeaturesReady())
             {
                 String prompt = getPrompt(DbScope.getLabKeyScope().getSqlDialect(), script);
                 HttpSession session = getViewContext().getSession();
@@ -1354,6 +1354,10 @@ public class SqlScriptController extends SpringActionController
     }
 
     private static final String MIGRATE_TO_PG_PROMPT = """
+        Note that `ENTITYID`, `UNIQUEIDENTIFIER`, and `USERID` data types are available on both databases. Maintain
+        these data types when migrating the script (do not replace `ENTITYID` with `VARCHAR(36)` or `USERID` with `INT`,
+        for example).
+
         Include a summary of the changes you made at the end.
         """;
 

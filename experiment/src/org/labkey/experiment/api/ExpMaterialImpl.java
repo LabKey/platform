@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,6 +179,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         _object.setAliquotedFromLSID(lsid);
     }
 
+    @Override
     public Long getSampleStateId()
     {
         return _object.getSampleState();
@@ -188,6 +189,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setSampleStateId(Long stateId)
     {
         _object.setSampleState(stateId);
+    }
+
+    @Override
+    public Long getSampleColorId()
+    {
+        return _object.getExpMaterialColor();
+    }
+
+    @Override
+    public void setSampleColorId(Long colorId)
+    {
+        _object.setExpMaterialColor(colorId);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -77,6 +78,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
@@ -137,7 +139,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.AssayBatchDetailsAction;
 import org.labkey.assay.actions.AssayBatchesAction;
 import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
 import org.labkey.assay.actions.DeleteProtocolAction;
 import org.labkey.assay.actions.GetAssayBatchAction;
 import org.labkey.assay.actions.GetAssayBatchesAction;
@@ -192,7 +193,6 @@ public class AssayController extends SpringActionController
         AssayResultsAction.class,
         AssayRunDetailsAction.class,
         AssayRunsAction.class,
-        DeleteAction.class,
         DeleteProtocolAction.class,
         DesignerAction.class,
         GetAssayBatchAction.class,
@@ -425,7 +425,6 @@ public class AssayController extends SpringActionController
         links.put("batches", urlProvider.getAssayBatchesURL(c, protocol, null));
         links.put("begin", urlProvider.getProtocolURL(c, protocol, AssayBeginAction.class));
         links.put("designCopy", urlProvider.getDesignerURL(c, protocol, true, null));
-        links.put("designDelete", urlProvider.getDeleteDesignURL(protocol));
         links.put("designEdit", urlProvider.getDesignerURL(c, protocol, false, null));
         links.put("import", provider.getImportURL(c, protocol));
         links.put("results", urlProvider.getAssayResultsURL(c, protocol));
@@ -1146,12 +1145,6 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getDeleteDesignURL(ExpProtocol protocol)
-        {
-            return getProtocolURL(protocol.getContainer(), protocol, DeleteAction.class);
-        }
-
-        @Override
         public ActionURL getImportURL(Container container, ExpProtocol protocol, String path, File[] files)
         {
             ActionURL url = new ActionURL(PipelineDataCollectorRedirectAction.class, container);
@@ -1376,6 +1369,9 @@ public class AssayController extends SpringActionController
                 ExpRun expRun = ExperimentService.get().getExpRun(NumberUtils.toInt(run));
                 if (expRun != null)
                 {
+                    // Kanban #1924 assure permissions to the run's container, which might be different from the current container
+                    if (!expRun.getContainer().hasPermission(getUser(), AssayReadPermission.class))
+                        throw new UnauthorizedException("User does not have " + AssayReadPermission.class.getSimpleName() + " for run " + run);
                     response.put("success", true);
                     DataState state = AssayQCService.getProvider().getQCState(expRun.getProtocol(), expRun.getRowId());
                     if (state != null)
@@ -1488,6 +1484,58 @@ public class AssayController extends SpringActionController
         }
     }
 
+    // GH Issue 1214: Returns the QC state history (assay/experiment audit events with a QC state) for a single run,
+    // for consumption by the assay app's run details page. A QC Analyst can edit an assay run's QC state but is not
+    // otherwise granted audit-log read access, so this action elevates to CanSeeAuditLog just for the history query
+    // (mirroring the server-rendered QCStateAction above) after confirming the caller can read the run's container.
+    @RequiresPermission(AssayReadPermission.class)
+    public static class GetRunQCHistoryAction extends ReadOnlyApiAction<RunQCHistoryForm>
+    {
+        @Override
+        public ApiResponse execute(RunQCHistoryForm form, BindException errors)
+        {
+            if (form.getRunId() == null)
+                throw new NotFoundException("A runId is required.");
+
+            // Resolve the run and confirm the (non-elevated) user can read its container BEFORE elevating, so this
+            // action can't be used to read audit events from a container the user otherwise can't access.
+            ExpRun run = ExperimentService.get().getExpRun(form.getRunId());
+            if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                throw new NotFoundException("Run " + form.getRunId() + " not found.");
+
+            Container runContainer = run.getContainer();
+            User auditUser = ElevatedUser.ensureCanSeeAuditLogRole(runContainer, getUser());
+            UserSchema schema = AuditLogService.getAuditLogSchema(auditUser, runContainer);
+            if (schema == null)
+                throw new NotFoundException("Audit log schema is not available.");
+
+            QuerySettings settings = new QuerySettings(getViewContext(), "qcHistory");
+            settings.setQueryName("ExperimentAuditEvent");
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());
+            filter.addCondition(FieldKey.fromParts("QCState"), null, CompareType.NONBLANK);
+            settings.setBaseFilter(filter);
+            settings.setBaseSort(new Sort("-Created"));
+
+            QueryView view = schema.createView(getViewContext(), settings, errors);
+            return new ExtendedApiQueryResponse(view, false, false, "auditLog", "ExperimentAuditEvent", 0, null, false, false, false);
+        }
+    }
+
+    public static class RunQCHistoryForm
+    {
+        private Long _runId;
+
+        public Long getRunId()
+        {
+            return _runId;
+        }
+
+        public void setRunId(Long runId)
+        {
+            _runId = runId;
+        }
+    }
+
     @RequiresPermission(QCAnalystPermission.class)
     public static class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
     {
@@ -1524,6 +1572,14 @@ public class AssayController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             if (form.getRuns() != null && _firstRun != null)
             {
+                for (Long id : form.getRuns())
+                {
+                    // Support cross-container operations but confirm permission
+                    ExpRun run = ExperimentService.get().getExpRun(id);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), QCAnalystPermission.class))
+                        throw new NotFoundException("Run " + id + " not found in this folder");
+                }
+
                 DataState state = DataStateManager.getInstance().getStateForRowId(_firstRun.getProtocol().getContainer(), form.getState());
                 if (state != null)
                     AssayQCService.getProvider().setQCStates(_firstRun.getProtocol(), getContainer(), getUser(), List.copyOf(form.getRuns()), state, form.getComment());
@@ -1681,6 +1737,11 @@ public class AssayController extends SpringActionController
 
             ExperimentService service = ExperimentService.get();
             ExpProtocol protocol = service.getExpProtocol(form.getProtocolId());
+            if (protocol == null)
+                throw new NotFoundException("Protocol with id " + form.getProtocolId() + " not found.");
+            // Kanban #1924: Assure permission in the protocol's container, which may be different than the current container
+            if (!protocol.getContainer().hasPermission(getUser(), ReadPermission.class))
+                throw new UnauthorizedException("User does not have permission to read protocol " + protocol.getName());
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
                 throw new NotFoundException("No provider found for protocol " + form.getProtocolId());

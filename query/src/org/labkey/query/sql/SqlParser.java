@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package org.labkey.query.sql;
 
 import org.antlr.runtime.ANTLRStringStream;
+import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.MismatchedTokenException;
 import org.antlr.runtime.MissingTokenException;
 import org.antlr.runtime.ParserRuleReturnScope;
 import org.antlr.runtime.RecognitionException;
@@ -35,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -43,7 +46,6 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
@@ -80,8 +82,126 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.labkey.query.sql.QNode.*;
-import static org.labkey.query.sql.antlr.SqlBaseParser.*;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AGGREGATE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ALIAS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AND;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ANY;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ASCENDING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.AVG;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BETWEEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_AND;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_OR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.BIT_XOR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CASE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CASE2;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CAST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CLOSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COLON;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COMMA;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COMMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CONCAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.COUNT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.CROSS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DATATYPE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DECLARATION;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DELETE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DESCENDING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DISTINCT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DIV;
+import static org.labkey.query.sql.antlr.SqlBaseParser.DOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ELSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.END;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EQ;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ESCAPE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXCEPT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXISTS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPANCESTORSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPDESCENDANTSOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPLINEAGEOF;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPONENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.EXPR_LIST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FLOAT_SUFFIX;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FROM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.FULL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GROUP;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GROUP_CONCAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.GT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.HAVING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.HEX_DIGIT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IDENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ID_LETTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ID_START_LETTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IFDEFINED;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INNER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INSERT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INTERSECT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.INTO;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IN_LIST;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.JOIN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LEFT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LIKE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LIMIT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LINE_COMMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.LT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MAX;
+import static org.labkey.query.sql.antlr.SqlBaseParser.METHOD_CALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MIN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MINUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.MODULO;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_BETWEEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_IN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NOT_LIKE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NULL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_DOUBLE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_FLOAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_INT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_LONG;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ON;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OPEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ORDER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.OUTER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PARAM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PIVOT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.PLUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUERY;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUOTED_IDENTIFIER;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUOTED_STRING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.RANGE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.RIGHT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.ROW_STAR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SELECT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SELECT_FROM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SET;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SOME;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SQL_NE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STAR;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STATEMENT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.STDDEV;
+import static org.labkey.query.sql.antlr.SqlBaseParser.SUM;
+import static org.labkey.query.sql.antlr.SqlBaseParser.THEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.TRUE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNARY_MINUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNARY_PLUS;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNION;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UNION_ALL;
+import static org.labkey.query.sql.antlr.SqlBaseParser.UPDATE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.VALUES;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WHEN;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WHERE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WITH;
+import static org.labkey.query.sql.antlr.SqlBaseParser.WS;
 
 
 /**
@@ -316,9 +436,10 @@ public class SqlParser
                     errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
             }
 
+            CommonTokenStream tokens = parser.getTokenStream() instanceof CommonTokenStream cts ? cts : null;
             for (Throwable e : _parseErrors)
             {
-                errors.add(wrapParseException(e));
+                errors.add(wrapParseException(e, tokens));
             }
 
             if (null != _root)
@@ -400,9 +521,10 @@ public class SqlParser
                 _root = qnodeRoot instanceof QExpr ? (QExpr) qnodeRoot : null;
             }
 
+            CommonTokenStream tokens = parser.getTokenStream() instanceof CommonTokenStream cts ? cts : null;
             for (Throwable e : _parseErrors)
             {
-                errors.add(wrapParseException(e));
+                errors.add(wrapParseException(e, tokens));
             }
             return (QExpr)_root;
         }
@@ -413,7 +535,7 @@ public class SqlParser
         }
     }
 
-    public QueryKey parseIdentifier(String str)
+    public SchemaKey parseIdentifier(String str)
     {
         _parseErrors = new ArrayList<>();
         try (var parser = getAntlrParser())
@@ -600,7 +722,7 @@ public class SqlParser
     static private final Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "all","any","and","as","asc","avg",
             "between","both",
-            "case","class","count",
+            "case","class","count","current_date","current_time","current_timestamp",
             "delete","desc","distinct",
             "elements","else","empty","end","escape","except","exists",
             "false","fetch","from","full",
@@ -623,6 +745,12 @@ public class SqlParser
 
     static QueryParseException wrapParseException(Throwable e)
     {
+        return wrapParseException(e, null);
+    }
+
+
+    static QueryParseException wrapParseException(Throwable e, @Nullable CommonTokenStream tokens)
+    {
         if (e instanceof QueryParseException)
         {
             return (QueryParseException) e;
@@ -633,7 +761,7 @@ public class SqlParser
 //        }
         else if (e instanceof RecognitionException re)
         {
-            String message = formatRecognitionException(re);
+            String message = formatRecognitionException(re, tokens);
             return new QueryParseException(message, re, re.line, re.charPositionInLine);
         }
         else if (e instanceof RuntimeException)
@@ -644,7 +772,7 @@ public class SqlParser
     }
 
 
-    static String formatRecognitionException(RecognitionException re)
+    static String formatRecognitionException(RecognitionException re, @Nullable CommonTokenStream tokens)
     {
         String message = re.getMessage();
         if (null != message)
@@ -652,13 +780,21 @@ public class SqlParser
 
         String missing = null;
         String near = null;
-        
+
         if (null != re.token)
             near = re.token.getText();
+        else if (re.c < 0)
+            near = "<EOF>";     // lexer error at end of input (e.g. unterminated string literal)
+        else if (re.c > 0)
+            near = String.valueOf((char)re.c);      // lexer error: no token, but we know the offending character
         if (re instanceof MissingTokenException mte)
         {
             if (null != mte.inserted)
-            missing = tokenName(((CommonToken)mte.inserted).getType());
+                missing = tokenName(((CommonToken)mte.inserted).getType());
+        }
+        else if (re instanceof MismatchedTokenException mte && null == re.token && mte.expecting > 0)
+        {
+            missing = String.valueOf((char)mte.expecting);      // lexer error: expected character
         }
 
         if (null != near)
@@ -667,7 +803,132 @@ public class SqlParser
             message = "Syntax error";
         if (null != missing)
             message += ", expected '" + missing + "'";
+
+        // append a targeted hint when the failure looks like a recognizable unsupported construct
+        String hint = forSyntaxError(re, tokens);
+        if (null != hint)
+            message += ". " + hint;
         return message;
+    }
+
+
+    /**
+     * Suggestions for common standard-SQL constructs that LabKey SQL does not support. Authors (and AI assistants)
+     * regularly reach for window functions, OFFSET, EXTRACT, ILIKE, etc.; the generic "Syntax error near '...'" gives
+     * them no way to converge on working LabKey SQL, so we append a targeted hint when the failure looks recognizable.
+     *
+     * These hints are consulted ONLY after a parse error has already occurred, keyed off the token ANTLR blames (with a
+     * little look-behind for constructs where the blamed token is generic). None of the trigger words are reserved in
+     * LabKey SQL -- most are legal identifiers -- so this method must never influence what parses; message text only.
+     */
+    @Nullable
+    static String forSyntaxError(RecognitionException re, @Nullable CommonTokenStream tokens)
+    {
+        if (null == re.token || null == re.token.getText())
+            return null;
+        String near = re.token.getText().toLowerCase();
+        String prev1 = previousToken(tokens, re.token, 1);
+        String prev2 = previousToken(tokens, re.token, 2);
+        String prev3 = previousToken(tokens, re.token, 3);
+
+        switch (near)
+        {
+            case "offset":
+                return "OFFSET is not supported. Use LIMIT n; apply paging via the client API (maxRows/offset).";
+            case "fetch":
+                return "FETCH FIRST is not supported. Use LIMIT n.";
+            case "ilike":
+                return "ILIKE is not supported. Use LOWER(x) LIKE LOWER(pattern).";
+            case "using":
+                return "JOIN ... USING is not supported. Use JOIN ... ON a.col = b.col.";
+            case "nulls":
+                return "NULLS FIRST/LAST is not supported. Try ORDER BY x IS NULL, x.";
+            case ":":
+                return "The '::' cast syntax is not supported. Use CAST(expr AS TYPE).";
+            case "(":
+                // "MAX(a) OVER (...)" parses OVER as a column alias, so the '(' gets the blame
+                if ("over".equals(prev1))
+                    return "Window functions (OVER) are not supported in LabKey SQL.";
+                if ("filter".equals(prev1))
+                    return "FILTER is not supported. Use an aggregate over CASE: SUM(CASE WHEN condition THEN 1 ELSE 0 END).";
+                // "JOIN S USING (x)" parses USING as the table alias, so the '(' gets the blame
+                if ("using".equals(prev1))
+                    return "JOIN ... USING is not supported. Use JOIN ... ON a.col = b.col.";
+                // "CURRENT_DATE()" -- these are niladic keywords, not functions, so the trailing '(' is unexpected
+                if ("current_date".equals(prev1) || "current_time".equals(prev1) || "current_timestamp".equals(prev1))
+                    return "CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses; use them as bare keywords.";
+                return null;
+            case "distinct":
+                if ("(".equals(prev1))
+                    return "DISTINCT is only supported inside COUNT() and GROUP_CONCAT().";
+                return null;
+            case "from":
+                // "EXTRACT(YEAR FROM d)" parses as a method call, so the FROM gets the blame
+                if ("(".equals(prev2) && "extract".equals(prev3))
+                    return "EXTRACT is not supported. Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc.";
+                return null;
+            default:
+                if (near.startsWith("'") && "interval".equals(prev1))
+                    return "INTERVAL literals are not supported. Use TIMESTAMPADD('SQL_TSI_DAY', n, ts) and TIMESTAMPDIFF().";
+                // "SELECT TOP 10 a FROM R" parses TOP as an expression, so the blame lands on a later token
+                if (("top".equals(prev1) && "select".equals(prev2)) || ("top".equals(prev2) && "select".equals(prev3)))
+                    return "TOP is not supported. Use LIMIT n at the end of the statement.";
+                return null;
+        }
+    }
+
+
+    @Nullable
+    private static String previousToken(@Nullable CommonTokenStream tokens, Token t, int back)
+    {
+        if (null == tokens)
+            return null;
+        int i = t.getTokenIndex();
+        if (i < back || i >= tokens.size())
+            return null;
+        Token p = tokens.get(i - back);
+        return null == p || null == p.getText() ? null : p.getText().toLowerCase();
+    }
+
+
+    // Suggestions for unrecognized method names, keyed by lower-cased name. These entries are valid on both
+    // databases; dialect-specific suggestions live in forUnknownMethod(). Some entries (len, charindex, instr)
+    // are dialect-specific methods that resolve on one database and land here on the other.
+    private static final Map<String, String> methodHints = Map.ofEntries(
+            Map.entry("position", "Use LOCATE(substring, string[, start])."),
+            Map.entry("extract", "Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc."),
+            Map.entry("string_agg", "Use GROUP_CONCAT([DISTINCT] expr[, separator])."),
+            Map.entry("nvl", "Use COALESCE(a, b) or IFNULL(a, b)."),
+            Map.entry("isnull", "Use IFNULL(a, b) or COALESCE(a, b)."),
+            Map.entry("iif", "Use CASE WHEN condition THEN a ELSE b END."),
+            Map.entry("if", "Use CASE WHEN condition THEN a ELSE b END."),
+            Map.entry("datediff", "Use TIMESTAMPDIFF('SQL_TSI_DAY', ts1, ts2) or AGE()/age_in_days()."),
+            Map.entry("dateadd", "Use TIMESTAMPADD('SQL_TSI_DAY', n, ts)."),
+            Map.entry("date_part", "Use YEAR(), MONTH(), DAYOFMONTH(), HOUR(), etc."),
+            Map.entry("day", "Use DAYOFMONTH(date)."),
+            Map.entry("len", "Use LENGTH(string)."),
+            Map.entry("instr", "Use LOCATE(substring, string)."),
+            Map.entry("charindex", "Use LOCATE(substring, string)."),
+            Map.entry("getdate", "Use NOW()."),
+            Map.entry("sysdate", "Use NOW().")
+    );
+
+    /**
+     * The suggestion should simply be appropriate for the current dialect -- never name a database product.
+     * A null dialect (expression parsing, tests) gets the portable suggestion.
+     */
+    @Nullable
+    static String forUnknownMethod(String name, @Nullable SqlDialect dialect)
+    {
+        boolean pg = null != dialect && dialect.isPostgreSQL();
+        return switch (name.toLowerCase())
+        {
+            case "trim" -> pg ? "Use btrim(x) or LTRIM(RTRIM(x))." : "Use LTRIM(RTRIM(x)).";
+            case "substring_index" -> pg ? "Use split_part(string, delimiter, n)." : null;
+            case "regexp_like", "regexp_matches" -> pg ? "Use similar_to(x, pattern) or regexp_replace(x, pattern, replacement)." : "Use LIKE with wildcards.";
+            case "date_trunc" -> pg ? "Use CAST(ts AS DATE) for day granularity, or to_char(ts, format)." : "Use CAST(ts AS DATE) for day granularity.";
+            default -> methodHints.get(name.toLowerCase());
+        };
     }
 
 
@@ -873,33 +1134,34 @@ public class SqlParser
 
     private QNode convertNode(CommonTree node, LinkedList<QNode> children, boolean constExpr)
     {
+        label:
         switch (node.getType())
         {
-            case ALIAS:
-            case AS:
+            case SqlBaseParser.ALIAS:
+            case SqlBaseParser.AS:
             {
                 // CONSIDER: check type
 //                if (children.size() == 1)
 //                    return first(children);
-                node.getToken().setType(AS);
+                node.getToken().setType(SqlBaseParser.AS);
                 break;
             }
-            case DIV:
+            case SqlBaseParser.DIV:
             {
                 var usesNullIf = false;
                 var nonZeroConstant = false;
                 var divisorType = children.size() > 1 ? children.get(1).getTokenType() : 0;
-                if (divisorType==METHOD_CALL)
+                if (divisorType== SqlBaseParser.METHOD_CALL)
                 {
                     var method = children.get(1).childList().getFirst();
                     if ("NULLIF".equalsIgnoreCase(method.getTokenText()))
                         usesNullIf = true;
                 }
-                else if (divisorType==NUM_DOUBLE || divisorType==NUM_FLOAT || divisorType==NUM_INT || divisorType==NUM_LONG)
+                else if (divisorType== SqlBaseParser.NUM_DOUBLE || divisorType== SqlBaseParser.NUM_FLOAT || divisorType== SqlBaseParser.NUM_INT || divisorType== SqlBaseParser.NUM_LONG)
                 {
                     try
                     {
-                        nonZeroConstant = 0.0 != (Double)JdbcType.DOUBLE.convert(children.get(1).getTokenText());
+                        nonZeroConstant = 0.0 != (Double) JdbcType.DOUBLE.convert(children.get(1).getTokenText());
                     }
                     catch(ConversionException e)
                     {
@@ -910,25 +1172,25 @@ public class SqlParser
                     _parseWarnings.add(new QueryParseWarning("Consider using NULLIF() to prevent division by zero. e.g. dividend / NULLIF(divisor,0))", null, node.getLine(), node.getCharPositionInLine()));
                 break;
             }
-            case ESCAPE:
+            case SqlBaseParser.ESCAPE:
             {
                 if (children.size() != 1)
                 {
                     _parseErrors.add(new QueryParseException("ESCAPE expects simple string specification", null, node.getLine(), node.getCharPositionInLine()));
                     break;
                 }
-                return first(children);
+                return QNode.first(children);
             }
-            case IN:
-            case NOT_IN:
+            case SqlBaseParser.IN:
+            case SqlBaseParser.NOT_IN:
             {
-                var lhs = firstOrThrow(children);
-                var rhs = secondOrThrow(children);
-                if (rhs.getTokenType() == METHOD_CALL)
+                var lhs = QNode.firstOrThrow(children);
+                var rhs = QNode.secondOrThrow(children);
+                if (rhs.getTokenType() == SqlBaseParser.METHOD_CALL)
                 {
                     // rewrite "IN EXPANCESTORS" "IN EXPDESCENDANTS"
                     var method = rhs.getFirstChild();
-                    if (method.getTokenType() != EXPANCESTORSOF && method.getTokenType() != EXPDESCENDANTSOF && method.getTokenType() != EXPLINEAGEOF)
+                    if (method.getTokenType() != SqlBaseParser.EXPANCESTORSOF && method.getTokenType() != SqlBaseParser.EXPDESCENDANTSOF && method.getTokenType() != SqlBaseParser.EXPLINEAGEOF)
                     {
                         _parseErrors.add(new QueryParseException("Illegal syntax near 'IN'", null, node.getLine(), node.getCharPositionInLine()));
                         return null;
@@ -941,21 +1203,21 @@ public class SqlParser
                         return null;
                     }
 
-                    var qInLineage = new QInLineage(node.getType() == IN, method.getTokenType());
+                    var qInLineage = new QInLineage(node.getType() == SqlBaseParser.IN, method.getTokenType());
                     var qInLineageChildren = new LinkedList<QNode>();
                     qInLineageChildren.add(lhs);
-                    qInLineageChildren.add(secondOrThrow(rhsChildren));
+                    qInLineageChildren.add(QNode.secondOrThrow(rhsChildren));
                     if (rhsChildren.size() > 2)
-                        qInLineageChildren.add(childOrThrow(rhsChildren, 2));
+                        qInLineageChildren.add(QNode.childOrThrow(rhsChildren, 2));
 
                     qInLineage._replaceChildren(qInLineageChildren);
                     return qInLineage;
                 }
             }
-            case METHOD_CALL:
+            case SqlBaseParser.METHOD_CALL:
             {
-                @NotNull QNode id = firstOrThrow(children);
-                @NotNull QNode exprList = secondOrThrow(children);
+                @NotNull QNode id = QNode.firstOrThrow(children);
+                @NotNull QNode exprList = QNode.secondOrThrow(children);
 
                 // check for special case table method "findColumn", this isn't a real method so it's easier if it has its own node type
 
@@ -974,57 +1236,60 @@ public class SqlParser
                         break;
                 String name = ((QIdentifier)id).getIdentifier().toLowerCase();
 
-                if (name.equals("convert") || name.equals("cast"))
+                switch (name)
                 {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
+                    case "convert", "cast" ->
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() != 2)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        var valueExpression = exprList.childList().get(0);
+                        QNode type = createType(exprList.childList().get(1));
+                        if (null == type)
+                        {
+                            assert !_parseErrors.isEmpty();
+                            return null;
+                        }
+                        exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
                     }
-                    var valueExpression = exprList.childList().get(0);
-                    QNode type = createType(exprList.childList().get(1));
-                    if (null == type)
+                    case "timestampadd", "timestampdiff" ->
                     {
-                        assert !_parseErrors.isEmpty();
-                        return null;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        assert exprList.childList().size() == 3;
+                        LinkedList<QNode> args = new LinkedList<>();
+                        args.add(constantToStringNode(exprList.childList().get(0)));
+                        args.add(exprList.childList().get(1));
+                        args.add(exprList.childList().get(2));
+                        exprList._replaceChildren(args);
+                        validateTimestampConstant(args.getFirst());
                     }
-                    exprList._replaceChildren(new LinkedList<>(List.of(valueExpression, type)));
-                }
-                else if (name.equals("timestampadd") || name.equals("timestampdiff"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() != 3)
+                    case "age" ->
                     {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
+                        if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
+                        {
+                            _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
+                            break label;
+                        }
+                        assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
+                        LinkedList<QNode> args = new LinkedList<>();
+                        args.add(exprList.childList().get(0));
+                        args.add(exprList.childList().get(1));
+                        if (exprList.childList().size() == 3)
+                            args.add(constantToStringNode(exprList.childList().get(2)));
+                        exprList._replaceChildren(args);
+                        if (args.size() == 3)
+                            validateTimestampConstant(args.get(2));
                     }
-                    assert exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<>();
-                    args.add(constantToStringNode(exprList.childList().get(0)));
-                    args.add(exprList.childList().get(1));
-                    args.add(exprList.childList().get(2));
-                    exprList._replaceChildren(args);
-                    validateTimestampConstant(args.getFirst());
-                }
-                else if (name.equals("age"))
-                {
-                    if (!(exprList instanceof QExprList) || exprList.childList().size() < 2 || exprList.childList().size() > 3)
-                    {
-                        _parseErrors.add(new QueryParseException(name.toUpperCase() + " function expects 2 or 3 arguments", null, node.getLine(), node.getCharPositionInLine()));
-                        break;
-                    }
-                    assert exprList.childList().size() == 2 || exprList.childList().size() == 3;
-                    LinkedList<QNode> args = new LinkedList<>();
-                    args.add(exprList.childList().get(0));
-                    args.add(exprList.childList().get(1));
-                    if (exprList.childList().size() == 3)
-                        args.add(constantToStringNode(exprList.childList().get(2)));
-                    exprList._replaceChildren(args);
-                    if (args.size() == 3)
-                        validateTimestampConstant(args.get(2));
                 }
 
                 // special case for table returning method
-                var isTableResultMethod = id.getTokenType() == EXPANCESTORSOF || id.getTokenType() == EXPDESCENDANTSOF || id.getTokenType() == EXPLINEAGEOF;
+                var isTableResultMethod = id.getTokenType() == SqlBaseParser.EXPANCESTORSOF || id.getTokenType() == SqlBaseParser.EXPDESCENDANTSOF || id.getTokenType() == SqlBaseParser.EXPLINEAGEOF;
                 if (!isTableResultMethod)
                 {
                     try
@@ -1038,12 +1303,15 @@ public class SqlParser
                     catch (IllegalArgumentException x)
                     {
                         if (failOnUnrecognizedMethodName)
-                            _parseErrors.add(new QueryParseException("Unknown method " + name, null, id.getLine(), id.getColumn()));
+                        {
+                            String hint = forUnknownMethod(name, _dialect);
+                            _parseErrors.add(new QueryParseException("Unknown method " + name + (null == hint ? "" : ". " + hint), null, id.getLine(), id.getColumn()));
+                        }
                     }
                 }
                 break;
             }
-            case AGGREGATE:
+            case SqlBaseParser.AGGREGATE:
             {
                 if (constExpr)
                     return constError(node);
@@ -1058,7 +1326,7 @@ public class SqlParser
                 {
                     boolean distinct = false;
 
-                    if (children.size() > 1 && first(children) instanceof QDistinct)
+                    if (children.size() > 1 && QNode.first(children) instanceof QDistinct)
                     {
                         children.removeFirst();
                         distinct = true;
@@ -1069,13 +1337,13 @@ public class SqlParser
                 }
                 return qAggregate;
             }
-            case TIMESTAMP_LITERAL:
-            case DATE_LITERAL:
+            case SqlBaseParser.TIMESTAMP_LITERAL:
+            case SqlBaseParser.DATE_LITERAL:
             {
-                String s = LabKeySql.unquoteString(firstOrThrow(children).getTokenText());
+                String s = LabKeySql.unquoteString(QNode.firstOrThrow(children).getTokenText());
                 try
                 {
-                    if (node.getType() == TIMESTAMP_LITERAL)
+                    if (node.getType() == SqlBaseParser.TIMESTAMP_LITERAL)
                         return new QTimestamp(node,new Timestamp(DateUtil.parseDateTime(s)));
                     else
                         return new QDate(node,new java.sql.Date(DateUtil.parseDate(s)));
@@ -1086,7 +1354,7 @@ public class SqlParser
                     return null;
                 }
             }
-            case TABLE_PATH_SUBSTITUTION:
+            case SqlBaseParser.TABLE_PATH_SUBSTITUTION:
             {
                 if (constExpr) return constError(node);
                 if (children.size() != 3)
@@ -1115,7 +1383,7 @@ public class SqlParser
                 }
                 return substituteModuleProperty(((QString) args.get(0)).getValue(), ((QString)args.get(1)).getValue());
             }
-            case QUERY:
+            case SqlBaseParser.QUERY:
             {
                 if (constExpr) return constError(node);
                 QQuery query = (QQuery)qnode(node, children, false);
@@ -1125,7 +1393,7 @@ public class SqlParser
                 }
                 return query;
             }
-            case RANGE:
+            case SqlBaseParser.RANGE:
             {
                 if (constExpr)
                     return constError(node);
@@ -1606,6 +1874,30 @@ public class SqlParser
     }
 
 
+    /**
+     * The default ANTLR lexer error handling prints unmatchable input to System.err and then drops it,
+     * letting the remaining characters re-lex into a different, valid-looking query (e.g.
+     * "{d'2001-02-03'}" -- missing the space after "{d" -- evaluated as 2001-02-03 = 1996 and swallowed
+     * the rest of the statement). Collect lexer errors so they surface as parse errors instead.
+     */
+    private static class _SqlLexer extends SqlBaseLexer
+    {
+        private final ArrayList<Exception> _errors;
+
+        _SqlLexer(CharStream input, ArrayList<Exception> errors)
+        {
+            super(input);
+            _errors = errors;
+        }
+
+        @Override
+        public void reportError(RecognitionException e)
+        {
+            _errors.add(e);
+        }
+    }
+
+
     private static class _SqlParser extends SqlBaseParser implements AutoCloseable
     {
         ArrayList<Exception> _errors;
@@ -1627,7 +1919,7 @@ public class SqlParser
         public void reset(String str, ArrayList<Exception> errors)
         {
             _errors = errors;
-            setTokenStream(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
+            setTokenStream(new CommonTokenStream(new _SqlLexer(new CaseInsensitiveStringStream(str), errors)));
         }
 
         @Override
@@ -1654,7 +1946,7 @@ public class SqlParser
         }
 
         @Override
-        public void close() throws Exception
+        public void close()
         {
             _errors = null;
             setTokenStream(null);
@@ -1897,6 +2189,8 @@ public class SqlParser
         "SELECT 'text',1,-2,1000000L,1.0f,3.1415926535897932384626433832795,6.02214179e23,TRUE,FALSE,0x0ab12,NULL FROM R",
 
         "SELECT DISTINCT R.a, b AS B FROM rel R INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
+        "SELECT a FROM R WHERE a IS DISTINCT FROM b",
+        "SELECT a FROM R WHERE a IS NOT DISTINCT FROM b",
         "SELECT R.* FROM R",
 
         "SELECT \"a\",\"b\",AVG(x),COUNT(x),COUNT(*),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' GROUP BY a,b ORDER BY a ASC, b DESC, SUM(x)",
@@ -1940,6 +2234,9 @@ public class SqlParser
         "SELECT TIMESTAMPDIFF(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF(SECOND,a,b), TIMESTAMPDIFF('SQL_TSI_DAY',a,b), TIMESTAMPDIFF('DAY',a,b) FROM R",
         "SELECT TIMESTAMPDIFF('SQL_TSI_Second',a,b), TIMESTAMPDIFF('Second',a,b), TIMESTAMPDIFF('SQL_TSI_Day',a,b), TIMESTAMPDIFF('Day',a,b) FROM R",
         "SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
+
+        // date/timestamp literals (JDBC escape syntax; note the space after {d and {ts is required)
+        "SELECT {d '2001-02-03'} AS d, {ts '2001-02-03 04:05:06'} AS ts FROM R",
 
         "SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
         "SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
@@ -2008,6 +2305,15 @@ public class SqlParser
         "SELECT a, GROUP_CONCAT(b, '%$', 'STUPID') FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT() FROM R GROUP BY a",
 
+        // lexer errors must be reported, not silently dropped (see _SqlLexer)
+        // missing space after {d used to evaluate as arithmetic (2001-02-03 = 1996) and swallow the rest of the statement
+        "SELECT {d'2001-02-03'} AS d FROM R",
+        "SELECT {ts'2001-02-03 04:05:06'} AS ts FROM R",
+        // unmatchable character used to be dropped, silently parsing as "SELECT a b FROM R"
+        "SELECT a # b FROM R",
+        // unterminated string literal
+        "SELECT a FROM R WHERE a = 'unterminated",
+
         "BROKEN",
             
         // empty select list
@@ -2021,6 +2327,37 @@ public class SqlParser
         // With within subquery
         "SELECT * FROM (WITH peeps AS (SELECT * FROM study.participant) SELECT * FROM peeps)"
     };
+
+    // unsupported standard-SQL constructs that should fail with a targeted hint (see forSyntaxError() above):
+    // sql -> expected substring of the error message
+    static List<Pair<String, String>> hintSql = Arrays.asList(
+        new Pair<>("SELECT a FROM R LIMIT 5 OFFSET 10", "OFFSET is not supported"),
+        new Pair<>("SELECT a FROM R ORDER BY a FETCH FIRST 5 ROWS ONLY", "FETCH FIRST is not supported"),
+        new Pair<>("SELECT ROW_NUMBER() OVER (ORDER BY a) FROM R", "Window functions"),
+        new Pair<>("SELECT SUM(x) OVER (PARTITION BY a) FROM R", "Window functions"),
+        new Pair<>("SELECT COUNT(*) FILTER (WHERE a > 0) FROM R", "FILTER is not supported"),
+        new Pair<>("SELECT a FROM R WHERE a ILIKE 'x%'", "ILIKE is not supported"),
+        new Pair<>("SELECT a FROM R JOIN S USING (x)", "USING is not supported"),
+        new Pair<>("SELECT a FROM R ORDER BY a NULLS LAST", "NULLS FIRST/LAST is not supported"),
+        new Pair<>("SELECT a::INTEGER FROM R", "CAST(expr AS TYPE)"),
+        new Pair<>("SELECT SUM(DISTINCT a) FROM R", "DISTINCT is only supported inside COUNT()"),
+        new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
+        new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
+        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
+        new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses"),
+        new Pair<>("SELECT CURRENT_TIME() FROM R", "take no parentheses"),
+        new Pair<>("SELECT CURRENT_TIMESTAMP() FROM R", "take no parentheses")
+    );
+
+    // unrecognized method names that should fail with a suggested replacement (see forUnknownMethod() above)
+    static List<Pair<String, String>> methodHintSql = Arrays.asList(
+        new Pair<>("SELECT POSITION('a' IN b) FROM R", "LOCATE"),
+        new Pair<>("SELECT DATEDIFF('day', a, b) FROM R", "TIMESTAMPDIFF"),
+        new Pair<>("SELECT ISNULL(a, b) FROM R", "IFNULL"),
+        new Pair<>("SELECT DAY(a) FROM R", "DAYOFMONTH"),
+        new Pair<>("SELECT STRING_AGG(a, ',') FROM R", "GROUP_CONCAT"),
+        new Pair<>("SELECT TRIM(a) FROM R", "LTRIM(RTRIM")
+    );
 
     @SuppressWarnings("JUnitMalformedDeclaration")
     public static class SqlParserTestCase extends Assert
@@ -2069,6 +2406,8 @@ public class SqlParser
             new Pair<>("a NOT BETWEEN 4 and 5", "(not between a 4 5)"),
             new Pair<>("a LIKE 'b'", "(like a 'b')"),
             new Pair<>("a NOT LIKE 'b'", "(not like a 'b')"),
+            new Pair<>("a IS DISTINCT FROM b", "(METHOD_CALL IS_DISTINCT_FROM (EXPR_LIST a b))"),
+            new Pair<>("a IS NOT DISTINCT FROM b", "(METHOD_CALL IS_NOT_DISTINCT_FROM (EXPR_LIST a b))"),
 
             new Pair<>("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
             new Pair<>("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
@@ -2082,6 +2421,9 @@ public class SqlParser
             new Pair<>("a.b","(. a b)"),
             new Pair<>("a.b.fn(5)","(METHOD_CALL (. (. a b) fn) (EXPR_LIST 5))"),
             new Pair<>("CURDATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("CURRENT_DATE","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("CURRENT_TIME","(METHOD_CALL CURTIME EXPR_LIST)"),
+            new Pair<>("CURRENT_TIMESTAMP","(METHOD_CALL NOW EXPR_LIST)"),
             new Pair<>("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
             new Pair<>("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
             new Pair<>("SUM(a+b)","(SUM (+ a b))"),
@@ -2101,6 +2443,8 @@ public class SqlParser
             new Pair<>("1 = 1", JdbcType.BOOLEAN),
             new Pair<>("'one' = 'two'", JdbcType.BOOLEAN),
             new Pair<>("1 = 'two'", JdbcType.BOOLEAN),
+            new Pair<>("1 IS DISTINCT FROM 2", JdbcType.BOOLEAN),
+            new Pair<>("1 IS NOT DISTINCT FROM 2", JdbcType.BOOLEAN),
             new Pair<>("'this ' || 'that'", JdbcType.VARCHAR),
             new Pair<>("1 || ' plus ' || 2", JdbcType.VARCHAR),
             new Pair<>("1 + 2", JdbcType.INTEGER),
@@ -2108,7 +2452,13 @@ public class SqlParser
             new Pair<>("1 + 2.1", JdbcType.DECIMAL),
             new Pair<>("ROUND(0.0,1)", JdbcType.DOUBLE),
             new Pair<>("1 + ROUND(0.0,1)", JdbcType.DOUBLE),
-            new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE)
+            new Pair<>("CASE WHEN TRUE THEN ROUND(0.0,1) ELSE ROUND(0.0,1) END", JdbcType.DOUBLE),
+            new Pair<>("CURDATE()", JdbcType.DATE),
+            new Pair<>("CURTIME()", JdbcType.TIME),
+            new Pair<>("NOW()", JdbcType.TIMESTAMP),
+            new Pair<>("CURRENT_DATE", JdbcType.DATE),
+            new Pair<>("CURRENT_TIME", JdbcType.TIME),
+            new Pair<>("CURRENT_TIMESTAMP", JdbcType.TIMESTAMP)
         );
 
 
@@ -2234,6 +2584,46 @@ public class SqlParser
             }
             long end = System.currentTimeMillis();
             _log.trace("SqlParser.testSql(): {}", DateUtil.formatDuration(end - start));
+        }
+
+        @Test
+        public void testSyntaxHints()
+        {
+            for (Pair<String, String> test : hintSql)
+            {
+                List<QueryParseException> errors = new ArrayList<>();
+                new SqlParser().parseQuery(test.first, errors, null);
+                assertFalse("expected a parse error: " + test.first, errors.isEmpty());
+                assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
+                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+            }
+        }
+
+        @Test
+        public void testUnknownMethodHints()
+        {
+            for (Pair<String, String> test : methodHintSql)
+            {
+                List<QueryParseException> errors = new ArrayList<>();
+                new SqlParser().setFailOnUnrecognizedMethodName(true).parseQuery(test.first, errors, null);
+                assertFalse("expected a parse error: " + test.first, errors.isEmpty());
+                assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
+                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+            }
+        }
+
+        @Test
+        public void testDialectMethodHints()
+        {
+            // the suggestion should be appropriate for the current dialect and never name a database product
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+            List<QueryParseException> errors = new ArrayList<>();
+            new SqlParser(d, null).setFailOnUnrecognizedMethodName(true).parseQuery("SELECT TRIM(a) FROM R", errors, null);
+            assertFalse(errors.isEmpty());
+            String message = errors.getFirst().getMessage();
+            assertTrue(message, StringUtils.contains(message, "LTRIM(RTRIM"));
+            assertEquals(message, d.isPostgreSQL(), StringUtils.contains(message, "btrim"));
+            assertFalse(message, StringUtils.containsIgnoreCase(message, "postgres"));
         }
 
         @Test

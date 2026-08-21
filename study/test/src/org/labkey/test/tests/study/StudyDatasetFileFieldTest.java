@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.test.tests.study;
 
 import org.apache.commons.io.FileUtils;
@@ -45,10 +60,10 @@ public class StudyDatasetFileFieldTest extends BaseWebDriverTest
     private static final String EXCLUDED_CHARS = "\""; // this gets encoded as %22 when the form data is sent.
     private static final String IMPORT_PROJECT = "StudyDatasetFileFieldFolderImportProject";
     // Include a "\" character at the end of the file field name to verify it round trips with escaped form field characters
-    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate) + "\\";
-    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
-    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
-    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate);
+    private static final String FILE_FIELD_1 = TestDataGenerator.randomFieldName("File Field 1", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120) + "\\";
+    private static final String FILE_FIELD_2 = TestDataGenerator.randomFieldName("File Field 2", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
+    private static final String INT_FIELD = TestDataGenerator.randomFieldName("Int Field", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
+    private static final String TEXT_FIELD = TestDataGenerator.randomFieldName("Text Field", 5, 20, EXCLUDED_CHARS, DomainUtils.DomainKind.StudyDatasetDate, 120);
 
     @BeforeClass
     public static void doSetup()

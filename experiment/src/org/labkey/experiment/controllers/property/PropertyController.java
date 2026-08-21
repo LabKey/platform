@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2195,7 +2195,7 @@ public class PropertyController extends SpringActionController
             List<OntologyManager.PropertyUsages> usages = null;
             if (form.getPropertyIds() != null)
             {
-                usages = OntologyManager.findPropertyUsages(getUser(), form.getPropertyIds(), form.maxUsageCount);
+                usages = OntologyManager.findPropertyUsagesByIds(getUser(), getContainer(), form.getPropertyIds(), form.maxUsageCount);
             }
             else if (form.getPropertyURIs() != null)
             {

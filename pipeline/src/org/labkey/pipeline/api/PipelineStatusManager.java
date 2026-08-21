@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -690,7 +690,7 @@ public class PipelineStatusManager
 
                 if (!statusSet)
                 {
-                    // Fall back to updating the simple bean in the case where can can't deserialize the job itself
+                    // Fall back to updating the simple bean in the case where we can't deserialize the job itself
                     PipelineStatusFileImpl sf = PipelineStatusManager.getStatusFile(rowId);
                     if (sf != null)
                     {

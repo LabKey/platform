@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,32 @@
 %>
 <%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.Formats" %>
-<%@ page import="org.labkey.api.util.HtmlString"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.text.DecimalFormat" %>
-<%@ page import="java.time.Duration" %>
-<%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -52,6 +55,7 @@
     .lk-admin-section { display: none; }
     .header-title { margin-bottom: 5px; }
     .header-link { margin: 0 5px 20px 0; }
+    .lk-server-time-warning { color: red; }
 </style>
 <div class="row">
     <div class="col-sm-12 col-md-3">
@@ -88,16 +92,19 @@
             <br/>
 <%
     row = 0;
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateUtil.getJsonDateTimeFormatString());
+    String timeCellCls = "";
+    HtmlString warning = HtmlString.EMPTY_STRING;
 
-    LocalDateTime serverTime = LocalDateTime.now();
-    LocalDateTime databaseTime = new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(LocalDateTime.class);
-    long duration = Math.abs(Duration.between(serverTime, databaseTime).toSeconds());
-
-    // Warn if greater than this many seconds
-    long warningSeconds = 10;
-
-    HtmlString style = unsafe(duration > warningSeconds ? " style=\"color:red;\"" : "");
-    HtmlString warning = unsafe(duration > warningSeconds ? " - Warning: Web and database server times differ by " + duration + " seconds!" : "");
+    SqlDialect.ServerDatabaseTimeDifference timeDifference = SqlDialect.getServerDatabaseTimeDifference(DbScope.getLabKeyScope());
+    if (timeDifference.exceedsWarningThreshold())
+    {
+        timeCellCls = "lk-server-time-warning";
+        warning = HtmlStringBuilder.of(" - Warning: Web and database server times differ by ")
+            .append(timeDifference.getSeconds())
+            .append(" seconds!")
+            .getHtmlString();
+    }
 %>
             <h4>Runtime Information</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
@@ -122,9 +129,9 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td<%=style%>><%=h(AdminBean.serverStartupTime)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td><%=h(AdminBean.serverStartupTime)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(dateTimeFormatter.format(timeDifference.serverTime()))%><%=warning%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td class="<%=h(timeCellCls)%>"><%=h(dateTimeFormatter.format(timeDifference.databaseTime()))%><%=warning%></td></tr>
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
@@ -152,7 +159,9 @@
             <%=link("Module Details", AdminController.ModulesAction.class)%>
             <br/><br/>
             <table><%
-                for (Module module : AdminBean.modules)
+                ArrayList<Module> modules = new ArrayList<>(ModuleLoader.getInstance().getModules());
+                modules.sort(Comparator.comparing(Module::getName, String.CASE_INSENSITIVE_ORDER));
+                for (Module module : modules)
                 {
                     String guid = makeId("m_");
                     String toggleScript = "return LABKEY.Utils.toggleLink(document.getElementById(" + q(guid) + "), false);";

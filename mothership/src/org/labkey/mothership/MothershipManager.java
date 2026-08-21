@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JsonUtil;
@@ -43,6 +46,7 @@ import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.NotFoundException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,6 +54,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
@@ -212,6 +217,13 @@ public class MothershipManager
         }
     }
 
+    public SoftwareRelease getSoftwareRelease(int softwareReleaseId, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromString("SoftwareReleaseId"), softwareReleaseId);
+        return new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
+    }
+
     public ServerInstallation getServerInstallation(@NotNull String serverGUID, @NotNull String serverHostName, @NotNull Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -224,6 +236,13 @@ public class MothershipManager
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromString("ServerSessionGUID"), serverSessionGUID);
+        return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
+    }
+
+    public ServerSession getServerSession(int serverSessionId, Container c)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromString("ServerSessionId"), serverSessionId);
         return new TableSelector(getTableInfoServerSession(), filter, null).getObject(ServerSession.class);
     }
 
@@ -598,6 +617,12 @@ public class MothershipManager
 
     public void updateSoftwareRelease(Container container, User user, SoftwareRelease bean)
     {
+        // Verify the target row actually belongs to this container before updating. The raw Table.update below is
+        // keyed only on the primary key, so without this check a user with UpdatePermission in one folder could edit
+        // (and, via setContainer, re-home) a SoftwareRelease owned by another folder.
+        if (getSoftwareRelease(bean.getSoftwareReleaseId(), container) == null)
+            throw new NotFoundException("SoftwareRelease not found in this folder: " + bean.getSoftwareReleaseId());
+
         bean.setContainer(container.getId());
         Table.update(user, getTableInfoSoftwareRelease(), bean, bean.getSoftwareReleaseId());
     }
@@ -609,18 +634,17 @@ public class MothershipManager
         return new TableSelector(getTableInfoServerInstallation(), filter, null).getObject(ServerInstallation.class);
     }
 
+    private static final Class<? extends Permission> ASSIGNED_TO_PERM = UpdatePermission.class;
+
+    public boolean canAssignTo(Container container, User possibleAssignee)
+    {
+        return container.hasPermission(possibleAssignee, ASSIGNED_TO_PERM);
+    }
+
     public List<User> getAssignedToList(Container container)
     {
-        List<User> projectUsers = org.labkey.api.security.SecurityManager.getProjectUsers(container.getProject());
-        List<User> list = new ArrayList<>();
-        // Filter list to only show active users
-        for (User user : projectUsers)
-        {
-            if (user.isActive())
-            {
-                list.add(user);
-            }
-        }
+        List<User> projectUsers = SecurityManager.getUsersWithPermissions(container.getProject(), Set.of(ASSIGNED_TO_PERM));
+        List<User> list = new ArrayList<>(projectUsers); // Make mutable so we can sort
         list.sort(USER_DISPLAY_NAME_COMPARATOR);
         return list;
     }

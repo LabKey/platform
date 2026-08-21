@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,15 +132,18 @@ import org.labkey.study.assay.query.PublishAuditProvider;
 import org.labkey.study.audit.ParticipantGroupAuditProvider;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.CohortController;
+import org.labkey.study.controllers.CreateChildStudyAction;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.ParticipantGroupController;
 import org.labkey.study.controllers.SharedStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.StudyDefinitionController;
 import org.labkey.study.controllers.StudyPropertiesController;
+import org.labkey.study.controllers.publish.PublishConfirmContainerScopingTest;
 import org.labkey.study.controllers.publish.PublishController;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.controllers.security.SecurityController;
+import org.labkey.study.dataset.DataStatesTest;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
@@ -397,11 +400,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_LINKED_DATASET_CHECK,
             "Assay linked to study consistency check",
             "Flags rows in assay linked datasets where the subject and timepoint may be different from the source assay.",
-            false);
-
-        OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
-            "Allow merge of study dataset that uses server-managed additional key fields",
-            "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
             false);
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_QUERY_DATASETS,
@@ -761,16 +759,21 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
-            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
-            ParticipantGroupManager.ParticipantGroupTestCase.class,
-            StudyImpl.ProtocolDocumentTestCase.class,
-            StudyManager.StudySnapshotTestCase.class,
-            StudyManager.VisitCreationTestCase.class,
-            StudyModule.TestCase.class,
-            VisitImpl.TestCase.class,
-            DatasetUpdateService.TestCase.class,
-            DatasetLsidImportHelper.TestCase.class
-        );
+                DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+                DataStatesTest.class,
+                ParticipantGroupManager.ContainerScopingTestCase.class,
+                StudyImpl.ProtocolDocumentTestCase.class,
+                StudyManager.StudySnapshotTestCase.class,
+                StudyManager.VisitCreationTestCase.class,
+                StudyModule.TestCase.class,
+                VisitImpl.TestCase.class,
+                DatasetController.DatasetAuditHistoryScopingTestCase.class,
+                DatasetUpdateService.TestCase.class,
+                DatasetLsidImportHelper.TestCase.class,
+                PublishConfirmContainerScopingTest.class,
+                CreateChildStudyAction.ContainerScopingTestCase.class,
+                StudyController.ContainerScopingTestCase.class,
+                ReportsController.ContainerScopingTestCase.class);
     }
 
     @Override
@@ -788,6 +791,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             DatasetDataWriter.TestCase.class,
             DefaultStudyDesignWriter.TestCase.class,
             ParticipantIdImportHelper.ParticipantIdTest.class,
+            ReportsController.TestCase.class,
             SequenceNumImportHelper.SequenceNumTest.class,
             StudyImpl.DateMathTestCase.class
         );

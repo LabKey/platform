@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,8 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.SpecimenSchema;
-import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -799,8 +799,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     {
         if (perm.equals(ReadPermission.class))
             return getContainer().hasPermission(user, perm, getContextualRoles());
-        else
-            return getContainer().hasPermissions(user, Set.of(perm, EditSpecimenDataPermission.class), getContextualRoles());
+
+        SpecimenMigrationService sms = SpecimenMigrationService.get();
+        return sms != null && getContainer().hasPermissions(user, Set.of(perm, sms.getEditSpecimenDataPermission()), getContextualRoles());
     }
 
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
@@ -14,28 +14,37 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
         this.addEvents('dependencychanged');
 
         this.errorTpl = new Ext4.XTemplate(
-                '<span class="labkey-error" style="display: block; margin: 50px;"><div>An Error Occurred Analyzing Queries : {exception}</div>',
-                '<pre>',
-                '<div>{url}</div>',
-                '<div>{exceptionClass}</div>',
-                '<tpl for="stackTrace">',
-                '<div>{.}</div>',
+                '<div class="labkey-error">',
+                '<h3>Errors during analysis</h3>',
+                '<tpl for=".">',
+                    '<div style="margin-top: 0.5em;">',
+                        '<div>{containerPath:htmlEncode}</div>',
+                        '<tpl for="messages">',
+                            '<div style="margin-left: 1em;">{.:htmlEncode}</div>',
+                        '</tpl>',
+                    '</div>',
                 '</tpl>',
-                '</pre>',
-                '</span>'
+                '</div>'
         );
     },
 
     initComponent : function() {
         this.enableBubble('dependencychanged');
         this.dependencyCache = LABKEY.query.browser.cache.QueryDependencies;
+
+        // the query browser can be opened at the site root, where there is no current project to analyze
+        this.projectPath = LABKEY.project ? LABKEY.project.path : undefined;
+        this.analysisPath = this.projectPath || '/';
+
+        const loading = '<i class="fa fa-spinner fa-pulse"></i>';
+
         this.items = [{
             xtype: 'box',
             cls: 'lk-cf-instructions',
             width: '75%',
-            html: 'This will allow an administrator to perform a query dependency analysis across folders. The user has ' +
-                    'the option to analyze at the site wide level which will include all folders on the server or at the project level. ' +
-                    'which will include the current project and all sub folders.'
+            html: 'By default, the Dependency Report shown when you view a query or table in the schema browser covers ' +
+                    'only the current folder. This analysis proactively loads references in other folders as well, ' +
+                    'so that dependencies from elsewhere on the server are included.'
         },{
             xtype: 'form',
             border: false,
@@ -46,8 +55,23 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
             },
             items: [{
                 xtype: 'radio',
-                fieldLabel: 'Site Level',
-                checked: true,
+                itemId: 'lk-cfd-project-scope',
+                fieldLabel: this.projectPath ? 'Current project, ' + Ext4.htmlEncode(this.projectPath) : 'Current project',
+                boxLabel: loading,
+                checked: !!this.projectPath,
+                disabled: !this.projectPath,
+                name: 'depth',
+                scope: this,
+                handler: function (cmp, checked) {
+                    if (checked)
+                        this.analysisPath = this.projectPath;
+                }
+            },{
+                xtype: 'radio',
+                itemId: 'lk-cfd-site-scope',
+                fieldLabel: 'Site-wide',
+                boxLabel: loading,
+                checked: !this.projectPath,
                 name: 'depth',
                 scope: this,
                 handler: function (cmp, checked) {
@@ -55,47 +79,97 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
                         this.analysisPath = '/';
                 }
             },{
-                xtype: 'radio',
-                fieldLabel: 'Current Project Level',
-                name: 'depth',
-                scope: this,
-                handler: function (cmp, checked) {
-                    if (checked)
-                        this.analysisPath = LABKEY.project.path;
-                }
+                xtype: 'box',
+                itemId: 'lk-cfd-scope-status',
+                padding: '5 0 0 0',
+                html: loading + ' Counting the folders each option would analyze. This can take a moment on a large site.'
             }],
             buttonAlign : 'left',
             buttons : [
-                {text : 'Start Analysis', handler : this.startAnalysis, scope : this}
+                {text : 'Start Analysis', itemId: 'lk-cfd-start', disabled: true, handler : this.startAnalysis, scope : this}
             ]
         },{
             xtype: 'box',
+            itemId: 'lk-cfd-error',
             padding: 10,
-            id: 'lk-dependency-progress-bar'
+            hidden: true
         }];
         this.callParent();
+
+        this.on('afterrender', this.loadScopeCounts, this);
+    },
+
+    // resolve the folder counts up front so the cost of each option is visible before an analysis is started
+    loadScopeCounts : function() {
+        this.dependencyCache.loadContainerCounts(function(scopes) {
+            // the tab is closable, so it may be gone by the time the container tree comes back
+            if (this.isDestroyed)
+                return;
+
+            this.setScopeCount('#lk-cfd-site-scope', scopes['/']);
+            this.setScopeCount('#lk-cfd-project-scope', this.projectPath ? scopes[this.projectPath] : undefined);
+            this.down('#lk-cfd-scope-status').hide();
+            this.down('#lk-cfd-start').enable();
+        }, function() {
+            if (this.isDestroyed)
+                return;
+
+            this.setScopeCount('#lk-cfd-site-scope', undefined);
+            this.setScopeCount('#lk-cfd-project-scope', undefined);
+            this.down('#lk-cfd-scope-status').update('<span class="labkey-error">Unable to determine how many folders each option would analyze.</span>');
+
+            // still startable: analyzeQueries() walks the container tree itself when it isn't handed a folder list
+            this.down('#lk-cfd-start').enable();
+        }, this);
+    },
+
+    setScopeCount : function(itemId, containers) {
+        let radio = this.down(itemId);
+        if (radio) {
+            let label = '';
+            if (containers) {
+                label = containers.length === 1 ? '1 folder' : containers.length.toLocaleString() + ' folders';
+            }
+            radio.setBoxLabel(label);
+        }
     },
 
     startAnalysis : function() {
-        // display a progress bar (even if it renders under the mask)
-        let pb = Ext4.create('Ext.ProgressBar', {
-            renderTo: 'lk-dependency-progress-bar',
-            width: 500
+        // resolved by loadScopeCounts(), so the analysis doesn't walk the container tree a second time
+        let containers = this.dependencyCache.getScopeContainers(this.analysisPath);
+
+        this.analysisRunning = true;
+        this.down('#lk-cfd-start').disable();
+        this.hideError();
+
+        this.progressBar = Ext4.create('Ext.ProgressBar', {width: 500});
+
+        // modal, both to keep Stop Analysis reachable and because QueryDependencies is a singleton that a query
+        // details page would otherwise start a second, competing analysis on
+        this.progressWindow = Ext4.create('Ext.window.Window', {
+            title: 'Analyzing Query Dependencies',
+            modal: true,
+            closable: false,
+            draggable: false,
+            bodyPadding: 10,
+            items: [this.progressBar],
+            buttons: [{text: 'Stop Analysis', handler: this.stopAnalysis, scope: this}]
         });
-        Ext4.TaskManager.start({
+        this.progressWindow.show();
+
+        this.progressTask = Ext4.TaskManager.start({
             interval: 250,
             delay: 1000,
             scope: this,
             run: function(){
                 let info = this.dependencyCache.getProgress();
-                pb.updateProgress(info.progress, info.currentContainer, true);
+                if (this.progressBar)
+                    this.progressBar.updateProgress(info.progress, info.currentContainer, true);
             }
         });
 
         function loadSuccessHandler(json, resp, opts) {
-            pb.destroy();
-            Ext4.TaskManager.stopAll();
-            this.parent.getEl().unmask();
+            this.endAnalysis();
             Ext4.Msg.alert('Cross Folder Dependencies', 'The query analysis has completed successfully',
                     function () {
                         this.fireEvent('dependencychanged');
@@ -104,37 +178,83 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
         }
 
         function loadFailureHandler(json, resp, opts) {
-            pb.destroy();
-            Ext4.TaskManager.stopAll();
-            this.parent.getEl().unmask();
-            var error = this.getErrorMessageFromResponse(resp, opts);
-            var dialog = Ext4.create('Ext.window.Window', {
-                layout: 'fit',
-                draggable: false,
-                modal: true,
-                closable: true,
-                title: 'Error',
-                items: [{
-                    xtype: 'box',
-                    tpl: this.errorTpl,
-                    data: error,
-                    autoScroll: true
-                }],
-                buttons: [{
-                    text: 'Close',
-                    handler: function() {
-                        dialog.close();
-                    }
-                }],
-                scope: this
-            });
-            dialog.show();
+            this.endAnalysis();
+            this.showErrors(resp, opts);
         }
 
         // clear the cache and re-load using the configured path
-        this.parent.getEl().mask();
         this.dependencyCache.clear();
-        this.dependencyCache.load(this.analysisPath, loadSuccessHandler, loadFailureHandler, this);
+        this.dependencyCache.load(this.analysisPath, loadSuccessHandler, loadFailureHandler, this, containers);
+    },
+
+    stopAnalysis : function() {
+        if (!this.analysisRunning)
+            return;
+
+        this.dependencyCache.cancel();
+        this.endAnalysis();
+
+        // the partial graph isn't usable, so drop it and let a later analysis rebuild it
+        this.dependencyCache.clear();
+        Ext4.Msg.alert('Cross Folder Dependencies', 'The query analysis was stopped.');
+    },
+
+    endAnalysis : function() {
+        this.analysisRunning = false;
+
+        if (this.progressTask) {
+            Ext4.TaskManager.stop(this.progressTask);
+            this.progressTask = undefined;
+        }
+        if (this.progressWindow) {
+            let win = this.progressWindow;
+            this.progressWindow = undefined;
+            this.progressBar = undefined;
+
+            // destroys the progress bar along with it
+            win.close();
+        }
+        this.down('#lk-cfd-start').enable();
+    },
+
+    /**
+     * Lists every container whose analysis failed. resp/opts describe the failure that ended the analysis and are only
+     * used when it failed before any container was requested, such as when the container list itself couldn't be loaded.
+     */
+    showErrors : function(resp, opts) {
+        let errors = this.dependencyCache.getErrors();
+        if (errors.length === 0)
+            errors = [{containerPath: this.analysisPath, response: resp, options: opts}];
+
+        let byContainer = {};
+        let grouped = [];
+        Ext4.each(errors, function(error) {
+            let messages = byContainer[error.containerPath];
+            if (!messages) {
+                messages = byContainer[error.containerPath] = [];
+                grouped.push({containerPath: error.containerPath, messages: messages});
+            }
+            messages.push(this.getErrorMessage(error.response, error.options));
+        }, this);
+
+        let box = this.down('#lk-cfd-error');
+        box.update(this.errorTpl.apply(grouped));
+        box.show();
+    },
+
+    getErrorMessage : function(response, opts) {
+        // getErrorMessageFromResponse() reads responseURL off the response unconditionally
+        if (!response)
+            return 'Unknown error';
+
+        // a JSON body that carries no exception (a bare success:false, say) leaves nothing to show
+        return this.getErrorMessageFromResponse(response, opts).exception || 'Unknown error';
+    },
+
+    hideError : function() {
+        let box = this.down('#lk-cfd-error');
+        box.update('');
+        box.hide();
     },
 
     getErrorMessageFromResponse : function (response, opts){

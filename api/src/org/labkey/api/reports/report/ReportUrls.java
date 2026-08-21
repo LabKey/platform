@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlReportSections(Container c);
     ActionURL urlManageViews(Container c);
     ActionURL urlExportCrosstab(Container c);
-    ActionURL urlShareReport(Container c, Report r);
     // Thumbnail or icon, depending on ImageType
     ActionURL urlImage(Container c, Report r, ThumbnailService.ImageType type, @Nullable Integer revision);
     ActionURL urlAttachmentReport(Container c, ActionURL returnUrl);

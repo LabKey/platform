@@ -1,5 +1,21 @@
+/*
+ * Copyright (c) 2023-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.security;
 
+import com.google.common.collect.Streams;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.permissions.Permission;
@@ -11,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A wrapped user that possesses all the security properties (groups, roles, impersonation status, etc.) of the
@@ -20,9 +37,26 @@ import java.util.stream.Collectors;
  */
 public class ElevatedUser extends ClonedUser
 {
+    private static class ElevatedUserContext extends WrappedPermissionsContext
+    {
+        private final Set<Role> _additionalRoles;
+
+        private ElevatedUserContext(PermissionsContext delegate, Set<Role> additionalRoles)
+        {
+            super(delegate);
+            _additionalRoles = additionalRoles;
+        }
+
+        @Override
+        public Stream<Role> getAssignedRoles(User user, SecurableResource resource)
+        {
+            return Streams.concat(_additionalRoles.stream(), super.getAssignedRoles(user, resource));
+        }
+    }
+
     private ElevatedUser(User user, Set<Role> rolesToAdd)
     {
-        super(user, new WrappedPermissionsContext(user.getPermissionsContext(), rolesToAdd));
+        super(user, new ElevatedUserContext(user.getPermissionsContext(), rolesToAdd));
     }
 
     private ElevatedUser(User user, PermissionsContext ctx)

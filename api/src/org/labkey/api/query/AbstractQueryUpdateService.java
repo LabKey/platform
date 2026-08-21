@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,19 +215,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     if (StringUtils.isEmpty(dataContainer))
                         dataContainer = (String) row.get("folder");
                     if (!container.getId().equals(dataContainer))
-                        throw new InvalidKeyException("Data does not belong to folder '" + container.getName() + "': " + key.getValue().values());
+                        throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
                 }
             }
             else if (verifyExisting)
-                throw new InvalidKeyException("Data not found for " + key.getValue().values());
+                throw new InvalidKeyException("Data does not exist in " + container.getName() + ": '" + key.getValue().toString() + "'.");
         }
         return result;
-    }
-
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        return false;
     }
 
     public static TransactionAuditProvider.TransactionAuditEvent createTransactionAuditEvent(Container container, QueryService.AuditAction auditAction)
@@ -408,7 +402,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         preImportDIBValidation(in, null);
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport() || context.isCrossFolderImport();
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -602,7 +596,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /** @deprecated switch to using DIB based method */
     @Deprecated
-    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    protected List<Map<String, Object>> _insertRowsUsingInsertRow(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors,
+                                                                  @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasInsertRowsPermission(user))
@@ -670,7 +665,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, null, false, errors, extraScriptContext);
 
-        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result, null, providedValues);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, configParameters, result, null, providedValues);
 
         return result;
     }
@@ -721,7 +716,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         try
         {
-            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, extraScriptContext);
+            List<Map<String,Object>> ret = _insertRowsUsingInsertRow(user, container, rows, errors, configParameters, extraScriptContext);
             afterInsertUpdate(null==ret?0:ret.size(), errors);
             if (errors.hasErrors())
                 return null;
@@ -898,6 +893,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         // Fire triggers, if any, and also throw if there are any errors
+        if (errors.hasErrors())
+            throw errors;
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, null, false, errors, extraScriptContext);
         afterInsertUpdate(null==result?0:result.size(), errors, true);
 
@@ -907,7 +904,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, result, oldRows, providedValues);
         WorkflowService service = WorkflowService.get();
         if (service != null && configParameters != null && configParameters.containsKey(WorkflowService.WorkflowConfigs.ActionId))
-            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId));
+            service.onActionComplete(container, user, (Long) configParameters.get(WorkflowService.WorkflowConfigs.ActionId), (String) configParameters.get(AuditUserComment));
 
         return result;
     }
@@ -1299,7 +1296,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     protected void _addSummaryAuditEvent(Container container, User user, DataIteratorContext context, int count)
     {
-        if (!context.isCrossTypeImport() && !context.isCrossFolderImport()) // audit handled at table level
+        if (!context.isCrossTypeImport()) // audit handled at table level
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
             String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,12 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.HttpStatusException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.RequestBasicAuthException;
+import org.labkey.api.view.TooManyRequestsException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
@@ -833,7 +835,6 @@ public class ExceptionUtil
                         ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName(),
                         ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName(),
                         AuthFilter.STRICT_TRANSPORT_SECURITY_HEADER_NAME,
-                        AuthFilter.X_FRAME_OPTIONS_HEADER_NAME,
                         AuthFilter.X_CONTENT_TYPE_OPTIONS_HEADER_NAME,
                         AuthFilter.REFERRER_POLICY_HEADER_NAME,
                         AuthFilter.SERVER_HEADER_NAME))
@@ -976,6 +977,20 @@ public class ExceptionUtil
 
             unhandledException = null;
         }
+        // Must come after the more specific HttpStatusException subclasses (BadRequestException, NotFoundException,
+        // UnauthorizedException)
+        else if (ex instanceof HttpStatusException hse)
+        {
+            responseStatus = hse.getStatus();
+            errorType = ErrorRenderer.ErrorType.notFound;
+            message = ex.getMessage();
+            responseStatusMessage = message;
+
+            if (ex instanceof TooManyRequestsException tmre)
+                headers.put("Retry-After", String.valueOf(tmre.getRetryAfterSeconds()));
+
+            unhandledException = null;
+        }
         else if (ex instanceof SQLException)
         {
             responseStatus = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -1020,7 +1035,7 @@ public class ExceptionUtil
                     response.getWriter().println();
                     response.getWriter().println();
                     response.getWriter().println("<pre>");
-                    ex.printStackTrace(response.getWriter());
+                    response.getWriter().println(PageFlowUtil.filter(ex.toString()));
                     response.getWriter().println("</pre>");
                 }
                 catch (IOException | IllegalStateException e)
@@ -1106,7 +1121,6 @@ public class ExceptionUtil
             else
             {
                 pageConfig.setTemplate(originalConfig.getTemplate());
-                pageConfig.setFrameOption(originalConfig.getFrameOption());
             }
 
             HttpView<?> errorView = null;
@@ -1232,7 +1246,7 @@ public class ExceptionUtil
             {
                 PrintWriter out = response.getWriter();
                 out.println("\"'>--></script><script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">");
-                out.println("window.location = '" + PageFlowUtil.filter(url) + "';");
+                out.println("window.location = " + PageFlowUtil.jsString(url) + ";");
                 out.println("</script>");
             }
         }

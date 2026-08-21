@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,9 +241,20 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      */
     private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
 
+    // Whether this startup ran any schema scripts. Used by the system upgrade audit event
+    private volatile boolean _hasSchemaUpgrade = false;
+
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
+
+    // All three are set by startup properties during doInitWithSourceModule() and read later from other threads
+
+    // If non-null, overrides the name specified in the distribution.properties file
+    private volatile String _distributionNameOverride;
+    // Modules to include and exclude in this server session; consumed by loadModules()
+    private volatile List<String> _moduleIncludeList = List.of();
+    private volatile List<String> _moduleExcludeList = List.of();
 
     private ModuleLoader()
     {
@@ -633,13 +644,21 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 .filter(ctx -> ctx.getSchemaVersion() != null)
                 .collect(Collectors.toMap(ModuleContext::getName, ctx->ctx));
 
+            record ModuleAndModuleContext(Module module, ModuleContext context)
+            {
+                boolean isTooOld()
+                {
+                    return context.getInstalledVersion() < module.getEarliestUpgradeVersion();
+                }
+            }
+
             // List of "<name> (<installedSchemaVersion>)" of LabKey-managed modules with schemas where the installed
-            // version is less than "earliest upgrade version"
+            // version is less than the module's earliest upgrade version
             var tooOld = labkeyModules.stream()
-                .map(m -> moduleContextMap.get(m.getName()))
-                .filter(Objects::nonNull)
-                .filter(ctx -> ctx.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
-                .map(UpgradeInfo::new)
+                .map(m -> new ModuleAndModuleContext(m, moduleContextMap.get(m.getName())))
+                .filter(mmc -> mmc.context() != null)
+                .filter(ModuleAndModuleContext::isTooOld)
+                .map(mmc -> new UpgradeInfo(mmc.context()))
                 .toList();
 
             if (!tooOld.isEmpty())
@@ -655,7 +674,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // Now that we know if this is a new install...
         setDatabaseMigrationConfiguration(labkeyRoot);
-        boolean coreRequiredUpgrade = upgradeCoreModule(lockFile);
+        // Core is upgraded before modulesRequiringUpgrade is built, so a core-only upgrade shows up nowhere else
+        boolean coreUpgraded = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
@@ -767,6 +787,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 }
             });
         }
+
+        _hasSchemaUpgrade = coreUpgraded || !modulesRequiringUpgrade.isEmpty();
 
         if (!modulesRequiringUpgrade.isEmpty())
             _log.info("Modules requiring upgrade: {}", modulesRequiringUpgrade);
@@ -1177,8 +1199,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         // filter by startup properties if they were specified
-        LinkedList<String> includeList = ModuleLoaderStartupProperties.include.getList();
-        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(ModuleLoaderStartupProperties.exclude.getList());
+        LinkedList<String> includeList = getModuleIncludeList();
+        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(getModuleExcludeList());
 
         List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
@@ -2056,11 +2078,57 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
     }
 
+    public @Nullable String getDistributionNameOverride()
+    {
+        return _distributionNameOverride;
+    }
+
+    void setDistributionNameOverride(@Nullable String distributionNameOverride)
+    {
+        checkStartupPropertyState("Distribution name override");
+        _distributionNameOverride = distributionNameOverride;
+    }
+
+    // Returns a mutable copy because loadModules() consumes the list destructively
+    LinkedList<String> getModuleIncludeList()
+    {
+        return new LinkedList<>(_moduleIncludeList);
+    }
+
+    void setModuleIncludeList(List<String> moduleIncludeList)
+    {
+        checkStartupPropertyState("Module include list");
+        _moduleIncludeList = List.copyOf(moduleIncludeList);
+    }
+
+    List<String> getModuleExcludeList()
+    {
+        return _moduleExcludeList;
+    }
+
+    void setModuleExcludeList(List<String> moduleExcludeList)
+    {
+        checkStartupPropertyState("Module exclude list");
+        _moduleExcludeList = List.copyOf(moduleExcludeList);
+    }
+
+    private void checkStartupPropertyState(String description)
+    {
+        if (isStartupComplete())
+            throw new IllegalStateException(description + " must be set during startup");
+    }
+
     // Did this server start up with no modules installed? If so, it's a new installation. This lets us tailor the
     // module upgrade UI to "install" or "upgrade," as appropriate.
     public boolean isNewInstall()
     {
         return _newInstall;
+    }
+
+    /** Did any module, including core, run schema scripts during this startup? */
+    public boolean hasSchemaUpgrade()
+    {
+        return _hasSchemaUpgrade;
     }
 
     private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)
@@ -2561,67 +2629,65 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private void loadStartupProps()
     {
         FileLike propsDir = getStartupPropDirectory();
-        if (null == propsDir)
-            return;
 
-        if (!propsDir.isDirectory())
-            return;
-
-        FileLike newinstall = propsDir.resolveChild("newinstall");
-        if (newinstall.isFile())
+        if (null != propsDir && propsDir.isDirectory())
         {
-            _log.debug("'newinstall' file detected: {}", newinstall.toNioPathForRead());
-
-            _newInstall = true;
-
-            // propsDir is readonly, so we need to cheat to get a File
-            var newInstallFile = newinstall.toNioPathForRead().toFile();
-            if (newInstallFile.canWrite())
-                newInstallFile.delete();
-            else
-                throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.toNioPathForRead());
-        }
-        else
-        {
-            _log.debug("no 'newinstall' file detected");
-        }
-
-        List<FileLike> propFiles = propsDir.getChildren().stream().filter(f -> f.getName().endsWith(".properties")).toList();
-
-        if (!propFiles.isEmpty())
-        {
-            List<FileLike> sortedPropFiles = propFiles.stream()
-                .sorted(Comparator.comparing(FileLike::getName).reversed())
-                .toList();
-
-            for (FileLike propFile : sortedPropFiles)
+            FileLike newinstall = propsDir.resolveChild("newinstall");
+            if (newinstall.isFile())
             {
-                _log.debug("loading propsFile: {}", propFile.toNioPathForRead());
+                _log.debug("'newinstall' file detected: {}", newinstall.toNioPathForRead());
 
-                try (InputStream in = propFile.openInputStream())
+                _newInstall = true;
+
+                // propsDir is readonly, so we need to cheat to get a File
+                var newInstallFile = newinstall.toNioPathForRead().toFile();
+                if (newInstallFile.canWrite())
+                    newInstallFile.delete();
+                else
+                    throw new ConfigurationException("file 'newinstall' exists, but is not writeable: " + newinstall.toNioPathForRead());
+            }
+            else
+            {
+                _log.debug("no 'newinstall' file detected");
+            }
+
+            List<FileLike> propFiles = propsDir.getChildren().stream().filter(f -> f.getName().endsWith(".properties")).toList();
+
+            if (!propFiles.isEmpty())
+            {
+                List<FileLike> sortedPropFiles = propFiles.stream()
+                        .sorted(Comparator.comparing(FileLike::getName).reversed())
+                        .toList();
+
+                for (FileLike propFile : sortedPropFiles)
                 {
-                    Properties props = new Properties();
-                    props.load(in);
+                    _log.debug("loading propsFile: {}", propFile.toNioPathForRead());
 
-                    for (Map.Entry<Object, Object> entry : props.entrySet())
+                    try (InputStream in = propFile.openInputStream())
                     {
-                        if (entry.getKey() instanceof String && entry.getValue() instanceof String)
-                        {
-                            _log.trace("property '{}' resolved to value: '{}'", entry.getKey(), entry.getValue());
+                        Properties props = new Properties();
+                        props.load(in);
 
-                            addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
+                        for (Map.Entry<Object, Object> entry : props.entrySet())
+                        {
+                            if (entry.getKey() instanceof String && entry.getValue() instanceof String)
+                            {
+                                _log.trace("property '{}' resolved to value: '{}'", entry.getKey(), entry.getValue());
+
+                                addStartupPropertyEntry(entry.getKey().toString(), entry.getValue().toString());
+                            }
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error parsing startup config properties file '{}'", propFile.toNioPathForRead(), e);
+                    catch (Exception e)
+                    {
+                        _log.error("Error parsing startup config properties file '{}'", propFile.toNioPathForRead(), e);
+                    }
                 }
             }
-        }
-        else
-        {
-            _log.debug("no propFiles to load");
+            else
+            {
+                _log.debug("no propFiles to load");
+            }
         }
 
         // load any system properties with the labkey prop prefix

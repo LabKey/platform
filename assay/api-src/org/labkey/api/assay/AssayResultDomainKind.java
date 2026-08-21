@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,15 +98,6 @@ public class AssayResultDomainKind extends AssayDomainKind
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return PageFlowUtil.set(new PropertyStorageSpec.Index(false, AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME));
-    }
-
-    @Override
-    public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys(Container container)
-    {
-        return new HashSet<>(Arrays.asList(
-            new PropertyStorageSpec.ForeignKey(SpecialColumn.CreatedBy.name(), "core", "users", "userid", null, false),
-            new PropertyStorageSpec.ForeignKey(SpecialColumn.ModifiedBy.name(), "core", "users", "userid", null, false)
-        ));
     }
 
     @Override

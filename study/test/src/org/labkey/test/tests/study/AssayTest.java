@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
@@ -62,6 +63,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.labkey.test.util.TestDataGenerator.randomTextChoice;
@@ -79,6 +81,7 @@ public class AssayTest extends AbstractAssayTest
     private static final String ISSUE_53616_ASSAY = "Issue53616Assay";
     private static final String ISSUE_53616_PROJECT = "Issue53616Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String ISSUE_53831_PROJECT = "Issue53831Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
+    private static final String GH_1023_PROJECT = "GH1023Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
     private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
     private static final String MVTC_MULTI_FILE_IMPORT_ASSAY = TestDataGenerator.randomDomainName("MVTCMultiFileImportAssay", DomainUtils.DomainKind.Assay);
@@ -107,6 +110,7 @@ public class AssayTest extends AbstractAssayTest
         _containerHelper.deleteProject(ISSUE_53616_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53625_PROJECT, false);
         _containerHelper.deleteProject(ISSUE_53831_PROJECT, false);
+        _containerHelper.deleteProject(GH_1023_PROJECT, false);
         _containerHelper.deleteProject(MVTC_MULTI_FILE_IMPORT_PROJECT, false);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
@@ -1213,6 +1217,27 @@ public class AssayTest extends AbstractAssayTest
         dataTable = new DataRegionTable("Data", getDriver());
         checker().verifyEquals("Incorrect number of results shown.", 1, dataTable.getDataRowCount());
         checker().verifyEquals("Lookup values not as expected.", List.of("123"), dataTable.getColumnDataAsText(lookupField.getLabel()));
+    }
+
+    @Test // GitHub Issue #1023
+    public void testNoExternalReturnUrlRedirect() throws Exception
+    {
+        _containerHelper.createProject(GH_1023_PROJECT, "Assay");
+        goToProjectHome(GH_1023_PROJECT);
+
+        // Navigate to domain designer with an external returnUrl. The safeRedirect action
+        // should prevent external redirects, falling back to the local home page instead.
+        String domainDesignerUrl = WebTestHelper.buildURL("assay", GH_1023_PROJECT, "designer",
+                Map.of("providerName", "General", "returnUrl", "https://labkey.com"));
+        beginAt(domainDesignerUrl);
+        DomainDesignerPage domainDesignerPage = new DomainDesignerPage(getDriver());
+        domainDesignerPage.fieldsPanel();
+        domainDesignerPage.clickCancel();
+        String postCancelUrl = getDriver().getCurrentUrl();
+        assertFalse("Cancel with an external returnUrl should not navigate to an external site",
+                postCancelUrl.contains("labkey.com"));
+        assertTrue("Cancel with an external returnUrl should redirect to a local LabKey page instead of: " + postCancelUrl,
+                WebTestHelper.isTestServerUrl(postCancelUrl));
     }
 
     @Override

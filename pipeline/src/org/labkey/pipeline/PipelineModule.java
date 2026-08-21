@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,9 @@ import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.OptionalFeatureFlag;
+import org.labkey.api.settings.OptionalFeatureService;
+import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -71,6 +74,7 @@ import org.labkey.pipeline.analysis.ProtocolManagementWebPart;
 import org.labkey.pipeline.api.CommandLineTokenizer;
 import org.labkey.pipeline.api.ExecTaskFactory;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
+import org.labkey.pipeline.api.PipelineJacksonTyping;
 import org.labkey.pipeline.api.PipelineJobMarshaller;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineManager;
@@ -89,6 +93,7 @@ import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
 import org.labkey.pipeline.mule.RemoteServerStartup;
 import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
+import org.labkey.pipeline.mule.transformers.PipelineXStreamSecurity;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.trigger.PipelineTriggerRegistryImpl;
 import org.labkey.pipeline.validators.PipelineSetupValidatorFactory;
@@ -206,6 +211,10 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         StatusController.registerAdminConsoleLinks();
         WebdavService.get().addProvider(new PipelineWebdavProvider());
 
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(PipelineJacksonTyping.FEATUREFLAG_DISABLE_JOB_TYPE_ALLOWLIST,
+            "Disable pipeline deserialization type allowlists",
+            "Reverts both pipeline deserialization channels to their historical unrestricted behavior: JSON jobs to unrestricted Jackson default typing, and the XStream JMS status channel to AnyTypePermission. Enable only as a temporary escape hatch if an allowlist rejects a legitimate type.", false, true, FeatureType.Deprecated));
+
         if (null != FileContentService.get())
             FileContentService.get().addFileListener(new TableUpdaterFileListener(PipelineSchema.getInstance().getTableInfoStatusFiles(), "FilePath", TableUpdaterFileListener.Type.filePathForwardSlash, "RowId"));
         SiteValidationService svc = SiteValidationService.get();
@@ -308,6 +317,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineQueueImpl.TestCase.class,
             PipelineServiceImpl.TestCase.class,
             StatusController.TestCase.class,
+            StatusController.ContainerScopingTestCase.class,
+            PipelineController.ContainerScopingTestCase.class,
             ClusterStartup.TestCase.class
         );
     }
@@ -321,7 +332,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
             PipelineJobMarshaller.TestCase.class,
-            PipelineJobServiceImpl.TestCase.class
+            PipelineJacksonTyping.TestCase.class,
+            PipelineJobServiceImpl.TestCase.class,
+            PipelineXStreamSecurity.TestCase.class
         );
     }
 

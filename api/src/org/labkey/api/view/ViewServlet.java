@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -505,6 +505,12 @@ public class ViewServlet extends HttpServlet
         public @NotNull Map<String, String[]> getParameterMap()
         {
             return _actionURL.getParameterMap();
+        }
+
+        @Override
+        public String getParameter(@NotNull String name)
+        {
+            return _actionURL.getParameter(name);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.InputBuilder;
@@ -350,7 +351,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public void delete(User user, boolean deleteRunsUsingData)
     {
-        ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()), deleteRunsUsingData);
+        ExperimentServiceImpl.get().deleteDataByRowIds(user, getContainer(), Collections.singleton(getRowId()), deleteRunsUsingData, null);
     }
 
     public String getMimeType()
@@ -939,7 +940,8 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             }
             else
             {
-                sb.append(label);
+                // GitHub Kanban #1946: encode the label (a DataClass name); the if-branch above already encodes via LinkBuilder.simpleLink.
+                sb.append(PageFlowUtil.filter(label));
             }
 
             sb.append("</span> ");

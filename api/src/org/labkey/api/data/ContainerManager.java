@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1090,17 +1090,18 @@ public class ContainerManager
         {
             try (DbScope.Transaction t = ensureTransaction())
             {
-                List<Container> children = new SqlSelector(CORE.getSchema(),
+                List<GUID> ids = new ArrayList<>();
+                ContainerFactory factory = new ContainerFactory();
+                // ContainerFactory only builds from a ResultSet (fromMap is unsupported), so iterate rows directly
+                new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
-                        parent.getId()).getArrayList(Container.class);
-
-                childIds = new ArrayList<>(children.size());
-                for (Container c : children)
-                {
-                    childIds.add(c.getEntityId());
+                        parent.getId()).forEach(rs -> {
+                    Container c = factory.handle(rs);
+                    ids.add(c.getEntityId());
                     _addToCache(c);
-                }
-                childIds = Collections.unmodifiableList(childIds);
+                });
+
+                childIds = Collections.unmodifiableList(ids);
                 CACHE_CHILDREN.put(parent.getEntityId(), childIds);
                 // No database changes to commit, but need to decrement the transaction counter
                 t.commit();
@@ -1949,10 +1950,6 @@ public class ContainerManager
             SecurityPolicyManager.removeAll(c);
             // and delete all container-based sequences
             DbSequenceManager.deleteAll(c);
-
-            ExperimentService experimentService = ExperimentService.get();
-            if (experimentService != null)
-                experimentService.removeContainerDataTypeExclusions(c.getId());
 
             // Issue 17015: After we've committed the transaction, be sure that we remove this container from the cache
             tx.addCommitTask(() ->

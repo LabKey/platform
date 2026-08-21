@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class PopupHelpView extends PopupMenuView
                 menu.addChild("Support", reportAProblemPath);
         }
 
-        if (laf.isHelpMenuEnabled())
+        if (laf.isDocumentationMenuEnabled())
             menu.addChild(topic.getNavTree("LabKey Documentation"));
 
         return menu;

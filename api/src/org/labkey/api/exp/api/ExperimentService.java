@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryViewProvider;
 import org.labkey.api.query.UserSchema;
@@ -83,7 +82,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -104,7 +102,6 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
 import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
@@ -178,6 +175,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     @Nullable
     ExpRun getExpRun(long rowId);
 
+    @Nullable
+    ExpRun getExpRun(long rowId, @Nullable Container container);
+
     List<? extends ExpRun> getExpRuns(Collection<Long> rowIds);
 
     @Nullable
@@ -188,8 +188,23 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol, @NotNull Predicate<ExpRun> filterFn);
-    
-    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container);
+
+    /**
+     * @param filterSQL optional additional WHERE predicates; callers doing keyset pagination should include
+     *                  {@code ER.RowId > minRowId} here
+     * @param limit     max rows to return; pass {@code Table.ALL_ROWS} (-1) for no limit
+     * @return up to {@code limit} ExpRuns in {@code container} matching {@code filterSQL}, ordered by RowId
+     */
+    List<? extends ExpRun> getExpRuns(@Nullable SQLFragment filterSQL, @NotNull Predicate<ExpRun> filterFn, @NotNull Container container, int limit);
+
+    /**
+     * @param modifiedSince optional upper-exclusive Modified cutoff; pass {@code null} to return all batches
+     * @param minRowId      keyset cursor — only batches with RowId &gt; minRowId are returned; pass 0 for the first page
+     * @param limit         max rows to return
+     * @return up to {@code limit} assay batches for {@code batchProtocol} in {@code container} with
+     *         RowId &gt; minRowId (and Modified &gt; modifiedSince when non-null), ordered by RowId
+     */
+    List<? extends ExpExperiment> getExpBatches(@NotNull Container container, @NotNull ExpProtocol batchProtocol, @Nullable Date modifiedSince, long minRowId, int limit);
 
     List<? extends ExpRun> getExpRunsForJobId(long jobId);
 
@@ -597,9 +612,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (updatedDomainDesign != null && !existingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
+            if (updatedDomainDesign != null)
             {
-                throw new IllegalArgumentException(String.format("An existing " + dataTypeNoun + " property conflicts with parent alias header: %1$s", trimmedKey));
+                var field = updatedDomainDesign.getFieldByName(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("An existing %1$s property conflicts with parent alias header: %2$s", dataTypeNoun, trimmedKey));
+                }
+                // GH Issue 1257: If there are conflicts with import aliases, this should be an error since it produces ambiguity during import
+                field = updatedDomainDesign.getFieldByImportAlias(trimmedKey);
+                if (field != null)
+                {
+                    throw new IllegalArgumentException(String.format("Field '%1$s' has an import alias '%2$s' that conflicts with a parent alias header.", field.getName(), trimmedKey));
+                }
+
             }
 
             if (!dupes.add(trimmedKey))
@@ -694,6 +720,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     SampleStatusTable createSampleStatusTable(ExpSchema expSchema, ContainerFilter cf);
 
+    TableInfo createDataColorTable(ExpSchema expSchema, ContainerFilter cf);
+
     ExpUnreferencedSampleFilesTable createUnreferencedSampleFilesTable(ExpSchema expSchema, ContainerFilter cf);
 
     FilteredTable<ExpSchema> createFieldsTable(ExpSchema expSchema, ContainerFilter cf);
@@ -721,6 +749,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     DbScope.Transaction ensureTransaction(Lock... locks);
 
     ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
+
+    ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type, @Nullable String dataRegionName);
 
     DbSchema getSchema();
 
@@ -1121,6 +1151,29 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String getDisabledDataTypeAuditMsg(DataTypeForExclusion type, List<Long> ids, boolean isUpdate);
 
+    @NotNull Set<Long> getDataTypeExcludedColors(DataTypeForExclusion dataType, long dataTypeId);
+
+    /** The data type rowIds (e.g. sample type rowIds) that currently exclude the given color. Inverse of {@link #getDataTypeExcludedColors}. */
+    @NotNull Set<Long> getDataTypesExcludingColor(DataTypeForExclusion dataType, long colorRowId);
+
+    @NotNull Set<Long> getActiveDataTypeColors(@NotNull Container container, DataTypeForExclusion dataType, long dataTypeId);
+
+    @NotNull List<DataColor> getActiveProjectColors(@NotNull Container container);
+
+    @NotNull List<DataColor> getAllProjectColors(@NotNull Container container);
+
+    @Nullable DataColor getDataColor(@NotNull Container container, long colorRowId);
+
+    boolean ensureDataColorExclusions(long dataTypeId, DataTypeForExclusion dataType, @Nullable Collection<Long> disabledColorRowIds, @NotNull Container container, User user);
+
+    @NotNull Set<Long> updateColorDataTypeExclusions(long colorRowId, DataTypeForExclusion dataType, @Nullable Collection<Long> newlyDisabledDataTypeIds, @Nullable Collection<Long> newlyEnabledDataTypeIds, @NotNull Container container, User user);
+
+    void removeDataColorExclusionsForColor(long colorRowId);
+
+    void removeDataColorExclusionsForDataType(long dataTypeId, DataTypeForExclusion dataType);
+
+    void removeContainerDataColors(String containerId);
+
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
     void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
@@ -1210,6 +1263,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     void clearDataAncestors(Collection<Long> dataRowIds);
     void clearMaterialAncestors(Collection<Long> materialRowIds);
     void repopulateAncestors();
+
+    boolean hasSampleIdsNotInScope(Container container, User user, Collection<Long> sampleIds);
+
+    boolean hasSourceIdsNotInScope(Container container, User user, Collection<Long> sourceIds);
+
 
     class XarExportOptions
     {
@@ -1331,17 +1389,5 @@ public interface ExperimentService extends ExperimentRunTypeSource
             _strictValidateExistingSampleType = strictValidateExistingSampleType;
             return this;
         }
-    }
-
-    @Deprecated // Use IntegerUtils.asLong() instead
-    static Long asLong(Object o)
-    {
-        return IntegerUtils.asLong(o);
-    }
-
-    @Deprecated // Use IntegerUtils.asInteger() instead
-    static Integer asInteger(Object o)
-    {
-        return IntegerUtils.asInteger(o);
     }
 }

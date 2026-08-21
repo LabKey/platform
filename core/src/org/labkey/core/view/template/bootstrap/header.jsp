@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2017-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
+<%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.search.SearchUrls" %>
 <%@ page import="org.labkey.api.search.SearchUtils" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
@@ -83,7 +84,6 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     ModuleLoader moduleLoader = ModuleLoader.getInstance();
     boolean isStartupComplete = moduleLoader.isStartupComplete();
-    boolean showSearch = isStartupComplete && PageFlowUtil.urlProviderOptional(SearchUrls.class) != null;
 
     HtmlView headerHtml = new HeaderProperties(getContainer()).getView();
     String siteShortName = (laf.getShortName() != null && !laf.getShortName().isEmpty()) ? laf.getShortName() : null;
@@ -139,7 +139,12 @@
 %>
         <ul class="navbar-nav-lk">
 <%
-    if (showSearch && pageConfig.shouldIncludeSearch())
+    boolean showSearch =
+        isStartupComplete &&
+        PageFlowUtil.urlProviderOptional(SearchUrls.class) != null &&
+        SearchService.get().isSearchIconVisible() &&
+        pageConfig.shouldIncludeSearch();
+    if (showSearch)
     {
 %>
             <li class="navbar-search hidden-xs">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -189,6 +189,12 @@ public class DataColumn extends DisplayColumn
             return col;
         ColumnInfo display = col.getDisplayField();
         return null==display ? col : display;
+    }
+
+    @Override
+    public void setWithLookup(boolean withLookup)
+    {
+        _displayColumn = withLookup ? getDisplayField(_boundColumn, true) : _boundColumn;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,18 @@ public interface WikiService
     record RenderedWiki (String name, String title, HtmlString html, String entityId) {}
 
     RenderedWiki getRenderedWiki(Container c, String name);
+
+    record WikiMarkdown(String name, String title, String markdown, String entityId) {}
+
+    /**
+     * Returns a best-effort Markdown rendering of the wiki's raw source, intended for indexing
+     * (search, embedding, vector stores) — NOT for user display. Conversion is lossy and may
+     * drop or mangle markup details that don't have a direct Markdown equivalent.
+     */
+    WikiMarkdown getWikiMarkdown(Container c, String name);
+
+    // Quick check for a terms-of-use wiki in the provided container. Helps optimize the every-request terms check.
+    boolean hasTermsOfUseWiki(Container c);
 
     default HtmlString getHtml(Container c, String name)
     {
@@ -105,4 +117,18 @@ public interface WikiService
     String updateAttachments(Container c, User user, String wikiName, @Nullable List<AttachmentFile> attachmentFiles, @Nullable List<String> deleteAttachmentNames);
 
     AttachmentParentType getAttachmentType();
+
+    /**
+     * Loads all wikis from the given container into the MCP vector store.
+     *
+     * <p>Each {@link org.labkey.api.mcp.McpService.VectorDocument} is assigned an ID of the form
+     * {@code "<containerEntityId>/<wikiEntityId>"}, where both components are GUIDs
+     * (as returned by {@link Container#getId()} and the wiki's own entity ID).
+     * Tools that consume vector store results (e.g. {@code listDocuments},
+     * {@code retrieveDocument}) must use this same format when constructing or
+     * interpreting document IDs.</p>
+     *
+     * @return the number of documents added
+     */
+    int populateVectorStore(Container container);
 }

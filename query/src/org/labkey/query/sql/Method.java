@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,12 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
@@ -167,7 +169,7 @@ public abstract class Method
         labkeyMethod.put("cos", new JdbcMethod("cos", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("cot", new JdbcMethod("cot", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
-        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.TIME, 0, 0));
         labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofyear", new JdbcMethod("dayofyear", JdbcType.INTEGER, 1, 1));
@@ -214,6 +216,22 @@ public abstract class Method
                 };
             }
         });
+        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS);
+            }
+        });
+        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsDistinctFromMethodInfo(IS_NOT);
+            }
+        });
         labkeyMethod.put("isequal", new Method("isequal", JdbcType.BOOLEAN, 2, 2)
         {
             @Override
@@ -228,6 +246,14 @@ public abstract class Method
             public MethodInfo getMethodInfo()
             {
                 return new IsMemberInfo();
+            }
+        });
+        labkeyMethod.put("isnumeric", new Method("isnumeric", JdbcType.BOOLEAN, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
             }
         });
         labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
@@ -375,6 +401,7 @@ public abstract class Method
         labkeyMethod.put("radians", new JdbcMethod("radians", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("rand", new JdbcMethod("rand", JdbcType.DOUBLE, 0, 1));
         labkeyMethod.put("repeat", new JdbcMethod("repeat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("right", new JdbcMethod("right", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("round", new Method("round", JdbcType.DOUBLE, 1, 2)
         {
             @Override
@@ -1064,6 +1091,27 @@ public abstract class Method
             ret.append("))");
 
             return ret;
+        }
+    }
+
+    // Portable isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+    // Returns 1 for digit strings with an optional sign/decimal point, 0 otherwise.
+    // This is stricter than SQL Server's ISNUMERIC(), which also accepts formats like scientific notation.
+    static class IsNumericInfo extends AbstractMethodInfo
+    {
+        IsNumericInfo()
+        {
+            super(JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment arg = arguments[0];
+            if (dialect.supportsIsNumeric())
+                return dialect.isNumericExpr(arg);
+
+            throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
         }
     }
 
@@ -1813,24 +1861,6 @@ public abstract class Method
         postgresMethods.put("jsonb_path_query_tz", new PassthroughMethod("jsonb_path_query_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_array_tz", new PassthroughMethod("jsonb_path_query_array_tz", JdbcType.VARCHAR, 2, 4));
         postgresMethods.put("jsonb_path_query_first_tz", new PassthroughMethod("jsonb_path_query_first_tz", JdbcType.VARCHAR, 2, 4));
-
-        // "is distinct from" and "is not distinct from" operators in method form
-        labkeyMethod.put("is_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS);
-            }
-        });
-        labkeyMethod.put("is_not_distinct_from", new Method(JdbcType.BOOLEAN, 2, 2)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsDistinctFromMethodInfo(IS_NOT);
-            }
-        });
     }
 
     private static class IsDistinctFromMethodInfo extends AbstractMethodInfo
@@ -1846,13 +1876,37 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
+            SQLFragment a = arguments[0];
+            SQLFragment b = arguments[1];
             SQLFragment ret = new SQLFragment();
-            ret.append(" ((").append(arguments[0]).append(")");
-            if (token == IS)
-                ret.append(" IS DISTINCT FROM ");
+
+            if (dialect.supportsNativeIsDistinctFrom())
+            {
+                ret.append(" ((").append(a).append(")");
+                if (token == IS)
+                    ret.append(" IS DISTINCT FROM ");
+                else
+                    ret.append(" IS NOT DISTINCT FROM ");
+                ret.append("(").append(b).append(")) ");
+            }
             else
-                ret.append(" IS NOT DISTINCT FROM ");
-            ret.append("(").append(arguments[1]).append(")) ");
+            {
+                // "IS [NOT] DISTINCT FROM" isn't standard/portable SQL -- it's native only on PostgreSQL-family and
+                // Snowflake dialects (and recent SQL Server). Elsewhere rewrite as a CASE expression that always
+                // evaluates to a real TRUE/FALSE -- never NULL, even when exactly one side is null -- so it behaves
+                // the same as the native predicate would.
+
+                // This is more complicated than the obvious (a=b or a is null and b is null).
+                // That expression can return NULL, we need to return only TRUE/FALSE.
+                if (token == IS)
+                    ret.append(" NOT ");
+                ret.append("(");
+                ret.append("((").append(a).append(") IS NOT NULL AND (").append(b).append(") IS NOT NULL AND (").append(a).append(")=(").append(b).append("))");
+                ret.append(" OR ");
+                ret.append("((").append(a).append(") IS NULL AND (").append(b).append(") IS NULL)");
+                ret.append(")");
+            }
+
             return ret;
         }
     }
@@ -1874,14 +1928,13 @@ public abstract class Method
         mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
-        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
+        // isnumeric is registered in labkeyMethod (portable across PostgreSQL and SQL Server)
         mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
         mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
         mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
         mssqlMethods.put("replace", new PassthroughMethod("replace", JdbcType.VARCHAR, 3, 3));
         mssqlMethods.put("replicate", new PassthroughMethod("replicate", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("reverse", new PassthroughMethod("reverse", JdbcType.VARCHAR, 1, 1));
-        mssqlMethods.put("right", new PassthroughMethod("right", JdbcType.VARCHAR, 2, 2));
         mssqlMethods.put("soundex", new PassthroughMethod("soundex", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("space", new PassthroughMethod("space", JdbcType.VARCHAR, 1, 1));
         mssqlMethods.put("str", new PassthroughMethod("str", JdbcType.VARCHAR, 1, 3));
@@ -1983,6 +2036,61 @@ public abstract class Method
             assertNotSimpleString(new SQLFragment("?").add(5));
             assertNotSimpleString(new SQLFragment("SELECT 'test'"));
             assertNotSimpleString(new SQLFragment("'test''string'"));
+        }
+
+        // Exercises both the native and portable-fallback branches of IsDistinctFromMethodInfo.getSQL() against every
+        // dialect that's actually connected in this environment, not just whichever dialect the current CI leg happens
+        // to be running against. A FROM-less SELECT works everywhere except Oracle, which requires FROM DUAL.
+        //
+        // Covers both usage contexts: as a selected boolean value (where three-valued logic would otherwise leak NULL
+        // for the one-null-argument case) and as a WHERE clause filter (where three-valued logic normally treats NULL
+        // as non-matching, so this instead confirms the CASE-based rewrite still evaluates to a real TRUE/FALSE there).
+        @Test
+        public void testIsDistinctFrom()
+        {
+            record Case(String a, String b, boolean distinct) {}
+            List<Case> cases = List.of(
+                new Case("1", "2", true),
+                new Case("1", "1", false),
+                new Case("NULL", "NULL", false),
+                new Case("1", "NULL", true)
+            );
+
+            for (DbScope scope : DbScope.getDbScopesToTest())
+            {
+                SqlDialect d = scope.getSqlDialect();
+
+                for (Case c : cases)
+                {
+                    assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
+                    assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                    assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
+                    assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                }
+            }
+        }
+
+        private void assertIsDistinctFrom(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        {
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
+            SQLFragment sql = new SQLFragment("SELECT ").append("CASE WHEN ").append(expr).append(" THEN ").append(T).append(" ELSE ").append(F).append(" END");
+            if (d.isOracle())
+                sql.append(" FROM DUAL");
+            Boolean result = new SqlSelector(scope, sql).getObject(Boolean.class);
+            assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
+        }
+
+        private void assertIsDistinctFromWhere(DbScope scope, SqlDialect d, int token, String a, String b, boolean expected)
+        {
+            SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
+            SQLFragment sql = new SQLFragment("SELECT 1");
+            if (d.isOracle())
+                sql.append(" FROM DUAL");
+            sql.append(" WHERE ").append(expr);
+
+            boolean matched = new SqlSelector(scope, sql).exists();
+            assertEquals(d.getClass().getSimpleName() + " (WHERE): " + sql.toDebugString(), expected, matched);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(readOnlyHttpRequestTimeout, timeout);
     }
 
+    public void setScriptExecutionTimeout(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("scriptExecutionTimeout must be >= 0");
+        storeIntValue(scriptExecutionTimeout, timeout);
+    }
+
     public void setMaxBLOBSize(int maxSize)
     {
         if (maxSize < 0)
@@ -104,16 +111,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setSelfReportExceptions(boolean selfReport)
     {
         storeBooleanValue(selfReportExceptions, selfReport);
-    }
-
-    public void setExt3Required(boolean required)
-    {
-        storeBooleanValue(ext3Required, required);
-    }
-
-    public void setExt3APIRequired(boolean required)
-    {
-        storeBooleanValue(ext3APIRequired, required);
     }
 
     public void setBLASTServerBaseURL(String blastServerBaseURL)
@@ -196,6 +193,13 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(includeServerHttpHeader, b);
     }
 
+    public void setTermsOfUseFrequencySeconds(int seconds)
+    {
+        if (seconds < 0)
+            throw new IllegalArgumentException("termsOfUseFrequencySeconds must be >= 0");
+        storeIntValue(termsOfUseFrequencySeconds, seconds);
+    }
+
     public void setAdministratorContactEmail(String email)
     {
         storeStringValue(administratorContactEmail, email);
@@ -226,11 +230,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setAllowSessionKeys(boolean b)
     {
         storeBooleanValue(allowSessionKeys, b);
-    }
-
-    public void setXFrameOption(String option)
-    {
-        storeStringValue(XFrameOption, option);
     }
 
     public void setExternalRedirectHosts(@NotNull Collection<String> externalRedirectHosts)

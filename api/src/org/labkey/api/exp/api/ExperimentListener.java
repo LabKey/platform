@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 LabKey Corporation
+ * Copyright (c) 2014-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
@@ -51,13 +52,13 @@ public interface ExperimentListener
     default void beforeRunDelete(ExpProtocol protocol, ExpRun run, User user) { }
 
     /** Called before deleting the datas. */
-    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data) { }
+    default void beforeDataDelete(Container c, User user, List<? extends ExpData> data, @Nullable String auditUserComment) { }
 
     /** Called after deleting the datas. */
     default void afterDataDelete(Container c, User user, List<? extends ExpData> data) { }
 
     /** Called before deleting experiment materials (in-transaction). */
-    default void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user) { }
+    default void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user, @Nullable String auditUserComment) { }
 
     /** Called after a material has been created (and saved). NOTE: This is not currently implemented. */
     default void afterMaterialCreated(List<? extends ExpMaterial> materials, Container container, User user) { }

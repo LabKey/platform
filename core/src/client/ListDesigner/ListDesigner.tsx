@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 LabKey Corporation
+ * Copyright (c) 2020-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import {
     ListDesignerPanels,
     ListModel,
     LoadingSpinner,
+    redirect,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -103,8 +104,8 @@ export class ListDesigner extends React.Component<Props, State> {
 
     navigate = async (returnUrlProvider: () => Promise<string>, model?: ListModel): Promise<void> => {
         this._dirty = false;
-
-        window.location.href = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        const redirectUrl = this.getReturnUrl(model) ?? (await returnUrlProvider());
+        redirect(redirectUrl);
     };
 
     getReturnUrl = (model?: ListModel): string => {

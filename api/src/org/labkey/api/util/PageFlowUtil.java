@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.ApiModule;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderOverrideHandler;
 import org.labkey.api.action.UrlProviderService;
@@ -67,6 +68,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -448,6 +450,12 @@ public class PageFlowUtil
                     break;
                 case '\"':
                     js.append("\\\"");
+                    break;
+                case '\u2028':
+                    js.append("\\u2028");
+                    break;
+                case '\u2029':
+                    js.append("\\u2029");
                     break;
                 default:
                     js.append(c);
@@ -1403,12 +1411,12 @@ public class PageFlowUtil
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
-    public static HtmlString generateDropDownTextLink(String text, String href, String onClick, boolean bold, String offset,
+    public static HtmlString generateDropDownTextLink(String text, String href, boolean bold,
                                                   String id, Map<String, String> properties)
     {
         if (StringUtils.isBlank(id))
             id = HttpView.currentPageConfig().makeId("dropdown_");
-        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" :onClick);
+        String onclick = "if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         HttpView.currentPageConfig().addHandler(id+"PopupLink", "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(id+"PopupLink").cl("labkey-menu-text-link","dropdown-toggle").at(bold, style, "font-weight:bold;").at(DOM.Attribute.href, href),
@@ -1419,13 +1427,13 @@ public class PageFlowUtil
     }
 
     /* Renders image and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownImage(String text, String href, String onClick, String imageSrc, String imageId,
+    public static HtmlString generateDropDownImage(String text, String href, String imageSrc, String imageId,
                                                Integer imageHeight, Integer imageWidth, Map<String, String> properties)
     {
         var page = HttpView.currentPageConfig();
 
         String anchorId = page.makeId("A_");
-        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; " + (onClick == null ? "" : onClick);
+        String onclick="if (this.className.indexOf('labkey-disabled-button') != -1) return false; ";
         page.addHandler(anchorId, "click", onclick);
         return DOM.createHtmlFragment(
             A(at(properties).id(anchorId).at(DOM.Attribute.href,href),
@@ -1434,8 +1442,8 @@ public class PageFlowUtil
     }
 
     /* Renders image using font icon and a drop down wrapped in an unstyled link */
-    public static HtmlString generateDropDownFontIconImage(String text, String href, String onClick, String imageCls,
-                                                       String imageId, Map<String, String> properties)
+    public static HtmlString generateDropDownFontIconImage(String text, String href, String imageCls,
+                                                           String imageId, Map<String, String> properties)
     {
         PageConfig page = HttpView.currentPageConfig();
         String id = page.makeId("a_");
@@ -1655,9 +1663,9 @@ public class PageFlowUtil
         if (includeDefaultResources)
         {
             // Respect App Properties regarding Ext3 configuration
-            if (AppProps.getInstance().isExt3APIRequired())
+            if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_API_REQUIRED))
                 resources.add(ClientDependency.fromPath("clientapi/ext3"));
-            else if (AppProps.getInstance().isExt3Required())
+            else if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_REQUIRED))
                 resources.add(ClientDependency.fromPath("Ext3"));
 
             // TODO: Turn this into a lib.xml
@@ -2180,7 +2188,7 @@ public class PageFlowUtil
         // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", true);
-        experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
+        experimental.put(AppProps.OPTIONAL_NO_GUESTS, AppProps.getInstance().isOptionalFeatureEnabled(AppProps.OPTIONAL_NO_GUESTS));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);
@@ -2257,8 +2265,7 @@ public class PageFlowUtil
         if (AppProps.getInstance().isOptionalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU) && user != null)
             json.put("notifications", Map.of("unreadCount", NotificationService.get().getUnreadNotificationCountByUser(null, user.getUserId())));
 
-        if (McpService.get().isEnabled())
-            json.put("mcpReady", McpService.get().isReady());
+        json.put("mcpReady", McpService.get().isAIFeaturesReady());
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2687,6 +2694,16 @@ public class PageFlowUtil
         if (Character.isWhitespace(value.charAt(0)) || Character.isWhitespace(value.charAt(value.length()-1)))
             return true;
         return StringUtils.containsAny(value,",\"");
+    }
+
+    /// Generate one row of tab-delimited output using RFC 4180 quoting rules.
+    /// Fields containing tabs, newlines, or double quotes are enclosed in double quotes,
+    /// with embedded double quotes escaped by doubling.
+    public static String joinValuesWithTabs4180(@NotNull List<String> values)
+    {
+        return values.stream()
+                .map(value -> null == value ? "" : StringUtils.containsAny(value, "\t\n\r\"") ? "\"" + Strings.CS.replace(value, "\"", "\"\"") + "\"" : value)
+                .collect(Collectors.joining("\t"));
     }
 
 

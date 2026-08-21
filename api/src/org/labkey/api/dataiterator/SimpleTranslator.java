@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -485,20 +485,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int derivationDataColInd;
         final int index;
         final boolean isDerivation;
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
 
         final SimpleConvertColumn _convertCol;
 
-        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedConvertColumn(int index, SimpleConvertColumn convertCol, int derivationDataColInd, boolean isDerivation)
         {
             super(convertCol.fieldName, convertCol.index, convertCol.type, convertCol.defaultUnit);
             _convertCol = convertCol;
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
@@ -506,7 +502,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             Object thisValue =  _convertCol.convert(o);
 
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
 
         }
     }
@@ -519,23 +515,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         final int index;
         final boolean isDerivation;
 
-        final String presentDerivationWarning;
-        final String presentNonDerivationWarning;
-
-        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+        public DerivationScopedColumn(int index, int derivationDataColInd, boolean isDerivation)
         {
             this.index = index;
             this.derivationDataColInd = derivationDataColInd;
             this.isDerivation = isDerivation;
-            this.presentDerivationWarning = presentDerivationWarning;
-            this.presentNonDerivationWarning = presentNonDerivationWarning;
         }
 
         @Override
         public Object get()
         {
             Object thisValue =  _data.get(index);
-            return getDerivationData(thisValue, derivationDataColInd, isDerivation, presentDerivationWarning, presentNonDerivationWarning);
+            return getDerivationData(thisValue, derivationDataColInd, isDerivation);
         }
     }
 
@@ -543,23 +534,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * @param thisValue the original field value
      * @param derivationDataColInd the col index for the field used to determine if a record is child or parent
      * @param isDerivationField if this field is a child only field
-     * @param presentDerivationWarning the warning msg to log if a child field is present for a parent record
-     * @param presentNonDerivationWarning the warning msg to log if a parent field is present for a child record
      */
-    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField, @Nullable String presentDerivationWarning, @Nullable String presentNonDerivationWarning)
+    private Object getDerivationData(Object thisValue, int derivationDataColInd, boolean isDerivationField)
     {
         Object derivationData = derivationDataColInd < 0 ? null : _data.get(derivationDataColInd);
         if ((isDerivationField && derivationData != null)
                 || (!isDerivationField && derivationData == null))
             return thisValue;
-
-        if (thisValue != null)
-        {
-            if (isDerivationField && presentDerivationWarning != null)
-                LOG.warn(presentDerivationWarning);
-            else if (!isDerivationField && presentNonDerivationWarning != null)
-                LOG.warn(presentNonDerivationWarning);
-        }
 
         return null;
     }
@@ -711,6 +692,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         final Set<Object> allowableContainers = new HashSet<>();
 
+        // GH Issue 1332: a bad container value recurs on every row; warn once per distinct value, not per row
+        final Set<Object> loggedUnresolvedContainers = new HashSet<>();
+        final Set<Object> loggedRejectedContainers = new HashSet<>();
+
         public ContainerColumn(UserSchema us, TableInfo tableInfo, String containerId, int idx)
         {
             this.us = us;
@@ -742,7 +727,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
                     {
                         getRowError().addError(new SimpleValidationError("Row supplied container value: " + rowContainerVal + " cannot be used for actions against the container: " + us.getContainer().getPath()));
-                        LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
+                        if (loggedRejectedContainers.add(rowContainerVal))
+                            LOG.warn("Resolved container to {} but rejected as valid location for import into {} in {}.{}", rowContainer.getPath(), us.getContainer().getPath(), us.getSchemaName(), tableInfo.getPublicSchemaName());
                     }
                     else
                     {
@@ -753,8 +739,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
                 else
                 {
-                    // only log if the incoming value is GUID-like
-                    if (rowContainerVal instanceof String && GUID.isGUID((String)rowContainerVal))
+                    // only log if the incoming value is GUID-like, and only once per distinct value
+                    if (rowContainerVal instanceof String s && GUID.isGUID(s) && loggedUnresolvedContainers.add(rowContainerVal))
                     {
                         LOG.warn("Failed to resolve container value '{}' to container for import into {}.{}, defaulting to original target container of {}", rowContainerVal, us.getSchemaName(), tableInfo.getPublicSchemaName(), us.getContainer().getPath());
                     }

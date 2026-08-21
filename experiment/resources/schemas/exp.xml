@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,6 +294,9 @@
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
+      </column>
+      <column columnName="ExpMaterialColor">
+          <description>The color assigned to this individual sample</description>
       </column>
       <column columnName="StoredAmount">
           <columnTitle>Amount</columnTitle>
@@ -1047,6 +1050,7 @@
       <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
+      <column columnName="ExpMaterialColor"/>
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
@@ -1249,6 +1253,32 @@
             <column columnName="DataTypeRowId"/>
             <column columnName="DataType"/>
             <column columnName="ExcludedContainer" />
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataColors" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="Container"/>
+            <column columnName="Label"/>
+            <column columnName="Color"/>
+            <column columnName="Archived"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataTypeColorExclusion" tableDbType="TABLE">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="Container"/>
+            <column columnName="DataTypeRowId"/>
+            <column columnName="DataType"/>
+            <column columnName="ColorRowId"/>
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>

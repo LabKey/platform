@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 LabKey Corporation
+ * Copyright (c) 2024-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ public interface OptionalFeatureService
         return svc;
     }
 
+    static boolean isAvailable()
+    {
+        return null != ServiceRegistry.get().getService(OptionalFeatureService.class);
+    }
+
     static void setInstance(OptionalFeatureService impl)
     {
         ServiceRegistry.get().registerService(OptionalFeatureService.class, impl);
@@ -44,8 +49,7 @@ public interface OptionalFeatureService
 
     /**
      * @param flag must be unique and conform to the Java identifier rules (e.g., alphanumeric plus _, start with a
-     *             letter, no spaces). That way it can be used as a startup property to enable/disable the task. If
-     *             you must use a flag that doesn't conform to these rules (why?) the call the other variant.
+     *             letter, no spaces) so it can be used as a startup property to enable/disable the task.
      */
     default void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
@@ -53,8 +57,9 @@ public interface OptionalFeatureService
     }
 
     /**
-     * This is left for backward compatibility. Use the variant above and provide flag that follows Java identifier rules.
+     * This is left for backward compatibility. Use the variant above and provide a flag that follows Java identifier rules.
      */
+    @Deprecated
     default void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean useDumbName)
     {
         addFeatureFlag(new OptionalFeatureFlag(flag, title, description, requiresRestart, false, FeatureType.Experimental, useDumbName));
@@ -122,8 +127,8 @@ public interface OptionalFeatureService
             {
                 return HtmlString.unsafe(
                     """
-                    Optional features are not typically used; discuss with your account manager before enabling any
-                    optional feature.
+                    Optional features are disabled by default. Review the description for each feature before enabling
+                    it, and discuss with your Account Manager if you have questions.
                     """
                 );
             }

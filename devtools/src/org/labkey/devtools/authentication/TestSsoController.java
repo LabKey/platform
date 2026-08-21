@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.labkey.api.security.AuthenticationConfigurationCache;
 import org.labkey.api.security.AuthenticationManager.AuthenticationConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.BaseSsoValidateAction;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
+import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SsoSaveConfigurationAction;
@@ -37,6 +38,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestSsoController extends SpringActionController
@@ -50,10 +52,11 @@ public class TestSsoController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public static class TestSsoAction extends SimpleViewAction<AuthenticationConfigurationForm>
+    @IgnoresTermsOfUse
+    public static class TestSsoAction extends SimpleViewAction<TestSsoForm>
     {
         @Override
-        public ModelAndView getView(AuthenticationConfigurationForm form, BindException errors)
+        public ModelAndView getView(TestSsoForm form, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/devtools/authentication/testSso.jsp", form, errors);
@@ -68,6 +71,7 @@ public class TestSsoController extends SpringActionController
     public static class TestSsoForm extends AuthenticationConfigurationForm
     {
         private String _email;
+        private boolean _reauth;
 
         public String getEmail()
         {
@@ -79,10 +83,22 @@ public class TestSsoController extends SpringActionController
         {
             _email = email;
         }
+
+        public boolean isReauth()
+        {
+            return _reauth;
+        }
+
+        @SuppressWarnings("unused")
+        public void setReauth(boolean reauth)
+        {
+            _reauth = reauth;
+        }
     }
 
     @AllowedDuringUpgrade
     @RequiresNoPermission
+    @IgnoresTermsOfUse
     // NOTE: Always invoked in the root, so no need for @IgnoresForbiddenProjectCheck
     public static class ValidateAction extends BaseSsoValidateAction<TestSsoForm>
     {
@@ -94,7 +110,7 @@ public class TestSsoController extends SpringActionController
             if (null == configuration)
                 throw new NotFoundException("Invalid TestSso configuration");
 
-            return AuthenticationResponse.success(configuration, new ValidEmail(form.getEmail()));
+            return AuthenticationResponse.success(configuration, new ValidEmail(form.getEmail())).setReauth(form.isReauth());
         }
     }
 
@@ -109,16 +125,35 @@ public class TestSsoController extends SpringActionController
 
     public static class TestSsoSaveConfigurationForm extends SsoSaveConfigurationForm
     {
+        private boolean _skipReauthentication = false;
+
         @Override
         public String getProvider()
         {
             return TestSsoProvider.NAME;
         }
 
+        public boolean isSkipReauthentication()
+        {
+            return _skipReauthentication;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSkipReauthentication(boolean skipReauthentication)
+        {
+            _skipReauthentication = skipReauthentication;
+        }
+
         @Override
         public @NotNull Map<String, Object> getPropertyMap()
         {
-            return null != _domain ? Map.of("domain", _domain) : Map.of();
+            Map<String, Object> map = new HashMap<>();
+            map.put(TestSsoConfiguration.SKIP_REAUTHENTICATION, _skipReauthentication);
+
+            if (null != _domain)
+                map.put("domain", _domain);
+
+            return map;
         }
     }
 }

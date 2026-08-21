@@ -1,5 +1,21 @@
+/*
+ * Copyright (c) 2024-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -48,16 +64,38 @@ public class RecordFactory<K> implements ObjectFactory<K>
             .toList();
     }
 
+    // Throws IllegalArgumentExceptions for missing primitive parameters and conversion errors
     private <MAP extends Map<String, ?> & CaseInsensitiveCollection> K fromCaseInsensitiveMap(MAP m)
     {
         Object[] params = Arrays.stream(_parameters).map(p -> {
             Object value = m.get(p.getName());
-            return value != null ? ConvertUtils.convert(value, p.getType()) : null;
+            try
+            {
+                return value != null ? ConvertUtils.convert(value, p.getType()) : null;
+            }
+            catch (ConversionException e)
+            {
+                throw new IllegalArgumentException("Failed to convert property value of type '" + value.getClass().getName() + "' to required type '" + p.getType().getName() + "' for property '" + p.getName() + "'; " + e.getMessage());
+            }
         }).toArray();
 
         try
         {
             return _constructor.newInstance(params);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Try to determine if this failed due to missing primitive parameters to improve the exception message
+            List<String> missingPrimitiveParameters = Arrays.stream(_parameters)
+                .filter(p -> p.getType().isPrimitive())
+                .map(Parameter::getName)
+                .filter(name -> m.get(name) == null)
+                .toList();
+            if (missingPrimitiveParameters.isEmpty())
+                throw e; // Unclear what the problem is, so just re-throw
+            if (missingPrimitiveParameters.size() == 1)
+                throw new IllegalArgumentException("Primitive parameter \"" + missingPrimitiveParameters.getFirst() + "\" is required");
+            throw new IllegalArgumentException("Primitive parameters are missing: " + missingPrimitiveParameters);
         }
         catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
         {
@@ -121,7 +159,7 @@ public class RecordFactory<K> implements ObjectFactory<K>
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws SQLException
+        public void testDatabase() throws SQLException
         {
             Map<String, Object> adHocMap = new CaseInsensitiveHashMap<>();
             adHocMap.put("FirstName", "Keyser");
@@ -146,17 +184,17 @@ public class RecordFactory<K> implements ObjectFactory<K>
                 rs.next();
                 Assert.assertEquals(users.getFirst(), factory.handle(rs));
             }
-            MiniUser randomUser = users.get((int)(Math.random() * users.size()));
-            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.userid), null).getObject(MiniUser.class);
+            MiniUser randomUser = users.get((int) (Math.random() * users.size()));
+            MiniUser selectedUser = new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), new SimpleFilter(FieldKey.fromString("UserId"), randomUser.UserId), null).getObject(MiniUser.class);
             Assert.assertEquals(randomUser, selectedUser);
 
             // Test fromMap() variant (should ignore selectedUser)
             assertEquals(adHocUser, factory.fromMap(selectedUser, adHocMap));
         }
+    }
 
-        // Simple test record. Weird casing is intentional to test case-insensitivity.
-        private record MiniUser(String FIRSTname, String LASTNAME, Date LastLogin, int userid)
-        {
-        }
+    // Simple test record. Weird casing is intentional to test case-insensitivity.
+    record MiniUser(String FIRSTname, String LASTNAME, Date lastLogin, int UserId)
+    {
     }
 }

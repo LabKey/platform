@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2004-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -165,8 +166,21 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             throw new UnauthorizedException();
         }
 
-        if (null != _tinfo.getColumn("container"))
+        FieldKey containerFK = FieldKey.fromParts("Container");
+        if (null != _tinfo.getColumn(containerFK))
+        {
+            // The hasPermission() check above only proves the user can update the *current* container. The UPDATE below
+            // keys on the PK alone and stamps the row into the current container, so without this guard a user with
+            // update permission here could edit (and re-home) a row that actually lives in another container simply by
+            // POSTing its PK. Confirm the existing row is in this container; 404 otherwise. PkFilter validates and
+            // converts the PK as well, so a missing or malformed key likewise 404s here rather than later.
+            SimpleFilter filter = new PkFilter(_tinfo, getPkVals());
+            filter.addCondition(containerFK, _c.getId());
+            if (!new TableSelector(_tinfo, filter, null).exists())
+                throw new NotFoundException("No matching row found in this folder");
+
             setValueToBind("container", _c.getId());
+        }
 
         Object[] pkVal = getPkVals();
         Map<String, Object> newMap = Table.update(_user, _tinfo, _getTypedValues(), pkVal);
@@ -189,19 +203,48 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             throw new UnauthorizedException();
         }
 
-        if (null != _selectedRows && _selectedRows.length > 0)
+        // Table.delete() keys on the PK alone. As with doUpdate(), the DeletePermission check only proves the user can
+        // delete in the *current* container, so for container-scoped tables we must confirm each target row lives here;
+        // otherwise a user could delete a row that belongs to another container by POSTing (or grid-selecting) its PK.
+        FieldKey containerFK = FieldKey.fromParts("Container");
+        boolean scopeToContainer = null != _tinfo.getColumn(containerFK);
+
+        try (DbScope.Transaction t = _tinfo.getSchema().getScope().ensureTransaction())
         {
-            for (String selectedRow : _selectedRows)
-                Table.delete(_tinfo, selectedRow);
+            if (null != _selectedRows && _selectedRows.length > 0)
+            {
+                for (String selectedRow : _selectedRows)
+                {
+                    if (scopeToContainer)
+                        deleteInContainer(selectedRow, containerFK);
+                    else
+                        Table.delete(_tinfo, selectedRow);
+                }
+            }
+            else
+            {
+                Object[] pkVal = getPkVals();
+                if (null != pkVal && null != pkVal[0])
+                {
+                    if (scopeToContainer)
+                        deleteInContainer(pkVal, containerFK);
+                    else
+                        Table.delete(_tinfo, pkVal);
+                }
+                else //Hmm, throw an exception here????
+                    _log.warn("Nothing to delete for table {} on request {}", _tinfo.getName(), _request.getRequestURI());
+            }
         }
-        else
-        {
-            Object[] pkVal = getPkVals();
-            if (null != pkVal && null != pkVal[0])
-                Table.delete(_tinfo, pkVal);
-            else //Hmm, throw an exception here????
-                _log.warn("Nothing to delete for table {} on request {}", _tinfo.getName(), _request.getRequestURI());
-        }
+    }
+
+    // Deletes a single row only if it lives in the form's container, scoping the DELETE's WHERE clause to the PK and the
+    // container together. 404s on a miss (cross-container or already gone), mirroring doUpdate().
+    private void deleteInContainer(Object pkVal, FieldKey containerFK)
+    {
+        SimpleFilter filter = new PkFilter(_tinfo, pkVal);
+        filter.addCondition(containerFK, _c.getId());
+        if (Table.delete(_tinfo, filter) == 0)
+            throw new NotFoundException("No matching row found in this folder");
     }
 
     /**
@@ -846,9 +889,15 @@ public class TableViewForm extends ViewForm implements HasBindParameters
             setValueToBind(pv.getName(), pv.getValue());
         }
 
-        BindException errors = new NullSafeBindException(this, "form");
+        BindException errors = createErrors();
         validateBind(errors);
         return errors;
+    }
+
+    // Construct and return a BindException that's appropriate for this form
+    public BindException createErrors()
+    {
+        return new NullSafeBindException(this, "form");
     }
 }
 

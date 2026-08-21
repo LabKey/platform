@@ -64,7 +64,7 @@ public class SurveyServiceImpl implements SurveyService
     @Override
     public SurveyDesign getSurveyDesign(Container container, User user, int surveyDesignId)
     {
-        return SurveyManager.get().getSurveyDesign(container, user, surveyDesignId);
+        return SurveyManager.get().getSurveyDesignForRead(container, user, surveyDesignId);
     }
 
     @Override

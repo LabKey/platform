@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2018 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2005-2026 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,39 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.ExceptionFramework;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MultiChoice;
+import org.labkey.api.data.MvUtil;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -64,8 +95,8 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.HttpView;
 
@@ -1012,12 +1043,12 @@ public class OntologyManager
         try
         {
             DbSchema schema = getExpSchema();
-            String sql = getSqlDialect().execute(getExpSchema(), "deleteObject", "?, ?");
             SqlExecutor executor = new SqlExecutor(schema);
 
             for (String uri : uris)
             {
-                executor.execute(sql, c.getId(), uri);
+                SQLFragment sql = getSqlDialect().execute(getExpSchema(), "deleteObject", new SQLFragment("?, ?", c.getId(), uri));
+                executor.execute(sql);
             }
         }
         finally
@@ -1341,7 +1372,7 @@ public class OntologyManager
             String deleteObjPropSql = "DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = ?)";
             executor.execute(deleteObjPropSql, c);
             String deleteObjSql = "DELETE FROM " + getTinfoObject() + " WHERE Container = ?";
-            _log.info("Deleting from exp.object in container {}", c);
+            _log.debug("Deleting from exp.object in container {}", c);
             executor.execute(deleteObjSql, c);
 
             // delete property validator references on property descriptors
@@ -1749,15 +1780,11 @@ public class OntologyManager
 
             // you are allowed to update if you are coming from the project root, or if  you are in the container
             // in which the descriptor was created
-            boolean fUpdateIfExists = false;
-            if (pdIn.getContainer().getId().equals(pd.getContainer().getId())
-                    || pdIn.getContainer().getId().equals(pdIn.getProject().getId()))
-                fUpdateIfExists = true;
+            boolean fUpdateIfExists = pdIn.getContainer().getId().equals(pd.getContainer().getId())
+                    || pdIn.getContainer().getId().equals(pdIn.getProject().getId());
 
 
-            boolean fMajorDifference = false;
-            if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-                fMajorDifference = true;
+            boolean fMajorDifference = colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType");
 
             String errmsg = "ensurePropertyDescriptor:  descriptor In different from Found for " + colDiffs +
                     "\n\t Descriptor In: " + pdIn +
@@ -2784,13 +2811,14 @@ public class OntologyManager
         return cache.remap(SchemaKey.fromParts(lookup.getSchemaKey()), lookup.getQueryName(), user, lkContainer, ContainerFilter.Type.CurrentPlusProjectAndShared, String.valueOf(value));
     }
 
-    public static List<PropertyUsages> findPropertyUsages(User user, List<Integer> propertyIds, int maxUsageCount)
+    public static List<PropertyUsages> findPropertyUsagesByIds(User user, Container container, List<Integer> propertyIds, int maxUsageCount)
     {
         List<PropertyUsages> ret = new ArrayList<>(propertyIds.size());
         for (int propertyId : propertyIds)
         {
             var pd = getPropertyDescriptor(propertyId);
-            if (pd == null)
+            // Kanban #1924: Get property descriptors for the current container only
+            if (pd == null || !pd.getContainer().equals(container))
                 throw new IllegalArgumentException("property not found: " + propertyId);
 
             ret.add(findPropertyUsages(user, pd, maxUsageCount));

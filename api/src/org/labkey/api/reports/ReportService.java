@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,6 @@ import java.util.List;
 
 public interface ReportService
 {
-    String R_REPORT_CUSTOM_SHARING = "rReportCustomSharing";
-
     // this logger is to enable all report loggers in the admin ui (org.labkey.api.reports.*)
     @SuppressWarnings({"UnusedDeclaration", "SSBasedInspection"})
     Logger packageLogger = LogManager.getLogger(ReportService.class.getPackageName());

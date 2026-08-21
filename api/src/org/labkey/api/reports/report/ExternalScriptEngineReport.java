@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2018 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -344,6 +344,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         {
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite().toString());
+            bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "report id=" + getDescriptor().getReportId()
+                    + " type=" + getType()
+                    + " name='" + getDescriptor().getReportName() + "'"
+                    + " container=" + context.getContainer().getPath());
 
             Map<String, String> paramMap = new HashMap<>();
             DataTransformService.get().addStandardParameters(null, context.getContainer(), null, session.getApiKey(), paramMap);

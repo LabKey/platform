@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2022-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.api.settings;
 
 import org.apache.logging.log4j.Logger;
@@ -75,28 +90,20 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setReadOnlyHttpRequestTimeout(Integer.parseInt(value));
         }
     },
+    scriptExecutionTimeout("Timeout in seconds for server-side JavaScript such as trigger scripts. Measured in wall-clock time, including database and other Java operations invoked by the script. Set to 0 to disable.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setScriptExecutionTimeout(Integer.parseInt(value));
+        }
+    },
     maxBLOBSize("Maximum file size, in bytes, to allow in database BLOBs")
     {
         @Override
         public void setValue(WriteableAppProps writeable, String value)
         {
             writeable.setMaxBLOBSize(Integer.parseInt(value));
-        }
-    },
-    ext3Required("Require ExtJS v3.4.1 be loaded on each page (DEPRECATED)")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setExt3Required(Boolean.parseBoolean(value));
-        }
-    },
-    ext3APIRequired("Require ExtJS v3.x based Client API be loaded on each page (DEPRECATED)")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setExt3APIRequired(Boolean.parseBoolean(value));
         }
     },
     sslRequired("Require SSL connections (users must connect via SSL)")
@@ -179,14 +186,6 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
             writeable.setAdminOnlyMessage(value);
         }
     },
-    XFrameOption("Controls whether or not a browser may render a server page in a <frame> , <iframe> or <object>. Valid values: [SAMEORIGIN, ALLOW]")
-    {
-        @Override
-        public void setValue(WriteableAppProps writeable, String value)
-        {
-            writeable.setXFrameOption(value);
-        }
-    },
     navAccessOpen("Always include inaccessible parent folders in project menu when child folder is accessible")
     {
         @Override
@@ -201,6 +200,14 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         public void setValue(WriteableAppProps writeable, String value)
         {
             writeable.setIncludeServerHttpHeader(Boolean.parseBoolean(value));
+        }
+    },
+    termsOfUseFrequencySeconds("Require terms-of-use acceptance frequency in seconds. 0 = every sign-in, or positive number of seconds between required re-acceptance.")
+    {
+        @Override
+        public void setValue(WriteableAppProps writeable, String value)
+        {
+            writeable.setTermsOfUseFrequencySeconds(Integer.parseInt(value));
         }
     };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018 LabKey Corporation
+ * Copyright (c) 2010-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,11 +240,11 @@ public class EmailServiceImpl implements EmailService
         }
 
         @Override
-        public void addContent(MimeType type, HttpServletRequest request, HttpView view) throws Exception
+        public void addContent(MimeType type, HttpServletRequest request, HttpView<?> view) throws Exception
         {
-            // set the frame type to none to remove the extra div that gets added otherwise.
+            // set the frame type to NOT_HTML to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
-                ((JspView)view).setFrame(WebPartView.FrameType.NOT_HTML);
+                ((JspView<?>)view).setFrame(WebPartView.FrameType.NOT_HTML);
 
             MockHttpServletResponse response = new MockHttpServletResponse();
             HttpView.include(view, request, response);
@@ -256,7 +256,7 @@ public class EmailServiceImpl implements EmailService
         @Override
         public MimeMessage createMessage() throws MessagingException
         {
-            MimeMessage msg = new MimeMessage(MailHelper.getSmtpSession());
+            MimeMessage msg = new MimeMessage(MailHelper.getSession());
             boolean multipart = _contentMap.size() > 1 || (_files != null && !_files.isEmpty());
             MimeMultipart multiPartContent = null;
 

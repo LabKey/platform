@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2018 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
+import org.labkey.api.data.dialect.BackslashEscapingStringHandler;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -190,7 +191,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         if (getStandardConformingStrings())
             return super.createStringHandler();
         else
-            return new PostgreSqlNonConformingStringHandler();
+            return new BackslashEscapingStringHandler();
     }
 
     /*
@@ -257,12 +258,6 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     public boolean supportsGroupConcat()
     {
         return getServerType().supportsGroupConcat();
-    }
-
-    @Override
-    public boolean supportsSelectConcat()
-    {
-        return true;
     }
 
     @Override
@@ -377,6 +372,8 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         super.addAdminWarningMessages(warnings, showAllWarnings);
         if (showAllWarnings)
             warnings.add(HtmlString.of(PostgreSqlDialectFactory.getStandardWarningMessage("has not been tested against", getMajorVersion() + ".x")));
+
+        addTimeDifferenceWarning(warnings, showAllWarnings);
     }
 
     private int getIdentifierMaxByteLength()
@@ -1231,5 +1228,24 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         ret.append(b);
         ret.append(")");
         return ret;
+    }
+
+    @Override
+    public SQLFragment array_element_like(SQLFragment a, String... values)
+    {
+        SQLFragment sql = new SQLFragment("(");
+        String sep = "";
+        for (String value : values)
+        {
+            sql.append(sep);
+            sql.append("EXISTS (SELECT 1 FROM unnest(");
+            sql.append(a);
+            sql.append(") AS _elem WHERE _elem");
+            appendCaseInsensitiveLikeClause(sql, value);
+            sql.append(")");
+            sep = " AND ";
+        }
+        sql.append(")");
+        return sql;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -33,9 +37,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
 
@@ -46,10 +56,19 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 {
     private static final Logger LOGGER = LogHelper.getLogger(SqlExecutingSelector.class, "Log warnings about SQL exceptions");
 
+    // Warn when this many (or more) rows are pulled into a Java collection; suggests switching to a streaming method
+    private static final int LARGE_RESULT_THRESHOLD = 10_000;
+
+    // At most one warning per day per call site (not per query or row count), so a legitimately large but expected load doesn't flood the log; see getStackKey()
+    private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
+            w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
+                    w.rowCount, w.elementClass, w.selectorClass, w.sql, w.stackTrace));
+
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
     @Nullable Map<String, Object> _namedParameters = null;
-    private ConnectionFactory _connectionFactory = super::getConnection;
+    private @Nullable ConnectionFactory _connectionFactory = null; // null means "no explicit choice"; see getEffectiveConnectionFactory()
+    private boolean _jdbcCachingExplicitlySet = false;
     private Integer _fetchSize = null; // By default, use the standard fetch size
 
     private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
@@ -79,21 +98,60 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     @Override
     public Connection getConnection() throws SQLException
     {
-        return _connectionFactory.get();
+        // Public callers may hold the returned Connection beyond this call, so treat it as "escaping": don't borrow the
+        // thread's shared connection. Internal callers that fully consume and close the ResultSet within a single
+        // selector call use getConnection(true); see getEffectiveConnectionFactory().
+        return getConnection(false);
+    }
+
+    Connection getConnection(boolean selfContained) throws SQLException
+    {
+        return getEffectiveConnectionFactory(selfContained).get();
+    }
+
+    /**
+     * Determines which {@link ConnectionFactory} to use for this query, resolved lazily so the transaction check
+     * reflects execution-time state. An explicit {@link #setJdbcCaching(boolean)} call or a Connection supplied at
+     * construction is honored; otherwise JDBC caching is disabled by default (via the dialect) so the driver won't
+     * buffer the whole ResultSet in memory. The dialect returns null — use the shared Connection with default caching —
+     * when that default is unnecessary or unsafe: in a transaction, non-PostgreSQL, or not a SELECT.
+     * <p>
+     * {@code selfContained} is passed through to {@link SqlDialect#getConnectionFactory}, which documents how it governs
+     * whether the thread's shared connection may be borrowed.
+     */
+    private ConnectionFactory getEffectiveConnectionFactory(boolean selfContained)
+    {
+        // Honor an explicit setJdbcCaching() call (which populated _connectionFactory)...
+        if (_jdbcCachingExplicitlySet)
+            return _connectionFactory;
+
+        // ...or a Connection supplied at construction time (super::getConnection returns the stashed _conn)
+        if (null != _conn)
+            return super::getConnection;
+
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(false, selfContained, getScope(),
+            new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
+
+        return null != factory ? factory : super::getConnection;
     }
 
     /**
      * <p>Calling this method with cache=false ensures that the JDBC driver will not cache the produced ResultSet in
      * memory, which is useful when potentially working with very large (e.g., > 100MB) ResultSets. Calling it with
-     * cache=true (the default setting) ensures the JDBC driver's default caching behavior.</p>
+     * cache=true ensures the JDBC driver's default caching behavior.</p>
      *
      * <p>By default, the PostgreSQL JDBC driver caches every ResultSet in its entirety. This can lead to
      * OutOfMemoryErrors when working with very large ResultSets. When the underlying database is PostgreSQL, calling
      * this method with false instructs this SqlExecutingSelector to use an unshared Connection and configure it with
      * special settings that disable the driver caching. The trade-off is that the underlying database query will not
      * use the shared Connection that other code on the thread (up or down the call stack) may be using, making
-     * Connection exhaustion more likely; that's why JDBC caching is on by default. Calling this method is not
-     * compatible with passing in an explicit Connection to the constructor.</p>
+     * Connection exhaustion more likely. Calling this method is not compatible with passing in an explicit Connection to
+     * the constructor.</p>
+     *
+     * <p>When neither this method nor an explicit Connection is supplied, JDBC caching is disabled by default whenever
+     * it's safe (PostgreSQL, no active transaction, SELECT) — see {@link #getEffectiveConnectionFactory(boolean)}. Callers that
+     * require the driver's default caching (e.g. to share the thread's Connection) must opt in by calling this with
+     * cache=true.</p>
      *
      * <p>When the underlying database is not PostgreSQL, calling this method has no effect, other than validating that
      * the stashed Connection is null.</p>
@@ -106,11 +164,89 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         if (null != _conn)
             throw new IllegalStateException("Calling setJdbcCaching() is not valid when a Connection has already been provided");
 
-        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, getScope(),
+        // Explicitly disabling caching is documented to use an unshared Connection, so this path is never self-contained
+        ConnectionFactory factory = getScope().getSqlDialect().getConnectionFactory(cache, false, getScope(),
             new SQLFragment("SELECT FakeColumn FROM FakeTable") /* SqlExecutingSelector always generates SELECT statements */);
         _connectionFactory = null != factory ? factory : super::getConnection;
+        _jdbcCachingExplicitlySet = true;
 
         return getThis();
+    }
+
+    /**
+     * Overridden to warn when a large number of rows is pulled into a Java collection. Loading many rows into memory
+     * (here plus, potentially, in the JDBC driver's buffer) is a common source of OutOfMemoryErrors; callers should
+     * generally prefer a streaming method — {@link #forEach(Class, Selector.ForEachBlock)}, {@link #forEachBatch}, or {@link #uncachedStream} — that
+     * processes rows without materializing them all at once. {@code getArray}, {@code getCollection},
+     * {@code getMapArray}, {@code stream}, and {@code getMapCollection} all delegate here, so they're covered as well.
+     */
+    @Override
+    public @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz)
+    {
+        ArrayList<E> result = super.getArrayList(clazz);
+
+        if (result.size() >= LARGE_RESULT_THRESHOLD)
+        {
+            Throwable stackTrace = new Throwable("Stack trace for large collection load");
+            // Log the parameterized SQL only so bound parameter values stay out of the log
+            SQLFragment sql = getSqlFactory(false).getSql();
+            LARGE_RESULT_WARNING_THROTTLE.execute(new LargeResultWarning(getStackKey(stackTrace), result.size(),
+                    clazz.getSimpleName(), getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
+        }
+
+        return result;
+    }
+
+    // The selector frames that can sit between the real call site and getArrayList(). A package prefix won't do:
+    // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
+    private static final Set<String> PLUMBING_CLASSES = Set.of(
+            "org.labkey.api.data.BaseSelector",
+            "org.labkey.api.data.SqlExecutingSelector",
+            "org.labkey.api.data.SqlSelector",
+            "org.labkey.api.data.TableSelector");
+
+    // Caps key length; a stack this deep in plumbing collapses to a single key
+    private static final int MAX_KEY_FRAMES = 10;
+
+    /**
+     * The stack through the first frame outside the selector plumbing — the code that actually loaded the collection.
+     * Don't extend this to the full stack: a cache loader is reached via many callers, each of which would then get its own warning.
+     */
+    private static String getStackKey(Throwable t)
+    {
+        StackTraceElement[] frames = t.getStackTrace();
+        int lastFrame = 0;
+
+        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
+            lastFrame++;
+
+        return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+    }
+
+    private static boolean isPlumbingStackFrame(StackTraceElement frame)
+    {
+        String className = frame.getClassName();
+        int nested = className.indexOf('$'); // Nested classes and lambdas belong to their enclosing selector
+
+        return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
+    }
+
+    // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element
+    // type, so the throttle dedupes on those rather than on the full (call site + row count + SQL) combination.
+    private record LargeResultWarning(String stackKey, int rowCount, String elementClass, String selectorClass,
+                                      String sql, Throwable stackTrace)
+    {
+        @Override
+        public boolean equals(Object o)
+        {
+            return o instanceof LargeResultWarning w && stackKey.equals(w.stackKey) && elementClass.equals(w.elementClass);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return 31 * stackKey.hashCode() + elementClass.hashCode();
+        }
     }
 
     /**
@@ -396,7 +532,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 if (null != _sql)
                 {
                     DbScope scope = getScope();
-                    conn = getConnection();
+                    // _closeResultSet means this factory fully consumes and closes the ResultSet within this call, so
+                    // the connection can be borrowed from the thread and restored rather than dedicated to the caller
+                    conn = getConnection(_closeResultSet);
 
                     try
                     {
@@ -570,6 +708,124 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             RuntimeException translated = getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
             ExceptionUtil.copyDecorations(e, translated);
             throw translated;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        // Mirrors the frames of a real DatabaseCache loader
+        private static final List<String> LOADER_PREFIX = List.of(
+                "org.labkey.api.data.SqlExecutingSelector",
+                "org.labkey.api.data.BaseSelector",
+                "org.labkey.inventory.model.InventoryLocation",   // first frame outside the plumbing
+                "org.labkey.api.cache.BlockingCache",
+                "org.labkey.api.data.DatabaseCache");
+
+        private static Throwable createThrowable(List<String> classNames)
+        {
+            Throwable t = new Throwable();
+            t.setStackTrace(classNames.stream()
+                    .map(className -> new StackTraceElement(className, "method", "Source.java", 1))
+                    .toArray(StackTraceElement[]::new));
+            return t;
+        }
+
+        // A stack that reaches the standard loader via the given callers
+        private static Throwable createLoaderThrowable(String... callers)
+        {
+            return createThrowable(Stream.concat(LOADER_PREFIX.stream(), Stream.of(callers)).toList());
+        }
+
+        @Test
+        public void keyStopsAtFirstFrameOutsideThePlumbing()
+        {
+            String key = getStackKey(createLoaderThrowable("org.labkey.inventory.InventoryManager"));
+
+            assertEquals("Key should cover the leading plumbing frames plus the first frame outside them", 3, key.split("\n").length);
+            assertTrue("Key should end at the loader frame", key.endsWith("org.labkey.inventory.model.InventoryLocation.method(Source.java:1)"));
+        }
+
+        @Test
+        public void differentCallersOfTheSameLoaderShareAKey()
+        {
+            String menuKey = getStackKey(createLoaderThrowable("org.labkey.inventory.FreezersMenuSection", "org.labkey.core.products.ProductController"));
+            String auditKey = getStackKey(createLoaderThrowable("org.labkey.inventory.InventoryServiceImpl", "org.labkey.query.controllers.QueryController"));
+
+            assertEquals(menuKey, auditKey);
+        }
+
+        @Test
+        public void differentCallSitesGetDifferentKeys()
+        {
+            String key = getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector", "org.labkey.study.StudyManager")));
+            String otherKey = getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector", "org.labkey.assay.AssayManager")));
+
+            assertNotEquals(key, otherKey);
+        }
+
+        // org.labkey.api.data holds ordinary callers as well as the selectors themselves
+        @Test
+        public void aCallerInTheSelectorPackageEndsTheKey()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector",
+                    "org.labkey.api.data.ContainerManager",
+                    "org.labkey.core.admin.AdminController")));
+
+            assertTrue("ContainerManager is a call site, not selector plumbing", key.endsWith("org.labkey.api.data.ContainerManager.method(Source.java:1)"));
+        }
+
+        @Test
+        public void nestedSelectorClassesAreStillPlumbing()
+        {
+            String key = getStackKey(createThrowable(List.of(
+                    "org.labkey.api.data.SqlExecutingSelector",
+                    "org.labkey.api.data.BaseSelector$ArrayListResultSetHandler",
+                    "org.labkey.study.StudyManager")));
+
+            assertEquals(3, key.split("\n").length);
+        }
+
+        @Test
+        public void allPlumbingStackIsCapped()
+        {
+            List<String> allPlumbing = Collections.nCopies(MAX_KEY_FRAMES + 5, "org.labkey.api.data.SqlExecutingSelector");
+
+            assertEquals(MAX_KEY_FRAMES, getStackKey(createThrowable(allPlumbing)).split("\n").length);
+        }
+
+        @Test
+        public void emptyStackTraceIsHandled()
+        {
+            assertEquals("", getStackKey(createThrowable(List.of())));
+        }
+
+        // The stack runs out before a call site is found, so the walk must stop on the last frame rather than past it
+        @Test
+        public void singlePlumbingFrameIsHandled()
+        {
+            assertEquals("org.labkey.api.data.SqlExecutingSelector.method(Source.java:1)",
+                    getStackKey(createThrowable(List.of("org.labkey.api.data.SqlExecutingSelector"))));
+        }
+
+        private static LargeResultWarning createWarning(String stackKey, String elementClass)
+        {
+            return new LargeResultWarning(stackKey, LARGE_RESULT_THRESHOLD, elementClass, "TableSelector", "SELECT *", new Throwable());
+        }
+
+        @Test
+        public void warningsDedupeOnCallSiteAndElementType()
+        {
+            assertEquals(createWarning("key", "Container"), createWarning("key", "Container"));
+            assertNotEquals("A generic helper loads many types from one call site", createWarning("key", "Container"), createWarning("key", "User"));
+            assertNotEquals(createWarning("key", "Container"), createWarning("otherKey", "Container"));
+        }
+
+        @Test
+        public void equalWarningsShareAHashCode()
+        {
+            assertEquals(createWarning("key", "Container").hashCode(), createWarning("key", "Container").hashCode());
         }
     }
 }

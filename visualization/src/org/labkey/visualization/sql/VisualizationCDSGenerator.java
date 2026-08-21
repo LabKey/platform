@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -537,7 +537,8 @@ public class VisualizationCDSGenerator
             BindException errors = new NullSafeBindException(q,"query");
             String sql = gen.getSQL(errors);
             assertFalse(errors.hasErrors());
-            return QueryService.get().selectResults(schema, sql, null, null, true, true);
+            // Pass true for a cached, scrollable result set so callers can use getSize() and beforeFirst()
+            return QueryService.get().getSelectBuilder(schema, sql, true).select(true);
         }
 
         List<Map<String,String>> getColumnAliases(VisDataRequest q) throws SQLGenerationException, SQLException

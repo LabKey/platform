@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,11 @@ package org.labkey.devtools;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.JsonInputLimit;
@@ -35,17 +34,21 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -57,9 +60,7 @@ import org.labkey.api.util.ButtonBuilder;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -74,15 +75,10 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.wiki.WikiService;
-import org.springframework.ai.document.Document;
-import org.springframework.ai.vectorstore.SimpleVectorStore;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -92,9 +88,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Gatherers;
 
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
@@ -1292,7 +1285,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            if (null == McpService.get() || !McpService.get().isReady())
+            if (null == McpService.get() || !McpService.get().isAIFeaturesReady())
                 return HtmlView.of("Service is not ready yet.");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             return new JspView<>("/org/labkey/devtools/view/chat.jsp");
@@ -1322,85 +1315,56 @@ public class TestController extends SpringActionController
         }
     }
 
-
-    @RequiresLogin
-    public static class PopulateVectorStoreAction extends ConfirmAction<Object>
+    @RequiresPermission(UpdatePermission.class)
+    public static class ExecuteMutatingSqlGetAction extends SimpleViewAction<Object>
     {
-        AtomicInteger count = new AtomicInteger();
-
         @Override
-        public ModelAndView getConfirmView(Object o, BindException errors)
+        public ModelAndView getView(Object o, BindException errors)
         {
-            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
-            HtmlStringBuilder message = HtmlStringBuilder.of();
-            message.append("This will add the contents of /Documention wikis to the vector store.").append(HtmlString.BR);
-            message.append("This may take a few minutes.");
-            if (db.exists())
-                message.unsafeAppend("<p/><p/>").append("I see a vector store file already exists. Just FYI.");
-            return new HtmlView(message);
+            setTitle("Execute Mutating SQL via GET");
+
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+
+            return new HtmlView(HtmlString.of("UPDATE via GET was allowed!"));
         }
 
         @Override
-        public void validateCommand(Object o, Errors errors)
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class ExecuteMutatingSqlPostAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object target, Errors errors)
         {
         }
 
         @Override
-        public @NotNull URLHelper getSuccessURL(Object o)
+        public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
-            return null;
-        }
-
-
-        // not usually used but some actions return views that close the current window etc...
-        @Override
-        public ModelAndView getSuccessView(Object form)
-        {
-            return HtmlView.of(count.get() + " documents added to vector store");
+            setTitle("Execute Mutating SQL via POST");
+            return new HtmlView(HtmlString.of(reshow ? "UPDATE via POST was allowed!" : "Need to POST to this action"));
         }
 
         @Override
         public boolean handlePost(Object o, BindException errors)
         {
-            Container documentsContainer = ContainerManager.getForPath("/Documentation");
-            if (null == documentsContainer)
-                throw new NotFoundException();
-            VectorStore vs = McpService.get().getVectorStore();
-            if (null == vs)
-                throw new NotFoundException("/Documentation project was not found");
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("UPDATE core.Containers SET Name = 'xxx' WHERE 1 = 0"));
+            return false;
+        }
 
-            ActionURL wikiBase = new ActionURL("wiki","page",documentsContainer);
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return actionURL(BeginAction.class);
+        }
 
-            WikiService service = Objects.requireNonNull(WikiService.get());
-            List<String> all = service.getNames(documentsContainer);
-            all.stream()
-                    .map(name -> service.getRenderedWiki(documentsContainer, name))
-                    .filter(Objects::nonNull)
-                    .map(wiki ->
-                    {
-                        count.incrementAndGet();
-                        var metadata = Map.of(
-                                "Content-Type", "text/html",
-                                "filename", wiki.name() + ".html",
-                                "title", (Object)wiki.title(),
-                                "source", wikiBase.clone().addParameter("name",wiki.name()).getURIString()
-                        );
-                        return new Document(wiki.entityId(), wiki.html().toString(), metadata);
-                    })
-                    .gather(Gatherers.windowFixed(50))
-                    .forEach(vs);
-
-            var db = FileUtil.getTempDirectoryFileLike().resolveChild("VectorStore.database");
-            try
-            {
-                ((SimpleVectorStore)vs).save(db.toNioPathForRead().toFile());
-                return true;
-            }
-            catch (Exception x)
-            {
-                errors.addError(new ObjectError("form", "error saving vectordb: " + x.getMessage()));
-                return false;
-            }
+        @Override
+        public void addNavTrail(NavTree root)
+        {
         }
     }
 
@@ -1492,4 +1456,41 @@ public class TestController extends SpringActionController
         }
     }
 
+    public record ReauthForm(@Nullable String reauthToken, @Nullable String errorMessage){}
+
+    @RequiresLogin
+    public class TestReauthAction extends FormViewAction<ReauthForm>
+    {
+        @Override
+        public void validateCommand(ReauthForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(ReauthForm form, boolean reshow, BindException errors)
+        {
+            getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            return new JspView<>("/org/labkey/devtools/view/testReauth.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ReauthForm form, BindException errors)
+        {
+            User reauthUser = AuthenticationManager.getAndClearReauthUser(getViewContext().getRequestOrThrow(), form.reauthToken(), getUser());
+            if (reauthUser == null)
+                throw new NotFoundException("Reauthentication validation failed!");
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ReauthForm form)
+        {
+            return actionURL(BeginAction.class);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
 }

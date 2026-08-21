@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1258,13 +1258,9 @@ public class StudyImpl extends ExtensibleStudyEntity<String, StudyImpl> implemen
             Container c = ContainerManager.createContainer(junit, name, _context.getUser());
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.DATE);
-            s.setStartDate(new Date(DateUtil.parseISODateTime("2001-01-01")));
-            s.setSubjectColumnName("SubjectID");
-            s.setSubjectNounPlural("Subjects");
-            s.setSubjectNounSingular("Subject");
             s.setSecurityType(SecurityType.BASIC_WRITE);
-            s.setStartDate(new Date(DateUtil.parseDateTime(c, "1 Jan 2000")));
-            _testStudy = StudyManager.getInstance().createStudy(_context.getUser(), s);
+            s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+            _testStudy = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
             MvUtil.assignMvIndicators(c,
                     new String[]{"X", "Y", "Z"},

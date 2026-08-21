@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -557,44 +557,6 @@ public abstract class CompareType
         public boolean isNewLineSeparatorAllowed()
         {
             return true;
-        }
-    };
-
-    public static final CompareType IN_NS = new CompareType("Equals One Of A Member Of A Named Set", "inns", "IN", true, null, OperatorType.IN)
-    {
-        // Each compare type uses CompareClause by default
-        @Override
-        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-        {
-            String namedSet = null;
-            if (value != null && StringUtils.isNotBlank(value.toString()))
-                namedSet = value.toString();
-            return new SimpleFilter.InClause(fieldKey, namedSet, true);
-        }
-
-        @Override
-        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
-        {
-            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
-        }
-    };
-
-    public static final CompareType NOT_IN_NS = new CompareType("Does Not Equal Any Members Of A Named Set", "notinns", "NOT IN", true, null, OperatorType.NOTIN)
-    {
-        // Each compare type uses CompareClause by default
-        @Override
-        public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-        {
-            String namedSet = null;
-            if (value != null && StringUtils.isNotBlank(value.toString()))
-                namedSet = value.toString();
-            return new SimpleFilter.InClause(fieldKey, namedSet, true);
-        }
-
-        @Override
-        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
-        {
-            throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
         }
     };
 
@@ -1321,7 +1283,8 @@ public abstract class CompareType
                         targetColumn = column;
 
                     // skip more uninteresting columns
-                    if (!targetColumn.isStringType() ||
+                    boolean isArray = targetColumn.getJdbcType() == JdbcType.ARRAY;
+                    if ((!targetColumn.isStringType() && !isArray) ||
                             targetColumn.getName().equalsIgnoreCase("lsid") ||
                             targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") ||
                             targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
@@ -1375,14 +1338,36 @@ public abstract class CompareType
                 if (mappedColumn == null)
                     continue;
 
+                SQLFragment columnSql;
+                if (mappedColumn.getJdbcType() == JdbcType.ARRAY)
+                {
+                    if (!dialect.supportsArrays())
+                        continue;
+
+                    String[] likeValues = Arrays.stream(param.split(","))
+                            .map(String::trim)
+                            .filter(v -> !v.isEmpty())
+                            .toArray(String[]::new);
+                    if (likeValues.length == 0)
+                        continue;
+
+                    SQLFragment aliasSql = new SQLFragment();
+                    aliasSql.appendIdentifier(mappedColumn.getAlias());
+                    columnSql = dialect.array_element_like(aliasSql, likeValues);
+                }
+                else
+                {
+                    columnSql = new SQLFragment();
+                    columnSql.appendIdentifier(mappedColumn.getAlias());
+                    columnSql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
+                    columnSql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
+                    columnSql.append(LikeClause.sqlEscape());
+                }
+
                 hasResult = true;
                 sql.append(sep);
                 sep = " OR ";
-
-                sql.appendIdentifier(mappedColumn.getAlias());
-                sql.append(" ").append(dialect.getCaseInsensitiveLikeOperator()).append(" ");
-                sql.append(dialect.concatenate(" '%'", "?", "'%' ")).add(LikeClause.escapeLikePattern(param));
-                sql.append(LikeClause.sqlEscape());
+                sql.append(columnSql);
             }
 
             return hasResult ? sql : new SQLFragment("1=1");

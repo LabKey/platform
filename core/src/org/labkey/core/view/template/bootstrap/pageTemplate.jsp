@@ -1,6 +1,6 @@
 <%--
 /*
- * Copyright (c) 2018-2019 LabKey Corporation
+ * Copyright (c) 2017-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,6 @@
     PageConfig model = me.getModelBean();
     ActionURL url = getActionURL();
     ViewContext context = getViewContext();
-
-    if (model.getFrameOption() != PageConfig.FrameOption.ALLOW)
-        response.setHeader("X-FRAME-OPTIONS", model.getFrameOption().name());
 
     boolean isExplicitNoIndex = null != url && "1".equals(url.getParameter(ActionURL.Param._noindex.name()));
     if (isExplicitNoIndex)

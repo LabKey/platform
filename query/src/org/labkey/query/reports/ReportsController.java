@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -81,7 +80,6 @@ import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
-import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -112,7 +110,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -123,7 +120,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
@@ -279,16 +275,6 @@ public class ReportsController extends SpringActionController
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
-        }
-
-        @Override
-        public ActionURL urlShareReport(Container c, Report r)
-        {
-            if (r.getDescriptor().getReportId() == null)
-                return null;
-            ActionURL url = new ActionURL(ShareReportAction.class, c);
-            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
-            return url;
         }
 
         @Override
@@ -1033,115 +1019,6 @@ public class ReportsController extends SpringActionController
             setHelpTopic("reportsAndViews");
             if (_report != null)
                 root.addChild(_report.getDescriptor().getReportName());
-        }
-    }
-
-    @RequiresPermission(ShareReportPermission.class)
-    public static class ShareReportAction extends FormViewAction<ShareReportForm>
-    {
-        Report _report = null;
-        List<User> _validRecipients = new ArrayList<>();
-
-        @Override
-        public ModelAndView getView(ShareReportForm form, boolean reshow, BindException errors)
-        {
-            return new JspView<>("/org/labkey/query/reports/view/shareReport.jsp", form, errors);
-        }
-
-        @Override
-        public void validateCommand(ShareReportForm form, Errors errors)
-        {
-            _validRecipients = SecurityManager.parseRecipientListForContainer(getContainer(), form.getRecipientList(), errors);
-        }
-
-        @Override
-        public boolean handlePost(ShareReportForm form, BindException errors) throws Exception
-        {
-            if (null != form.getReportId())
-                _report = form.getReportId().getReport(getViewContext());
-
-            if (!errors.hasErrors() && !_validRecipients.isEmpty() && _report != null)
-            {
-                for (User recipient : _validRecipients)
-                {
-                    NotificationService.get().sendMessageForRecipient(
-                        getContainer(), getUser(), recipient,
-                        form.getMessageSubject(), form.getMessageBody(), _report.getRunReportURL(getViewContext()),
-                        form.getReportId().toString(), Report.SHARE_REPORT_TYPE
-                    );
-
-                    // if the report is already public, send the notification but don't update the policy
-                    if (!ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(_report.getDescriptor().getAccess()))
-                        ReportUtil.updateReportSecurityPolicy(getViewContext(), _report, recipient.getUserId(), true);
-
-                    String auditMsg = "The following report was shared: recipient: " + recipient.getName() + " (" + recipient.getUserId() + ")"
-                            + ", reportId: " + _report.getDescriptor().getReportId()
-                            + ", name: " + _report.getDescriptor().getReportName();
-                    StudyService.get().addStudyAuditEvent(getContainer(), getUser(), auditMsg);
-                }
-            }
-
-            return !errors.hasErrors();
-        }
-
-        @Override
-        public URLHelper getSuccessURL(ShareReportForm form)
-        {
-            if (_report != null && getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                return urlProvider(StudyUrls.class).getManageReportPermissions(getContainer()).
-                        addParameter(ReportDescriptor.Prop.reportId, _report.getDescriptor().getReportId().toString());
-            }
-
-            return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            root.addChild("Share Report");
-        }
-    }
-
-    public static class ShareReportForm extends ReportDesignBean<Report>
-    {
-        private String _recipientList;
-        private String _messageSubject;
-        private String _messageBody;
-
-        public String getRecipientList()
-        {
-            return _recipientList;
-        }
-
-        public void setRecipientList(String recipientList)
-        {
-            _recipientList = recipientList;
-        }
-
-        public String getMessageSubject()
-        {
-            return _messageSubject;
-        }
-
-        public void setMessageSubject(String messageSubject)
-        {
-            _messageSubject = messageSubject;
-        }
-
-        public String getMessageBody()
-        {
-            return _messageBody;
-        }
-
-        public void setMessageBody(String messageBody)
-        {
-            _messageBody = messageBody;
-        }
-
-        public ActionURL getDefaultUrl(Container container)
-        {
-            return new ActionURL(ManageViewsAction.class, container);
         }
     }
 

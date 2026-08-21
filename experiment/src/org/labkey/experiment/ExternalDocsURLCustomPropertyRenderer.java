@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,6 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
         {
             // That's OK, we won't try to do anything with the link
         }
-        return "<a href=\"" + link + "\">" + PageFlowUtil.filter(label) + "</a>";
+        return "<a href=\"" + PageFlowUtil.filter(link) + "\">" + PageFlowUtil.filter(label) + "</a>";
     }
 }

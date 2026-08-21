@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,21 +94,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.labkey.api.util.IntegerUtils.asInteger;
-import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.study.publish.StudyPublishService.LinkToStudyKeys;
 import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.SCRIPT;
 import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.IntegerUtils.asInteger;
+import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
 
 public class PublishResultsQueryView extends QueryView
 {
     private static final Logger LOG = LogManager.getLogger(PublishResultsQueryView.class);
+
+    // GH Issue 1332: Only warn once per distinct column
+    private static final Set<String> LOGGED_MULTIVALUE_COLUMNS = ConcurrentHashMap.newKeySet();
 
     private final SimpleFilter _filter;
     private final Container _targetStudyContainer;
@@ -303,7 +307,7 @@ public class PublishResultsQueryView extends QueryView
             List<Object> values = ((IMultiValuedDisplayColumn)dc).getDisplayValues(ctx);
             if (values.size() == 1)
                 return values.getFirst();
-            else
+            else if (LOGGED_MULTIVALUE_COLUMNS.add(col.getFieldKey().toString()))
                 LOG.warn("Unable to use the value returned from column : {} because this multi-value column returned more than a single value.", col.getName());
         }
         return col.getValue(ctx);

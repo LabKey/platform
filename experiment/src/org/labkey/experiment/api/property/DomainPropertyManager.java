@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,7 +173,7 @@ public class DomainPropertyManager
             // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
             if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)
             {
-                LOG.error("Invalid property validator typeUri: {}", pv.getTypeURI());
+                LOG.warn("Invalid property validator typeUri: {}", pv.getTypeURI());
             }
             else
             {

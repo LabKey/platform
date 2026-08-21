@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2011-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,13 +60,15 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * User: matthewb
- * Date: 2011-05-31
- * Time: 12:52 PM
+ * Static helpers for assembling DataIterator pipelines: matching a source iterator's columns to a target
+ * TableInfo's columns (by property URI, name, import alias, or JDBC-legal name) and copying or merging the
+ * result into that table. Also provides adapters that present an iterator as scrollable, map-based,
+ * map-transforming, or a Stream of maps.
  */
 public class DataIteratorUtil
 {
@@ -373,6 +375,28 @@ public class DataIteratorUtil
         }
     }
 
+    /**
+     * DataIteratorBuilder.getDataIterator() calls this to simplify implementing the success or close() input contract
+     */
+    public static @Nullable DataIterator wrapOrClose(DataIteratorBuilder in, DataIteratorContext context, UnaryOperator<DataIterator> wrapper)
+    {
+        DataIterator di = in.getDataIterator(context);
+        if (null == di)
+            return null;
+
+        try
+        {
+            DataIterator out = wrapper.apply(di);
+            if (null == out)
+                closeQuietly(di);
+            return out;
+        }
+        catch (RuntimeException | Error e)
+        {
+            closeQuietly(di);
+            throw e;
+        }
+    }
 
     /*
      * Wrapping functions to add functionality to existing DataIterators

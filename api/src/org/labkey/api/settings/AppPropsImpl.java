@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2019 LabKey Corporation
+ * Copyright (c) 2012-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -322,21 +323,15 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getScriptExecutionTimeout()
+    {
+        return lookupIntValue(scriptExecutionTimeout, DEFAULT_SCRIPT_EXECUTION_TIMEOUT);
+    }
+
+    @Override
     public int getMaxBLOBSize()
     {
         return lookupIntValue(maxBLOBSize, 50_000_000);
-    }
-
-    @Override
-    public boolean isExt3Required()
-    {
-        return lookupBooleanValue(ext3Required, false);
-    }
-
-    @Override
-    public boolean isExt3APIRequired()
-    {
-        return lookupBooleanValue(ext3APIRequired, false);
     }
 
     @Override
@@ -539,6 +534,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), UNKNOWN_VERSION);
     }
 
+    @Nullable
+    @Override
+    public String getBuildTime()
+    {
+        return ModuleLoader.getInstance().getCoreModule().getBuildTime();
+    }
+
     @Override
     public double getSchemaVersion()
     {
@@ -565,13 +567,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     {
         return lookupBooleanValue(allowSessionKeys, false);
     }
-
-    @Override
-    public String getXFrameOption()
-    {
-        return lookupStringValue(XFrameOption, "SAMEORIGIN");
-    }
-
 
     private static final String not_init = "";
     private String staticFilesPrefix = not_init;
@@ -657,6 +652,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public int getTermsOfUseFrequencySeconds()
+    {
+        return lookupIntValue(termsOfUseFrequencySeconds, 0);
+    }
+
+    @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
@@ -709,7 +710,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     @Override
     public @NotNull String getDistributionName()
     {
-        return DISTRIBUTION_NAME;
+        return Objects.requireNonNullElse(ModuleLoader.getInstance().getDistributionNameOverride(), DISTRIBUTION_NAME);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2019-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
@@ -71,6 +72,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -96,9 +98,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -114,6 +118,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -147,6 +152,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.insert;
+import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.update;
 
@@ -180,6 +186,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Expiration Date", "MaterialExpDate");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Entered Storage", "Stored");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("EnteredStorage", "Stored");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleColor", "ExpMaterialColor");
+        SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Color", "ExpMaterialColor");
     }
 
     public enum Options
@@ -398,8 +406,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport() || context.isCrossFolderImport())
-            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType, true);
+        if (context.isCrossTypeImport())
+            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), _sampleType, true);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
         dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
@@ -420,7 +428,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId) != null)
                 {
-                    dib = workService.getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    Long actionId = (Long) context.getConfigParameter(WorkflowService.WorkflowConfigs.ActionId);
+
+                    if (workService.actionWillAddSamples(actionId) && !context.getInsertOption().allowUpdate)
+                    {
+                        dib = workService.getSampleCreationDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
+                    }
+
                     dib = workService.getActionAuditDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser());
                 }
             }
@@ -449,7 +463,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         columnDescriptor.name = SAMPLE_ALT_IMPORT_NAME_COLS.get(columnDescriptor.getColumnName());
                     }
                 }
-                configureCrossFolderImport(rows, context);
             }
         }
         catch (IOException e)
@@ -459,12 +472,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
         ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
+        InsertOption insertOption = context.getInsertOption();
+        Timestamp changedSince = insertOption.allowUpdate ? captureChangedSince() : null;
+
         int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
-            boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, context.getInsertOption().allowUpdate ? update : insert);
-            audit(context.getInsertOption().auditAction);
+            boolean isMediaUpdate = _sampleType.isMedia() && insertOption.updateOnly;
+            SampleTypeServiceImpl.SampleChangeType reason = insertOption.updateOnly ? update : insertOption.allowUpdate ? merge : insert;
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container, reason, changedSince);
+            audit(insertOption.auditAction);
         }
         return ret;
     }
@@ -473,10 +490,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        Timestamp changedSince = captureChangedSince();
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null, configParameters, container, update); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters, container, merge, changedSince); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -503,7 +521,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(results, configParameters, container, SampleTypeServiceImpl.SampleChangeType.insert);
+            onSamplesChanged(results, configParameters, container, insert);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -546,6 +564,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         List<Map<String, Object>> results;
         Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
         recordDataIteratorUsed(finalConfigParameters);
+        Timestamp changedSince = captureChangedSince();
 
         try
         {
@@ -560,7 +579,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && !results.isEmpty() && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container, update, changedSince);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -741,7 +760,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (_sampleType == null)
             return 0;
 
-        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container);
+        int ret = SampleTypeServiceImpl.get().truncateSampleType(_sampleType, user, container, null);
         if (ret > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
@@ -892,29 +911,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new TableSelector(getQueryTable(), filter, null).getMap();
     }
 
-    @Override
-    public boolean hasExistingRowsInOtherContainers(Container container, Map<Integer, Map<String, Object>> keys)
-    {
-        Long sampleTypeId = null;
-        Set<String> sampleNames = new HashSet<>();
-        for (Map.Entry<Integer, Map<String, Object>> keyMap : keys.entrySet())
-        {
-            String name = getMaterialName(keyMap.getValue());
-
-            if (name != null)
-                sampleNames.add(name);
-
-            if (sampleTypeId == null)
-                sampleTypeId = getMaterialSourceId(keyMap.getValue());
-        }
-
-        SimpleFilter filter = new SimpleFilter(MaterialSourceId.fieldKey(), sampleTypeId);
-        filter.addCondition(Name.fieldKey(), sampleNames, CompareType.IN);
-        filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.NEQ);
-
-        return new TableSelector(ExperimentService.get().getTinfoMaterial(), filter, null).exists();
-    }
-
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
@@ -1051,7 +1047,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             // Issue 52922: cross-folder merge without Product Folders enabled silently ignores the cross-folder
             // row update. Use a relaxed container filter to find existing data from cross-containers.
-            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, user);
+            // Use elevated user to avoid data being filtered out due to permission
+            ContainerFilter cf = new ContainerFilter.AllInProjectPlusShared(container, ElevatedUser.getElevatedUser(user, ReaderRole.class));
             Set<GUID> containerIds = new HashSet<>(Objects.requireNonNull(cf.getIds()));
             containerIds.remove(container.getEntityId());
 
@@ -1063,7 +1060,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     filter.addCondition(FieldKey.fromParts("Container"), containerIds, CompareType.IN);
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(RowId.name(), Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + " (" + row.get(RowId.name()) + ").");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + row.get(RowId.name()) + "'.");
                 }
 
                 if (!missingNames.isEmpty())
@@ -1074,7 +1071,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                     var row = new TableSelector(ExperimentService.get().getTinfoMaterial(), CaseInsensitiveHashSet.of(Name.name()), filter, null).setMaxRows(1).getMap();
                     if (row != null)
-                        throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + row.get(Name.name()) + ".");
+                        throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + row.get(Name.name()) + "'.");
                 }
             }
         }
@@ -1082,9 +1079,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting)
         {
             if (!missingRowIds.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: (RowId) " + missingRowIds.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + missingRowIds.iterator().next() + "'.");
             if (!missingNames.isEmpty())
-                throw new InvalidKeyException("Sample does not exist: " + missingNames.iterator().next() + ".");
+                throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + missingNames.iterator().next() + "'.");
         }
 
         // if contains domain fields, check for aliquot specific fields
@@ -1155,6 +1152,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason)
     {
+        onSamplesChanged(results, params, container, reason, null);
+    }
+
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
+    {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
@@ -1178,7 +1180,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
                 tx.addCommitTask(() -> {
-                    fireSamplesChanged(reason);
+                    fireSamplesChanged(reason, changedSince);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1188,7 +1190,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
         else
         {
-            fireSamplesChanged(reason);
+            fireSamplesChanged(reason, changedSince);
         }
     }
 
@@ -1220,10 +1222,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason)
+    private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         if (_sampleType != null)
-            _sampleType.onSamplesChanged(getUser(), null, reason);
+            _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
+
+        // Notify connected clients so cached "insights" counts can be flagged stale (insert/update/merge).
+        // Deletes bypass this path -- see ExperimentServiceImpl.deleteMaterialByRowIds for that notification.
+        SampleChangeNotify.fireSampleDataChanged(getContainer());
+    }
+
+    static @Nullable Timestamp captureChangedSince()
+    {
+        return new SqlSelector(DbScope.getLabKeyScope(), "SELECT CURRENT_TIMESTAMP").getObject(Timestamp.class);
     }
 
     void audit(QueryService.AuditAction auditAction)
@@ -1263,10 +1274,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator di = builder.getDataIterator(context);
-            if (di == null)
-                return null; // can happen if context has errors
+            return DataIteratorUtil.wrapOrClose(builder, context, di -> build(di, context));
+        }
 
+        /** Returning null here (after adding an error) or throwing leaves `di` to be closed by wrapOrClose. */
+        private DataIterator build(DataIterator di, DataIteratorContext context)
+        {
             boolean isMerge = context.getInsertOption() == InsertOption.MERGE;
             boolean isUpdate = context.getInsertOption() == InsertOption.UPDATE;
 
@@ -1281,7 +1294,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
                 if (!isContainerField)
                     isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
-                if (isReservedHeader(name) || isContainerField)
+                if (isContainerField)
+                {
+                    drop.add(name);
+                    continue;
+                }
+                if (isReservedHeader(name))
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.
@@ -1300,13 +1318,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isExpMaterialColumn(SampleState, name))
                         continue;
+                    if (isExpMaterialColumn(ExpMaterialColor, name))
+                        continue;
                     if (isExpMaterialColumn(MaterialExpDate, name))
                         continue;
                     if (isExpMaterialColumn(StoredAmount, name))
                         continue;
                     if (isExpMaterialColumn(Units, name))
-                        continue;
-                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     if (isExpMaterialColumn(RowId, name))
                     {
@@ -1607,9 +1625,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     static class _SamplesCoerceDataIterator extends SimpleTranslator
     {
-        private static final String INVALID_ALIQUOT_PROPERTY = "An aliquot-specific property [%1$s] value has been ignored for a non-aliquot sample.";
-        private static final String INVALID_NON_ALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
-
         private final ExpSampleTypeImpl _sampleType;
         private final Unit _sampleTypeBaseUnit;
 
@@ -1664,14 +1679,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     String name = to.getName();
                     boolean isScopedField = scopedFields.containsKey(name);
 
-                    String ignoredAliquotPropValue = String.format(INVALID_ALIQUOT_PROPERTY, name);
-                    String ignoredMetaPropValue = String.format(INVALID_NON_ALIQUOT_PROPERTY, name);
                     if (to.getPropertyType() == PropertyType.ATTACHMENT || to.getPropertyType() == PropertyType.FILE_LINK)
                     {
                         if (isScopedField)
                         {
                             ColumnInfo clone = new BaseColumnInfo(to);
-                            addColumn(clone, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(clone, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name)));
                         }
                         else
                             addColumn(to, i);
@@ -1683,7 +1696,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         {
                             var col = new BaseColumnInfo(getInput().getColumnInfo(i));
                             col.setName(name);
-                            addColumn(col, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name), ignoredAliquotPropValue, ignoredMetaPropValue));
+                            addColumn(col, new DerivationScopedColumn(i, aliquotedFromDataColInd, scopedFields.get(name)));
                         }
                         else
                             addColumn(to.getName(), i);
@@ -1754,7 +1767,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private void _addConvertColumn(ColumnInfo col, int fromIndex, int derivationDataColInd, boolean isAliquotField)
         {
             SimpleConvertColumn c = createConvertColumn(col, fromIndex, RemapMissingBehavior.Error);
-            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NON_ALIQUOT_PROPERTY, col.getName()));
+            c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField);
 
             addColumn(col, c);
         }

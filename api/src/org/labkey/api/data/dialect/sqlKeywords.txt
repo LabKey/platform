@@ -1,7 +1,7 @@
 # A list of SQL keyword candidates -- all known and potential future keywords across all databases. We use this for testing.
 # Sources include the old, hard-coded keyword lists in the dialects, the reserved word lists in the PostgreSQL, MySQL, and
 # SQL Server documentation, and the return values of DatabaseMetaData.getSqlKeywords() for every database we support.
-# Note: build is required after altering this file.
+# Note: a build is required after altering this file.
 a
 abort
 abs
@@ -241,6 +241,7 @@ degree
 delay_key_write
 delayed
 delete
+delete_domain_id
 delimiter
 delimiters
 dense_rank
@@ -253,6 +254,7 @@ des_key_file
 desc
 describe
 descriptor
+destination
 destroy
 destructor
 detach
@@ -281,6 +283,7 @@ dlurlscheme
 dlurlserver
 dlvalue
 do
+do_domain_ids
 document
 domain
 double
@@ -294,6 +297,7 @@ dynamic
 dynamic_function
 dynamic_function_code
 each
+edge
 element
 else
 elseif
@@ -400,6 +404,8 @@ goto
 grant
 granted
 grants
+graph
+graph_table
 greatest
 group
 group_replication
@@ -432,6 +438,7 @@ identity_insert
 identitycol
 if
 ignore
+ignore_domain_ids
 ignore_server_ids
 ilike
 immediate
@@ -560,6 +567,7 @@ longtext
 loop
 low_priority
 lower
+lsn
 m
 map
 mapping
@@ -672,6 +680,7 @@ nocompress
 nocreatedb
 nocreaterole
 nocreateuser
+node
 nodegroup
 noholdlock
 noinherit
@@ -749,6 +758,7 @@ p
 pack_keys
 pad
 page
+page_checksum
 parallel
 parameter
 parameter_mode
@@ -759,6 +769,7 @@ parameter_specific_name
 parameter_specific_schema
 parameters
 parse_gcol_expr
+parse_vcol_expr
 parser
 partial
 partition
@@ -793,6 +804,7 @@ point
 policy
 polygon
 port
+portion
 position
 position_regex
 postfix
@@ -819,6 +831,8 @@ processlist
 profile
 profiles
 program
+properties
+property
 proxy
 public
 publication
@@ -851,6 +865,7 @@ redo_buffer_size
 redofile
 redundant
 ref
+ref_system_id
 reference
 references
 referencing
@@ -866,6 +881,7 @@ regr_sxx
 regr_sxy
 regr_syy
 reindex
+relationship
 relative
 relay
 relay_log_file
@@ -877,6 +893,7 @@ reload
 remove
 rename
 reorganize
+repack
 repair
 repeat
 repeatable
@@ -1216,6 +1233,7 @@ varying
 vector
 verbose
 version
+vertex
 view
 views
 virtual

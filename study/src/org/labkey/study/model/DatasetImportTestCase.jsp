@@ -1,3 +1,20 @@
+<%
+/*
+ * Copyright (c) 2021-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+%>
 <%@ page import="org.apache.commons.lang3.mutable.MutableInt" %>
 <%@ page import="org.apache.logging.log4j.Logger" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
@@ -97,13 +114,9 @@ public void createStudy()
         c.setFolderType(FolderTypeManager.get().getFolderType(StudyFolderType.NAME), _context.getUser());
         StudyImpl s = new StudyImpl(c, this.getClass().getName());
         s.setTimepointType(TimepointType.DATE);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
-        s.setSubjectColumnName("SubjectID");
-        s.setSubjectNounPlural("Subjects");
-        s.setSubjectNounSingular("Subject");
         s.setSecurityType(SecurityType.BASIC_WRITE);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "1 Jan 2000")));
-        _studyDateBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        s.setStartDate(new Date(DateUtil.parseDateTime("1 Jan 2000")));
+        _studyDateBased = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
         MvUtil.assignMvIndicators(c,
                 new String[] {"X", "Y", "Z"},
@@ -115,12 +128,9 @@ public void createStudy()
         Container c = ContainerManager.createContainer(junit, name, _context.getUser());
         StudyImpl s = new StudyImpl(c, "Junit Study");
         s.setTimepointType(TimepointType.VISIT);
-        s.setStartDate(new Date(DateUtil.parseDateTime(c, "2001-01-01")));
-        s.setSubjectColumnName("SubjectID");
-        s.setSubjectNounPlural("Subjects");
-        s.setSubjectNounSingular("Subject");
+        s.setStartDate(new Date(DateUtil.parseDateTime("2001-01-01")));
         s.setSecurityType(SecurityType.BASIC_WRITE);
-        _studyVisitBased = StudyManager.getInstance().createStudy(_context.getUser(), s);
+        _studyVisitBased = StudyManager.getInstance().createTestStudy(_context.getUser(), s);
 
         MvUtil.assignMvIndicators(c,
                 new String[] {"X", "Y", "Z"},
@@ -859,7 +869,7 @@ private void  _testDatasetTransformExport(Study study) throws Throwable
 
     String alternateId = null;
 
-    try (ResultSet rs = QueryService.get().select(participantTableInfo, cols, SimpleFilter.createContainerFilter(study.getContainer()), null))
+    try (ResultSet rs = QueryService.get().getSelectBuilder(participantTableInfo).columns(cols).filter(SimpleFilter.createContainerFilter(study.getContainer())).select())
     {
         // store the ptid date offset and alternate ID for verification later
         int dateOffset = -1;

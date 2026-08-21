@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 LabKey Corporation
+ * Copyright (c) 2016-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package org.labkey.test.tests.study;
 
-import org.apache.commons.collections4.Bag;
-import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
@@ -346,14 +346,14 @@ public class StudyDataspaceTest extends StudyBaseTest implements PostgresOnlyTes
                               "1/3 - Heterologous boost regimen", "2/4 - Heterologous boost regimen",
                               "2/4 - Heterologous boost regimen", "1/3 - Heterologous boost regimen");
 
-        Bag<List<String>> expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
+        MultiSet<List<String>> expectedRows = new HashMultiSet<>(DataRegionTable.collateColumnsIntoRows(VISIT_TAG_MAP_TAGS, VISIT_TAG_MAP_VISITS, VISIT_TAG_MAP_COHORTS));
 
         // Check visit tags
         clickProject(getProjectName());
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
         DataRegionTable visitTagMaps = new DataRegionTable("query", this);
-        Bag<List<String>> actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
+        MultiSet<List<String>> actualRows = new HashMultiSet<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
 
         assertEquals("Wrong Rows", expectedRows, actualRows);
 
@@ -364,13 +364,13 @@ public class StudyDataspaceTest extends StudyBaseTest implements PostgresOnlyTes
         final List<String> STUDY5_VISIT_TAG_MAP_TAGS = Arrays.asList("First Vaccination", "Second Vaccination", "Follow Up", "Follow Up");
         final List<String> STUDY5_VISIT_TAG_MAP_VISITS = Arrays.asList("Day -1001", "Day -1316", "Day -1351", "Day -1377");
         final List<String> STUDY5_VISIT_TAG_MAP_COHORTS = Arrays.asList(" ", " ", " ", " ");
-        expectedRows = new HashBag<>(DataRegionTable.collateColumnsIntoRows(STUDY5_VISIT_TAG_MAP_TAGS, STUDY5_VISIT_TAG_MAP_VISITS, STUDY5_VISIT_TAG_MAP_COHORTS));
+        expectedRows = new HashMultiSet<>(DataRegionTable.collateColumnsIntoRows(STUDY5_VISIT_TAG_MAP_TAGS, STUDY5_VISIT_TAG_MAP_VISITS, STUDY5_VISIT_TAG_MAP_COHORTS));
 
         clickFolder(FOLDER_STUDY5);
         goToModule("Query");
         viewQueryData("study", "VisitTagMap");
         visitTagMaps = new DataRegionTable("query", this);
-        actualRows = new HashBag<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
+        actualRows = new HashMultiSet<>(visitTagMaps.getRows("VisitTag", "Visit", "Cohort"));
 
         assertEquals("Wrong Visit Tag Map Rows in study folder", expectedRows, actualRows);
 

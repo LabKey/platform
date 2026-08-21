@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 LabKey Corporation
+ * Copyright (c) 2015-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,12 +237,11 @@ public class VisDataRequest
         String alias;
         Boolean inNotNullSet;
         String name;
-        String nsvalues;
         String queryName;
         String axisName;
         Boolean requireLeftJoin;
         String schemaName;
-        List<Object> values = new ArrayList<>();
+        List<?> values = new ArrayList<>();
 
         public Measure()
         {}
@@ -398,24 +397,12 @@ public class VisDataRequest
             return this;
         }
 
-        // see QueryService.get().getNamedSet();
-        public String getNsvalues()
-        {
-            return nsvalues;
-        }
-
-        public Measure setNsvalues(String nsvalues)
-        {
-            this.nsvalues = nsvalues;
-            return this;
-        }
-
-        public List<Object> getValues()
+        public List<?> getValues()
         {
             return values;
         }
 
-        public Measure setValues(List<Object> values)
+        public Measure setValues(List<?> values)
         {
             this.values = values;
             return this;

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2019-2026 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
@@ -5,22 +20,25 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.BaseSSOAuthenticationConfiguration;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<TestSsoProvider>
 {
+    static final String SKIP_REAUTHENTICATION = "SkipReauthentication";
+
     private final String _domain;
+    private final boolean _skipReauthentication;
     private final LinkFactory _linkFactory = new LinkFactory(this);
 
     protected TestSsoConfiguration(TestSsoProvider provider, Map<String, Object> standardSettings, Map<String, Object> properties)
     {
         super(provider, standardSettings);
         _domain = (String)properties.get("domain");
+        _skipReauthentication = Boolean.TRUE.equals(properties.get(SKIP_REAUTHENTICATION));
     }
 
     @Override
@@ -30,12 +48,18 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
-    public URLHelper getUrl(ViewContext ctx)
+    public ActionURL getUrl(ViewContext ctx)
     {
         ActionURL url = new ActionURL(TestSsoController.TestSsoAction.class, ContainerManager.getRoot());
         url.addParameter("configuration", getRowId());
 
         return url;
+    }
+
+    @Override
+    public ActionURL getReauthUrl(ViewContext ctx)
+    {
+        return getUrl(ctx).addParameter("reauth", true);
     }
 
     @Override
@@ -45,8 +69,20 @@ public class TestSsoConfiguration extends BaseSSOAuthenticationConfiguration<Tes
     }
 
     @Override
+    public boolean isReauthenticationSupported()
+    {
+        return !_skipReauthentication;
+    }
+
+    @Override
     public @NotNull Map<String, Object> getCustomProperties()
     {
-        return null != _domain ? Map.of("domain", _domain) : Collections.emptyMap();
+        Map<String, Object> map = new HashMap<>();
+        map.put(SKIP_REAUTHENTICATION, _skipReauthentication);
+
+        if (null != _domain)
+            map.put("domain", _domain);
+
+        return map;
     }
 }

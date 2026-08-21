@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2019 LabKey Corporation
+ * Copyright (c) 2008-2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementFullModel" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.Settings" %>
@@ -38,7 +39,7 @@
     Container c = getContainer();
     User user = getUser();
     ThreadViewBean bean = me.getModelBean();
-    AnnouncementModel announcementModel = bean.announcementModel;
+    AnnouncementFullModel announcementModel = bean.announcementModel;
     Settings settings = bean.settings;
 
     if (null == announcementModel)
