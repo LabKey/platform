@@ -15,8 +15,6 @@
  */
 package org.labkey.query.controllers;
 
-import com.google.genai.errors.ClientException;
-import com.google.genai.errors.ServerException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
+import org.labkey.api.mcp.ChatException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.RuntimeValidationException;
@@ -96,7 +95,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 LOG.info("Expression assistant prompt: {}", prompt);
                 responses = McpService.get().sendMessageEx(chatSession, composedPrompt);
             }
-            catch (ServerException x)
+            catch (ChatException x)
             {
                 return new JSONObject(Map.of(
                         "error", x.getMessage(),
@@ -110,7 +109,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                     "conversationId", getConversationId(),
                     "segments", segments));
         }
-        catch (ClientException x)
+        catch (ChatException x)
         {
             return errorResponse(x);
         }
