@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -688,54 +687,40 @@ public class ToolsController extends SpringActionController
             root.addChild("Check Crawler Actions");
         }
 
-        private static class ControllerActionId implements Comparable<ControllerActionId>
-        {
-            private final String _controller;
-            private final String _action;
+        private record ControllerActionId(String _controller, String _action) implements Comparable<ControllerActionId>
+                {
 
-            public ControllerActionId(String controller, String action)
-            {
-                _controller = controller;
-                _action = action;
-            }
+                    public String getController()
+                    {
+                        return _controller;
+                    }
 
-            public String getController()
-            {
-                return _controller;
-            }
+                    public String getAction()
+                    {
+                        return _action;
+                    }
 
-            public String getAction()
-            {
-                return _action;
-            }
+                    @Override
+                    public String toString()
+                    {
+                        return "/" + _controller + "-" + _action;
+                    }
 
-            @Override
-            public String toString()
-            {
-                return "/" + _controller + "-" + _action;
-            }
+                    @Override
+                    public boolean equals(Object o)
+                    {
+                        if (this == o) return true;
+                        if (o == null || getClass() != o.getClass()) return false;
+                        ControllerActionId that = (ControllerActionId) o;
+                        return _controller.equals(that._controller) && _action.equals(that._action);
+                    }
 
-            @Override
-            public boolean equals(Object o)
-            {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-                ControllerActionId that = (ControllerActionId) o;
-                return _controller.equals(that._controller) && _action.equals(that._action);
-            }
-
-            @Override
-            public int hashCode()
-            {
-                return Objects.hash(_controller, _action);
-            }
-
-            @Override
-            public int compareTo(@NotNull ControllerActionId o)
-            {
-                return toString().compareTo(o.toString());
-            }
-        }
+                    @Override
+                    public int compareTo(@NotNull ControllerActionId o)
+                    {
+                        return toString().compareTo(o.toString());
+                    }
+                }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -1137,7 +1122,6 @@ public class ToolsController extends SpringActionController
         @Test
         public void testOverlappingIndices()
         {
-            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
             var map = new OverlappingIndicesAnalyzer().getChanges(null);
             var keys = map.keys();
             if (!keys.isEmpty())
@@ -1294,22 +1278,17 @@ public class ToolsController extends SpringActionController
             {
                 writer.write("-- " + change.description() + "\n");
 
-                if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
+                if (dropIndex.indexType() == Unique)
                 {
-                    if (dropIndex.indexType() == Unique)
+                    String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
+                    if (constraintName != null)
                     {
-                        String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
-                        if (constraintName != null)
-                        {
-                            writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
-                            return;
-                        }
+                        writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
+                        return;
                     }
-
-                    writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
                 }
-                else
-                    writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
+
+                writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
             }
         },
         Convert

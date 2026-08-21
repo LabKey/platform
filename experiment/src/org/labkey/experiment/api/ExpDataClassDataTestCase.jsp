@@ -710,7 +710,6 @@ public void testContainerDelete() throws Exception
     }
 }
 
-// Issue 26129: sqlserver maximum size of index keys must be < 900 bytes
 @Test
 public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
 {
@@ -721,26 +720,12 @@ public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
     List<GWTIndex> indices = new ArrayList<>();
     indices.add(new GWTIndex(List.of("aa", "bb"), true));
 
-    boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
-    try
-    {
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique", null, props, indices, null, null);
-        if (sqlServer)
-            fail("Expected exception creating large index over two columns");
-    }
-    catch (IllegalArgumentException ex)
-    {
-        // Not supported on SQL Server
-        String msg = ex.getMessage();
-        String expected = "Index over large columns is not supported";
-        assertTrue("Unexpected message: " + ex.getMessage(), msg.contains(expected));
-    }
+    ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique", null, props, indices, null, null);
 }
 
 @Test
 public void testLargeUnique() throws Exception
 {
-    boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
     GWTPropertyDescriptor prop = new GWTPropertyDescriptor("bb", "multiLine");
@@ -751,18 +736,7 @@ public void testLargeUnique() throws Exception
     DataClassDomainKindProperties options = new DataClassDomainKindProperties();
     options.setNameExpression("JUNIT-${genId}-${aa}");
 
-    ExpDataClassImpl dataClass;
-    try
-    {
-        dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique2", options, props, indices, null, null);
-    }
-    catch (IllegalArgumentException e)
-    {
-        // Not supported on SQL Server, so create with no indices
-        assertTrue("Expected exception creating large index over two columns", e.getMessage().contains("Index over large columns is not supported"));
-        assertTrue(sqlServer);
-        dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique2", options, props, List.of(), null, null);
-    }
+    ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique2", options, props, indices, null, null);
 
     List<Map<String, Object>> rows = new ArrayList<>();
     Map<String, Object> row = new CaseInsensitiveHashMap<>();
@@ -788,8 +762,7 @@ public void testLargeUnique() throws Exception
     try (DbScope.Transaction tx = ExperimentService.get().getSchema().getScope().beginTransaction())
     {
         helper.insertRows(c, rows, dataClass.getName());
-        if (!sqlServer)
-            fail("Expected constraint exception");
+        fail("Expected constraint exception");
     }
     catch (BatchValidationException e)
     {

@@ -21,7 +21,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -48,8 +47,7 @@ public class StorageNameGenerator
 
     public StorageNameGenerator(@NotNull SqlDialect dialect)
     {
-        // GitHub Issue 869: Create SQL Server storage names using PostgreSQL's rules to ensure all tables and columns can migrate
-        _dialect = dialect.isSqlServer() ? PostgreSqlService.get().getDialect() : dialect;
+        _dialect = dialect;
     }
 
     public String claimName(String name)

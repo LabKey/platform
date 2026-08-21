@@ -18,8 +18,6 @@ package org.labkey.test.tests.upgrade;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.Locators;
-import org.labkey.test.WebTestHelper;
-import org.labkey.test.WebTestHelper.DatabaseType;
 import org.labkey.test.pages.ConfigureReportsAndScriptsPage;
 import org.labkey.test.pages.ConfigureReportsAndScriptsPage.EngineType;
 import org.labkey.test.pages.admin.RConfigurationPage;
@@ -59,13 +57,10 @@ public class EncryptionKeyUpgradeTest extends BaseUpgradeTest
                 .setEngineOverrides(DUMMY_R_SERVE, DUMMY_R_SERVE)
                 .save();
 
-        if (WebTestHelper.getDatabaseType() == DatabaseType.PostgreSQL)
-        {
-            // Set StatusCake api key
-            EditUpgradeMessagePage.beginAt(this)
-                    .setStatusCakeApiKey("password")
-                    .save();
-        }
+        // Set StatusCake api key
+        EditUpgradeMessagePage.beginAt(this)
+                .setStatusCakeApiKey("password")
+                .save();
     }
 
     @Test
@@ -84,12 +79,9 @@ public class EncryptionKeyUpgradeTest extends BaseUpgradeTest
     @Test
     public void testStatusCakeApiKey()
     {
-        if (WebTestHelper.getDatabaseType() == DatabaseType.PostgreSQL)
-        {
-            // Just loading this page can trigger an error if there was a problem with the encryption
-            assertEquals("StatusCake API key input should be present but blank",
-                    "", EditUpgradeMessagePage.beginAt(this, null).getStatusCakeApiKey()); // Use the root container in case the '_mothership' project doesn't exist
-        }
+        // Just loading this page can trigger an error if there was a problem with the encryption
+        assertEquals("StatusCake API key input should be present but blank",
+                "", EditUpgradeMessagePage.beginAt(this, null).getStatusCakeApiKey()); // Use the root container in case the '_mothership' project doesn't exist
     }
 
     @Override

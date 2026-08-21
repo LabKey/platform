@@ -234,7 +234,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     public static DatabaseIdentifier getLegalSelectNameFromStorageName(SqlDialect dialect, String storageName)
     {
         String legalName = dialect.makeLegalIdentifier(storageName);
-        if (!storageName.equals(legalName) && dialect.isPostgreSQL())
+        if (!storageName.equals(legalName))
         {
             storageName = storageName.toLowerCase();
             legalName = dialect.makeLegalIdentifier(storageName);      // Our PG code deep down makes these lowercase, so we need to, too

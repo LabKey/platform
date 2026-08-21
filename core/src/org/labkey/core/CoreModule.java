@@ -517,23 +517,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+        DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
         {
-            DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                @Override
-                public boolean isAvailable(DefaultSchema schema, Module module)
-                {
-                    return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
-                }
+                return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
+            }
 
-                @Override
-                public QuerySchema createSchema(DefaultSchema schema, Module module)
-                {
-                    return new PostgresUserSchema(schema.getUser(), schema.getContainer());
-                }
-            });
-        }
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new PostgresUserSchema(schema.getUser(), schema.getContainer());
+            }
+        });
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
@@ -1255,17 +1252,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
             results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
 
-            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
-                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
-                // Note that they can be non-trivial in size.
-                SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
-                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-                sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
+            // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+            // Note that they can be non-trivial in size.
+            SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
+            sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+            sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
-                var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
-                results.put("databaseSchemaSize", schemaSizes);
-            }
+            var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
+            results.put("databaseSchemaSize", schemaSizes);
 
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());

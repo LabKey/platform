@@ -37,7 +37,7 @@
     String expType = Objects.toString(bean.getExpTypeValue(), "ALL");
     // See Issue 37332, better (but more complicated) fix for sql server would be to use "option (maxrecursion 1000)"
     int depth = bean.getConfiguredDepth();
-    var CONCAT = unsafe(dialect.isPostgreSQL() ? "||" : "+");
+    var CONCAT = unsafe("||");
 
     String varcharType = dialect.getSqlTypeName(JdbcType.VARCHAR);
 

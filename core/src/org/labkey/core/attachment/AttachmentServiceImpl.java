@@ -808,7 +808,7 @@ public class AttachmentServiceImpl implements AttachmentService
         }
         else if (Strings.CI.endsWith(column.getName(), "LSID"))
         {
-            Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql(), column.getSqlDialect());
+            Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(column.getSelectIdentifier().getSql());
             expression = pair.first;
             where = pair.second;
         }

@@ -56,11 +56,6 @@ public class DateValidator extends AbstractColumnValidator
     private final long _maxDate;
     private final String _errMsg;
 
-    public DateValidator(String columnName)
-    {
-        this(columnName, MIN_TIMESTAMP_SQLSERVER, MAX_TIMESTAMP_SQLSERVER, ERRMSG_SQLSERVER);
-    }
-
     public DateValidator(String columnName, @Nullable SqlDialect dialect)
     {
         this(columnName,

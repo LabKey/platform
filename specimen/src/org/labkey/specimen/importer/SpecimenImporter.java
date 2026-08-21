@@ -485,25 +485,14 @@ public class SpecimenImporter extends SpecimenTableManager
         {
 //            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(info.getContainer());
             info("Deleting old data from SpecimenEvent, Vial and Specimen tables...");
-            if (getTableInfoSpecimen().getSchema().getSqlDialect().isPostgreSQL())
-            {
-                SQLFragment sql = new SQLFragment("TRUNCATE ")
-                    .append(getTableInfoSpecimenEvent().getSelectName())
-                    .append(", ")
-                    .append(getTableInfoVial().getSelectName())
-                    .append(", ")
-                    .append(getTableInfoSpecimen().getSelectName());
+            SQLFragment sql = new SQLFragment("TRUNCATE ")
+                .append(getTableInfoSpecimenEvent().getSelectName())
+                .append(", ")
+                .append(getTableInfoVial().getSelectName())
+                .append(", ")
+                .append(getTableInfoSpecimen().getSelectName());
 
-                executeSQL(getTableInfoSpecimen().getSchema(), sql);
-            }
-            else
-            {
-                Table.delete(getTableInfoSpecimenEvent());
-                ensureNotCanceled();
-                Table.delete(getTableInfoVial());
-                ensureNotCanceled();
-                Table.delete(getTableInfoSpecimen());
-            }
+            executeSQL(getTableInfoSpecimen().getSchema(), sql);
             info("Complete.");
         }
 

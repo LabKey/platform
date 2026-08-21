@@ -1633,38 +1633,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     SQLFragment quickRollUpSql = null;
 
-                    if (tableInfo.getSchema().getSqlDialect().isSqlServer())
-                    {
-                        /*
-                         * SqlServer needs to specify the alias in the FROM clause, and use that alias as the target of the update.
-                         */
-                        quickRollUpSql = new SQLFragment("UPDATE exp.material SET \n")
-                                .append("aliquotvolume = ROUND(CAST(COALESCE(stats.total_volume, 0) AS NUMERIC(38,12)) , ?),\n").add(precisionScale)
-                                .append("aliquotunit = stats.common_unit,\n")
-                                .append("availablealiquotvolume = ROUND(CAST(COALESCE(stats.avail_volume, 0) AS NUMERIC(38,12)), ?)\n").add(precisionScale)
-                                .append("FROM exp.material m INNER JOIN (")
-                                .append(statsSql)
-                                .append(") AS stats\n")
-                                .append("ON m.rowid = stats.rootmaterialrowid"
-                                );
-                    }
-                    else
-                    {
-                        /*
-                         * Alias usage: PostgreSQL allows you to use an alias in the UPDATE clause itself
-                         * Type casting: PostgreSQL uses ::NUMERIC for type casting.
-                         * JOIN condition: The WHERE clause is used for joining the tables instead of an INNER JOIN with ON.
-                         */
-                        quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
-                                .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
-                                .append("aliquotunit = stats.common_unit,\n")
-                                .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
-                                .append("FROM (")
-                                .append(statsSql)
-                                .append(") AS stats\n")
-                                .append("WHERE m.rowid = stats.rootmaterialrowid"
-                                );
-                    }
+                    quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                            .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
+                            .append("aliquotunit = stats.common_unit,\n")
+                            .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
+                            .append("FROM (")
+                            .append(statsSql)
+                            .append(") AS stats\n")
+                            .append("WHERE m.rowid = stats.rootmaterialrowid"
+                            );
 
                     new SqlExecutor(tableInfo.getSchema()).execute(quickRollUpSql);
 
