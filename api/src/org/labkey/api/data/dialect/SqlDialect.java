@@ -360,7 +360,7 @@ public abstract class SqlDialect
 
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
-    protected @Nullable String getDatabaseMaintenanceSql()
+    protected @Nullable SQLFragment getDatabaseMaintenanceSql()
     {
         return null;
     }
