@@ -47,6 +47,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -623,13 +624,18 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (getTotalAndNonBlankSql(domain, prop, allRowsSQL, nonBlankRowsSQL))
         {
+            String scope = prop.getDerivationDataScope();
             // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
-            String table = domain.getStorageTableName();
-            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
-                    .append("SELECT RowId FROM " + getStorageSchemaName() + "." + table)
-                    .append(") AND RootMaterialRowId = RowId");
+            // GH Issue 1472: Include aliquot rows when checking for a property that is editable for both aliquots and samples
+            if (StringUtils.isEmpty(scope) || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(scope))
+            {
+                String table = domain.getStorageTableName();
+                allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
+                        .append("SELECT RowId FROM ").append(getStorageSchemaName()).append(".").append(table)
+                        .append(") AND RootMaterialRowId = RowId");
+            }
 
-            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
+            long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
             return totalRows != nonBlankRows;
         }

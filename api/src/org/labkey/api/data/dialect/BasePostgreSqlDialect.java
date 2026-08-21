@@ -743,9 +743,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    protected @Nullable String getDatabaseMaintenanceSql()
+    protected SQLFragment getDatabaseMaintenanceSql()
     {
-        return "VACUUM ANALYZE;";
+        return new SQLFragment("VACUUM ANALYZE");
     }
 
     @Override

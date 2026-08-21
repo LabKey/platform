@@ -72,6 +72,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -1225,6 +1226,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         if (_sampleType != null)
             _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
+
+        // Notify connected clients so cached "insights" counts can be flagged stale (insert/update/merge).
+        // Deletes bypass this path -- see ExperimentServiceImpl.deleteMaterialByRowIds for that notification.
+        SampleChangeNotify.fireSampleDataChanged(getContainer());
     }
 
     static @Nullable Timestamp captureChangedSince()
