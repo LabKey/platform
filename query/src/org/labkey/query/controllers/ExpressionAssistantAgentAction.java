@@ -217,12 +217,10 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             }
             else if (f != null && !f.terminated)
             {
-                // Unterminated fence — fold the body back into prose so we don't drop content,
-                // but skip the opening fence line itself so the user doesn't see a stray
-                // "```expression" rendered as a code marker.
-                if (!htmlBuf.isEmpty()) htmlBuf.append("\n");
-                htmlBuf.append(f.body);
-                break;
+                // Unterminated fence — skip only the opening line, so the user doesn't see a stray
+                // "```expression" rendered as a code marker, and keep scanning. The body lands in prose
+                // line by line via the branch below, and a well-formed fence later in the turn still parses.
+                i++;
             }
             else
             {
@@ -237,21 +235,29 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
         flushHtmlSegment(segments, htmlBuf, md);
 
-        // A payload in prose means the model broke the fence protocol, so the user is reading raw JSON
-        // instead of being offered an Apply Expression action. Log the response that caused it.
+        // A payload the user can read means the model broke the fence protocol, so it renders as raw JSON
+        // instead of a working Apply Expression action. Log the response that caused it.
         if (hasLeakedPayload(segments))
-            LOG.warn("Expression assistant leaked a validator payload into prose:\n{}", text);
+            LOG.warn("Expression assistant leaked a validator payload into its reply:\n{}", text);
 
         return segments;
     }
 
-    /** True when a validateCalculatedColumnExpression payload reached prose instead of an `expression` fence. */
+    /**
+     * True when a validateCalculatedColumnExpression payload reached the user as text rather than being unpacked
+     * into an `expression` segment. Prose is one surface; the others are an illustrative `sql` block and an
+     * `expression` block whose body didn't yield an expression, which shows the raw JSON behind an Apply button.
+     * A well-formed `expression` segment carries jdbcType as its own key, so only the displayed text is checked.
+     */
     private static boolean hasLeakedPayload(JSONArray segments)
     {
         for (int i = 0; i < segments.length(); i++)
         {
             JSONObject segment = segments.getJSONObject(i);
-            if ("html".equals(segment.optString("type")) && segment.optString("html", "").contains("jdbcType"))
+            String displayed = "html".equals(segment.optString("type"))
+                    ? segment.optString("html", "")
+                    : segment.optString("sql", "");
+            if (displayed.contains("jdbcType"))
                 return true;
         }
         return false;
@@ -528,6 +534,19 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         @Test
+        public void unterminatedFenceDoesNotDiscardLaterResponses()
+        {
+            // An unterminated fence must cost only its own block — the four-backtick opener below is never
+            // closed (its closer is shorter), and the well-formed block after it still has to parse.
+            var r1 = markdownResponse("````expression\n" + expressionPayload("SELECT 1", "INTEGER") + "\n```");
+            var r2 = markdownResponse("Corrected:\n```expression\n" + expressionPayload("SELECT 2", "BIGINT") + "\n```");
+            JSONArray segments = buildSegments(List.of(r1, r2));
+            assertEquals(2, segments.length());
+            assertEquals("html", segment(segments, 0).getString("type"));
+            assertExpressionSegment(segments, 1, "SELECT 2", "BIGINT");
+        }
+
+        @Test
         public void unknownFenceLanguageIsTreatedAsProse()
         {
             String md = "```python\nprint('hi')\n```";
@@ -593,9 +612,42 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         @Test
+        public void leakedPayloadDetectedInSqlFence()
+        {
+            // The model reached for the illustrative `sql` tag, so the payload renders as a read-only code block.
+            String md = "```sql\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            assertEquals(1, segments.length());
+            assertEquals("sql", segment(segments, 0).getString("type"));
+            assertTrue("payload in a sql block should be reported as a leak", hasLeakedPayload(segments));
+        }
+
+        @Test
+        public void leakedPayloadDetectedWhenExpressionBodyIsNotJson()
+        {
+            // The model narrated inside the fence, so the body doesn't parse and Apply would write JSON to the field.
+            String body = "Here is the payload: " + expressionPayload("Int7 + Int6", "INTEGER");
+            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + body + "\n```")));
+            assertEquals(1, segments.length());
+            assertEquals("expression", segment(segments, 0).getString("type"));
+            assertEquals(body, segment(segments, 0).getString("sql"));
+            assertTrue("unparsable payload should be reported as a leak", hasLeakedPayload(segments));
+        }
+
+        @Test
+        public void leakedPayloadDetectedWhenExpressionKeyIsMissing()
+        {
+            // Parses, but nothing to unpack, so buildSqlSegment falls back to the raw body.
+            String body = "{\"jdbcType\":\"INTEGER\",\"sql\":\"Int7 + Int6\"}";
+            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + body + "\n```")));
+            assertEquals(body, segment(segments, 0).getString("sql"));
+            assertTrue("payload without an expression key should be reported as a leak", hasLeakedPayload(segments));
+        }
+
+        @Test
         public void wellFormedExpressionSegmentIsNotALeak()
         {
-            // "jdbcType" is a key on the expression segment itself, so only prose can leak.
+            // "jdbcType" is a key on the expression segment itself, not part of the SQL the user sees.
             String md = "```expression\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertExpressionSegment(segments, 0, "Int7 + Int6", "INTEGER");
@@ -613,7 +665,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void expressionFenceWithExtraInfoStringTokenIsRecognized()
         {
-            // The tag is matched against the whole info string, so any trailing token defeats it.
+            // Only the info string's first word is the tag, so "expression json" still resolves to "expression".
             String md = "```expression json\n" + expressionPayload("Int7 + Int6", "INTEGER") + "\n```";
             JSONArray segments = buildSegments(List.of(markdownResponse(md)));
             assertEquals(1, segments.length());
@@ -624,7 +676,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void expressionFenceSplitAcrossResponsesIsRecognized()
         {
-            // Fence state does not survive the per-response scan, so a turn-split mid-fence loses the payload.
+            // Tool calling can split one assistant turn mid-fence; the scan joins the turns so the block still closes.
             String payload = expressionPayload("Int7 + Int6", "INTEGER");
             var r1 = markdownResponse("Adding Int7 and Int6.\n\n```expression\n" + payload);
             var r2 = markdownResponse("```");
