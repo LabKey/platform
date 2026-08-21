@@ -213,6 +213,11 @@ public class LogManager
     }
     public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf)
     {
+        return getAuditEvents(container, user, eventType, filter, sort, cf, Table.ALL_ROWS);
+    }
+
+    public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort, @Nullable ContainerFilter cf, int maxRows)
+    {
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(eventType);
         if (provider != null)
         {
@@ -222,6 +227,7 @@ public class LogManager
             {
                 TableInfo table = schema.getTable(provider.getEventName(), cf);
                 TableSelector selector = new TableSelector(table, filter, sort);
+                selector.setMaxRows(maxRows);
 
                 return selector.getArrayList(provider.getEventClass());
             }

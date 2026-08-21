@@ -32,6 +32,8 @@ import org.labkey.api.assay.sample.MaterialInputRoleComparator;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
@@ -184,6 +186,7 @@ import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.VersionNumber;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -298,9 +301,11 @@ public class ApiModule extends CodeOnlyModule
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();
         MailHelper.init();
+        AuditLogService.get().registerAuditType(new SystemUpgradeAuditProvider());
         // Handle system maintenance startup properties as late as possible; we want all system maintenance tasks to be registered first
         ContextListener.addStartupListener(new SystemMaintenanceStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
+        ContextListener.addStartupListener(new SystemUpgradeAuditProvider.SystemUpgradeStartupListener());
     }
 
     @Override
@@ -485,12 +490,14 @@ public class ApiModule extends CodeOnlyModule
             SubfolderWriter.TestCase.class,
             SvgUtil.TestCase.class,
             SwapQueue.TestCase.class,
+            SystemUpgradeAuditProvider.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
+            VersionNumber.TestCase.class,
             XmlBeansUtil.TestCase.class
         );
     }
