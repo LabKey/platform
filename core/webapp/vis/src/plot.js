@@ -469,6 +469,11 @@ boxPlot.render();
         return domain;
     };
 
+    // size/color scales map data onto an aesthetic range rather than a visible axis, so they are never domain-padded.
+    var isAxisAes = function(aesName) {
+        return aesName == 'x' || aesName == 'xTop' || aesName == 'xSub' || aesName == 'yLeft' || aesName == 'yRight';
+    };
+
     var getContinuousDomain = function(aesName, userScale, data, acc, errorAes) {
         var userMin, userMax, min, max, minAcc, maxAcc;
         var minFromUser = false, maxFromUser = false;
@@ -524,7 +529,7 @@ boxPlot.render();
                 min = min - 1;
             }
         }
-        else if (LABKEY.vis.isValid(min) && LABKEY.vis.isValid(max)
+        else if (isAxisAes(aesName) && LABKEY.vis.isValid(min) && LABKEY.vis.isValid(max)
                 && (!minFromUser || !maxFromUser)) {
             // Add padding so data points don't sit on the plot edges. Only pad
             // bounds that were auto-computed; respect any user-specified bound exactly.
@@ -536,7 +541,7 @@ boxPlot.render();
             }
             else {
                 var range = (max - min) * PADDING;
-                // Don't push a non-negative min below zero (e.g. bar/count data).
+                // Don't push a non-negative min below zero (zero-anchored data reads better flush)
                 if (!minFromUser) min = (min >= 0) ? Math.max(0, min - range) : min - range;
                 if (!maxFromUser) max = max + range;
             }
