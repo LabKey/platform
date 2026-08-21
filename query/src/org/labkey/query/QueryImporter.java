@@ -159,35 +159,7 @@ public class QueryImporter implements FolderImporter
             ctx.addContext(QueryImportContext.class, qic);
 
             // import any remaining metadata xml overrides
-            for (Map.Entry<String, QueryDocument> entry : metaFilesMap.entrySet())
-            {
-                String metaFileName = entry.getKey();
-
-                QueryDocument queryDoc = entry.getValue();
-                QueryType queryXml = queryDoc.getQuery();
-
-                String queryName = queryXml.getName();
-                String schemaName = queryXml.getSchemaName();
-                SchemaKey schemaKey = SchemaKey.fromString(schemaName);
-                UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
-                if (schema == null)
-                {
-                    // Schemas whose existence depends on data imported by a later importer, such as an assay protocol
-                    // schema created by the XAR importer, can only be resolved once every importer has run
-                    ctx.getLogger().info("Deferring import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist yet."));
-                    qic.deferredMetadataFiles.put(metaFileName, queryDoc);
-                    continue;
-                }
-
-                if (!schema.getTableNames().contains(queryName))
-                {
-                    // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
-                    ctx.getLogger().warn("Importing: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
-                    qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);//
-                }
-
-                createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, null, null);
-            }
+            importMetadataOverrides(ctx, qic, metaFilesMap, createdQueries, changedQueries, true);
 
             fireQueryEvents(ctx, createdQueries, changedQueries);
 
@@ -227,9 +199,26 @@ public class QueryImporter implements FolderImporter
     {
         Map<SchemaKey, List<String>> createdQueries = new LinkedHashMap<>();
         Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries = new LinkedHashMap<>();
+
+        Map<String, QueryDocument> deferred = new LinkedHashMap<>(qic.deferredMetadataFiles);
+        qic.deferredMetadataFiles.clear();
+
+        int importedCount = importMetadataOverrides(ctx, qic, deferred, createdQueries, changedQueries, false);
+        fireQueryEvents(ctx, createdQueries, changedQueries);
+
+        ctx.getLogger().info("{} deferred metadata quer{} imported", importedCount, 1 == importedCount ? "y" : "ies");
+    }
+
+    private int importMetadataOverrides(FolderImportContext ctx, QueryImportContext qic,
+                                        Map<String, QueryDocument> metaFiles,
+                                        Map<SchemaKey, List<String>> createdQueries,
+                                        Map<Pair<SchemaKey, QueryProperty>, List<QueryPropertyChange<?>>> changedQueries,
+                                        boolean canDefer)
+            throws SQLException
+    {
         int importedCount = 0;
 
-        for (Map.Entry<String, QueryDocument> entry : qic.deferredMetadataFiles.entrySet())
+        for (Map.Entry<String, QueryDocument> entry : metaFiles.entrySet())
         {
             String metaFileName = entry.getKey();
             QueryDocument queryDoc = entry.getValue();
@@ -241,21 +230,31 @@ public class QueryImporter implements FolderImporter
             UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaKey);
             if (schema == null)
             {
-                ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
+                if (canDefer)
+                {
+                    // Schemas whose existence depends on data imported by a later importer, such as an assay protocol
+                    // schema created by the XAR importer, can only be resolved once every importer has run
+                    ctx.getLogger().info("Deferring import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist yet."));
+                    qic.deferredMetadataFiles.put(metaFileName, queryDoc);
+                }
+                else
+                    ctx.getLogger().warn("Skipping import: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "schema doesn't exist."));
                 continue;
             }
 
             if (!schema.getTableNames().contains(queryName))
+            {
+                // warn if the table doesn't exist -- it may be created later during the import (e.g., a SampleType may be created as a part of the import process)
                 ctx.getLogger().warn("Importing: {}", queryImportMessage(schemaName, queryName, null, metaFileName, "Creating metadata xml override for table that doesn't exist"));
+                if (canDefer)
+                    qic.unresolvedMetadataFiles.put(metaFileName, queryDoc);
+            }
 
             createQueryDef(ctx, createdQueries, changedQueries, metaFileName, queryDoc, null, null);
             importedCount++;
         }
 
-        qic.deferredMetadataFiles.clear();
-        fireQueryEvents(ctx, createdQueries, changedQueries);
-
-        ctx.getLogger().info("{} deferred metadata quer{} imported", importedCount, 1 == importedCount ? "y" : "ies");
+        return importedCount;
     }
 
     private void createQueryDef(FolderImportContext ctx,
