@@ -83,6 +83,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
@@ -123,6 +124,7 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_SEQUENCE_PREFIX;
+import static org.labkey.api.exp.query.ExpSchema.DerivationDataScopeType.ChildOnly;
 
 public class DomainImpl implements Domain
 {
@@ -756,7 +758,9 @@ public class DomainImpl implements Domain
                             // If this field is newly required, or it's required and we're disabling MV indicators on
                             // it, make sure that all the rows have values for it
                             if ((!impl._pdOld.isRequired() && impl._pd.isRequired()) ||
-                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()))
+                                    (impl._pd.isRequired() && !impl._pd.isMvEnabled() && impl._pdOld.isMvEnabled()) ||
+                                    (impl._pdOld.isRequired() && derivationDataScopeChanged(impl._pdOld.getDerivationDataScope(), impl._pd.getDerivationDataScope()))
+                            )
                             {
                                 checkRequiredStatus.add(impl);
                             }
@@ -874,6 +878,14 @@ public class DomainImpl implements Domain
             {
                 for (DomainProperty prop : checkRequiredStatus)
                 {
+                    // Issue 46733: A field that is editable for aliquots only is never populated for a sample, so it can
+                    // never be required. Reject it before the blank value check below, which would otherwise report every
+                    // sample row as blank and give a misleading reason.
+                    if (ChildOnly.name().equalsIgnoreCase(prop.getDerivationDataScope()))
+                    {
+                        throw new ChangePropertyDescriptorException("The property \"" + prop.getName() + "\" cannot be required when it is editable for aliquots only.");
+                    }
+
                     boolean hasRows = kind.hasNullValues(this, prop);
                     if (hasRows)
                     {
@@ -924,6 +936,13 @@ public class DomainImpl implements Domain
             transaction.addCommitTask(afterDomainCommitOrRollback, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
             transaction.commit();
         }
+    }
+
+    private boolean derivationDataScopeChanged(String oldScope, String newScope)
+    {
+        ExpSchema.DerivationDataScopeType oldType = oldScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(oldScope);
+        ExpSchema.DerivationDataScopeType newType = newScope == null ? ExpSchema.DerivationDataScopeType.ParentOnly : ExpSchema.DerivationDataScopeType.valueOf(newScope);
+        return oldType != newType;
     }
 
     record CalculatedFieldsUpdate(@Nullable List<MetadataColumnJSON> added, @Nullable List<MetadataColumnJSON> removed, @Nullable List<Pair<MetadataColumnJSON, MetadataColumnJSON>> updated)
