@@ -3005,6 +3005,7 @@ public class WikiController extends SpringActionController
 
             // @RequiresPermission(UpdatePermission.class)
             assertForUpdateOrDeletePermission(user,
+                controller.new BackLinksAction(),
                 controller.new PrintAllAction(),
                 controller.new PrintAllRawAction(),
                 controller.new PrintBranchAction()
