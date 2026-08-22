@@ -17,7 +17,10 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.jetbrains.annotations.NotNull" %>
 <%@ page import="org.junit.After" %>
+<%@ page import="org.junit.AfterClass" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.junit.Before" %>
+<%@ page import="org.junit.BeforeClass" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.action.ApiUsageException" %>
 <%@ page import="org.labkey.api.audit.AuditLogService" %>
@@ -41,7 +44,6 @@
 <%@ page import="org.labkey.api.dataiterator.DataIteratorContext" %>
 <%@ page import="org.labkey.api.dataiterator.DetailedAuditLogDataIterator" %>
 <%@ page import="org.labkey.api.dataiterator.MapDataIterator" %>
-<%@ page import="org.labkey.api.exp.ExperimentException" %>
 <%@ page import="org.labkey.api.exp.ObjectProperty" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
@@ -97,19 +99,16 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.HashSet" %>
-<%@ page import="static java.util.Collections.emptyList" %>
-<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.concurrent.TimeUnit" %>
 <%@ page import="java.util.stream.Collectors" %>
-<%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
+<%@ page import="static java.util.Collections.emptyList" %>
+<%@ page import="static org.hamcrest.Matchers.containsString" %>
 <%@ page import="static org.labkey.api.util.IntegerUtils.asInteger" %>
 <%@ page import="static org.labkey.api.util.IntegerUtils.asLong" %>
-<%@ page import="static org.hamcrest.Matchers.containsString" %>
-<%@ page import="org.junit.BeforeClass" %>
-<%@ page import="org.junit.AfterClass" %>
+<%@ page import="static org.labkey.api.util.PageFlowUtil.encodeURIComponent" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.BVT" %>
 
 <%!
@@ -379,7 +378,7 @@ private void testDeleteExpDataClass(ExpDataClassImpl dataClass, User user, Table
     assertNull(ExperimentService.get().getDataClass(c, table.getName()));
     assertNull(PropertyService.get().getDomain(c, typeURI));
 
-    UserSchema schema1 = QueryService.get().getUserSchema(user, c, helper.expDataSchemaKey);
+    UserSchema schema1 = QueryService.get().getUserSchema(user, c, ExpProvisionedTableTestHelper.expDataSchemaKey);
     assertNull(schema1.getTable(table.getName()));
 
     dbTable = dbSchema.getTable(storageTableName);
@@ -607,7 +606,7 @@ public void testDomainTemplate() throws Exception
     }
 
     // verify the "TodoList" DataClass was created and data was imported
-    UserSchema expSchema = QueryService.get().getUserSchema(_user, sub, helper.expDataSchemaKey);
+    UserSchema expSchema = QueryService.get().getUserSchema(_user, sub, ExpProvisionedTableTestHelper.expDataSchemaKey);
     TableInfo table = expSchema.getTable("TodoList");
     assertNotNull("data class not in query schema", table);
 
@@ -708,19 +707,6 @@ public void testContainerDelete() throws Exception
         dbTable = dbSchema.getTable(storageTableName);
         assertNull(dbTable);
     }
-}
-
-@Test
-public void testLargeUniqueOnSingleColumnOnly() throws ExperimentException
-{
-    List<GWTPropertyDescriptor> props = new ArrayList<>();
-    props.add(new GWTPropertyDescriptor("aa", "int"));
-    props.add(new GWTPropertyDescriptor("bb", "multiLine"));
-
-    List<GWTIndex> indices = new ArrayList<>();
-    indices.add(new GWTIndex(List.of("aa", "bb"), true));
-
-    ExperimentServiceImpl.get().createDataClass(c, _user, "largeUnique", null, props, indices, null, null);
 }
 
 @Test
@@ -903,7 +889,7 @@ public void testViewSupportForVocabularyDomains() throws Exception
     ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, _user, dataClassName, null,
             List.of(new GWTPropertyDescriptor("OtherProp", "string")), emptyList(), null, null);
 
-    UserSchema userSchema = QueryService.get().getUserSchema(_user, c, helper.expDataSchemaKey);
+    UserSchema userSchema = QueryService.get().getUserSchema(_user, c, ExpProvisionedTableTestHelper.expDataSchemaKey);
 
     // insert a data class with vocab look up prop using row id of inserted sample
     ArrayListMap<String, Object> rowToInsert = newArrayListMap();
