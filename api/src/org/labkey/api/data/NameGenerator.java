@@ -622,7 +622,7 @@ public class NameGenerator
             {
                 try
                 {
-                    Integer.parseInt(startVal);
+                    Long.parseLong(startVal);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1636,7 +1636,7 @@ public class NameGenerator
             {
                 try
                 {
-                    startInd = Integer.valueOf(startIndStr);
+                    startInd = Long.parseLong(startIndStr);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1803,7 +1803,7 @@ public class NameGenerator
             if (counterMatcher.find())
             {
                 String namePrefixExpression = counterMatcher.group(1);
-                int startInd = 0;
+                long startInd = 0;
                 String startIndStr = counterMatcher.group(2);
                 String numberFormat = counterMatcher.group(3);
                 String param = counterMatcher.group(4);
@@ -1812,7 +1812,7 @@ public class NameGenerator
                 {
                     try
                     {
-                        startInd = Integer.valueOf(startIndStr);
+                        startInd = Long.parseLong(startIndStr);
                     }
                     catch (NumberFormatException e)
                     {
@@ -1974,7 +1974,7 @@ public class NameGenerator
         private final static long WITH_COUNTER_PREVIEW_VALUE = 1;
 
         private final String _prefixExpression;
-        private final Integer _startIndex;
+        private final long _startIndex;
 
         private final FieldKeyStringExpression _parsedNameExpression;
 
@@ -1987,7 +1987,7 @@ public class NameGenerator
 
         private final String _counterSeqPrefix;
 
-        public CounterExpressionPart(String expression, int startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+        public CounterExpressionPart(String expression, long startIndex, String counterFormatStr, boolean strictIncremental, Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
         {
             _prefixExpression = expression;
             _parsedNameExpression = NameGenerationExpression.create(expression, false, NullValueBehavior.ReplaceNullWithBlank, true, container, null, null, false);
@@ -2606,7 +2606,7 @@ public class NameGenerator
                 assertEquals(2, se.getDeepParsedExpression().size());
                 assertTrue(parsedExpressions.getFirst() instanceof NameGenerator.CounterExpressionPart);
                 NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) parsedExpressions.getFirst();
-                assertEquals((Integer) 101, counterPart._startIndex);
+                assertEquals(101L, counterPart._startIndex);
 
                 String s = se.eval(m);
                 assertEquals("S100..101", s);
@@ -2630,6 +2630,32 @@ public class NameGenerator
                 assertEquals("S100...0112", s);
             }
 
+        }
+
+        @Test
+        public void testWithCounterLongStartValue()
+        {
+            // Issue 1431: a start value larger than Integer.MAX_VALUE must not be truncated
+            Map<String, Object> m = new HashMap<>();
+            m.put(ALIQUOTED_FROM_INPUT, aliquotedFrom);
+            Map<FieldKey, Object> fm = toFieldKeyMap(m);
+
+            Container c = JunitUtil.getTestContainer();
+            long start = 10_000_000_000L; // > Integer.MAX_VALUE
+            DbSequenceManager.delete(c, COUNTER_SEQ_PREFIX + (aliquotedFrom + "Z").toLowerCase());
+
+            String pattern = "${${AliquotedFrom}Z:withCounter(" + start + ")}";
+            Pair<List<String>, List<String>> messages =
+                    NameGenerator.validateWithCounterSyntax(pattern, pattern.indexOf(SubstitutionValue.withCounter.name()));
+            assertTrue("Long start value should validate", messages.first.isEmpty());
+
+            FieldKeyStringExpression se = NameGenerationExpression.create(
+                    pattern, false, NullValueBehavior.ReplaceNullWithBlank, true, c, null);
+            NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) se.getParsedExpression().getFirst();
+            assertEquals(start, counterPart._startIndex);
+
+            assertEquals("S100Z" + start, se.eval(m));
+            assertEquals("S100Z" + (start + 1), se.eval(fm));
         }
 
         @Test
