@@ -33,7 +33,6 @@ import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.core.admin.CustomizeSitePage;
 import org.labkey.test.pages.mothership.ShowInstallationDetailPage;
 import org.labkey.test.pages.test.TestActions;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.io.File;
@@ -55,7 +54,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.TEST_HOST_NAME;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 4) @OrderWith(Alphanumeric.class)
-public class MothershipReportTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class MothershipReportTest extends BaseWebDriverTest
 {
     private MothershipHelper _mothershipHelper;
 

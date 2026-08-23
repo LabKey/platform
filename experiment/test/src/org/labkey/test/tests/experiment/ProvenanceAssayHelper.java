@@ -33,7 +33,6 @@ import org.labkey.test.components.assay.AssayConstants;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.params.experiment.SampleTypeDefinition;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.SampleTypeHelper;
 
 import java.io.File;
@@ -42,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ProvenanceAssayHelper extends BaseWebDriverTest implements PostgresOnlyTest
+public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
 {
     protected static final String PROVENANCE_DATA_FILE = "AssayImportProvenanceRun.xls";
 

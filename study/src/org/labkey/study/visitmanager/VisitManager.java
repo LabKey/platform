@@ -748,8 +748,6 @@ public abstract class VisitManager
         SQLFragment sqlDelete = new SQLFragment();
         sqlDelete.appendComment("<VisitManager.purgeParticipantsFromParticipantsVisitTable>", study.getSqlDialect());
         sqlDelete.append("DELETE FROM study.ParticipantVisit");
-        if (study.getSqlDialect().isSqlServer())
-            sqlDelete.append(" WITH (UPDLOCK)");
         sqlDelete.append(" WHERE Container = ? AND ParticipantId IN (");
         sqlDelete.add(c);
         sqlDelete.append(sqlSelect);

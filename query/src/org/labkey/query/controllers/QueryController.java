@@ -8692,12 +8692,9 @@ public class QueryController extends SpringActionController
                                 throw warning.get();
                         }
                         // if that worked, let have the DB check it too
-                        if (ti.getSqlDialect().isPostgreSQL())
-                        {
-                            // CONSIDER: will this work with LabKey SQL named parameters?
-                            SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
-                            new SqlExecutor(ti.getSchema().getScope()).execute(sql);
-                        }
+                        // CONSIDER: will this work with LabKey SQL named parameters?
+                        SQLFragment sql = new SQLFragment("PREPARE validate AS SELECT * FROM ").append(ti.getFromSQL("MYVALIDATEQUERY__"));
+                        new SqlExecutor(ti.getSchema().getScope()).execute(sql);
                     }
                     catch (Exception x)
                     {

@@ -68,7 +68,6 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.Path;
 import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.TestContext;
@@ -1129,13 +1128,6 @@ public class SqlScriptController extends SpringActionController
                         .href(getScriptURL(CleanUpScriptAction.class, script))
                         .tooltip("Remove redundant and unnecessary statements. This uses AI, so it may take some time and its results must be carefully reviewed.")
                 );
-                SqlDialect dialect = script.getSchema().getSqlDialect();
-                String theOther = getTheOtherDialectDescription(script.getSchema().getSqlDialect());
-                out.println(
-                    PageFlowUtil.button("Migrate to " + theOther)
-                        .href(getScriptURL(MigrateScriptAction.class, script))
-                        .tooltip("Migrate this " + dialect.getProductName() + " SQL script to " + theOther + " syntax. This uses AI, so it may take some time and its results must be carefully reviewed.")
-                );
             }
         }
     }
@@ -1325,7 +1317,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         protected String getPrompt(SqlDialect dialect, SqlScript script)
         {
-            String youAre = "You are a " + dialect.getProductName() + (dialect.isSqlServer() ? " T-SQL" : " SQL") + " expert.\n";
+            String youAre = "You are a " + dialect.getProductName() + " SQL expert.\n";
             String yourTask = "Your task is to clean up this " + dialect.getProductName() + " SQL script" + (script.getFromVersion() == 0.0 ? ", which creates a brand new database schema and populates it with tables" : "") + ".\n";
             return youAre + yourTask + CLEAN_UP_PROMPT;
         }
@@ -1343,56 +1335,6 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-    private static String getTheOtherDialectDescription(SqlDialect dialect)
-    {
-        return dialect.isPostgreSQL() ? "Microsoft SQL Server" : "PostgreSQL";
-    }
-
-    private static String getTheOtherScriptDir(SqlDialect dialect)
-    {
-        return dialect.isPostgreSQL() ? "sqlserver" : "postgresql";
-    }
-
-    private static final String MIGRATE_TO_PG_PROMPT = """
-        Note that `ENTITYID`, `UNIQUEIDENTIFIER`, and `USERID` data types are available on both databases. Maintain
-        these data types when migrating the script (do not replace `ENTITYID` with `VARCHAR(36)` or `USERID` with `INT`,
-        for example).
-
-        Include a summary of the changes you made at the end.
-        """;
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class MigrateScriptAction extends BaseAIScriptAction
-    {
-        @Override
-        protected String getPrompt(SqlDialect dialect, SqlScript script)
-        {
-            String youAre = "You are an expert in Microsoft SQL Server T-SQL and PostgreSQL SQL.\n";
-            String yourTask = "Given this " + dialect.getProductName() + " SQL script, create an equivalent SQL script that's compatible with " + getTheOtherDialectDescription(dialect) + ".\n";
-            return youAre + yourTask + MIGRATE_TO_PG_PROMPT;
-        }
-
-        @Override
-        protected String getChatName()
-        {
-            return "SQL Script Migrator";
-        }
-
-        @Override
-        protected String getActionDescription()
-        {
-            return "Migrate " + super.getActionDescription();
-        }
-
-        @Override
-        protected ActionURL getSaveScriptActionURL(SqlScript script, String newContents, @Nullable File scriptDir)
-        {
-            SqlDialect dialect = script.getSchema().getSqlDialect();
-            File dbscripts = ((FileSqlScriptProvider)script.getProvider()).getScriptDirectory(dialect).getParentFile();
-            scriptDir = FileUtil.appendPath(dbscripts, Path.parse(getTheOtherScriptDir(dialect)));
-            return super.getSaveScriptActionURL(script, newContents, scriptDir);
-        }
-    }
 
     private record ScriptToSave(SqlScript script, String contents, @Nullable File scriptsDir) {}
 

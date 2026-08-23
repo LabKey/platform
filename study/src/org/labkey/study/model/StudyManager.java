@@ -77,7 +77,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -1645,8 +1644,6 @@ public class StudyManager
                     SQLFragment sqlf = new SQLFragment();
                     sqlf.append("DELETE FROM ");
                     sqlf.append(t);
-                    if (schema.getSqlDialect().isSqlServer())
-                        sqlf.append(" WITH (UPDLOCK)");
                     sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
                     sqlf.append(t);
                     sqlf.append(" d, ");
@@ -3978,21 +3975,7 @@ public class StudyManager
 
     public static SQLFragment timePortionFromDateSQL(String dateColumnName)
     {
-        SqlDialect dialect = StudySchema.getInstance().getSqlDialect();
-        SQLFragment sql = new SQLFragment();
-        if (dialect.isPostgreSQL())
-        {
-            sql.append("to_char(").append(dateColumnName).append(", 'HH24MISS')");
-        }
-        else if (dialect.isSqlServer())
-        {
-            sql.append("FORMAT(").append(dateColumnName).append(", 'HHmmss')");
-        }
-        else
-        {
-            sql.append("CAST((").append(dateColumnName).append(") AS VARCHAR(10))");
-        }
-        return sql;
+        return new SQLFragment("to_char(").append(dateColumnName).append(", 'HH24MISS')");
     }
 
     private String getParticipantCacheKey(Container container)
