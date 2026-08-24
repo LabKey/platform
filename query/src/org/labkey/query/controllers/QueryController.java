@@ -2560,11 +2560,17 @@ public class QueryController extends SpringActionController
 
         // GitHub Issue #899: the lookups above also resolve views inherited from ancestor folders. Absent an explicit
         // target folder, shadow that view with a new local one rather than editing (and relocating) the ancestor's.
+        CustomView inheritedView = null;
         if (view != null && !explicitTargetContainer && view.getContainer() != null && !container.equals(view.getContainer()))
+        {
+            inheritedView = view;
             view = null;
+        }
 
         if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
             errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" already exists. ");
+        else if (inheritedView != null && !replaceExisting && !StringUtils.isEmpty(name))
+            errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
@@ -6268,11 +6274,16 @@ public class QueryController extends SpringActionController
 
                 // GitHub Issue #899: getCustomView() also resolves views inherited from ancestor folders. Absent an explicit
                 // target folder, shadow that view with a new local one instead of rewriting (and un-inheriting) the ancestor's.
+                CustomView inheritedView = null;
                 if (existingView != null && !explicitTargetContainer && existingView.getContainer() != null
                         && !container.equals(existingView.getContainer()))
                 {
+                    inheritedView = existingView;
                     existingView = null;
                 }
+
+                if (inheritedView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
+                    throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
 
                 // save a new private view if shared is false but existing view is shared
                 if (existingView != null && !form.isShared() && existingView.getOwner() == null)
