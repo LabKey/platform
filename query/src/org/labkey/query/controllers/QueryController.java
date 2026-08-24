@@ -2534,7 +2534,7 @@ public class QueryController extends SpringActionController
     // Uck. Supports the old and new view designer.
     protected JSONObject saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName, boolean replaceExisting,
-                                                 boolean share, boolean inherit,
+                                                 boolean share, boolean inherit, boolean explicitTargetContainer,
                                                  boolean session, boolean saveFilter,
                                                  boolean hidden, JSONObject jsonView,
                                                  ActionURL returnUrl,
@@ -2558,10 +2558,9 @@ public class QueryController extends SpringActionController
         else
             view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
 
-        // GitHub Issue #899: the lookups above also resolve views inherited from ancestor folders. containerPath is only
-        // honored when inherit is set, so otherwise shadow that view with a new local one rather than editing (and
-        // relocating) the ancestor's.
-        if (view != null && !inherit && view.getContainer() != null && !container.equals(view.getContainer()))
+        // GitHub Issue #899: the lookups above also resolve views inherited from ancestor folders. Absent an explicit
+        // target folder, shadow that view with a new local one rather than editing (and relocating) the ancestor's.
+        if (view != null && !explicitTargetContainer && view.getContainer() != null && !container.equals(view.getContainer()))
             view = null;
 
         if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
@@ -2631,7 +2630,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, returnUrl, errors);
+                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, explicitTargetContainer, session, saveFilter, hidden, jsonView, returnUrl, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2776,9 +2775,10 @@ public class QueryController extends SpringActionController
                 boolean session = jsonView.optBoolean("session", false);
                 boolean hidden = jsonView.optBoolean("hidden", false);
                 // Users may save views to a location other than the current container
-                String containerPath = jsonView.optString("containerPath", getContainer().getPath());
+                String containerPath = jsonView.optString("containerPath", null);
+                boolean explicitTargetContainer = inherit && containerPath != null;
                 Container container;
-                if (inherit)
+                if (explicitTargetContainer)
                 {
                     // Only respect this request if it's a view that is inheritable in subfolders
                     container = ContainerManager.getForPath(containerPath);
@@ -2796,7 +2796,7 @@ public class QueryController extends SpringActionController
 
                 JSONObject savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName, replace,
-                        shared, inherit, session, true, hidden, jsonView, null, errors);
+                        shared, inherit, explicitTargetContainer, session, true, hidden, jsonView, null, errors);
 
                 if (savedView != null)
                 {
