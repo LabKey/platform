@@ -511,7 +511,7 @@ public abstract class SearchTest extends StudyBaseTest
         importStudy();
         startSpecimenImport(2);
 
-        waitForPipelineJobsToComplete(2, "study import", false);
+        waitForSpecimenImport();
 
         _searchHelper.enqueueSearchItem("999320016", Locator.linkContainingText("999320016"));
         _searchHelper.enqueueSearchItem("Urinalysis", Locator.linkContainingText("URF-1"),

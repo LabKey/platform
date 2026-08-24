@@ -15,12 +15,12 @@
  */
 package org.labkey.test.tests.study;
 
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestTimeoutException;
-import org.labkey.test.categories.Daily;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.util.StudyHelper;
 
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * CreateVialsTest also uses the specimen merge feature.
  */
-@Category({Daily.class, Specimen.class})
+@Category({Specimen.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 7)
 public class SpecimenMergeTest extends BaseWebDriverTest
 {
@@ -105,6 +105,7 @@ public class SpecimenMergeTest extends BaseWebDriverTest
 
     protected void setUpSteps()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
         _containerHelper.createProject(PROJECT_NAME, null);
         _containerHelper.createSubfolder(PROJECT_NAME, PROJECT_NAME, FOLDER_NAME, "Study", null);
         _containerHelper.enableModule("Specimen");

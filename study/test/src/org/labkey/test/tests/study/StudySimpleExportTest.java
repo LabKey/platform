@@ -17,6 +17,7 @@ package org.labkey.test.tests.study;
 
 import org.apache.commons.collections4.MapUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -1098,6 +1099,8 @@ public class StudySimpleExportTest extends StudyBaseTest
     @Test
     public void verifySpecimenSettings()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
+
         final String FOLDER_NAME = "Specimen Settings";
 
         log("Export specimen request settings");
