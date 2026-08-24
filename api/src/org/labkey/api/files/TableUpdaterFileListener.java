@@ -229,7 +229,6 @@ public class TableUpdaterFileListener implements FileListener
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
         sharedSQL.append(_table);
-        sharedSQL.append(_table.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "");
         sharedSQL.append(" SET ");
         if (_table.getColumn("Modified") != null)
         {

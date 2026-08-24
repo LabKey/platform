@@ -1744,8 +1744,8 @@ public class Table
         DomainKind<?> domainKind = tableDelete.getDomainKind();
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
-            if (!d.isPostgreSQL() && !d.isSqlServer())
-                throw new IllegalArgumentException("Domains are only supported for sql server and postgres");
+            if (!d.isPostgreSQL())
+                throw new IllegalArgumentException("Domains are only supported for postgres");
 
             String objectIdColumnName = updatable.getObjectIdColumnName();
             String objectURIColumnName = updatable.getObjectURIColumnName();

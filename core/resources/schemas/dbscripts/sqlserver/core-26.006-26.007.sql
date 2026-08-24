@@ -1,1 +1,0 @@
-ALTER TABLE core.ApiKeys ADD RestrictionRole NVARCHAR(256);

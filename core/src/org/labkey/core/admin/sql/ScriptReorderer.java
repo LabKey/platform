@@ -57,22 +57,11 @@ public class ScriptReorderer
         _schema = schema;
         _contents = contents;
 
-        if (_schema.getSqlDialect().isSqlServer())
-        {
-            SCHEMA_NAME_REGEX = "(((\\w+)|(\\[\\w+\\]))\\.)?"; // optional [] around schema name
-            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "((#?\\w+)|(\\[#?\\w+\\])))";  // # allows for temp table names, optional [] around table name
-            TABLE_NAME_NO_UNDERSCORE_REGEX = null;
-            STATEMENT_ENDING_REGEX = "((; GO\\s*$)|(;\\s*$)|( GO\\s*$))\\s*";       // Semicolon, GO, or both
-            CONSTRAINT_NAME_REGEX = "(?<constraint>((\\w+)|(\\[\\w+\\])))"; // optional [] around name
-        }
-        else
-        {
-            SCHEMA_NAME_REGEX = "((\\w+)\\.)?";
-            TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(\\w+))";
-            TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "([[a-zA-Z0-9]]+))";
-            STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
-            CONSTRAINT_NAME_REGEX = "(?<constraint>(\\w+))";
-        }
+        SCHEMA_NAME_REGEX = "((\\w+)\\.)?";
+        TABLE_NAME_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "(\\w+))";
+        TABLE_NAME_NO_UNDERSCORE_REGEX = "(?<table>" + SCHEMA_NAME_REGEX + "([[a-zA-Z0-9]]+))";
+        STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
+        CONSTRAINT_NAME_REGEX = "(?<constraint>(\\w+))";
 
         TABLE_NAME2_REGEX = TABLE_NAME_REGEX.replace("table", "table2");
 
@@ -102,46 +91,24 @@ public class ScriptReorderer
 
         patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (IF EXISTS )?"), Type.Table, Operation.Other));
 
-        if (_schema.getSqlDialect().isSqlServer())
-        {
-            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+        patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (TEMPORARY )?TABLE "), Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)'\\s*,\\s*'(?<schema>\\w+)'\\s*,\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+        patterns.add(new SqlPattern("SELECT SETVAL\\('" + TABLE_NAME_NO_UNDERSCORE_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
+        patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
+        patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, Operation.Other));
 
-            // Specific sp_rename pattern for table rename
-            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "'\\s*,\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+        // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
+        patterns.add(new SqlPattern("(DROP|ALTER) INDEX (IF EXISTS )?" + SCHEMA_NAME_REGEX + "(IX_|IDX_|UQ_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            // All other sp_renames
-            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*(@objname\\s*=\\s*)?'(?<table>\\w+)'\\s*,\\s*(@objschema\\s*=\\s*)?'(?<schema>\\w+)'\\s*,\\s*(@objtype\\s*=\\s*)?'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+        // Find table name based on sequence naming conventions
+        patterns.add(new SqlPattern("CREATE SEQUENCE " + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
 
-            // DROP INDEX on SQL Server follows a similar pattern to CREATE INDEX (above)
-            patterns.add(new SqlPattern("DROP INDEX (IF EXISTS )?\\w+ ON " + TABLE_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-
-            patterns.add(new SqlPattern("(CREATE|ALTER) PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
-            patterns.add(new SqlPattern("(CREATE|ALTER) TRIGGER .+?" + "END GO\\s*$", Type.NonTable, Operation.Other));
-            patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " CHECK CONSTRAINT " + CONSTRAINT_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-        }
-        else
-        {
-            patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME2_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (TEMPORARY )?TABLE "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(?<table>\\w+)'\\s*,\\s*'(?<schema>\\w+)'\\s*,\\s*'(TABLE|COLUMN|INDEX|DEFAULT|CONSTRAINT)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)'\\s*,\\s*'(?<schema>\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
-            patterns.add(new SqlPattern("SELECT SETVAL\\('" + TABLE_NAME_NO_UNDERSCORE_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
-            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, Operation.Other));
-
-            // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
-            patterns.add(new SqlPattern("(DROP|ALTER) INDEX (IF EXISTS )?" + SCHEMA_NAME_REGEX + "(IX_|IDX_|UQ_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-
-            // Find table name based on sequence naming conventions
-            patterns.add(new SqlPattern("CREATE SEQUENCE " + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-
-            patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (\\S+) (.+?) \\2 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?( VOLATILE)?( COST \\d+)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
-            patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("DO (\\S+) (.+?) END \\1" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
-        }
+        patterns.add(new SqlPattern("CREATE (OR REPLACE )?FUNCTION .+? RETURNS \\w+ AS (\\S+) (.+?) \\2 LANGUAGE (plpgsql|SQL)( STRICT)?( IMMUTABLE)?( VOLATILE)?( COST \\d+)?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+        patterns.add(new SqlPattern(getRegExWithPrefix("COMMENT ON TABLE "), Type.Table, Operation.Other));
+        patterns.add(new SqlPattern("DO (\\S+) (.+?) END \\1" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
         patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " (WITH CHECK )?ADD CONSTRAINT " + CONSTRAINT_NAME_REGEX + " FOREIGN KEY\\s*\\([^\\)]+?\\) REFERENCES " + TABLE_NAME2_REGEX + " \\([^\\)]+?\\).*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
         // Put this at the end to capture all other ALTER TABLE statements (i.e., not RENAMEs)
@@ -217,9 +184,7 @@ public class ScriptReorderer
                         // Stash a normalized version of the constraint name so we can save it to the map associated
                         // with its table (below). Also, if a second table is not specified and we can determine the
                         // constraint's table from the map, then set it as tableName2. This ensures the statement is
-                        // output after its CREATE statement. For example, a SQL Server statement like ALTER TABLE
-                        // MyTable CHECK CONSTRAINT MyConstraint may need to be output after the second table from the
-                        // original CREATE statement.
+                        // output after its CREATE statement.
                         String constraintName = m.group("constraint");
                         assert constraintName != null;
                         constraintKey = normalizeName(constraintName);

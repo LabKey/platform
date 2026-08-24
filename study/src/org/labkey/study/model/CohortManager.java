@@ -284,13 +284,11 @@ public class CohortManager
 
         // null out cohort for all participants in this container:
         new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
-                (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
                 "\nSET InitialCohortId = NULL, CurrentCohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
 
         // null out cohort for all participant/visits in this container (required for advanced cohort support, where participants
         // can change cohorts over time):
         new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                (ss.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") +
                 "\nSET CohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
 
         StudyManager.getInstance().clearParticipantCache(study.getContainer());

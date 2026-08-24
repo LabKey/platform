@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -47,7 +46,6 @@ import org.labkey.api.data.TableInfo.IndexDefinition;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -612,7 +610,7 @@ public class ToolsController extends SpringActionController
 
             for (ControllerActionId actionId : actionIds)
             {
-                Module module = ModuleLoader.getInstance().getModuleForController(actionId.getController().toLowerCase());
+                Module module = ModuleLoader.getInstance().getModuleForController(actionId.controller().toLowerCase());
 
                 if (null == module)
                 {
@@ -620,8 +618,8 @@ public class ToolsController extends SpringActionController
                 }
                 else
                 {
-                    SpringActionController controller = (SpringActionController) module.getController(null, actionId.getController());
-                    if (null == controller || controller.resolveAction(actionId.getAction()) == null)
+                    SpringActionController controller = (SpringActionController) module.getController(null, actionId.controller());
+                    if (null == controller || controller.resolveAction(actionId.action()) == null)
                     {
                         missingActions.add(actionId);
                     }
@@ -688,46 +686,12 @@ public class ToolsController extends SpringActionController
             root.addChild("Check Crawler Actions");
         }
 
-        private static class ControllerActionId implements Comparable<ControllerActionId>
+        private record ControllerActionId(String controller, String action) implements Comparable<ControllerActionId>
         {
-            private final String _controller;
-            private final String _action;
-
-            public ControllerActionId(String controller, String action)
-            {
-                _controller = controller;
-                _action = action;
-            }
-
-            public String getController()
-            {
-                return _controller;
-            }
-
-            public String getAction()
-            {
-                return _action;
-            }
-
-            @Override
+            @Override @NotNull
             public String toString()
             {
-                return "/" + _controller + "-" + _action;
-            }
-
-            @Override
-            public boolean equals(Object o)
-            {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-                ControllerActionId that = (ControllerActionId) o;
-                return _controller.equals(that._controller) && _action.equals(that._action);
-            }
-
-            @Override
-            public int hashCode()
-            {
-                return Objects.hash(_controller, _action);
+                return "/" + controller + "-" + action;
             }
 
             @Override
@@ -735,30 +699,6 @@ public class ToolsController extends SpringActionController
             {
                 return toString().compareTo(o.toString());
             }
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class PostgreSqlOnlyModulesThatHaveSqlServerScriptsAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            List<String> names = ModuleLoader.getInstance().getModules().stream()
-                .filter(m -> !m.getSupportedDatabasesSet().contains(SupportedDatabase.mssql))
-                .filter(m -> !StringUtils.isBlank(m.getSourcePath()))
-                .filter(m -> new File(m.getSourcePath(), "resources/schemas/dbscripts/sqlserver").exists())
-                .map(Module::getName)
-                .toList();
-
-            return new HtmlView(HtmlString.of(names.isEmpty() ? "None" : names.toString()));
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            addBeginNavTrail(root);
-            root.addChild("PostgreSQL-Only Modules That Still Have SQL Server Scripts");
         }
     }
 
@@ -1137,7 +1077,6 @@ public class ToolsController extends SpringActionController
         @Test
         public void testOverlappingIndices()
         {
-            Assume.assumeTrue("Skipping because this server is not running on PostgreSQL", DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL());
             var map = new OverlappingIndicesAnalyzer().getChanges(null);
             var keys = map.keys();
             if (!keys.isEmpty())
@@ -1294,22 +1233,17 @@ public class ToolsController extends SpringActionController
             {
                 writer.write("-- " + change.description() + "\n");
 
-                if (DbScope.getLabKeyScope().getSqlDialect().isPostgreSQL())
+                if (dropIndex.indexType() == Unique)
                 {
-                    if (dropIndex.indexType() == Unique)
+                    String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
+                    if (constraintName != null)
                     {
-                        String constraintName = getConstraintForIndex(schemaName, dropIndex.name());
-                        if (constraintName != null)
-                        {
-                            writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
-                            return;
-                        }
+                        writer.write("ALTER TABLE " + schemaName + "." + tableName + " DROP CONSTRAINT " + constraintName + ";\n");
+                        return;
                     }
-
-                    writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
                 }
-                else
-                    writer.write("DROP INDEX " + dropIndex.name() + " ON " + schemaName + "." + tableName + ";\n");
+
+                writer.write("DROP INDEX " + schemaName + "." + dropIndex.name() + ";\n");
             }
         },
         Convert

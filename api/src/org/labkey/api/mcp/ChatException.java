@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2026 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-CREATE VIEW core.Users AS
-    SELECT p.Name AS Email, ud.*, p.Active, CAST(CASE WHEN l.UserId IS NULL THEN 0 ELSE 1 END AS BIT) AS HasPassword
-    FROM core.Principals p
-        INNER JOIN core.UsersData ud ON p.UserId = ud.UserId
-        LEFT OUTER JOIN core.Logins l ON p.UserId = l.UserId
-    WHERE Type = 'u';
+package org.labkey.api.mcp;
 
-GO
-
-CREATE VIEW core.ActiveUsers AS
-    SELECT *
-    FROM core.Users
-    WHERE Active=1;
-
-GO
-
+// Provider-agnostic wrapper for exceptions thrown by the active _ModelProvider's ChatModel, so callers can handle
+// chat failures without depending on any specific vendor SDK (Anthropic/OpenAI/Gemini/Bedrock/Ollama, etc.).
+public class ChatException extends RuntimeException
+{
+    public ChatException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+}

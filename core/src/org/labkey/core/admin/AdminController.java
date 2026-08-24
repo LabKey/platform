@@ -506,12 +506,9 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
 
-        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-        {
-            AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
-            AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
-            AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
-        }
+        AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
+        AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+        AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
@@ -2691,11 +2688,6 @@ public class AdminController extends SpringActionController
             if (!getContainer().isRoot())
             {
                 throw new NotFoundException("Available only in the root container");
-            }
-
-            if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
-                throw new NotFoundException("Available only with Postgres as the primary database");
             }
 
             return super.createQueryView(form, errors, forExport, dataRegion);

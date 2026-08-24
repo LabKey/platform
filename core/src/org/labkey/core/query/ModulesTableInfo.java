@@ -27,7 +27,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -156,17 +155,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
     {
         sql.append(sep);
 
-        SqlDialect dialect = getSqlDialect();
-        String literal = dialect.getBooleanLiteral(b);
-
-        if (dialect.isSqlServer())
-        {
-            sql.append("CAST (").append(literal).append(" AS BIT)");
-        }
-        else
-        {
-            sql.append(literal);
-        }
+        sql.append(getSqlDialect().getBooleanLiteral(b));
     }
 
     @NotNull

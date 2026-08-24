@@ -1126,11 +1126,7 @@ public class SecurityManager
         displayName = displayName.replace("@"," ");
         displayName = StringUtils.trimToEmpty(displayName);
 
-        // Issue 25813: if two users are being inserted at the same time through the addUser method above, we can get deadlock on SQLServer so we
-        // actively lock when doing this select to prevent it from promoting a lock up the chain.
         SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
-        if (core.getSchema().getScope().getSqlDialect().isSqlServer())
-            select.append(" WITH (UPDLOCK)");
         select.append(" WHERE DisplayName = ? AND UserId != ?");
         select.add(displayName);
         select.add(userId);

@@ -162,9 +162,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 }
                 else
                 {
-                    // UNLOGGED skips WAL when populating and indexing the table; only supported in PostgreSQL.
+                    // UNLOGGED skips WAL when populating and indexing the table.
                     selectInto = new SQLFragment("SELECT * INTO ")
-                            .append(_mqh._unlogged && _mqh._scope.getSqlDialect().isPostgreSQL() ? "UNLOGGED " : "")
+                            .append(_mqh._unlogged ? "UNLOGGED " : "")
                             .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");

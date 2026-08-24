@@ -43,8 +43,6 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
         scope = t.getSchema().getScope();
         this.failIfRowNotFound = failIfRowNotFound;
 
-        if (scope.getSqlDialect().isSqlServer())
-            forUpdate.append(" WITH (UPDLOCK)");
         forUpdate.append("\nWHERE ");
         String and = " ";
         for (ColumnInfo pkColumn : pkColumns)
@@ -52,8 +50,7 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
             forUpdate.append(and);
             forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).append("=?").add(pkValues[forUpdate.getParamsArray().length]);
         }
-        if (scope.getSqlDialect().isPostgreSQL())
-            forUpdate.append("\nFOR UPDATE");
+        forUpdate.append("\nFOR UPDATE");
     }
 
     @Override

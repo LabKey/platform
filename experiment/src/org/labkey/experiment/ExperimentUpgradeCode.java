@@ -37,7 +37,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.DeferredUpgrade;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.ParameterMapStatement;
@@ -129,25 +128,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             DbScope primary = DbScope.getLabKeyScope();
             String schemaName = "exp";
             long desiredValue = Integer.MAX_VALUE + 1L;
-            if (primary.getSqlDialect().isPostgreSQL())
-            {
-                String sequenceName = "object_objectid_seq";
-                ensureBigObjectIds(
-                    // Calling currval() is not an option since it requires a previous call to nextval() in this database session
-                    new SqlSelector(primary, new SQLFragment("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
-                    newValue -> new SqlExecutor(primary).execute("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue),
-                    desiredValue
-                );
-            }
-            else
-            {
-                String tableName = schemaName + "." + "Object";
-                ensureBigObjectIds(
-                    new SqlSelector(primary, new SQLFragment("SELECT IDENT_CURRENT(?)", tableName)),
-                    newValue -> new SqlExecutor(primary).execute("DBCC CHECKIDENT(?, RESEED, ?)", tableName, newValue),
-                    desiredValue
-                );
-            }
+            String sequenceName = "object_objectid_seq";
+            ensureBigObjectIds(
+                // Calling currval() is not an option since it requires a previous call to nextval() in this database session
+                new SqlSelector(primary, new SQLFragment("SELECT last_value FROM pg_sequences WHERE schemaname = ? AND sequencename = ?", schemaName, sequenceName)),
+                newValue -> new SqlExecutor(primary).execute("SELECT setval(?, ?)", schemaName + "." + sequenceName, newValue),
+                desiredValue
+            );
         }
     }
 
@@ -638,11 +625,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         // Set NOT NULL constraint
         SqlExecutor executor = new SqlExecutor(scope);
-        boolean isPostgreSQL = scope.getSqlDialect().isPostgreSQL();
-        if (isPostgreSQL)
-            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId SET NOT NULL"));
-        else
-            executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId INT NOT NULL"));
+        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId SET NOT NULL"));
 
         // Add indexes back via StorageProvisioner
         storageProvisioner.ensureTableIndices(domain);
@@ -908,25 +891,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         else
             LOG.info("No indices found on table '{}' that contain the lsid column.", provisionedTable.getName());
 
-        DbScope primary = DbScope.getLabKeyScope();
-        // postgres automatically drops FK associated with column when column is dropped
-        if (primary.getSqlDialect().isSqlServer())
-        {
-            boolean hasFKDropped = false;
-            ForeignKey lsidFKCol = lsidColumn.getFk();
-            if (lsidFKCol != null)
-            {
-                String lsidFKName = lsidFKCol.getFkName();
-                if (lsidFKName != null)
-                {
-                    StorageProvisionerImpl.get().dropTableConstraints(domain, Collections.singleton(lsidFKName));
-                    hasFKDropped = true;
-                }
-            }
-
-            if (!hasFKDropped) // GitHub Issue 1117: this could happen if the dataclass is created by folder import
-                LOG.info("No FK found on table '{}' that contain the lsid column.", provisionedTable.getName());
-        }
+        // postgres automatically drops the FK associated with a column when the column is dropped
 
         // Remanufacture a property descriptor that matches the original LSID property descriptor.
         var spec = new PropertyStorageSpec(lsidColumnName, JdbcType.VARCHAR, 300).setNullable(false);

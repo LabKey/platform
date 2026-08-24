@@ -1807,11 +1807,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return false;
     }
 
-    @Override
-    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
-    {
-    }
-
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}
 
     public record AssayMoveData(Map<String, Integer> counts, Map<Long, List<AssayFileMoveData>> fileMovesByRunId) {}

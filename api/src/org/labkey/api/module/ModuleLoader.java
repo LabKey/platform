@@ -241,6 +241,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
      */
     private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
 
+    // Whether this startup ran any schema scripts. Used by the system upgrade audit event
+    private volatile boolean _hasSchemaUpgrade = false;
+
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph) -> sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveKeyedHashSetValuedMap<>();
@@ -671,7 +674,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         // Now that we know if this is a new install...
         setDatabaseMigrationConfiguration(labkeyRoot);
-        upgradeCoreModule(lockFile);
+        // Core is upgraded before modulesRequiringUpgrade is built, so a core-only upgrade shows up nowhere else
+        boolean coreUpgraded = upgradeCoreModule(lockFile);
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
@@ -783,6 +787,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 }
             });
         }
+
+        _hasSchemaUpgrade = coreUpgraded || !modulesRequiringUpgrade.isEmpty();
 
         if (!modulesRequiringUpgrade.isEmpty())
             _log.info("Modules requiring upgrade: {}", modulesRequiringUpgrade);
@@ -2117,6 +2123,12 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public boolean isNewInstall()
     {
         return _newInstall;
+    }
+
+    /** Did any module, including core, run schema scripts during this startup? */
+    public boolean hasSchemaUpgrade()
+    {
+        return _hasSchemaUpgrade;
     }
 
     private void setDatabaseMigrationConfiguration(FileLike labkeyRoot)

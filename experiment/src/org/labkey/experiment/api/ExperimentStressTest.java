@@ -17,13 +17,11 @@ package org.labkey.experiment.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -182,14 +180,6 @@ public class ExperimentStressTest
 
     private void _sampleTypeInserts(RunMode mode) throws Throwable
     {
-        /*
-         * Deadlock on recompute introduced by Issue 47033 has been fixed by Issue 47246.
-         * The tests are currently passing when run locally using sql server.
-         * However, there are more deadlocks with sql server when run on TC, now on ExperimentRun table.
-         */
-        Assume.assumeFalse("Issue 47033: Test does not yet pass on SQL Server. Skipping.",
-                CoreSchema.getInstance().getSqlDialect().isSqlServer());
-
         LOG.info("** starting sample type insert test {}", mode._description);
         final User user = TestContext.get().getUser();
         final Container c = JunitUtil.getTestContainer();

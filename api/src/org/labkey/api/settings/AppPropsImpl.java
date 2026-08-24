@@ -534,6 +534,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), UNKNOWN_VERSION);
     }
 
+    @Nullable
+    @Override
+    public String getBuildTime()
+    {
+        return ModuleLoader.getInstance().getCoreModule().getBuildTime();
+    }
+
     @Override
     public double getSchemaVersion()
     {
