@@ -2534,7 +2534,7 @@ public class QueryController extends SpringActionController
     // Uck. Supports the old and new view designer.
     protected JSONObject saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName, boolean replaceExisting,
-                                                 boolean share, boolean inherit, boolean explicitTargetContainer,
+                                                 boolean share, boolean inherit, boolean inheritToTargetContainer,
                                                  boolean session, boolean saveFilter,
                                                  boolean hidden, JSONObject jsonView,
                                                  ActionURL returnUrl,
@@ -2561,7 +2561,7 @@ public class QueryController extends SpringActionController
         // GitHub Issue #899: the lookups above also resolve views inherited from ancestor folders. Absent an explicit
         // target folder, shadow that view with a new local one rather than editing (and relocating) the ancestor's.
         CustomView inheritedView = null;
-        if (view != null && !explicitTargetContainer && view.getContainer() != null && !container.equals(view.getContainer()))
+        if (view != null && !inheritToTargetContainer && view.getContainer() != null && !container.equals(view.getContainer()))
         {
             inheritedView = view;
             view = null;
@@ -2569,7 +2569,7 @@ public class QueryController extends SpringActionController
 
         if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
             errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" already exists. ");
-        else if (inheritedView != null && !replaceExisting && !StringUtils.isEmpty(name))
+        if (inheritedView != null && !replaceExisting && !StringUtils.isEmpty(name))
             errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
 
         // 11179: Allow editing the view if we're saving to session.
@@ -2636,7 +2636,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, explicitTargetContainer, session, saveFilter, hidden, jsonView, returnUrl, errors);
+                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, inheritToTargetContainer, session, saveFilter, hidden, jsonView, returnUrl, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2782,9 +2782,9 @@ public class QueryController extends SpringActionController
                 boolean hidden = jsonView.optBoolean("hidden", false);
                 // Users may save views to a location other than the current container
                 String containerPath = jsonView.optString("containerPath", null);
-                boolean explicitTargetContainer = inherit && containerPath != null;
+                boolean inheritToTargetContainer = inherit && containerPath != null;
                 Container container;
-                if (explicitTargetContainer)
+                if (inheritToTargetContainer)
                 {
                     // Only respect this request if it's a view that is inheritable in subfolders
                     container = ContainerManager.getForPath(containerPath);
@@ -2800,9 +2800,12 @@ public class QueryController extends SpringActionController
                     throw new NotFoundException("No such container: " + containerPath);
                 }
 
+                if (inheritToTargetContainer && !container.hasPermission(getUser(), EditSharedViewPermission.class))
+                    throw new UnauthorizedException();
+
                 JSONObject savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName, replace,
-                        shared, inherit, explicitTargetContainer, session, true, hidden, jsonView, null, errors);
+                        shared, inherit, inheritToTargetContainer, session, true, hidden, jsonView, null, errors);
 
                 if (savedView != null)
                 {
@@ -6232,9 +6235,9 @@ public class QueryController extends SpringActionController
 
             // Users may save views to a location other than the current container
             String containerPath = form.getContainerPath();
-            boolean explicitTargetContainer = form.isInherit() && containerPath != null;
+            boolean inheritToTargetContainer = form.isInherit() && containerPath != null;
             Container container;
-            if (explicitTargetContainer)
+            if (inheritToTargetContainer)
             {
                 // Only respect this request if it's a view that is inheritable in subfolders
                 container = ContainerManager.getForPath(containerPath);
@@ -6272,10 +6275,16 @@ public class QueryController extends SpringActionController
                     existingView = form.getQueryDef().getCustomView(getUser(), null, form.getNewName());
                 }
 
+                // save a new private view if shared is false but existing view is shared
+                if (existingView != null && !form.isShared() && existingView.getOwner() == null)
+                {
+                    existingView = null;
+                }
+
                 // GitHub Issue #899: getCustomView() also resolves views inherited from ancestor folders. Absent an explicit
                 // target folder, shadow that view with a new local one instead of rewriting (and un-inheriting) the ancestor's.
                 CustomView inheritedView = null;
-                if (existingView != null && !explicitTargetContainer && existingView.getContainer() != null
+                if (existingView != null && !inheritToTargetContainer && existingView.getContainer() != null
                         && !container.equals(existingView.getContainer()))
                 {
                     inheritedView = existingView;
@@ -6284,12 +6293,6 @@ public class QueryController extends SpringActionController
 
                 if (inheritedView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
                     throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
-
-                // save a new private view if shared is false but existing view is shared
-                if (existingView != null && !form.isShared() && existingView.getOwner() == null)
-                {
-                    existingView = null;
-                }
 
                 if (existingView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
                     throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" already exists. ");
