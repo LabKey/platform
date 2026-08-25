@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
@@ -134,7 +133,6 @@ public class AssayTest extends AbstractAssayTest
     @Test
     public void testAssayMultiFileImportForMVTC() throws Exception
     {
-        Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
         _containerHelper.createProject(MVTC_MULTI_FILE_IMPORT_PROJECT, "Assay");
         new GeneralAssayDesign(MVTC_MULTI_FILE_IMPORT_ASSAY)
                 .setRunFields(List.of(new FieldDefinition("runText", FieldDefinition.ColumnType.String)), true)

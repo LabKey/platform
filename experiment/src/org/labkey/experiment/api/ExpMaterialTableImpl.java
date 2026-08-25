@@ -1587,9 +1587,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             SQLFragment incremental = new SQLFragment();
-            if (d.isPostgreSQL())
-            {
-                incremental
+            incremental
                     .append("UPDATE temp.${NAME} AS st\n")
                     .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
                     .append("FROM exp.Material AS expm\n")
@@ -1600,22 +1598,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
                     .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
                     .append(")");
-            }
-            else
-            {
-                // SQL Server 2022 supports IS DISTINCT FROM
-                incremental
-                    .append("UPDATE st\n")
-                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                    .append("FROM temp.${NAME} st, exp.Material expm\n")
-                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
-                    .append("    COALESCE(st.aliquotcount,-2147483648) <> COALESCE(expm.aliquotcount,-2147483648) OR ")
-                    .append("    COALESCE(st.availablealiquotcount,-2147483648) <> COALESCE(expm.availablealiquotcount,-2147483648) OR ")
-                    .append("    COALESCE(st.aliquotvolume,-2147483648) <> COALESCE(expm.aliquotvolume,-2147483648) OR ")
-                    .append("    COALESCE(st.availablealiquotvolume,-2147483648) <> COALESCE(expm.availablealiquotvolume,-2147483648) OR ")
-                    .append("    COALESCE(st.aliquotunit,'-') <> COALESCE(expm.aliquotunit,'-')")
-                    .append(")");
-            }
             upsertWithRetry(incremental);
         }
 
@@ -1640,12 +1622,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
-            SqlDialect d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            // SQL Server's datetime type lacks microsecond precision
-            Timestamp comparison = d.isSqlServer() ? new Timestamp(changedSince.getTime() - 500) : changedSince;
-
             SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
-                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(comparison)
+                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
                     .append(")\n");
 
             SQLFragment src = new SQLFragment()
@@ -1653,18 +1631,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("UNION\n")
                     .append(getViewSourceSql()).append(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
 
-            if (d.isPostgreSQL())
-            {
-                sql.append("UPDATE temp.${NAME} AS st\nSET ");
-                appendSetFromSrc(sql);
-                sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
-            }
-            else
-            {
-                sql.append("UPDATE st\nSET ");
-                appendSetFromSrc(sql);
-                sql.append("\nFROM temp.${NAME} st INNER JOIN (").append(src).append("\n) src ON st.rowid = src.rowid");
-            }
+            sql.append("UPDATE temp.${NAME} AS st\nSET ");
+            appendSetFromSrc(sql);
+            sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
 
             return sql;
         }
@@ -1833,7 +1802,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" / ? AS ")
-                            .append(parent.getSqlDialect().isPostgreSQL() ? "DECIMAL" : "DOUBLE PRECISION")
+                            .append("DECIMAL")
                             .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())

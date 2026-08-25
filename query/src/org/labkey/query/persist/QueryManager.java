@@ -1089,8 +1089,6 @@ public class QueryManager
         if (schema != null)
         {
             DbSchema dbSchema = schema.getDbSchema();
-            if (!dbSchema.getSqlDialect().isPostgreSQL())
-                return null; // deliberately not reporting metrics from SQL Server
             TableInfo table = schema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT, new ContainerFilter.AllFolders(adminUser));
             if (table != null)
             {

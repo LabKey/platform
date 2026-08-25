@@ -59,7 +59,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
@@ -747,19 +746,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 throw new RuntimeSQLException(e);
             }
         }
-    }
-
-    @Override
-    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
-    {
-        assert AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive();
-
-        var table = AssayDbSchema.getInstance().getTableInfoFilterCriteria();
-        var sql = new SQLFragment("DELETE FROM ").append(table)
-                .append(" WHERE (PropertyId = ? OR ReferencePropertyId = ?)")
-                .addAll(pd.getPropertyId(), pd.getPropertyId());
-
-        new SqlExecutor(table.getSchema()).execute(sql);
     }
 
     private static boolean isResultsDomain(GWTDomain<?> domain)

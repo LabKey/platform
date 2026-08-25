@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -98,14 +97,6 @@ public class SearchModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set("search");
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        // Should test the "search" schema, but it differs between SQL Server & PostgreSQL
-        return Collections.emptySet();
     }
 
     @Override

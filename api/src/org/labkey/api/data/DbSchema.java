@@ -622,21 +622,9 @@ public class DbSchema
 
             SqlExecutor executor = new SqlExecutor(testSchema);
 
-            if (testSchema.getSqlDialect().isSqlServer())
-            {
-                // test the 3 ways to create a schema on SQLServer
-                executor.execute("EXEC sp_addapprole 'testdrop', 'password'");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute(testSchema.getSqlDialect().getCreateSchemaSql("testdrop3"));
-            }
-            else if (testSchema.getSqlDialect().isPostgreSQL())
-            {
-                executor.execute("CREATE SCHEMA testdrop");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute("CREATE SCHEMA testdrop3");
-            }
-            else
-                return;
+            executor.execute("CREATE SCHEMA testdrop");
+            executor.execute("CREATE SCHEMA testdrop2");
+            executor.execute("CREATE SCHEMA testdrop3");
 
             executor.execute("CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)");
             executor.execute("CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))");

@@ -153,17 +153,7 @@ public class TableChange
                 {
                     List<String> columnNames = index.columns().stream().map(ColumnInfo::getName).collect(Collectors.toList());
 
-                    // CONSIDER: Move this re-classification of the non-unique index as a unique index into SchemaColumnMetaData.loadUniqueIndices()
-                    // SQLServer creates a non-unique index for single large text columns with a "_hashed_" prefix.
-                    // The uniqueness is enforced by a database trigger.
-                    boolean unique = index.indexType() == TableInfo.IndexType.Unique ||
-                            (schema.getSqlDialect().isSqlServer() && columnNames.size() == 1 && columnNames.getFirst().startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX));
-
-                    // remove the _hashed_ column prefix for SQLServer
-                    if (schema.getSqlDialect().isSqlServer() && unique)
-                        columnNames = columnNames.stream().map(s -> s.startsWith(PropertyStorageSpec.HASHED_COLUMN_PREFIX) ? s.substring(PropertyStorageSpec.HASHED_COLUMN_PREFIX.length()) : s).collect(Collectors.toList());
-
-                    Index idx = new Index(unique, columnNames);
+                    Index idx = new Index(index.indexType() == TableInfo.IndexType.Unique, columnNames);
 
                     for (String columnName : columnNames)
                     {

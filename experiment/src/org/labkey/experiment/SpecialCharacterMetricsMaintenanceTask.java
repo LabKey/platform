@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -95,13 +94,6 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
             Map<String, Object> metric = new LinkedHashMap<>();
             metric.put("Run time", new Date());
-
-            if (!dialect.isPostgreSQL())
-            {
-                metric.put("skipped", "nonPostgres");
-                SpecialCharacterMetricsProvider.getInstance().updateMetrics(Map.of(SpecialCharacterMetricsProvider.METRIC_KEY, metric));
-                return;
-            }
 
             Map<String, Map<String, Long>> counts = new LinkedHashMap<>();
             for (String type : new String[]{TYPE_TEXT_CHOICE, TYPE_MVTC, TYPE_TEXT, TYPE_MULTILINE, TYPE_DATA_NAME, TYPE_OBJECT_STRING_VALUE})
@@ -313,9 +305,6 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         @Test
         public void testSpecialCharacterMetrics() throws Exception
         {
-            DbScope scope = ExperimentService.get().getSchema().getScope();
-            Assume.assumeTrue("Special character metrics are PostgreSQL only", scope.getSqlDialect().isPostgreSQL());
-
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             Logger log = LogManager.getLogger(TestCase.class);

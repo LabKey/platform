@@ -2569,9 +2569,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
                 String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetProperty() +
                         " (plateSetId, propertyId, propertyURI, FieldKey)" +
-                        " VALUES (?, CAST(? AS INT), " +
-                        (DbScope.getLabKeyScope().getSqlDialect().isSqlServer() ? "CAST(? AS VARCHAR(300))" : "CAST(? AS VARCHAR)") +
-                        ", CAST(? AS VARCHAR))";
+                        " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))";
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
 
                 transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
