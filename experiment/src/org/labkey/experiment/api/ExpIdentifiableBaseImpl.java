@@ -192,7 +192,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
             for (String nameSuffix : nameSuffixes)
             {
-                // \d+ admits suffixes beyond Long.MAX_VALUE, so skip any that don't fit
+                // \d+ admits suffixes beyond Long.MAX_VALUE, so skip any that don't fit so generated sequence won't overflow
                 if (nameSuffix.matches("\\d+"))
                 {
                     try
