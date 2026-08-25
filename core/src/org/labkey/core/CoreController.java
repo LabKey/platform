@@ -223,7 +223,10 @@ public class CoreController extends SpringActionController
 {
     private static final Map<Container, Content> _customStylesheetCache = new ConcurrentHashMap<>();
     private static final Logger _log = LogHelper.getLogger(CoreController.class, "Attachment icon warnings");
-    private static final ActionResolver _actionResolver = new DefaultActionResolver(CoreController.class);
+    private static final ActionResolver _actionResolver = new DefaultActionResolver(
+            CoreController.class,
+            DocumentationAssistantAgentAction.class
+    );
 
     public CoreController()
     {
