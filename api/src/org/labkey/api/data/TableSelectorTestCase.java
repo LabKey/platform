@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -30,6 +31,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.jdbc.UncategorizedSQLException;
 
 import java.sql.ResultSet;
@@ -50,6 +52,8 @@ import java.util.stream.Stream;
 
 public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
 {
+    private static final Logger LOG = LogHelper.getLogger(TableSelectorTestCase.class, "Test progress");
+
     @Test
     public void testTableSelector() throws SQLException
     {
@@ -59,13 +63,25 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 //        testTableSelector(DbSchema.get("oracle.granite", DbSchemaType.Bare).getTable("account"), Account.class);
 
         // Test MySQL or MariaDB database, if present
-        List<DbScope> mySqlScopes = Stream.of("mySql", "mariadb")
-                .map(DbScope::getDbScope).filter(Objects::nonNull).toList();
+        List<DbScope> mySqlScopes = DbScope.getDbScopesToTest().stream()
+            .filter(scope -> Set.of("MySQL", "MariaDB").contains(scope.getSqlDialect().getProductName()))
+            .toList();
+
         for (DbScope mySqlScope: mySqlScopes)
         {
             DbSchema sakila = mySqlScope.getSchema("sakila", DbSchemaType.Bare);
             if (sakila.existsInDatabase())
-                testTableSelector(sakila.getTable("country"), Country.class);
+            {
+                testTableSelector(sakila.getTable("Country"), Country.class);
+            }
+            else
+            {
+                DbSchema sys = mySqlScope.getSchema("sys", DbSchemaType.Bare);
+                if (sys.existsInDatabase())
+                {
+                    testTableSelector(sys.getTable("sys_config"), Config.class);
+                }
+            }
         }
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
@@ -123,6 +139,8 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             return Objects.hash(_country_id, _country, _last_update);
         }
     }
+
+    record Config(String Variable, String Value, Date Set_Time, String Set_By){}
 
 //    public static class Account
 //    {
@@ -430,6 +448,9 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
     private <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
     {
+        DbSchema schema = table.getSchema();
+        LOG.info("Testing {}.{}.{}", schema.getScope().getDisplayName(), schema.getName(), table.getName());
+
         TableSelector selector = new TableSelector(table);
 
         test(selector, clazz);
