@@ -23,6 +23,7 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
@@ -77,6 +78,12 @@ public class PlateSetDataGenerator extends DataGenerator<PlateSetDataGenerator.C
 
     public void generatePlateSets()
     {
+        if (!PlateService.isPrimaryPlateSetsEnabled())
+        {
+            _log.error("PlateSetDataGenerator is not able to generate plate sets when primary plate sets are disabled.");
+            return;
+        }
+
         Config config = getConfig();
         if (validateConfiguration(config))
         {
