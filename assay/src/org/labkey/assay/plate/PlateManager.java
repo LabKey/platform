@@ -121,7 +121,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
