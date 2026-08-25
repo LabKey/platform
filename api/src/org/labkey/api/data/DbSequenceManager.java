@@ -262,13 +262,13 @@ public class DbSequenceManager
     }
 
 
-    static int current(DbSequence sequence)
+    static long current(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
         sql.add(sequence.getRowId());
 
-        Integer currentValue = executeAndMaybeReturnInteger(tinfo, sql);
+        Long currentValue = executeAndMaybeReturnLong(tinfo, sql);
 
         if (null == currentValue)
             throw new IllegalStateException("Current value for " + sequence + " was null!");
@@ -379,6 +379,20 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlSelector(scope, conn, sql).getObject(Integer.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static @Nullable Long executeAndMaybeReturnLong(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlSelector(scope, conn, sql).getObject(Long.class);
         }
         catch (SQLException e)
         {
