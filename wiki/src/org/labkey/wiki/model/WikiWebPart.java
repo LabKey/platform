@@ -37,7 +37,7 @@ public class WikiWebPart extends BaseWikiView
         String name = props.get("name");
         name = (name != null) ? name : "default";
 
-        init(c, name);
+        init(c, name, null);
 
         // display edit pencil in frameless webpart
         setShowFloatingCustomBtn(true);

@@ -6425,6 +6425,7 @@ public class AdminController extends SpringActionController
             {
                 if (service.isFileRootDisabled(ctx.getContainer()) || !service.isUseDefaultRoot(ctx.getContainer()))
                 {
+                    throwIfUnauthorizedFileRootChange(ctx, service, form);
                     service.setIsUseDefaultRoot(ctx.getContainer(), true);
                     changed = true;
                     shouldCopyMove = true;
@@ -6562,22 +6563,62 @@ public class AdminController extends SpringActionController
 
     private static void throwIfUnauthorizedFileRootChange(ViewContext ctx, FileContentService service, FileManagementForm form)
     {
-        // test permissions. only site admins are able to turn on a custom file root for a folder
-        // this is only relevant if the folder is either being switched to a custom file root,
-        // or if the file root is changed.
-        if (!service.isUseDefaultRoot(ctx.getContainer()))
+        // Only site admins (AdminOperationsPermission) are able to switch a folder to a custom file root, change
+        // an existing custom root's path, or revert a custom root back to the site default -- any of these moves
+        // where the folder's files live. Resubmitting the folder's own current root unchanged is a no-op and does
+        // not require the elevated permission.
+        boolean hasAdminOpsPermission = ctx.getUser().hasRootPermission(AdminOperationsPermission.class);
+        boolean isUseDefaultRoot = service.isUseDefaultRoot(ctx.getContainer());
+        String requestedRoot;
+        String currentRoot;
+
+        if (form.hasSiteDefaultRoot())
         {
-            Path fileRootPath = service.getFileRootPath(ctx.getContainer());
-            if (null != fileRootPath)
+            // Requesting the default root: no root is being submitted; the current custom root (if any) is
+            // whatever type the container has now.
+            requestedRoot = null;
+            if (isUseDefaultRoot)
+                currentRoot = null;
+            else if (service.isCloudRoot(ctx.getContainer()))
+                currentRoot = service.getCloudRootName(ctx.getContainer());
+            else
             {
-                String absolutePath = FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath);
-                if (Strings.CI.equals(absolutePath, form.getFolderRootPath()))
-                {
-                    if (!ctx.getUser().hasRootPermission(AdminOperationsPermission.class))
-                        throw new UnauthorizedException("Only site admins can change file roots");
-                }
+                Path fileRootPath = service.getFileRootPath(ctx.getContainer());
+                currentRoot = null != fileRootPath ? FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath) : null;
             }
         }
+        else if (form.isCloudFileRoot())
+        {
+            requestedRoot = form.getCloudRootName();
+            currentRoot = (!isUseDefaultRoot && service.isCloudRoot(ctx.getContainer())) ? service.getCloudRootName(ctx.getContainer()) : null;
+        }
+        else
+        {
+            requestedRoot = StringUtils.trimToNull(form.getFolderRootPath());
+            Path fileRootPath = isUseDefaultRoot ? null : service.getFileRootPath(ctx.getContainer());
+            currentRoot = null != fileRootPath ? FileUtil.getAbsolutePath(ctx.getContainer(), fileRootPath) : null;
+        }
+
+        if (!isFileRootChangeAuthorizedOrNoChange(hasAdminOpsPermission, isUseDefaultRoot, currentRoot, requestedRoot))
+            throw new UnauthorizedException("Only site admins can change file roots");
+    }
+
+    /**
+     * Pure decision logic behind {@link #throwIfUnauthorizedFileRootChange}, factored out for unit testing.
+     * @param hasAdminOpsPermission whether the requesting user holds root AdminOperationsPermission
+     * @param isUseDefaultRoot whether the target container currently uses the default (inherited) file root
+     * @param currentRoot the container's existing custom root path/cloud name, or null if there isn't one
+     * @param requestedRoot the root path/cloud name submitted in the request, or null if none was submitted
+     */
+    private static boolean isFileRootChangeAuthorizedOrNoChange(boolean hasAdminOpsPermission, boolean isUseDefaultRoot, @Nullable String currentRoot, @Nullable String requestedRoot)
+    {
+        if (hasAdminOpsPermission)
+            return true;
+        if (null == requestedRoot)
+            return isUseDefaultRoot || null == currentRoot; // clearing an existing custom root is still a change to it
+        if (!isUseDefaultRoot && requestedRoot.equalsIgnoreCase(currentRoot))
+            return true; // no-op resubmission of the folder's own existing custom root
+        return false;
     }
 
     public static void setEnabledCloudStores(ViewContext ctx, FileManagementForm form, BindException errors)
@@ -9553,6 +9594,68 @@ public class AdminController extends SpringActionController
 
             if (!moduleNames.isEmpty())
                 fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames);
+        }
+    }
+
+    // Regression coverage for the file root privilege-escalation fix: a folder/project admin without root
+    // AdminOperationsPermission must never be able to switch a container to a custom file root, or change an
+    // existing custom root's path.
+    public static class FileRootPermissionTestCase extends Assert
+    {
+        @Test
+        public void defaultRootRequiresAdminOpsPermissionForNewCustomPath()
+        {
+            // This is the case the original (inverted) condition silently skipped: a container on the default
+            // root, submitting any custom path, from a user without AdminOperationsPermission.
+            assertFalse(isFileRootChangeAuthorizedOrNoChange(false, true, null, "/some/path"));
+        }
+
+        @Test
+        public void customRootRequiresAdminOpsPermissionForDifferentPath()
+        {
+            assertFalse(isFileRootChangeAuthorizedOrNoChange(false, false, "/existing/path", "/attacker/path"));
+        }
+
+        @Test
+        public void customRootResubmissionOfSamePathIsAllowed()
+        {
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(false, false, "/existing/path", "/existing/path"));
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(false, false, "/Existing/Path", "/existing/path"));
+        }
+
+        @Test
+        public void noRequestedRootOnDefaultRootIsAllowed()
+        {
+            // No custom root requested and none currently exists -- nothing to protect.
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(false, true, null, null));
+        }
+
+        @Test
+        public void clearingAnExistingCustomRootRequiresAdminOpsPermission()
+        {
+            // A request that omits the root (e.g. a non-ops admin's disabled form fields not being submitted)
+            // must not be able to silently clear an existing custom root back to default.
+            assertFalse(isFileRootChangeAuthorizedOrNoChange(false, false, "/existing/path", null));
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(true, false, "/existing/path", null));
+        }
+
+        @Test
+        public void revertingCustomRootToSiteDefaultRequiresAdminOpsPermission()
+        {
+            // Selecting the site default root while a custom root (file path or cloud) is in effect relocates the
+            // folder's file storage, so it needs the same elevated permission as setting a custom root.
+            assertFalse(isFileRootChangeAuthorizedOrNoChange(false, false, "/existing/path", null));
+            assertFalse(isFileRootChangeAuthorizedOrNoChange(false, false, "myCloudStore", null));
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(true, false, "myCloudStore", null));
+            // Already on the default root (e.g. re-enabling file sharing from the disabled state) is a no-op.
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(false, true, null, null));
+        }
+
+        @Test
+        public void adminOpsPermissionIsAlwaysAllowed()
+        {
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(true, true, null, "/some/path"));
+            assertTrue(isFileRootChangeAuthorizedOrNoChange(true, false, "/existing/path", "/attacker/path"));
         }
     }
 
