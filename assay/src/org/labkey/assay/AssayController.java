@@ -1448,10 +1448,8 @@ public class AssayController extends SpringActionController
                 for (Long runId : form.getRuns())
                 {
                     ExpRun run = ExperimentService.get().getExpRun(runId);
-                    if (run == null)
+                    if (run == null || !run.getContainer().hasPermission(getUser(), AssayReadPermission.class))
                         throw new NotFoundException("Run " + runId + " not found.");
-                    if (!run.getContainer().hasPermission(getUser(), AssayReadPermission.class))
-                        throw new UnauthorizedException("User does not have " + AssayReadPermission.class.getSimpleName() + " for run " + runId);
                     runs.add(run);
                 }
 
