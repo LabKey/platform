@@ -72,6 +72,20 @@ public interface WikiService
 
     List<String> getNames(Container c);
 
+    /**
+     * A single assistant-memory index entry — the bare slug, its one-line description, and its type,
+     * parsed from the memory's frontmatter. Assistant memories are ordinary wikis managed by the
+     * assistant-memory MCP tools; this record carries just the lightweight index, never the body.
+     */
+    record AssistantMemory(String name, String description, String type) {}
+
+    /**
+     * Returns the assistant-memory index for the container — one entry per stored memory, in wiki-name
+     * order — so callers (e.g. the MCP setContainer tool) can surface what a folder remembers without
+     * pulling full bodies. Returns an empty list if none are stored.
+     */
+    List<AssistantMemory> getAssistantMemories(Container c);
+
     void addWikiListener(WikiChangeListener listener);
     void removeWikiListener(WikiChangeListener listener);
 

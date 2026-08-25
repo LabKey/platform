@@ -35,7 +35,9 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.wiki.WikiService;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
 import org.springframework.ai.tool.annotation.Tool;
@@ -117,7 +119,7 @@ public class CoreMcp implements McpService.McpImpl
     @RequiresNoPermission // Because we don't have a container yet, but the tool will verify read permission before setting the container
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. MyProject/MyFolder") String containerPath)
     {
-        final String message;
+        String message;
 
         Container container = ContainerManager.getForPath(containerPath);
 
@@ -142,7 +144,30 @@ public class CoreMcp implements McpService.McpImpl
         else
         {
             McpService.get().saveSessionContainer(context, container);
-            message = "Container has been set to " + container.getPath();
+            message = "Container has been set to " + container.getPath() + ".";
+
+            WikiService wikiService = WikiService.get();
+            if (wikiService != null)
+            {
+                var memories = wikiService.getAssistantMemories(container);
+                if (memories.isEmpty())
+                {
+                    message += "\nThis container has no assistant memories.";
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder("\nThis container has ")
+                        .append(StringUtilsLabKey.pluralize(memories.size(), "assistant memory", "assistant memories"))
+                        .append(". Review this index before answering questions about this container, and call getAssistantMemory to read the full body of any that look relevant:");
+                    for (var memory : memories)
+                    {
+                        sb.append("\n  • ").append(memory.name());
+                        if (isNotBlank(memory.description()))
+                            sb.append(" — ").append(memory.description());
+                    }
+                    message += sb;
+                }
+            }
         }
 
         return message;

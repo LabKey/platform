@@ -964,6 +964,110 @@ public class WikiManager implements WikiService
         return new ArrayList<>(l);
     }
 
+    /** Storage-name prefix for assistant-memory wikis. Package-local: only the wiki module needs it. */
+    public static final String MEMORY_PREFIX = "memory:";
+
+    /** Name of the parent wiki page under which all assistant-memory wikis are nested. Package-local: only the wiki module needs it. */
+    public static final String MEMORY_PARENT_NAME = "_ai_assistant";
+
+    /**
+     * Ensures the {@link #MEMORY_PARENT_NAME} wiki page exists in the container, creating an empty
+     * one if necessary, and returns it.
+     */
+    private Wiki ensureAssistantMemoryParent(Container c, User user)
+    {
+        Wiki parent = WikiSelectManager.getWiki(c, MEMORY_PARENT_NAME);
+        if (null != parent)
+            return parent;
+
+        Wiki wiki = new Wiki(c, MEMORY_PARENT_NAME);
+        WikiVersion wikiversion = new WikiVersion();
+        wikiversion.setTitle("AI Assistant Memory");
+        wikiversion.setBody("");
+        wikiversion.setRendererTypeEnum(WikiRendererType.MARKDOWN);
+
+        try
+        {
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return wiki;
+    }
+
+    /**
+     * Inserts a new assistant-memory wiki, nesting it under {@link #MEMORY_PARENT_NAME} (creating
+     * that parent page first if it doesn't already exist).
+     */
+    void insertAssistantMemory(User user, Container c, String wikiName, String content, String title)
+    {
+        Wiki parent = ensureAssistantMemoryParent(c, user);
+
+        Wiki wiki = new Wiki(c, wikiName);
+        wiki.setParent(parent.getRowId());
+        WikiVersion wikiversion = new WikiVersion();
+        wikiversion.setTitle(title);
+        wikiversion.setBody(content);
+        wikiversion.setRendererTypeEnum(WikiRendererType.MARKDOWN);
+
+        try
+        {
+            insertWiki(user, c, wiki, wikiversion, null, false, null);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<AssistantMemory> getAssistantMemories(Container c)
+    {
+        List<AssistantMemory> memories = new ArrayList<>();
+        for (String wikiName : getNames(c))
+        {
+            if (!wikiName.startsWith(MEMORY_PREFIX))
+                continue;
+
+            String name = wikiName.substring(MEMORY_PREFIX.length());
+            Map<String, String> front = parseFrontmatter(getContent(c, wikiName));
+            memories.add(new AssistantMemory(name, front.getOrDefault("description", ""), front.getOrDefault("type", "")));
+        }
+        return memories;
+    }
+
+    /** Parse the leading {@code ---}-delimited frontmatter block of a memory wiki into a key/value map. Best effort. */
+    private static Map<String, String> parseFrontmatter(String content)
+    {
+        Map<String, String> map = new HashMap<>();
+        if (null == content)
+            return map;
+
+        List<String> lines = List.of(content.split("\n", -1));
+        if (lines.isEmpty() || !lines.getFirst().strip().equals("---"))
+            return map;
+
+        for (int i = 1; i < lines.size(); i++)
+        {
+            String line = lines.get(i);
+            if (line.strip().equals("---"))
+                break;
+            int colon = line.indexOf(':');
+            if (colon > 0)
+            {
+                String key = line.substring(0, colon).strip();
+                String value = line.substring(colon + 1).strip();
+                if (StringUtils.isNotBlank(key))
+                    map.put(key, value);
+            }
+        }
+
+        return map;
+    }
+
     @Override
     public int populateVectorStore(Container container)
     {
