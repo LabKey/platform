@@ -17,7 +17,6 @@
 package org.labkey.test.tests.study;
 
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -188,7 +187,6 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @Test
     public void testDatasetWithMultiChoice()
     {
-        Assume.assumeTrue("Multi-choice text fields are only supported on PostgreSQL", WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL);
         String datasetName = "Test dataset";
         DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()

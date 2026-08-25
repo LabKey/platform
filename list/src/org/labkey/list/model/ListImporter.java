@@ -241,18 +241,6 @@ public class ListImporter
                             }
                         }
 
-                        // pre-process
-                        if (supportAI)
-                        {
-                            SqlDialect dialect = ti.getSqlDialect();
-
-                            if (dialect.isSqlServer())
-                            {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" ON\n");
-                                new SqlExecutor(ti.getSchema()).execute(check);
-                            }
-                        }
-
                         def.importListItems(user, c, loader, batchErrors, sourceDir.getDir(FileUtil.makeLegalName(def.getName())), null, supportAI, LookupResolutionType.primaryKey, _importContext.useMerge() ? QueryUpdateService.InsertOption.MERGE : QueryUpdateService.InsertOption.IMPORT);
                     }
 
@@ -267,68 +255,43 @@ public class ListImporter
                             SqlDialect dialect = ti.getSqlDialect();
 
                             // If auto-increment based need to reset the sequence counter on the DB
-                            if (dialect.isPostgreSQL())
+                            String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
+                            if (null != src)
                             {
-                                String src = ti.getColumn(def.getKeyName()).getJdbcDefaultValue();
-                                if (null != src)
+                                SQLFragment keyupdate;
+
+                                // To best support crazy column names, reuse the regclass in the nextval() call when present
+                                if (src.startsWith("nextval(") && src.endsWith("::regclass)"))
                                 {
-                                    SQLFragment keyupdate;
+                                    String setVal = src.replace("nextval(", "setval(");
+                                    setVal = setVal.replace("::regclass)", "::regclass, ");
+                                    keyupdate = new SQLFragment("SELECT ").append(SQLFragment.unsafe(setVal));
+                                }
+                                else
+                                {
+                                    // In case there are sequences in the wild with different syntax, fall back on
+                                    // our previous strategy
+                                    String sequence = "";
 
-                                    // To best support crazy column names, reuse the regclass in the nextval() call when present
-                                    if (src.startsWith("nextval(") && src.endsWith("::regclass)"))
-                                    {
-                                        String setVal = src.replace("nextval(", "setval(");
-                                        setVal = setVal.replace("::regclass)", "::regclass, ");
-                                        keyupdate = new SQLFragment("SELECT ").append(SQLFragment.unsafe(setVal));
-                                    }
-                                    else
-                                    {
-                                        // In case there are sequences in the wild with different syntax, fall back on
-                                        // our previous strategy
-                                        String sequence = "";
+                                    int start = src.indexOf('\'');
+                                    int end = src.lastIndexOf('\'');
 
-                                        int start = src.indexOf('\'');
-                                        int end = src.lastIndexOf('\'');
+                                    if (end > start)
 
-                                        if (end > start)
-
-                                            sequence = src.substring(start + 1, end);
-                                        if (!sequence.toLowerCase().startsWith("list."))
-                                            sequence = "list." + sequence;
-                                        keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
-                                    }
-
-                                    String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
-                                    keyupdate.append(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
-                                    keyupdate.append("), 1), false)");
-                                    new SqlExecutor(ti.getSchema()).execute(keyupdate);
+                                        sequence = src.substring(start + 1, end);
+                                    if (!sequence.toLowerCase().startsWith("list."))
+                                        sequence = "list." + sequence;
+                                    keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence, dialect);
                                 }
 
-                            }
-                            else if (dialect.isSqlServer())
-                            {
-                                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                                new SqlExecutor(ti.getSchema()).execute(check);
-                                supportAI = false; // reset in order to avoid setting IDENTITY_INSERT to OFF again in the finally block below.
+                                String keyStorageColName = def.getDomain().getPropertyByName(def.getKeyName()).getPropertyDescriptor().getStorageColumnName();
+                                keyupdate.append(" coalesce((SELECT MAX(").appendIdentifier(dialect.makeDatabaseIdentifier(keyStorageColName.toLowerCase())).append(")+1 FROM ").append(tableName);
+                                keyupdate.append("), 1), false)");
+                                new SqlExecutor(ti.getSchema()).execute(keyupdate);
                             }
                         }
 
                         transaction.commit();
-                    }
-                }
-                // any errors during an insert in the above block will keep IDENTITY_INSERT set to ON - so setting it to OFF in the finally block.
-                // Refer to Issue 32667 for more details.
-                finally
-                {
-                    if (supportAI)
-                    {
-                        SqlDialect dialect = ti.getSqlDialect();
-
-                        if (dialect.isSqlServer())
-                        {
-                            SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(tableName).append(" OFF\n");
-                            new SqlExecutor(ti.getSchema()).execute(check);
-                        }
                     }
                 }
             }

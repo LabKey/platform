@@ -143,7 +143,7 @@ public class DbSequenceManager
 
         Integer rowId = executeAndMaybeReturnInteger(tinfo, getRowIdSql);
 
-        if (rowId != null && rowId > 0 && withUpdateLock && tinfo.getSqlDialect().isPostgreSQL())
+        if (rowId != null && rowId > 0 && withUpdateLock)
         {
             SQLFragment lockRowSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
             lockRowSql.append(" WHERE RowId = ?");
@@ -262,13 +262,13 @@ public class DbSequenceManager
     }
 
 
-    static int current(DbSequence sequence)
+    static long current(DbSequence sequence)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment sql = new SQLFragment("SELECT Value FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
         sql.add(sequence.getRowId());
 
-        Integer currentValue = executeAndMaybeReturnInteger(tinfo, sql);
+        Long currentValue = executeAndMaybeReturnLong(tinfo, sql);
 
         if (null == currentValue)
             throw new IllegalStateException("Current value for " + sequence + " was null!");
@@ -303,37 +303,18 @@ public class DbSequenceManager
         // Reselect the current value
         tinfo.getSqlDialect().addReselect(sql, tinfo.getColumn("Value"), null);
 
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
-
         long last = sequence.useCurrentTransaction() ? executeAndReturnLongInTraction(tinfo, sql) : executeAndReturnLong(tinfo, sql, Level.WARN);
         long first = last - count;
         return new Pair<>(first,last);
     }
 
 
-    private static void addLocks(TableInfo tinfo, SQLFragment updateSql)
-    {
-        if (tinfo.getSqlDialect().isSqlServer())
-            updateSql.insert(updateSql.indexOf("SET"), "WITH (XLOCK, ROWLOCK) ");
-    }
-
-
     private static void addValueSql(SQLFragment sql, TableInfo tinfo, DbSequence sequence)
     {
-        SqlDialect dialect = tinfo.getSqlDialect();
-
-        if (dialect.isPostgreSQL())
-        {
-            // SELECT with FOR UPDATE locks the row to ensure a true atomic update
-            SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE RowId = ? FOR UPDATE");
-            selectForUpdate.add(sequence.getRowId());
-            sql.append("(").append(selectForUpdate).append(")");
-        }
-        else
-        {
-            sql.append("Value");
-        }
+        // SELECT with FOR UPDATE locks the row to ensure a true atomic update
+        SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE RowId = ? FOR UPDATE");
+        selectForUpdate.add(sequence.getRowId());
+        sql.append("(").append(selectForUpdate).append(")");
     }
 
 
@@ -346,9 +327,6 @@ public class DbSequenceManager
         sql.add(minimum);
         sql.add(sequence.getRowId());
         sql.add(minimum);
-
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
 
         if (sequence.useCurrentTransaction())
             new SqlExecutor(tinfo.getSchema()).execute(sql);
@@ -364,9 +342,6 @@ public class DbSequenceManager
         SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ?");
         sql.add(value);
         sql.add(sequence.getRowId());
-
-        // Add locking appropriate to this dialect
-        addLocks(tinfo, sql);
 
         if (sequence.useCurrentTransaction())
             new SqlExecutor(tinfo.getSchema()).execute(sql);
@@ -404,6 +379,20 @@ public class DbSequenceManager
         try (Connection conn = scope.getPooledConnection())
         {
             return new SqlSelector(scope, conn, sql).getObject(Integer.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static @Nullable Long executeAndMaybeReturnLong(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlSelector(scope, conn, sql).getObject(Long.class);
         }
         catch (SQLException e)
         {

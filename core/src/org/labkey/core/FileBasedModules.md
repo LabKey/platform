@@ -40,8 +40,7 @@ myModule/
     │   └── [view_name].webpart.xml
     ├── schemas/               # Database schema definitions
     │   └── dbscripts/
-    │       ├── postgresql/
-    │       └── sqlserver/
+    │       └── postgresql/
     ├── web/                   # JavaScript, CSS, images
     │   └── [moduleName]/
     │       ├── [moduleName].js
@@ -90,7 +89,6 @@ RequiredServerVersion: 23.11
 - **SchemaVersion**: Version number for SQL schema upgrade scripts (e.g., `1.00`)
 - **ManageVersion**: Boolean (true/false) for schema version management
 - **BuildType**: "Development" or "Production"
-- **SupportedDatabases**: "pgsql" or "mssql" (comma-separated)
 - **URL**: Homepage URL for the module
 
 ### Auto-Generated Properties (Don't Set)
@@ -363,7 +361,6 @@ Simply refresh your browser to see changes.
 ### Maintenance
 - Version your module.properties appropriately
 - Document breaking changes in your README
-- Test on both PostgreSQL and SQL Server if supporting both
 - Keep module.properties up to date with RequiredServerVersion
 
 ## Common Patterns
