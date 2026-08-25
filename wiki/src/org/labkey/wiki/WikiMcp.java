@@ -117,6 +117,7 @@ public class WikiMcp implements McpService.McpImpl
         "do not copy PHI/PII or specific record contents into the body. " +
         "Keep one fact per memory. Reuse an existing slug (see listAssistantMemory) to revise rather " +
         "than duplicate.")
+    // TODO RequiresAllOf({InsertPermission.class, UpdatePermission.class})
     @RequiresPermission(InsertPermission.class)
     String saveAssistantMemory(
         ToolContext toolContext,

@@ -30,6 +30,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
@@ -119,7 +120,7 @@ public class CoreMcp implements McpService.McpImpl
     @RequiresNoPermission // Because we don't have a container yet, but the tool will verify read permission before setting the container
     String setContainer(ToolContext context, @ToolParam(description = "Container path, e.g. MyProject/MyFolder") String containerPath)
     {
-        String message;
+        StringBuilder message = new StringBuilder();
 
         Container container = ContainerManager.getForPath(containerPath);
 
@@ -139,38 +140,43 @@ public class CoreMcp implements McpService.McpImpl
         // case to prevent information exposure.
         if (container == null || !container.hasPermission(getUser(context), ReadPermission.class))
         {
-            message = "That's not a valid container path. Try using listContainers to see the valid options.";
+            message.append("That's not a valid container path. Try using listContainers to see the valid options.\n");
         }
         else
         {
             McpService.get().saveSessionContainer(context, container);
-            message = "Container has been set to " + container.getPath() + ".";
+            message.append("Container has been set to ").append(container.getPath()).append(".\n");
 
             WikiService wikiService = WikiService.get();
             if (wikiService != null)
             {
+                if (container.hasPermission(getUser(context), UpdatePermission.class))
+                    message.append("You have permission to save memories in this container using ```saveAssistantMemory```.\n");
+                else
+                    message.append("You do not have permission to save memories in this container — memory creation requires update access. Do not attempt ```saveAssistantMemory```.\n");
+
                 var memories = wikiService.getAssistantMemories(container);
                 if (memories.isEmpty())
                 {
-                    message += "\nThis container has no assistant memories.";
+                    message.append("This container has no assistant memories.\n");
                 }
                 else
                 {
-                    StringBuilder sb = new StringBuilder("\nThis container has ")
+                    message.append("This container has ")
                         .append(StringUtilsLabKey.pluralize(memories.size(), "assistant memory", "assistant memories"))
-                        .append(". Review this index before answering questions about this container, and call getAssistantMemory to read the full body of any that look relevant:");
+                        .append(". Review this index before answering questions about this container, and call getAssistantMemory to read the full body of any that look relevant:\n");
                     for (var memory : memories)
                     {
-                        sb.append("\n  • ").append(memory.name());
+                        message.append("  • ").append(memory.name());
                         if (isNotBlank(memory.description()))
-                            sb.append(" — ").append(memory.description());
+                            message.append(" — ").append(memory.description());
+                        message.append("\n");
                     }
-                    message += sb;
                 }
             }
         }
 
-        return message;
+        return message.toString();
     }
 
 
