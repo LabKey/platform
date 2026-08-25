@@ -121,6 +121,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -2886,6 +2887,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (plateSet.getType() == null)
             plateSet.setType(PlateSetType.assay);
+        if (!PlateService.isPrimaryPlateSetsEnabled() && plateSet.getType() == PlateSetType.primary)
+            throw new ValidationException("The primary plate set feature is not enabled.");
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
