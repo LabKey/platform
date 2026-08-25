@@ -3930,10 +3930,8 @@ public class DavController extends SpringActionController
                 return getResponse().sendError(WebdavStatus.SC_LOCKED);
             }
 
-            if (getUser().isGuest())
-            {
-                return getResponse().sendError(WebdavStatus.SC_FORBIDDEN);
-            }
+            Path path1 = getResourcePath();
+//            _log.info("LOCK " + path1.toString()); // TODO: TEMP logging
 
             LockInfo lock = new LockInfo();
 
