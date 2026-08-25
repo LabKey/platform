@@ -26,9 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.data.Builder;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.net.URI;
@@ -138,36 +136,16 @@ public class Lsid
     }
 
     // Keep in sync with LSID_REGEX (above). Note: AttachmentServiceImpl.TestCase.testLsidGuidExtraction tests this.
-    public static Pair<SQLFragment, SQLFragment> getSqlExpressionToExtractObjectId(SQLFragment lsidExpression, SqlDialect dialect)
+    public static Pair<SQLFragment, SQLFragment> getSqlExpressionToExtractObjectId(SQLFragment lsidExpression)
     {
-        String objectId = GUID.SQL_LIKE_GUID_PATTERN;
+        // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the fourth
+        // colon to the end of the string (or to the fifth colon, if present).
+        SQLFragment expression = new SQLFragment("SUBSTRING(")
+            .append(lsidExpression)
+            .append(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
+        SQLFragment where = new SQLFragment(lsidExpression).append(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");
 
-        if (dialect.isPostgreSQL())
-        {
-            // PostgreSQL SUBSTRING supports simple regular expressions. This captures all the text from the fourth
-            // colon to the end of the string (or to the fifth colon, if present).
-            SQLFragment expression = new SQLFragment("SUBSTRING(")
-                .append(lsidExpression)
-                .append(" FROM '%urn:lsid:%:%:#\"[0-9a-f\\-]{36}#\":?%' FOR '#')");
-            SQLFragment where = new SQLFragment(lsidExpression).append(" SIMILAR TO '%urn:lsid:%:%:[0-9a-f\\-]{36}:?%'");
-
-            return new Pair<>(expression, where);
-        }
-
-        if (dialect.isSqlServer())
-        {
-            // SQL Server doesn't support regular expressions
-            SQLFragment expression = new SQLFragment("SUBSTRING(")
-                .append(lsidExpression)
-                .append(", PATINDEX('%:" + objectId + "%', ")
-                .append(lsidExpression)
-                .append(") + 1, 36)");
-            SQLFragment where = new SQLFragment(lsidExpression).append(" LIKE '%urn:lsid:%:%:" + objectId + "%'");
-
-            return new Pair<>(expression, where);
-        }
-
-        throw new IllegalStateException("Unsupported SqlDialect: " + dialect.getProductName());
+        return new Pair<>(expression, where);
     }
 
     public String getSrc()

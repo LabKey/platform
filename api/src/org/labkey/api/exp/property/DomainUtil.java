@@ -39,7 +39,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseIdentifier;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
@@ -442,9 +441,7 @@ public class DomainUtil
 
     public static boolean allowMultiChoice(DomainKind<?> kind)
     {
-        if (!kind.allowMultiChoiceProperties())
-            return false;
-        return CoreSchema.getInstance().getSqlDialect().isPostgreSQL();
+        return kind.allowMultiChoiceProperties();
     }
 
     private static GWTDomain<GWTPropertyDescriptor> getDomain(Domain dd)

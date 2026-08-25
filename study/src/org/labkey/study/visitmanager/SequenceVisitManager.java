@@ -342,17 +342,12 @@ public class SequenceVisitManager extends VisitManager
         {
             TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), defsWithVisitDates, user);
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit);
-            if (!schema.getSqlDialect().isSqlServer())
-                sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
+            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append(" PV");
             sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
                 .append(" (\n")
                 .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
                 .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
                 .append(tableVisit.getFromSQL("V"));
-
-            if (schema.getSqlDialect().isSqlServer())
-                sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
 
             sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
                 .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
@@ -413,17 +408,12 @@ public class SequenceVisitManager extends VisitManager
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
         TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(def), user);
         SQLFragment sqlUpdateVisitDates = new SQLFragment();
-        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit);
-        if (!schema.getSqlDialect().isSqlServer())
-            sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
+        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append(" PV");
         sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
             .append(" (\n")
             .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
             .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD, ")
             .append(tableVisit.getFromSQL("V"));
-
-        if (schema.getSqlDialect().isSqlServer())
-            sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
 
         sqlUpdateVisitDates.append("\n WHERE PV.VisitRowId = V.RowId AND")    // 'join' V
             .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
@@ -475,24 +465,12 @@ public class SequenceVisitManager extends VisitManager
         // updating a column to the existing value
         SQLFragment sqlUpdateVisitRowId = new SQLFragment();
         sqlUpdateVisitRowId.append(seqnum2visit);
-        if (schema.getSqlDialect().isPostgreSQL())
-        {
-            sqlUpdateVisitRowId.append(
-                "UPDATE study.ParticipantVisit PV\n" +
-                "        SET VisitRowId = RowId\n" +
-                "        FROM seqnum2visit\n" +
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
-            sqlUpdateVisitRowId.add(getStudy().getContainer());
-        }
-        else
-        {
-            sqlUpdateVisitRowId.append(
-                "UPDATE PV\n" +
-                "        SET VisitRowId = RowId\n" +
-                "        FROM study.ParticipantVisit PV WITH (INDEX(ix_participantvisit_sequencenum)), seqnum2visit\n"+
-                "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
-            sqlUpdateVisitRowId.add(getStudy().getContainer());
-        }
+        sqlUpdateVisitRowId.append(
+            "UPDATE study.ParticipantVisit PV\n" +
+            "        SET VisitRowId = RowId\n" +
+            "        FROM seqnum2visit\n" +
+            "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
+        sqlUpdateVisitRowId.add(getStudy().getContainer());
         if (!updateAll)
             sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
 
