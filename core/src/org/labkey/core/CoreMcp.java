@@ -75,6 +75,7 @@ public class CoreMcp implements McpService.McpImpl
         var baseServerUrl = AppProps.getInstance().getBaseServerUrl();
         try
         {
+            // Disallow call back to self.  If this looks like a self-reference (www.labkey.org trying to call www.labkey.org) return false.
             return !(new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(baseServerUrl).getHost()));
         }
         catch (URISyntaxException x)
