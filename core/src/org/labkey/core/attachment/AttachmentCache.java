@@ -25,6 +25,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
@@ -44,7 +45,6 @@ import java.util.Set;
 public class AttachmentCache
 {
     private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
-    private static final Cache<String, Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(200000, CacheManager.MONTH, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
     {
@@ -62,6 +62,9 @@ public class AttachmentCache
 
         return Collections.unmodifiableMap(map);
     };
+
+    // Must be transaction aware: attachments are very often added and deleted inside a transaction
+    private static final Cache<String, Map<String, Attachment>> CACHE = DatabaseCache.get(CoreSchema.getInstance().getScope(), 200000, CacheManager.MONTH, "Attachments", LOADER);
 
 
     static @NotNull Map<String, Attachment> getAttachments(AttachmentParent parent)
