@@ -58,6 +58,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
@@ -2414,6 +2415,7 @@ public abstract class SqlDialect
     // TESTS
     //
 
+    @TestWhen(TestWhen.When.DB_SCOPE)
     public static class DialectTestCase
     {
         DbScope s;

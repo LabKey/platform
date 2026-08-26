@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
@@ -50,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+@TestWhen(TestWhen.When.DB_SCOPE)
 public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
 {
     private static final Logger LOG = LogHelper.getLogger(TableSelectorTestCase.class, "Test progress");
