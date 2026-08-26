@@ -1373,19 +1373,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /** Look up (or build and cache) the {@link _MaterializedQueryHelper} for this table's sample type. Caller must ensure {@code _ss != null}. */
-    private _MaterializedQueryHelper getOrCreateMQH()
+    /** Signature of the sample type's current column set. Changes when a field is added, dropped, or renamed, so a materialized helper built from a stale schema snapshot can be detected and rebuilt (Issue 51979). */
+    private String materializedSchemaKey()
+    {
+        return new TreeSet<>(_ss.getTinfo().getColumnNameSet()).toString();
+    }
+
+    private _MaterializedQueryHelper getOrCreateMQH(String schemaKey)
     {
         return _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
         {
-            /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
-             * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
-             * even if just to help with race-conditions.
-             *
-             * Maybe have a callback to generate the SQL dynamically and verify that the SQL is unchanged.
-             */
             List<ColumnInfo> updateColumns = new ArrayList<>();
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
-            MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
+            MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), schemaKey, "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .unlogged(true)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
@@ -1410,7 +1410,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (ContextListener.isShuttingDown())
             return null;
 
-        var mqh = getOrCreateMQH();
+        // Issue 51979: the helper is cached by LSID only, but its temp table's columns are frozen from the sample type
+        // snapshot that built it. If a field was added/dropped/renamed since (this snapshot's column set differs), the
+        // cached temp table lacks the current columns; drop the stale helper and use the live join so the next read rebuilds it.
+        String schemaKey = materializedSchemaKey();
+        var mqh = getOrCreateMQH(schemaKey);
+        if (!schemaKey.equals(mqh._schemaKey))
+        {
+            _materializedQueries.remove(_ss.getLSID());
+            return null;
+        }
 
         SQLFragment tempRef = mqh.tryGetFromSqlIfLoaded("_cached_view_");
         if (tempRef == null)
@@ -1450,17 +1459,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     static class _MaterializedQueryHelper extends MaterializedQueryHelper
     {
         final String _lsid;
+        final String _schemaKey;
         final List<ColumnInfo> _updateColumns;
 
         static class Builder extends MaterializedQueryHelper.Builder
         {
             String _lsid;
+            String _schemaKey;
             List<ColumnInfo> _updateColumns = List.of();
 
-            public Builder(String lsid, String prefix, DbScope scope, SQLFragment select)
+            public Builder(String lsid, String schemaKey, String prefix, DbScope scope, SQLFragment select)
             {
                 super(prefix, scope, select);
                 this._lsid = lsid;
+                this._schemaKey = schemaKey;
             }
 
             public Builder updateColumns(List<ColumnInfo> updateColumns)
@@ -1472,12 +1484,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
+                return new _MaterializedQueryHelper(_lsid, _schemaKey, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
             }
         }
 
         _MaterializedQueryHelper(
             String lsid,
+            String schemaKey,
             List<ColumnInfo> updateColumns,
             String prefix,
             DbScope scope,
@@ -1492,6 +1505,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql, unlogged);
             this._lsid = lsid;
+            this._schemaKey = schemaKey;
             this._updateColumns = updateColumns;
         }
 
@@ -2328,7 +2342,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          */
         private void assertCacheMatchesFreshDerivation(ExpMaterialTableImpl table, String lsid)
         {
-            _MaterializedQueryHelper mqh = table.getOrCreateMQH();
+            _MaterializedQueryHelper mqh = table.getOrCreateMQH(table.materializedSchemaKey());
             assertNotNull("MQH should not be null for a sample type table", mqh);
             SQLFragment cached = new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
             SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
