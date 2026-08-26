@@ -2531,10 +2531,42 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * GitHub Issue #899: custom view lookups also resolve views inherited from ancestor folders. Absent an explicit target
+     * folder, such a view must be shadowed by a new local one instead of rewritten (and un-inherited), so a name collision
+     * with an ancestor's view reports differently from one with a local view.
+     *
+     * @param localView the resolved view, null once it turns out to belong to an ancestor
+     * @param message a name-collision error, or null if the save may proceed
+     */
+    private record ResolvedViewName(CustomView localView, String message) {}
+
+    private static ResolvedViewName resolveViewName(CustomView existingView, String name, Container container,
+                                                    boolean inheritToTargetContainer, boolean replaceExisting)
+    {
+        CustomView inheritedView = null;
+        if (existingView != null && !inheritToTargetContainer && existingView.getContainer() != null
+                && !container.equals(existingView.getContainer()))
+        {
+            inheritedView = existingView;
+            existingView = null;
+        }
+
+        String message = null;
+        if (!replaceExisting && !StringUtils.isEmpty(name))
+        {
+            if (inheritedView != null)
+                message = "A saved view by the name \"" + name + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ";
+            else if (existingView != null)
+                message = "A saved view by the name \"" + name + "\" already exists. ";
+        }
+        return new ResolvedViewName(existingView, message);
+    }
+
     // Uck. Supports the old and new view designer.
     protected JSONObject saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName, boolean replaceExisting,
-                                                 boolean share, boolean inherit,
+                                                 boolean share, boolean inherit, boolean inheritToTargetContainer,
                                                  boolean session, boolean saveFilter,
                                                  boolean hidden, JSONObject jsonView,
                                                  ActionURL returnUrl,
@@ -2558,8 +2590,10 @@ public class QueryController extends SpringActionController
         else
             view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
 
-        if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
-            errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" already exists. ");
+        ResolvedViewName resolved = resolveViewName(view, name, container, inheritToTargetContainer, replaceExisting);
+        view = resolved.localView();
+        if (resolved.message() != null)
+            errors.reject(ERROR_MSG, resolved.message());
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
@@ -2625,7 +2659,7 @@ public class QueryController extends SpringActionController
                     try
                     {
                         view.delete(getUser(), getViewContext().getRequest());
-                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, session, saveFilter, hidden, jsonView, returnUrl, errors);
+                        JSONObject ret = saveCustomView(container, queryDef, regionName, viewName, replaceExisting, share, inherit, inheritToTargetContainer, session, saveFilter, hidden, jsonView, returnUrl, errors);
                         success = !errors.hasErrors() && ret != null;
                         return success ? ret : null;
                     }
@@ -2770,9 +2804,10 @@ public class QueryController extends SpringActionController
                 boolean session = jsonView.optBoolean("session", false);
                 boolean hidden = jsonView.optBoolean("hidden", false);
                 // Users may save views to a location other than the current container
-                String containerPath = jsonView.optString("containerPath", getContainer().getPath());
+                String containerPath = jsonView.optString("containerPath", null);
+                boolean inheritToTargetContainer = inherit && containerPath != null;
                 Container container;
-                if (inherit)
+                if (inheritToTargetContainer)
                 {
                     // Only respect this request if it's a view that is inheritable in subfolders
                     container = ContainerManager.getForPath(containerPath);
@@ -2788,9 +2823,12 @@ public class QueryController extends SpringActionController
                     throw new NotFoundException("No such container: " + containerPath);
                 }
 
+                if (inheritToTargetContainer && !container.hasPermission(getUser(), EditSharedViewPermission.class))
+                    throw new UnauthorizedException();
+
                 JSONObject savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName, replace,
-                        shared, inherit, session, true, hidden, jsonView, null, errors);
+                        shared, inherit, inheritToTargetContainer, session, true, hidden, jsonView, null, errors);
 
                 if (savedView != null)
                 {
@@ -6220,8 +6258,9 @@ public class QueryController extends SpringActionController
 
             // Users may save views to a location other than the current container
             String containerPath = form.getContainerPath();
+            boolean inheritToTargetContainer = form.isInherit() && containerPath != null;
             Container container;
-            if (form.isInherit() && containerPath != null)
+            if (inheritToTargetContainer)
             {
                 // Only respect this request if it's a view that is inheritable in subfolders
                 container = ContainerManager.getForPath(containerPath);
@@ -6265,8 +6304,10 @@ public class QueryController extends SpringActionController
                     existingView = null;
                 }
 
-                if (existingView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
-                    throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" already exists. ");
+                ResolvedViewName resolved = resolveViewName(existingView, form.getNewName(), container, inheritToTargetContainer, form.isReplace());
+                existingView = resolved.localView();
+                if (resolved.message() != null)
+                    throw new IllegalArgumentException(resolved.message());
 
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
@@ -6278,8 +6319,7 @@ public class QueryController extends SpringActionController
                     viewCopy.setFilterAndSort(view.getFilterAndSort());
                     viewCopy.setColumnProperties(view.getColumnProperties());
                     viewCopy.setIsHidden(form.isHidden());
-                    if (form.isInherit())
-                        viewCopy.setContainer(container);
+                    viewCopy.setContainer(container);
 
                     viewCopy.save(getUser(), getViewContext().getRequest());
                 }
