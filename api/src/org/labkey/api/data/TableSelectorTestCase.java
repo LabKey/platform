@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -46,7 +47,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -55,17 +55,37 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
     private static final Logger LOG = LogHelper.getLogger(TableSelectorTestCase.class, "Test progress");
 
     @Test
-    public void testTableSelector() throws SQLException
+    public void testOracleDataSources() throws SQLException
     {
+        // Test Oracle database, if present
+        List<DbScope> scopes = DbScope.getDbScopesToTest().stream()
+                .filter(scope -> "Oracle".equals(scope.getSqlDialect().getProductName()))
+                .toList();
+        Assume.assumeFalse("Nothing to test", scopes.isEmpty());
 
-//  Call below can be used to test that Oracle dialect behaves as expected, following our maxRows, offset, and other
-//  rules. Uncomment this line and the corresponding bean class below.
-//        testTableSelector(DbSchema.get("oracle.granite", DbSchemaType.Bare).getTable("account"), Account.class);
+        for (DbScope scope : scopes)
+        {
+            DbSchema schema = scope.getSchema("HR", DbSchemaType.Bare);
+            if (schema.existsInDatabase())
+            {
+                testTableSelector(schema.getTable("EMPLOYEES"), Employees.class);
+            }
+
+            // Test a system table
+            schema = scope.getSchema("SYS", DbSchemaType.Bare);
+            testTableSelector(schema.getTable("AUDIT_ACTIONS"), AuditAction.class);
+        }
+    }
+
+    @Test
+    public void testMariaDbDataSources() throws SQLException
+    {
 
         // Test MySQL or MariaDB database, if present
         List<DbScope> mySqlScopes = DbScope.getDbScopesToTest().stream()
             .filter(scope -> Set.of("MySQL", "MariaDB").contains(scope.getSqlDialect().getProductName()))
             .toList();
+        Assume.assumeFalse("Nothing to test", mySqlScopes.isEmpty());
 
         for (DbScope mySqlScope: mySqlScopes)
         {
@@ -74,125 +94,27 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             {
                 testTableSelector(sakila.getTable("Country"), Country.class);
             }
-            else
-            {
-                DbSchema sys = mySqlScope.getSchema("sys", DbSchemaType.Bare);
-                if (sys.existsInDatabase())
-                {
-                    testTableSelector(sys.getTable("sys_config"), Config.class);
-                }
-            }
+
+            // Test a system table
+            DbSchema sys = mySqlScope.getSchema("sys", DbSchemaType.Bare);
+            testTableSelector(sys.getTable("sys_config"), Config.class);
         }
+    }
+
+    @Test
+    public void testTableSelector() throws SQLException
+    {
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
     }
 
-    @SuppressWarnings("unused")
-    public static class Country
-    {
-        private int _country_id;
-        private String _country;
-        private Date _last_update;
+    // MariaDB tables
+    record Country(int country_id, String country, Date last_update) {}
+    record Config(String Variable, String Value, Date Set_Time, String Set_By) {}
 
-        public int getCountry_id()
-        {
-            return _country_id;
-        }
-
-        public void setCountry_id(int country_id)
-        {
-            _country_id = country_id;
-        }
-
-        public String getCountry()
-        {
-            return _country;
-        }
-
-        public void setCountry(String country)
-        {
-            _country = country;
-        }
-
-        public Date getLast_update()
-        {
-            return _last_update;
-        }
-
-        public void setLast_update(Date last_update)
-        {
-            _last_update = last_update;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Country country = (Country) o;
-            return _country_id == country._country_id && Objects.equals(_country, country._country) && Objects.equals(_last_update, country._last_update);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(_country_id, _country, _last_update);
-        }
-    }
-
-    record Config(String Variable, String Value, Date Set_Time, String Set_By){}
-
-//    public static class Account
-//    {
-//        private int _account_id;
-//        private String _account_number;
-//        private String _account_desc;
-//
-//        public int getAccount_id()
-//        {
-//            return _account_id;
-//        }
-//
-//        public void setAccount_id(int account_id)
-//        {
-//            _account_id = account_id;
-//        }
-//
-//        public String getAccount_number()
-//        {
-//            return _account_number;
-//        }
-//
-//        public void setAccount_number(String account_number)
-//        {
-//            _account_number = account_number;
-//        }
-//
-//        public String getAccount_desc()
-//        {
-//            return _account_desc;
-//        }
-//
-//        public void setAccount_desc(String account_desc)
-//        {
-//            _account_desc = account_desc;
-//        }
-//
-//        @Override
-//        public boolean equals(Object o)
-//        {
-//            if (this == o) return true;
-//            if (o == null || getClass() != o.getClass()) return false;
-//            Account account = (Account) o;
-//            return _account_id == account._account_id && Objects.equals(_account_number, account._account_number) && Objects.equals(_account_desc, account._account_desc);
-//        }
-//
-//        @Override
-//        public int hashCode()
-//        {
-//            return Objects.hash(_account_id, _account_number, _account_desc);
-//        }
-//    }
+    // OracleDB tables
+    record Employees(Integer EMPLOYEE_ID, String FIRST_NAME, String LAST_NAME, String EMAIL, Date HIRE_DATE, String JOB_ID, Double SALARY, Double COMMISSION_PCT, Integer MANAGER_ID, Integer DEPARTMENT_ID) {}
+    record AuditAction(Integer ACTION, String NAME) {}
 
     @Test
     public void testGetObject()
