@@ -2573,6 +2573,16 @@ public class DbScope
         }
     }
 
+    // Counterpart to popCurrentTransaction(), for callers that need to detach a transaction from its thread
+    // temporarily. See TransactionImpl.commitAndKeepConnection().
+    private void pushCurrentTransaction(TransactionImpl transaction)
+    {
+        synchronized (_transaction)
+        {
+            _transaction.computeIfAbsent(getEffectiveThread(), _ -> new ArrayList<>()).add(transaction);
+        }
+    }
+
     public static class ConnectionSharingCloseable implements AutoCloseable
     {
         private final Thread _asyncThread;
@@ -2804,8 +2814,29 @@ public class DbScope
             {
                 CommitTaskOption.PRECOMMIT.run(this);
                 getConnection().commit();
-                _caches.clear();
-                CommitTaskOption.POSTCOMMIT.run(this);
+                closeCaches();
+
+                // Detach this transaction from the thread while the POSTCOMMIT tasks run, matching commit(), which
+                // pops before running them. Commit tasks that invalidate a DatabaseCache resolve their target through
+                // getCurrentTransactionImpl(): with this transaction still on the thread they build a fresh
+                // TransactionCache and clear that throwaway private cache, so the shared cache goes on serving
+                // pre-commit values until they expire. Skip the swap if we somehow aren't the innermost transaction,
+                // since popping would then corrupt the thread's transaction stack.
+                boolean detached = this == getCurrentTransactionImpl();
+
+                if (detached)
+                    popCurrentTransaction();
+
+                try
+                {
+                    CommitTaskOption.POSTCOMMIT.run(this);
+                }
+                finally
+                {
+                    if (detached)
+                        pushCurrentTransaction(this);
+                }
+
                 clearCommitTasks();
             }
             catch (SQLException e)
@@ -3237,6 +3268,59 @@ public class DbScope
             }
             assertFalse(getLabKeyScope().isTransactionActive());
             closeAllConnectionsForCurrentThread();
+        }
+
+        @Test
+        public void testCommitAndKeepConnection()
+        {
+            DbScope scope = getLabKeyScope();
+            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
+            DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test");
+
+            try
+            {
+                cache.put("key_1", "value_1");
+                cache.put("key_2", "value_2");
+
+                List<Transaction> transactionsSeenByPostCommitTask = new ArrayList<>();
+
+                try (Transaction t = scope.ensureTransaction())
+                {
+                    t.addCommitTask(() -> transactionsSeenByPostCommitTask.add(scope.getCurrentTransaction()), CommitTaskOption.POSTCOMMIT);
+                    cache.remove("key_1");
+
+                    // DatabaseCache defers removals to the commit, so the shared cache still serves the old value
+                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().contains("key_1"));
+
+                    t.commitAndKeepConnection();
+
+                    // The deferred removal must land on the shared cache. If this transaction is still on the thread
+                    // while the POSTCOMMIT tasks run, the removal builds a fresh TransactionCache and clears that
+                    // throwaway private cache instead, leaving key_1 in the shared cache until it expires.
+                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().contains("key_1"));
+                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().contains("key_2"));
+
+                    // POSTCOMMIT tasks must run detached from the transaction, exactly as they do under commit()
+                    assertEquals("POSTCOMMIT task should have run exactly once", 1, transactionsSeenByPostCommitTask.size());
+                    assertNull("POSTCOMMIT tasks must not see an active transaction", transactionsSeenByPostCommitTask.get(0));
+
+                    // ...and the transaction must be back on the thread, still active and still usable
+                    assertTrue(scope.isTransactionActive());
+                    assertSame("commitAndKeepConnection() must leave the transaction on the thread", t, scope.getCurrentTransaction());
+
+                    cache.remove("key_2");
+                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().contains("key_2"));
+
+                    t.commit();
+                }
+
+                assertFalse("commit() must invalidate the shared cache", cache.getKeys().contains("key_2"));
+                assertFalse(scope.isTransactionActive());
+            }
+            finally
+            {
+                cache.close();
+            }
         }
 
         @Test
