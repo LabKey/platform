@@ -33,6 +33,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -91,6 +92,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -146,6 +148,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class AttachmentServiceImpl implements AttachmentService
@@ -382,12 +385,33 @@ public class AttachmentServiceImpl implements AttachmentService
         deleteAttachments(Collections.singleton(parent));
     }
 
+    /**
+     * Returns a parent's attachments without reading through the AttachmentCache. Bulk deletes call this once per
+     * parent inside a single transaction -- ExperimentServiceImpl.truncateDataClass builds one AttachmentParent per
+     * data class row, and IssueManager one per comment -- so reading through the cache there fills the transaction's
+     * private cache and queues a post-commit reload task for every parent, work that the removal below immediately
+     * discards. AttachmentDirectory parents still take the cached path, which reconciles the database rows against
+     * the file system.
+     */
+    private @NotNull List<Attachment> getAttachmentsForDelete(AttachmentParent parent)
+    {
+        if (parent instanceof AttachmentDirectory)
+            return getAttachments(parent);
+
+        checkSecurityPolicy(parent);
+
+        return new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
+                ATTACHMENT_COLUMNS,
+                new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId()),
+                new Sort("+RowId")).getArrayList(Attachment.class);
+    }
+
     @Override
     public void deleteAttachments(Collection<AttachmentParent> parents)
     {
         for (AttachmentParent parent : parents)
         {
-            List<Attachment> atts = getAttachments(parent);
+            List<Attachment> atts = getAttachmentsForDelete(parent);
 
             // No attachments, or perhaps container doesn't match entityid
             if (atts.isEmpty())
@@ -1830,6 +1854,123 @@ public class AttachmentServiceImpl implements AttachmentService
             service.deleteAttachment(root, file2.getName(), user);
             attachments = service.getAttachments(root);
             assertEquals(originalCount, attachments.size());
+        }
+
+        /**
+         * Attachments are routinely added and deleted inside a transaction while other threads -- most notably the
+         * SearchService indexing threads -- read the same parent's attachments. Those readers have no transaction, so
+         * they must see the pre-commit state until the delete commits, and must never be handed a cached snapshot that
+         * outlives the commit. This is the deterministic version of the race that made
+         * DeleteJobAttachmentsApiTest.testMultipleAttachments flaky.
+         */
+        @Test
+        public void testCacheConsistencyAcrossUncommittedDelete() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            AttachmentParent parent = new TestAttachmentParent(JunitUtil.getTestContainer());
+
+            try
+            {
+                svc.addAttachments(parent, List.of(testFile("one.txt"), testFile("two.txt"), testFile("three.txt")), user);
+
+                // Warm the shared cache; this is what threads without a transaction read below
+                assertEquals("Should start with three attachments", 3, svc.getAttachments(parent).size());
+
+                try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
+                {
+                    svc.deleteAttachment(parent, "one.txt", user);
+                    svc.deleteAttachment(parent, "two.txt", user);
+
+                    // The deleting thread sees its own uncommitted deletes
+                    assertEquals(List.of("three.txt"), getNames(svc.getAttachments(parent)));
+
+                    // A thread with no transaction must still see the pre-commit state. Two ways this can break: the
+                    // cache hands it the uncommitted list the line above just loaded, or the cache was evicted
+                    // eagerly and it reloads the pre-delete rows on its own connection and caches them past the
+                    // commit. A transaction-aware cache keeps the transaction's loads private and defers the eviction.
+                    assertEquals("Thread without a transaction must see the pre-commit state",
+                            List.of("one.txt", "two.txt", "three.txt"), getNamesOnNewThread(parent));
+
+                    tx.commit();
+                }
+
+                // The commit must have invalidated the shared cache in both directions
+                assertEquals(List.of("three.txt"), getNames(svc.getAttachments(parent)));
+                assertEquals("Thread without a transaction must see the committed state",
+                        List.of("three.txt"), getNamesOnNewThread(parent));
+            }
+            finally
+            {
+                svc.deleteAttachments(parent);
+            }
+        }
+
+        private static AttachmentFile testFile(String name)
+        {
+            return new ByteArrayAttachmentFile(name, name.getBytes(StringUtilsLabKey.DEFAULT_CHARSET), "text/plain");
+        }
+
+        private static List<String> getNames(Collection<Attachment> attachments)
+        {
+            return attachments.stream().map(Attachment::getName).toList();
+        }
+
+        // Reads the parent's attachments on a thread that has never had a transaction, so it always resolves to the
+        // shared cache
+        private static List<String> getNamesOnNewThread(AttachmentParent parent) throws InterruptedException
+        {
+            AtomicReference<List<String>> names = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+
+            Thread thread = new Thread(() -> {
+                try
+                {
+                    names.set(getNames(AttachmentService.get().getAttachments(parent)));
+                }
+                catch (Throwable t)
+                {
+                    failure.set(t);
+                }
+            }, "AttachmentServiceImpl.TestCase reader");
+
+            thread.start();
+            thread.join(30_000);
+
+            if (null != failure.get())
+                throw new RuntimeException("Reader thread failed", failure.get());
+            assertFalse("Reader thread did not finish; it is likely blocked on the open transaction", thread.isAlive());
+
+            return names.get();
+        }
+
+        private static class TestAttachmentParent implements AttachmentParent
+        {
+            private final String _containerId;
+            private final String _entityId = GUID.makeGUID();
+
+            private TestAttachmentParent(Container c)
+            {
+                _containerId = c.getId();
+            }
+
+            @Override
+            public String getEntityId()
+            {
+                return _entityId;
+            }
+
+            @Override
+            public String getContainerId()
+            {
+                return _containerId;
+            }
+
+            @Override
+            public @NotNull AttachmentParentType getAttachmentParentType()
+            {
+                return AttachmentParentType.UNKNOWN;
+            }
         }
 
         // Tests the ability to extract EntityIds from data class LSIDs
