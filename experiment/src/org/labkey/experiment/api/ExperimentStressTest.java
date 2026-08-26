@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -59,6 +60,12 @@ public class ExperimentStressTest
             LOG.info("deleting junit container");
             JunitUtil.deleteTestContainer();
         }
+    }
+
+    @AfterClass
+    public static void tearDown()
+    {
+        JunitUtil.deleteTestContainer();
     }
 
     private final Random random;
