@@ -2531,6 +2531,38 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * GitHub Issue #899: custom view lookups also resolve views inherited from ancestor folders. Absent an explicit target
+     * folder, such a view must be shadowed by a new local one instead of rewritten (and un-inherited), so a name collision
+     * with an ancestor's view reports differently from one with a local view.
+     *
+     * @param localView the resolved view, null once it turns out to belong to an ancestor
+     * @param message a name-collision error, or null if the save may proceed
+     */
+    private record ResolvedViewName(CustomView localView, String message) {}
+
+    private static ResolvedViewName resolveViewName(CustomView existingView, String name, Container container,
+                                                    boolean inheritToTargetContainer, boolean replaceExisting)
+    {
+        CustomView inheritedView = null;
+        if (existingView != null && !inheritToTargetContainer && existingView.getContainer() != null
+                && !container.equals(existingView.getContainer()))
+        {
+            inheritedView = existingView;
+            existingView = null;
+        }
+
+        String message = null;
+        if (!replaceExisting && !StringUtils.isEmpty(name))
+        {
+            if (inheritedView != null)
+                message = "A saved view by the name \"" + name + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ";
+            else if (existingView != null)
+                message = "A saved view by the name \"" + name + "\" already exists. ";
+        }
+        return new ResolvedViewName(existingView, message);
+    }
+
     // Uck. Supports the old and new view designer.
     protected JSONObject saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName, boolean replaceExisting,
@@ -2558,19 +2590,10 @@ public class QueryController extends SpringActionController
         else
             view = queryDef.getCustomView(owner, getViewContext().getRequest(), name);
 
-        // GitHub Issue #899: the lookups above also resolve views inherited from ancestor folders. Absent an explicit
-        // target folder, shadow that view with a new local one rather than editing (and relocating) the ancestor's.
-        CustomView inheritedView = null;
-        if (view != null && !inheritToTargetContainer && view.getContainer() != null && !container.equals(view.getContainer()))
-        {
-            inheritedView = view;
-            view = null;
-        }
-
-        if (view != null && !replaceExisting && !StringUtils.isEmpty(name))
-            errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" already exists. ");
-        if (inheritedView != null && !replaceExisting && !StringUtils.isEmpty(name))
-            errors.reject(ERROR_MSG, "A saved view by the name \"" + viewName + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
+        ResolvedViewName resolved = resolveViewName(view, name, container, inheritToTargetContainer, replaceExisting);
+        view = resolved.localView();
+        if (resolved.message() != null)
+            errors.reject(ERROR_MSG, resolved.message());
 
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
@@ -6281,21 +6304,10 @@ public class QueryController extends SpringActionController
                     existingView = null;
                 }
 
-                // GitHub Issue #899: getCustomView() also resolves views inherited from ancestor folders. Absent an explicit
-                // target folder, shadow that view with a new local one instead of rewriting (and un-inheriting) the ancestor's.
-                CustomView inheritedView = null;
-                if (existingView != null && !inheritToTargetContainer && existingView.getContainer() != null
-                        && !container.equals(existingView.getContainer()))
-                {
-                    inheritedView = existingView;
-                    existingView = null;
-                }
-
-                if (inheritedView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
-                    throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" is already inherited from folder \"" + inheritedView.getContainer().getPath() + "\". ");
-
-                if (existingView != null && !form.isReplace() && !StringUtils.isEmpty(form.getNewName()))
-                    throw new IllegalArgumentException("A saved view by the name \"" + form.getNewName() + "\" already exists. ");
+                ResolvedViewName resolved = resolveViewName(existingView, form.getNewName(), container, inheritToTargetContainer, form.isReplace());
+                existingView = resolved.localView();
+                if (resolved.message() != null)
+                    throw new IllegalArgumentException(resolved.message());
 
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
