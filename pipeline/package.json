@@ -14,7 +14,7 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production rspack build --config node_modules/@labkey/build/configs/prod.config.js"
   },
   "dependencies": {
-    "@labkey/components": "7.58.6-fb-saveView899.1"
+    "@labkey/components": "7.59.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.2",
