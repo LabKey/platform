@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -829,14 +830,29 @@ public class QueryPivot extends AbstractQueryRelation
                 }
                 else
                 {
-                    // Bind the pivot value as a parameter rather than embedding its source-text literal.
-                    // Embedding via getSourceText() trips SQLFragment's semicolon/quote guardrail when the
-                    // value contains ';' or unbalanced '"' (both legal inside SQL string literals, but the
-                    // guardrail can't distinguish them from unsafe raw SQL).
-                    // Bind with an explicit JdbcType so Postgres can resolve the parameter's type — an
-                    // untyped bind can trip "could not determine data type of parameter $N" in some plans.
+                    // Bind the pivot value as a parameter instead of embedding it directly in the SQL.
+                    // This safely handles values containing characters like ';' or quotes.
+                    //
+                    // Use an explicit JdbcType so Postgres can determine the parameter type.
+                    // Prefer the pivot column's type, especially for date/timestamp columns, to avoid
+                    // type mismatch errors. Fall back to the constant's type if conversion isn't possible.
+                    Object bindValue = ((IConstant) value).getValue();
+                    JdbcType bindType = ((QExpr) value).getJdbcType();
+                    JdbcType columnType = _pivotColumn.getJdbcType();
+                    if (null != columnType && JdbcType.OTHER != columnType && columnType != bindType)
+                    {
+                        try
+                        {
+                            bindValue = columnType.convert(bindValue);
+                            bindType = columnType;
+                        }
+                        catch (ConversionException ignored)
+                        {
+                            // keep the constant's own type and value
+                        }
+                    }
                     sql.append("=?");
-                    sql.add(((IConstant) value).getValue(), ((QExpr) value).getJdbcType());
+                    sql.add(bindValue, bindType);
                 }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
