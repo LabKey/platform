@@ -8173,8 +8173,8 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
-            String schemaName = form.getSchemaName();
-            // GitHub Issue 1470: use the resolved table's name instead of user provided name that might have different casing
+            // GitHub Issue 1470: use the resolved schema/table names instead of the user-provided names that might have different casing
+            String schemaName = _tInfo.getUserSchema() != null ? _tInfo.getUserSchema().getSchemaName() : form.getSchemaName();
             String queryName = _tInfo.getName();
             QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
             if (queryDef != null && queryDef.getQueryDefId() != 0)
