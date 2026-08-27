@@ -3787,7 +3787,7 @@ public class QueryServiceImpl implements QueryService
         public void testRightAndIsnumeric() throws SQLException
         {
             // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape;
-            // isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
+            // isnumeric() returns a boolean predicate on both -- (ISNUMERIC(x) = 1) on SQL Server, a regex match on PostgreSQL.
             // This test exercises both against whichever dialect the test container is using.
             String sql =
                 "SELECT " +
