@@ -26,6 +26,7 @@ import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -58,6 +59,8 @@ public class AsyncQueryRequest<T>
     private final HttpServletResponse _rootResponse;
     /** Names the APM span; without it every async query aggregates under the bare operation name */
     private final @Nullable String _resourceName;
+    /** Extra tags for APM search and grouping, beyond the resource name */
+    private final @NotNull Map<String, String> _spanTags;
 
     boolean _cancelled;
     @Nullable Statement _statement;
@@ -66,10 +69,11 @@ public class AsyncQueryRequest<T>
     T _result;
     Throwable _exception;
 
-    public AsyncQueryRequest(HttpServletResponse response, @Nullable String resourceName)
+    public AsyncQueryRequest(HttpServletResponse response, @Nullable String resourceName, @NotNull Map<String, String> spanTags)
     {
         _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
         _resourceName = resourceName;
+        _spanTags = spanTags;
 
         _rootResponse = getRootResponse(response);
     }
@@ -116,6 +120,7 @@ public class AsyncQueryRequest<T>
         final Span span = tracer.buildSpan("AsyncRequest").start();
         if (_resourceName != null)
             span.setTag(DDTags.RESOURCE_NAME, _resourceName);
+        _spanTags.forEach(span::setTag);
         _span = span;
 
         Runnable runnable = () -> {
@@ -136,8 +141,12 @@ public class AsyncQueryRequest<T>
             }
             catch (Throwable t)
             {
-                Tags.ERROR.set(span, true);
-                span.log(Map.of(Fields.ERROR_OBJECT, t));
+                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure
+                if (!isCancelled())
+                {
+                    Tags.ERROR.set(span, true);
+                    span.log(Map.of(Fields.ERROR_OBJECT, t));
+                }
                 setException(t);
             }
             finally
@@ -162,9 +171,11 @@ public class AsyncQueryRequest<T>
         Thread thread = new Thread(runnable, threadName);
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
+        boolean started = false;
         try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread))
         {
             thread.start();
+            started = true;
 
             // Stash the original disconnect exception if the client has dropped off
             IOException clientDisconnectException = null;
@@ -220,6 +231,12 @@ public class AsyncQueryRequest<T>
                 }
             }
         }
+        finally
+        {
+            // The runnable finishes the span; without a thread to run it the span stays open and its parent trace never completes
+            if (!started)
+                span.finish();
+        }
     }
 
     synchronized public void setResult(T result)
@@ -243,6 +260,11 @@ public class AsyncQueryRequest<T>
     {
         _exception = exception;
         notify();
+    }
+
+    synchronized private boolean isCancelled()
+    {
+        return _cancelled;
     }
 
     synchronized private void cancel()

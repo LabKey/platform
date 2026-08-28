@@ -453,11 +453,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
                     getFromSql("_bg_");
                 }
-                catch (Exception e)
+                catch (Throwable t)
                 {
                     Tags.ERROR.set(span, true);
-                    span.log(Map.of(Fields.ERROR_OBJECT, e));
-                    LOG.warn("Background materialization failed.", e);
+                    span.log(Map.of(Fields.ERROR_OBJECT, t));
+                    LOG.warn("Background materialization failed.", t);
+                    // Broad enough to tag an Error on the span, but only Exceptions are swallowed
+                    if (t instanceof Error e)
+                        throw e;
                 }
                 finally
                 {
