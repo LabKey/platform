@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.59.1-fb-saveViewFilters696.3"
+    "@labkey/components": "7.60.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.2",
