@@ -2902,6 +2902,21 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * GitHub Issue #1397: QueryForm.getCustomView() also resolves shared views and views inherited from an ancestor
+     * folder or /Shared, so check user permissions on the view container
+     */
+    private static boolean canEditView(CustomView view, Container currentContainer, User user)
+    {
+        // Module and auto-generated views have no container of their own
+        Container viewContainer = view.getContainer() != null ? view.getContainer() : currentContainer;
+
+        if (!viewContainer.hasPermission(user, ReadPermission.class))
+            return false;
+
+        return !view.isShared() || viewContainer.hasPermission(user, EditSharedViewPermission.class);
+    }
+
     protected void renameCustomView(Container container, QueryDefinition queryDef, CustomView fromView, String newViewName, BindException errors)
     {
         if (newViewName != null && RESERVED_VIEW_NAMES.contains(newViewName.toLowerCase()))
@@ -2913,6 +2928,9 @@ public class QueryController extends SpringActionController
 
         if (errors.hasErrors())
             return;
+
+        if (!canEditView(fromView, container, getUser()))
+            throw new UnauthorizedException();
 
         User owner = getUser();
         boolean canSaveForAllUsers = container.hasPermission(getUser(), EditSharedViewPermission.class);
@@ -6118,22 +6136,19 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            if (getUser().isGuest())
+            if (view.isSession())
             {
-                // Guests can only delete session custom views.
-                if (!view.isSession())
+                // Session views live in the caller's own session, so guests may delete theirs
+                if (!getUser().isGuest() && !getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException();
+            }
+            else if (getUser().isGuest())
+            {
+                throw new UnauthorizedException();
             }
             else
             {
-                // Logged in users must have read permission
-                if (!getContainer().hasPermission(getUser(), ReadPermission.class))
-                    throw new UnauthorizedException();
-            }
-
-            if (view.isShared())
-            {
-                if (!getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                if (!canEditView(view, getContainer(), getUser()))
                     throw new UnauthorizedException();
             }
 
@@ -6146,7 +6161,7 @@ public class QueryController extends SpringActionController
                 CustomView shadowed = form.getCustomView();
                 if (shadowed != null && shadowed.isEditable() && !(shadowed instanceof ModuleCustomView))
                 {
-                    if (!shadowed.isShared() || getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                    if (canEditView(shadowed, getContainer(), getUser()))
                         shadowed.delete(getUser(), getViewContext().getRequest());
                 }
             }
@@ -8378,6 +8393,7 @@ public class QueryController extends SpringActionController
                 new ExportRowsTsvAction(),
                     new ExcelWebQueryDefinitionAction(),
                 controller.new SaveQueryViewsAction(),
+                controller.new RenameQueryViewAction(),
                 controller.new PropertiesQueryAction(),
                 controller.new SelectRowsAction(),
                 new GetDataAction(),
@@ -8406,6 +8422,11 @@ public class QueryController extends SpringActionController
 
             // submitter should be allowed for InsertRows
             assertForReadPermission(user, true, new InsertRowsAction());
+
+            // @RequiresNoPermission
+            assertForNoPermission(user,
+                new DeleteViewAction()
+            );
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,
