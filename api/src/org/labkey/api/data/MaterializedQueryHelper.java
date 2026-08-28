@@ -15,9 +15,18 @@
  */
 package org.labkey.api.data;
 
+import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.DDTags;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -422,17 +431,39 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         if (_backgroundTaskRunning.compareAndSet(false, true))
         {
+            String triggeringTraceId = CorrelationIdentifier.getTraceId();
+            String triggeringSpanId = CorrelationIdentifier.getSpanId();
+
             _materializationRunner.execute(() -> {
-                try
+                // Materialization outlives the request that triggers it and then serves every later request, so it gets its own trace; the trigger is recorded as tags rather than as a parent
+                Tracer tracer = GlobalTracer.get();
+                Span span = tracer.buildSpan("MaterializeAsync").ignoreActiveSpan().start();
+                span.setTag(DDTags.RESOURCE_NAME, StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName()));
+                if (!"0".equals(triggeringTraceId))
                 {
+                    span.setTag("labkey.triggering_trace_id", triggeringTraceId);
+                    span.setTag("labkey.triggering_span_id", triggeringSpanId);
+                }
+
+                try (Scope ignored = tracer.activateSpan(span))
+                {
+                    // Connect log messages with the active trace and span
+                    ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                    ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+
                     getFromSql("_bg_");
                 }
                 catch (Exception e)
                 {
+                    Tags.ERROR.set(span, true);
+                    span.log(Map.of(Fields.ERROR_OBJECT, e));
                     LOG.warn("Background materialization failed.", e);
                 }
                 finally
                 {
+                    span.finish();
+                    ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+                    ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
                     _backgroundTaskRunning.set(false);
                 }
             });

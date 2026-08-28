@@ -17,9 +17,12 @@
 package org.labkey.api.data;
 
 import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.DDTags;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -39,6 +42,7 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
@@ -52,16 +56,20 @@ public class AsyncQueryRequest<T>
     @Nullable
     private final StackTraceElement[] _creationStackTrace;
     private final HttpServletResponse _rootResponse;
+    /** Names the APM span; without it every async query aggregates under the bare operation name */
+    private final @Nullable String _resourceName;
 
     boolean _cancelled;
     @Nullable Statement _statement;
+    @Nullable Span _span;
 
     T _result;
     Throwable _exception;
 
-    public AsyncQueryRequest(HttpServletResponse response)
+    public AsyncQueryRequest(HttpServletResponse response, @Nullable String resourceName)
     {
         _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        _resourceName = resourceName;
 
         _rootResponse = getRootResponse(response);
     }
@@ -103,29 +111,33 @@ public class AsyncQueryRequest<T>
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 
-        String traceId = CorrelationIdentifier.getTraceId();
-
         // Create the span, so we can connect the async query with its owning thread
         final Tracer tracer = GlobalTracer.get();
         final Span span = tracer.buildSpan("AsyncRequest").start();
-        String spanId = CorrelationIdentifier.getSpanId();
+        if (_resourceName != null)
+            span.setTag(DDTags.RESOURCE_NAME, _resourceName);
+        _span = span;
 
         Runnable runnable = () -> {
             if (current != null)
                  MemTracker.get().startProfiler("async query");
 
             assert ThreadContext.isEmpty();  // Prevent/detect leaks
-            // Connect log messages with the active trace and span
-            ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), traceId);
-            ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), spanId);
 
             qs.copyEnvironment(state);
-            try
+            // Activate on this thread, not the caller's, or the JDBC integration starts a new trace instead of parenting here
+            try (Scope ignored = tracer.activateSpan(span))
             {
+                // Connect log messages with the active trace and span
+                ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+
                 setResult(callable.call());
             }
             catch (Throwable t)
             {
+                Tags.ERROR.set(span, true);
+                span.log(Map.of(Fields.ERROR_OBJECT, t));
                 setException(t);
             }
             finally
@@ -150,8 +162,7 @@ public class AsyncQueryRequest<T>
         Thread thread = new Thread(runnable, threadName);
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
-        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread);
-             Scope ignore = tracer.activateSpan(span))
+        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread))
         {
             thread.start();
 
@@ -237,6 +248,8 @@ public class AsyncQueryRequest<T>
     synchronized private void cancel()
     {
         _cancelled = true;
+        if (_span != null)
+            _span.setTag("labkey.async_query.cancelled", true);
         if (_statement != null)
         {
             try

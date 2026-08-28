@@ -379,10 +379,23 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
+    /** Names the APM span for an async query. Public schema/query name when there is one, otherwise the DB table. */
+    private String getAsyncResourceName(String operation)
+    {
+        String schema = _table.getPublicSchemaName();
+        String name = _table.getPublicName();
+        if (null == schema || null == name)
+        {
+            schema = null != _table.getSchema() ? _table.getSchema().getName() : null;
+            name = _table.getName();
+        }
+        return operation + " " + (null != schema ? schema + "." : "") + name;
+    }
+
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"));
         setAsyncRequest(asyncRequest);
 
         try
@@ -554,7 +567,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"));
         setAsyncRequest(asyncRequest);
 
         try
