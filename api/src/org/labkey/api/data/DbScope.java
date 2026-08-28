@@ -591,7 +591,7 @@ public class DbScope
                 LOG.info(
                         "Initializing DbScope with the following configuration:" +
                                 "\n    DataSource Name:          " + getDbScopeLoader().getDsName() +
-                                "\n    Server URL:               " + dbmd.getURL() +
+                                "\n    Server URL:               " + filterUrl(dbmd.getURL()) +
                                 "\n    Database Name:            " + _databaseName +
                                 "\n    Database Product Name:    " + _databaseProductName +
                                 "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
@@ -613,6 +613,19 @@ public class DbScope
             // Issue 50488: Pre-register this data source's SQL error codes in Spring to prevent deadlocks
             SQLErrorCodesFactory.getInstance().registerDatabase(dataSource.getDataSource(), _databaseProductName);
         }
+    }
+
+    // MariaDB driver adds username and password to the URL. This masks the password so we don't log it.
+    private String filterUrl(String url)
+    {
+        int start = url.indexOf("password=");
+        if (start != -1)
+        {
+            start = start + 9;
+            int end = Math.max(url.length(), url.indexOf('&', start));
+            url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
+        }
+        return url;
     }
 
     private String determineDriverLocation(Class<Driver> driverClass)

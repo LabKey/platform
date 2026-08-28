@@ -40,11 +40,6 @@
     boolean excludeSiteAdmins = !getUser().hasSiteAdminPermission(); // App admins can't clone permissions from site admins
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    document.addEventListener("DOMContentLoaded", function() {
-        if (LABKEY.ActionURL.getParameter('provider')) {
-            document.getElementById('provider').value = LABKEY.ActionURL.getParameter('provider');
-        }
-    });
 
     function enableText()
     {
@@ -139,7 +134,7 @@
     <%
         if (form.getProvider() != null)
         {
-            %><input type="hidden" name="provider" id="provider" value=<%=h(form.getProvider())%>><%
+            %><input type="hidden" name="provider" id="provider" value="<%=h(form.getProvider())%>"><%
         }
         else
         {
