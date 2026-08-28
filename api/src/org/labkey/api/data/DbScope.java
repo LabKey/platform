@@ -26,11 +26,15 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -49,6 +53,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -2145,7 +2150,8 @@ public class DbScope
     /**
      * Some DbScopes shouldn't be exercised by junit tests (e.g., an external data source connected to LabKey Server via
      * the PostgreSQL wire protocol)
-     * Tests that use this should be annotated with '@TestWhen(TestWhen.When.DB_SCOPE)'
+     * Tests that use this should be annotated with '@TestWhen(TestWhen.When.DBSCOPE)' to ensure they run in suites that
+     * configure external data sources on TeamCity.
      *
      * @return A collection of DbScopes that are suitable for testing
      */
@@ -2962,46 +2968,57 @@ public class DbScope
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
     @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class DialectTestCase extends Assert
     {
-        @Test
-        public void testAllScopes() throws SQLException, IOException
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
         {
-            for (DbScope scope : getDbScopesToTest())
-            {
-                SqlDialect dialect = scope.getSqlDialect();
+            return JunitUtil.getDbScopesTestParameters();
+        }
 
-                try (Connection conn = scope.getConnection())
-                {
-                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
-                    dialect.testDialectKeywords(executor);
-                    dialect.testKeywordCandidates(executor);
-                }
+        private final DbScope scope;
+
+        public DialectTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
+
+        @Test
+        public void testKeywords() throws SQLException, IOException
+        {
+            SqlDialect dialect = scope.getSqlDialect();
+
+            try (Connection conn = scope.getConnection())
+            {
+                SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                dialect.testDialectKeywords(executor);
+                dialect.testKeywordCandidates(executor);
             }
         }
 
         @Test
-        public void testLabKeyScope()
+        public void testDateDiff()
         {
-            DbScope scope = getLabKeyScope();
             SqlDialect dialect = scope.getSqlDialect();
+            Assume.assumeFalse("Datediff not supported for " + dialect.getClass().getSimpleName(), dialect instanceof SimpleSqlDialect);
 
-            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
 
-            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
-            testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
-            testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
-            testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
-            testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
-            testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
+            _testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
+            _testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
+            _testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
+            _testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
 
-            testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
+            _testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
         }
 
-        private void testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
+        private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
             SQLFragment sql = new SQLFragment("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
@@ -3013,24 +3030,33 @@ public class DbScope
     }
 
     @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class GroupConcatTestCase extends Assert
     {
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
+        {
+            return JunitUtil.getDbScopesTestParameters(scope -> scope.getSqlDialect().supportsGroupConcat());
+        }
+
+        private final DbScope scope;
+
+        public GroupConcatTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
+
         @Test
         public void testGroupConcat()
         {
-            for (DbScope scope : getDbScopesToTest())
-            {
-                SqlDialect dialect = scope.getSqlDialect();
-                if (!dialect.supportsGroupConcat())
-                    continue;
+            SqlDialect dialect = scope.getSqlDialect();
 
-                boolean caseInsensitiveCollation = dialect.isSqlServer();
+            boolean caseInsensitiveCollation = dialect.isSqlServer();
 
-                testGroupConcat(scope, dialect, false, false, "x Y z z y");
-                testGroupConcat(scope, dialect, true, false, caseInsensitiveCollation ? "x Y z" : "x y Y z");
-                testGroupConcat(scope, dialect, false, true, "x y Y z z");
-                testGroupConcat(scope, dialect, true, true, caseInsensitiveCollation ? "x Y z" : "x y Y z");
-            }
+            testGroupConcat(scope, dialect, false, false, "x Y z z y");
+            testGroupConcat(scope, dialect, true, false, caseInsensitiveCollation ? "x Y z" : "x y Y z");
+            testGroupConcat(scope, dialect, false, true, "x y Y z z");
+            testGroupConcat(scope, dialect, true, true, caseInsensitiveCollation ? "x Y z" : "x y Y z");
         }
 
         private void testGroupConcat(DbScope scope, SqlDialect dialect, boolean distinct, boolean sorted, String expected)

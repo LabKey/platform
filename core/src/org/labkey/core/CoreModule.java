@@ -1478,6 +1478,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
             SqlDialect.DialectTestCase.class,
+            SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
