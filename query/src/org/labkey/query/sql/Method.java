@@ -2000,7 +2000,7 @@ public abstract class Method
         }
     }
 
-    @TestWhen(TestWhen.When.DB_SCOPE)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TestCase extends Assert
     {
         void assertIsSimpleString(String expected, SQLFragment s)

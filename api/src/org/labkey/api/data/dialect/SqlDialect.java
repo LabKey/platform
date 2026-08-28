@@ -2415,7 +2415,7 @@ public abstract class SqlDialect
     // TESTS
     //
 
-    @TestWhen(TestWhen.When.DB_SCOPE)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class DialectTestCase
     {
         DbScope s;

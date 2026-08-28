@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -51,107 +49,55 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-@TestWhen(TestWhen.When.DB_SCOPE)
-public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
+public abstract class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelector>
 {
     private static final Logger LOG = LogHelper.getLogger(TableSelectorTestCase.class, "Test progress");
 
-    @Test
-    public void testOracleDataSources() throws SQLException
+    @TestWhen(TestWhen.When.DBSCOPE)
+    public static class CoreTableSelectorTest extends TableSelectorTestCase
     {
-        // Test Oracle database, if present
-        List<DbScope> scopes = DbScope.getDbScopesToTest().stream()
-                .filter(scope -> "Oracle".equals(scope.getSqlDialect().getProductName()))
-                .toList();
-        Assume.assumeFalse("Nothing to test", scopes.isEmpty());
 
-        for (DbScope scope : scopes)
+        @Test
+        public void testTableSelector() throws SQLException
         {
-            DbSchema schema = scope.getSchema("HR", DbSchemaType.Bare);
-            if (schema.existsInDatabase())
+            testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
+            testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
+        }
+
+        @Test
+        public void testGetObject()
+        {
+            TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers());
+
+            User user = TestContext.get().getUser();
+            User selectedUser = userSelector.getObject(user.getUserId(), User.class);
+            assertEquals(user, selectedUser);
+
+            // TableSelector to test a couple exception scenarios
+            TableSelector moduleSelector = new TableSelector(CoreSchema.getInstance().getTableInfoModules());
+            moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing SQLExceptions
+
+            // Make sure that getObject() throws if more than one row is selected
+            try
             {
-                testTableSelector(schema.getTable("EMPLOYEES"), Employees.class);
+                moduleSelector.getObject(ModuleContext.class);
+                fail("getObject() should have thrown when returning multiple objects");
+            }
+            catch (UncategorizedSQLException e)
+            {
+                String message = e.getMessage();
+                // Verify that the exception message does not contain SQL (we don't want to display SQL to users...
+                assertFalse("Exception message " + message + " seems to contain SQL", message.contains("SELECT"));
+                // ...and that the exception is decorated, so the SQL does end up in mothership
+                String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
+                assertNotNull("Exception was not decorated", decoration);
             }
 
-            // Test a system table
-            schema = scope.getSchema("SYS", DbSchemaType.Bare);
-            testTableSelector(schema.getTable("AUDIT_ACTIONS"), AuditAction.class);
-        }
-    }
+            // Make sure that getObject() throws if pk == null, #20057
 
-    @Test
-    public void testMariaDbDataSources() throws SQLException
-    {
-
-        // Test MySQL or MariaDB database, if present
-        List<DbScope> mySqlScopes = DbScope.getDbScopesToTest().stream()
-            .filter(scope -> Set.of("MySQL", "MariaDB").contains(scope.getSqlDialect().getProductName()))
-            .toList();
-        Assume.assumeFalse("Nothing to test", mySqlScopes.isEmpty());
-
-        for (DbScope mySqlScope: mySqlScopes)
-        {
-            DbSchema sakila = mySqlScope.getSchema("sakila", DbSchemaType.Bare);
-            if (sakila.existsInDatabase())
-            {
-                testTableSelector(sakila.getTable("Country"), Country.class);
-            }
-
-            // Test a system table
-            DbSchema sys = mySqlScope.getSchema("sys", DbSchemaType.Bare);
-            testTableSelector(sys.getTable("sys_config"), Config.class);
-        }
-    }
-
-    @Test
-    public void testTableSelector() throws SQLException
-    {
-        testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
-        testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
-    }
-
-    // MariaDB tables
-    record Country(int country_id, String country, Date last_update) {}
-    record Config(String Variable, String Value, Date Set_Time, String Set_By) {}
-
-    // OracleDB tables
-    record Employees(Integer EMPLOYEE_ID, String FIRST_NAME, String LAST_NAME, String EMAIL, Date HIRE_DATE, String JOB_ID, Double SALARY, Double COMMISSION_PCT, Integer MANAGER_ID, Integer DEPARTMENT_ID) {}
-    record AuditAction(Integer ACTION, String NAME) {}
-
-    @Test
-    public void testGetObject()
-    {
-        TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers());
-
-        User user = TestContext.get().getUser();
-        User selectedUser = userSelector.getObject(user.getUserId(), User.class);
-        assertEquals(user, selectedUser);
-
-        // TableSelector to test a couple exception scenarios
-        TableSelector moduleSelector = new TableSelector(CoreSchema.getInstance().getTableInfoModules());
-        moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing SQLExceptions
-
-        // Make sure that getObject() throws if more than one row is selected
-        try
-        {
-            moduleSelector.getObject(ModuleContext.class);
-            fail("getObject() should have thrown when returning multiple objects");
-        }
-        catch (UncategorizedSQLException e)
-        {
-            String message = e.getMessage();
-            // Verify that the exception message does not contain SQL (we don't want to display SQL to users...
-            assertFalse("Exception message " + message + " seems to contain SQL", message.contains("SELECT"));
-            // ...and that the exception is decorated, so the SQL does end up in mothership
-            String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
-            assertNotNull("Exception was not decorated", decoration);
-        }
-
-        // Make sure that getObject() throws if pk == null, #20057
-
-        // For now, null returns null to get DataReportsTest running again
-        ModuleContext ctx = moduleSelector.getObject(null, ModuleContext.class);
-        assertNull("getObject(null) should return null", ctx);
+            // For now, null returns null to get DataReportsTest running again
+            ModuleContext ctx = moduleSelector.getObject(null, ModuleContext.class);
+            assertNull("getObject(null) should return null", ctx);
 
 //        try
 //        {
@@ -162,31 +108,49 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 //        {
 //            assertEquals("PK on getObject() must not be null", e.getMessage());
 //        }
+        }
+
+        @Test
+        public void testColumnLists() throws SQLException
+        {
+            TableInfo ti = CoreSchema.getInstance().getTableInfoActiveUsers();
+
+            testColumnList(new TableSelector(ti, new HashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), false);
+            testColumnList(new TableSelector(ti, new HashSet<>(ti.getColumns("Email,UserId,DisplayName,Created,Active")), null, null), false);
+
+            testColumnList(new TableSelector(ti, PageFlowUtil.set("Email", "UserId", "DisplayName", "Created", "Active")), true);
+            testColumnList(new TableSelector(ti, new LinkedHashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), true);
+            testColumnList(new TableSelector(ti, new CsvSet("Email, UserId, DisplayName, Created, Active")), true);
+            testColumnList(new TableSelector(ti, PageFlowUtil.set(ti.getColumn("Email"), ti.getColumn("UserId"), ti.getColumn("DisplayName"), ti.getColumn("Created"), ti.getColumn("Active")), null, null), true);
+            testColumnList(new TableSelector(ti, ti.getColumns("Email,UserId,DisplayName,Created,Active"), null, null), true);
+
+            // Singleton column collections should always be considered "stable"
+            testColumnList(new TableSelector(ti, PageFlowUtil.set("Email")), true);
+            testColumnList(new TableSelector(ti, new CsvSet("Email")), true);
+            testColumnList(new TableSelector(ti, Collections.singleton("Email")), true);
+            testColumnList(new TableSelector(ti, ti.getColumns("Email"), null, null), true);
+            testColumnList(new TableSelector(ti, Collections.singleton(ti.getColumn("Email")), null, null), true);
+        }
+
+        @Test
+        public void testInClause()
+        {
+            TableInfo table = CoreSchema.getInstance().getTableInfoContainers();
+            long rowCount = new TableSelector(table).getRowCount();
+
+            Container root = ContainerManager.getRoot();
+            FilterClause rootClause = new InClause(FieldKey.fromParts("RowId"), Set.of(root.getRowId()));
+            assertEquals(1, new TableSelector(table, new SimpleFilter(rootClause), null).getRowCount());
+            assertEquals(rowCount - 1, new TableSelector(table, new SimpleFilter(new NotClause(rootClause)), null).getRowCount());
+
+            FilterClause emptyClause = new InClause(FieldKey.fromParts("RowId"), Set.of());
+            assertEquals(0, new TableSelector(table, new SimpleFilter(emptyClause), null).getRowCount());
+            assertEquals(rowCount, new TableSelector(table, new SimpleFilter(new NotClause(emptyClause)), null).getRowCount());
+        }
+
     }
 
-    @Test
-    public void testColumnLists() throws SQLException
-    {
-        TableInfo ti = CoreSchema.getInstance().getTableInfoActiveUsers();
-
-        testColumnList(new TableSelector(ti, new HashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), false);
-        testColumnList(new TableSelector(ti, new HashSet<>(ti.getColumns("Email,UserId,DisplayName,Created,Active")), null, null), false);
-
-        testColumnList(new TableSelector(ti, PageFlowUtil.set("Email", "UserId", "DisplayName", "Created", "Active")), true);
-        testColumnList(new TableSelector(ti, new LinkedHashSet<>(Arrays.asList("Email", "UserId", "DisplayName", "Created", "Active"))), true);
-        testColumnList(new TableSelector(ti, new CsvSet("Email, UserId, DisplayName, Created, Active")), true);
-        testColumnList(new TableSelector(ti, PageFlowUtil.set(ti.getColumn("Email"), ti.getColumn("UserId"), ti.getColumn("DisplayName"), ti.getColumn("Created"), ti.getColumn("Active")), null, null), true);
-        testColumnList(new TableSelector(ti, ti.getColumns("Email,UserId,DisplayName,Created,Active"), null, null), true);
-
-        // Singleton column collections should always be considered "stable"
-        testColumnList(new TableSelector(ti, PageFlowUtil.set("Email")), true);
-        testColumnList(new TableSelector(ti, new CsvSet("Email")), true);
-        testColumnList(new TableSelector(ti, Collections.singleton("Email")), true);
-        testColumnList(new TableSelector(ti, ti.getColumns("Email"), null, null), true);
-        testColumnList(new TableSelector(ti, Collections.singleton(ti.getColumn("Email")), null, null), true);
-    }
-
-    private void testColumnList(TableSelector selector, boolean stable) throws SQLException
+    protected void testColumnList(TableSelector selector, boolean stable) throws SQLException
     {
         // The following methods should succeed with both stable and unstable ordered column lists
 
@@ -370,7 +334,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         }
     }
 
-    private <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
+    protected <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
     {
         DbSchema schema = table.getSchema();
         LOG.info("Testing {}.{}.{}", schema.getScope().getDisplayName(), schema.getName(), table.getName());
@@ -474,19 +438,4 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         verifyResultSets(selector, rowCount, expectedComplete);
     }
 
-    @Test
-    public void testInClause()
-    {
-        TableInfo table = CoreSchema.getInstance().getTableInfoContainers();
-        long rowCount = new TableSelector(table).getRowCount();
-
-        Container root = ContainerManager.getRoot();
-        FilterClause rootClause = new InClause(FieldKey.fromParts("RowId"), Set.of(root.getRowId()));
-        assertEquals(1, new TableSelector(table, new SimpleFilter(rootClause), null).getRowCount());
-        assertEquals(rowCount - 1, new TableSelector(table, new SimpleFilter(new NotClause(rootClause)), null).getRowCount());
-
-        FilterClause emptyClause = new InClause(FieldKey.fromParts("RowId"), Set.of());
-        assertEquals(0, new TableSelector(table, new SimpleFilter(emptyClause), null).getRowCount());
-        assertEquals(rowCount, new TableSelector(table, new SimpleFilter(new NotClause(emptyClause)), null).getRowCount());
-    }
 }

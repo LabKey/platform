@@ -2961,7 +2961,7 @@ public class DbScope
     }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
-    @TestWhen(TestWhen.When.DB_SCOPE)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class DialectTestCase extends Assert
     {
         @Test
@@ -3012,7 +3012,7 @@ public class DbScope
         }
     }
 
-    @TestWhen(TestWhen.When.DB_SCOPE)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class GroupConcatTestCase extends Assert
     {
         @Test
@@ -3058,7 +3058,7 @@ public class DbScope
         }
     }
 
-    @TestWhen(TestWhen.When.DB_SCOPE)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TransactionTestCase extends Assert
     {
         @Test
