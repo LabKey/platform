@@ -1493,10 +1493,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
 
-                runIncremental(materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
-                runIncremental(materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
-                runIncremental(materialized.incrementalRollupCheck, this::executeIncrementalRollup);
-                runIncremental(materialized.incrementalInsertCheck, this::executeIncrementalInsert);
+                runIncremental("delete", materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
+                runIncremental("update", materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
+                runIncremental("rollup", materialized.incrementalRollupCheck, this::executeIncrementalRollup);
+                runIncremental("insert", materialized.incrementalInsertCheck, this::executeIncrementalInsert);
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1524,13 +1524,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          * reflects the change, instead of briefly serving a stale materialized view. Must be called while holding the
          * materialized's loading lock so only one updater runs at a time.
          */
-        private static void runIncremental(MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
+        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
         {
             if (check.peekValid())
                 return;
             String token = check.current();
-            work.run();
+            traced("incremental." + kind, getMaterializationName(), work);
             check.markValidAs(token);
+        }
+
+        @Override
+        protected String getMaterializationName()
+        {
+            return StringUtils.defaultIfEmpty(Lsid.parse(_lsid).getObjectId(), _lsid);
         }
 
         void upsertWithRetry(SQLFragment sql)

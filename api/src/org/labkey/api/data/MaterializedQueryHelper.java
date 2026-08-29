@@ -162,31 +162,33 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 DbSchema temp = DbSchema.getTemp();
                 TempTableTracker.track(_tableName, this);
 
-                SQLFragment selectInto;
-                if (isSelectInto)
-                {
-                    String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
-                    List<Object> params = selectQuery.getParams();
-                    selectInto = new SQLFragment(sql,params);
-                }
-                else
-                {
-                    // UNLOGGED skips WAL when populating and indexing the table; only supported in PostgreSQL.
-                    selectInto = new SQLFragment("SELECT * INTO ")
-                            .append(_mqh._unlogged && _mqh._scope.getSqlDialect().isPostgreSQL() ? "UNLOGGED " : "")
-                            .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
-                    selectInto.append(selectQuery);
-                    selectInto.append("\n) _sql_");
-                }
-                new SqlExecutor(_mqh._scope).execute(selectInto);
-
-                try (var ignored = SpringActionController.ignoreSqlUpdates())
-                {
-                    for (String index : _mqh._indexes)
+                traced("full", _mqh.getMaterializationName(), () -> {
+                    SQLFragment selectInto;
+                    if (isSelectInto)
                     {
-                        new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                        String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
+                        List<Object> params = selectQuery.getParams();
+                        selectInto = new SQLFragment(sql,params);
                     }
-                }
+                    else
+                    {
+                        // UNLOGGED skips WAL when populating and indexing the table; only supported in PostgreSQL.
+                        selectInto = new SQLFragment("SELECT * INTO ")
+                                .append(_mqh._unlogged && _mqh._scope.getSqlDialect().isPostgreSQL() ? "UNLOGGED " : "")
+                                .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
+                        selectInto.append(selectQuery);
+                        selectInto.append("\n) _sql_");
+                    }
+                    new SqlExecutor(_mqh._scope).execute(selectInto);
+
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        for (String index : _mqh._indexes)
+                        {
+                            new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                        }
+                    }
+                });
 
                 _loadingState.set(LoadingState.LOADED);
                 return true;
@@ -439,6 +441,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 Tracer tracer = GlobalTracer.get();
                 Span span = tracer.buildSpan("MaterializeAsync").ignoreActiveSpan().start();
                 span.setTag(DDTags.RESOURCE_NAME, StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName()));
+                span.setTag("labkey.materialized_view", getMaterializationName());
                 if (!"0".equals(triggeringTraceId))
                 {
                     span.setTag("labkey.triggering_trace_id", triggeringTraceId);
@@ -584,6 +587,41 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     protected void incrementalUpdateBeforeSelect(Materialized m)
     {
+    }
+
+    /**
+     * Runs DB work inside its own Datadog APM span so each kind of materialization is a separate resource. Nests under
+     * MaterializeAsync on the background thread and under the HTTP request when a stale view is rebuilt inline.
+     */
+    protected static void traced(String resource, String viewName, Runnable work)
+    {
+        Tracer tracer = GlobalTracer.get();
+        Span span = tracer.buildSpan("labkey.materialize").start();
+        span.setTag(DDTags.RESOURCE_NAME, resource);
+        // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
+        span.setTag(DDTags.MEASURED, true);
+        span.setTag("labkey.materialized_view", viewName);
+
+        try (Scope ignored = tracer.activateSpan(span))
+        {
+            work.run();
+        }
+        catch (Throwable t)
+        {
+            Tags.ERROR.set(span, true);
+            span.log(Map.of(Fields.ERROR_OBJECT, t));
+            throw t;
+        }
+        finally
+        {
+            span.finish();
+        }
+    }
+
+    /** Identifies the view in APM. Carried as a tag, never a resource name, to keep per-view cardinality out of trace metrics. */
+    protected String getMaterializationName()
+    {
+        return StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName());
     }
 
     /**
