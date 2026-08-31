@@ -2597,7 +2597,8 @@ public class QueryController extends SpringActionController
 
         // GitHub Issue #1440: check perm view's container
         Container viewContainer = view != null ? view.getContainer() : null;
-        if (viewContainer != null && !viewContainer.equals(container) && !canEditView(view, viewContainer, getUser()))
+        boolean shadowsSharedView = owner != null && view != null && view.isShared();
+        if (viewContainer != null && !shadowsSharedView && !viewContainer.equals(container) && !canEditView(view, viewContainer, getUser()))
             throw new UnauthorizedException();
 
         // 11179: Allow editing the view if we're saving to session.
@@ -6151,10 +6152,9 @@ public class QueryController extends SpringActionController
             {
                 throw new UnauthorizedException();
             }
-            else
+            else if (!getContainer().hasPermission(getUser(), ReadPermission.class) || !canEditView(view, getContainer(), getUser()))
             {
-                if (!canEditView(view, getContainer(), getUser()))
-                    throw new UnauthorizedException();
+                throw new UnauthorizedException();
             }
 
             view.delete(getUser(), getViewContext().getRequest());
