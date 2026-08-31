@@ -177,6 +177,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
                     }
+                    analyze();
                 }
 
                 _loadingState.set(LoadingState.LOADED);
@@ -191,6 +192,22 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             {
                 if (lockAcquired)
                     _loadingLock.unlock();
+            }
+        }
+
+        /** SELECT INTO leaves the table with no statistics, so the planner guesses until autovacuum eventually analyzes it. */
+        private void analyze()
+        {
+            try
+            {
+                SQLFragment sql = _mqh._scope.getSqlDialect().getAnalyzeCommandForTable(_fromSql);
+                if (null != sql)
+                    new SqlExecutor(_mqh._scope).execute(sql);
+            }
+            catch (RuntimeException x)
+            {
+                // Statistics are an optimization, so a dialect that can't analyze must not fail the materialization
+                LOG.warn("Failed to update statistics for materialized table {}", _tableName, x);
             }
         }
 
