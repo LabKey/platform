@@ -75,11 +75,6 @@ module.exports = {
         generateLib: true, // used in FilterDialog.js
         path: './src/client/ConceptFilter'
     }, {
-        name: 'querySelectInput',
-        title: 'Query Select Input',
-        generateLib: true, // used in TypeAheadSelectDisplayColumn.java
-        path: './src/client/QuerySelectInput'
-    }, {
         name: 'apiKeys', // used in ApiKeyViewProvider.java
         title: 'API Keys',
         path: './src/client/APIKeys'
