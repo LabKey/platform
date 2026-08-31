@@ -8235,8 +8235,9 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
-            String schemaName = form.getSchemaName();
-            String queryName = form.getQueryName();
+            // GitHub Issue 1470: use the resolved schema/table names instead of the user-provided names that might have different casing
+            String schemaName = _tInfo.getUserSchema() != null ? _tInfo.getUserSchema().getSchemaName() : form.getSchemaName();
+            String queryName = _tInfo.getName();
             QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
             if (queryDef != null && queryDef.getQueryDefId() != 0)
             {
@@ -8270,7 +8271,7 @@ public class QueryController extends SpringActionController
                     {
                         throw new MetadataUnavailableException(e.getMessage());
                     }
-                    xmlTable = getTableType(form.getQueryName(), doc);
+                    xmlTable = getTableType(queryName, doc);
                     // when there is a queryDef but xmlTable is null it means the xmlMetaData contains tableName which does not
                     // match with actual queryName then reconstruct the xml table metadata : See Issue 43523
                     if (xmlTable == null)
