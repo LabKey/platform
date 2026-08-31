@@ -2595,6 +2595,11 @@ public class QueryController extends SpringActionController
         if (resolved.message() != null)
             errors.reject(ERROR_MSG, resolved.message());
 
+        // GitHub Issue #1440: check perm view's container
+        Container viewContainer = view != null ? view.getContainer() : null;
+        if (viewContainer != null && !viewContainer.equals(container) && !canEditView(view, viewContainer, getUser()))
+            throw new UnauthorizedException();
+
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
         boolean canEdit = view == null || session || view.canEdit(container, errors);
@@ -6266,9 +6271,6 @@ public class QueryController extends SpringActionController
             if (!view.isSession())
                 throw new IllegalArgumentException("This action only supports saving session views.");
 
-            //if (!getContainer().getId().equals(view.getContainer().getId()))
-            //    throw new IllegalArgumentException("View may only be saved from container it was created in.");
-
             assert !view.canInherit() && !view.isShared() && view.isEditable(): "Session view should never be inheritable or shared and always be editable";
 
             // Users may save views to a location other than the current container
@@ -6323,6 +6325,11 @@ public class QueryController extends SpringActionController
                 existingView = resolved.localView();
                 if (resolved.message() != null)
                     throw new IllegalArgumentException(resolved.message());
+
+                // GitHub Issue #1440: check perm existingView's container
+                Container viewContainer = existingView != null ? existingView.getContainer() : null;
+                if (viewContainer != null && !viewContainer.equals(container) && !canEditView(existingView, viewContainer, getUser()))
+                    throw new UnauthorizedException();
 
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
