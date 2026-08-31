@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -379,10 +380,49 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
+    /** @return "schema.query", using the public (Query) names when the table has them, otherwise the DB schema and table */
+    private String getAsyncQueryName()
+    {
+        String schema = _table.getPublicSchemaName();
+        String name = _table.getPublicName();
+        if (null == schema || null == name)
+        {
+            schema = null != _table.getSchema() ? _table.getSchema().getName() : null;
+            name = _table.getName();
+        }
+        return (null != schema ? schema + "." : "") + name;
+    }
+
+    /** @return the schema name, preferring the public (Query) name over the DB schema, or null if the table has neither */
+    private @Nullable String getAsyncSchemaName()
+    {
+        String schema = _table.getPublicSchemaName();
+        if (null == schema && null != _table.getSchema())
+            schema = _table.getSchema().getName();
+        return schema;
+    }
+
+    /** Query names are user-defined and unbounded, and resource.name is a trace-metric dimension, so the resource stops at the schema and the query goes in a tag. */
+    private String getAsyncResourceName(String operation)
+    {
+        String schema = getAsyncSchemaName();
+        return null != schema ? operation + " " + schema : operation;
+    }
+
+    /** APM span tags. The only place the query being run is identified, since resource.name deliberately stops at the schema. */
+    private Map<String, String> getAsyncSpanTags()
+    {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("labkey.query", getAsyncQueryName());
+        if (null != _table.getSchema())
+            tags.put("labkey.db_schema", _table.getSchema().getName());
+        return tags;
+    }
+
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
@@ -554,7 +594,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
