@@ -118,6 +118,8 @@ public class AsyncQueryRequest<T>
         // Create the span, so we can connect the async query with its owning thread
         final Tracer tracer = GlobalTracer.get();
         final Span span = tracer.buildSpan("AsyncRequest").start();
+        // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
+        span.setTag(DDTags.MEASURED, true);
         if (_resourceName != null)
             span.setTag(DDTags.RESOURCE_NAME, _resourceName);
         _spanTags.forEach(span::setTag);
