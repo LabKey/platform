@@ -8101,7 +8101,9 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
-            if (container.getProject() != null && container.getProject().getAuditCommentsRequired() && StringUtils.isBlank(form.getAuditUserComment()))
+            // the audit setting is stored on the app home folder, which is the project only when product folders are enabled
+            Container settingsContainer = container.isAppHomeFolder() ? container : container.getProject();
+            if (settingsContainer != null && settingsContainer.getAuditCommentsRequired() && StringUtils.isBlank(form.getAuditUserComment()))
                 errors.reject(ERROR_GENERIC, "A reason for the template update is required.");
             String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
             _kind = PropertyService.get().getDomainKind(domainURI);
