@@ -2145,6 +2145,7 @@ public class DbScope
     /**
      * Some DbScopes shouldn't be exercised by junit tests (e.g., an external data source connected to LabKey Server via
      * the PostgreSQL wire protocol)
+     * Tests that use this should be annotated with '@TestWhen(TestWhen.When.DB_SCOPE)'
      *
      * @return A collection of DbScopes that are suitable for testing
      */
@@ -2991,7 +2992,7 @@ public class DbScope
     }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
-    @TestWhen(TestWhen.When.BVT)
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class DialectTestCase extends Assert
     {
         @Test
@@ -3042,6 +3043,7 @@ public class DbScope
         }
     }
 
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class GroupConcatTestCase extends Assert
     {
         @Test
@@ -3087,7 +3089,7 @@ public class DbScope
         }
     }
 
-
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TransactionTestCase extends Assert
     {
         @Test

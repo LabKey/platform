@@ -49,14 +49,15 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
-import java.util.Calendar;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1999,6 +2000,7 @@ public abstract class Method
         }
     }
 
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TestCase extends Assert
     {
         void assertIsSimpleString(String expected, SQLFragment s)
