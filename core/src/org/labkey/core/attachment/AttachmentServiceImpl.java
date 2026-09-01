@@ -158,6 +158,10 @@ public class AttachmentServiceImpl implements AttachmentService
     private static final Map<String, AttachmentParentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
     private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
 
+    // Maximum number of deferred AttachmentCache invalidations one transaction will accumulate before falling
+    // back to clearing the whole cache. See invalidateCache().
+    private static final int MAX_DEFERRED_CACHE_INVALIDATIONS = 1000;
+
     @Override
     public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
@@ -293,9 +297,13 @@ public class AttachmentServiceImpl implements AttachmentService
         Set<String> filesToSkip = new TreeSet<>();
         File fileLocation = parent instanceof AttachmentDirectory dir ? dir.getFileSystemDirectory() : null;
 
+        // Resolve which of these files already exist with a single query instead of a cached read per file.
+        Map<String, Attachment> existingAttachments = null == parent ? Collections.emptyMap() :
+                getAttachments(parent, files.stream().map(AttachmentFile::getFilename).toList());
+
         for (AttachmentFile file : files)
         {
-            if (parent != null && exists(parent, file.getFilename()))
+            if (existingAttachments.containsKey(file.getFilename()))
             {
                 filesToSkip.add(file.getFilename());
                 continue;
@@ -321,7 +329,7 @@ public class AttachmentServiceImpl implements AttachmentService
             addAuditEvent(user, parent, file.getFilename(), "The attachment " + file.getFilename() + " was added");
         }
 
-        AttachmentCache.removeAttachments(parent);
+        invalidateCache(parent);
 
         if (!filesToSkip.isEmpty())
             throw new AttachmentService.DuplicateFilenameException(filesToSkip);
@@ -423,7 +431,89 @@ public class AttachmentServiceImpl implements AttachmentService
             new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(parent));
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
+            invalidateCache(parent);
+        }
+    }
+
+    /**
+     * Invalidates a mutated parent's AttachmentCache entry, bounding how many deferred invalidations a single
+     * transaction can accumulate. Inside a transaction, DatabaseCache defers each key removal to the commit as its
+     * own task (see TransactionCache.remove()), and several callers reach this once per parent inside a single
+     * transaction: ExperimentServiceImpl.truncateDataClass builds one AttachmentParent per data class row,
+     * IssueManager one per comment, and AttachmentDataIterator adds and deletes attachments per imported row. A
+     * large operation would otherwise retain a task per parent for the life of the transaction. Past
+     * MAX_DEFERRED_CACHE_INVALIDATIONS we clear the whole cache once instead, trading precision for a bound on
+     * memory; over-invalidating only costs cache warmth, never correctness.
+     */
+    private void invalidateCache(AttachmentParent parent)
+    {
+        DbScope.Transaction tx = CoreSchema.getInstance().getScope().getCurrentTransaction();
+
+        // Outside a transaction each removal happens immediately and retains nothing, so there's nothing to bound
+        if (null == tx)
+        {
             AttachmentCache.removeAttachments(parent);
+            return;
+        }
+
+        DeferredInvalidationCounter counter = tx.addCommitTask(new DeferredInvalidationCounter(), DbScope.CommitTaskOption.POSTCOMMIT);
+
+        if (counter.removeIndividually())
+            AttachmentCache.removeAttachments(parent);
+        else if (counter.shouldClear())
+            AttachmentCache.clear();
+    }
+
+    /**
+     * Transaction-scoped counter of deferred AttachmentCache removals. Coalesced via addCommitTask()'s equals()-based
+     * dedup, which hands back the task already registered for this transaction; the same approach
+     * DatabaseCache.BlockingDatabaseCache.CacheReloadCounterTask uses to bound its own post-commit work. run() is a
+     * no-op -- the task exists only to carry the count.
+     */
+    private static class DeferredInvalidationCounter implements Runnable
+    {
+        private int _count;
+        private boolean _cleared;
+
+        @Override
+        public void run()
+        {
+            // No-op: this task exists only to hold a transaction-scoped count
+        }
+
+        /** @return true if the caller should invalidate this parent's key individually */
+        private boolean removeIndividually()
+        {
+            return !_cleared && ++_count <= MAX_DEFERRED_CACHE_INVALIDATIONS;
+        }
+
+        /** @return true if the caller should clear the whole cache, i.e., only on the call that crosses the limit */
+        private boolean shouldClear()
+        {
+            if (_cleared)
+                return false;
+
+            _cleared = true;
+            return true;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return null != o && getClass() == o.getClass();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return getClass().hashCode();
+        }
+
+        // CommitTaskOption.add() logs this eagerly on every duplicate, so keep it allocation-free
+        @Override
+        public String toString()
+        {
+            return "AttachmentCache deferred invalidation counter";
         }
     }
 
@@ -505,7 +595,7 @@ public class AttachmentServiceImpl implements AttachmentService
         if (null != att)
         {
             _deleteAttachment(parent, name, auditUser);
-            AttachmentCache.removeAttachments(parent);
+            invalidateCache(parent);
         }
     }
 
@@ -519,7 +609,7 @@ public class AttachmentServiceImpl implements AttachmentService
             _deleteAttachment(parent, attachment.getName(), null);
         }
 
-        AttachmentCache.removeAttachments(parent);
+        invalidateCache(parent);
     }
 
 
@@ -554,7 +644,7 @@ public class AttachmentServiceImpl implements AttachmentService
         if (null != dir)
             src.renameTo(dest);
 
-        AttachmentCache.removeAttachments(parent);
+        invalidateCache(parent);
 
         addAuditEvent(auditUser, parent, newName, "The attachment " + oldName + " was renamed " + newName);
     }
@@ -601,7 +691,7 @@ public class AttachmentServiceImpl implements AttachmentService
                     deleteIndexedAttachment(parent, filename);
                     addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
                 }
-                AttachmentCache.removeAttachments(parent);
+                invalidateCache(parent);
             }
         }
 
@@ -1903,6 +1993,57 @@ public class AttachmentServiceImpl implements AttachmentService
             finally
             {
                 svc.deleteAttachments(parent);
+            }
+        }
+
+        /**
+         * The bulk delete path bounds how many deferred cache removals one transaction accumulates (see
+         * invalidateCache()). Below that bound each parent is still invalidated individually, so verify that
+         * a multi-parent delete defers its removals and invalidates every parent on commit.
+         */
+        @Test
+        public void testBulkDeleteCacheInvalidation() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            AttachmentService svc = AttachmentService.get();
+            Container c = JunitUtil.getTestContainer();
+            List<AttachmentParent> parents = List.of(new TestAttachmentParent(c), new TestAttachmentParent(c), new TestAttachmentParent(c));
+
+            try
+            {
+                for (AttachmentParent parent : parents)
+                    svc.addAttachments(parent, List.of(testFile("bulk.txt")), user);
+
+                // Warm the shared cache for every parent; this is what threads without a transaction read below
+                for (AttachmentParent parent : parents)
+                    assertEquals(List.of("bulk.txt"), getNames(svc.getAttachments(parent)));
+
+                try (DbScope.Transaction tx = CoreSchema.getInstance().getScope().ensureTransaction())
+                {
+                    svc.deleteAttachments(parents);
+
+                    // The deleting thread sees its own uncommitted deletes
+                    for (AttachmentParent parent : parents)
+                        assertTrue("Deleting thread should see its own uncommitted deletes", svc.getAttachments(parent).isEmpty());
+
+                    // ...while the removals stay deferred for everyone else
+                    for (AttachmentParent parent : parents)
+                        assertEquals("Thread without a transaction must see the pre-commit state",
+                                List.of("bulk.txt"), getNamesOnNewThread(parent));
+
+                    tx.commit();
+                }
+
+                // Every parent's entry must be gone from the shared cache, not just the last one
+                for (AttachmentParent parent : parents)
+                {
+                    assertTrue("Bulk delete must invalidate the shared cache", svc.getAttachments(parent).isEmpty());
+                    assertEquals(List.of(), getNamesOnNewThread(parent));
+                }
+            }
+            finally
+            {
+                svc.deleteAttachments(parents);
             }
         }
 

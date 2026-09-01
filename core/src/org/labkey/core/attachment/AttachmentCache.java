@@ -85,6 +85,14 @@ public class AttachmentCache
     }
 
 
+    // Wholesale invalidation, for bulk operations where invalidating every affected parent individually would
+    // retain too many deferred commit tasks.
+    static void clear()
+    {
+        CACHE.clear();
+    }
+
+
     private static String getKey(AttachmentParent parent)
     {
         return parent.getContainerId() + ":" + parent.getEntityId();
