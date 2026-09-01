@@ -1375,6 +1375,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
+    public void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata)
+    {
+        List<SampleTimelineAuditEvent> events = samples.stream()
+                .map(sample -> createAuditRecord(container, comment, userComment, sample, metadata))
+                .collect(Collectors.toList());
+        AuditLogService.get().addEvents(user, events);
+    }
+
+    @Override
     public long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container)
     {
         long max = 0;
