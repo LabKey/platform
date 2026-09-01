@@ -8101,6 +8101,8 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
+            if (container.getProject() != null && container.getProject().getAuditCommentsRequired() && StringUtils.isBlank(form.getAuditUserComment()))
+                errors.reject(ERROR_GENERIC, "A reason for the template update is required.");
             String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
             _kind = PropertyService.get().getDomainKind(domainURI);
             _domain = PropertyService.get().getDomain(container, domainURI);
