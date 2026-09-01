@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.60.0"
+    "@labkey/components": "7.61.1-fb-query-model-select-rows.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.2",
