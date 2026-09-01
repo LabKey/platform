@@ -916,6 +916,23 @@ public class ContainerManager
 
         clearCache();
 
+        // GH Issue 1504: Clear again after the commit has propagated the new state to other threads and transactions. Do this in a
+        // commit task since the caller may have started (or joined) a transaction; if not, it runs immediately.
+        CORE.getSchema().getScope().addCommitTask(() ->
+        {
+            // Be sure that we've waited until any threads that might be populating the cache have finished, otherwise
+            // one of them could put the pre-commit LockState back into the cache after we've cleared it
+            DATABASE_QUERY_LOCK.lock();
+            try
+            {
+                clearCache();
+            }
+            finally
+            {
+                DATABASE_QUERY_LOCK.unlock();
+            }
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
+
         addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
     }
 
