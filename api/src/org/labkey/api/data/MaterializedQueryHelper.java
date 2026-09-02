@@ -213,7 +213,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             {
                 SQLFragment sql = _mqh._scope.getSqlDialect().getAnalyzeCommandForTable(_fromSql);
                 if (null != sql)
-                    new SqlExecutor(_mqh._scope).execute(sql);
+                {
+                    try (var _ = SpringActionController.ignoreSqlUpdates())
+                    {
+                        new SqlExecutor(_mqh._scope).execute(sql);
+                    }
+                }
             }
             catch (RuntimeException x)
             {
