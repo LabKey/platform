@@ -206,7 +206,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             WorkflowService workService = WorkflowService.get();
 
             if (workService != null && protocol != null && !workService.isTaskAssayType(workflowTaskId, protocol.getRowId()))
-                throw new ExperimentException("Invalid job task id " + workflowTaskId + ". Either the task does not exist or does not reference this assay type.");
+                throw new ValidationException("Invalid job task id " + workflowTaskId + ". Either the task does not exist or does not reference this assay type.");
         }
 
         if (reImportOption == null)
