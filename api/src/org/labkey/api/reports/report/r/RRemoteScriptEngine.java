@@ -87,7 +87,7 @@ public class RRemoteScriptEngine extends RScriptEngine
         StringBuffer output = new StringBuffer();
         try (CustomTiming t = MiniProfiler.custom("remoteRunner", "execute r in remote runner"))
         {
-            _service.executeR(scriptFile, getRWorkingDir(context), REMOTE_WORKING_DIR, inputFiles());
+            _service.execute(scriptFile, getRWorkingDir(context), REMOTE_WORKING_DIR, inputFiles());
             appendConsoleOutput(context, output);
         }
         catch (Exception e)

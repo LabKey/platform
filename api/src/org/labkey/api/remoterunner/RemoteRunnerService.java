@@ -36,11 +36,14 @@ public interface RemoteRunnerService
      * Tar {@code localWorkingDir}, run {@code scriptFile} against it in the remote runner, and unpack the result back
      * over {@code localWorkingDir}.
      *
+     * The runner picks an interpreter from the script's extension, so this is not R-specific; an extension it does not
+     * recognize is an error rather than a default.
+     *
      * @param scriptFile      the script to run, already written into the working directory
      * @param localWorkingDir working directory on this server
      * @param remoteWorkingDir path the runner will see, used for path mapping
      * @param inputFiles      which files in the working directory to send
      */
-    void executeR(FileLike scriptFile, String localWorkingDir, String remoteWorkingDir, @Nullable FileFilter inputFiles)
+    void execute(FileLike scriptFile, String localWorkingDir, String remoteWorkingDir, @Nullable FileFilter inputFiles)
             throws IOException;
 }
