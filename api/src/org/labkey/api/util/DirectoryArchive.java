@@ -31,15 +31,15 @@ public class DirectoryArchive
     {
     }
 
-    /** Tar {@code directory} into {@code target}. Entries are named relative to {@code parentName}. */
-    public static void create(File directory, @Nullable FileFilter filter, String parentName, File target) throws IOException
+    /** Tar {@code directory} into {@code target}, with entries named relative to it. */
+    public static void create(File directory, @Nullable FileFilter filter, File target) throws IOException
     {
         try (OutputStream fos = new FileOutputStream(target);
              TarArchiveOutputStream tar = new TarArchiveOutputStream(fos))
         {
             // Long working-directory paths are routine, and the default format silently truncates past 100 chars.
             tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-            addDirectory(tar, directory, filter, trimTrailingSlash(parentName));
+            addDirectory(tar, directory, filter, "");
             tar.finish();
         }
     }
@@ -52,8 +52,8 @@ public class DirectoryArchive
 
         for (File child : children)
         {
-            // An empty prefix means entries are named bare, so extracting anywhere reproduces the directory. Joining
-            // unconditionally would name them "/script.r", which extraction rejects as an absolute path.
+            // Top level is unprefixed; joining unconditionally would name it "/script.r", which extract rejects as an
+            // absolute path. The prefix only accumulates as recursion descends into subdirectories.
             String entryName = prefix.isEmpty() ? child.getName() : prefix + "/" + child.getName();
             if (child.isDirectory())
             {
@@ -74,11 +74,10 @@ public class DirectoryArchive
     }
 
     /**
-     * Untar {@code in} beneath {@code destination}, stripping the leading path component so a tar made with
-     * {@code parentName} unpacks flat into the destination.
+     * Untar {@code in} beneath {@code destination}, reproducing the archived directory.
      *
-     * Entries resolving outside the destination are rejected. The tar arrives from a remote runner that executed
-     * customer script code, so its entry names are untrusted input.
+     * Entries resolving outside the destination are rejected, absolute names included. The tar arrives from a remote
+     * runner that executed customer script code, so its entry names are untrusted input.
      */
     public static void extract(InputStream in, File destination) throws IOException
     {
@@ -89,7 +88,7 @@ public class DirectoryArchive
             TarArchiveEntry entry;
             while ((entry = tar.getNextEntry()) != null)
             {
-                String name = stripLeadingComponent(entry.getName());
+                String name = entry.getName();
                 if (name.isEmpty())
                     continue;
 
@@ -113,18 +112,6 @@ public class DirectoryArchive
         }
     }
 
-    private static String stripLeadingComponent(String entryName)
-    {
-        String name = entryName.startsWith("/") ? entryName.substring(1) : entryName;
-        int slash = name.indexOf('/');
-        return slash < 0 ? "" : name.substring(slash + 1);
-    }
-
-    private static String trimTrailingSlash(String s)
-    {
-        return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
-    }
-
     public static class TestCase extends org.junit.Assert
     {
         @org.junit.Test
@@ -141,7 +128,7 @@ public class DirectoryArchive
                 Files.write(new File(nested, "plot.png").toPath(), binary);
 
                 File tar = File.createTempFile("arch", ".tar");
-                create(src, null, "/work", tar);
+                create(src, null, tar);
                 try (InputStream in = new FileInputStream(tar))
                 {
                     extract(in, dest);
@@ -168,7 +155,7 @@ public class DirectoryArchive
                 Files.writeString(new File(src, "drop.tmp").toPath(), "drop");
 
                 File tar = File.createTempFile("arch", ".tar");
-                create(src, f -> f.getName().endsWith(".R"), "/work", tar);
+                create(src, f -> f.getName().endsWith(".R"), tar);
                 try (InputStream in = new FileInputStream(tar))
                 {
                     extract(in, dest);
@@ -181,6 +168,73 @@ public class DirectoryArchive
             {
                 FileUtil.deleteDir(src);
                 FileUtil.deleteDir(dest);
+            }
+        }
+
+        /** The runner returns a flat tar. Skipping those entries loses every result without reporting anything. */
+        @org.junit.Test
+        public void extractsFlatEntriesFromAForeignTar() throws IOException
+        {
+            File dest = FileUtil.createTempDirectory("arch-flat").toFile();
+            File tar = File.createTempFile("flat", ".tar");
+            try
+            {
+                writeSingleEntryTar(tar, "script.r.Rout", "console output");
+
+                try (InputStream in = new FileInputStream(tar))
+                {
+                    extract(in, dest);
+                }
+
+                assertEquals("console output", Files.readString(new File(dest, "script.r.Rout").toPath()));
+            }
+            finally
+            {
+                FileUtil.deleteDir(dest);
+            }
+        }
+
+        /** An absolute entry would otherwise escape the destination entirely. */
+        @org.junit.Test
+        public void rejectsAbsoluteEntry() throws IOException
+        {
+            File dest = FileUtil.createTempDirectory("arch-absolute").toFile();
+            File tar = File.createTempFile("absolute", ".tar");
+            try
+            {
+                writeSingleEntryTar(tar, "/etc/passwd", "pwned");
+
+                try (InputStream in = new FileInputStream(tar))
+                {
+                    extract(in, dest);
+                    fail("Expected absolute entry to be rejected");
+                }
+                catch (IOException expected)
+                {
+                    assertTrue(expected.getMessage().contains("outside the destination"));
+                }
+            }
+            finally
+            {
+                FileUtil.deleteDir(dest);
+            }
+        }
+
+        private static void writeSingleEntryTar(File tar, String entryName, String content) throws IOException
+        {
+            try (OutputStream fos = new FileOutputStream(tar);
+                 TarArchiveOutputStream out = new TarArchiveOutputStream(fos))
+            {
+                out.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+                // preserveAbsolutePath, or the constructor strips the leading slash and the absolute case cannot be
+                // written at all. Python's tarfile preserves it, so the runner can produce one.
+                TarArchiveEntry entry = new TarArchiveEntry(entryName, true);
+                byte[] payload = content.getBytes();
+                entry.setSize(payload.length);
+                out.putArchiveEntry(entry);
+                out.write(payload);
+                out.closeArchiveEntry();
+                out.finish();
             }
         }
 
