@@ -511,26 +511,16 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         _docker = docker;
     }
 
-
     @Override
-
     public boolean isRemoteRunner()
-
     {
-
         return _remoteRunner;
-
     }
 
-
     @Override
-
     public void setRemoteRunner(boolean remoteRunner)
-
     {
-
         _remoteRunner = remoteRunner;
-
     }
 
     @Override
