@@ -212,7 +212,8 @@ class AuthenticationConfiguration extends PureComponent<{}, Partial<State>> {
                 const oldOrdering = state.dirtinessData[configType];
                 return !isEquivalent(newOrdering, oldOrdering);
             });
-            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData);
+           // const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData);
+            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({ ...globalSettings }, dirtinessData.globalSettings);
 
             return { ...newState, dirty };
         });
