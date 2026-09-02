@@ -103,6 +103,23 @@ public class RRemoteScriptEngine extends RScriptEngine
         return scriptOut;
     }
 
+    /**
+     * The base class names this file by the appserver's working directory, which does not exist in the container, so
+     * the write silently fails and no packages are ever recorded. The runner runs the script from the unpacked job
+     * directory, so a bare name lands beside the script and returns in the result tar.
+     */
+    @Override
+    protected @Nullable String getPackageCaptureEpilog(ScriptContext context)
+    {
+        if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)
+            return null;
+
+        return """
+                # --- LabKey R package usage capture ---
+                tryCatch(writeLines(sort(loadedNamespaces()), "%s"), error = function(e) invisible(NULL))
+                """.formatted(PACKAGES_FILE);
+    }
+
     private static FileFilter inputFiles()
     {
         return pathname ->
