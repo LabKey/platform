@@ -1076,11 +1076,9 @@ public abstract class Method
         }
     }
 
-    // Portable isnumeric() returns a boolean predicate on both databases, so it is valid in a boolean
-    // context (CASE WHEN, WHERE) as well as in a SELECT list: (ISNUMERIC(x) = 1) on SQL Server, and a
-    // regex match on PostgreSQL. True for digit strings with an optional sign/decimal point.
-    // The PostgreSQL regex is stricter than SQL Server's ISNUMERIC(), which also accepts formats like
-    // scientific notation and currency.
+    // Portable isnumeric() is a boolean predicate on both databases -- (ISNUMERIC(x) = 1) on SQL Server, a regex
+    // match on PostgreSQL -- so it is valid in CASE WHEN and WHERE, not just a SELECT list. The PostgreSQL regex
+    // accepts only digits with an optional sign/decimal point, stricter than SQL Server's ISNUMERIC().
     static class IsNumericInfo extends AbstractMethodInfo
     {
         IsNumericInfo()

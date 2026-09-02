@@ -551,7 +551,7 @@ public class QueryPivot extends AbstractQueryRelation
 
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
-                        // _makePivotedAggColumn() returns null when parse errors are present; don't store nulls
+                        // _makePivotedAggColumn() returns null when parse errors are present
                         if (null != pvt)
                             _columns.put(pivotName, pvt);
                         else
@@ -560,10 +560,9 @@ public class QueryPivot extends AbstractQueryRelation
                 }
             }
 
-            // Returning a silently short column list is harder to diagnose than the error that caused it, so
-            // surface the underlying parse error the way getSql() and getColMembers() do. Only fires when a
-            // column was actually dropped, so the complete-column path is unaffected. _columns is discarded
-            // first: it is cached, and a partial map would be handed out unguarded on any subsequent call.
+            // A silently short column list is harder to diagnose than the parse error behind it, so throw the way
+            // getSql() and getColMembers() do. Discard the cached _columns first, or the partial map gets handed
+            // out unguarded on the next call.
             if (droppedColumn && !getParseErrors().isEmpty())
             {
                 _columns = null;
@@ -845,12 +844,9 @@ public class QueryPivot extends AbstractQueryRelation
                 }
                 else
                 {
-                    // Bind the pivot value as a parameter instead of embedding it directly in the SQL.
-                    // This safely handles values containing characters like ';' or quotes.
-                    //
-                    // Use an explicit JdbcType so Postgres can determine the parameter type.
-                    // Prefer the pivot column's type, especially for date/timestamp columns, to avoid
-                    // type mismatch errors. Fall back to the constant's type if conversion isn't possible.
+                    // Bind rather than embed the source text: a value containing ';' or a quote trips SQLFragment's guardrail.
+                    // Postgres needs an explicit parameter type, and wrapConstant() types date/timestamp pivot values as
+                    // QString, so prefer the pivot column's type and fall back to the constant's if it won't convert.
                     Object bindValue = ((IConstant) value).getValue();
                     JdbcType bindType = ((QExpr) value).getJdbcType();
                     JdbcType columnType = _pivotColumn.getJdbcType();

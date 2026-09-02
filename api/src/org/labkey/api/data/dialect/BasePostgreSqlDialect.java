@@ -937,9 +937,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
-        // Return a boolean predicate, matching SQL Server's contract, so callers that place this in a
-        // boolean context (CASE WHEN, WHERE) get valid Postgres syntax. In SELECT position Postgres
-        // returns it as a boolean column and JDBC's getInt() converts true/false to 1/0.
+        // A boolean predicate, not 1/0, to match SQL Server's contract; in SELECT position JDBC's getInt() converts true/false to 1/0.
         return new SQLFragment("(CAST((").append(expression)
                 .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$')");
     }
@@ -1175,14 +1173,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         return super.formatJdbcFunction("timestampdiff", arguments);
     }
 
-    /* week() inconsistent between sql server and postgres: pgjdbc translates {fn week(x)} to
-     * EXTRACT(WEEK FROM x), which returns ISO 8601 week numbering (week 1 contains the year's
-     * first Thursday; weeks start on Monday). The Microsoft SQL Server JDBC driver translates
-     * {fn week(x)} to DATEPART(week, x), which uses US-style numbering (week 1 always contains
-     * Jan 1; weeks start on Sunday under the default DATEFIRST=7). The two agree most of the
-     * year but disagree by 1 on Sundays and around year boundaries. Emit an equivalent US-style
-     * expression here so LabKey SQL's week() returns matching values on both databases.
-     */
+    // pgjdbc translates {fn week(x)} to EXTRACT(WEEK FROM x) -- ISO 8601, weeks start Monday -- while the SQL Server
+    // driver emits DATEPART(week, x) -- US-style, weeks start Sunday. Emit US-style so both databases agree.
     private SQLFragment week(SQLFragment... arguments)
     {
         SQLFragment ret = new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM ");
