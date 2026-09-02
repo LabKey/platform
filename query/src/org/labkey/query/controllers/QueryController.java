@@ -5002,7 +5002,7 @@ public class QueryController extends SpringActionController
             else
             {
                 // Since we are moving between containers, we know we have product folders enabled
-                if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
+                if (getContainer().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
                     errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
                 else
                 {
@@ -8101,6 +8101,9 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
+
+            if (container != null && container.getAuditCommentsRequired() && StringUtils.isBlank(form.getAuditUserComment()))
+                errors.reject(ERROR_GENERIC, "A reason for the template update is required.");
             String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
             _kind = PropertyService.get().getDomainKind(domainURI);
             _domain = PropertyService.get().getDomain(container, domainURI);
