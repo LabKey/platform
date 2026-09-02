@@ -52,6 +52,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -88,6 +89,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.inventory.InventoryService;
@@ -1365,15 +1367,60 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 .updateColumns(updateColumns)
                 .unlogged(true)
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
-                .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
                 .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
+
+            getDomainIndexDdl().forEach(builder::addIndex);
 
             if (isIncrementalUpdateDisabled())
                 builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
 
             return (_MaterializedQueryHelper) builder.build();
         });
+    }
+
+    /**
+     * DDL mirroring the sample type domain's admin-defined indices onto the materialized table. Never unique:
+     * {@link #getJoinSQL} selects root-scoped columns from the root sample's row, so a value that is unique in the
+     * provisioned table repeats across every aliquot sharing that root.
+     */
+    private List<String> getDomainIndexDdl()
+    {
+        TableInfo provisioned = _ss.getTinfo();
+        if (null == provisioned)
+            return List.of();
+
+        Domain domain = _ss.getDomain();
+
+        List<String> ddl = new ArrayList<>();
+        Set<String> distinctColumnLists = new HashSet<>();
+
+        for (PropertyStorageSpec.Index index : domain.getPropertyIndices())
+        {
+            List<String> columns = new ArrayList<>();
+
+            for (String storageName : index.translateToStorageNames(domain).columnNames)
+            {
+                ColumnInfo column = provisioned.getColumn(storageName);
+
+                if (null == column)
+                {
+                    _log.warn("Sample type {} is indexed on {}, which is not in its provisioned table; that index is not mirrored onto the materialized table.", _ss.getName(), storageName);
+                    columns.clear();
+                    break;
+                }
+
+                columns.add(column.getSelectIdentifier().getSql().getSQL());
+            }
+
+            if (columns.isEmpty() || !distinctColumnLists.add(String.join(",", columns)))
+                continue;
+
+            // Ordinal names because ${NAME} is already 33 of the 63 chars Postgres allows before it silently truncates and collides.
+            ddl.add("CREATE INDEX idx_${NAME}_d" + ddl.size() + " ON temp.${NAME} (" + String.join(", ", columns) + ")");
+        }
+
+        return ddl;
     }
 
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
@@ -2259,7 +2306,28 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 
+        @Test
+        public void testDomainIndexMirroredNonUnique() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdIndexed", List.of(new GWTIndex(List.of("rootProp"), true)));
+            insertRoots(st, "R1");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            List<String> ddl = table.getDomainIndexDdl();
+            assertEquals("Expected the domain's one index to be mirrored: " + ddl, 1, ddl.size());
+            assertFalse("Mirrored index must not be unique: " + ddl.getFirst(), ddl.getFirst().contains("UNIQUE"));
+
+            // All four rows share the root's rootProp, so mirroring the domain's unique index as-is would fail the build.
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
         private ExpSampleType createSampleType(String name) throws Exception
+        {
+            return createSampleType(name, Collections.emptyList());
+        }
+
+        private ExpSampleType createSampleType(String name, List<GWTIndex> indices) throws Exception
         {
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
@@ -2269,7 +2337,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             GWTPropertyDescriptor aliquotProp = new GWTPropertyDescriptor("aliquotProp", "string");
             aliquotProp.setDerivationDataScope(ExpSchema.DerivationDataScopeType.ChildOnly.name()); // -> m_aliquot join
             props.add(aliquotProp);
-            return SampleTypeService.get().createSampleType(_c, _user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            return SampleTypeService.get().createSampleType(_c, _user, name, null, props, indices, -1, -1, -1, -1, null);
         }
 
         private ExpMaterialTableImpl getSamplesTable(ExpSampleType st)
