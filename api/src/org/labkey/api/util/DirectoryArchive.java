@@ -52,7 +52,9 @@ public class DirectoryArchive
 
         for (File child : children)
         {
-            String entryName = prefix + "/" + child.getName();
+            // An empty prefix means entries are named bare, so extracting anywhere reproduces the directory. Joining
+            // unconditionally would name them "/script.r", which extraction rejects as an absolute path.
+            String entryName = prefix.isEmpty() ? child.getName() : prefix + "/" + child.getName();
             if (child.isDirectory())
             {
                 addDirectory(tar, child, filter, entryName);
