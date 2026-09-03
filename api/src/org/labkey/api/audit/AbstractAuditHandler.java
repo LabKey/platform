@@ -26,13 +26,18 @@ import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 public abstract class AbstractAuditHandler implements AuditHandler
 {
+    /** Bounds both the JDBC batch and the events held in memory while a batch accumulates. */
+    public static final int AUDIT_BATCH_SIZE = 2500;
+
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
 
     @Override
@@ -71,6 +76,15 @@ public abstract class AbstractAuditHandler implements AuditHandler
      * @return DetailedAuditTypeEvent object describing audit record (NOTE: not committed to DB yet)
      */
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues);
+
+    /**
+     * Overload for providers whose record construction produces audit events of its own. Events added to
+     * sideEffectEvents are batched by addAuditEvent() rather than inserted one per row.
+     */
+    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
+    {
+        return createDetailedAuditRecord(user, c, tInfo, action, userComment, row, existingRow, providedValues);
+    }
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
@@ -130,13 +144,14 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
                     AuditLogService auditLog = AuditLogService.get();
                     List<DetailedAuditTypeEvent> batch = new ArrayList<>();
+                    List<AuditTypeEvent> sideEffectEvents = new ArrayList<>();
 
                     for (int i=0; i < rows.size(); i++)
                     {
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null == existingRows ? Collections.emptyMap() : existingRows.get(i);
                         Map<String, Object> providedValueRow = null == providedValues || providedValues.size() <= i  ? null : providedValues.get(i);
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow, providedValueRow);
+                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, userComment, row, existingRow, providedValueRow, sideEffectEvents);
 
                         switch (action)
                         {
@@ -175,10 +190,16 @@ public abstract class AbstractAuditHandler implements AuditHandler
                             }
                         }
                         batch.add(event);
-                        if (batch.size() > 1000)
+                        if (batch.size() >= AUDIT_BATCH_SIZE)
                         {
                             auditLog.addEvents(user, batch, useTransactionAuditCache);
                             batch.clear();
+                        }
+                        // a row can contribute more than one side effect, so bound these separately from the row batch
+                        if (sideEffectEvents.size() >= AUDIT_BATCH_SIZE)
+                        {
+                            addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
+                            sideEffectEvents.clear();
                         }
                     }
                     if (!batch.isEmpty())
@@ -186,10 +207,20 @@ public abstract class AbstractAuditHandler implements AuditHandler
                         auditLog.addEvents(user, batch, useTransactionAuditCache);
                         batch.clear();
                     }
+                    addSideEffectEvents(auditLog, user, sideEffectEvents, useTransactionAuditCache);
                     break;
                 }
             }
         }
+    }
+
+    /** insertEvents() batches only a fully homogeneous list. Group by event type and container. Each type is stored its own provisioned table */
+    private void addSideEffectEvents(AuditLogService auditLog, User user, List<AuditTypeEvent> events, boolean useTransactionAuditCache)
+    {
+        events.stream()
+                .collect(Collectors.groupingBy(event -> Pair.of(event.getEventType(), event.getContainer()), LinkedHashMap::new, Collectors.toList()))
+                .values()
+                .forEach(group -> auditLog.addEvents(user, group, useTransactionAuditCache));
     }
 
     private void setOldAndNewMapsForUpdate(DetailedAuditTypeEvent event, Container c, Map<String, Object> row, Map<String, Object> existingRow, TableInfo table)

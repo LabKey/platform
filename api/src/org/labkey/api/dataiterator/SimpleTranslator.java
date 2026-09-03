@@ -220,12 +220,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void setIncludePkLookup(boolean includePkLookup)
         {
             _includePkLookup = includePkLookup;
-            _maps = null;
         }
 
         public ColumnInfo getPkColumn()
         {
             return _targetTable.getPkColumns().getFirst();
+        }
+
+        private Pair<ColumnInfo, Map<?, ?>> pkLookupMap()
+        {
+            if (!_includePkLookup)
+                return null;
+
+            if (_pkColumnLookupMap == null)
+                _pkColumnLookupMap = Pair.of(getPkColumn(), new HashMap<>());
+
+            return _pkColumnLookupMap;
         }
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> getMaps()
@@ -271,11 +281,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                         _titleColumnLookupMap = Triple.of(pkCol, titleColumn, new ArrayListValuedHashMap());
                     }
                 }
-
-                if (_includePkLookup)
-                {
-                    _pkColumnLookupMap = Pair.of(pkCol, new HashMap<>());
-                }
             }
             return _maps;
         }
@@ -291,9 +296,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
 
-            if (_pkColumnLookupMap != null)
+            Pair<ColumnInfo, Map<?, ?>> pkLookupMap = pkLookupMap();
+            if (pkLookupMap != null)
             {
-                Object v = fetch(_pkColumnLookupMap, k);
+                Object v = fetch(pkLookupMap, k);
                 if (v != null)
                     return v;
             }
@@ -2231,6 +2237,97 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 }
             }
 
+        }
+
+        /** Lookup fixture with one text alternate key (Value) over an integer pk (RowId); Ordinal is unique but not text, so it yields no map. */
+        private EnumTableInfo<LookupValues> remapLookupTable()
+        {
+            var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true);
+        }
+
+        @Test
+        public void remapMemoizationSurvivesPkLookupToggle()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            // RemappingConvertColumn flips this before every row, so it must not discard what earlier rows resolved
+            converter.setIncludePkLookup(false);
+
+            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> maps = converter.getMaps();
+            assertEquals("expected one alternate-key map, on the Value column", 1, maps.size());
+
+            // Seed keys no enum value can supply, so anything but a memo hit resolves to null
+            MultiValuedMap memo = maps.getFirst().getRight();
+            Integer seeded = 42;
+            memo.put("seeded-hit", seeded);
+            memo.put("seeded-miss", converter.MISS);
+
+            assertEquals(seeded, converter.mappedValue("seeded-hit"));
+            assertNull(converter.mappedValue("seeded-miss"));
+
+            for (int i = 0; i < 3; i++)
+            {
+                converter.setIncludePkLookup(true);
+                converter.setIncludePkLookup(false);
+            }
+
+            assertSame("toggling includePkLookup discarded the memoization maps", maps, converter.getMaps());
+            assertEquals("resolved value was discarded, so every row re-queries it", seeded, converter.mappedValue("seeded-hit"));
+            assertNull("MISS marker was discarded, so every row re-queries the absent value", converter.mappedValue("seeded-miss"));
+        }
+
+        @Test
+        public void remapResolutionIsStableAcrossPkLookupToggle()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            converter.setIncludePkLookup(false);
+
+            Object resolved = converter.mappedValue(LookupValues.Two.name());
+            assertNotNull("expected " + LookupValues.Two + " to resolve by alternate key", resolved);
+
+            converter.setIncludePkLookup(true);
+            converter.setIncludePkLookup(false);
+
+            assertEquals(resolved, converter.mappedValue(LookupValues.Two.name()));
+        }
+
+        @Test
+        public void remapAlternateKeyWinsWhenPkLookupIsOff()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            // Seed the two maps to disagree on one key, so the resolved value says which map was consulted
+            Integer key = 7;
+            Integer pkResolution = 7;
+            Integer akResolution = 99;
+            Map pkMemo = converter.pkLookupMap().getValue();
+            MultiValuedMap akMemo = converter.getMaps().getFirst().getRight();
+            pkMemo.put(key, pkResolution);
+            akMemo.put(key, akResolution);
+
+            assertEquals("pk lookup should take precedence while includePkLookup is on", pkResolution, converter.mappedValue(key));
+
+            // The pk map survives the toggle, so this also pins that it is not consulted while the flag is off
+            converter.setIncludePkLookup(false);
+            assertEquals("alternate key should resolve while includePkLookup is off", akResolution, converter.mappedValue(key));
+        }
+
+        @Test
+        public void remapPkLookupMapIsRetained()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, false);
+            assertNull("pk lookup map should not exist while includePkLookup is off", converter.pkLookupMap());
+
+            converter.setIncludePkLookup(true);
+            Pair<ColumnInfo, Map<?, ?>> pkMap = converter.pkLookupMap();
+            assertNotNull(pkMap);
+
+            converter.setIncludePkLookup(false);
+            assertNull(converter.pkLookupMap());
+
+            converter.setIncludePkLookup(true);
+            assertSame("pk lookup map was rebuilt rather than retained", pkMap, converter.pkLookupMap());
         }
 
         @Test

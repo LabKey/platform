@@ -31,6 +31,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MultiChoice;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
@@ -84,6 +85,9 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     public static final String COLUMN_NAME_DATA_CHANGES = "DataChanges";
 
     private final AbstractAuditDomainKind _domainKind;
+
+    private record CachedStorageTable(SchemaTableInfo schemaTableInfo, TableInfo storageTableInfo) {}
+    private volatile CachedStorageTable _cachedStorageTable;
 
     public AbstractAuditTypeProvider(@NotNull AbstractAuditDomainKind domainKind)
     {
@@ -264,6 +268,29 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if (null == domain)
             throw new NullPointerException("Could not find domain for " + getEventName());
         return StorageProvisioner.createTableInfo(domain);
+    }
+
+    @Override @NotNull
+    public TableInfo getStorageTableInfoForInsert()
+    {
+        Domain domain = getDomain();
+        if (null == domain)
+            throw new IllegalStateException("Could not find domain for audit event type " + getEventName());
+
+        // We want to reuse a cached provisioned TableInfo to avoid construction costs. Getting the SchemaTableInfo is
+        // cheap so use that as a guide for when the table has changed (primarily during startup as its shape may
+        // need to be updated based on current code expections) and when it's safe to reuse the previous copy.
+        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+        CachedStorageTable cached = _cachedStorageTable;
+        if (null != cached && cached.schemaTableInfo() == schemaTableInfo)
+            return cached.storageTableInfo();
+
+        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
+        // Shared across threads from here on
+        storageTableInfo.setLocked(true);
+        _cachedStorageTable = new CachedStorageTable(schemaTableInfo, storageTableInfo);
+
+        return storageTableInfo;
     }
 
     @Override
