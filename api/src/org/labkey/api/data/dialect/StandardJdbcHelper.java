@@ -44,7 +44,7 @@ public class StandardJdbcHelper implements JdbcHelper
         if (-1 == dbEnd)
             dbEnd = url.length();
 
-        // Last '/' is the database delimiter, except for "jdbc:postgresql:database"
+        // Last '/' is the database delimiter, except for "jdbc:postgresql:database" and old Oracle formats
         char dbDelimiter = url.contains("/") ? '/' : ':';
         int dbDelimiterIndex = url.lastIndexOf(dbDelimiter, dbEnd);
 
