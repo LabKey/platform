@@ -55,9 +55,7 @@ public enum JdbcType implements SimpleConvert
         @Override
         protected Object _fromNumber(Number n)
         {
-            if (n.doubleValue() == (double) n.longValue())
-                return n.longValue();
-            return null; // fallback
+            return _toLong(n);
         }
 
         @Override
@@ -722,15 +720,22 @@ public enum JdbcType implements SimpleConvert
             return Boolean.FALSE;
         if (1 == n.intValue())
             return Boolean.TRUE;
-
         throw new ConversionException("Expected boolean value");
     }
 
+    private static Long _toLong(Number n)
+    {
+        if (n instanceof Long l)
+            return l;
+        if (!(n instanceof BigDecimal) && n.doubleValue() == (double)n.longValue())
+            return n.longValue();
+        return ConvertHelper.convert(n, Long.class);
+    }
 
     private static Integer _toInt(Number n)
     {
         if (n.doubleValue() != (double)n.intValue())
-            throw new ConversionException("Expected integer value");
+            throw new ConversionException("Could not convert '" + n + "' to an integer");
         return n.intValue();
     }
 
@@ -738,7 +743,7 @@ public enum JdbcType implements SimpleConvert
     private static Short _toShort(Number n)
     {
         if (n.doubleValue() != (double)n.shortValue())
-            throw new ConversionException("Expected integer value");
+            throw new ConversionException("Could not convert '" + n + "' to a short integer");
         return n.shortValue();
     }
 
