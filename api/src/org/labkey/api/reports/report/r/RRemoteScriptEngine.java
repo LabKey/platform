@@ -5,6 +5,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.CustomTiming;
@@ -16,6 +17,7 @@ import org.labkey.api.remoterunner.RemoteRunnerService;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import javax.script.ScriptContext;
@@ -34,6 +36,8 @@ import java.util.Collections;
  */
 public class RRemoteScriptEngine extends RScriptEngine
 {
+    private static final Logger LOG = LogHelper.getLogger(RRemoteScriptEngine.class, "Remote R script engine");
+
     /** Fixed because the runner unpacks the working directory to the same place every run. */
     public static final String REMOTE_WORKING_DIR = "/work";
 
@@ -92,8 +96,11 @@ public class RRemoteScriptEngine extends RScriptEngine
         }
         catch (Exception e)
         {
+            // Message only. The chain can carry a presigned URL, which is a bearer credential for that object until
+            // it expires, and this text renders in the report pane for anyone who can run the report.
+            LOG.error("Remote runner failed for script '{}'", scriptFile.getName(), e);
             throw new ScriptException("An error occurred when running the script '" + scriptFile.getName()
-                    + "', msg " + e.getMessage() + ").\n" + e);
+                    + "': " + e.getMessage());
         }
 
         String scriptOut = output.toString();
