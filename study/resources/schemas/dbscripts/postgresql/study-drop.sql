@@ -20,5 +20,5 @@
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
 -- Current views
-SELECT core.fn_dropifexists('LockedSpecimens', 'study', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ParticipantGroupCohortUnion', 'study', 'VIEW', NULL);
+DROP VIEW IF EXISTS study.LockedSpecimens;
+DROP VIEW IF EXISTS study.ParticipantGroupCohortUnion;
