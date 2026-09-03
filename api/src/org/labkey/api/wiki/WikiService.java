@@ -124,9 +124,8 @@ public interface WikiService
      * <p>Each {@link org.labkey.api.mcp.McpService.VectorDocument} is assigned an ID of the form
      * {@code "<containerEntityId>/<wikiEntityId>"}, where both components are GUIDs
      * (as returned by {@link Container#getId()} and the wiki's own entity ID).
-     * Tools that consume vector store results (e.g. {@code listDocuments},
-     * {@code retrieveDocument}) must use this same format when constructing or
-     * interpreting document IDs.</p>
+     * Tools that consume vector store results (e.g. {@code retrieveDocument}) must use this same
+     * format when constructing or interpreting document IDs.</p>
      *
      * @return the number of documents added
      */
