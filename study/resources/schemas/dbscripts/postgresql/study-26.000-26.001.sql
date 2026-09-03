@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
--- Reset specimen base-column storage names that were uniquified with a numeric suffix but never became a physical column
+-- GitHub Issue 1499: Reset specimen base-column storage names that were uniquified with a numeric suffix but never became a physical column
 UPDATE exp.propertydescriptor
 SET storagecolumnname = exp.propertydescriptor.name
 FROM exp.propertydomain pdm, exp.domaindescriptor dd
