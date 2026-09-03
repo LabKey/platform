@@ -1368,19 +1368,37 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
+        AuditLogService.get().addEvent(user, createTimelineAuditRecord(container, comment, userComment, sample, metadata, updateType));
+    }
+
+    @Override
+    public SampleTimelineAuditEvent createTimelineAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    {
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         event.setUserComment(userComment);
-        AuditLogService.get().addEvent(user, event);
+        return event;
     }
 
     @Override
     public void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata)
     {
-        List<SampleTimelineAuditEvent> events = samples.stream()
-                .map(sample -> createAuditRecord(container, comment, userComment, sample, metadata))
-                .collect(Collectors.toList());
-        AuditLogService.get().addEvents(user, events);
+        AuditLogService auditLog = AuditLogService.get();
+        List<SampleTimelineAuditEvent> events = new ArrayList<>(Math.min(samples.size(), AUDIT_BATCH_SIZE));
+
+        for (ExpMaterial sample : samples)
+        {
+            events.add(createAuditRecord(container, comment, userComment, sample, metadata));
+
+            if (events.size() >= AUDIT_BATCH_SIZE)
+            {
+                auditLog.addEvents(user, events);
+                events.clear();
+            }
+        }
+
+        if (!events.isEmpty())
+            auditLog.addEvents(user, events);
     }
 
     @Override

@@ -1049,7 +1049,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return CoreSchema.getInstance().getSqlDialect();
     }
 
-    @Override
+    @Override @NotNull
     public SchemaTableInfo getSchemaTableInfo(Domain domain)
     {
         DomainKind<?> kind = getDomainKind(domain);

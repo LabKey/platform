@@ -79,6 +79,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -148,6 +149,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -1380,7 +1382,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     /**
-     * DDL mirroring the sample type domain's admin-defined indices onto the materialized table. Never unique:
+     * DDL mirroring the sample type domain's admin-defined indices onto the materialized table. Read from the
+     * provisioned table's own indices, not {@link Domain#getPropertyIndices()} -- that set is only ever populated by
+     * the caller that is saving a domain, so it is empty on a domain read back from the database. Never unique:
      * {@link #getJoinSQL} selects root-scoped columns from the root sample's row, so a value that is unique in the
      * provisioned table repeats across every aliquot sharing that root.
      */
@@ -1391,36 +1395,53 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return List.of();
 
         Domain domain = _ss.getDomain();
+        DomainKind<?> kind = domain.getDomainKind();
+        if (null == kind)
+            return List.of();
 
         List<String> ddl = new ArrayList<>();
         Set<String> distinctColumnLists = new HashSet<>();
 
-        for (PropertyStorageSpec.Index index : domain.getPropertyIndices())
-        {
-            List<String> columns = new ArrayList<>();
+        // Seeded with the kind's own indices (rowid, name); the materialized table already indexes those.
+        for (PropertyStorageSpec.Index index : kind.getPropertyIndices(domain))
+            distinctColumnLists.add(indexKey(Arrays.asList(index.translateToStorageNames(domain).columnNames)));
 
-            for (String storageName : index.translateToStorageNames(domain).columnNames)
+        for (TableInfo.IndexDefinition index : StorageProvisioner.get().getSchemaTableInfo(domain).getAllIndices())
+        {
+            if (TableInfo.IndexType.Primary == index.indexType())
+                continue;
+
+            List<String> names = new ArrayList<>();
+            List<String> identifiers = new ArrayList<>();
+
+            for (ColumnInfo indexColumn : index.columns())
             {
-                ColumnInfo column = provisioned.getColumn(storageName);
+                ColumnInfo column = provisioned.getColumn(indexColumn.getName());
 
                 if (null == column)
                 {
-                    _log.warn("Sample type {} is indexed on {}, which is not in its provisioned table; that index is not mirrored onto the materialized table.", _ss.getName(), storageName);
-                    columns.clear();
+                    _log.warn("Sample type {} is indexed on {}, which is not in its provisioned table; that index is not mirrored onto the materialized table.", _ss.getName(), indexColumn.getName());
+                    names.clear();
                     break;
                 }
 
-                columns.add(column.getSelectIdentifier().getSql().getSQL());
+                names.add(column.getName());
+                identifiers.add(column.getSelectIdentifier().getSql().getSQL());
             }
 
-            if (columns.isEmpty() || !distinctColumnLists.add(String.join(",", columns)))
+            if (names.isEmpty() || !distinctColumnLists.add(indexKey(names)))
                 continue;
 
             // Ordinal names because ${NAME} is already 33 of the 63 chars Postgres allows before it silently truncates and collides.
-            ddl.add("CREATE INDEX idx_${NAME}_d" + ddl.size() + " ON temp.${NAME} (" + String.join(", ", columns) + ")");
+            ddl.add("CREATE INDEX idx_${NAME}_d" + ddl.size() + " ON temp.${NAME} (" + String.join(", ", identifiers) + ")");
         }
 
         return ddl;
+    }
+
+    private static String indexKey(List<String> columnNames)
+    {
+        return columnNames.stream().map(name -> name.toLowerCase(Locale.ROOT)).collect(Collectors.joining(","));
     }
 
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
