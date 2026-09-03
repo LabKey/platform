@@ -131,9 +131,9 @@ public class LogManager
         Logger auditLogger = getAuditLogger(type);
         SQLException sqlx = null;
 
-        try (Connection conn = dbTable.getSchema().getScope().getConnection())
+        try (Connection conn = dbTable.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true))
         {
-            ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true);
             for (var event : events)
             {
                 event = validateFields(provider, event);

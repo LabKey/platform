@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -1386,10 +1387,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      * provisioned table's own indices, not {@link Domain#getPropertyIndices()} -- that set is only ever populated by
      * the caller that is saving a domain, so it is empty on a domain read back from the database. Never unique:
      * {@link #getJoinSQL} selects root-scoped columns from the root sample's row, so a value that is unique in the
-     * provisioned table repeats across every aliquot sharing that root.
+     * provisioned table repeats across every aliquot sharing that root. PostgreSQL only: SQL Server refuses an index
+     * over a column as wide as a default string property, so a mirrored index there would fail the materialization.
      */
     private List<String> getDomainIndexDdl()
     {
+        if (!getExpSchema().getDbSchema().getSqlDialect().isPostgreSQL())
+            return List.of();
+
         TableInfo provisioned = _ss.getTinfo();
         if (null == provisioned)
             return List.of();
@@ -2330,6 +2335,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         @Test
         public void testDomainIndexMirroredNonUnique() throws Exception
         {
+            Assume.assumeTrue("Domain indices are only mirrored on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
+
             ExpSampleType st = createSampleType("IncrUpdIndexed", List.of(new GWTIndex(List.of("rootProp"), true)));
             insertRoots(st, "R1");
             insertAliquots(st, "R1", 3);
