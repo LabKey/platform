@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -61,6 +63,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -2416,21 +2419,22 @@ public abstract class SqlDialect
     //
 
     @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class DialectTestCase
     {
-        DbScope s;
-        SqlDialect d;
-
-        @Test
-        public void testScopes()
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
         {
-            DbScope.getDbScopesToTest().forEach(scope ->
-            {
-                this.s = scope;
-                this.d = scope.getSqlDialect();
-                testDialectStringHandler();
-                testLikeOperator();
-            });
+            return JunitUtil.getDbScopesTestParameters();
+        }
+
+        private final DbScope s;
+        private final SqlDialect d;
+
+        public DialectTestCase(DbScope scope, String displayName)
+        {
+            this.s = scope;
+            this.d = scope.getSqlDialect();
         }
 
         void testEquals(String expected, SQLFragment sqlf)
@@ -2439,13 +2443,14 @@ public abstract class SqlDialect
             {
                 assertEquals(expected, new SqlSelector(s, sqlf).getObject(String.class));
             }
-            catch (AssertionError|Exception ae)
+            catch (AssertionError | Exception ae)
             {
                 throw new AssertionError("Expected [" + expected + "] Failed for dialect " + d.getClass().getName() + " on scope " + s.getDatabaseUrl() + ": " + sqlf.toDebugString(), ae);
             }
         }
 
-        void testDialectStringHandler()
+        @Test
+        public void testDialectStringHandler()
         {
             // quotes backslashes etc
             for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
@@ -2457,7 +2462,8 @@ public abstract class SqlDialect
                 testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
         }
 
-        void testLikeOperator()
+        @Test
+        public void testLikeOperator()
         {
             String stringLiteralPrefix = d.isSqlServer() ? " N" : " ";
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString(d));
@@ -2468,7 +2474,10 @@ public abstract class SqlDialect
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString(d));
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString(d));
         }
+    }
 
+    public static class LabKeyScopeDialectTestCase
+    {
         @Test
         public void testAutoIncrementQuery()
         {
