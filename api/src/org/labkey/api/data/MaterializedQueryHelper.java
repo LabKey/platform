@@ -187,8 +187,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                         {
                             new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
                         }
+                        analyze();
                     }
-                    analyze();
                 });
 
                 _loadingState.set(LoadingState.LOADED);
@@ -218,7 +218,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             catch (RuntimeException x)
             {
                 // Statistics are an optimization, so a dialect that can't analyze must not fail the materialization
-                LOG.warn("Failed to update statistics for materialized table {}", _tableName, x);
+                LOG.error("Failed to update statistics for materialized table {}", _tableName, x);
             }
         }
 
