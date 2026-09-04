@@ -279,8 +279,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         ContainerFilter cf = null == containerFilter ? ContainerFilter.current(container, user) : containerFilter;
         Collection<GUID> ids = scopeIds(user, container, cf);
         if (null == ids)
-            return event -> true;
+            return _ -> true;
 
+        // Ensure an O(1) lookup
         Set<GUID> scope = new HashSet<>(ids);
         Set<String> childTypes = cf.getIncludedChildTypes();
 
