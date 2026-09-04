@@ -1790,7 +1790,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
                         // note switched order (oldRecord, newRecord)
-                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null);
+                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null, List.of());
                         batch.add(event);
                         if (batch.size() > 1000)
                         {
@@ -1808,7 +1808,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
 
         @Override
-        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
         {
             throw new UnsupportedOperationException();
         }
@@ -1817,7 +1817,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * NOTE: userComment field is not supported for this domain and will be ignored
          */
         @Override
-        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues)
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
         {
             String auditComment = switch (action)
                     {

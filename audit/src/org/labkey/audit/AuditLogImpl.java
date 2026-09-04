@@ -45,6 +45,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
@@ -54,13 +55,17 @@ import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AuditLogImpl implements AuditLogService, StartupListener
@@ -248,6 +253,31 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
+    /**
+     * Mirrors {@link ContainerFilter}'s SQL: an event matches on its own container, or on being a child of an in-scope
+     * container whose type the filter includes. Cached events need this applied by hand -- reading them back from the
+     * database is what would otherwise apply it.
+     */
+    private static Predicate<AuditTypeEvent> inScope(User user, Container container, @Nullable ContainerFilter containerFilter)
+    {
+        Collection<GUID> ids = (null == containerFilter ? ContainerFilter.current(container, user) : containerFilter).getIds();
+        if (null == ids)
+            return event -> true;
+
+        Set<GUID> scope = new HashSet<>(ids);
+        Set<String> childTypes = null == containerFilter ? Collections.emptySet() : containerFilter.getIncludedChildTypes();
+
+        return event -> {
+            Container c = event.getContainer();
+            if (null == c)
+                return false;
+            if (scope.contains(c.getEntityId()))
+                return true;
+            Container parent = c.getParent();
+            return null != parent && childTypes.contains(c.getType()) && scope.contains(parent.getEntityId());
+        };
+    }
+
     public record TransactionRowIds(List<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
 
     public TransactionRowIds getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
@@ -265,6 +295,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             events = transactionEvents.stream()
                     .filter(SampleTimelineAuditEvent.class::isInstance)
                     .map(SampleTimelineAuditEvent.class::cast)
+                    .filter(inScope(user, container, containerFilter))
                     .toList();
         }
         Map<Long, Long> dataTypeRowCounts = new HashMap<>();
@@ -287,6 +318,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 : transactionEvents.stream()
                         .filter(DetailedAuditTypeEvent.class::isInstance)
                         .map(DetailedAuditTypeEvent.class::cast)
+                        .filter(inScope(user, container, containerFilter))
                         .toList();
 
         detailedEvents.forEach(event -> {

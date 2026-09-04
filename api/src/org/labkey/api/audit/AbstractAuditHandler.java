@@ -38,7 +38,7 @@ public abstract class AbstractAuditHandler implements AuditHandler
     /** Bounds both the JDBC batch and the events held in memory while a batch accumulates. */
     public static final int AUDIT_BATCH_SIZE = 2500;
 
-    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row);
+    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents);
 
     @Override
     public void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment)
@@ -56,9 +56,11 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
             if (auditType == SUMMARY || skipAuditLevelCheck)
             {
-                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, dataRowCount, null);
+                List<AuditTypeEvent> sideEffectEvents = new ArrayList<>();
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, dataRowCount, null, sideEffectEvents);
 
                 AuditLogService.get().addEvent(user, event);
+                addSideEffectEvents(AuditLogService.get(), user, sideEffectEvents, false);
             }
         }
     }
@@ -73,18 +75,10 @@ public abstract class AbstractAuditHandler implements AuditHandler
      * @param row            map of new data values
      * @param existingRow    map of data values
      * @param providedValues map of values provided by the user before conversion (e.g., for quantity values)
+     * @param sideEffectEvents collects audit events raised as a side effect of building this record, for the caller to flush through {@link #addSideEffectEvents}
      * @return DetailedAuditTypeEvent object describing audit record (NOTE: not committed to DB yet)
      */
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues);
-
-    /**
-     * Overload for providers whose record construction produces audit events of its own. Events added to
-     * sideEffectEvents are batched by addAuditEvent() rather than inserted one per row.
-     */
-    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
-    {
-        return createDetailedAuditRecord(user, c, tInfo, action, userComment, row, existingRow, providedValues);
-    }
+    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents);
 
     /**
      * Allow for adding fields that may be present in the updated row but not represented in the original row
@@ -117,8 +111,10 @@ public abstract class AbstractAuditHandler implements AuditHandler
 
                     case SUMMARY:
                     case DETAILED:
-                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, 0, null);
+                        List<AuditTypeEvent> truncateSideEffects = new ArrayList<>();
+                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, 0, null, truncateSideEffects);
                         AuditLogService.get().addEvent(user, event);
+                        addSideEffectEvents(AuditLogService.get(), user, truncateSideEffects, useTransactionAuditCache);
                         return;
                 }
             }
@@ -132,9 +128,11 @@ public abstract class AbstractAuditHandler implements AuditHandler
                 {
                     assert null != rows;
 
-                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.getFirst());
+                    List<AuditTypeEvent> sideEffectEvents = new ArrayList<>();
+                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, userComment, rows.size(), rows.getFirst(), sideEffectEvents);
 
                     AuditLogService.get().addEvent(user, event);
+                    addSideEffectEvents(AuditLogService.get(), user, sideEffectEvents, useTransactionAuditCache);
 
                     return;
                 }
@@ -214,8 +212,12 @@ public abstract class AbstractAuditHandler implements AuditHandler
         }
     }
 
-    /** insertEvents() batches only a fully homogeneous list. Group by event type and container. Each type is stored its own provisioned table */
-    private void addSideEffectEvents(AuditLogService auditLog, User user, List<AuditTypeEvent> events, boolean useTransactionAuditCache)
+    /**
+     * The one place side-effect events are written, so they can't pick up different batching or transaction-cache
+     * behavior depending on which call path produced them. insertEvents() batches only a fully homogeneous list, so
+     * group by event type and container -- each type is stored in its own provisioned table.
+     */
+    public static void addSideEffectEvents(AuditLogService auditLog, User user, List<AuditTypeEvent> events, boolean useTransactionAuditCache)
     {
         events.stream()
                 .collect(Collectors.groupingBy(event -> Pair.of(event.getEventType(), event.getContainer()), LinkedHashMap::new, Collectors.toList()))
