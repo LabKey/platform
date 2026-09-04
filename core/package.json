@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.62.1-fb-disable-text-input.1",
+    "@labkey/components": "7.62.1",
     "@labkey/themes": "1.9.5"
   },
   "devDependencies": {
