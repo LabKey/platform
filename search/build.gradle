@@ -317,7 +317,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.drewnoakes:metadata-extractor:2.20.0",
+            "com.drewnoakes:metadata-extractor:2.21.0",
             "Metadata Extractor",
             "drewnoakes",
             "https://github.com/drewnoakes/metadata-extractor",
@@ -421,7 +421,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.29",
+            "com.googlecode.plist:dd-plist:1.30",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",
