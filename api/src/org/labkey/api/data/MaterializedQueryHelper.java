@@ -180,8 +180,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                         selectInto.append("\n) _sql_");
                     }
                     new SqlExecutor(_mqh._scope).execute(selectInto);
-                    createIndexes(_mqh._indexes, false);
-                    analyze();
+
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        createIndexes(_mqh._indexes, false);
+                        analyze();
+                    }
                 });
 
                 // Published here, not after the deferred indexes: those only make the table faster, and building them
@@ -242,7 +246,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             catch (RuntimeException x)
             {
                 // Statistics are an optimization, so a dialect that can't analyze must not fail the materialization
-                LOG.warn("Failed to update statistics for materialized table {}", _tableName, x);
+                LOG.error("Failed to update statistics for materialized table {}", _tableName, x);
             }
         }
 
