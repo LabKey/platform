@@ -257,10 +257,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         @Override
         public void close()
         {
-            flush();
-
-            if (this == _auditBatch)
-                _auditBatch = null;
+            try
+            {
+                flush();
+            }
+            finally
+            {
+                if (this == _auditBatch)
+                    _auditBatch = null;
+            }
         }
     }
 

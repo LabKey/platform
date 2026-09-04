@@ -2247,7 +2247,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Test
-        public void remapMemoizationSurvivesPkLookupToggle()
+        public void remapCacheSurvivesPkLookupToggle()
         {
             RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
 
@@ -2257,11 +2257,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> maps = converter.getMaps();
             assertEquals("expected one alternate-key map, on the Value column", 1, maps.size());
 
-            // Seed keys no enum value can supply, so anything but a memo hit resolves to null
-            MultiValuedMap memo = maps.getFirst().getRight();
+            // Seed keys no enum value can supply, so anything but a cache hit resolves to null
+            MultiValuedMap cache = maps.getFirst().getRight();
             Integer seeded = 42;
-            memo.put("seeded-hit", seeded);
-            memo.put("seeded-miss", converter.MISS);
+            cache.put("seeded-hit", seeded);
+            cache.put("seeded-miss", converter.MISS);
 
             assertEquals(seeded, converter.mappedValue("seeded-hit"));
             assertNull(converter.mappedValue("seeded-miss"));
@@ -2272,7 +2272,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 converter.setIncludePkLookup(false);
             }
 
-            assertSame("toggling includePkLookup discarded the memoization maps", maps, converter.getMaps());
+            assertSame("toggling includePkLookup discarded the cached lookups", maps, converter.getMaps());
             assertEquals("resolved value was discarded, so every row re-queries it", seeded, converter.mappedValue("seeded-hit"));
             assertNull("MISS marker was discarded, so every row re-queries the absent value", converter.mappedValue("seeded-miss"));
         }
@@ -2301,10 +2301,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             Integer key = 7;
             Integer pkResolution = 7;
             Integer akResolution = 99;
-            Map pkMemo = converter.pkLookupMap().getValue();
-            MultiValuedMap akMemo = converter.getMaps().getFirst().getRight();
-            pkMemo.put(key, pkResolution);
-            akMemo.put(key, akResolution);
+            Map pkCache = converter.pkLookupMap().getValue();
+            MultiValuedMap akCache = converter.getMaps().getFirst().getRight();
+            pkCache.put(key, pkResolution);
+            akCache.put(key, akResolution);
 
             assertEquals("pk lookup should take precedence while includePkLookup is on", pkResolution, converter.mappedValue(key));
 

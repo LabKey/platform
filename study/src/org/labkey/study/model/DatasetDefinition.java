@@ -1792,7 +1792,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         // note switched order (oldRecord, newRecord)
                         var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null, List.of());
                         batch.add(event);
-                        if (batch.size() > 1000)
+                        if (batch.size() > AbstractAuditHandler.AUDIT_BATCH_SIZE)
                         {
                             auditLog.addEvents(user, batch);
                             batch.clear();

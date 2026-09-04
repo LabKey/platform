@@ -279,7 +279,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
 
         // We want to reuse a cached provisioned TableInfo to avoid construction costs. Getting the SchemaTableInfo is
         // cheap so use that as a guide for when the table has changed (primarily during startup as its shape may
-        // need to be updated based on current code expections) and when it's safe to reuse the previous copy.
+        // need to be updated based on current code expectations) and when it's safe to reuse the previous copy.
         SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
         CachedStorageTable cached = _cachedStorageTable;
         if (null != cached && cached.schemaTableInfo() == schemaTableInfo)

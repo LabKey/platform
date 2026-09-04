@@ -1369,11 +1369,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .unlogged(true)
+                // RowId and Container are used in many places so ensure they're created before use. Other indices can
+                // be added as a followup step
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
+                .addDeferredIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
+                // Deferred despite being UNIQUE. Source data guarantees uniqueness, and this is very expensive to build
+                .addDeferredIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)");
 
-            getDomainIndexDdl().forEach(builder::addIndex);
+            getDomainIndexDdl().forEach(builder::addDeferredIndex);
 
             if (isIncrementalUpdateDisabled())
                 builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
@@ -1407,9 +1411,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         List<String> ddl = new ArrayList<>();
         Set<String> distinctColumnLists = new HashSet<>();
 
-        // Seeded with the kind's own indices (rowid, name); the materialized table already indexes those.
+        // Seeded with the provisioned columns the builder already indexes above: the kind's own indices (rowid, name)
+        // and lsid. Its other indices are over exp.material columns, which cannot appear in a provisioned index.
         for (PropertyStorageSpec.Index index : kind.getPropertyIndices(domain))
             distinctColumnLists.add(indexKey(Arrays.asList(index.translateToStorageNames(domain).columnNames)));
+        distinctColumnLists.add(indexKey(List.of("lsid")));
 
         for (TableInfo.IndexDefinition index : StorageProvisioner.get().getSchemaTableInfo(domain).getAllIndices())
         {
@@ -1521,7 +1527,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
             }
         }
 
@@ -1534,12 +1540,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Nullable SQLFragment uptodate,
             Supplier<String> supplier,
             @Nullable Collection<String> indexes,
+            @Nullable Collection<String> deferredIndexes,
             long maxTimeToCache,
             boolean isSelectIntoSql,
             boolean unlogged
         )
         {
-            super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql, unlogged);
+            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
         }
@@ -1565,6 +1572,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 lockAcquired = materialized.getLock().tryLock(1, TimeUnit.MINUTES);
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
+
+                // The lock is held by a full rebuild (including its deferred indexes). Leave the counters untouched so
+                // readers stay on the live query and the next materializeAsync retries, rather than racing that rebuild.
+                if (!lockAcquired)
+                {
+                    _log.info("Skipping incremental update of {}; a rebuild still holds the lock.", getMaterializationName());
+                    return;
+                }
 
                 runIncremental("delete", materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
                 runIncremental("update", materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);

@@ -85,6 +85,14 @@ public class AuditModule extends DefaultModule
     }
 
     @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return Set.of(
+            AuditLogImpl.TransactionScopeTestCase.class
+        );
+    }
+
+    @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
