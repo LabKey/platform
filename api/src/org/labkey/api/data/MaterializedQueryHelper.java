@@ -183,15 +183,18 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
                     try (var ignored = SpringActionController.ignoreSqlUpdates())
                     {
-                        for (String index : _mqh._indexes)
-                        {
-                            new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
-                        }
+                        createIndexes(_mqh._indexes, false);
                         analyze();
                     }
                 });
 
+                // Published here, not after the deferred indexes: those only make the table faster, and building them
+                // first keeps every reader on the unmaterialized query for the length of the slowest index.
                 _loadingState.set(LoadingState.LOADED);
+
+                if (!_mqh._deferredIndexes.isEmpty())
+                    traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
+
                 return true;
             }
             catch (RuntimeException rex)
@@ -203,6 +206,28 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             {
                 if (lockAcquired)
                     _loadingLock.unlock();
+            }
+        }
+
+        /**
+         * @param tolerateFailure true once the table is serving reads, where a missing index costs speed but nothing else,
+         *                        so the failure is logged and the remaining indexes are still attempted
+         */
+        private void createIndexes(List<String> indexes, boolean tolerateFailure)
+        {
+            for (String index : indexes)
+            {
+                String sql = StringUtils.replace(index, "${NAME}", _tableName);
+                try
+                {
+                    new SqlExecutor(_mqh._scope).execute(sql);
+                }
+                catch (RuntimeException x)
+                {
+                    if (!tolerateFailure)
+                        throw x;
+                    LOG.error("Failed to create index on materialized table {}. The table is serving queries without it. DDL: {}", _tableName, sql, x);
+                }
             }
         }
 
@@ -389,6 +414,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     protected final SQLFragment _uptodateQuery;
     protected final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
+    private final List<String> _deferredIndexes = new ArrayList<>();
     protected final long _maxTimeToCache;
     private final Map<String, Materialized> _map = Collections.synchronizedMap(new LinkedHashMap<>()
     {
@@ -410,7 +436,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     private boolean _closed = false;
 
-    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
+    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, @Nullable Collection<String> deferredIndexes, long maxTimeToCache,
                                     boolean isSelectIntoSql, boolean unlogged)
     {
         _prefix = Objects.toString(prefix,"mat");
@@ -421,6 +447,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         _maxTimeToCache = maxTimeToCache;
         if (null != indexes)
             _indexes.addAll(indexes);
+        if (null != deferredIndexes)
+            _deferredIndexes.addAll(deferredIndexes);
         _isSelectIntoSql = isSelectIntoSql;
         _unlogged = unlogged;
         assert MemTracker.get().put(this);
@@ -769,14 +797,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, null, maxTimeToCache, false, false);
     }
 
 
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, null, maxTimeToCache, false, false);
     }
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
@@ -791,6 +819,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         protected SQLFragment _uptodate = null;
         protected Supplier<String> _supplier = null;
         protected Collection<String> _indexes = new ArrayList<>();
+        protected Collection<String> _deferredIndexes = new ArrayList<>();
 
         public Builder(String prefix, DbScope scope, SQLFragment select)
         {
@@ -834,16 +863,24 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return this;
         }
 
+        /** Index built before the table is published, for anything a reader or the incremental maintenance SQL cannot go without. */
         public Builder addIndex(String index)
         {
             _indexes.add(index);
             return this;
         }
 
+        /** Index built after the table is published to readers; a failure is logged and the table serves without it. */
+        public Builder addDeferredIndex(String index)
+        {
+            _deferredIndexes.add(index);
+            return this;
+        }
+
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
         }
     }
 

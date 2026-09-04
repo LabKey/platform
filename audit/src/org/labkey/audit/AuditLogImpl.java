@@ -20,6 +20,11 @@ import jakarta.servlet.ServletContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -27,6 +32,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -37,16 +43,27 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -54,13 +71,17 @@ import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class AuditLogImpl implements AuditLogService, StartupListener
@@ -248,6 +269,48 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
+    /**
+     * Mirrors {@link ContainerFilter}'s SQL: an event matches on its own container, or on being a child of an in-scope
+     * container whose type the filter includes. Cached events need this applied by hand -- reading them back from the
+     * database is what would otherwise apply it.
+     */
+    private static Predicate<AuditTypeEvent> inScope(User user, Container container, @Nullable ContainerFilter containerFilter)
+    {
+        ContainerFilter cf = null == containerFilter ? ContainerFilter.current(container, user) : containerFilter;
+        Collection<GUID> ids = scopeIds(user, container, cf);
+        if (null == ids)
+            return _ -> true;
+
+        // Ensure an O(1) lookup
+        Set<GUID> scope = new HashSet<>(ids);
+        Set<String> childTypes = cf.getIncludedChildTypes();
+
+        return event -> {
+            Container c = event.getContainer();
+            if (null == c)
+                return false;
+            if (scope.contains(c.getEntityId()))
+                return true;
+            Container parent = c.getParent();
+            return null != parent && childTypes.contains(c.getType()) && scope.contains(parent.getEntityId());
+        };
+    }
+
+    /**
+     * Scopes by CanSeeAuditLogPermission the way {@link org.labkey.api.audit.query.DefaultAuditTypeTable} does, not by
+     * the ReadPermission that {@link ContainerFilter#getIds()} applies, so a folder the user can read but whose audit
+     * log they cannot see stays out of scope.
+     */
+    private static @Nullable Collection<GUID> scopeIds(User user, Container container, ContainerFilter cf)
+    {
+        if (!(cf instanceof ContainerFilter.ContainerFilterWithPermission cfp))
+            return cf.getIds();
+
+        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
+
+        return cfp.generateIds(container, CanSeeAuditLogPermission.class, roles);
+    }
+
     public record TransactionRowIds(List<Long> rowIds, Map<Long, Long> dataTypeRowCounts) {}
 
     public TransactionRowIds getTransactionSampleIds(long transactionAuditId, User user, Container container, @Nullable ContainerFilter containerFilter)
@@ -265,6 +328,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             events = transactionEvents.stream()
                     .filter(SampleTimelineAuditEvent.class::isInstance)
                     .map(SampleTimelineAuditEvent.class::cast)
+                    .filter(inScope(user, container, containerFilter))
                     .toList();
         }
         Map<Long, Long> dataTypeRowCounts = new HashMap<>();
@@ -287,6 +351,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 : transactionEvents.stream()
                         .filter(DetailedAuditTypeEvent.class::isInstance)
                         .map(DetailedAuditTypeEvent.class::cast)
+                        .filter(inScope(user, container, containerFilter))
                         .toList();
 
         detailedEvents.forEach(event -> {
@@ -313,5 +378,135 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             sourceIds.addAll(selector.getArrayList(Long.class));
         }
         return new TransactionRowIds(sourceIds, dataTypeRowCounts);
+    }
+
+    /**
+     * {@link #inScope} reproduces {@link org.labkey.api.audit.query.DefaultAuditTypeTable}'s container filtering in
+     * memory, so the branch that reads cached transaction events has to agree with the branch that reads them back from
+     * the database. Two cases separate the two: a workbook, which is in scope only through its parent via
+     * {@link ContainerFilter#getIncludedChildTypes()}, and a user who can read a folder but not its audit log.
+     */
+    public static class TransactionScopeTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "AuditTransactionScopeTest Project";
+        private static final long SAMPLE_TYPE_ID = 4242;
+
+        private static User _user;
+        private static Container _project;
+        private static Container _workbook;
+        private static Container _subfolder;
+
+        @BeforeClass
+        public static void setup()
+        {
+            Assume.assumeTrue("The SampleTimelineEvent provider is registered by the experiment module",
+                    null != AuditLogService.get().getAuditProvider(SampleTimelineAuditEvent.EVENT_TYPE));
+
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, _user);
+            _workbook = ContainerManager.createContainer(_project, null, "Workbook", null, WorkbookContainerType.NAME, _user);
+            _subfolder = ContainerManager.createContainer(_project, "Subfolder", _user);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _subfolder = null;
+            _workbook = null;
+            _project = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        /** Unique per call, and from the sequence production draws transaction ids from. */
+        private static long newTransactionId()
+        {
+            return AbstractQueryUpdateService.createTransactionAuditEvent(_project, QueryService.AuditAction.INSERT).getRowId();
+        }
+
+        private static SampleTimelineAuditEvent timelineEvent(Container c, long transactionId, long sampleId)
+        {
+            SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c, "Sample inserted");
+            event.setTransactionId(transactionId);
+            event.setSampleId(sampleId);
+            event.setSampleTypeId(SAMPLE_TYPE_ID);
+
+            return event;
+        }
+
+        /** One event per container, all in one transaction. Written with the cache on, so both branches see them. */
+        private static long writeEvents(User user, long projectSampleId, long workbookSampleId, long subfolderSampleId)
+        {
+            long transactionId = newTransactionId();
+
+            AuditLogService.get().addEvents(user, List.of(
+                    timelineEvent(_project, transactionId, projectSampleId),
+                    timelineEvent(_workbook, transactionId, workbookSampleId),
+                    timelineEvent(_subfolder, transactionId, subfolderSampleId)), true);
+
+            assertFalse("expected addEvents() to populate the transaction event cache",
+                    TRANSACTION_EVENT_CACHE.get(transactionId).second.isEmpty());
+
+            return transactionId;
+        }
+
+        /** Emptying the cache entry is what sends getTransactionSampleIds() to the database. */
+        private static TransactionRowIds fromDatabase(long transactionId, User user)
+        {
+            TRANSACTION_EVENT_CACHE.get(transactionId).second.clear();
+
+            return get().getTransactionSampleIds(transactionId, user, _project, null);
+        }
+
+        @Test
+        public void workbookIsInScopeForBothBranches()
+        {
+            long transactionId = writeEvents(_user, 101, 102, 103);
+
+            TransactionRowIds cached = get().getTransactionSampleIds(transactionId, _user, _project, null);
+            TransactionRowIds database = fromDatabase(transactionId, _user);
+
+            assertEquals("the workbook is in scope through its parent, the subfolder is not in scope at all",
+                    Set.of(101L, 102L), Set.copyOf(cached.rowIds()));
+            assertEquals("cached and database branches disagreed on sample ids",
+                    Set.copyOf(cached.rowIds()), Set.copyOf(database.rowIds()));
+            assertEquals("cached and database branches disagreed on row counts",
+                    Map.of(SAMPLE_TYPE_ID, 2L), cached.dataTypeRowCounts());
+            assertEquals("cached and database branches disagreed on row counts",
+                    cached.dataTypeRowCounts(), database.dataTypeRowCounts());
+        }
+
+        @Test
+        public void auditLogPermissionIsAppliedByBothBranches()
+        {
+            // Read alone is not enough to see audit events; the production caller elevates with CanSeeAuditLogRole first
+            User reader = new LimitedUser(_user, ReaderRole.class);
+            assertTrue("expected the reader to be able to read the project", _project.hasPermission(reader, ReadPermission.class));
+            assertFalse("expected the reader to lack the audit log permission", _project.hasPermission(reader, CanSeeAuditLogPermission.class));
+
+            long transactionId = writeEvents(_user, 201, 202, 203);
+
+            TransactionRowIds cached = get().getTransactionSampleIds(transactionId, reader, _project, null);
+            TransactionRowIds database = fromDatabase(transactionId, reader);
+
+            assertEquals("a reader without the audit log permission should see no events", List.of(), cached.rowIds());
+            assertEquals("cached and database branches disagreed on sample ids", cached.rowIds(), database.rowIds());
+
+            // The same events are visible to a user who can see the audit log, so the empty results above are the
+            // permission check and not a fixture that failed to write
+            assertEquals("expected the admin to see the events the reader could not",
+                    Set.of(201L, 202L), Set.copyOf(get().getTransactionSampleIds(transactionId, _user, _project, null).rowIds()));
+        }
     }
 }
