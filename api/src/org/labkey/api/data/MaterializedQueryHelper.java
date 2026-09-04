@@ -215,21 +215,18 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
          */
         private void createIndexes(List<String> indexes, boolean tolerateFailure)
         {
-            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            for (String index : indexes)
             {
-                for (String index : indexes)
+                String sql = StringUtils.replace(index, "${NAME}", _tableName);
+                try
                 {
-                    String sql = StringUtils.replace(index, "${NAME}", _tableName);
-                    try
-                    {
-                        new SqlExecutor(_mqh._scope).execute(sql);
-                    }
-                    catch (RuntimeException x)
-                    {
-                        if (!tolerateFailure)
-                            throw x;
-                        LOG.error("Failed to create index on materialized table {}. The table is serving queries without it. DDL: {}", _tableName, sql, x);
-                    }
+                    new SqlExecutor(_mqh._scope).execute(sql);
+                }
+                catch (RuntimeException x)
+                {
+                    if (!tolerateFailure)
+                        throw x;
+                    LOG.error("Failed to create index on materialized table {}. The table is serving queries without it. DDL: {}", _tableName, sql, x);
                 }
             }
         }
