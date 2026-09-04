@@ -87,6 +87,7 @@ import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -648,6 +649,19 @@ public class StorageProvisionerImpl implements StorageProvisioner
         _ProvisionedTable wrapper = new _ProvisionedTable(sti.getSchema(), sti.getName(), sti, domain);
         wrapper.wrapAllColumns();
         return wrapper;
+    }
+
+    @Override
+    @NotNull
+    public TableInfo createSharedTableInfoImpl(@NotNull Domain domain)
+    {
+        TableInfo table = createTableInfoImpl(domain);
+        table.setLocked(true);
+        MemTracker.getInstance().remove(table);
+        // The table holds the Domain, which holds a DomainDescriptor that MemTracker tracks separately
+        if (domain instanceof DomainImpl di)
+            MemTracker.getInstance().remove(di._dd);
+        return table;
     }
 
     @NotNull

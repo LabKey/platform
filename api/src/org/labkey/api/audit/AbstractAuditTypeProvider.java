@@ -50,7 +50,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -286,11 +285,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if (null != cached && cached.schemaTableInfo() == schemaTableInfo)
             return cached.storageTableInfo();
 
-        TableInfo storageTableInfo = StorageProvisioner.createTableInfo(domain);
-        // Shared across threads from here on
-        storageTableInfo.setLocked(true);
-        // Held for the process lifetime, so stop tracking it; MemTracker reports every retained TableInfo as a leak.
-        MemTracker.getInstance().remove(storageTableInfo);
+        TableInfo storageTableInfo = StorageProvisioner.createSharedTableInfo(domain);
         _cachedStorageTable = new CachedStorageTable(schemaTableInfo, storageTableInfo);
 
         return storageTableInfo;
