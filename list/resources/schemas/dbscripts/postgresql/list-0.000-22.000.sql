@@ -14,12 +14,4 @@
  * limitations under the License.
  */
 
-/* list-13.10-13.20.sql */
-
 CREATE SCHEMA list;
-
-SELECT core.fn_dropifexists('indexinteger', 'exp', 'TABLE', NULL);
-SELECT core.fn_dropifexists('indexvarchar', 'exp', 'TABLE', NULL);
-SELECT core.fn_dropifexists('list', 'exp', 'CONSTRAINT', 'UQ_RowId');
-
-ALTER TABLE exp.list DROP COLUMN IF EXISTS rowid CASCADE;
