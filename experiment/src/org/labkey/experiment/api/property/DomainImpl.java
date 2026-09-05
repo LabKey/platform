@@ -588,13 +588,13 @@ public class DomainImpl implements Domain
 
     public void saveIfNotExists(User user) throws ChangePropertyDescriptorException
     {
-        save(user, false, true, null, null, null, null, null, null);
+        save(user, true, null, null, null, null, null, null);
     }
 
     @Override
     public void save(User user, @Nullable Map<String, Object> newRecordMap, @Nullable List<? extends GWTPropertyDescriptor> calculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, null, null, null, newRecordMap, null, calculatedFields);
+        save(user, false, null, null, null, newRecordMap, null, calculatedFields);
     }
 
     @Override
@@ -602,10 +602,10 @@ public class DomainImpl implements Domain
                      @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
                      @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
-        save(user, false, false, auditComment, auditUserComment, oldRecordMap, newRecordMap, oldCalculatedFields, newCalculatedFields);
+        save(user, false, auditComment, auditUserComment, oldRecordMap, newRecordMap, oldCalculatedFields, newCalculatedFields);
     }
 
-    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment, @Nullable String auditUserComment,
+    public void save(User user, boolean saveOnlyIfNotExists, @Nullable String auditComment, @Nullable String auditUserComment,
                      @Nullable Map<String, Object> oldRecordMap, @Nullable Map<String, Object> newRecordMap,
                      @Nullable List<? extends GWTPropertyDescriptor> oldCalculatedFields, @Nullable List<? extends GWTPropertyDescriptor> newCalculatedFields) throws ChangePropertyDescriptorException
     {
@@ -718,7 +718,7 @@ public class DomainImpl implements Domain
                     // make sure all properties have storageColumnName
                     if (null == impl._pd.getStorageColumnName())
                     {
-                        if (!allowAddBaseProperty && baseProperties.contains(newPropName))
+                        if (baseProperties.contains(newPropName))
                             impl._pd.setStorageColumnName(newPropName); // Issue 29047: if we allow base property (like "date"), we're later going to use the base property name for storage
                         else
                             generateStorageColumnName(impl._pd);
@@ -845,7 +845,7 @@ public class DomainImpl implements Domain
                 {
                     if (!propsAdded.isEmpty())
                     {
-                        StorageProvisionerImpl.get().addProperties(this, propsAdded, allowAddBaseProperty);
+                        StorageProvisionerImpl.get().addProperties(this, propsAdded);
                         try
                         {
                             ensureUniqueIdValues(propsAdded);
