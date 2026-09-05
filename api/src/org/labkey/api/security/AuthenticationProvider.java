@@ -245,6 +245,8 @@ public interface AuthenticationProvider
     interface SecondaryAuthenticationProvider<SAC extends SecondaryAuthenticationConfiguration<?>> extends ConfigurableAuthenticationProvider<SAC>
     {
         String REQUIRED_FOR = "requiredFor";
+        /** Servlet context parameter that the embedded boot layer sets from context.bypass2FA */
+        String BYPASS_2FA_PARAMETER = "bypass2FA";
 
         /**
          * Bypass authentication from this provider. Might be configured via context.bypass2FA=true property in
@@ -252,6 +254,11 @@ public interface AuthenticationProvider
          * a 3rd party service provider is unavailable.
          */
         boolean bypass();
+
+        static boolean isBypassConfigured()
+        {
+            return Boolean.parseBoolean(ModuleLoader.getServletContext().getInitParameter(BYPASS_2FA_PARAMETER));
+        }
 
         default SettingsField getRequiredForField(String name)
         {
