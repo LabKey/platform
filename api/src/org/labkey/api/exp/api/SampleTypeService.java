@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
@@ -248,6 +249,9 @@ public interface SampleTypeService
     void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 
     void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata);
+
+    /** Builds the same event addAuditEvent() would write, for callers on row-scaling paths that need to batch the inserts themselves. */
+    SampleTimelineAuditEvent createTimelineAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType);
 
     // find the max sequence number with '${sampleName}-' prefix
     long getMaxAliquotId(@NotNull String sampleName, @NotNull String sampleTypeLsid, Container container);
