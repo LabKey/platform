@@ -1569,7 +1569,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             boolean lockAcquired = false;
             try
             {
+                long lockWaitStart = System.currentTimeMillis();
                 lockAcquired = materialized.getLock().tryLock(1, TimeUnit.MINUTES);
+                long lockWaitMs = System.currentTimeMillis() - lockWaitStart;
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
 
@@ -1577,7 +1579,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // readers stay on the live query and the next materializeAsync retries, rather than racing that rebuild.
                 if (!lockAcquired)
                 {
-                    _log.info("Skipping incremental update of {}; a rebuild still holds the lock.", getMaterializationName());
+                    long deferredStarted = materialized.getDeferredIndexesStarted();
+                    _log.info("Skipping incremental update of {} after waiting {} ms for the loading lock. Deferred index build in progress: {}. Caller is served temp table {} as-is. {}",
+                            getMaterializationName(),
+                            lockWaitMs,
+                            0 == deferredStarted ? "no" : (System.currentTimeMillis() - deferredStarted) + " ms so far",
+                            materialized.getTableName(),
+                            describeStaleness(materialized));
                     return;
                 }
 
@@ -1601,6 +1609,33 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 if (lockAcquired)
                     materialized.getLock().unlock();
+            }
+        }
+
+        /**
+         * Rows the caller will not see: the skipped incremental insert is what copies everything above the temp table's
+         * max rowid. Diagnostic only, so it must never fail the read it is describing.
+         */
+        private String describeStaleness(_Materialized materialized)
+        {
+            try
+            {
+                var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+                SQLFragment materializedMax = new SQLFragment("SELECT COALESCE(MAX(rowid), 0) FROM ")
+                        .appendIdentifier(DbSchema.getTemp().getName()).append(".").appendIdentifier(materialized.getTableName());
+                SQLFragment sourceMax = new SQLFragment("SELECT COALESCE(MAX(rowid), 0) FROM exp.material WHERE cpastype = ")
+                        .appendValue(_lsid, d);
+
+                long inTable = new SqlSelector(_scope, materializedMax).getObject(Long.class);
+                long inSource = new SqlSelector(_scope, sourceMax).getObject(Long.class);
+
+                return inSource > inTable
+                        ? "STALE: temp table max rowid " + inTable + ", exp.material max rowid " + inSource + "."
+                        : "Temp table is current at max rowid " + inTable + ".";
+            }
+            catch (RuntimeException x)
+            {
+                return "Staleness check failed: " + x.getMessage();
             }
         }
 

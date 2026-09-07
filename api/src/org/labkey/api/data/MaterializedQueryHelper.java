@@ -86,6 +86,21 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
         public RuntimeException _loadException = null;
 
+        // Diagnostic: non-zero while the table is published (LOADED) but the loading lock is still held by the
+        // deferred-index build, the window in which a reader can be handed a table missing recent inserts.
+        private final AtomicLong _deferredIndexesStarted = new AtomicLong(0);
+
+        /** Millis at which the deferred-index build began, or 0 if it is not running. */
+        public long getDeferredIndexesStarted()
+        {
+            return _deferredIndexesStarted.get();
+        }
+
+        public String getTableName()
+        {
+            return _tableName;
+        }
+
 
         public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
         {
@@ -193,7 +208,22 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 _loadingState.set(LoadingState.LOADED);
 
                 if (!_mqh._deferredIndexes.isEmpty())
-                    traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
+                {
+                    long deferredStart = System.currentTimeMillis();
+                    _deferredIndexesStarted.set(deferredStart);
+                    LOG.info("Deferred index build starting for {} ({}); table is published but the loading lock is still held.",
+                            _tableName, _mqh.getMaterializationName());
+                    try
+                    {
+                        traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
+                    }
+                    finally
+                    {
+                        _deferredIndexesStarted.set(0);
+                        LOG.info("Deferred index build finished for {} ({}) after {} ms; loading lock released next.",
+                                _tableName, _mqh.getMaterializationName(), System.currentTimeMillis() - deferredStart);
+                    }
+                }
 
                 return true;
             }
