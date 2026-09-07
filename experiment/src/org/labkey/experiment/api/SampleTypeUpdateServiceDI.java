@@ -1117,36 +1117,46 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     /**
-     * Diagnostic for the intermittent "Sample does not exist" failure on cross-type update. A missing name that is in
-     * exp.material at a rowid below the highest rowid the query table returns means the incremental insert's
-     * MAX(rowid) watermark skipped it; above that mark means the incremental insert had not run yet.
+     * Diagnostic for the intermittent "Sample does not exist" failure on cross-type update. The name lookup keys off
+     * exp.material.materialsourceid, so this reports what the rows it could not find actually carry: a null
+     * materialsourceid means the write path lost it, a value that disagrees with the resolved sample type means the
+     * create and the update resolved different sample types.
      */
     private void logMissingSampleDiagnostic(Container container, @Nullable Long sampleTypeId, Set<String> missingNames)
     {
         try
         {
             TableInfo source = ExperimentService.get().getTinfoMaterial();
-            Set<String> rowIdAndName = CaseInsensitiveHashSet.of(RowId.name(), Name.name());
+            Set<String> identity = CaseInsensitiveHashSet.of(RowId.name(), Name.name(), CpasType.name(), MaterialSourceId.name());
 
-            SimpleFilter scope = new SimpleFilter(FieldKey.fromParts("Container"), container);
+            SimpleFilter byName = new SimpleFilter(FieldKey.fromParts("Container"), container);
+            byName.addCondition(Name.fieldKey(), missingNames, CompareType.IN);
+            Map<String, Object>[] found = new TableSelector(source, identity, byName, new Sort(RowId.name())).getMapArray();
+
+            SimpleFilter bySampleTypeId = new SimpleFilter(FieldKey.fromParts("Container"), container);
             if (sampleTypeId != null)
-                scope.addCondition(MaterialSourceId.fieldKey(), sampleTypeId);
+                bySampleTypeId.addCondition(MaterialSourceId.fieldKey(), sampleTypeId);
 
-            SimpleFilter byName = new SimpleFilter(Name.fieldKey(), missingNames, CompareType.IN);
-            byName.addAllClauses(scope);
-            Map<String, Object>[] inSource = new TableSelector(source, rowIdAndName, byName, null).getMapArray();
+            SimpleFilter byCpasType = new SimpleFilter(FieldKey.fromParts("Container"), container);
+            if (_sampleType != null)
+                byCpasType.addCondition(CpasType.fieldKey(), _sampleType.getLSID());
 
-            Map<String, Object> highest = new TableSelector(getQueryTable(), rowIdAndName, scope, new Sort("-" + RowId.name())).setMaxRows(1).getMap();
-
-            LOG.info("Sample lookup missed {} name(s) {} in {}: exp.material holds {} of them at rowids {}; row count exp.material={} vs query table={}; highest rowid the query table returns={}.",
+            LOG.info("Sample lookup missed {} name(s) {} in {}: filtered on materialsourceid={}, service holds rowId={} lsid={} definedIn={};"
+                            + " container+name found {} of them {}; container row count by materialsourceid={} vs by cpastype={}.",
                     missingNames.size(),
                     missingNames.stream().sorted().limit(5).toList(),
                     getQueryTable().getName(),
-                    inSource.length,
-                    Arrays.stream(inSource).map(r -> r.get(RowId.name())).limit(5).toList(),
-                    new TableSelector(source, rowIdAndName, scope, null).getRowCount(),
-                    new TableSelector(getQueryTable(), rowIdAndName, scope, null).getRowCount(),
-                    null == highest ? "none" : highest.get(RowId.name()));
+                    sampleTypeId,
+                    _sampleType == null ? "none" : _sampleType.getRowId(),
+                    _sampleType == null ? "none" : _sampleType.getLSID(),
+                    _sampleType == null ? "none" : _sampleType.getContainer().getPath(),
+                    found.length,
+                    Arrays.stream(found).limit(5).map(r -> r.get(Name.name())
+                            + "[rowid=" + r.get(RowId.name())
+                            + " materialsourceid=" + r.get(MaterialSourceId.name())
+                            + " cpastype=" + r.get(CpasType.name()) + "]").toList(),
+                    new TableSelector(source, identity, bySampleTypeId, null).getRowCount(),
+                    new TableSelector(source, identity, byCpasType, null).getRowCount());
         }
         catch (RuntimeException x)
         {
