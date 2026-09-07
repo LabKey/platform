@@ -482,7 +482,8 @@ public abstract class SqlDialect
         return new StandardDialectStringHandler();
     }
 
-    public synchronized DialectStringHandler getStringHandler()
+    // Override createStringHandler() instead
+    public final synchronized DialectStringHandler getStringHandler()
     {
         if (null == _stringHandler)
             _stringHandler = createStringHandler();
