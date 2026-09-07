@@ -1170,6 +1170,7 @@ public class AnnouncementManager
             model.setCreated(bogusDate);
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
+            Thread.sleep(10); // Quick sleep to ensure ModifiedBy > CreatedBy, even on a very fast test run
             AnnouncementModel update = AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
 
             assertEquals(entityId, update.getEntityId());                       // EntityId hasn't changed
