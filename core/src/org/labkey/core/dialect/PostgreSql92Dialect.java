@@ -38,9 +38,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.dialect.BackslashEscapingStringHandler;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
-import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
@@ -182,16 +180,6 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
                 LOG.error("Couldn't parse max_identifier_length; continuing with default value of {}", _maxIdentifierByteLength, e);
             }
         }
-    }
-
-    @Override
-    protected DialectStringHandler createStringHandler()
-    {
-        // TODO: Isn't this the wrong setting?  Should we be looking at the "backslash_quote" setting instead?
-        if (getStandardConformingStrings())
-            return super.createStringHandler();
-        else
-            return new BackslashEscapingStringHandler();
     }
 
     /*

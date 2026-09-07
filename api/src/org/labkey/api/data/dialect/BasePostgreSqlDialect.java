@@ -94,9 +94,21 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
     public boolean getStandardConformingStrings()
     {
-        // make sure we're not calling this before finishing instance init
-        assert _standardConformingStrings != null;
-        return _standardConformingStrings == null || _standardConformingStrings;
+        // This should always be set before prior to getting the value
+        if (_standardConformingStrings == null)
+            throw new IllegalStateException("Standard Conforming Strings are not set for " + this);
+        return _standardConformingStrings;
+    }
+
+
+    @Override
+    protected DialectStringHandler createStringHandler()
+    {
+        // TODO: Should we look at "backslash_quote" setting instead/in addition?
+        if (getStandardConformingStrings())
+            return super.createStringHandler();
+        else
+            return new BackslashEscapingStringHandler();
     }
 
     public void setStandardConformingStrings(boolean standardConformingStrings)
