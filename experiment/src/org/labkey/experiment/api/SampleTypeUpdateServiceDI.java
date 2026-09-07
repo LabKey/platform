@@ -46,6 +46,7 @@ import org.labkey.api.data.NameGeneratorState;
 import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -120,6 +121,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1079,7 +1081,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (!missingRowIds.isEmpty())
                 throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": (RowId) '" + missingRowIds.iterator().next() + "'.");
             if (!missingNames.isEmpty())
+            {
+                logMissingSampleDiagnostic(container, sampleTypeId, missingNames);
                 throw new InvalidKeyException("Sample does not exist in " + container.getName() + ": '" + missingNames.iterator().next() + "'.");
+            }
         }
 
         // if contains domain fields, check for aliquot specific fields
@@ -1109,6 +1114,44 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         ExperimentServiceImpl.get().addRowsParentsFields(new HashSet<>(seeds), sampleRows, user, container);
 
         return sampleRows;
+    }
+
+    /**
+     * Diagnostic for the intermittent "Sample does not exist" failure on cross-type update. A missing name that is in
+     * exp.material at a rowid below the highest rowid the query table returns means the incremental insert's
+     * MAX(rowid) watermark skipped it; above that mark means the incremental insert had not run yet.
+     */
+    private void logMissingSampleDiagnostic(Container container, @Nullable Long sampleTypeId, Set<String> missingNames)
+    {
+        try
+        {
+            TableInfo source = ExperimentService.get().getTinfoMaterial();
+            Set<String> rowIdAndName = CaseInsensitiveHashSet.of(RowId.name(), Name.name());
+
+            SimpleFilter scope = new SimpleFilter(FieldKey.fromParts("Container"), container);
+            if (sampleTypeId != null)
+                scope.addCondition(MaterialSourceId.fieldKey(), sampleTypeId);
+
+            SimpleFilter byName = new SimpleFilter(Name.fieldKey(), missingNames, CompareType.IN);
+            byName.addAllClauses(scope);
+            Map<String, Object>[] inSource = new TableSelector(source, rowIdAndName, byName, null).getMapArray();
+
+            Map<String, Object> highest = new TableSelector(getQueryTable(), rowIdAndName, scope, new Sort("-" + RowId.name())).setMaxRows(1).getMap();
+
+            LOG.info("Sample lookup missed {} name(s) {} in {}: exp.material holds {} of them at rowids {}; row count exp.material={} vs query table={}; highest rowid the query table returns={}.",
+                    missingNames.size(),
+                    missingNames.stream().sorted().limit(5).toList(),
+                    getQueryTable().getName(),
+                    inSource.length,
+                    Arrays.stream(inSource).map(r -> r.get(RowId.name())).limit(5).toList(),
+                    new TableSelector(source, rowIdAndName, scope, null).getRowCount(),
+                    new TableSelector(getQueryTable(), rowIdAndName, scope, null).getRowCount(),
+                    null == highest ? "none" : highest.get(RowId.name()));
+        }
+        catch (RuntimeException x)
+        {
+            LOG.info("Sample lookup miss diagnostic failed: {}", x.toString());
+        }
     }
 
     @Override
