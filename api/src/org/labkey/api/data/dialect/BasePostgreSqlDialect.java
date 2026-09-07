@@ -101,12 +101,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getDatabaseSizeSql(String databaseName)
-    {
-        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
-    }
-
-    @Override
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
         // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
@@ -420,12 +414,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment wrapBooleanExpression(SQLFragment booleanSql)
     {
         return booleanSql;
-    }
-
-    @Override
-    protected String getSystemTableNames()
-    {
-        return "pg_logdir_ls";
     }
 
     @Override

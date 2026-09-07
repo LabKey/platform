@@ -292,6 +292,18 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         return PRODUCT_NAME;
     }
 
+    @Override
+    protected String getSystemTableNames()
+    {
+        return "pg_logdir_ls";
+    }
+
+    @Override
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
     // Query PostgreSQL-specific settings
     protected void determineSettings(DbScope scope)
     {
