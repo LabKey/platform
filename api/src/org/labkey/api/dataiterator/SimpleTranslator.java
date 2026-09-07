@@ -203,6 +203,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private boolean _includePkLookup;               // if true, will perform an initial PK lookup before attempting the AK lookup
 
         private final boolean _allowBulkLoads;
+        private final boolean _cacheMisses;
         private final Set<Pair<ColumnInfo, ColumnInfo>> _bulkLoads = new HashSet<>();
 
         private List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?, ?>>> _maps = null;
@@ -211,10 +212,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         public RemapConverter(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup)
         {
+            this(targetTable, includeTitleColumn, allowBulkLoads, includePkLookup, true);
+        }
+
+        /** @param cacheMisses false when the same operation writes the lookup target, so an unresolved key must be re-queried instead of memoized */
+        public RemapConverter(@NotNull TableInfo targetTable, boolean includeTitleColumn, boolean allowBulkLoads, boolean includePkLookup, boolean cacheMisses)
+        {
             _targetTable = targetTable;
             _includeTitleColumn = includeTitleColumn;
             _allowBulkLoads = allowBulkLoads;
             _includePkLookup = includePkLookup;
+            _cacheMisses = cacheMisses;
         }
 
         public void setIncludePkLookup(boolean includePkLookup)
@@ -371,11 +379,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     vs = bulkLoaded;
                 }
 
-                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
-                // If there are no values in the database, stash a MISS marker to avoid re-fetching.
                 assert vs != null;
                 if (vs.isEmpty())
+                {
+                    if (!_cacheMisses)
+                        return null;
+
                     map.put(k, MISS);
+                }
             }
 
             Object v = getSingleValue(k, vs);
@@ -414,6 +425,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 {
                     if (k == null || (k instanceof String strKey && !GUID.isGUID(strKey)))
                     {
+                        // Not a data miss: a key that isn't a GUID can never become one, so memoize regardless of _cacheMisses
                         map.put(k, MISS);
                         return null;
                     }
@@ -434,7 +446,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     return map.get(k);
                 else
                 {
-                    map.put(k, MISS);
+                    if (_cacheMisses)
+                        map.put(k, MISS);
                     return null;
                 }
             }
@@ -949,7 +962,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             _toCol = toCol;
             _missing = missing;
             _includeTitleColumn = includeTitleColumn;
-            _remapper = new RemapConverter(_toCol.getFkTableInfo(), _includeTitleColumn, false, true);
+            // The import can create the rows this resolves against, so a miss must not outlive the row that saw it
+            _remapper = new RemapConverter(_toCol.getFkTableInfo(), _includeTitleColumn, false, true, false);
             _lookupResolutionType = lookupResolutionType;
         }
 
@@ -2328,6 +2342,33 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             converter.setIncludePkLookup(true);
             assertSame("pk lookup map was rebuilt rather than retained", pkMap, converter.pkLookupMap());
+        }
+
+        @Test
+        public void remapMissIsNotMemoizedWhenCacheMissesIsOff()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true, false);
+            MultiValuedMap cache = converter.getMaps().getFirst().getRight();
+
+            String absent = "no-enum-value-supplies-this";
+            assertNull(converter.mappedValue(absent));
+            assertFalse("miss was memoized, so a row the import adds later can never resolve", cache.containsKey(absent));
+
+            // Stands in for the row appearing after the first lookup
+            Integer added = 42;
+            cache.put(absent, added);
+            assertEquals(added, converter.mappedValue(absent));
+        }
+
+        @Test
+        public void remapMissIsMemoizedByDefault()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            MultiValuedMap cache = converter.getMaps().getFirst().getRight();
+
+            String absent = "no-enum-value-supplies-this";
+            assertNull(converter.mappedValue(absent));
+            assertTrue("callers that don't write the lookup target rely on the MISS marker to avoid re-querying", cache.containsKey(absent));
         }
 
         @Test
