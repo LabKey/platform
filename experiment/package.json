@@ -13,12 +13,12 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "7.62.1"
+    "@labkey/components": "7.62.3-fb-vantaSep7.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.2",
     "@labkey/eslint-config": "1.2.3",
-    "@labkey/test": "1.14.2",
+    "@labkey/test": "1.14.3-fb-vantaSep7.0",
     "@types/jest": "30.0.0",
     "@types/react": "18.3.31",
     "@types/react-dom": "18.3.7",
