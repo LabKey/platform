@@ -29,7 +29,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
@@ -67,7 +69,7 @@ public abstract class AbstractContainerScopingTest extends Assert
 
     private final List<Container> _containers = new ArrayList<>();
     private final List<User> _users = new ArrayList<>();
-    private final List<User> _rootRoleGrants = new ArrayList<>();
+    private final List<Pair<User, Class<? extends Role>>> _rootRoleGrants = new ArrayList<>();
 
     /** The site-admin user (from {@link TestContext}) that owns the test fixtures. */
     protected User getAdmin()
@@ -145,7 +147,7 @@ public abstract class AbstractContainerScopingTest extends Assert
     protected void grantRootRole(User user, Class<? extends Role> role) throws Exception
     {
         grantRole(user, ContainerManager.getRoot(), role);
-        _rootRoleGrants.add(user);
+        _rootRoleGrants.add(new Pair<>(user, role));
     }
 
     /**
@@ -187,7 +189,9 @@ public abstract class AbstractContainerScopingTest extends Assert
             try
             {
                 MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot().getPolicy());
-                _rootRoleGrants.forEach(rootPolicy::clearAssignedRoles);
+                // Remove only what grantRootRole added: clearAssignedRoles() would drop every root assignment the
+                // principal holds, which is site-wide and unrecoverable if the caller passed a pre-existing user.
+                _rootRoleGrants.forEach(grant -> rootPolicy.removeRoleAssignment(grant.getKey(), RoleManager.getRole(grant.getValue())));
                 SecurityPolicyManager.savePolicyForTests(rootPolicy, admin);
             }
             catch (Exception ignored)

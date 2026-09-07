@@ -78,6 +78,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.springframework.validation.BindException;
@@ -216,6 +217,11 @@ public class SurveyManager
 
     public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign survey)
     {
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser. This is the chokepoint every
+        // caller reaches, including SurveyService; the query update path is gated separately in SurveyDesignTable.
+        if (!user.isTrustedAnalyst())
+            throw new UnauthorizedException(SurveyController.TRUSTED_ANALYST_REQUIRED);
+
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
