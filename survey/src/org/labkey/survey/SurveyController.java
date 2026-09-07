@@ -70,6 +70,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -340,6 +341,10 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
         {
+            // GitHub Issue #1526 treat surveys as executable code.
+            if (!getUser().isTrustedAnalyst())
+                throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst to create and edit surveys.");
+
             ApiSimpleResponse response = new ApiSimpleResponse();
             // Updating the survey design. Resolve the design with container scoping.
             SurveyDesign survey = getSurveyDesign(form, id -> SurveyManager.get().getSurveyDesignForWrite(getContainer(), getUser(), id));
