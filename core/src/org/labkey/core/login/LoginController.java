@@ -712,10 +712,21 @@ public class LoginController extends SpringActionController
 
                 if (!form.isForceReauth() && form.isApprovedTermsOfUse())
                 {
+                    // Pass in the user to setTermsOfUseApproved(), since the ViewContext doesn't have the authenticated
+                    // user yet. Also, if MFA is configured, authResult user will be null; pull user from primary
+                    // result in that case.
+                    User acceptingUser = user;
+                    if (null == acceptingUser)
+                    {
+                        PrimaryAuthenticationResult primaryResult = AuthenticationManager.getPrimaryAuthenticationResult(request.getSession(true));
+                        if (primaryResult != null)
+                            acceptingUser = primaryResult.getUser();
+                    }
+
                     if (form.getTermsOfUseType() == TermsOfUseType.PROJECT_LEVEL)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(termsProject));
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), WikiTermsOfUseProvider.getTermsContainer(termsProject), acceptingUser);
                     else if (form.getTermsOfUseType() == TermsOfUseType.SITE_WIDE)
-                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot());
+                        WikiTermsOfUseProvider.setTermsOfUseApproved(getViewContext(), ContainerManager.getRoot(), acceptingUser);
                     response.put("approvedTermsOfUse", true);
                 }
 
@@ -732,8 +743,8 @@ public class LoginController extends SpringActionController
                 }
                 else
                 {
-                    // AuthenticationResult returned by AuthenticationManager.handleAuthentication indicated that a secondary authentication is needed
-                    // in the ajax response inform js handler to load page from secondary authenticator url
+                    // AuthenticationResult indicated that a secondary authentication is needed. Inform js handler to
+                    // load page from secondary authenticator url
                     response.put(ActionURL.Param.returnUrl.name(), redirectString);
                 }
             }

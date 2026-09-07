@@ -95,6 +95,8 @@ public interface WorkflowService
     boolean actionWillAddSamples(Long actionId);
     boolean actionWillAddSources(Long actionId);
 
+    boolean isTaskAssayType(Long taskId, Long assayId);
+
     DataIteratorBuilder getSampleCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
 
     DataIteratorBuilder getSourceCreationDataIteratorBuilder(DataIteratorBuilder data, Container container, User user);
