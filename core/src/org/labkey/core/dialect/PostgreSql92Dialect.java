@@ -304,6 +304,23 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         return new SQLFragment("SELECT pg_database_size(?)", databaseName);
     }
 
+    @Override
+    public String getExtraInfo(SQLException e)
+    {
+        // Deadlock between two different DB connections
+        if ("40P01".equals(e.getSQLState()))
+        {
+            return getOtherDatabaseThreads();
+        }
+        return null;
+    }
+
+    @Override
+    public @NotNull String getApplicationConnectionsSql()
+    {
+        return "SELECT pid, usename, client_addr, client_hostname, xact_start, query_start, state, application_name, query FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = ? AND application_name = ?";
+    }
+
     // Query PostgreSQL-specific settings
     protected void determineSettings(DbScope scope)
     {

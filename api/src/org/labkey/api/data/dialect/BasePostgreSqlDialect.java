@@ -66,7 +66,9 @@ import java.util.Set;
 // if not, put it in PostgreSql92Dialect.
 public abstract class BasePostgreSqlDialect extends SqlDialect
 {
-    // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis
+    // Issue 52190: Expose troubleshooting data that supports postgreSQL-specific analysis. These names are also used
+    // by org.labkey.api.util.DebugInfoDumper, so they must stay in the api module even though the queries they back
+    // (see PostgreSql92Dialect) are Postgres-only, not Redshift.
     public static final String POSTGRES_SCHEMA_NAME = "postgres";
 
     public static final String POSTGRES_STAT_ACTIVITY_TABLE_NAME = "pg_stat_activity";
@@ -945,17 +947,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public String getExtraInfo(SQLException e)
-    {
-        // Deadlock between two different DB connections
-        if ("40P01".equals(e.getSQLState()))
-        {
-            return getOtherDatabaseThreads();
-        }
-        return null;
-    }
-
-    @Override
     public ConnectionFactory getConnectionFactory(boolean useJdbcCaching, boolean selfContained, DbScope scope, SQLFragment sql)
     {
         // Fiddle with the Connection settings only if asked to turn off JDBC caching, we're not inside a transaction,
@@ -1156,11 +1147,5 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public @Nullable String getDefaultApplicationName()
     {
         return "PostgreSQL JDBC Driver";
-    }
-
-    @Override
-    public @NotNull String getApplicationConnectionsSql()
-    {
-        return "SELECT pid, usename, client_addr, client_hostname, xact_start, query_start, state, application_name, query FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = ? AND application_name = ?";
     }
 }
