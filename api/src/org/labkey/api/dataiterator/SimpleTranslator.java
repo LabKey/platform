@@ -313,7 +313,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             if (_titleColumnLookupMap != null)
             {
-                return fetch(_titleColumnLookupMap, String.valueOf(k));
+                // Pass the key as-is so fetch() can apply its "alternate keys must be String" rule. Stringifying here
+                // turned an integer pk into a title match, so rowId 2 resolved to whatever row is titled "2".
+                return fetch(_titleColumnLookupMap, k);
             }
 
             return null;
@@ -2244,6 +2246,55 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
             return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true);
+        }
+
+        /**
+         * Same fixture with the unique indices dropped, so the title column is not already claimed as an alternate key.
+         * That is the shape of exp.MaterialSource (integer pk, Name carries no single-column unique index) and the only
+         * one that builds the title-column map.
+         */
+        private EnumTableInfo<LookupValues> remapTitleColumnLookupTable()
+        {
+            var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true)
+            {
+                @Override
+                public @NotNull List<IndexDefinition> getUniqueIndices()
+                {
+                    return List.of();
+                }
+            };
+        }
+
+        @Test
+        public void remapTitleColumnIgnoresNonStringKey()
+        {
+            RemapConverter converter = new RemapConverter(remapTitleColumnLookupTable(), true, false, true);
+
+            // convertWithRemapper turns the pk lookup off, which is what lets the key reach the title column at all
+            converter.setIncludePkLookup(false);
+            assertTrue("expected no alternate-key maps, so the title column is the only match left", converter.getMaps().isEmpty());
+
+            // A row whose title is the decimal string of a different row's pk, e.g. a sample type named "2"
+            MultiValuedMap titleCache = converter._titleColumnLookupMap.getRight();
+            Integer rowTitledTwo = 42;
+            titleCache.put("2", rowTitledTwo);
+
+            assertEquals("a String key should still resolve against the title column", rowTitledTwo, converter.mappedValue("2"));
+            assertNull("integer pk 2 was stringified into a title match, resolving to the row titled \"2\"", resolve(converter, 2));
+        }
+
+        /** mappedValue throws on a first-time miss instead of returning null, so mirror what convertWithRemapper does with that. */
+        private Object resolve(RemapConverter converter, Object k)
+        {
+            try
+            {
+                return converter.mappedValue(k);
+            }
+            catch (ConversionException x)
+            {
+                return null;
+            }
         }
 
         @Test
