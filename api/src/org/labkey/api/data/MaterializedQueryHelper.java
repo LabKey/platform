@@ -191,11 +191,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 // Published here, not after the deferred indexes: those only make the table faster, and building them
                 // first keeps every reader on the unmaterialized query for the length of the slowest index.
                 _loadingState.set(LoadingState.LOADED);
-
-                if (!_mqh._deferredIndexes.isEmpty())
-                    traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
-
-                return true;
             }
             catch (RuntimeException rex)
             {
@@ -207,6 +202,20 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 if (lockAcquired)
                     _loadingLock.unlock();
             }
+
+            buildDeferredIndexes();
+            return true;
+        }
+
+        /**
+         * Must run with the loading lock released. Incremental update abandons its work when it can't take that lock,
+         * and since the table is already published, holding it here serves readers a table missing the rows that
+         * update would have copied.
+         */
+        protected void buildDeferredIndexes()
+        {
+            if (!_mqh._deferredIndexes.isEmpty())
+                traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
         }
 
         /**
@@ -900,6 +909,67 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             DbSchema temp = DbSchema.getTemp();
             new SqlExecutor(temp).execute("DROP TABLE temp.MQH_TESTCASE");
+        }
+
+        @Test
+        public void deferredIndexesBuildWithoutTheLoadingLock()
+        {
+            DbSchema temp = DbSchema.getTemp();
+            new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
+
+            AtomicReference<Boolean> lockFreeDuringBuild = new AtomicReference<>();
+            SQLFragment select = new SQLFragment("SELECT x FROM temp.MQH_TESTCASE");
+            List<String> deferred = List.of("CREATE INDEX idx_${NAME}_x ON temp.${NAME} (x)");
+
+            try (MaterializedQueryHelper mqh = new MaterializedQueryHelper("test", temp.getScope(), select, null, null, null, deferred, CacheManager.UNLIMITED, false, false)
+            {
+                @Override
+                protected Materialized createMaterialized(String txCacheKey)
+                {
+                    String name = _prefix + "_" + GUID.makeHash();
+                    Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(),
+                            "\"" + DbSchema.getTemp().getName() + "\".\"" + name + "\"")
+                    {
+                        @Override
+                        protected void buildDeferredIndexes()
+                        {
+                            lockFreeDuringBuild.set(lockIsFreeOnAnotherThread(_loadingLock));
+                            super.buildDeferredIndexes();
+                        }
+                    };
+                    initMaterialized(materialized);
+                    return materialized;
+                }
+            })
+            {
+                mqh.getFromSql("_");
+            }
+
+            assertEquals("Deferred index build held the loading lock, so a concurrent incremental update would abandon its work",
+                    Boolean.TRUE, lockFreeDuringBuild.get());
+        }
+
+        /** The loading lock is reentrant, so the thread that took it sees its own hold as available. */
+        private static boolean lockIsFreeOnAnotherThread(Lock lock)
+        {
+            AtomicBoolean acquired = new AtomicBoolean();
+            Thread probe = new Thread(() -> {
+                if (lock.tryLock())
+                {
+                    acquired.set(true);
+                    lock.unlock();
+                }
+            }, "MQH deferred index lock probe");
+            probe.start();
+            try
+            {
+                probe.join();
+            }
+            catch (InterruptedException x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+            return acquired.get();
         }
 
         @Test

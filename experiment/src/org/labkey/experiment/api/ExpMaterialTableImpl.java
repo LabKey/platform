@@ -1573,7 +1573,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
 
-                // The lock is held by a full rebuild (including its deferred indexes). Leave the counters untouched so
+                // The lock is held by a full rebuild. Leave the counters untouched so
                 // readers stay on the live query and the next materializeAsync retries, rather than racing that rebuild.
                 if (!lockAcquired)
                 {
