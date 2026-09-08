@@ -94,6 +94,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -220,8 +221,10 @@ public class SurveyManager
     {
         // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser. This is the chokepoint every
         // caller reaches, including SurveyService; the query update path is gated separately in SurveyDesignTable.
-        if (!container.hasPermission(user, BrowserDeveloperPermission.class))
-            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst to create and edit survey designs.");
+        // BrowserDeveloperPermission is a site permission that root role assignments grant in every container, so it
+        // has to be required alongside the folder-scoped write check, never in place of it.
+        if (!container.hasPermissions(user, Set.of(InsertPermission.class, BrowserDeveloperPermission.class)))
+            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst with insert permission in this folder to create and edit survey designs.");
 
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -842,9 +845,12 @@ public class SurveyManager
         @Before
         public void setUp()
         {
+            // Every test here dispatches through SurveyController, and DefaultModule.dispatch 404s before the action
+            // runs unless the module is active in the container.
+            Module survey = ModuleLoader.getInstance().getModule("Survey");
             _user = getAdmin();
-            _projectA = createContainer("A");
-            _projectB = createContainer("B");
+            _projectA = createContainer("A", survey);
+            _projectB = createContainer("B", survey);
         }
 
         @Test
@@ -897,15 +903,16 @@ public class SurveyManager
 
             User attacker = createUserInRole(_projectA, ReaderRole.class);
             grantRole(attacker, _projectB, AuthorRole.class);
-            // GH Issue 1526 added a trusted analyst gate ahead of the container check, so the attacker needs
-            // that role for this test to still reach the scoping logic it was written to cover.
+            // GH Issue 1526 gates the action on BrowserDeveloperPermission, so the attacker needs a developer role
+            // to reach the container check this test covers.
             grantRootRole(attacker, PlatformDeveloperRole.class);
 
             ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectB)
                     .addParameter("rowId", designId)
                     .addParameter("label", "STOLEN")
                     .addParameter("description", "hijacked");
-            post(url, attacker);
+            // Container scoping rejects the cross-folder rowId before the design is touched
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, attacker));
 
             // The design must still belong to folder A with its original field values: not reparented, not overwritten.
             SurveyDesign after = sm.getSurveyDesignForRead(_projectA, _user, designId);
@@ -923,7 +930,6 @@ public class SurveyManager
         @Test
         public void testSurveyDesignAuthoringRequiresTrustedAnalyst() throws Exception
         {
-            activateModules(_projectA, ModuleLoader.getInstance().getModule("Survey"));
             User author = createUserInRole(_projectA, AuthorRole.class);
             assertFalse("Test author must not be a trusted analyst", author.isTrustedAnalyst());
             assertTrue("Site admin is expected to satisfy the trusted analyst check", _user.isTrustedAnalyst());

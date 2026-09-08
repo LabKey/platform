@@ -54,6 +54,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -213,7 +214,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermission(BrowserDeveloperPermission.class)
+    @RequiresAllOf({InsertPermission.class, BrowserDeveloperPermission.class})
     public static class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
     {
         private String _title = "Create Survey Design";
@@ -335,7 +336,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermission(BrowserDeveloperPermission.class)
+    @RequiresAllOf({InsertPermission.class, BrowserDeveloperPermission.class})
     public class SaveSurveyTemplateAction extends MutatingApiAction<SurveyDesignForm>
     {
         @Override
