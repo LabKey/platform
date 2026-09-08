@@ -3824,14 +3824,15 @@ public class QueryServiceImpl implements QueryService
         @Test
         public void testWeek() throws SQLException
         {
-            // week() must return SQL Server's US numbering on both platforms: weeks start Sunday, and week 1 is
-            // whatever week contains Jan 1. pgjdbc expands {fn week} to ISO 8601 -- Monday start, week 1 anchored
-            // on the year's first Thursday -- so BasePostgreSqlDialect intercepts it rather than deferring.
+            // Verifies week() returns the same number on both platforms.
             //
-            // The two rules diverge independently, and how they combine depends on the day Jan 1 falls on, so a
-            // single year badly understates the difference. 2026 (Jan 1 = Thursday) agrees with ISO except on
-            // Sundays; 2027 (Jan 1 = Friday) is off by one every day, and ISO assigns 2027-01-01 to week 53 of
-            // the prior year. Both are covered below; do not reduce this to a mid-year sample.
+            // pgjdbc expands {fn week} to ISO 8601 numbering (weeks start Monday, week 1 holds the year's first
+            // Thursday) where SQL Server uses US numbering (weeks start Sunday, week 1 holds Jan 1), so the two
+            // disagreed. BasePostgreSqlDialect.formatJdbcFunction now emits the US form instead of deferring to
+            // the driver.
+            //
+            // The dates cover both rule differences and the year boundary; a mid-year sample in a year whose
+            // Jan 1 falls Mon-Thu passes either way.
             String sql =
                 "SELECT " +
                 "  week(CAST('2026-01-01 00:00:00' AS TIMESTAMP)) AS w1, " +   // Thursday -> 1
