@@ -58,6 +58,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -70,7 +71,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -88,8 +88,6 @@ import java.util.stream.Collectors;
 
 public class SurveyController extends SpringActionController implements SurveyUrls
 {
-    static final String TRUSTED_ANALYST_REQUIRED = "You must be either a PlatformDeveloper or TrustedAnalyst to create and edit survey designs.";
-
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(SurveyController.class);
 
     public SurveyController()
@@ -215,7 +213,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(BrowserDeveloperPermission.class)
     public static class SurveyDesignAction extends SimpleViewAction<SurveyDesignForm>
     {
         private String _title = "Create Survey Design";
@@ -223,10 +221,6 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public ModelAndView getView(SurveyDesignForm form,BindException errors)
         {
-            // GH Issue 1526: the designer authors executable code, so don't render it for someone who cannot save it
-            if (!getUser().isTrustedAnalyst())
-                throw new UnauthorizedException(TRUSTED_ANALYST_REQUIRED);
-
             if (form.getRowId() != 0)
             {
                 SurveyDesign survey = SurveyManager.get().getSurveyDesignForWrite(getContainer(), getUser(), form.getRowId());
@@ -341,16 +335,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
+    @RequiresPermission(BrowserDeveloperPermission.class)
     public class SaveSurveyTemplateAction extends MutatingApiAction<SurveyDesignForm>
     {
         @Override
         public ApiResponse execute(SurveyDesignForm form, BindException errors) throws Exception
         {
-            // GH Issue 1526: treat survey designs as executable code
-            if (!getUser().isTrustedAnalyst())
-                throw new UnauthorizedException(TRUSTED_ANALYST_REQUIRED);
-
             ApiSimpleResponse response = new ApiSimpleResponse();
             // Updating the survey design. Resolve the design with container scoping.
             SurveyDesign survey = getSurveyDesign(form, id -> SurveyManager.get().getSurveyDesignForWrite(getContainer(), getUser(), id));

@@ -65,6 +65,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -219,8 +220,8 @@ public class SurveyManager
     {
         // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser. This is the chokepoint every
         // caller reaches, including SurveyService; the query update path is gated separately in SurveyDesignTable.
-        if (!user.isTrustedAnalyst())
-            throw new UnauthorizedException(SurveyController.TRUSTED_ANALYST_REQUIRED);
+        if (!container.hasPermission(user, BrowserDeveloperPermission.class))
+            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst to create and edit survey designs.");
 
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
@@ -917,8 +918,8 @@ public class SurveyManager
                     "original description", after.getDescription());
         }
 
-        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser, so authoring one takes the
-        // same trust level as a script report. Insert permission in the folder is no longer enough on its own.
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser, so authoring one requires
+        // the BrowserDeveloperPermission. Both PlatformDeveloper and TrustedAnalyst are expected to satisfy the check.
         @Test
         public void testSurveyDesignAuthoringRequiresTrustedAnalyst() throws Exception
         {

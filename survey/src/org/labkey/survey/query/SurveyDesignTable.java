@@ -25,8 +25,8 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -84,7 +84,7 @@ public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
         // GitHub Issue #1526 treat surveys as executable code.
         if (perm.equals(InsertPermission.class) || perm.equals(UpdatePermission.class))
         {
-            if (!(user instanceof User u) || !u.isTrustedAnalyst())
+            if (!getContainer().hasPermission(user, BrowserDeveloperPermission.class))
                 return false;
         }
         return getContainer().hasPermission(user, perm);

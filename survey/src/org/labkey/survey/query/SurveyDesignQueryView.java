@@ -17,11 +17,10 @@ package org.labkey.survey.query;
 
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.survey.SurveyController;
@@ -53,9 +52,7 @@ public class SurveyDesignQueryView extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        // Authoring a design takes the trusted analyst role, which SurveyDesignTable enforces; ask the table, not the container.
-        TableInfo table = getTable();
-        if (table != null && table.hasPermission(getUser(), InsertPermission.class))
+        if (getContainer().hasPermission(getUser(), BrowserDeveloperPermission.class))
         {
             ActionURL insertURL = new ActionURL(SurveyController.SurveyDesignAction.class, getContainer());
             insertURL.addReturnUrl(getReturnUrl());
