@@ -2439,6 +2439,8 @@ public abstract class SqlDialect
 
         void testEquals(String expected, SQLFragment sqlf)
         {
+            if (d.isOracle() || expected.isEmpty())
+                expected = null; // Oracle returns 'null' for an empty string
             try
             {
                 assertEquals(expected, new SqlSelector(s, sqlf).getObject(String.class));
@@ -2453,7 +2455,7 @@ public abstract class SqlDialect
         public void testDialectStringHandler()
         {
             // quotes backslashes etc
-            for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
+            for (String v : Arrays.asList("", " ", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
                 testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
