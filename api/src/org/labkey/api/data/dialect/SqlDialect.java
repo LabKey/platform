@@ -2439,7 +2439,7 @@ public abstract class SqlDialect
 
         void testEquals(String expected, SQLFragment sqlf)
         {
-            if (d.isOracle() || expected.isEmpty())
+            if (d.isOracle() && expected.isEmpty())
                 expected = null; // Oracle returns 'null' for an empty string
             try
             {
