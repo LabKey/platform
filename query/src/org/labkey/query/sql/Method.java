@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -51,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -58,6 +61,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -2000,7 +2004,6 @@ public abstract class Method
         }
     }
 
-    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TestCase extends Assert
     {
         void assertIsSimpleString(String expected, SQLFragment s)
@@ -2039,6 +2042,24 @@ public abstract class Method
             assertNotSimpleString(new SQLFragment("SELECT 'test'"));
             assertNotSimpleString(new SQLFragment("'test''string'"));
         }
+    }
+
+    @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
+    public static class IsDistinctFromMethodTestCase extends Assert
+    {
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
+        {
+            return JunitUtil.getDbScopesTestParameters();
+        }
+
+        private final DbScope scope;
+
+        public IsDistinctFromMethodTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
 
         // Exercises both the native and portable-fallback branches of IsDistinctFromMethodInfo.getSQL() against every
         // dialect that's actually connected in this environment, not just whichever dialect the current CI leg happens
@@ -2058,17 +2079,14 @@ public abstract class Method
                 new Case("1", "NULL", true)
             );
 
-            for (DbScope scope : DbScope.getDbScopesToTest())
-            {
-                SqlDialect d = scope.getSqlDialect();
+            SqlDialect d = scope.getSqlDialect();
 
-                for (Case c : cases)
-                {
-                    assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
-                    assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
-                    assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
-                    assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
-                }
+            for (Case c : cases)
+            {
+                assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
             }
         }
 
