@@ -78,19 +78,6 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     }
 
     @Override
-    public JSONObject toJSON()
-    {
-        JSONObject json = new JSONObject();
-
-        json.put("name", getName());
-        json.put("defaultValue", getDefault());
-        json.put("isRequired", isRequired());
-        json.put("jdbcType", getJdbcType().toString());
-
-        return json;
-    }
-
-    @Override
     public void appendSource(SourceBuilder builder)
     {
         int count = _decl.childList().size();
