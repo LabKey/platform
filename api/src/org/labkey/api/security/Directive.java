@@ -21,7 +21,7 @@ import org.labkey.api.util.SafeToRenderEnum;
 /**
  * All CSP directives that support substitutions. These constant names are persisted to the database, so be careful
  * with any changes. If adding a Directive, make sure to add the corresponding substitutions to the appropriate CSP
- * template(s) in LabKeyServer.
+ * template(s) in server/embedded/src/main/resources/application.properties.
  */
 public enum Directive implements StartupProperty, SafeToRenderEnum
 {
