@@ -1176,7 +1176,7 @@ public class AnnouncementManager
             AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
 
             // Re-select updated model
-            AnnouncementModel updated = AnnouncementManager.getAnnouncement(model.lookupContainer(), model.getRowId());
+            AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());
             assertNotNull(updated);
             assertEquals(entityId, updated.getEntityId());                         // EntityId hasn't changed
             assertEquals(admin.getUserId(), updated.getCreatedBy());               // CreatedBy hasn't changed
