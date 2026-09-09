@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryService;
 
@@ -74,6 +75,19 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
     public boolean isRequired()
     {
         return _required;
+    }
+
+    @Override
+    public JSONObject toJSON()
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("name", getName());
+        json.put("defaultValue", getDefault());
+        json.put("isRequired", isRequired());
+        json.put("jdbcType", getJdbcType().toString());
+
+        return json;
     }
 
     @Override
