@@ -663,6 +663,8 @@ public class AnnouncementManager
     public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
         Container c = ContainerManager.getForId(update.getContainerId());
+        if (c == null)
+            throw new NotFoundException("No container with id " + update.getContainerId());
         AnnouncementModel current = getAnnouncement(c, update.getRowId());
         if (current == null)
             throw new NotFoundException("No announcement with id " + update.getRowId());
@@ -1170,17 +1172,20 @@ public class AnnouncementManager
             model.setCreated(bogusDate);
             model.setModifiedBy(reader.getUserId());
             model.setModified(bogusDate);
-            Thread.sleep(10); // Quick sleep to ensure ModifiedBy > CreatedBy, even on a very fast test run
-            AnnouncementModel update = AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+            Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
+            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
 
-            assertEquals(entityId, update.getEntityId());                       // EntityId hasn't changed
-            assertEquals(admin.getUserId(), update.getCreatedBy());             // CreatedBy hasn't changed
-            assertEquals(created, update.getCreated());                         // Created hasn't changed
-            assertEquals(admin.getUserId(), update.getModifiedBy());            // ModifiedBy hasn't changed
-            assertNotEquals(bogusDate, update.getModified());                   // Modified is not our bogus value
-            assertTrue(update.getModified().compareTo(update.getCreated()) > 0); // ModifiedBy > CreatedBy
+            // Re-select updated model
+            AnnouncementModel updated = AnnouncementManager.getAnnouncement(model.lookupContainer(), model.getRowId());
+            assertNotNull(updated);
+            assertEquals(entityId, updated.getEntityId());                         // EntityId hasn't changed
+            assertEquals(admin.getUserId(), updated.getCreatedBy());               // CreatedBy hasn't changed
+            assertEquals(created, updated.getCreated());                           // Created hasn't changed
+            assertEquals(admin.getUserId(), updated.getModifiedBy());              // ModifiedBy hasn't changed
+            assertNotEquals(bogusDate, updated.getModified());                     // Modified is not our bogus value
+            assertTrue(updated.getModified().compareTo(updated.getCreated()) > 0); // Modified > Created
 
-            AnnouncementManager.deleteAnnouncement(update);
+            AnnouncementManager.deleteAnnouncement(updated);
         }
     }
 
