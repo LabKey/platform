@@ -16,6 +16,7 @@
 
 package org.labkey.survey;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +51,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCaches;
@@ -63,8 +65,12 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
+import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
@@ -73,7 +79,9 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.survey.query.SurveyQuerySchema;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -86,6 +94,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -210,6 +219,13 @@ public class SurveyManager
 
     public SurveyDesign saveSurveyDesign(Container container, User user, SurveyDesign survey)
     {
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser. This is the chokepoint every
+        // caller reaches, including SurveyService; the query update path is gated separately in SurveyDesignTable.
+        // BrowserDeveloperPermission is a site permission that root role assignments grant in every container, so it
+        // has to be required alongside the folder-scoped write check, never in place of it.
+        if (!container.hasPermissions(user, Set.of(InsertPermission.class, BrowserDeveloperPermission.class)))
+            throw new UnauthorizedException("You must be either a PlatformDeveloper or TrustedAnalyst with insert permission in this folder to create and edit survey designs.");
+
         DbScope scope = SurveySchema.getInstance().getSchema().getScope();
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -829,9 +845,12 @@ public class SurveyManager
         @Before
         public void setUp()
         {
+            // Every test here dispatches through SurveyController, and DefaultModule.dispatch 404s before the action
+            // runs unless the module is active in the container.
+            Module survey = ModuleLoader.getInstance().getModule("Survey");
             _user = getAdmin();
-            _projectA = createContainer("A");
-            _projectB = createContainer("B");
+            _projectA = createContainer("A", survey);
+            _projectB = createContainer("B", survey);
         }
 
         @Test
@@ -884,12 +903,16 @@ public class SurveyManager
 
             User attacker = createUserInRole(_projectA, ReaderRole.class);
             grantRole(attacker, _projectB, AuthorRole.class);
+            // GH Issue 1526 gates the action on BrowserDeveloperPermission, so the attacker needs a developer role
+            // to reach the container check this test covers.
+            grantRootRole(attacker, PlatformDeveloperRole.class);
 
             ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectB)
                     .addParameter("rowId", designId)
                     .addParameter("label", "STOLEN")
                     .addParameter("description", "hijacked");
-            post(url, attacker);
+            // Container scoping rejects the cross-folder rowId before the design is touched
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, attacker));
 
             // The design must still belong to folder A with its original field values: not reparented, not overwritten.
             SurveyDesign after = sm.getSurveyDesignForRead(_projectA, _user, designId);
@@ -900,6 +923,46 @@ public class SurveyManager
                     "Design owned by A", after.getLabel());
             assertEquals("Design description must NOT be overwritten from another container",
                     "original description", after.getDescription());
+        }
+
+        // GH Issue 1526: a design's metadata is compiled and run in the viewer's browser, so authoring one requires
+        // the BrowserDeveloperPermission. Both PlatformDeveloper and TrustedAnalyst are expected to satisfy the check.
+        @Test
+        public void testSurveyDesignAuthoringRequiresTrustedAnalyst() throws Exception
+        {
+            User author = createUserInRole(_projectA, AuthorRole.class);
+            assertFalse("Test author must not be a trusted analyst", author.isTrustedAnalyst());
+            assertTrue("Site admin is expected to satisfy the trusted analyst check", _user.isTrustedAnalyst());
+
+            TableInfo designs = QueryService.get()
+                    .getUserSchema(author, _projectA, SurveyQuerySchema.SCHEMA_NAME)
+                    .getTable(SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
+            assertNotNull("Survey designs table should resolve for an author", designs);
+
+            // The query update path is closed to an untrusted author, so query-insertRows.api cannot reach the metadata column
+            assertFalse("An untrusted author must not be able to insert a survey design",
+                    designs.hasPermission(author, InsertPermission.class));
+            assertFalse("An untrusted author must not be able to update a survey design",
+                    designs.hasPermission(author, UpdatePermission.class));
+            // ...but reading the designs grid is unaffected
+            assertTrue("An author must still be able to read survey designs",
+                    designs.hasPermission(author, ReadPermission.class));
+
+            // A trusted user keeps both write paths
+            TableInfo adminDesigns = QueryService.get()
+                    .getUserSchema(_user, _projectA, SurveyQuerySchema.SCHEMA_NAME)
+                    .getTable(SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
+            assertTrue("A trusted user must be able to insert a survey design",
+                    adminDesigns.hasPermission(_user, InsertPermission.class));
+            assertTrue("A trusted user must be able to update a survey design",
+                    adminDesigns.hasPermission(_user, UpdatePermission.class));
+
+            // The action rejects the same author. UnauthorizedException resolves to 403 rather than 401 for a logged-in user.
+            ActionURL url = new ActionURL(SurveyController.SaveSurveyTemplateAction.class, _projectA)
+                    .addParameter("label", "Untrusted design")
+                    .addParameter("metadata", "{\"survey\":{\"beforeLoad\":{\"fn\":\"function(){}\"},"
+                            + "\"sections\":[{\"title\":\"s\",\"questions\":[]}]}}");
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(url, author));
         }
 
         @Test
