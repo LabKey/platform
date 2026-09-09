@@ -121,6 +121,22 @@ public class CalculatedExpressionColumn extends BaseColumnInfo
         return Collections.unmodifiableSet(_allFieldKeys);
     }
 
+    /* getValueSql() inlines the value SQL of every column the expression references, so any join those columns
+     * declare has to be declared here too -- otherwise the inlined SQL names a table alias that is not in the FROM.
+     * Lookups and self-reference are rejected during binding, so every referenced key is a plain column on this table.
+     */
+    @Override
+    public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
+    {
+        getBoundExpression();   // populates _allFieldKeys
+        for (FieldKey key : getReferencedFieldKeys())
+        {
+            ColumnInfo col = getParentTable().getColumn(key);
+            if (null != col && col != this)
+                col.declareJoins(parentAlias, map);
+        }
+    }
+
     public void computeMetaData(Map<FieldKey,ColumnInfo> columns)
     {
         if (null == columns)
