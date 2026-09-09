@@ -324,7 +324,8 @@ public interface QueryService
         Object getDefault();
         boolean isRequired();
 
-        default JSONObject toJSON() {
+        default JSONObject toJSON()
+        {
             JSONObject json = new JSONObject();
 
             json.put("name", getName());
