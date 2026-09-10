@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipelineStatusUrls" %>
+<%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page import="org.labkey.api.util.NetworkDrive" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -114,6 +115,9 @@
             sb.append("<ul>");
             for (PipelineStatusFileImpl child : children)
             {
+                Container childContainer = child.lookupContainer();
+                if (childContainer == null || !childContainer.hasPermission(getUser(), DeletePermission.class))
+                    continue;
                 sb.append(renderStatusFile(root, child, allRuns));
             }
             sb.append("</ul>");
@@ -131,10 +135,8 @@
 
     PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
 
-    int[] rowIds = form.getRowIds();
-    if (rowIds == null)
-        rowIds = new int[0];
-    List<PipelineStatusFileImpl> files = PipelineStatusManager.getStatusFiles(rowIds);
+    // Already permission-checked by DeleteStatusAction.getView(); don't re-query by the client-supplied rowIds
+    List<PipelineStatusFileImpl> files = form.getStatusFiles();
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
 %>

@@ -108,6 +108,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFile;
+import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFiles;
 
 
 public class StatusController extends SpringActionController
@@ -745,6 +746,17 @@ public class StatusController extends SpringActionController
         private String _dataRegionSelectionKey;
         private boolean _confirm;
         private boolean _deleteRuns;
+        private List<PipelineStatusFileImpl> _statusFiles = List.of();
+
+        public List<PipelineStatusFileImpl> getStatusFiles()
+        {
+            return _statusFiles;
+        }
+
+        public void setStatusFiles(List<PipelineStatusFileImpl> statusFiles)
+        {
+            _statusFiles = statusFiles;
+        }
 
         public String getDataRegionSelectionKey()
         {
@@ -777,7 +789,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    // DeletePermission will be checked in PipelineStatusManager.deleteStatus()
+    // DeletePermission is checked per job, against the job's own container, in getView() and in PipelineStatusManager.deleteStatus()
     @RequiresPermission(ReadPermission.class)
     public class DeleteStatusAction extends FormViewAction<ConfirmDeleteStatusForm>
     {
@@ -801,6 +813,18 @@ public class StatusController extends SpringActionController
         @Override
         public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors)
         {
+            getContainerCheckAdmin();
+
+            int[] rowIds = form.getRowIds() == null ? new int[0] : form.getRowIds();
+            List<PipelineStatusFileImpl> statusFiles = getStatusFiles(rowIds);
+            for (PipelineStatusFileImpl sf : statusFiles)
+            {
+                Container sfContainer = sf.lookupContainer();
+                if (sfContainer == null || !sfContainer.hasPermission(getUser(), DeletePermission.class))
+                    throw new NotFoundException("Could not find status file for rowId " + sf.getRowId());
+            }
+            form.setStatusFiles(statusFiles);
+
             return new JspView<>("/org/labkey/pipeline/status/deleteStatus.jsp", form, errors);
         }
 
@@ -1237,6 +1261,39 @@ public class StatusController extends SpringActionController
             // only the cross-container case rather than every request.
             ActionURL ownUrl = new ActionURL(DetailsAction.class, folderB).addParameter("rowId", String.valueOf(rowId));
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+        }
+
+        @Test
+        public void testDeleteStatusContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+            User readerA = createUserInRole(folderA, ReaderRole.class);
+            User readerB = createUserInRole(folderB, ReaderRole.class);
+
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+            String rowIdParam = String.valueOf(rowId);
+
+            // A caller with no rights in folder B must not see B's job described through folder A
+            ActionURL foreignUrl = new ActionURL(DeleteStatusAction.class, folderA).addParameter("rowIds", rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, readerA));
+
+            // Same on the POST that reshows the page, where the rowIds come from the data region selection
+            ActionURL selectUrl = new ActionURL(DeleteStatusAction.class, folderA).addParameter(DataRegion.SELECT_CHECKBOX_NAME, rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(selectUrl, readerA));
+
+            // Read alone isn't enough: the page confirms a delete, so it requires DeletePermission like the POST does
+            ActionURL ownUrl = new ActionURL(DeleteStatusAction.class, folderB).addParameter("rowIds", rowIdParam);
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(ownUrl, readerB));
+
+            // Positive controls: a caller who can delete in B gets the page through either container -- a selection can
+            // legitimately span containers when the grid uses a container filter.
+            assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
+            assertStatus(HttpServletResponse.SC_OK, get(foreignUrl, admin));
+
+            // Rendering the confirmation page must not delete anything
+            assertNotNull("Job must still exist after rendering the confirmation page", getStatusFile(rowId));
         }
 
         // Insert a bare status file in the given container. FilePath is a required column; point it at a non-existent
