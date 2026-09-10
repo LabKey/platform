@@ -1591,8 +1591,7 @@ public abstract class SqlDialect
      */
     public void dropSchema(DbSchema schema, String schemaName)
     {
-        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", "*", schemaName, "SCHEMA", null));
-        new SqlExecutor(schema).execute(sql);
+        new SqlExecutor(schema).execute("DROP SCHEMA IF EXISTS " + quoteIdentifier(schemaName)+ " CASCADE");
     }
 
     /**
