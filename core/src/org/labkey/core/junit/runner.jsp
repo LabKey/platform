@@ -26,10 +26,43 @@
 <%@ page import="org.labkey.core.junit.JunitController.Run2Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.Run3Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
-<%@ page import="static org.labkey.api.util.DOM.*" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
+<%@ page import="java.util.stream.Stream" %>
+<%@ page import="static DOM.A" %>
+<%@ page import="static DOM.DETAILS" %>
+<%@ page import="static DOM.DIV" %>
+<%@ page import="static DOM.HR" %>
+<%@ page import="static DOM.LI" %>
+<%@ page import="static DOM.LK" %>
+<%@ page import="static DOM.Renderable" %>
+<%@ page import="static DOM.SPAN" %>
+<%@ page import="static DOM.SUMMARY" %>
+<%@ page import="static DOM.UL" %>
+<%@ page import="static DOM.at" %>
+<%@ page import="static DOM.cl" %>
+<%@ page import="static DOM.createHtmlFragment" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.action" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.method" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.name" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.open" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.style" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    // Parameterized (and other Suite-based) runners nest a level of per-invocation Descriptions between the
+    // class and its test methods; flatten to leaves so every test method renders at the same list level.
+    private Stream<Description> leafDescriptions(Description desc)
+    {
+        return desc.isTest() ? Stream.of(desc) : desc.getChildren().stream().flatMap(this::leafDescriptions);
+    }
+
+    private Renderable renderLeaf(Description desc, ActionURL testCaseURL)
+    {
+        return LI(desc.getMethodName() != null
+                ? A(at(href, testCaseURL.clone().addParameter("methodName", desc.getMethodName())), desc.getMethodName())
+                : desc.toString());
+    }
+%>
 <%
     JspView<JUnitViewBean> me = HttpView.currentView();
     JUnitViewBean bean = me.getModelBean();
@@ -108,10 +141,7 @@
                                     A(at(href, testCaseURL.getLocalURIString()), displayName),
                                     showRunButtons ? SPAN(cl("scope-tag", JunitController.getScope(clazz).name()), JunitController.getScope(clazz).name()) : null,
                                         (desc.testCount() > 1 ? SPAN(cl("test-count"), "(" + desc.testCount() + ")") : "")),
-                                UL(desc.getChildren().stream().map(
-                                        child -> LI(child.getMethodName() != null
-                                                ? A(at(href, testCaseURL.clone().addParameter("methodName", child.getMethodName())), child.getMethodName())
-                                                : child.toString())))
+                                UL(leafDescriptions(desc).map(child -> renderLeaf(child, testCaseURL)))
 
                         ));
             }))
