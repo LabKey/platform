@@ -339,6 +339,7 @@ import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.PostgresSnapshot;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
@@ -510,6 +511,7 @@ public class AdminController extends SpringActionController
         {
             AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+            AdminConsole.addLink(Diagnostics, "postgres snapshot (download)", new ActionURL(PostgresSnapshotAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
         }
 
@@ -2734,6 +2736,23 @@ public class AdminController extends SpringActionController
         public PostgresTableSizesAction()
         {
             super(BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME);
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class PostgresSnapshotAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            if (!getContainer().isRoot())
+                throw new NotFoundException("Available only in the root container");
+
+            if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+                throw new NotFoundException("Available only with Postgres as the primary database");
+
+            String filename = FileUtil.makeFileNameWithTimestamp("pg-snapshot", "json");
+            PageFlowUtil.streamFileBytes(response, filename, PostgresSnapshot.capture().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
     }
 
