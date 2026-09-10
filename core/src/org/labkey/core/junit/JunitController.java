@@ -41,6 +41,7 @@ import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.jsp.JspTest;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -57,6 +58,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
+
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -145,6 +148,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @MethodsAllowed(POST)
     public class RunAction extends SimpleViewAction<TestForm>
     {
         @Override
@@ -220,6 +224,7 @@ public class JunitController extends SpringActionController
     private static final String RESULTS_SESSION_KEY = "JUnit_Results";
 
     @RequiresSiteAdmin
+    @MethodsAllowed(POST)
     public static class Run3Action extends SimpleViewAction<TestForm>
     {
         @Override
@@ -300,6 +305,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @MethodsAllowed(POST)
     public static class Run2Action extends StatusReportingRunnableAction
     {
         private List<Class<?>> getTestClasses(TestForm form)

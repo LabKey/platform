@@ -42,7 +42,7 @@
     private Renderable renderLeaf(Description desc, ActionURL testCaseURL)
     {
         return LI(desc.getMethodName() != null
-                ? A(at(href, testCaseURL.clone().addParameter("methodName", desc.getMethodName())), desc.getMethodName())
+                ? simpleLink(desc.getMethodName(), testCaseURL.clone().addParameter("methodName", desc.getMethodName())).usePost()
                 : desc.toString());
     }
 %>
@@ -92,18 +92,18 @@
 
                     NBSP, "\u22EE", NBSP,
 
-                    button("Run All").href(new ActionURL(RunAction.class, getContainer())),
+                    button("Run All").href(new ActionURL(RunAction.class, getContainer())).usePost(),
                     NBSP,
-                    button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")),
+                    button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")).usePost(),
                     NBSP,
-                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")),
+                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")).usePost(),
 
                     NBSP, "\u22EE", NBSP,
 
                     LK.FORM(at(style, "display:inline-block;", name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
                             button("Run In Background #1 (Experimental)").submit(true)),
                     NBSP,
-                    button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer()))
+                    button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())).usePost()
                 ),
             HR()).appendTo(out);
 
@@ -111,7 +111,7 @@
 
     DIV(testCases.keySet().stream().map(module ->
         DETAILS(at(open, true),
-            SUMMARY(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)), module)),
+            SUMMARY(simpleLink(module, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)).usePost()),
             DIV(cl("module-details"), testCases.get(module).stream().map(clazz -> {
                 Runner runner = Request.aClass(clazz).getRunner();
                 Description desc = runner.getDescription();
@@ -121,7 +121,7 @@
                 return DIV(cl("labkey-indented"),
                         DETAILS(
                                 SUMMARY(
-                                    A(at(href, testCaseURL.getLocalURIString()), displayName),
+                                    simpleLink(displayName, testCaseURL).usePost(),
                                     showRunButtons ? SPAN(cl("scope-tag", JunitController.getScope(clazz).name()), JunitController.getScope(clazz).name()) : null,
                                         (desc.testCount() > 1 ? SPAN(cl("test-count"), "(" + desc.testCount() + ")") : "")),
                                 UL(leafDescriptions(desc).map(child -> renderLeaf(child, testCaseURL)))
