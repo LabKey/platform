@@ -79,6 +79,7 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -344,7 +345,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -590,8 +590,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         dbConnected = conn != null;
                     }
-                    catch (SQLException e)
+                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                    // we return a 200 saying we're not healthy instead of a 500
+                    catch (Throwable e)
                     {
+                        LOG.debug("Failed to get connection for data source " + dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
 

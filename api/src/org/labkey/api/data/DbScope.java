@@ -1435,29 +1435,43 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        if (!conn.getAutoCommit())
-            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+        // Until the ConnectionWrapper exists, nothing tracks the raw connection. Close it here if we fail to create a wrapper
+        boolean wrapped = false;
 
-        //
-        // Handle one time per-connection setup
-        // relies on pool implementation reusing same connection/wrapper instances
-        //
-
-        Connection delegate = getDelegate(conn);
-        Integer spid = _initializedConnections.get(delegate);
-
-        if (null == spid)
+        try
         {
-            if (null != _dialect)
+            if (!conn.getAutoCommit())
+                throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
+            //
+            // Handle one time per-connection setup
+            // relies on pool implementation reusing same connection/wrapper instances
+            //
+
+            Connection delegate = getDelegate(conn);
+            Integer spid = _initializedConnections.get(delegate);
+
+            if (null == spid)
             {
-                _dialect.prepareConnection(conn);
-                spid = _dialect.getSPID(delegate);
+                if (null != _dialect)
+                {
+                    _dialect.prepareConnection(conn);
+                    spid = _dialect.getSPID(delegate);
+                }
+
+                _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
-        }
+            ConnectionWrapper result = new ConnectionWrapper(conn, this, spid, type, log);
+            wrapped = true;
 
-        return new ConnectionWrapper(conn, this, spid, type, log);
+            return result;
+        }
+        finally
+        {
+            if (!wrapped)
+                releaseConnection(conn);
+        }
     }
 
     /**
