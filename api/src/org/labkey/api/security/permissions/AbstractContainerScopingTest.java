@@ -29,7 +29,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
@@ -52,6 +54,7 @@ import java.util.Set;
  *   <li>{@link #createContainer(String)} — make a throwaway child of the junit container (auto-cleaned).</li>
  *   <li>{@link #createUserInRole(Container, Class)} — make a user with a role assigned in <em>one</em> folder only
  *       (auto-cleaned). Use this to obtain a caller who is, say, admin in folder A but has no rights in folder B.</li>
+ *   <li>{@link #grantRootRole(User, Class)} — grant a site-wide role such as Platform Developer (auto-cleaned).</li>
  *   <li>{@link #get(ActionURL, User)} / {@link #post(ActionURL, User)} — dispatch an in-JVM request as a given user
  *       and inspect the {@link MockHttpServletResponse} status. Parameters travel on the {@link ActionURL}.</li>
  * </ul>
@@ -66,6 +69,7 @@ public abstract class AbstractContainerScopingTest extends Assert
 
     private final List<Container> _containers = new ArrayList<>();
     private final List<User> _users = new ArrayList<>();
+    private final List<Pair<User, Class<? extends Role>>> _rootRoleGrants = new ArrayList<>();
 
     /** The site-admin user (from {@link TestContext}) that owns the test fixtures. */
     protected User getAdmin()
@@ -136,6 +140,17 @@ public abstract class AbstractContainerScopingTest extends Assert
     }
 
     /**
+     * Grant {@code role} to {@code user} at the site level, for permissions that are only ever checked against the root
+     * container (Platform Developer and the other {@code User.isTrusted*} roles). Registered for cleanup: the root
+     * policy is site-wide, so an assignment left behind would outlive the test.
+     */
+    protected void grantRootRole(User user, Class<? extends Role> role) throws Exception
+    {
+        grantRole(user, ContainerManager.getRoot(), role);
+        _rootRoleGrants.add(new Pair<>(user, role));
+    }
+
+    /**
      * Dispatch a GET to the action addressed by {@code url} as {@code user}. Put request parameters on the URL. No
      * request-body Content-Type is sent: a GET carries no body, and an "application/json" Content-Type would make an
      * API action ({@code ReadOnlyApiAction}) try to parse the empty body as JSON and fail with 400 before its
@@ -168,6 +183,22 @@ public abstract class AbstractContainerScopingTest extends Assert
     public void cleanupContainerScopingFixtures()
     {
         User admin = getAdmin();
+
+        if (!_rootRoleGrants.isEmpty())
+        {
+            try
+            {
+                MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot().getPolicy());
+                // Remove only what grantRootRole added: clearAssignedRoles() would drop every root assignment the
+                // principal holds, which is site-wide and unrecoverable if the caller passed a pre-existing user.
+                _rootRoleGrants.forEach(grant -> rootPolicy.removeRoleAssignment(grant.getKey(), RoleManager.getRole(grant.getValue())));
+                SecurityPolicyManager.savePolicyForTests(rootPolicy, admin);
+            }
+            catch (Exception ignored)
+            {
+            }
+            _rootRoleGrants.clear();
+        }
 
         for (User user : _users)
         {
