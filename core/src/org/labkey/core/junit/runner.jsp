@@ -27,25 +27,8 @@
 <%@ page import="org.labkey.core.junit.JunitController.Run3Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
 <%@ page import="java.util.stream.Stream" %>
-<%@ page import="static DOM.A" %>
-<%@ page import="static DOM.DETAILS" %>
-<%@ page import="static DOM.DIV" %>
-<%@ page import="static DOM.HR" %>
-<%@ page import="static DOM.LI" %>
-<%@ page import="static DOM.LK" %>
-<%@ page import="static DOM.Renderable" %>
-<%@ page import="static DOM.SPAN" %>
-<%@ page import="static DOM.SUMMARY" %>
-<%@ page import="static DOM.UL" %>
-<%@ page import="static DOM.at" %>
-<%@ page import="static DOM.cl" %>
-<%@ page import="static DOM.createHtmlFragment" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.action" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.href" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.method" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.name" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.open" %>
-<%@ page import="static org.labkey.api.util.DOM.Attribute.style" %>
+<%@ page import="static org.labkey.api.util.DOM.*" %>
+<%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
