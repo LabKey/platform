@@ -37,12 +37,26 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
     {
         _scope = scope;
         _connection = getConnection();
-        _dbmd = _connection.getMetaData();
 
-        _schemaName = schemaName;
-        _schemaNamePattern = schemaNamePattern;
-        _tableName = tableName;
-        _tableNamePattern = tableNamePattern;
+        // Ensure we close the connection if we're going to throw from the constructor
+        boolean constructed = false;
+
+        try
+        {
+            _dbmd = _connection.getMetaData();
+
+            _schemaName = schemaName;
+            _schemaNamePattern = schemaNamePattern;
+            _tableName = tableName;
+            _tableNamePattern = tableNamePattern;
+
+            constructed = true;
+        }
+        finally
+        {
+            if (!constructed)
+                scope.releaseConnection(_connection);
+        }
     }
 
     protected Connection getConnection() throws SQLException
