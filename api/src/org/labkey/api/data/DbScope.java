@@ -1435,9 +1435,6 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        // Until the ConnectionWrapper exists, nothing tracks the raw connection. Close it here if we fail to create a wrapper
-        boolean wrapped = false;
-
         try
         {
             if (!conn.getAutoCommit())
@@ -1462,15 +1459,13 @@ public class DbScope
                 _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            ConnectionWrapper result = new ConnectionWrapper(conn, this, spid, type, log);
-            wrapped = true;
-
-            return result;
+            return new ConnectionWrapper(conn, this, spid, type, log);
         }
-        finally
+        catch (Throwable t)
         {
-            if (!wrapped)
-                releaseConnection(conn);
+            // If the ConnectionWrapper didn't get created and returned, nothing else can close the connection
+            closeQuietly(conn, t);
+            throw t;
         }
     }
 
@@ -1486,6 +1481,22 @@ public class DbScope
         catch (SQLException e)
         {
             LOG.warn("Error releasing connection", e);
+        }
+    }
+
+    /**
+     * Release a connection while an exception is already propagating. Pool implementations can throw unchecked from
+     * close(), which would otherwise replace the failure we're unwinding from.
+     **/
+    public void closeQuietly(Connection conn, Throwable propagating)
+    {
+        try
+        {
+            releaseConnection(conn);
+        }
+        catch (Throwable t)
+        {
+            propagating.addSuppressed(t);
         }
     }
 

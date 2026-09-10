@@ -360,6 +360,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -579,6 +580,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void registerHealthChecks()
     {
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
             {
                 Map<String, Object> healthValues = new HashMap<>();
@@ -592,11 +596,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
                     // we return a 200 saying we're not healthy instead of a 500
-                    catch (Throwable e)
+                    catch (Exception e)
                     {
-                        LOG.debug("Failed to get connection for data source " + dbScope.getDataSourceName(), e);
+                        if (failedDataSources.add(dbScope.getDataSourceName()))
+                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
+
+                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
                     healthValues.put(dbScope.getDatabaseName(), dbConnected);
                     allConnected &= dbConnected;

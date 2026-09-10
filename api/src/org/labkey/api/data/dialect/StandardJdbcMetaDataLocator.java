@@ -38,9 +38,6 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
         _scope = scope;
         _connection = getConnection();
 
-        // Ensure we close the connection if we're going to throw from the constructor
-        boolean constructed = false;
-
         try
         {
             _dbmd = _connection.getMetaData();
@@ -49,13 +46,12 @@ public class StandardJdbcMetaDataLocator implements JdbcMetaDataLocator
             _schemaNamePattern = schemaNamePattern;
             _tableName = tableName;
             _tableNamePattern = tableNamePattern;
-
-            constructed = true;
         }
-        finally
+        catch (Throwable t)
         {
-            if (!constructed)
-                scope.releaseConnection(_connection);
+            // Nobody else can close the connection for us if we throw from the constructor
+            scope.closeQuietly(_connection, t);
+            throw t;
         }
     }
 
