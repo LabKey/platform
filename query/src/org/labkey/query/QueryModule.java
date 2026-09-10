@@ -247,7 +247,7 @@ public class QueryModule extends DefaultModule
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS, "Disable managed columns in query triggers",
                 "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_USE_LEGACY_EXACT_ROW_COUNTS, "Use legacy (exact) grid row counts",
-                "Grids cap their pagination row count (showing \"10,000+\" instead of an exact total) so the count query is fixed-cost. Enable this to restore exact row counts.", false);
+                "Grids cap their pagination row count (showing \"100,000+\" instead of an exact total) so the count query is fixed-cost. Enable this to restore exact row counts.", false);
     }
 
 
