@@ -568,6 +568,7 @@ public class ApiModule extends CodeOnlyModule
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
             SecurityManager.TestCase.class,
+            SimpleTranslator.RemapCollisionTestCase.class,
             SimpleTranslator.TranslateTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
