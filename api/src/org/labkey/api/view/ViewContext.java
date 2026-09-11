@@ -164,9 +164,14 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return new StackResetter(context, stackSize);
     }
 
+    /**
+     * Ensures a view context is available without disturbing one that's already there: if a view is
+     * already on the stack, returns it wrapped in a no-op resetter; otherwise pushes a new mock context
+     * via {@link #pushMockViewContext}.
+     */
     public static StackResetter ensureViewContext(User user, Container c, ActionURL url)
     {
-        if (!HttpView.hasCurrentView())
+        if (HttpView.hasCurrentView())
             return new StackResetter(HttpView.currentContext(), HttpView.getStackSize());
         else
             return pushMockViewContext(user, c, url);
