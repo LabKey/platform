@@ -164,6 +164,13 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return new StackResetter(context, stackSize);
     }
 
+    public static StackResetter ensureViewContext(User user, Container c, ActionURL url)
+    {
+        if (!HttpView.hasCurrentView())
+            return new StackResetter(HttpView.currentContext(), HttpView.getStackSize());
+        else
+            return pushMockViewContext(user, c, url);
+    }
 
     // Needed by background threads that call entrypoints that require ViewContexts
     // TODO: Well-behaved interfaces should not take ViewContexts -- clean up query, et al to remove ViewContext params
@@ -178,7 +185,11 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         if (null != url)
             context.setBindPropertyValues(url.getPropertyValues());
 
-        HttpServletRequest request = ViewServlet.mockRequest("GET", url, user, null, null);
+        // Inherit current request's method, if present.
+        HttpServletRequest currentRequest = HttpView.currentRequest();
+        String mockRequestMethod = pushViewContext && currentRequest != null ? currentRequest.getMethod() : "GET";
+
+        HttpServletRequest request = ViewServlet.mockRequest(mockRequestMethod, url, user, null, null);
         context.setRequest(request);
 
         // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 
