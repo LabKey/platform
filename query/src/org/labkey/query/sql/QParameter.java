@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.QueryService;
 
