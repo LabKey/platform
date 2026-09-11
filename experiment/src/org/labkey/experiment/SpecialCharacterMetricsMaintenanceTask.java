@@ -22,7 +22,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -54,6 +57,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 {
@@ -182,7 +186,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
     {
         // Enumerate provisioned Text/Multiline columns, excluding Text Choice fields.
         SQLFragment enumSql = new SQLFragment(
-            "SELECT dd.storageschemaname, dd.storagetablename, pd.storagecolumnname, pd.rangeuri AS rangeuri\n" +
+            "SELECT dd.storageschemaname, dd.storagetablename, pd.storagecolumnname, pd.name, pd.rangeuri AS rangeuri\n" +
             "FROM exp.propertydescriptor pd\n" +
             "JOIN exp.propertydomain pdm ON pd.propertyid = pdm.propertyid\n" +
             "JOIN exp.domaindescriptor dd ON pdm.domainid = dd.domainid\n" +
@@ -198,7 +202,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
             String rangeUri = rs.getString("rangeuri");
             String fieldType = PropertyType.MULTI_LINE.getTypeUri().equals(rangeUri) ? TYPE_MULTILINE : TYPE_TEXT;
             TableKey key = new TableKey(rs.getString("storageschemaname"), rs.getString("storagetablename"));
-            byTable.computeIfAbsent(key, k -> new ArrayList<>()).add(new Col(rs.getString("storagecolumnname"), fieldType));
+            byTable.computeIfAbsent(key, k -> new ArrayList<>()).add(new Col(rs.getString("storagecolumnname"), rs.getString("name"), fieldType));
         });
 
         // Sample type and data class provisioned tables have a base "name" column that is not a domain property (so it
@@ -224,8 +228,8 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         new SqlSelector(scope, sql).forEach(rs -> {
             TableKey key = new TableKey(rs.getString("storageschemaname"), rs.getString("storagetablename"));
             List<Col> cols = byTable.computeIfAbsent(key, k -> new ArrayList<>());
-            if (cols.stream().noneMatch(col -> "name".equalsIgnoreCase(col.storageName())))
-                cols.add(new Col("name", TYPE_DATA_NAME));
+            if (cols.stream().noneMatch(col -> "name".equalsIgnoreCase(col.storageColumnName())))
+                cols.add(new Col("name", "name", TYPE_DATA_NAME));
         });
     }
 
@@ -234,9 +238,43 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         SQLFragment sql = new SQLFragment("SELECT ");
         Map<String, String[]> aliasMeta = new LinkedHashMap<>();
         boolean first = true;
+
+        Map<String, String> remappedCols = new CaseInsensitiveHashMap<>();
+        boolean needsRemap = false;
+        for (Col col : cols)
+        {
+            // GitHub Issue 1449: A legacy descriptor can carry a storage name that is the field name uniquified with a numeric suffix (e.g. "Container1") but never became a physical column
+            String storageColumnName = col.storageColumnName();
+            if (isNumericSuffixOf(storageColumnName, col.colName()))
+            {
+                needsRemap = true;
+                break;
+            }
+        }
+
+        if (needsRemap)
+        {
+            TableInfo ti = DbSchema.get(table.schema(), DbSchemaType.Provisioned).getTable(table.table());
+            if (ti != null)
+            {
+                Set<String> columnNames = new CaseInsensitiveHashSet(ti.getColumnNameSet());
+                for (Col col : cols)
+                {
+                    String storageColumnName = col.storageColumnName();
+                    if (isNumericSuffixOf(storageColumnName, col.colName()) && !columnNames.contains(storageColumnName) && columnNames.contains(col.colName()))
+                        remappedCols.put(storageColumnName, col.colName());
+                }
+            }
+        }
+
         for (int i = 0; i < cols.size(); i++)
         {
-            SQLFragment colRef = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, cols.get(i).storageName()).getSql();
+            Col col = cols.get(i);
+            String storageColumnName = col.storageColumnName();
+            if (remappedCols.containsKey(storageColumnName))
+                storageColumnName = remappedCols.get(storageColumnName);
+
+            SQLFragment colRef = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, storageColumnName).getSql();
             for (String ck : CHAR_KEYS)
             {
                 String alias = "c" + i + "_" + ck.toLowerCase();
@@ -246,7 +284,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
                 sql.append("bool_or(");
                 appendBoolExpr(sql, ck, colRef);
                 sql.append(") AS ").append(alias);
-                aliasMeta.put(alias, new String[]{cols.get(i).fieldType(), ck});
+                aliasMeta.put(alias, new String[]{col.fieldType(), ck});
             }
         }
         sql.append(" FROM ").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.schema())).append(".").appendIdentifier(PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, table.table()));
@@ -272,6 +310,15 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
         }
     }
 
+    // True when storageName is name followed by a positive-integer suffix, compared case-insensitively (e.g. "Container1" for "Container").
+    // Prior to https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=29047, suffix (1, 2, etc.) would be added to field that matches base fields
+    private static boolean isNumericSuffixOf(String storageName, String name)
+    {
+        if (name == null || storageName.length() <= name.length() || !storageName.regionMatches(true, 0, name, 0, name.length()))
+            return false;
+        return storageName.substring(name.length()).chars().allMatch(Character::isDigit);
+    }
+
     // Appends a boolean SQL expression detecting the given special character.
     // The search patterns are bound as parameters so that no semicolons or quotes appear in the SQL text, which SQLFragment rejects.
     // None of the target characters are LIKE wildcards, so they need no LIKE escaping.
@@ -289,7 +336,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
     private record TableKey(String schema, String table) {}
 
-    private record Col(String storageName, String fieldType) {}
+    private record Col(String storageColumnName, String colName, String fieldType) {}
 
     public static class TestCase extends Assert
     {
