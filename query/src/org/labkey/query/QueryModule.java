@@ -77,7 +77,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
@@ -246,8 +245,6 @@ public class QueryModule extends DefaultModule
             "Only list folder-specific data within product folders.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS, "Disable managed columns in query triggers",
                 "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.", false);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(QueryService.EXPERIMENTAL_USE_LEGACY_EXACT_ROW_COUNTS, "Use legacy (exact) grid row counts",
-                "Grids cap their pagination row count (showing \"100,000+\" instead of an exact total) so the count query is fixed-cost. Enable this to restore exact row counts.", false);
     }
 
 
@@ -459,7 +456,6 @@ public class QueryModule extends DefaultModule
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductFoldersAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductFoldersDataListingScopedToProject());
         json.put(QueryService.MAX_QUERY_SELECTION, DataRegionSelection.MAX_QUERY_SELECTION_SIZE);
-        json.put(QueryService.EXPERIMENTAL_USE_LEGACY_EXACT_ROW_COUNTS, AppProps.getInstance().isOptionalFeatureEnabled(QueryService.EXPERIMENTAL_USE_LEGACY_EXACT_ROW_COUNTS));
         return json;
     }
 }
