@@ -364,3 +364,5 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `Parameter type is not supported: DATE` | Use TIMESTAMP (§11) |
 | `The underlying database does not support nested ORDER BY unless LIMIT...` (warning) | ORDER BY is being dropped — add `LIMIT` or sort via the API |
 | `ExecutingSelector; bad SQL grammar []` | Runtime (database-level) failure with no detail — usually a type mismatch (add CASTs) or a dialect-specific function limit (e.g. `timestampdiff` YEAR on PostgreSQL, `sum` over text) |
+
+For any LabKey SQL topic not covered above, call `searchDocumentation`.

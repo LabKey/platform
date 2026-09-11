@@ -23,7 +23,7 @@ When writing R scripts, read the server URL from `.mcp.json` (via `jsonlite::fro
 Confirm all of these settings with the analyst before writing any script.
 
 ## Online Reference Material
-https://www.labkey.org/Documentation/wiki-page.view?name=rAPI
+For questions about the Rlabkey package, LabKey SQL, or server concepts not covered here, call `searchDocumentation` (e.g. `searchDocumentation("Rlabkey selectRows executeSql filters")`), then `retrieveDocument` for the full page.
 
 ## MCP Tools Available
 
@@ -420,7 +420,7 @@ Data frames passed to modification functions must be created with `stringsAsFact
 
 10. **baseUrl must include the context path and trailing slash**: e.g. `"http://localhost:8080/labkey/"` if the server uses a context path, or `"http://localhost:8080/"` if it does not.
 
-11. **LabKey SQL is not standard SQL.** It is a SQL dialect specific to LabKey. Use `mcp__labkey__validateSQL` to check syntax before executing. Refer to LabKey documentation for dialect-specific features (e.g., lookup column traversal via `/` or `.` notation).
+11. **LabKey SQL is not standard SQL.** It is a SQL dialect specific to LabKey. Use `mcp__labkey__validateSQL` to check syntax before executing. For dialect-specific features (e.g., lookup column traversal via `/` or `.` notation), read the LabKey SQL resource (`resource://org/labkey/query/controllers/prompts/LabKeySql.md`) or call `searchDocumentation`.
 
 12. **SSL configuration**: For HTTPS servers on Windows, you may need to set the `RLABKEY_CAINFO_FILE` environment variable pointing to a CA bundle file. Use `labkey.acceptSelfSignedCerts()` for development servers with self-signed certificates.
 

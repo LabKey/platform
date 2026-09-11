@@ -923,6 +923,12 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
         }
+
+        @Override
+        public ActionURL getOptionalFeaturesURL()
+        {
+            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Optional.name());
+        }
     }
 
     public static class MaintenanceBean

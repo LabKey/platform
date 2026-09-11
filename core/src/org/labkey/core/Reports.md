@@ -8,6 +8,8 @@ Jump to the track that matches your language:
 
 Everything else on this page (data-bound vs. not, authorization, UI vs. file-based module) applies to both languages.
 
+For report topics not covered here (e.g. additional export formats, less common report types), call `searchDocumentation`.
+
 ## Report Type Landscape
 
 LabKey has several built-in report types: Query Report (renders a query view, no script), Attachment Report (uploaded static document), Link Report (URL pointer), JavaScript Report (runs in the *viewer's browser*, not server-side), R Report, Jupyter Report, and Query Snapshot (a persisted table, not really a "report"). **R Reports** and **Jupyter Reports** are the two paths this guide covers for turning an analyst-authored script into a server-side report. (A generic `ExternalScriptEngineReport`/`InternalScriptEngineReport` mechanism also exists for other JSR223-compatible engines an admin configures — historically used for Perl — but there's no conversion track for it here.)
