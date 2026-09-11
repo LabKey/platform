@@ -1320,14 +1320,21 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(ImportVisitMapForm form, Errors errors)
         {
+            StudyImpl study = getStudyThrowIfNull();
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
+                errors.reject(null, "Can't import visits into a study with shared visits");
         }
 
         @Override
         public boolean handlePost(ImportVisitMapForm form, BindException errors) throws Exception
         {
+            StudyImpl study = getStudyThrowIfNull();
+            redirectToSharedVisitStudy(study, getViewContext().getActionURL());
+
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<>();
-            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
+            if (!importer.process(getUser(), study, form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
