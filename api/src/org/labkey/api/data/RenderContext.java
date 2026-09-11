@@ -434,10 +434,12 @@ public class RenderContext implements Map<String, Object>, Serializable
 
             selector.setNamedParameters(parameters);
 
+            // GitHub Issue 1534: Cap row counts for React grid pagination
+            int maxCount = settings != null ? settings.getMaxCount() : 0;
             if (async)
-                return selector.getAggregatesAsync(aggregates, getViewContext().getResponse());
+                return selector.getAggregatesAsync(aggregates, getViewContext().getResponse(), maxCount);
             else
-                return selector.getAggregates(aggregates);
+                return selector.getAggregates(aggregates, maxCount);
         }
 
         return Collections.emptyMap();

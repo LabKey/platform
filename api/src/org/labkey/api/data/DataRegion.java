@@ -189,6 +189,7 @@ public class DataRegion extends DisplayElement
     private boolean _horizontalGroups = true;
     private boolean _errorCreatingResults = false;
     private Long _totalRows = null; // total rows in the query or null if unknown
+    private boolean _totalRowsCapped = false; // true when _totalRows was capped at maxCount rather than counted exactly
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
     private boolean _buttonBarRendered = false;
@@ -860,6 +861,14 @@ public class DataRegion extends DisplayElement
                         _totalRows = 0L;
                         if (countStarResult.getValue() instanceof Number)
                             _totalRows = ((Number) countStarResult.getValue()).longValue();
+
+                        // The cap only takes effect when count star is the sole aggregate (same precondition as the SELECT 1 optimization), so it never truncates a summary-stat query.
+                        int maxCount = getSettings() != null ? getSettings().getMaxCount() : 0;
+                        if (baseAggregates.isEmpty() && maxCount > 0 && _totalRows > maxCount)
+                        {
+                            _totalRows = (long) maxCount;
+                            _totalRowsCapped = true;
+                        }
                     }
                 }
             }
@@ -890,6 +899,11 @@ public class DataRegion extends DisplayElement
     public Long getTotalRows()
     {
         return _totalRows;
+    }
+
+    public boolean isTotalRowsCapped()
+    {
+        return _totalRowsCapped;
     }
 
     public void setTotalRows(Long totalRows)

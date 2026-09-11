@@ -20,7 +20,7 @@
     "lint-branch-fix": "node lint.diff.mjs --currentBranch --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.62.3",
+    "@labkey/components": "7.62.4-fb-limitMaxCount.2",
     "@labkey/themes": "1.9.6"
   },
   "devDependencies": {
