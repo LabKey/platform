@@ -3786,9 +3786,8 @@ public class QueryServiceImpl implements QueryService
         @Test
         public void testRightAndIsnumeric() throws SQLException
         {
-            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape;
-            // isnumeric() emits ISNUMERIC(x) on SQL Server and a regex-based CASE on PostgreSQL.
-            // This test exercises both against whichever dialect the test container is using.
+            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape; isnumeric() is a
+            // boolean predicate on both -- (ISNUMERIC(x) = 1) on SQL Server, a regex match on PostgreSQL.
             String sql =
                 "SELECT " +
                 "  right('hello', 2) AS r1, " +
@@ -3819,6 +3818,49 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("isnumeric('-3.14') on " + dialect, 1, results.getInt("n2"));
                 assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
                 assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
+            }
+        }
+
+        @Test
+        public void testWeek() throws SQLException
+        {
+            // Verifies week() returns the same number on both platforms.
+            //
+            // pgjdbc expands {fn week} to ISO 8601 numbering (weeks start Monday, week 1 holds the year's first
+            // Thursday) where SQL Server uses US numbering (weeks start Sunday, week 1 holds Jan 1), so the two
+            // disagreed. BasePostgreSqlDialect.formatJdbcFunction now emits the US form instead of deferring to
+            // the driver.
+            //
+            // The dates cover both rule differences and the year boundary; a mid-year sample in a year whose
+            // Jan 1 falls Mon-Thu passes either way.
+            String sql =
+                "SELECT " +
+                "  week(CAST('2026-01-01 00:00:00' AS TIMESTAMP)) AS w1, " +   // Thursday -> 1
+                "  week(CAST('2026-01-03 00:00:00' AS TIMESTAMP)) AS w2, " +   // Saturday -> 1
+                "  week(CAST('2026-01-04 00:00:00' AS TIMESTAMP)) AS w3, " +   // Sunday   -> 2   (ISO gives 1)
+                "  week(CAST('2027-01-01 00:00:00' AS TIMESTAMP)) AS w4, " +   // Friday   -> 1   (ISO gives 53)
+                "  week(CAST('2027-07-15 00:00:00' AS TIMESTAMP)) AS w5 " +    // Thursday -> 29  (ISO gives 28)
+                "FROM core.Containers";
+
+            QueryDef qd = new QueryDef();
+            qd.setSchema("core");
+            qd.setName("junit" + GUID.makeHash());
+            qd.setContainer(JunitUtil.getTestContainer().getId());
+            qd.setSql(sql);
+            QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo t = qdef.getTable(errors, false);
+            String dialect = t == null ? "?" : t.getSqlDialect().getProductName();
+            assertTrue("Query parse errors on " + dialect + ": " + errors, errors.isEmpty());
+
+            try (Results results = new TableSelector(t).getResults())
+            {
+                assertTrue("Expected at least one row from core.Containers", results.next());
+                assertEquals("week(2026-01-01), Thursday, on " + dialect, 1, results.getInt("w1"));
+                assertEquals("week(2026-01-03), Saturday, on " + dialect, 1, results.getInt("w2"));
+                assertEquals("week(2026-01-04), Sunday, on " + dialect, 2, results.getInt("w3"));
+                assertEquals("week(2027-01-01), Friday, on " + dialect, 1, results.getInt("w4"));
+                assertEquals("week(2027-07-15), Fri-Sun-anchored year, on " + dialect, 29, results.getInt("w5"));
             }
         }
     }

@@ -937,8 +937,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
-        return new SQLFragment("(CASE WHEN CAST((").append(expression)
-                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
+        // A boolean predicate, not 1/0, to match SQL Server's contract; in SELECT position JDBC's getInt() converts true/false to 1/0.
+        return new SQLFragment("(CAST((").append(expression)
+                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$')");
     }
 
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
@@ -1130,6 +1131,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return formatFunction(call, nativeFn, arguments);
         else if (fn.equalsIgnoreCase("timestampdiff"))
             return timestampdiff(arguments);
+        else if (fn.equalsIgnoreCase("week"))
+            return week(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
@@ -1168,6 +1171,18 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
+    }
+
+    // pgjdbc translates {fn week(x)} to EXTRACT(WEEK FROM x) -- ISO 8601, weeks start Monday -- while the SQL Server
+    // driver emits DATEPART(week, x) -- US-style, weeks start Sunday. Emit US-style so both databases agree.
+    private SQLFragment week(SQLFragment... arguments)
+    {
+        SQLFragment ret = new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM ");
+        ret.append(arguments[0]);
+        ret.append(") + EXTRACT(dow FROM date_trunc('year', ");
+        ret.append(arguments[0]);
+        ret.append(")) - 1) / 7) + 1 AS INTEGER)");
+        return ret;
     }
 
     @Override

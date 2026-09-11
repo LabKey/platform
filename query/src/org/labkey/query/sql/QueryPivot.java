@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -538,6 +539,7 @@ public class QueryPivot extends AbstractQueryRelation
             }
 
             // Add the pivoted aggregate columns grouped by pivot value
+            boolean droppedColumn = false;
             if (!aggs.isEmpty())
             {
                 for (String pivotValue : pivotValues.keySet())
@@ -549,9 +551,24 @@ public class QueryPivot extends AbstractQueryRelation
 
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
-                        _columns.put(pivotName, pvt);
+                        // _makePivotedAggColumn() returns null when parse errors are present
+                        if (null != pvt)
+                            _columns.put(pivotName, pvt);
+                        else
+                            droppedColumn = true;
                     }
                 }
+            }
+
+            // A silently short column list is harder to diagnose than the parse error behind it, so throw the way
+            // getSql() and getColMembers() do. Discard the cached _columns first, or the partial map gets handed
+            // out unguarded on the next call.
+            if (droppedColumn && !getParseErrors().isEmpty())
+            {
+                _columns = null;
+                QueryException qe = getParseErrors().get(0);
+                _query.decorateException(qe);
+                throw qe;
             }
         }
         return _columns;
@@ -822,9 +839,32 @@ public class QueryPivot extends AbstractQueryRelation
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
                 sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
+                {
                     sql.append(" IS NULL");
+                }
                 else
-                    sql.append("=").append(value.getSourceText());
+                {
+                    // Bind rather than embed the source text: a value containing ';' or a quote trips SQLFragment's guardrail.
+                    // Postgres needs an explicit parameter type, and wrapConstant() types date/timestamp pivot values as
+                    // QString, so prefer the pivot column's type and fall back to the constant's if it won't convert.
+                    Object bindValue = ((IConstant) value).getValue();
+                    JdbcType bindType = ((QExpr) value).getJdbcType();
+                    JdbcType columnType = _pivotColumn.getJdbcType();
+                    if (null != columnType && JdbcType.OTHER != columnType && columnType != bindType)
+                    {
+                        try
+                        {
+                            bindValue = columnType.convert(bindValue);
+                            bindType = columnType;
+                        }
+                        catch (ConversionException ignored)
+                        {
+                            // keep the constant's own type and value
+                        }
+                    }
+                    sql.append("=?");
+                    sql.add(bindValue, bindType);
+                }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
