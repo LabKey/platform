@@ -38,6 +38,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     private final K[] _values;
 
     private long _count = 0;
+    private boolean _clearedFirstInvocation = false;
 
     public MultiPhaseCPUTimer(Class<K> clazz, K[] values)
     {
@@ -92,6 +93,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
         synchronized (_accumulationMap)
         {
             _accumulationMap.values().forEach(v -> v.setValue(0));
+            _count = 0;
         }
     }
 
@@ -99,8 +101,11 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     {
         synchronized (_accumulationMap)
         {
-            if (_count == 1)
+            if (!_clearedFirstInvocation)
+            {
+                _clearedFirstInvocation = true;
                 clearTimes();
+            }
         }
     }
 
