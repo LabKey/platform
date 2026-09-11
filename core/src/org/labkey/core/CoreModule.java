@@ -589,25 +589,28 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 boolean allConnected = true;
                 for (DbScope dbScope : DbScope.getDbScopes())
                 {
-                    boolean dbConnected;
-                    try (Connection conn = dbScope.getConnection())
+                    if (dbScope.isLabKeyScope())
                     {
-                        dbConnected = conn != null;
-                    }
-                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
-                    // we return a 200 saying we're not healthy instead of a 500
-                    catch (Exception e)
-                    {
-                        if (failedDataSources.add(dbScope.getDataSourceName()))
-                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
-                        dbConnected = false;
-                    }
+                        boolean dbConnected;
+                        try (Connection conn = dbScope.getConnection())
+                        {
+                            dbConnected = conn != null;
+                        }
+                        // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                        // we return a 200 saying we're not healthy instead of a 500
+                        catch (Exception e)
+                        {
+                            if (failedDataSources.add(dbScope.getDataSourceName()))
+                                LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
+                            dbConnected = false;
+                        }
 
-                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
-                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
+                        if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                            LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
-                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                    allConnected &= dbConnected;
+                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                        allConnected &= dbConnected;
+                    }
                 }
 
                 return new HealthCheck.Result(allConnected, healthValues);
