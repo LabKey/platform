@@ -16,6 +16,8 @@
 
 package org.labkey.search.model;
 
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReader;
@@ -34,25 +36,33 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurableResource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
-class SecurityQuery extends Query
+public class SecurityQuery extends Query
 {
     private final User _user;
     private final Container _currentContainer;
@@ -75,11 +85,72 @@ class SecurityQuery extends Query
 
         _containerIds = searchScope.getSearchableContainers(user, currentContainer);
 
-        SearchService.get().getSearchCategories().forEach(
-                category -> {
-                    _categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, _containerIds));
-                }
-        );
+        // Categories that require only base container Read (already guaranteed for every container above) are
+        // resolved directly; the rest are grouped by required permission so multiple categories that require the
+        // same permission (e.g., the three assay categories all require AssayReadPermission) share a single
+        // O(containers) assembly pass below instead of each redoing it.
+        Set<String> baseReadCategoryNames = new HashSet<>();
+        MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+            groupCategoriesByRequiredPermission(SearchService.get().getSearchCategories(), baseReadCategoryNames);
+
+        for (String categoryName : baseReadCategoryNames)
+            _categoryContainers.put(categoryName, _containerIds.keySet());
+
+        // Containers that inherit their policy (e.g., workbooks, which typically don't have their own explicit
+        // policy) share the exact same SecurityPolicy object as their nearest ancestor with one. Role resolution
+        // (SecurityManager.getPermissions()) is therefore identical for every container backed by the same policy,
+        // so compute it once per distinct policy instead of once per container per category. A user's full granted
+        // permission set can be large (100+ for a site admin), but categories only ever ask about a handful of
+        // permission classes, so retain just those instead of holding the full set for every distinct policy.
+        Set<Class<? extends Permission>> requiredPermissions = categoriesByPermission.keySet();
+        HashMap<String, Set<Class<? extends Permission>>> permissionsByPolicy = new HashMap<>();
+
+        if (!requiredPermissions.isEmpty())
+        {
+            for (Container c : _containerIds.values())
+            {
+                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), id -> {
+                    Set<Class<? extends Permission>> permitted = new HashSet<>(requiredPermissions);
+                    permitted.retainAll(SecurityManager.getPermissions(c, user, null));
+                    return permitted;
+                });
+            }
+        }
+
+        categoriesByPermission.asMap().forEach((requiredPermission, categories) -> {
+            Set<String> permittedContainerIds = new HashSet<>();
+
+            for (var entry : _containerIds.entrySet())
+            {
+                if (permissionsByPolicy.get(entry.getValue().getPolicy().getResourceId()).contains(requiredPermission))
+                    permittedContainerIds.add(entry.getKey());
+            }
+
+            for (SearchService.SearchCategory category : categories)
+                _categoryContainers.put(category.getName(), permittedContainerIds);
+        });
+    }
+
+    /**
+     * Splits categories into those requiring only base container Read (their names are added to baseReadCategoryNames)
+     * and those requiring a specific permission, which are grouped by that permission class.
+     */
+    static MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> groupCategoriesByRequiredPermission(
+            Collection<SearchService.SearchCategory> categories, Set<String> baseReadCategoryNames)
+    {
+        MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission = new ArrayListValuedHashMap<>();
+
+        for (SearchService.SearchCategory category : categories)
+        {
+            Class<? extends Permission> requiredPermission = category.getRequiredPermission();
+
+            if (null == requiredPermission)
+                baseReadCategoryNames.add(category.getName());
+            else
+                categoriesByPermission.put(requiredPermission, category);
+        }
+
+        return categoriesByPermission;
     }
 
     @Override
@@ -312,6 +383,80 @@ class SecurityQuery extends Query
         public boolean mayInheritPolicy()
         {
             return false;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static SearchService.SearchCategory categoryRequiring(String name, Class<? extends Permission> requiredPermission)
+        {
+            return new SearchService.SearchCategory(name, name, false)
+            {
+                @Override
+                public Class<? extends Permission> getRequiredPermission()
+                {
+                    return requiredPermission;
+                }
+            };
+        }
+
+        @Test
+        public void testCategoryWithNoRequiredPermissionGoesToBaseRead()
+        {
+            SearchService.SearchCategory wiki = new SearchService.SearchCategory("wiki", "Wiki Pages");
+            Set<String> baseReadCategoryNames = new HashSet<>();
+
+            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+                SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki), baseReadCategoryNames);
+
+            assertEquals(Set.of("wiki"), baseReadCategoryNames);
+            assertTrue(categoriesByPermission.isEmpty());
+        }
+
+        @Test
+        public void testCategoriesSharingAPermissionAreGroupedTogether()
+        {
+            // Mirrors the real assay/assayBatch/assayRun categories, which all require the same permission.
+            SearchService.SearchCategory assay = categoryRequiring("assay", InsertPermission.class);
+            SearchService.SearchCategory assayBatch = categoryRequiring("assayBatch", InsertPermission.class);
+            SearchService.SearchCategory assayRun = categoryRequiring("assayRun", InsertPermission.class);
+            Set<String> baseReadCategoryNames = new HashSet<>();
+
+            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+                SecurityQuery.groupCategoriesByRequiredPermission(List.of(assay, assayBatch, assayRun), baseReadCategoryNames);
+
+            assertTrue(baseReadCategoryNames.isEmpty());
+            assertEquals(Set.of(InsertPermission.class), categoriesByPermission.keySet());
+            assertEquals(Set.of(assay, assayBatch, assayRun), Set.copyOf(categoriesByPermission.get(InsertPermission.class)));
+        }
+
+        @Test
+        public void testCategoriesWithDifferentPermissionsAreNotGroupedTogether()
+        {
+            SearchService.SearchCategory data = categoryRequiring("data", InsertPermission.class);
+            SearchService.SearchCategory media = categoryRequiring("media", DeletePermission.class);
+            Set<String> baseReadCategoryNames = new HashSet<>();
+
+            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+                SecurityQuery.groupCategoriesByRequiredPermission(List.of(data, media), baseReadCategoryNames);
+
+            assertEquals(Set.of(InsertPermission.class, DeletePermission.class), categoriesByPermission.keySet());
+            assertEquals(List.of(data), categoriesByPermission.get(InsertPermission.class));
+            assertEquals(List.of(media), categoriesByPermission.get(DeletePermission.class));
+        }
+
+        @Test
+        public void testMixOfBaseReadAndPermissionRequiringCategories()
+        {
+            SearchService.SearchCategory wiki = new SearchService.SearchCategory("wiki", "Wiki Pages");
+            SearchService.SearchCategory data = categoryRequiring("data", InsertPermission.class);
+            Set<String> baseReadCategoryNames = new HashSet<>();
+
+            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+                SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki, data), baseReadCategoryNames);
+
+            assertEquals(Set.of("wiki"), baseReadCategoryNames);
+            assertEquals(List.of(data), categoriesByPermission.get(InsertPermission.class));
         }
     }
 }
