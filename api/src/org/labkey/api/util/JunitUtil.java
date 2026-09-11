@@ -24,6 +24,7 @@ import org.junit.AssumptionViolatedException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.settings.AppProps;
 import org.w3c.dom.Node;
@@ -32,9 +33,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -45,6 +48,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 
@@ -271,5 +275,45 @@ public class JunitUtil
         {
             throw new AssumptionViolatedException(message + " Skipping test in production mode.");
         }
+    }
+
+    /**
+     * Gets `DbScope.getDbScopesToTest()`, structured for use with `@RunWith(Parameterized.class)`.<br>
+     * Tests using these parameters should also be annotated with `@TestWhen(TestWhen.When.DBSCOPE)` to ensure they run
+     * in suites that configure external data sources on TeamCity.
+     *
+     * <pre>{@code
+     *     @TestWhen(TestWhen.When.DBSCOPE)
+     *     @RunWith(Parameterized.class)
+     *     public static class DbScopeTestCase
+     *     {
+     *         @Parameterized.Parameters(name = "{1}")
+     *         public static Collection<Object[]> schemas()
+     *         {
+     *             return JunitUtil.getDbScopesTestParameters();
+     *         }
+     *
+     *         private final DbScope scope;
+     *
+     *         public DbScopeTestCase(DbScope scope, String displayName)
+     *         {
+     *             this.scope = scope;
+     *         }
+     *
+     *         // @Test cases will me multiplied across all found db scopes
+     *     }
+     * }</pre>
+     */
+    public static Collection<Object[]> getDbScopesTestParameters(Function<DbScope, Boolean> filter)
+    {
+        return DbScope.getDbScopesToTest().stream()
+                .filter(filter::apply)
+                .map(scope -> new Object[]{scope, scope.getSqlDialect().getClass().getSimpleName()})
+                .toList();
+    }
+
+    public static Collection<Object[]> getDbScopesTestParameters()
+    {
+        return getDbScopesTestParameters(_ -> true);
     }
 }

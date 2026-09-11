@@ -26,11 +26,15 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.dialect.SimpleSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -49,6 +53,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.ResultSetUtil;
@@ -2145,6 +2150,8 @@ public class DbScope
     /**
      * Some DbScopes shouldn't be exercised by junit tests (e.g., an external data source connected to LabKey Server via
      * the PostgreSQL wire protocol)
+     * Tests that use this should be annotated with '@TestWhen(TestWhen.When.DBSCOPE)' to ensure they run in suites that
+     * configure external data sources on TeamCity.
      *
      * @return A collection of DbScopes that are suitable for testing
      */
@@ -2573,6 +2580,16 @@ public class DbScope
         }
     }
 
+    // Counterpart to popCurrentTransaction(), for callers that need to detach a transaction from its thread
+    // temporarily. See TransactionImpl.commitAndKeepConnection().
+    private void pushCurrentTransaction(TransactionImpl transaction)
+    {
+        synchronized (_transaction)
+        {
+            _transaction.computeIfAbsent(getEffectiveThread(), _ -> new ArrayList<>()).add(transaction);
+        }
+    }
+
     public static class ConnectionSharingCloseable implements AutoCloseable
     {
         private final Thread _asyncThread;
@@ -2804,8 +2821,29 @@ public class DbScope
             {
                 CommitTaskOption.PRECOMMIT.run(this);
                 getConnection().commit();
-                _caches.clear();
-                CommitTaskOption.POSTCOMMIT.run(this);
+                closeCaches();
+
+                // Detach this transaction from the thread while the POSTCOMMIT tasks run, matching commit(), which
+                // pops before running them. Commit tasks that invalidate a DatabaseCache resolve their target through
+                // getCurrentTransactionImpl(): with this transaction still on the thread they build a fresh
+                // TransactionCache and clear that throwaway private cache, so the shared cache goes on serving
+                // pre-commit values until they expire. Skip the swap if we somehow aren't the innermost transaction,
+                // since popping would then corrupt the thread's transaction stack.
+                boolean detached = this == getCurrentTransactionImpl();
+
+                if (detached)
+                    popCurrentTransaction();
+
+                try
+                {
+                    CommitTaskOption.POSTCOMMIT.run(this);
+                }
+                finally
+                {
+                    if (detached)
+                        pushCurrentTransaction(this);
+                }
+
                 clearCommitTasks();
             }
             catch (SQLException e)
@@ -2960,47 +2998,58 @@ public class DbScope
     }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
-    @TestWhen(TestWhen.When.BVT)
+    @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class DialectTestCase extends Assert
     {
-        @Test
-        public void testAllScopes() throws SQLException, IOException
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
         {
-            for (DbScope scope : getDbScopesToTest())
-            {
-                SqlDialect dialect = scope.getSqlDialect();
+            return JunitUtil.getDbScopesTestParameters();
+        }
 
-                try (Connection conn = scope.getConnection())
-                {
-                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
-                    dialect.testDialectKeywords(executor);
-                    dialect.testKeywordCandidates(executor);
-                }
+        private final DbScope scope;
+
+        public DialectTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
+
+        @Test
+        public void testKeywords() throws SQLException, IOException
+        {
+            SqlDialect dialect = scope.getSqlDialect();
+
+            try (Connection conn = scope.getConnection())
+            {
+                SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                dialect.testDialectKeywords(executor);
+                dialect.testKeywordCandidates(executor);
             }
         }
 
         @Test
-        public void testLabKeyScope()
+        public void testDateDiff()
         {
-            DbScope scope = getLabKeyScope();
             SqlDialect dialect = scope.getSqlDialect();
+            Assume.assumeFalse("Datediff not supported for " + dialect.getClass().getSimpleName(), dialect instanceof SimpleSqlDialect);
 
-            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.DATE, 31);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.DATE, 366);
 
-            testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
-            testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
-            testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
-            testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
-            testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
-            testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/1/2000", Calendar.MONTH, 1);
+            _testDateDiff(scope, dialect, "2/1/2000", "1/31/2000", Calendar.MONTH, 1);
+            _testDateDiff(scope, dialect, "1/1/2000", "1/1/2000", Calendar.MONTH, 0);
+            _testDateDiff(scope, dialect, "1/31/2000", "1/1/2000", Calendar.MONTH, 0);
+            _testDateDiff(scope, dialect, "12/31/2000", "1/1/2000", Calendar.MONTH, 11);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.MONTH, 12);
+            _testDateDiff(scope, dialect, "1/31/2001", "1/1/2000", Calendar.MONTH, 12);
 
-            testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
-            testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
+            _testDateDiff(scope, dialect, "1/1/2000", "12/31/2000", Calendar.YEAR, 0);
+            _testDateDiff(scope, dialect, "1/1/2001", "1/1/2000", Calendar.YEAR, 1);
         }
 
-        private void testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
+        private void _testDateDiff(DbScope scope, SqlDialect dialect, String date1, String date2, int part, int expected)
         {
             SQLFragment sql = new SQLFragment("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
@@ -3011,24 +3060,34 @@ public class DbScope
         }
     }
 
+    @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class GroupConcatTestCase extends Assert
     {
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
+        {
+            return JunitUtil.getDbScopesTestParameters(scope -> scope.getSqlDialect().supportsGroupConcat());
+        }
+
+        private final DbScope scope;
+
+        public GroupConcatTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
+
         @Test
         public void testGroupConcat()
         {
-            for (DbScope scope : getDbScopesToTest())
-            {
-                SqlDialect dialect = scope.getSqlDialect();
-                if (!dialect.supportsGroupConcat())
-                    continue;
+            SqlDialect dialect = scope.getSqlDialect();
 
-                boolean caseInsensitiveCollation = dialect.isSqlServer();
+            boolean caseInsensitiveCollation = dialect.isSqlServer();
 
-                testGroupConcat(scope, dialect, false, false, "x Y z z y");
-                testGroupConcat(scope, dialect, true, false, caseInsensitiveCollation ? "x Y z" : "x y Y z");
-                testGroupConcat(scope, dialect, false, true, "x y Y z z");
-                testGroupConcat(scope, dialect, true, true, caseInsensitiveCollation ? "x Y z" : "x y Y z");
-            }
+            testGroupConcat(scope, dialect, false, false, "x Y z z y");
+            testGroupConcat(scope, dialect, true, false, caseInsensitiveCollation ? "x Y z" : "x y Y z");
+            testGroupConcat(scope, dialect, false, true, "x y Y z z");
+            testGroupConcat(scope, dialect, true, true, caseInsensitiveCollation ? "x Y z" : "x y Y z");
         }
 
         private void testGroupConcat(DbScope scope, SqlDialect dialect, boolean distinct, boolean sorted, String expected)
@@ -3056,7 +3115,7 @@ public class DbScope
         }
     }
 
-
+    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TransactionTestCase extends Assert
     {
         @Test
@@ -3237,6 +3296,59 @@ public class DbScope
             }
             assertFalse(getLabKeyScope().isTransactionActive());
             closeAllConnectionsForCurrentThread();
+        }
+
+        @Test
+        public void testCommitAndKeepConnection()
+        {
+            DbScope scope = getLabKeyScope();
+            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
+            DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test");
+
+            try
+            {
+                cache.put("key_1", "value_1");
+                cache.put("key_2", "value_2");
+
+                List<Transaction> transactionsSeenByPostCommitTask = new ArrayList<>();
+
+                try (Transaction t = scope.ensureTransaction())
+                {
+                    t.addCommitTask(() -> transactionsSeenByPostCommitTask.add(scope.getCurrentTransaction()), CommitTaskOption.POSTCOMMIT);
+                    cache.remove("key_1");
+
+                    // DatabaseCache defers removals to the commit, so the shared cache still serves the old value
+                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().contains("key_1"));
+
+                    t.commitAndKeepConnection();
+
+                    // The deferred removal must land on the shared cache. If this transaction is still on the thread
+                    // while the POSTCOMMIT tasks run, the removal builds a fresh TransactionCache and clears that
+                    // throwaway private cache instead, leaving key_1 in the shared cache until it expires.
+                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().contains("key_1"));
+                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().contains("key_2"));
+
+                    // POSTCOMMIT tasks must run detached from the transaction, exactly as they do under commit()
+                    assertEquals("POSTCOMMIT task should have run exactly once", 1, transactionsSeenByPostCommitTask.size());
+                    assertNull("POSTCOMMIT tasks must not see an active transaction", transactionsSeenByPostCommitTask.get(0));
+
+                    // ...and the transaction must be back on the thread, still active and still usable
+                    assertTrue(scope.isTransactionActive());
+                    assertSame("commitAndKeepConnection() must leave the transaction on the thread", t, scope.getCurrentTransaction());
+
+                    cache.remove("key_2");
+                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().contains("key_2"));
+
+                    t.commit();
+                }
+
+                assertFalse("commit() must invalidate the shared cache", cache.getKeys().contains("key_2"));
+                assertFalse(scope.isTransactionActive());
+            }
+            finally
+            {
+                cache.close();
+            }
         }
 
         @Test

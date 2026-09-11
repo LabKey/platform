@@ -1294,19 +1294,13 @@ public class SqlScriptController extends SpringActionController
     private static final String CLEAN_UP_PROMPT = """
         Refactor the script to provide a clean, "final state" version, removing redundant and unnecessary statements.
         
-        Note that the `core.fn_dropifexists` stored procedure is used to drop a TABLE, VIEW, COLUMN, or other database
-        object if it exists. In most cases, the first parameter specifies the table name, the second parameter specifies
-        the schema name, the third parameter specifies the object type, and the optional fourth parameter specifies
-        other details such as a column name. Here are some examples:
-        - `EXEC core.fn_dropifexists @objname = 'MyTable', @objschema = 'MySchema', @objtype = 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
-        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
-        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn` is the same as `ALTER TABLE TableName DROP COLUMN IF EXISTS ColumnName`
-        
         Please do the following:
         - Consolidate all iterative changes (column additions & renames, PK changes, and FK changes) into the initial CREATE TABLE statements.
-        - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
+        - Remove unnecessary DROP TABLE statements calls, for example, those that come before a table has been created.
         - Remove all intermediate DROP and ALTER statements that are superseded by later logic.
-        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or a core.fn_dropifexists 'TABLE' call on that same table.
+        - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE call on that same table.
+        
+        Leave all comments in place unless they are associated with statements that are being removed or no longer apply for other reasons.
         
         Include a summary of the changes you made at the end.
         """;

@@ -59,8 +59,10 @@ import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -94,9 +96,11 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -659,9 +663,14 @@ public class AnnouncementManager
     public static AnnouncementModel updateAnnouncement(User user, AnnouncementModel update, List<AttachmentFile> files) throws IOException, RuntimeValidationException
     {
         Container c = ContainerManager.getForId(update.getContainerId());
-        update = validateModelWithSideEffects(update, ContainerManager.getForId(update.getContainerId()), user, false);
+        if (c == null)
+            throw new NotFoundException("No container with id " + update.getContainerId());
+        AnnouncementModel current = getAnnouncement(c, update.getRowId());
+        if (current == null)
+            throw new NotFoundException("No announcement with id " + update.getRowId());
+        update = validateModelWithSideEffects(update, c, user, false);
 
-        update.beforeUpdate(user);
+        update.beforeUpdate(user, current); // This preserves Created, CreatedBy, EntityId, etc.
         AnnouncementModel result = Table.update(user, _comm.getTableInfoAnnouncements(), update, update.getRowId());
         notifyDiscussionProviderOfChange(c, user, result, Change.Update);
 
@@ -1132,6 +1141,51 @@ public class AnnouncementManager
             // UNDONE: attachments, update, responses, ....
 
             purgeAnnouncements(c, true);
+        }
+    }
+
+    // Not testing container scoping, but AbstractContainerScopingTest provides useful helper methods
+    public static class UpdateTest extends AbstractContainerScopingTest
+    {
+        @Test
+        public void testUpdateFields() throws Exception
+        {
+            // Create a new message as admin
+            Container folder = JunitUtil.getTestContainer();
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Test message update");
+            insert.setBody("body");
+            User admin = getAdmin();
+            final AnnouncementModel model = AnnouncementManager.insertAnnouncement(folder, admin, insert, null, false);
+            Date created = model.getCreated();
+            String entityId = model.getEntityId();
+
+            // GH Issue #1461: Users should not be able to override EntityId, Created, CreatedBy, Modified, or
+            // ModifiedBy properties. Create new Reader and attempt to override the model properties and update.
+            // This simulates values coming from URL parameters.
+            Calendar calendar = new GregorianCalendar(1999, Calendar.SEPTEMBER, 9);
+            Date bogusDate = calendar.getTime();
+            User reader = createUserInRole(folder, ReaderRole.class);
+            // Entity.setEntityId() should block setting a new EntityId
+            Assert.assertThrows(IllegalStateException.class, () -> model.setEntityId(GUID.makeGUID()));
+            model.setCreatedBy(reader.getUserId());
+            model.setCreated(bogusDate);
+            model.setModifiedBy(reader.getUserId());
+            model.setModified(bogusDate);
+            Thread.sleep(10); // Quick sleep to ensure Modified > Created, even on a very fast test run
+            AnnouncementManager.updateAnnouncement(getAdmin(), model, List.of());
+
+            // Re-select updated model
+            AnnouncementModel updated = AnnouncementManager.getAnnouncement(folder, model.getRowId());
+            assertNotNull(updated);
+            assertEquals(entityId, updated.getEntityId());                         // EntityId hasn't changed
+            assertEquals(admin.getUserId(), updated.getCreatedBy());               // CreatedBy hasn't changed
+            assertEquals(created, updated.getCreated());                           // Created hasn't changed
+            assertEquals(admin.getUserId(), updated.getModifiedBy());              // ModifiedBy hasn't changed
+            assertNotEquals(bogusDate, updated.getModified());                     // Modified is not our bogus value
+            assertTrue(updated.getModified().compareTo(updated.getCreated()) > 0); // Modified > Created
+
+            AnnouncementManager.deleteAnnouncement(updated);
         }
     }
 

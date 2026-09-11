@@ -448,7 +448,7 @@ public class SecurityManager
             String rawEmail = basicCredentials.getKey();
             String password = basicCredentials.getValue();
             if (rawEmail.equalsIgnoreCase("guest"))
-                return User.guest;
+                return AuthFilter.getGuestUser();
 
             return AuthenticationManager.authenticate(request, rawEmail, password);
         }

@@ -814,6 +814,9 @@ public class Table
 
     /**
      * @return a new Map&lt;String, Object&gt; if fieldsIn is a Map, otherwise returns modified version of fieldsIn.
+     * The row is not re-queried after the insert, so the returned value carries only the fields passed in plus the
+     * generated autoincrement key and special fields (e.g. created/createdBy) -- not any other database-computed
+     * values such as defaults, computed columns, or trigger-modified data.
      * @throws RuntimeValidationException if there is a problem with the data that's detected before we try to actually do the insert
      * @throws RuntimeSQLException if there is a problem communicating with the database or there is a constraint violation or similar error
      */
@@ -959,7 +962,12 @@ public class Table
         return update(user, table, fieldsIn, null, pkVals, filter, level);
     }
 
-    /* NOTE this does not enforce that keyColumn is an appropriately unique column! */
+    /**
+     * NOTE: this does not enforce that keyColumn is an appropriately unique column!
+     * @return fieldsIn itself (mutated in place) if it's a bean, or a new Map&lt;String, Object&gt; if fieldsIn is a Map.
+     * The row is not re-queried after the update, so the returned value reflects only the fields as passed in --
+     * not database-computed values such as version-column update expressions, defaults, or trigger-modified data.
+     */
     public static <K> K update(@Nullable User user, TableInfo table, K fieldsIn, @Nullable ColumnInfo keyColumn, Object pkVals, @Nullable Filter filter, Level level)
     {
         assert assertInDb(table);

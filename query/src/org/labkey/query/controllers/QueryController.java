@@ -2595,6 +2595,12 @@ public class QueryController extends SpringActionController
         if (resolved.message() != null)
             errors.reject(ERROR_MSG, resolved.message());
 
+        // GitHub Issue #1440: check perm view's container
+        Container viewContainer = view != null ? view.getContainer() : null;
+        boolean shadowsSharedView = owner != null && view != null && view.isShared();
+        if (viewContainer != null && !shadowsSharedView && !viewContainer.equals(container) && !canEditView(view, viewContainer, getUser()))
+            throw new UnauthorizedException();
+
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
         boolean canEdit = view == null || session || view.canEdit(container, errors);
@@ -2902,6 +2908,21 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /**
+     * GitHub Issue #1397: QueryForm.getCustomView() also resolves shared views and views inherited from an ancestor
+     * folder or /Shared, so check user permissions on the view container
+     */
+    private static boolean canEditView(CustomView view, Container currentContainer, User user)
+    {
+        // Module and auto-generated views have no container of their own
+        Container viewContainer = view.getContainer() != null ? view.getContainer() : currentContainer;
+
+        if (!viewContainer.hasPermission(user, ReadPermission.class))
+            return false;
+
+        return !view.isShared() || viewContainer.hasPermission(user, EditSharedViewPermission.class);
+    }
+
     protected void renameCustomView(Container container, QueryDefinition queryDef, CustomView fromView, String newViewName, BindException errors)
     {
         if (newViewName != null && RESERVED_VIEW_NAMES.contains(newViewName.toLowerCase()))
@@ -2913,6 +2934,9 @@ public class QueryController extends SpringActionController
 
         if (errors.hasErrors())
             return;
+
+        if (!canEditView(fromView, container, getUser()))
+            throw new UnauthorizedException();
 
         User owner = getUser();
         boolean canSaveForAllUsers = container.hasPermission(getUser(), EditSharedViewPermission.class);
@@ -5002,7 +5026,7 @@ public class QueryController extends SpringActionController
             else
             {
                 // Since we are moving between containers, we know we have product folders enabled
-                if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
+                if (getContainer().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
                     errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
                 else
                 {
@@ -6118,23 +6142,19 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            if (getUser().isGuest())
+            if (view.isSession())
             {
-                // Guests can only delete session custom views.
-                if (!view.isSession())
+                // Session views live in the caller's own session, so guests may delete theirs
+                if (!getUser().isGuest() && !getContainer().hasPermission(getUser(), ReadPermission.class))
                     throw new UnauthorizedException();
             }
-            else
+            else if (getUser().isGuest())
             {
-                // Logged in users must have read permission
-                if (!getContainer().hasPermission(getUser(), ReadPermission.class))
-                    throw new UnauthorizedException();
+                throw new UnauthorizedException();
             }
-
-            if (view.isShared())
+            else if (!getContainer().hasPermission(getUser(), ReadPermission.class) || !canEditView(view, getContainer(), getUser()))
             {
-                if (!getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
-                    throw new UnauthorizedException();
+                throw new UnauthorizedException();
             }
 
             view.delete(getUser(), getViewContext().getRequest());
@@ -6146,7 +6166,7 @@ public class QueryController extends SpringActionController
                 CustomView shadowed = form.getCustomView();
                 if (shadowed != null && shadowed.isEditable() && !(shadowed instanceof ModuleCustomView))
                 {
-                    if (!shadowed.isShared() || getContainer().hasPermission(getUser(), EditSharedViewPermission.class))
+                    if (canEditView(shadowed, getContainer(), getUser()))
                         shadowed.delete(getUser(), getViewContext().getRequest());
                 }
             }
@@ -6251,9 +6271,6 @@ public class QueryController extends SpringActionController
             if (!view.isSession())
                 throw new IllegalArgumentException("This action only supports saving session views.");
 
-            //if (!getContainer().getId().equals(view.getContainer().getId()))
-            //    throw new IllegalArgumentException("View may only be saved from container it was created in.");
-
             assert !view.canInherit() && !view.isShared() && view.isEditable(): "Session view should never be inheritable or shared and always be editable";
 
             // Users may save views to a location other than the current container
@@ -6308,6 +6325,11 @@ public class QueryController extends SpringActionController
                 existingView = resolved.localView();
                 if (resolved.message() != null)
                     throw new IllegalArgumentException(resolved.message());
+
+                // GitHub Issue #1440: check perm existingView's container
+                Container viewContainer = existingView != null ? existingView.getContainer() : null;
+                if (viewContainer != null && !viewContainer.equals(container) && !canEditView(existingView, viewContainer, getUser()))
+                    throw new UnauthorizedException();
 
                 if (existingView == null || (existingView instanceof ModuleCustomView && existingView.isEditable()))
                 {
@@ -8101,6 +8123,9 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
+
+            if (container != null && container.getAuditCommentsRequired() && StringUtils.isBlank(form.getAuditUserComment()))
+                errors.reject(ERROR_GENERIC, "A reason for the template update is required.");
             String domainURI = PropertyService.get().getDomainURI(form.getSchemaName(), form.getQueryName(), container, user);
             _kind = PropertyService.get().getDomainKind(domainURI);
             _domain = PropertyService.get().getDomain(container, domainURI);
@@ -8213,8 +8238,9 @@ public class QueryController extends SpringActionController
         {
             User user = getUser();
             Container container = getContainer();
-            String schemaName = form.getSchemaName();
-            String queryName = form.getQueryName();
+            // GitHub Issue 1470: use the resolved schema/table names instead of the user-provided names that might have different casing
+            String schemaName = _tInfo.getUserSchema() != null ? _tInfo.getUserSchema().getSchemaName() : form.getSchemaName();
+            String queryName = _tInfo.getName();
             QueryDef queryDef = QueryManager.get().getQueryDef(container, schemaName, queryName, false);
             if (queryDef != null && queryDef.getQueryDefId() != 0)
             {
@@ -8248,7 +8274,7 @@ public class QueryController extends SpringActionController
                     {
                         throw new MetadataUnavailableException(e.getMessage());
                     }
-                    xmlTable = getTableType(form.getQueryName(), doc);
+                    xmlTable = getTableType(queryName, doc);
                     // when there is a queryDef but xmlTable is null it means the xmlMetaData contains tableName which does not
                     // match with actual queryName then reconstruct the xml table metadata : See Issue 43523
                     if (xmlTable == null)
@@ -8378,6 +8404,7 @@ public class QueryController extends SpringActionController
                 new ExportRowsTsvAction(),
                     new ExcelWebQueryDefinitionAction(),
                 controller.new SaveQueryViewsAction(),
+                controller.new RenameQueryViewAction(),
                 controller.new PropertiesQueryAction(),
                 controller.new SelectRowsAction(),
                 new GetDataAction(),
@@ -8406,6 +8433,11 @@ public class QueryController extends SpringActionController
 
             // submitter should be allowed for InsertRows
             assertForReadPermission(user, true, new InsertRowsAction());
+
+            // @RequiresNoPermission
+            assertForNoPermission(user,
+                new DeleteViewAction()
+            );
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,

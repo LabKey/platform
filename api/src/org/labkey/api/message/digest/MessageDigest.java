@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -70,7 +71,7 @@ public abstract class MessageDigest
         AtomicReference<Exception> ref = new AtomicReference<>();
 
         // Issue 45978: Run in a background thread to better simulate being triggered by a timer
-        JobRunner.getDefault().execute(() -> {
+        Future<?> future = JobRunner.getDefault().execute(() -> {
             try
             {
                 Date prev = getLastSuccessful();
@@ -92,7 +93,8 @@ public abstract class MessageDigest
             }
         }, 0);
 
-        JobRunner.getDefault().waitForCompletion();
+        // Don't use JobRunner.waitForCompletion(); it blocks on every job queued on the shared default runner, including SimpleMetricsService's save, which is submitted with a 15 minute delay.
+        future.get();
 
         if (ref.get() != null)
         {

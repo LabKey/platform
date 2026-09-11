@@ -612,15 +612,16 @@ public class DbSchema
         public void testDDLMethods() throws Exception
         {
             DbSchema testSchema = test.getSchema();
+            DbScope testScope = testSchema.getScope();
 
             // create test objects
             //start with cleanup
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope,"testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
             testSchema.dropTableIfExists(tempTableName);
 
-            SqlExecutor executor = new SqlExecutor(testSchema);
+            SqlExecutor executor = new SqlExecutor(testScope);
 
             executor.execute("CREATE SCHEMA testdrop");
             executor.execute("CREATE SCHEMA testdrop2");
@@ -654,16 +655,16 @@ public class DbSchema
             testSchema.dropTableIfExists(tempTableName);
             executor.execute(sqlCreateTempTable);
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
             // these don't exist
             testSchema.dropIndexIfExists("T", "T_notexist") ;
             testSchema.dropTableIfExists("V1");
             testSchema.dropTableIfExists("Tnot");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
         }
 
         @After

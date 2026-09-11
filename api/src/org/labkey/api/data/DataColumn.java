@@ -33,7 +33,6 @@ import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.DOM.Renderable;
@@ -53,7 +52,6 @@ import org.labkey.api.util.TextAreaBuilder;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.TypeAheadSelectDisplayColumn;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -77,8 +75,6 @@ import static org.labkey.api.util.DOM.id;
 /** Subclass that wraps a ColumnInfo to pull values from the database */
 public class DataColumn extends DisplayColumn
 {
-    public static final String EXPERIMENTAL_USE_QUERYSELECT_COMPONENT = "experimental-use-queryselect-component";
-
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
     private List<FieldKey> _sortFieldKeys;
@@ -690,13 +686,7 @@ public class DataColumn extends DisplayColumn
         }
         else if (_inputType.toLowerCase().startsWith("select"))
         {
-            if (OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_USE_QUERYSELECT_COMPONENT) && !"select.multiple".equalsIgnoreCase(_inputType))
-            {
-                TypeAheadSelectDisplayColumn displayColumn = new TypeAheadSelectDisplayColumn(_boundColumn, null);
-                displayColumn.renderInputHtml(ctx, out, value);
-            }
-            else
-                renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
+            renderSelectFormInputFromFk(ctx, out, formFieldName, value, strVal, disabledInput);
         }
         else if (_inputType.equalsIgnoreCase("textarea"))
         {

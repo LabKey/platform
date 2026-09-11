@@ -1033,9 +1033,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @NotNull
     public Boolean getAuditCommentsRequired()
     {
-        Map<String, String> props = PropertyManager.getProperties(this, AUDIT_SETTINGS_PROPERTY_SET_NAME);
         if (!ProductRegistry.isProductFeatureEnabled(ProductFeature.DataChangeCommentRequirement))
             return false;
+        // the audit setting is stored on the app home folder, which is the project only when product folders are enabled
+        Container container = isAppHomeFolder() ? this : getProject();
+        if (container == null) // shouldn't ever happen
+            return false;
+        Map<String, String> props = PropertyManager.getProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME);
         return Boolean.parseBoolean(props.getOrDefault(REQUIRE_USER_COMMENTS_PROPERTY_NAME, "false"));
     }
 
