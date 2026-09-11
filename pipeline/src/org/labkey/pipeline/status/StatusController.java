@@ -99,6 +99,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -108,7 +109,7 @@ import static org.labkey.pipeline.api.PipelineStatusManager.cancelStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.completeStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.deleteStatus;
 import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFile;
-import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFiles;
+import static org.labkey.pipeline.api.PipelineStatusManager.getStatusFilesInScope;
 
 
 public class StatusController extends SpringActionController
@@ -796,6 +797,10 @@ public class StatusController extends SpringActionController
         @Override
         public void validateCommand(ConfirmDeleteStatusForm form, Errors errors)
         {
+            // The confirmation page posts back the rowIds it displayed; only fall back to the grid selection
+            if (form.getRowIds() != null && form.getRowIds().length > 0)
+                return;
+
             // Don't clear the state yet because we're just validating at this point. We'll clear it as part of the
             // delete itself. See issue 44873
             Set<String> runs = DataRegionSelection.getSelected(getViewContext(), false);
@@ -813,10 +818,14 @@ public class StatusController extends SpringActionController
         @Override
         public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors)
         {
-            getContainerCheckAdmin();
+            Container c = getContainerCheckAdmin();
 
             int[] rowIds = form.getRowIds() == null ? new int[0] : form.getRowIds();
-            List<PipelineStatusFileImpl> statusFiles = getStatusFiles(rowIds);
+            // Scope to what deleteStatus() would delete, so the page can't list jobs the confirm wouldn't touch
+            List<PipelineStatusFileImpl> statusFiles = getStatusFilesInScope(c, getUser(), rowIds);
+            if (statusFiles.size() != Arrays.stream(rowIds).distinct().count())
+                throw new NotFoundException("Could not find status file for every requested rowId");
+
             for (PipelineStatusFileImpl sf : statusFiles)
             {
                 Container sfContainer = sf.lookupContainer();
@@ -835,15 +844,23 @@ public class StatusController extends SpringActionController
                 return false;
 
             getContainerCheckAdmin();
+
+            // Delete the jobs the confirmation page listed, not a selection that may since have changed
+            Set<Long> rowIds = new TreeSet<>();
+            for (int rowId : form.getRowIds() == null ? new int[0] : form.getRowIds())
+                rowIds.add((long) rowId);
+
             try
             {
-                deleteStatus(getViewBackgroundInfo().getContainer(), getViewBackgroundInfo().getUser(), form.isDeleteRuns(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
+                deleteStatus(getViewBackgroundInfo().getContainer(), getViewBackgroundInfo().getUser(), form.isDeleteRuns(), rowIds);
             }
             catch (PipelineProvider.HandlerException e)
             {
                 errors.addError(new LabKeyError(e.getMessage() == null ? "Failed to delete at least one job. It may be referenced by other jobs" : e.getMessage()));
                 return false;
             }
+
+            DataRegionSelection.clearAll(getViewContext());
             return true;
         }
 
@@ -1287,13 +1304,30 @@ public class StatusController extends SpringActionController
             ActionURL ownUrl = new ActionURL(DeleteStatusAction.class, folderB).addParameter("rowIds", rowIdParam);
             assertStatus(HttpServletResponse.SC_NOT_FOUND, get(ownUrl, readerB));
 
-            // Positive controls: a caller who can delete in B gets the page through either container -- a selection can
-            // legitimately span containers when the grid uses a container filter.
+            // Even a site admin gets 404 through folder A: deleteStatus() scopes its DELETE to the URL's container, so
+            // listing B's job here would promise a delete that silently wouldn't happen.
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, get(foreignUrl, admin));
+
+            // Positive control: through its own container a caller who can delete gets the page
             assertStatus(HttpServletResponse.SC_OK, get(ownUrl, admin));
-            assertStatus(HttpServletResponse.SC_OK, get(foreignUrl, admin));
 
             // Rendering the confirmation page must not delete anything
             assertNotNull("Job must still exist after rendering the confirmation page", getStatusFile(rowId));
+        }
+
+        @Test
+        public void testDeleteStatusActsOnDisplayedJobs() throws Exception
+        {
+            // The page lists form.getRowIds(), so the confirm must delete those same ids rather than a grid selection
+            // that the confirming request may not carry at all.
+            Container folderB = createContainer("B");
+            long rowId = insertStatusFile(folderB, PipelineJob.TaskStatus.complete.toString()).getRowId();
+
+            ActionURL confirmUrl = new ActionURL(DeleteStatusAction.class, folderB)
+                    .addParameter("rowIds", String.valueOf(rowId))
+                    .addParameter("confirm", "true");
+            assertStatus(HttpServletResponse.SC_FOUND, post(confirmUrl, getAdmin()));
+            assertNull("Confirming must delete the job the page listed", getStatusFile(rowId));
         }
 
         // Insert a bare status file in the given container. FilePath is a required column; point it at a non-existent

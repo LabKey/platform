@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentService" %>
@@ -176,12 +175,10 @@
 <p>
     <input type="hidden" name="confirm" value="true">
 <%
-    if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
+    // Post back exactly the jobs listed above, so the delete acts on what was confirmed
+    for (PipelineStatusFileImpl file : files)
     {
-        for (String selectedValue : getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME))
-        {
-    %><input type="hidden" name="<%= h(DataRegion.SELECT_CHECKBOX_NAME) %>" value="<%= h(selectedValue) %>" /><%
-        }
+    %><input type="hidden" name="rowIds" value="<%= file.getRowId() %>" /><%
     }
 %>
 
