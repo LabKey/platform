@@ -43,6 +43,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.SearchCategory;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
@@ -83,14 +84,26 @@ public class SecurityQuery extends Query
         _recursive = searchScope.isRecursive();
         _iTimer = iTimer;
 
+        // For now, perform the permission checking twice, old way and new way. This allows us to verify the results
+        // are identical and evaluate the performance benefit. TODO: Remove the block below and comparison asserts before merging.
+        iTimer.setPhase(SearchService.SEARCH_PHASE.buildSecurityFilterOld);
+        HashMap<String, Container> oldContainerIds = searchScope.getSearchableContainers(user, currentContainer);
+        HashMap<String, Set<String>> categoryContainers = new HashMap<>();
+        SearchService.get().getSearchCategories().forEach(
+            category -> categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, oldContainerIds))
+        );
+        iTimer.setPhase(SearchService.SEARCH_PHASE.buildSecurityFilter);
+
         _containerIds = searchScope.getSearchableContainers(user, currentContainer);
+
+        assert oldContainerIds.equals(_containerIds);
 
         // Categories that require only base container Read (already guaranteed for every container above) are
         // resolved directly; the rest are grouped by required permission so multiple categories that require the
         // same permission (e.g., the three assay categories all require AssayReadPermission) share a single
         // O(containers) assembly pass below instead of each redoing it.
         Set<String> baseReadCategoryNames = new HashSet<>();
-        MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+        MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
             groupCategoriesByRequiredPermission(SearchService.get().getSearchCategories(), baseReadCategoryNames);
 
         for (String categoryName : baseReadCategoryNames)
@@ -126,21 +139,23 @@ public class SecurityQuery extends Query
                     permittedContainerIds.add(entry.getKey());
             }
 
-            for (SearchService.SearchCategory category : categories)
+            for (SearchCategory category : categories)
                 _categoryContainers.put(category.getName(), permittedContainerIds);
         });
+
+        assert categoryContainers.equals(_categoryContainers);
     }
 
     /**
      * Splits categories into those requiring only base container Read (their names are added to baseReadCategoryNames)
      * and those requiring a specific permission, which are grouped by that permission class.
      */
-    static MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> groupCategoriesByRequiredPermission(
-            Collection<SearchService.SearchCategory> categories, Set<String> baseReadCategoryNames)
+    static MultiValuedMap<Class<? extends Permission>, SearchCategory> groupCategoriesByRequiredPermission(
+            Collection<SearchCategory> categories, Set<String> baseReadCategoryNames)
     {
-        MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission = new ArrayListValuedHashMap<>();
+        MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission = new ArrayListValuedHashMap<>();
 
-        for (SearchService.SearchCategory category : categories)
+        for (SearchCategory category : categories)
         {
             Class<? extends Permission> requiredPermission = category.getRequiredPermission();
 
@@ -388,9 +403,9 @@ public class SecurityQuery extends Query
 
     public static class TestCase extends Assert
     {
-        private static SearchService.SearchCategory categoryRequiring(String name, Class<? extends Permission> requiredPermission)
+        private static SearchCategory categoryRequiring(String name, Class<? extends Permission> requiredPermission)
         {
-            return new SearchService.SearchCategory(name, name, false)
+            return new SearchCategory(name, name, false)
             {
                 @Override
                 public Class<? extends Permission> getRequiredPermission()
@@ -403,10 +418,10 @@ public class SecurityQuery extends Query
         @Test
         public void testCategoryWithNoRequiredPermissionGoesToBaseRead()
         {
-            SearchService.SearchCategory wiki = new SearchService.SearchCategory("wiki", "Wiki Pages");
+            SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
             Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
                 SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki), baseReadCategoryNames);
 
             assertEquals(Set.of("wiki"), baseReadCategoryNames);
@@ -417,12 +432,12 @@ public class SecurityQuery extends Query
         public void testCategoriesSharingAPermissionAreGroupedTogether()
         {
             // Mirrors the real assay/assayBatch/assayRun categories, which all require the same permission.
-            SearchService.SearchCategory assay = categoryRequiring("assay", InsertPermission.class);
-            SearchService.SearchCategory assayBatch = categoryRequiring("assayBatch", InsertPermission.class);
-            SearchService.SearchCategory assayRun = categoryRequiring("assayRun", InsertPermission.class);
+            SearchCategory assay = categoryRequiring("assay", InsertPermission.class);
+            SearchCategory assayBatch = categoryRequiring("assayBatch", InsertPermission.class);
+            SearchCategory assayRun = categoryRequiring("assayRun", InsertPermission.class);
             Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
                 SecurityQuery.groupCategoriesByRequiredPermission(List.of(assay, assayBatch, assayRun), baseReadCategoryNames);
 
             assertTrue(baseReadCategoryNames.isEmpty());
@@ -433,11 +448,11 @@ public class SecurityQuery extends Query
         @Test
         public void testCategoriesWithDifferentPermissionsAreNotGroupedTogether()
         {
-            SearchService.SearchCategory data = categoryRequiring("data", InsertPermission.class);
-            SearchService.SearchCategory media = categoryRequiring("media", DeletePermission.class);
+            SearchCategory data = categoryRequiring("data", InsertPermission.class);
+            SearchCategory media = categoryRequiring("media", DeletePermission.class);
             Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
                 SecurityQuery.groupCategoriesByRequiredPermission(List.of(data, media), baseReadCategoryNames);
 
             assertEquals(Set.of(InsertPermission.class, DeletePermission.class), categoriesByPermission.keySet());
@@ -448,11 +463,11 @@ public class SecurityQuery extends Query
         @Test
         public void testMixOfBaseReadAndPermissionRequiringCategories()
         {
-            SearchService.SearchCategory wiki = new SearchService.SearchCategory("wiki", "Wiki Pages");
-            SearchService.SearchCategory data = categoryRequiring("data", InsertPermission.class);
+            SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
+            SearchCategory data = categoryRequiring("data", InsertPermission.class);
             Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchService.SearchCategory> categoriesByPermission =
+            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
                 SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki, data), baseReadCategoryNames);
 
             assertEquals(Set.of("wiki"), baseReadCategoryNames);

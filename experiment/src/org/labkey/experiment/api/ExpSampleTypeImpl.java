@@ -102,6 +102,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         {
             return MediaReadPermission.class;
         }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
     };
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";

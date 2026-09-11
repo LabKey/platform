@@ -187,7 +187,7 @@ public interface SearchService extends SearchMXBean
         }
     }
 
-    enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, applySecurityFilter, processHits}
+    enum SEARCH_PHASE {createQuery, buildSecurityFilterOld, buildSecurityFilter, search, applySecurityFilter, processHits}
 
     interface TaskListener
     {
@@ -313,6 +313,23 @@ public interface SearchService extends SearchMXBean
         public Class<? extends Permission> getRequiredPermission()
         {
             return null;
+        }
+
+        @Deprecated // TODO: Remove after testing
+        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        {
+            Set<String> containerIds = new HashSet<>();
+            containers.forEach((id, container) -> {
+                if (container.hasPermission(user, perm))
+                    containerIds.add(id);
+            });
+            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
+        }
+
+        @Deprecated // TODO: Remove after testing
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return containers.keySet();
         }
 
         public boolean isShowInAdvancedSearch()

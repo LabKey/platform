@@ -87,6 +87,23 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
         return map;
     }
 
+    public void clearTimes()
+    {
+        synchronized (_accumulationMap)
+        {
+            _accumulationMap.values().forEach(v -> v.setValue(0));
+        }
+    }
+
+    public void clearTimesIfFirstInvocation()
+    {
+        synchronized (_accumulationMap)
+        {
+            if (_count == 1)
+                clearTimes();
+        }
+    }
+
     // Create an enum map and populate it with MutableLongs for each value
     private static <ENUM extends Enum<ENUM>> Map<ENUM, MutableLong> getEnumMap(Class<ENUM> clazz, ENUM[] values)
     {

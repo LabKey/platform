@@ -93,6 +93,12 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         {
             return MediaReadPermission.class;
         }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+        }
     };
 
     static public List<ExpMaterialImpl> fromMaterials(Collection<Material> materials)

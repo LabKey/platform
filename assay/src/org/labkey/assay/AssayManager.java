@@ -125,6 +125,12 @@ public class AssayManager implements AssayService
         {
             return AssayReadPermission.class;
         }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
     };
     SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batches", false) {
         @Override
@@ -132,12 +138,24 @@ public class AssayManager implements AssayService
         {
             return AssayReadPermission.class;
         }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
+        }
     };
     SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Runs", false) {
         @Override
         public Class<? extends Permission> getRequiredPermission()
         {
             return AssayReadPermission.class;
+        }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
 

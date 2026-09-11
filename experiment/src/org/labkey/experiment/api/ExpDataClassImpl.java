@@ -81,12 +81,24 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         {
             return DataClassReadPermission.class;
         }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
+        }
     };
     public static final SearchService.SearchCategory MEDIA_SEARCH_CATEGORY = new SearchService.SearchCategory(MEDIA_SEARCH_CATEGORY_NAME, "Collections of media data and samples", false) {
         @Override
         public Class<? extends Permission> getRequiredPermission()
         {
             return MediaReadPermission.class;
+        }
+
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
         }
     };
 
