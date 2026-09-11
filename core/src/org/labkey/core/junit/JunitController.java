@@ -32,7 +32,9 @@ import org.json.JSONObject;
 import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.action.PermissionCheckableAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -41,6 +43,7 @@ import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
 import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.jsp.JspTest;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -56,7 +59,10 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import static org.labkey.api.util.HttpUtil.Method.POST;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -144,8 +150,38 @@ public class JunitController extends SpringActionController
     }
 
 
+    /**
+     * Like {@link SimpleViewAction} — one code path, no form redisplay — but POST-only and not one of
+     * the types {@link SpringActionController#checkForMutatingSql} treats as unconditionally read-only,
+     * so subclasses can legitimately run mutating SQL.
+     */
+    @MethodsAllowed(POST)
+    private abstract static class SimplePostViewAction<FORM> extends BaseViewAction<FORM> implements NavTrailAction
+    {
+        @Override
+        public final ModelAndView handleRequest() throws Exception
+        {
+            BindException errors = defaultBindParameters(getPropertyValues());
+            return getView((FORM) errors.getTarget(), errors);
+        }
+
+        @Override
+        protected final String getCommandClassMethodName()
+        {
+            return "getView";
+        }
+
+        @Override
+        public final void validate(Object target, Errors errors)
+        {
+        }
+
+        public abstract ModelAndView getView(FORM form, BindException errors) throws Exception;
+    }
+
+
     @RequiresSiteAdmin
-    public class RunAction extends SimpleViewAction<TestForm>
+    public class RunAction extends SimplePostViewAction<TestForm>
     {
         @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
@@ -220,7 +256,7 @@ public class JunitController extends SpringActionController
     private static final String RESULTS_SESSION_KEY = "JUnit_Results";
 
     @RequiresSiteAdmin
-    public static class Run3Action extends SimpleViewAction<TestForm>
+    public static class Run3Action extends SimplePostViewAction<TestForm>
     {
         @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
@@ -300,6 +336,7 @@ public class JunitController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    @MethodsAllowed(POST)
     public static class Run2Action extends StatusReportingRunnableAction
     {
         private List<Class<?>> getTestClasses(TestForm form)

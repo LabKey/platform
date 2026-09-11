@@ -26,10 +26,26 @@
 <%@ page import="org.labkey.core.junit.JunitController.Run2Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.Run3Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
+<%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    // Parameterized (and other Suite-based) runners nest a level of per-invocation Descriptions between the
+    // class and its test methods; flatten to leaves so every test method renders at the same list level.
+    private Stream<Description> leafDescriptions(Description desc)
+    {
+        return desc.isTest() ? Stream.of(desc) : desc.getChildren().stream().flatMap(this::leafDescriptions);
+    }
+
+    private Renderable renderLeaf(Description desc, ActionURL testCaseURL)
+    {
+        return LI(desc.getMethodName() != null
+                ? simpleLink(desc.getMethodName(), testCaseURL.clone().addParameter("methodName", desc.getMethodName())).usePost()
+                : desc.toString());
+    }
+%>
 <%
     JspView<JUnitViewBean> me = HttpView.currentView();
     JUnitViewBean bean = me.getModelBean();
@@ -76,18 +92,18 @@
 
                     NBSP, "\u22EE", NBSP,
 
-                    button("Run All").href(new ActionURL(RunAction.class, getContainer())),
+                    button("Run All").href(new ActionURL(RunAction.class, getContainer())).usePost(),
                     NBSP,
-                    button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")),
+                    button("Run BVT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "BVT")).usePost(),
                     NBSP,
-                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")),
+                    button("Run DRT").href(new ActionURL(RunAction.class, getContainer()).addParameter("when", "DRT")).usePost(),
 
                     NBSP, "\u22EE", NBSP,
 
                     LK.FORM(at(style, "display:inline-block;", name, "run2", action, new ActionURL(Run2Action.class, getContainer()), method, "POST"),
                             button("Run In Background #1 (Experimental)").submit(true)),
                     NBSP,
-                    button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer()))
+                    button("Run In Background #2 (Experimental)").href(new ActionURL(Run3Action.class, getContainer())).usePost()
                 ),
             HR()).appendTo(out);
 
@@ -95,7 +111,7 @@
 
     DIV(testCases.keySet().stream().map(module ->
         DETAILS(at(open, true),
-            SUMMARY(A(at(href, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)), module)),
+            SUMMARY(simpleLink(module, new ActionURL(RunAction.class, getContainer()).addParameter("module", module)).usePost()),
             DIV(cl("module-details"), testCases.get(module).stream().map(clazz -> {
                 Runner runner = Request.aClass(clazz).getRunner();
                 Description desc = runner.getDescription();
@@ -105,13 +121,10 @@
                 return DIV(cl("labkey-indented"),
                         DETAILS(
                                 SUMMARY(
-                                    A(at(href, testCaseURL.getLocalURIString()), displayName),
+                                    simpleLink(displayName, testCaseURL).usePost(),
                                     showRunButtons ? SPAN(cl("scope-tag", JunitController.getScope(clazz).name()), JunitController.getScope(clazz).name()) : null,
                                         (desc.testCount() > 1 ? SPAN(cl("test-count"), "(" + desc.testCount() + ")") : "")),
-                                UL(desc.getChildren().stream().map(
-                                        child -> LI(child.getMethodName() != null
-                                                ? A(at(href, testCaseURL.clone().addParameter("methodName", child.getMethodName())), child.getMethodName())
-                                                : child.toString())))
+                                UL(leafDescriptions(desc).map(child -> renderLeaf(child, testCaseURL)))
 
                         ));
             }))
