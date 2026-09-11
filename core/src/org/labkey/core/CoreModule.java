@@ -79,6 +79,7 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -344,7 +345,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -360,6 +360,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -579,6 +580,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void registerHealthChecks()
     {
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
             {
                 Map<String, Object> healthValues = new HashMap<>();
@@ -590,10 +594,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         dbConnected = conn != null;
                     }
-                    catch (SQLException e)
+                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                    // we return a 200 saying we're not healthy instead of a 500
+                    catch (Exception e)
                     {
+                        if (failedDataSources.add(dbScope.getDataSourceName()))
+                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
+
+                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
                     healthValues.put(dbScope.getDatabaseName(), dbConnected);
                     allConnected &= dbConnected;
