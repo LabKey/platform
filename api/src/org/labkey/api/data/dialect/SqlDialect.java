@@ -1588,11 +1588,13 @@ public abstract class SqlDialect
     /**
      * Drop a schema if it exists.
      * Throws an exception if schema exists and could not be dropped.
+     * @param scope DbScope where the schema might exist
+     * @param schemaName Name of the schema to drop. Casing must match the name in the database exactly. By convention,
+     *                   schema names are all lowercase, but quoting supports mixed case and uppercase as well.
      */
-    public void dropSchema(DbSchema schema, String schemaName)
+    public void dropSchema(DbScope scope, String schemaName)
     {
-        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", "*", schemaName, "SCHEMA", null));
-        new SqlExecutor(schema).execute(sql);
+        new SqlExecutor(scope).execute("DROP SCHEMA IF EXISTS " + quoteIdentifier(schemaName)+ " CASCADE");
     }
 
     /**
