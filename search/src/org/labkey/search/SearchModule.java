@@ -58,6 +58,7 @@ import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchSchema;
 import org.labkey.search.model.SearchStartupProperties;
+import org.labkey.search.model.SecurityQuery;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
@@ -259,7 +260,7 @@ public class SearchModule extends DefaultModule
     @Override
     public @NotNull Set<Class<?>> getUnitTests()
     {
-        return Set.of(AbstractSearchService.TestCase.class);
+        return Set.of(AbstractSearchService.TestCase.class, SecurityQuery.TestCase.class);
     }
 
     @Override
