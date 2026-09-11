@@ -54,6 +54,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgreSqlService;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -62,6 +63,7 @@ import org.labkey.api.exp.api.SampleTypeDomainKind;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
@@ -97,6 +99,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -815,5 +818,208 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         if (!badColumnNames.isEmpty())
             LOG.error("Some storage column names are still too long!! {}", badColumnNames);
+    }
+
+    // Legacy prefixes, frozen at their historical values so later renames of the service constants can't change what this upgrade matches.
+    private static final String LEGACY_CONTAINER_DEFAULTS_PREFIX = "DomainDefaultValue";
+    private static final String LEGACY_USER_DEFAULTS_PARENT_PREFIX = "UserDefaultValueParent";
+
+    /**
+     * Called from exp-26.005-26.006.sql
+     * GitHub Issue #1569: re-key folder-level default values by domain kind. The old key was the container plus the
+     * domain typeURI objectId, which repeats across kinds and is shared outright by an assay design's domains, so
+     * unrelated domains silently overwrote each other's defaults. Rows written before 25.7 are keyed by domain name
+     * instead; both forms are handled here. The owning domain is resolved from the properties the object actually
+     * holds, which is what disambiguates rows that several domains once shared.
+     */
+    @SuppressWarnings("unused")
+    @DeferredUpgrade
+    public static void migrateDefaultValueLsids(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            migrateContainerDefaults();
+            reparentUserDefaults();
+            tx.commit();
+        }
+    }
+
+    private static void migrateContainerDefaults()
+    {
+        SQLFragment sql = new SQLFragment()
+            .append("SELECT o.ObjectId, o.ObjectURI, MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
+            .append("FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
+            .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.ObjectId = o.ObjectId\n")
+            .append("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").append(" ON pdm.PropertyId = op.PropertyId\n")
+            // the legacy prefix is followed by '.'; the qualified form written below inserts '-<kind>' before it
+            .append("WHERE o.ObjectURI LIKE ?\n").add("%:" + LEGACY_CONTAINER_DEFAULTS_PREFIX + ".Folder-%")
+            .append("GROUP BY o.ObjectId, o.ObjectURI");
+
+        List<DefaultValueRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(DefaultValueRow.class);
+        int migrated = 0;
+
+        // Both legacy forms can map onto the same target. The objectId form was written by 25.7 or later, so it is the
+        // newer of the two and is moved first; the name form then loses the NOT EXISTS race below, as it should.
+        for (boolean objectIdForm : new boolean[] {true, false})
+        {
+            for (DefaultValueRow row : rows)
+            {
+                Domain domain = resolveDomain(row);
+                if (domain == null)
+                    continue;
+
+                Lsid domainLsid = new Lsid(domain.getTypeURI());
+                if (objectIdForm != new Lsid(row.getObjectURI()).getObjectId().equals(domainLsid.getObjectId()))
+                    continue;
+
+                String newUri = qualifiedLsid(row.getObjectURI(), domainLsid);
+                if (newUri == null || newUri.equals(row.getObjectURI()))
+                    continue;
+
+                if (renameObject(row.getObjectId(), newUri))
+                    migrated++;
+                else
+                    LOG.warn("Leaving default values at {}: {} already exists.", row.getObjectURI(), newUri);
+            }
+        }
+
+        LOG.info("Folder-level default values re-keyed by domain kind: {} of {} moved.", migrated, rows.size());
+    }
+
+    /**
+     * The per-user parent object groups a domain's scopes so they can be deleted together. A colliding parent collected
+     * children from several domains, so only one of them can keep it -- the rest get a parent of their own.
+     */
+    private static void reparentUserDefaults()
+    {
+        SQLFragment sql = new SQLFragment()
+            .append("SELECT child.ObjectId, child.ObjectURI, parent.ObjectId AS ParentId, parent.ObjectURI AS ParentURI, parent.Container,\n")
+            .append("  MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
+            .append("FROM ").append(OntologyManager.getTinfoObject(), "parent").append("\n")
+            .append("INNER JOIN ").append(OntologyManager.getTinfoObject(), "child").append(" ON child.OwnerObjectId = parent.ObjectId\n")
+            .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.ObjectId = child.ObjectId\n")
+            .append("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").append(" ON pdm.PropertyId = op.PropertyId\n")
+            .append("WHERE parent.ObjectURI LIKE ?\n").add("%:" + LEGACY_USER_DEFAULTS_PARENT_PREFIX + ".Folder-%")
+            .append("GROUP BY child.ObjectId, child.ObjectURI, parent.ObjectId, parent.ObjectURI, parent.Container");
+
+        List<DefaultValueRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(DefaultValueRow.class);
+
+        // children of each legacy parent, bucketed by the qualified parent they now belong under
+        Map<Long, Map<String, List<DefaultValueRow>>> byLegacyParent = new LinkedHashMap<>();
+        for (DefaultValueRow row : rows)
+        {
+            Domain domain = resolveDomain(row);
+            if (domain == null)
+                continue;
+
+            String newParentUri = qualifiedLsid(row.getParentURI(), new Lsid(domain.getTypeURI()));
+            if (newParentUri == null || newParentUri.equals(row.getParentURI()))
+                continue;
+
+            byLegacyParent.computeIfAbsent(row.getParentId(), k -> new LinkedHashMap<>())
+                .computeIfAbsent(newParentUri, k -> new ArrayList<>()).add(row);
+        }
+
+        int reparented = 0;
+
+        for (Map.Entry<Long, Map<String, List<DefaultValueRow>>> legacyParent : byLegacyParent.entrySet())
+        {
+            boolean legacyParentReused = false;
+
+            for (Map.Entry<String, List<DefaultValueRow>> group : legacyParent.getValue().entrySet())
+            {
+                // Renaming the legacy parent for the first group leaves nothing behind; its children still point at it
+                if (!legacyParentReused && renameObject(legacyParent.getKey(), group.getKey()))
+                {
+                    legacyParentReused = true;
+                    reparented += group.getValue().size();
+                    continue;
+                }
+
+                Container container = ContainerManager.getForId(group.getValue().get(0).getContainer());
+                if (container == null)
+                    continue;
+
+                long newParentId = OntologyManager.ensureObject(container, group.getKey());
+                for (DefaultValueRow row : group.getValue())
+                {
+                    SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
+                        .append(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.getObjectId());
+                    new SqlExecutor(ExperimentService.get().getSchema()).execute(update);
+                    reparented++;
+                }
+            }
+        }
+
+        LOG.info("Per-user default values re-parented by domain kind: {} of {} moved.", reparented, rows.size());
+    }
+
+    /** The owning domain, or null when the object's properties don't identify exactly one resolvable user-created domain. */
+    private static Domain resolveDomain(DefaultValueRow row)
+    {
+        if (row.getDomainCount() != 1)
+        {
+            LOG.warn("Leaving default values at {}: properties span {} domains, so the owner is ambiguous.", row.getObjectURI(), row.getDomainCount());
+            return null;
+        }
+
+        Domain domain = PropertyService.get().getDomain(row.getDomainId());
+        if (domain == null)
+        {
+            LOG.warn("Leaving default values at {}: domain {} no longer exists.", row.getObjectURI(), row.getDomainId());
+            return null;
+        }
+
+        // Domains whose kind can't be resolved have always used the name-based key, so they are already correct
+        DomainKind<?> kind = domain.getDomainKind();
+        return kind != null && kind.isUserCreatedType() ? domain : null;
+    }
+
+    /** Rebuild a default-value LSID with the domain kind folded into the namespace prefix, preserving Folder-/User- scope. */
+    private static String qualifiedLsid(String objectURI, Lsid domainLsid)
+    {
+        Lsid existing = new Lsid(objectURI);
+        if (existing.getNamespaceSuffix() == null)
+            return null;
+        return new Lsid(existing.getNamespacePrefix() + "-" + domainLsid.getNamespacePrefix(), existing.getNamespaceSuffix(), domainLsid.getObjectId()).toString();
+    }
+
+    /** A row already at the target was written under the new scheme and is newer, so it wins. */
+    private static boolean renameObject(long objectId, String newUri)
+    {
+        SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
+            .append(" SET ObjectURI = ? WHERE ObjectId = ? AND NOT EXISTS (SELECT 1 FROM ")
+            .append(OntologyManager.getTinfoObject(), "existing").append(" WHERE existing.ObjectURI = ?)")
+            .addAll(newUri, objectId, newUri);
+        return new SqlExecutor(ExperimentService.get().getSchema()).execute(update) > 0;
+    }
+
+    public static class DefaultValueRow
+    {
+        private long _objectId;
+        private String _objectURI;
+        private long _parentId;
+        private String _parentURI;
+        private String _container;
+        private int _domainId;
+        private int _domainCount;
+
+        public long getObjectId() { return _objectId; }
+        public void setObjectId(long objectId) { _objectId = objectId; }
+        public String getObjectURI() { return _objectURI; }
+        public void setObjectURI(String objectURI) { _objectURI = objectURI; }
+        public long getParentId() { return _parentId; }
+        public void setParentId(long parentId) { _parentId = parentId; }
+        public String getParentURI() { return _parentURI; }
+        public void setParentURI(String parentURI) { _parentURI = parentURI; }
+        public String getContainer() { return _container; }
+        public void setContainer(String container) { _container = container; }
+        public int getDomainId() { return _domainId; }
+        public void setDomainId(int domainId) { _domainId = domainId; }
+        public int getDomainCount() { return _domainCount; }
+        public void setDomainCount(int domainCount) { _domainCount = domainCount; }
     }
 }
