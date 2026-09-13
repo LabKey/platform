@@ -50,7 +50,9 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -278,6 +280,14 @@ public class ExpGeneratorHelper
         return run;
     }
 
+    // Require write access to a material's own container before mutating its lineage.
+    private static void assertCanModifyMaterial(User user, ExpMaterial material)
+    {
+        if (material != null && !material.getContainer().hasPermission(user, UpdatePermission.class))
+            throw new UnauthorizedException("No permission to modify sample '" + material.getName()
+                    + "' in " + material.getContainer().getPath());
+    }
+
     static private ExpRunImpl _insertRun(Container container,
                                          User user,
                                          String runName,
@@ -377,6 +387,7 @@ public class ExpGeneratorHelper
             for (String lsid : action.getMaterialInputs())
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                assertCanModifyMaterial(user, material);
                 material.setRun(run);
                 stepApp.addMaterialInput(user, material, null, null);
             }
@@ -385,6 +396,7 @@ public class ExpGeneratorHelper
             for (String lsid : action.getMaterialOutputs())
             {
                 ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
+                assertCanModifyMaterial(user, material);
                 material.setSourceApplication(stepApp);
                 // set up the output to the run
                 if (action.isEnd())
