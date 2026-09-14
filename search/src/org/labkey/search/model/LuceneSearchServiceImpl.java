@@ -1824,6 +1824,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         finally
         {
             TIMER.releaseInvocationTimer(iTimer);
+            TIMER.clearTimesIfFirstInvocation(); // Toss the very first invocation since it likely had to warm the caches, etc.
         }
     }
 

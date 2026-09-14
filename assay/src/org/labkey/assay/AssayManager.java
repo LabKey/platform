@@ -76,6 +76,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
@@ -120,6 +121,12 @@ public class AssayManager implements AssayService
 {
     SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Assays") {
         @Override
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return AssayReadPermission.class;
+        }
+
+        @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
@@ -127,12 +134,24 @@ public class AssayManager implements AssayService
     };
     SearchService.SearchCategory ASSAY_BATCH_CATEGORY = new SearchService.SearchCategory("assayBatch", "Assay Batches", false) {
         @Override
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return AssayReadPermission.class;
+        }
+
+        @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, AssayReadPermission.class);
         }
     };
     SearchService.SearchCategory ASSAY_RUN_CATEGORY = new SearchService.SearchCategory("assayRun", "Assay Runs", false) {
+        @Override
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return AssayReadPermission.class;
+        }
+
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

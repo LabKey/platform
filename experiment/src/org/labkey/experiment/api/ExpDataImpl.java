@@ -133,12 +133,24 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData", false) {
         @Override
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return DataClassReadPermission.class;
+        }
+
+        @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return getPermittedContainerIds(user, containers, DataClassReadPermission.class);
         }
     };
     public static final SearchService.SearchCategory expMediaDataCategory = new SearchService.SearchCategory("mediaData", "ExpData for media objects", false) {
+        @Override
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return MediaReadPermission.class;
+        }
+
         @Override
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {

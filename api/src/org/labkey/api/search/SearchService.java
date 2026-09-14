@@ -187,7 +187,7 @@ public interface SearchService extends SearchMXBean
         }
     }
 
-    enum SEARCH_PHASE {createQuery, buildSecurityFilter, search, applySecurityFilter, processHits}
+    enum SEARCH_PHASE {createQuery, buildSecurityFilterOld, buildSecurityFilter, search, applySecurityFilter, processHits}
 
     interface TaskListener
     {
@@ -305,6 +305,17 @@ public interface SearchService extends SearchMXBean
             return _name;
         }
 
+        /**
+         * Permission required, beyond base container Read (which every searchable container already has), for this
+         * category's documents to be visible. Return null if base Read is sufficient.
+         */
+        @Nullable
+        public Class<? extends Permission> getRequiredPermission()
+        {
+            return null;
+        }
+
+        @Deprecated // TODO: Remove after testing
         protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
         {
             Set<String> containerIds = new HashSet<>();
@@ -315,6 +326,7 @@ public interface SearchService extends SearchMXBean
             return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
         }
 
+        @Deprecated // TODO: Remove after testing
         public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
         {
             return containers.keySet();
