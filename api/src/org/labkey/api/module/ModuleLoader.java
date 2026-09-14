@@ -1885,11 +1885,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         Module m = getModule(moduleName);
         SchemaActions schemaActions = getSchemaActions(m, context);
 
-        schemaActions.deleteList().forEach(schema -> {
-            _log.info("Dropping schema \"{}\"", schema);
-            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
-            scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
-            scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
+        schemaActions.deleteList().forEach(schemaName -> {
+            _log.info("Dropping schema \"{}\"", schemaName);
+            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schemaName + "-%");
+            scope.getSqlDialect().dropSchema(scope, schemaName);
+            scope.invalidateSchema(schemaName, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
             SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
         });
 
