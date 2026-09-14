@@ -942,6 +942,21 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
                 .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$')");
     }
 
+    @Override
+    public SQLFragment weekIsoExpr(SQLFragment expression)
+    {
+        return new SQLFragment("CAST(EXTRACT(week FROM (").append(expression).append(")) AS INTEGER)");
+    }
+
+    @Override
+    public SQLFragment weekUsExpr(SQLFragment expression)
+    {
+        // Week 1 is whatever week contains Jan 1, and weeks start Sunday: (day of year + Sunday-based weekday of Jan 1 - 1) / 7, rounded down, plus one.
+        return new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM (").append(expression)
+                .append(")) + EXTRACT(dow FROM date_trunc('year', (").append(expression)
+                .append("))) - 1) / 7) + 1 AS INTEGER)");
+    }
+
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final TableInfo _table;
@@ -1131,8 +1146,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return formatFunction(call, nativeFn, arguments);
         else if (fn.equalsIgnoreCase("timestampdiff"))
             return timestampdiff(arguments);
-        else if (fn.equalsIgnoreCase("week"))
-            return week(arguments);
         else
             return super.formatJdbcFunction(fn, arguments);
     }
@@ -1171,18 +1184,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return epoch.append("/3600.0");
 
         return super.formatJdbcFunction("timestampdiff", arguments);
-    }
-
-    // pgjdbc translates {fn week(x)} to EXTRACT(WEEK FROM x) -- ISO 8601, weeks start Monday -- while the SQL Server
-    // driver emits DATEPART(week, x) -- US-style, weeks start Sunday. Emit US-style so both databases agree.
-    private SQLFragment week(SQLFragment... arguments)
-    {
-        SQLFragment ret = new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM ");
-        ret.append(arguments[0]);
-        ret.append(") + EXTRACT(dow FROM date_trunc('year', ");
-        ret.append(arguments[0]);
-        ret.append(")) - 1) / 7) + 1 AS INTEGER)");
-        return ret;
     }
 
     @Override

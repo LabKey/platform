@@ -482,6 +482,25 @@ public abstract class Method
         // Put new methods below this line and move above after they're documented, i.e.,
         // added to https://www.labkey.org/Documentation/wiki-page.view?name=labkeySql
 
+        // week() is a passthrough, so its numbering is whatever the database does. These two are defined by LabKey and return the same number on either dialect.
+        //   weekiso(x) -- ISO 8601, 1 to 53. Weeks start Monday and week 1 holds the year's first Thursday, so early January can number as the prior year's week 52 or 53.
+        //   weekus(x)  -- US, 1 to 54. Weeks start Sunday and week 1 holds Jan 1, so every date numbers within its own year.
+        labkeyMethod.put("weekiso", new Method("weekiso", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekIsoInfo();
+            }
+        });
+        labkeyMethod.put("weekus", new Method("weekus", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new WeekUsInfo();
+            }
+        });
 
         // ========== Don't document these ==========
         labkeyMethod.put("__cte_two__", new Method(JdbcType.INTEGER, 0, 0)
@@ -1094,6 +1113,34 @@ public abstract class Method
                 return dialect.isNumericExpr(arg);
 
             throw new IllegalStateException("isnumeric() is not supported for this database dialect: " + dialect.getProductName());
+        }
+    }
+
+    static class WeekIsoInfo extends AbstractMethodInfo
+    {
+        WeekIsoInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekIsoExpr(arguments[0]);
+        }
+    }
+
+    static class WeekUsInfo extends AbstractMethodInfo
+    {
+        WeekUsInfo()
+        {
+            super(JdbcType.INTEGER);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            return dialect.weekUsExpr(arguments[0]);
         }
     }
 

@@ -3821,32 +3821,43 @@ public class QueryServiceImpl implements QueryService
             }
         }
 
+        // 2026 (Jan 1 = Thursday) makes the two rules agree except on Sundays; 2027 (Jan 1 = Friday) puts them one
+        // apart every day and starts in the prior ISO year. A mid-year sample in a Mon-Thu year passes either way.
+        private static final String[] WEEK_DATES = {
+            "2026-01-01",   // Thursday
+            "2026-01-03",   // Saturday
+            "2026-01-04",   // Sunday
+            "2027-01-01",   // Friday
+            "2027-07-15"    // Thursday
+        };
+
         @Test
-        public void testWeek() throws SQLException
+        public void testWeekUs() throws SQLException
         {
-            // Verifies week() returns the same number on both platforms.
-            //
-            // pgjdbc expands {fn week} to ISO 8601 numbering (weeks start Monday, week 1 holds the year's first
-            // Thursday) where SQL Server uses US numbering (weeks start Sunday, week 1 holds Jan 1), so the two
-            // disagreed. BasePostgreSqlDialect.formatJdbcFunction now emits the US form instead of deferring to
-            // the driver.
-            //
-            // The dates cover both rule differences and the year boundary; a mid-year sample in a year whose
-            // Jan 1 falls Mon-Thu passes either way.
-            String sql =
-                "SELECT " +
-                "  week(CAST('2026-01-01 00:00:00' AS TIMESTAMP)) AS w1, " +   // Thursday -> 1
-                "  week(CAST('2026-01-03 00:00:00' AS TIMESTAMP)) AS w2, " +   // Saturday -> 1
-                "  week(CAST('2026-01-04 00:00:00' AS TIMESTAMP)) AS w3, " +   // Sunday   -> 2   (ISO gives 1)
-                "  week(CAST('2027-01-01 00:00:00' AS TIMESTAMP)) AS w4, " +   // Friday   -> 1   (ISO gives 53)
-                "  week(CAST('2027-07-15 00:00:00' AS TIMESTAMP)) AS w5 " +    // Thursday -> 29  (ISO gives 28)
-                "FROM core.Containers";
+            // Weeks start Sunday and week 1 holds Jan 1, matching SQL Server's DATEPART(week, x) under DATEFIRST 7.
+            assertWeeks("weekus", 1, 1, 2, 1, 29);
+        }
+
+        @Test
+        public void testWeekIso() throws SQLException
+        {
+            // ISO 8601: weeks start Monday and week 1 holds the year's first Thursday, so 2027-01-01 lands in 2026's week 53.
+            assertWeeks("weekiso", 1, 1, 1, 53, 28);
+        }
+
+        private void assertWeeks(String method, int... expected) throws SQLException
+        {
+            StringBuilder sql = new StringBuilder("SELECT ");
+            for (int i = 0; i < WEEK_DATES.length; i++)
+                sql.append(i > 0 ? ", " : "").append(method)
+                   .append("(CAST('").append(WEEK_DATES[i]).append(" 00:00:00' AS TIMESTAMP)) AS w").append(i + 1);
+            sql.append(" FROM core.Containers");
 
             QueryDef qd = new QueryDef();
             qd.setSchema("core");
             qd.setName("junit" + GUID.makeHash());
             qd.setContainer(JunitUtil.getTestContainer().getId());
-            qd.setSql(sql);
+            qd.setSql(sql.toString());
             QueryDefinition qdef = new CustomQueryDefinitionImpl(TestContext.get().getUser(), JunitUtil.getTestContainer(), qd);
             List<QueryException> errors = new ArrayList<>();
             TableInfo t = qdef.getTable(errors, false);
@@ -3856,11 +3867,8 @@ public class QueryServiceImpl implements QueryService
             try (Results results = new TableSelector(t).getResults())
             {
                 assertTrue("Expected at least one row from core.Containers", results.next());
-                assertEquals("week(2026-01-01), Thursday, on " + dialect, 1, results.getInt("w1"));
-                assertEquals("week(2026-01-03), Saturday, on " + dialect, 1, results.getInt("w2"));
-                assertEquals("week(2026-01-04), Sunday, on " + dialect, 2, results.getInt("w3"));
-                assertEquals("week(2027-01-01), Friday, on " + dialect, 1, results.getInt("w4"));
-                assertEquals("week(2027-07-15), Fri-Sun-anchored year, on " + dialect, 29, results.getInt("w5"));
+                for (int i = 0; i < expected.length; i++)
+                    assertEquals(method + "(" + WEEK_DATES[i] + ") on " + dialect, expected[i], results.getInt("w" + (i + 1)));
             }
         }
     }
