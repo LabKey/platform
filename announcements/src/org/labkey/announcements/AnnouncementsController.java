@@ -133,6 +133,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.HtmlWriter;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1180,7 +1181,8 @@ public class AnnouncementsController extends SpringActionController
         public BindException bindParameters(PropertyValues m) throws Exception
         {
             // issue 16731: check that if an entityId is present, it is a GUID
-            if (m.getPropertyValue("entityId") != null && !GUID.isGUID(m.getPropertyValue("entityId").getValue().toString()))
+            PropertyValue entityId = m.getPropertyValue("entityId");
+            if (entityId != null && !GUID.isGUID(entityId.getValue().toString()))
                 throw new NotFoundException();
 
             return super.bindParameters(m);

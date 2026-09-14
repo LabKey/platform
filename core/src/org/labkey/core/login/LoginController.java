@@ -354,7 +354,7 @@ public class LoginController extends SpringActionController
             {
                 // Attempt authentication with all active form providers
                 String formEmail = form.getEmail();
-                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, formEmail, form.getPassword(), form.getReturnUrlHelper(), true);
+                PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, formEmail, form.getPassword(), form.getReturnUrlHelper(), true, form.isForceReauth());
                 AuthenticationStatus status = result.getStatus();
 
                 if (Success == status)
