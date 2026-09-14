@@ -59,6 +59,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
@@ -102,11 +103,9 @@ public class SecurityQuery extends Query
         // resolved directly; the rest are grouped by required permission so multiple categories that require the
         // same permission (e.g., the three assay categories all require AssayReadPermission) share a single
         // O(containers) assembly pass below instead of each redoing it.
-        Set<String> baseReadCategoryNames = new HashSet<>();
-        MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
-            groupCategoriesByRequiredPermission(SearchService.get().getSearchCategories(), baseReadCategoryNames);
+        CategoryPermissions categoryPermissions = groupCategoriesByRequiredPermission(SearchService.get().getSearchCategories());
 
-        for (String categoryName : baseReadCategoryNames)
+        for (String categoryName : categoryPermissions.baseReadCategoryNames())
             _categoryContainers.put(categoryName, _containerIds.keySet());
 
         // Containers that inherit their policy (e.g., workbooks, which typically don't have their own explicit
@@ -115,6 +114,7 @@ public class SecurityQuery extends Query
         // so compute it once per distinct policy instead of once per container per category. A user's full granted
         // permission set can be large (100+ for a site admin), but categories only ever ask about a handful of
         // permission classes, so retain just those instead of holding the full set for every distinct policy.
+        Map<Class<? extends Permission>, Collection<SearchCategory>> categoriesByPermission = categoryPermissions.categoriesByPermission();
         Set<Class<? extends Permission>> requiredPermissions = categoriesByPermission.keySet();
         HashMap<String, Set<Class<? extends Permission>>> permissionsByPolicy = new HashMap<>();
 
@@ -122,7 +122,7 @@ public class SecurityQuery extends Query
         {
             for (Container c : _containerIds.values())
             {
-                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), id -> {
+                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> {
                     Set<Class<? extends Permission>> permitted = new HashSet<>(requiredPermissions);
                     permitted.retainAll(SecurityManager.getPermissions(c, user, null));
                     return permitted;
@@ -130,7 +130,7 @@ public class SecurityQuery extends Query
             }
         }
 
-        categoriesByPermission.asMap().forEach((requiredPermission, categories) -> {
+        categoriesByPermission.forEach((requiredPermission, categories) -> {
             Set<String> permittedContainerIds = new HashSet<>();
 
             for (var entry : _containerIds.entrySet())
@@ -146,14 +146,16 @@ public class SecurityQuery extends Query
         assert categoryContainers.equals(_categoryContainers);
     }
 
+    record CategoryPermissions(Map<Class<? extends Permission>, Collection<SearchCategory>> categoriesByPermission, Set<String> baseReadCategoryNames){}
+
     /**
      * Splits categories into those requiring only base container Read (their names are added to baseReadCategoryNames)
      * and those requiring a specific permission, which are grouped by that permission class.
      */
-    static MultiValuedMap<Class<? extends Permission>, SearchCategory> groupCategoriesByRequiredPermission(
-            Collection<SearchCategory> categories, Set<String> baseReadCategoryNames)
+    static CategoryPermissions groupCategoriesByRequiredPermission(Collection<SearchCategory> categories)
     {
         MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission = new ArrayListValuedHashMap<>();
+        Set<String> baseReadCategoryNames = new HashSet<>();
 
         for (SearchCategory category : categories)
         {
@@ -165,7 +167,7 @@ public class SecurityQuery extends Query
                 categoriesByPermission.put(requiredPermission, category);
         }
 
-        return categoriesByPermission;
+        return new CategoryPermissions(categoriesByPermission.asMap(), baseReadCategoryNames);
     }
 
     @Override
@@ -419,13 +421,11 @@ public class SecurityQuery extends Query
         public void testCategoryWithNoRequiredPermissionGoesToBaseRead()
         {
             SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
-            Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
-                SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki), baseReadCategoryNames);
+            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki));
 
-            assertEquals(Set.of("wiki"), baseReadCategoryNames);
-            assertTrue(categoriesByPermission.isEmpty());
+            assertEquals(Set.of("wiki"), result.baseReadCategoryNames());
+            assertTrue(result.categoriesByPermission().isEmpty());
         }
 
         @Test
@@ -435,14 +435,12 @@ public class SecurityQuery extends Query
             SearchCategory assay = categoryRequiring("assay", InsertPermission.class);
             SearchCategory assayBatch = categoryRequiring("assayBatch", InsertPermission.class);
             SearchCategory assayRun = categoryRequiring("assayRun", InsertPermission.class);
-            Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
-                SecurityQuery.groupCategoriesByRequiredPermission(List.of(assay, assayBatch, assayRun), baseReadCategoryNames);
+            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(assay, assayBatch, assayRun));
 
-            assertTrue(baseReadCategoryNames.isEmpty());
-            assertEquals(Set.of(InsertPermission.class), categoriesByPermission.keySet());
-            assertEquals(Set.of(assay, assayBatch, assayRun), Set.copyOf(categoriesByPermission.get(InsertPermission.class)));
+            assertTrue(result.baseReadCategoryNames().isEmpty());
+            assertEquals(Set.of(InsertPermission.class), result.categoriesByPermission().keySet());
+            assertEquals(Set.of(assay, assayBatch, assayRun), Set.copyOf(result.categoriesByPermission().get(InsertPermission.class)));
         }
 
         @Test
@@ -450,14 +448,12 @@ public class SecurityQuery extends Query
         {
             SearchCategory data = categoryRequiring("data", InsertPermission.class);
             SearchCategory media = categoryRequiring("media", DeletePermission.class);
-            Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
-                SecurityQuery.groupCategoriesByRequiredPermission(List.of(data, media), baseReadCategoryNames);
+            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(data, media));
 
-            assertEquals(Set.of(InsertPermission.class, DeletePermission.class), categoriesByPermission.keySet());
-            assertEquals(List.of(data), categoriesByPermission.get(InsertPermission.class));
-            assertEquals(List.of(media), categoriesByPermission.get(DeletePermission.class));
+            assertEquals(Set.of(InsertPermission.class, DeletePermission.class), result.categoriesByPermission().keySet());
+            assertEquals(List.of(data), result.categoriesByPermission().get(InsertPermission.class));
+            assertEquals(List.of(media), result.categoriesByPermission().get(DeletePermission.class));
         }
 
         @Test
@@ -465,13 +461,11 @@ public class SecurityQuery extends Query
         {
             SearchCategory wiki = new SearchCategory("wiki", "Wiki Pages");
             SearchCategory data = categoryRequiring("data", InsertPermission.class);
-            Set<String> baseReadCategoryNames = new HashSet<>();
 
-            MultiValuedMap<Class<? extends Permission>, SearchCategory> categoriesByPermission =
-                SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki, data), baseReadCategoryNames);
+            CategoryPermissions result = SecurityQuery.groupCategoriesByRequiredPermission(List.of(wiki, data));
 
-            assertEquals(Set.of("wiki"), baseReadCategoryNames);
-            assertEquals(List.of(data), categoriesByPermission.get(InsertPermission.class));
+            assertEquals(Set.of("wiki"), result.baseReadCategoryNames());
+            assertEquals(List.of(data), result.categoriesByPermission().get(InsertPermission.class));
         }
     }
 }
