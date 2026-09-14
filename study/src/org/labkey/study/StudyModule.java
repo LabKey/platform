@@ -773,6 +773,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 PublishConfirmContainerScopingTest.class,
                 CreateChildStudyAction.ContainerScopingTestCase.class,
                 StudyController.ContainerScopingTestCase.class,
+                StudyController.DatasetPermissionsTestCase.class,
                 ReportsController.ContainerScopingTestCase.class);
     }
 
