@@ -365,7 +365,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
         change.execute();
     }
 
-    public void addProperties(Domain domain, Collection<DomainProperty> properties, boolean allowAddBaseProperty)
+    public void addProperties(Domain domain, Collection<DomainProperty> properties)
     {
         DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
@@ -390,7 +390,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             if (prop.getName() == null || prop.getName().isEmpty())
                 throw new IllegalArgumentException("Can't add property with no name: " + prop.getPropertyURI());
 
-            if (!allowAddBaseProperty && base.contains(prop.getName()))
+            if (base.contains(prop.getName()))
             {
                 // apparently this is a case where the domain allows a propertydescriptor to be defined with the same
                 // name as a built-in column. e.g. to allow setting overrides?
