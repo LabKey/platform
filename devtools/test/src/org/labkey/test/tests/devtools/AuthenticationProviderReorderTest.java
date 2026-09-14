@@ -70,12 +70,11 @@ public class AuthenticationProviderReorderTest extends BaseWebDriverTest
         assertSsoLinkOrder(config_uncool, config_cool);
         simpleSignIn();
 
-        configurePage = LoginConfigurePage.beginAt(this);
-        WebElement uncoolRow = Locator.byClass("domain-row-handle").findElement(configurePage.getPrimaryConfigurationRow(config_uncool));
-        WebElement coolRow = Locator.byClass("domain-row-handle").findElement(configurePage.getPrimaryConfigurationRow(config_cool));
-        dragAndDrop(uncoolRow, coolRow);
-        BootstrapLocators.infoBanner.waitForElement(getDriver(), 2_000);
-        configurePage.clickSaveAndFinish();
+        LoginConfigurePage reorderPage = LoginConfigurePage.beginAt(this);
+        keyboardDragAndDrop(reorderPage.getPrimaryConfigurationRow(config_uncool).getDragHandle(),
+                reorderPage.getPrimaryConfigurationRow(config_cool).getDragHandle());
+        waitFor(() -> BootstrapLocators.infoBanner.existsIn(getDriver()), "Configurations were not reordered", 2_000);
+        reorderPage.clickSaveAndFinish();
 
         signOut();
         assertSsoLinkOrder(config_cool, config_uncool);

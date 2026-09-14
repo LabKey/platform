@@ -152,6 +152,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleChangeNotify;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -5077,6 +5078,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // Use null as container because we want deletes to run even if the container is deleted
                 () -> SearchService.get().deleteResources(docids),
                 POSTCOMMIT);
+
+            // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
+            // Deletes don't go through onSamplesChanged, so the notification is fired here.
+            transaction.addCommitTask(() -> SampleChangeNotify.fireSampleDataChanged(container), POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)

@@ -33,6 +33,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -1203,78 +1204,111 @@ public class ListManager implements SearchService.DocumentProvider
 
     void addAuditEvent(ListDefinitionImpl list, User user, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
+        AuditLogService.get().addEvent(user, createAuditEvent(list, c, comment, entityId, oldRecord, newRecord));
+    }
+
+    ListAuditProvider.ListAuditEvent createAuditEvent(ListDefinitionImpl list, Container c, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
+    {
         ListAuditProvider.ListAuditEvent event = new ListAuditProvider.ListAuditEvent(c, comment, list);
 
         event.setListItemEntityId(entityId);
         if (oldRecord != null) event.setOldRecordMap(oldRecord);
         if (newRecord != null) event.setNewRecordMap(newRecord);
 
-        AuditLogService.get().addEvent(user, event);
+        return event;
     }
 
     String formatAuditItem(ListDefinitionImpl list, User user, Map<String, Object> props)
     {
-        String itemRecord = "";
-        TableInfo ti = list.getTable(user);
+        return getAuditItemFormatter(list, user).format(props);
+    }
 
-        if (null != ti)
+    AuditItemFormatter getAuditItemFormatter(ListDefinitionImpl list, User user)
+    {
+        return new AuditItemFormatter(list, user);
+    }
+
+    /**
+     * Builds the audit record map for list rows. Resolve one instance per operation, not per row: the table, the
+     * reserved property names, and the name resolution for a given key are identical for every row of a list.
+     */
+    static class AuditItemFormatter
+    {
+        private final TableInfo _table;
+        private final Domain _domain;
+        private final Set<String> _reserved;
+        private final Map<String, String> _resolvedNames = new CaseInsensitiveHashMap<>();
+
+        AuditItemFormatter(ListDefinitionImpl list, User user)
         {
-            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
-            Set<String> reserved = list.getDomain().getDomainKind().getReservedPropertyNames(list.getDomain(), user);
+            _table = list.getTable(user);
+            _domain = list.getDomain();
+            _reserved = null == _table ? Set.of() : new CaseInsensitiveHashSet(_domain.getDomainKind().getReservedPropertyNames(_domain, user));
+        }
 
-            // Match props to columns
+        String format(Map<String, Object> props)
+        {
+            if (null == _table)
+                return "";
+
+            Map<String, Object> recordChangedMap = new CaseInsensitiveHashMap<>();
+
             for (Map.Entry<String, Object> entry : props.entrySet())
             {
-                String baseKey = entry.getKey();
+                Object value = entry.getValue();
 
-                boolean isReserved = false;
-                for (String res : reserved)
-                {
-                    if (res.equalsIgnoreCase(baseKey))
-                    {
-                        isReserved = true;
-                        break;
-                    }
-                }
-
-                if (isReserved)
+                if (null == value)
                     continue;
 
-                ColumnInfo col = ti.getColumn(FieldKey.fromParts(baseKey));
-                Object value = entry.getValue();
-                String key = null;
+                String key = resolveName(entry.getKey());
 
-                if (null != col)
-                {
-                    // Found the column
-                    key = col.getName(); // best good
-                }
-                else
-                {
-                    // See if there is a match in the domain properties
-                    for (DomainProperty dp : list.getDomain().getProperties())
-                    {
-                        if (dp.getName().equalsIgnoreCase(baseKey))
-                        {
-                            key = dp.getName(); // middle good
-                        }
-                    }
-
-                    // Try by name
-                    DomainProperty dp = list.getDomain().getPropertyByName(baseKey);
-                    if (null != dp)
-                        key = dp.getName();
-                }
-
-                if (null != key && null != value)
+                if (null != key)
                     recordChangedMap.put(key, value);
             }
 
-            if (!recordChangedMap.isEmpty())
-                itemRecord = ListAuditProvider.encodeForDataMap(recordChangedMap);
+            return recordChangedMap.isEmpty() ? "" : ListAuditProvider.encodeForDataMap(recordChangedMap);
         }
 
-        return itemRecord;
+        /** @return the canonical property name to audit under, or null if the key is reserved or unknown */
+        private String resolveName(String baseKey)
+        {
+            if (_resolvedNames.containsKey(baseKey))
+                return _resolvedNames.get(baseKey);
+
+            String key = computeName(baseKey);
+            _resolvedNames.put(baseKey, key);
+
+            return key;
+        }
+
+        private String computeName(String baseKey)
+        {
+            if (_reserved.contains(baseKey))
+                return null;
+
+            ColumnInfo col = _table.getColumn(FieldKey.fromParts(baseKey));
+
+            if (null != col)
+                return col.getName(); // best good
+
+            String key = null;
+
+            // See if there is a match in the domain properties
+            for (DomainProperty dp : _domain.getProperties())
+            {
+                if (dp.getName().equalsIgnoreCase(baseKey))
+                {
+                    key = dp.getName(); // middle good
+                }
+            }
+
+            // Try by name
+            DomainProperty dp = _domain.getPropertyByName(baseKey);
+            if (null != dp)
+                key = dp.getName();
+
+            return key;
+        }
     }
 
     boolean importListSchema(

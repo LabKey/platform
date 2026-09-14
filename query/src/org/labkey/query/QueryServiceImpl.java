@@ -3083,7 +3083,7 @@ public class QueryServiceImpl implements QueryService
         return new AbstractAuditHandler()
         {
             @Override
-            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row, null);
                 event.setUserComment(userComment);
@@ -3091,7 +3091,7 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);

@@ -27,8 +27,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -155,7 +155,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                     propertyUris.add(property.getPropertyURI());
                 }
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), parentLSID);
+                SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), m.getRowId());
                 Map<String,Object> tableProps = new TableSelector(queryTable, filter, null).getMap();
                 // include calculated fields from the domain / query as well
                 List<ColumnInfo> cols = queryTable.getColumns().stream()
