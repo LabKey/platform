@@ -85,6 +85,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JunitUtil;
@@ -2464,6 +2465,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      * Derive every colliding name from a rowId read back from the server, never a hardcoded number: a literal name
      * collides only when the sequence happens to hand out that value.
      */
+    @TestTimeout(120)
     public static class RemapCollisionTestCase extends Assert
     {
         private static final String LIST_TITLE_COLUMN = "Label";
@@ -2491,10 +2493,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @AfterClass
         public static void doCleanup() throws Exception
         {
-            for (Integer userId : _createdUserIds)
-                UserManager.deleteUser(userId);
-            _createdUserIds.clear();
-            JunitUtil.deleteTestContainer();
+            try
+            {
+                for (Integer userId : _createdUserIds)
+                    UserManager.deleteUser(userId);
+            }
+            finally
+            {
+                _createdUserIds.clear();
+                JunitUtil.deleteTestContainer();
+            }
         }
 
         /** An integer primary key with a text title column is the generic shape of this hazard; the surfaces below are instances of it. */
@@ -2545,6 +2553,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 assertTrue("expected an ambiguity error, got: " + x.getMessage(),
                         x.getMessage() != null && x.getMessage().contains("Found 2 values"));
             }
+        }
+
+        /** The first lookup of an unmatched key must report the miss, not throw: RemapCache's callers already read null as unresolved. */
+        @Test
+        public void unmatchedKeyMissesOnEveryLookup() throws Exception
+        {
+            TableInfo list = createList("RemapUnmatchedKeyList");
+            insertListRow(list, uniqueName("seed"));
+
+            RemapConverter converter = new RemapConverter(list, true, false, true);
+            converter.setIncludePkLookup(false);
+
+            String absent = uniqueName("nobody");
+            assertNull("no row is titled \"" + absent + "\", so the first lookup must miss", converter.mappedValue(absent));
+            assertNull("the cached miss must read the same as the uncached one", converter.mappedValue(absent));
         }
 
         /**
