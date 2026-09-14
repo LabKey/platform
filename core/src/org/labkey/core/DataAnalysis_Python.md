@@ -23,7 +23,7 @@ When writing Python scripts, read the server URL from `.mcp.json` to pre-populat
 Confirm all of these settings with the analyst before writing any script.
 
 ## Online Reference Material
-https://www.labkey.org/Documentation/wiki-page.view?name=python
+For questions about the `labkey` Python package, LabKey SQL, or server concepts not covered here, call `searchDocumentation` (e.g. `searchDocumentation("labkey python APIWrapper select_rows filters")`), then `retrieveDocument` for the full page.
 
 ## MCP Tools Available
 
@@ -291,7 +291,7 @@ All modification APIs accept `timeout=300`, `container_path=None`, `transacted=T
 
 10. **select_rows sends a GET request** to `query-getQuery.api`. `execute_sql` sends a POST to `query-executeSql.api`.
 
-11. **LabKey SQL is not standard SQL.** It is a SQL dialect specific to LabKey. Use `mcp__labkey__validateSQL` to check syntax before executing. Refer to LabKey documentation for dialect-specific features (e.g., lookup column traversal via `/` or `.` notation).
+11. **LabKey SQL is not standard SQL.** It is a SQL dialect specific to LabKey. Use `mcp__labkey__validateSQL` to check syntax before executing. For dialect-specific features (e.g., lookup column traversal via `/` or `.` notation), read the LabKey SQL resource (`resource://org/labkey/query/controllers/prompts/LabKeySql.md`) or call `searchDocumentation`.
 
 ## Typical Analysis Workflow
 
