@@ -528,7 +528,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             LimitedUser admin = new LimitedUser(context.getUpgradeUser(), SiteAdminRole.class);
             int numDuplicates = service.fixContainerForExpDataFiles(admin);
             LOG.info("Fixed {} duplicate data files.", numDuplicates);
+            tx.commit();
         }
+        catch (Exception e) // Issue 55026
+        {
+            LOG.error("Error while fixing container for moved sample files.", e);
+        }
+
     }
 
     /**
