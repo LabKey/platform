@@ -539,7 +539,6 @@ public class QueryPivot extends AbstractQueryRelation
             }
 
             // Add the pivoted aggregate columns grouped by pivot value
-            boolean droppedColumn = false;
             if (!aggs.isEmpty())
             {
                 for (String pivotValue : pivotValues.keySet())
@@ -554,21 +553,8 @@ public class QueryPivot extends AbstractQueryRelation
                         // _makePivotedAggColumn() returns null when parse errors are present
                         if (null != pvt)
                             _columns.put(pivotName, pvt);
-                        else
-                            droppedColumn = true;
                     }
                 }
-            }
-
-            // A silently short column list is harder to diagnose than the parse error behind it, so throw the way
-            // getSql() and getColMembers() do. Discard the cached _columns first, or the partial map gets handed
-            // out unguarded on the next call.
-            if (droppedColumn && !getParseErrors().isEmpty())
-            {
-                _columns = null;
-                QueryException qe = getParseErrors().get(0);
-                _query.decorateException(qe);
-                throw qe;
             }
         }
         return _columns;
