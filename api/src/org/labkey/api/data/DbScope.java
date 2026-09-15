@@ -43,7 +43,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -558,16 +557,6 @@ public class DbScope
 
             if (null == primaryDS)
                 throw new ConfigurationException("You must have a DataSource named \"" + LABKEY_DATA_SOURCE + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
-
-            // When running in devMode, allow either database. When running in production mode, throw if the
-            // distribution doesn't support the primary database type.
-            if (!AppProps.getInstance().isDevMode())
-            {
-                SqlDialect primaryDialect = primaryDS.getDialect();
-                SupportedDatabase primaryDatabaseType = SupportedDatabase.get(primaryDialect);
-                if (!AppProps.getInstance().getDistributionSupportedDatabases().contains(primaryDatabaseType))
-                    throw new ConfigurationException("This distribution (" + AppProps.getInstance().getDistributionFilename() + ") does not support " + primaryDialect.getProductName());
-            }
 
             primaryDS.setPrimary();
 
