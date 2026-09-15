@@ -1247,7 +1247,6 @@ api/src/org/labkey/api/study/Cohort.java -text
 api/src/org/labkey/api/study/Dataset.java -text
 api/src/org/labkey/api/study/DatasetTable.java -text
 api/src/org/labkey/api/study/Location.java -text
-api/src/org/labkey/api/study/MasterPatientIndexService.java -text
 api/src/org/labkey/api/study/ParticipantCategory.java -text
 api/src/org/labkey/api/study/ParticipantVisit.java -text
 api/src/org/labkey/api/study/permissions/SharedParticipantGroupPermission.java -text
@@ -2599,7 +2598,6 @@ study/src/org/labkey/study/importer/VisitMapParseException.java -text
 study/src/org/labkey/study/importer/VisitMapReader.java -text
 study/src/org/labkey/study/importer/VisitMapRecord.java -text
 study/src/org/labkey/study/importer/XmlVisitMapReader.java -text
-study/src/org/labkey/study/MasterPatientIndexMaintenanceTask.java -text
 study/src/org/labkey/study/model/AbstractStudyEntity.java -text
 study/src/org/labkey/study/model/ChildStudyDefinition.java -text
 study/src/org/labkey/study/model/CohortImpl.java -text
@@ -2639,7 +2637,6 @@ study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
 study/src/org/labkey/study/pipeline/DatasetInferSchemaReader.java -text
 study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
 study/src/org/labkey/study/pipeline/FileAnalysisDatasetTask.java -text
-study/src/org/labkey/study/pipeline/MasterPatientIndexUpdateTask.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
 study/src/org/labkey/study/pipeline/StandaloneDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StudyPipeline.java -text
@@ -2734,7 +2731,6 @@ study/src/org/labkey/study/view/importVisitMap.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageFilewatchers.jsp -text
-study/src/org/labkey/study/view/manageMasterPatientConfig.jsp -text
 study/src/org/labkey/study/view/manageParticipantCategories.jsp -text
 study/src/org/labkey/study/view/manageReports.jsp -text
 study/src/org/labkey/study/view/manageStudy.jsp -text
