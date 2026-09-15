@@ -43,8 +43,7 @@ public class EhCacheProvider implements CacheProvider
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
 
     private final AtomicLong cacheCount = new AtomicLong(0);
-    private final SafeCacheManager MANAGER;
-    private final List<WeakReference<Cache>> ehCacheReferenceList;
+    private final CacheManager MANAGER;
 
     public static EhCacheProvider getInstance()
     {
@@ -53,37 +52,16 @@ public class EhCacheProvider implements CacheProvider
 
     private EhCacheProvider()
     {
-        final CacheManager cm;
 
         try (InputStream is = EhCacheProvider.class.getResourceAsStream("ehcache.xml"))
         {
-            cm = new CacheManager(is);
-            MANAGER = new SafeCacheManager(cm);
+            MANAGER = new CacheManager(is);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
 
-        List<WeakReference<Cache>> list;
-
-        // Leave this in place to allow monitoring the size of the internal EhCache reference list. See #19480.
-        try
-        {
-            Field craField = cm.getClass().getDeclaredField("cacheRejoinAction");
-            craField.setAccessible(true);
-            Object cra = craField.get(cm);
-            Field cachedField = cra.getClass().getDeclaredField("caches");
-            cachedField.setAccessible(true);
-            list = (List<WeakReference<Cache>>) cachedField.get(cra);
-        }
-        catch (NoSuchFieldException | IllegalAccessException e)
-        {
-            LOG.error("Could not access EhCache reference list via reflection", e);
-            list = null;
-        }
-
-        ehCacheReferenceList = list;
     }
 
     @Override
@@ -128,10 +106,6 @@ public class EhCacheProvider implements CacheProvider
     void closeCache(Cache cache)
     {
         MANAGER.removeCache(cache.getName());
-
-        // We've upgraded EhCache to 2.6.8, so we no longer need to modify ehCacheReferenceList. Just log its size to keep us (and EhCache) honest. See #19480.
-        if (null != ehCacheReferenceList)
-            LOG.debug("Caches in EhCache reference list: {}", ehCacheReferenceList.size());
 
         LOG.debug("Closing \"{}\".  Ehcaches: {}", cache.getName(), MANAGER.getCacheNames().length);
     }
