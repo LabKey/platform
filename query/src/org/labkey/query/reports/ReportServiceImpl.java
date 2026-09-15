@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
@@ -438,9 +439,15 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         else
             throw new RuntimeException("Can't save a report that is not stored in the database!");
 
-        boolean reportExists = null != reportId && reportExists(reportId.getRowId());
+        // A descriptor's reportId can come straight from client input, so it may name a row in any container.
+        ReportDB existing = null != reportId ? getReportDB(reportId.getRowId()) : null;
+        if (null != existing && !c.getId().equals(existing.getContainerId()))
+            throw new UnauthorizedException("A report can only be saved from the folder that it belongs to.");
+
+        boolean reportExists = null != existing;
         if (reportExists)
-            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId());
+            reportDB = Table.update(user, getTable(), reportDB, reportId.getRowId(),
+                    new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId()), Level.WARN);
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
@@ -815,12 +822,11 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         return null;
     }
 
-    private boolean reportExists(int reportId)
+    /** Unscoped by container on purpose: callers need the row's own container to decide whether they may touch it. */
+    private @Nullable ReportDB getReportDB(int reportId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), reportId);
-        ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
-
-        return (report != null);
+        return new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
     }
 
     @Nullable
