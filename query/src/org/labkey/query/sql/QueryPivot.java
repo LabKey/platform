@@ -15,7 +15,6 @@
  */
 package org.labkey.query.sql;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -825,31 +824,13 @@ public class QueryPivot extends AbstractQueryRelation
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
                 sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
-                {
                     sql.append(" IS NULL");
-                }
                 else
                 {
-                    // Bind rather than embed the source text: a value containing ';' or a quote trips SQLFragment's guardrail.
-                    // Postgres needs an explicit parameter type, and wrapConstant() types date/timestamp pivot values as
-                    // QString, so prefer the pivot column's type and fall back to the constant's if it won't convert.
-                    Object bindValue = ((IConstant) value).getValue();
-                    JdbcType bindType = ((QExpr) value).getJdbcType();
-                    JdbcType columnType = _pivotColumn.getJdbcType();
-                    if (null != columnType && JdbcType.OTHER != columnType && columnType != bindType)
-                    {
-                        try
-                        {
-                            bindValue = columnType.convert(bindValue);
-                            bindType = columnType;
-                        }
-                        catch (ConversionException ignored)
-                        {
-                            // keep the constant's own type and value
-                        }
-                    }
-                    sql.append("=?");
-                    sql.add(bindValue, bindType);
+                    // Let the constant write itself into sql, quoting through the dialect. Never splice in its source text:
+                    // text carrying ';' or an unbalanced quote trips SQLFragment's guardrail.
+                    sql.append("=");
+                    ((QExpr) value).appendSql(sql, _query);
                 }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
