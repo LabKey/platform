@@ -2669,12 +2669,12 @@ public class DbScope
             _auditEvent = event;
         }
 
-        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
+        <K extends java.io.Serializable, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
             return (Cache<K, V>)_caches.get(cache);
         }
 
-        <K, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
+        <K extends java.io.Serializable, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
         {
             _caches.put(cache, map);
         }

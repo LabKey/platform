@@ -71,7 +71,7 @@ public class CacheManager
     /** Marker indicating unlimited entries or unlimited time-to-live (do not expire entries) */
     public static final int UNLIMITED = 0;
 
-    private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
+    private static <K extends java.io.Serializable, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
         CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null, Thread.currentThread().getStackTrace());
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
@@ -79,7 +79,7 @@ public class CacheManager
         return cache;
     }
 
-    public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
+    public static <K extends java.io.Serializable, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
     {
         return createCache(limit, defaultTimeToLive, debugName);
     }
@@ -89,7 +89,7 @@ public class CacheManager
         return createCache(limit, defaultTimeToLive, debugName);
     }
 
-    public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
+    public static <K extends java.io.Serializable, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
         TrackingCache<K, Wrapper<V>> cache = getCache(limit, defaultTimeToLive, debugName);
         return new BlockingCache<>(cache, loader);

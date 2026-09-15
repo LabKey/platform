@@ -41,7 +41,7 @@ import java.util.function.Predicate;
  * No synchronization is necessary in this class since the underlying caches are thread-safe, and the transaction cache
  * creation is single-threaded since the Transaction is thread local.
  */
-public class DatabaseCache<K, V> implements Cache<K, V>
+public class DatabaseCache<K extends java.io.Serializable, V> implements Cache<K, V>
 {
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
@@ -53,12 +53,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         _scope = scope;
     }
 
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    public static <K extends java.io.Serializable, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
     }
 
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    public static <K extends java.io.Serializable, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
         return get(scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
@@ -69,7 +69,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
      * transaction's private cache into the shared cache after successful commit. This can result in a big performance
      * improvement, particularly for operations that always take place inside a transaction.
      */
-    private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
+    private static class BlockingDatabaseCache<K extends java.io.Serializable, V> extends BlockingCache<K, V>
     {
         private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
@@ -318,7 +318,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static class TestCase extends Assert
     {
-        public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
+        public static class TempDatabaseCache<K extends java.io.Serializable, V> extends DatabaseCache<K, V>
         {
             public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
             {

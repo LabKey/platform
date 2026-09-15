@@ -234,7 +234,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element
     // type, so the throttle dedupes on those rather than on the full (call site + row count + SQL) combination.
     private record LargeResultWarning(String stackKey, int rowCount, String elementClass, String selectorClass,
-                                      String sql, Throwable stackTrace)
+                                      String sql, Throwable stackTrace) implements java.io.Serializable
     {
         @Override
         public boolean equals(Object o)

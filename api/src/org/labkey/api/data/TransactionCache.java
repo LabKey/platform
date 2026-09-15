@@ -36,7 +36,7 @@ import java.util.function.Predicate;
  * during the transaction and in the case of a rollback. On successful commit, remove and clear operations are replayed
  * into the shared cache. Using a BlockingDatabaseCache ensures that load() operations are also replayed.
  */
-public class TransactionCache<K, V> implements Cache<K, V>
+public class TransactionCache<K extends java.io.Serializable, V> implements Cache<K, V>
 {
     /** Need our own markers so we can distinguish missing vs. cached miss and missing vs. removed */
     @SuppressWarnings("unchecked")

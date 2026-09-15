@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * <p>Tracks how many times the consumer actually ran ({@link #getExecutionCount()}) versus was throttled
  * ({@link #getThrottledCount()}), useful for metrics and for tests asserting the throttling behavior.</p>
  */
-public class Throttle<K>
+public class Throttle<K extends java.io.Serializable>
 {
     private final BlockingCache<K, K> _cache;
     private final AtomicLong _executionCount = new AtomicLong();
