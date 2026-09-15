@@ -937,9 +937,9 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     @Override
     public SQLFragment isNumericExpr(SQLFragment expression)
     {
-        // A boolean predicate, not 1/0, to match SQL Server's contract; in SELECT position JDBC's getInt() converts true/false to 1/0.
-        return new SQLFragment("(CAST((").append(expression)
-                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$')");
+        // 1/0, matching what SQL Server's ISNUMERIC() passthrough returns.
+        return new SQLFragment("(CASE WHEN CAST((").append(expression)
+                .append(") AS TEXT) ~ '^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$' THEN 1 ELSE 0 END)");
     }
 
     @Override

@@ -1095,9 +1095,9 @@ public abstract class Method
         }
     }
 
-    // Portable isnumeric() is a boolean predicate on both databases -- (ISNUMERIC(x) = 1) on SQL Server, a regex
-    // match on PostgreSQL -- so it is valid in CASE WHEN and WHERE, not just a SELECT list. The PostgreSQL regex
-    // accepts only digits with an optional sign/decimal point, stricter than SQL Server's ISNUMERIC().
+    // A regex-based CASE on PostgreSQL; SQL Server resolves isnumeric to the mssqlMethods passthrough and never
+    // reaches here. Yields 1/0 to match that passthrough, not a boolean as JdbcType.BOOLEAN suggests, so
+    // isnumeric(x) = 1 works on either database -- don't "fix" the dialects to emit predicates instead.
     static class IsNumericInfo extends AbstractMethodInfo
     {
         IsNumericInfo()
@@ -1951,7 +1951,7 @@ public abstract class Method
         mssqlMethods.put("charindex", new PassthroughMethod("charindex", JdbcType.INTEGER, 2, 3));
         mssqlMethods.put("concat_ws", new PassthroughMethod("concat_ws", JdbcType.VARCHAR, 1, Integer.MAX_VALUE));
         mssqlMethods.put("difference", new PassthroughMethod("difference", JdbcType.INTEGER, 2, 2));
-        // isnumeric is registered in labkeyMethod (portable across PostgreSQL and SQL Server)
+        mssqlMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.BOOLEAN, 1, 1));
         mssqlMethods.put("len", new PassthroughMethod("len", JdbcType.INTEGER, 1, 1));
         mssqlMethods.put("patindex", new PassthroughMethod("patindex", JdbcType.INTEGER, 2, 2));
         mssqlMethods.put("quotename", new PassthroughMethod("quotename", JdbcType.VARCHAR, 1, 2));
