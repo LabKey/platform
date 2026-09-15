@@ -952,9 +952,10 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     public SQLFragment weekUsExpr(SQLFragment expression)
     {
         // Week 1 is whatever week contains Jan 1, and weeks start Sunday: (day of year + Sunday-based weekday of Jan 1 - 1) / 7, rounded down, plus one.
-        return new SQLFragment("CAST(FLOOR((EXTRACT(doy FROM (").append(expression)
-                .append(")) + EXTRACT(dow FROM date_trunc('year', (").append(expression)
-                .append("))) - 1) / 7) + 1 AS INTEGER)");
+        // The VALUES subquery names the argument so it is evaluated once; spelled out twice, a volatile argument could read either side of midnight.
+        return new SQLFragment("(SELECT CAST(FLOOR((EXTRACT(doy FROM v.d) + EXTRACT(dow FROM date_trunc('year', v.d)) - 1) / 7) + 1 AS INTEGER) FROM (VALUES (CAST(")
+                .append(expression)
+                .append(" AS TIMESTAMP))) AS v(d))");
     }
 
     private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
