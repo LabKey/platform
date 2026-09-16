@@ -47,7 +47,6 @@ public interface AppProps
     String OPTIONAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP = "deriveSamplesNotInApp";
-    String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
