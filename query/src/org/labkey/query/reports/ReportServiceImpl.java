@@ -390,10 +390,15 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
         else
         {
-            if (report.canEdit(context.getUser(), context.getContainer(), errors))
+            // A descriptor's reportId can come straight from client input, so its owner and creator describe the save,
+            // not the row that save would overwrite. Authorize against the stored report whenever there is one.
+            Report stored = getStoredReport(descriptor.getReportId());
+            Report toCheck = null != stored ? stored : report;
+
+            if (toCheck.canEdit(context.getUser(), context.getContainer(), errors))
             {
                 if (descriptor.isShared())
-                    report.canShare(context.getUser(), context.getContainer(), errors);
+                    toCheck.canShare(context.getUser(), context.getContainer(), errors);
             }
         }
 
@@ -827,6 +832,12 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), reportId);
         return new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
+    }
+
+    /** The persisted report a descriptor's reportId names, or null if it names no database row. */
+    private @Nullable Report getStoredReport(@Nullable ReportIdentifier reportId)
+    {
+        return reportId instanceof DbReportIdentifier dbReportId ? _getInstance(getReportDB(dbReportId.getRowId())) : null;
     }
 
     @Nullable
