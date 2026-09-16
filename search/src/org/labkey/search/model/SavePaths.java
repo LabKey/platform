@@ -181,9 +181,10 @@ public class SavePaths implements DavCrawler.SavePaths
         try
         {
             SQLFragment insert = new SQLFragment(
-                    "INSERT INTO search.crawlcollections (parent, name, path, lastcrawled, nextcrawl)\n" +
-                    "SELECT ? as parent, ? as name, ? as path, ? as lastcrawled, ? as nextcrawl\n" +
-                    "WHERE NOT EXISTS (SELECT * FROM search.crawlcollections WHERE parent=? and name=?)");
+                    """
+                            INSERT INTO search.crawlcollections (parent, name, path, lastcrawled, nextcrawl)
+                            SELECT ? as parent, ? as name, ? as path, ? as lastcrawled, ? as nextcrawl
+                            WHERE NOT EXISTS (SELECT * FROM search.crawlcollections WHERE parent=? and name=?)""");
             // values
             insert.add(valueParent);
             insert.add(valueName);
@@ -218,9 +219,37 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    // A path too long for these columns can never be stored, so warn and skip instead of letting the INSERT throw on every crawl
+    private boolean checkLengths(Path path)
+    {
+        TableInfo coll = getSearchSchema().getTable("CrawlCollections");
+        if (!checkLength(coll.getColumn("Path"), toPathString(path), path))
+            return false;
+        // Ancestor rows get inserted along the way, so every segment lands in Name
+        for (String name : path)
+        {
+            if (!checkLength(coll.getColumn("Name"), name, path))
+                return false;
+        }
+        return true;
+    }
+
+
+    private boolean checkLength(ColumnInfo column, String value, Path path)
+    {
+        if (value.length() <= column.getScale())
+            return true;
+        _log.warn("Not crawling '{}': {} value is {} characters, which exceeds the maximum of {}", path, column.getName(), value.length(), column.getScale());
+        return false;
+    }
+
+
     @Override
     public boolean insertPath(Path path, Date nextCrawl)
     {
+        if (!checkLengths(path))
+            return false;
+
         try
         {
             // Mostly I don't care about Parent
@@ -263,6 +292,9 @@ public class SavePaths implements DavCrawler.SavePaths
     @Override
     public boolean updatePath(Path path, java.util.Date last, java.util.Date next, boolean create)
     {
+        if (!checkLengths(path))
+            return false;
+
         try
         {
             boolean success = _update(path,last,next);
@@ -343,13 +375,12 @@ public class SavePaths implements DavCrawler.SavePaths
         Date awhileago = new Date(Math.max(_startupTime, now.getTime() - 30*60000));
 
         SqlDialect dialect = getSearchSchema().getSqlDialect();
-        SQLFragment f = new SQLFragment(
-                "SELECT Parent, Name, Path, LastCrawled, NextCrawl\n" +
-                "FROM search.CrawlCollections\n");
-        f.append("WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
-                "ORDER BY NextCrawl");
-        f.add(now);
-        f.add(awhileago);
+        SQLFragment f = new SQLFragment("""
+                SELECT Parent, Name, Path, LastCrawled, NextCrawl
+                FROM search.CrawlCollections
+                WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?)
+                ORDER BY NextCrawl
+                """, now, awhileago);
         SQLFragment sel = dialect.limitRows(f, limit);
 
         try
@@ -407,9 +438,10 @@ public class SavePaths implements DavCrawler.SavePaths
     public Map<String, DavCrawler.ResourceInfo> getFiles(Path path)
     {
         SQLFragment s = new SQLFragment(
-                "SELECT D.ChangeInterval, D.Path, D.id, F.Name, F.Modified, F.LastIndexed\n" +
-                "FROM search.CrawlCollections D LEFT OUTER JOIN search.CrawlResources F on D.id=F.parent\n" +
-                "WHERE D.path = ?");
+                """
+                        SELECT D.ChangeInterval, D.Path, D.id, F.Name, F.Modified, F.LastIndexed
+                        FROM search.CrawlCollections D LEFT OUTER JOIN search.CrawlResources F on D.id=F.parent
+                        WHERE D.path = ?""");
         s.add(toPathString(path));
 
         final Map<String,DavCrawler.ResourceInfo> map = new HashMap<>();
