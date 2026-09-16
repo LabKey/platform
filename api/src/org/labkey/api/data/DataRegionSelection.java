@@ -51,9 +51,10 @@ import java.util.Set;
 
 /**
  * Manages row selection states, scoped to schema/query and possibly a separate selection key.
- * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
- * should do their own synchronization on the set itself if they are operating on it one element at a time
- * and want to have a consistent view. This allows for the backing set to be a {@link LinkedHashSet}.
+ * <p>
+ * The session selection sets are shared across every concurrent request on the session, so they are wrapped in
+ * {@link Collections#synchronizedSet(Set)}. That guards individual methods but not iteration: anything that reads the
+ * whole set (or passes to other code that does) must go through {@link #snapshot} first rather than receiving the live set.
  */
 public class DataRegionSelection
 {
@@ -114,6 +115,16 @@ public class DataRegionSelection
         }
 
         return Collections.synchronizedSet(new LinkedHashSet<>());
+    }
+
+    /** Makes a full copy under the set's synchronization lock suitable for passing to code that doesn't know about our synchronization requirements. */
+    private static @NotNull Set<String> snapshot(@NotNull Collection<String> selection)
+    {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (selection)
+        {
+            return new LinkedHashSet<>(selection);
+        }
     }
 
     /**
@@ -231,7 +242,7 @@ public class DataRegionSelection
 
     public static @NotNull ArrayList<String> getSnapshotSelected(ViewContext context, @Nullable String key)
     {
-        return new ArrayList<>(getSet(context, key, false, true));
+        return new ArrayList<>(snapshot(getSet(context, key, false, true)));
     }
 
     public static @NotNull ArrayList<Long> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
@@ -313,9 +324,9 @@ public class DataRegionSelection
             }
             else
                 selectedValues.removeAll(selection);
-        }
 
-        return selectedValues.size();
+            return selectedValues.size();
+        }
     }
 
     public static int setSelectedFromForm(QueryForm form)
@@ -514,12 +525,14 @@ public class DataRegionSelection
     /**
      * Returns all items in the given result set that are selected and selectable
      * @param view the view from which to retrieve the data region context and session variable
-     * @param selectedValues optionally (nullable) specify a collection of selected values that will be matched
+     * @param selection optionally (nullable) specify a collection of selected values that will be matched
      *                       against when selecting items. If null, then all items will be returned.
      * @return Set of items from the result set that are in the selected session, or an empty list if none.
      */
-    private static Set<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues)
+    private static Set<String> getSelectedItems(QueryView view, @NotNull Collection<String> selection)
     {
+        Set<String> selectedValues = snapshot(selection);
+
         // Issue 48657: no need to query the region result set if we have no selectedValues
         if (selectedValues.isEmpty())
             return new LinkedHashSet<>();
@@ -539,11 +552,7 @@ public class DataRegionSelection
 
         try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
         {
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (selectedValues)
-            {
-                return createSelectionSet(ctx, rgn, rs, selectedValues);
-            }
+            return createSelectionSet(ctx, rgn, rs, selectedValues);
         }
         catch (SQLException e)
         {
