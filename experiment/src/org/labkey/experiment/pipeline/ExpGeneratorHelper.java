@@ -53,6 +53,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -285,6 +286,14 @@ public class ExpGeneratorHelper
         return run;
     }
 
+    private static ExpMaterial resolveReadableMaterial(User user, String lsid)
+    {
+        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        if (material == null || !material.getContainer().hasPermission(user, ReadPermission.class))
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+        return material;
+    }
+
     // Unresolved and unauthorized both return NotFoundException, so a foreign LSID is never confirmed.
     private static void assertCanEditLineage(User user, String lsid, ExpMaterial material)
     {
@@ -396,10 +405,10 @@ public class ExpGeneratorHelper
                 stepApp.setProperty(user, pd, prop.getValue());
             }
 
-            // material inputs - only adds an edge, never rewrites the material, so no write check
+            // material inputs - adds an edge
             for (String lsid : action.getMaterialInputs())
             {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                ExpMaterial material = resolveReadableMaterial(user, lsid);
                 material.setRun(run);
                 stepApp.addMaterialInput(user, material, null, null);
             }
@@ -561,10 +570,10 @@ public class ExpGeneratorHelper
         }
     }
 
-    // Promotes a step input to a run input; only adds an edge, so no edit check needed
+    // Promotes a step input to a run input
     static private void addMaterialInput(ExpRun run, ExpProtocolApplication app, String lsid, User user)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        ExpMaterial material = resolveReadableMaterial(user, lsid);
         material.setRun(run);
         app.addMaterialInput(user, material, null, null);
     }
