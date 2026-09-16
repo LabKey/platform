@@ -48,6 +48,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
@@ -730,9 +731,49 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                 "propertyCountsByConcept", stripUriPrefixes(new SqlSelector(schema,
                         new SQLFragment("SELECT CASE WHEN ConceptURI IS NULL THEN 'null' ELSE ConceptURI END, COUNT(*) AS Count FROM exp.PropertyDescriptor GROUP BY ConceptURI")
                 ).getValueMap(String.class)),
-                        "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class),
+                "defaultValuePropertyCounts", Map.of(
+                        "folder", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.DOMAIN_DEFAULT_VALUE_LSID_PREFIX + "%.Folder-%"),
+                        "user", savedDefaultValuePropertyCounts(schema, "%:" + DefaultValueService.USER_DEFAULT_VALUE_LSID_PREFIX + ".Folder-%")
+                ),
+                "conditionalFormattingFields", new SqlSelector(schema, new SQLFragment("SELECT COUNT (DISTINCT propertyid) from exp.conditionalformat")).getObject(Long.class),
                 "storageColumnNameMismatches", storageColumnNameMismatches
         );
+    }
+
+    /**
+     * Properties that a user has actually saved a default value for, counted by the property's default value type and
+     * by the namespace prefix of the domain that owns it.
+     */
+    private Map<String, Object> savedDefaultValuePropertyCounts(DbSchema schema, String lsidPattern)
+    {
+        Map<String, Set<Integer>> byDefaultValueType = new HashMap<>();
+        Map<String, Set<Integer>> byDomainKind = new HashMap<>();
+
+        // One row per property/domain pair, so a property shared by two domains counts toward both kinds
+        SQLFragment sql = new SQLFragment("""
+                SELECT DISTINCT OP.PropertyId, PD.DefaultValueType, DD.DomainURI
+                FROM exp.ObjectProperty OP
+                    INNER JOIN exp.PropertyDescriptor PD ON PD.PropertyId = OP.PropertyId
+                    INNER JOIN exp.PropertyDomain PDM ON PDM.PropertyId = OP.PropertyId
+                    INNER JOIN exp.DomainDescriptor DD ON DD.DomainId = PDM.DomainId
+                WHERE OP.ObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI LIKE ?)""").add(lsidPattern);
+
+        for (Map<String, Object> row : new SqlSelector(schema, sql).getMapCollection())
+        {
+            Integer propertyId = ((Number) row.get("PropertyId")).intValue();
+            Object defaultValueType = row.get("DefaultValueType");
+            Lsid domainLsid = new Lsid((String) row.get("DomainURI"));
+
+            byDefaultValueType.computeIfAbsent(defaultValueType == null ? "null" : defaultValueType.toString(), k -> new HashSet<>()).add(propertyId);
+            byDomainKind.computeIfAbsent(domainLsid.isValid() ? domainLsid.getNamespacePrefix() : "null", k -> new HashSet<>()).add(propertyId);
+        }
+
+        return Map.of("byDefaultValueType", countDistinct(byDefaultValueType), "byDomainKind", countDistinct(byDomainKind));
+    }
+
+    private static Map<String, Integer> countDistinct(Map<String, Set<Integer>> propertyIds)
+    {
+        return propertyIds.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().size()));
     }
 
     /**

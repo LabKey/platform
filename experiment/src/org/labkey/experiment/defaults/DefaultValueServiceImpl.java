@@ -52,7 +52,6 @@ import java.util.concurrent.locks.Lock;
 
 public class DefaultValueServiceImpl implements DefaultValueService
 {
-    private static final String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
     private static final String USER_DEFAULT_VALUE_DOMAIN_PARENT = "UserDefaultValueParent";
 
     private final Lock _lock = new ReentrantLockWithName(DefaultValueServiceImpl.class, "_lock");
