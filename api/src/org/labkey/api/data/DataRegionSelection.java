@@ -80,11 +80,7 @@ public class DataRegionSelection
         return getSet(context, key, create, false);
     }
 
-    /**
-     *  * Uses a synchronized Set. As per documentation on {@link Collections#synchronizedSet(Set)}, callers
-     *  * should do their own synchronization on the set itself if they are operating on it one element at a time
-     *  * and want to have a consistent view
-     */
+    /** Returns the live session set; see the class javadoc for the synchronization contract. */
     private static @NotNull Set<String> getSet(ViewContext context, @Nullable String key, boolean create, boolean useSnapshot)
     {
         if (key == null)
@@ -242,7 +238,8 @@ public class DataRegionSelection
 
     public static @NotNull ArrayList<String> getSnapshotSelected(ViewContext context, @Nullable String key)
     {
-        return new ArrayList<>(snapshot(getSet(context, key, false, true)));
+        // No snapshot() needed: ArrayList's copy constructor goes through the set's synchronized toArray()
+        return new ArrayList<>(getSet(context, key, false, true));
     }
 
     public static @NotNull ArrayList<Long> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
@@ -525,8 +522,7 @@ public class DataRegionSelection
     /**
      * Returns all items in the given result set that are selected and selectable
      * @param view the view from which to retrieve the data region context and session variable
-     * @param selection optionally (nullable) specify a collection of selected values that will be matched
-     *                       against when selecting items. If null, then all items will be returned.
+     * @param selection the selected values to match against when selecting items
      * @return Set of items from the result set that are in the selected session, or an empty list if none.
      */
     private static Set<String> getSelectedItems(QueryView view, @NotNull Collection<String> selection)
