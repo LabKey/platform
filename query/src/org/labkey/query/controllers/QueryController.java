@@ -3480,6 +3480,7 @@ public class QueryController extends SpringActionController
     {
         private Integer _start;
         private Integer _limit;
+        private Integer _maxCount;
         private boolean _includeDetailsColumn = false;
         private boolean _includeUpdateColumn = false;
         private boolean _includeTotalCount = true;
@@ -3506,6 +3507,16 @@ public class QueryController extends SpringActionController
         public void setLimit(Integer limit)
         {
             _limit = limit;
+        }
+
+        public Integer getMaxCount()
+        {
+            return _maxCount;
+        }
+
+        public void setMaxCount(Integer maxCount)
+        {
+            _maxCount = maxCount;
         }
 
         public boolean isIncludeTotalCount()
@@ -3598,6 +3609,8 @@ public class QueryController extends SpringActionController
             }
             if (getStart() != null)
                 results.setOffset(getStart());
+            if (getMaxCount() != null)
+                results.setMaxCount(getMaxCount());
 
             return results;
         }

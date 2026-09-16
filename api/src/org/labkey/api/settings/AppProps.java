@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.secrets.SecretService;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
@@ -273,8 +272,6 @@ public interface AppProps
     @NotNull String getDistributionName();
 
     @NotNull String getDistributionFilename();
-
-    @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
 
     @NotNull List<String> getAllowedExtensions();
 

@@ -174,6 +174,9 @@ public class ApiQueryResponse implements ApiResponse
                 long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
                 writer.writeProperty("rowCount", rowCount);
 
+                if (_dataRegion.isTotalRowsCapped())
+                    writer.writeProperty("rowCountCapped", true);
+
                 if (_includeMetaData)
                 {
                     // messages, but only if metadata is requested
