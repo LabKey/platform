@@ -43,7 +43,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -558,16 +557,6 @@ public class DbScope
 
             if (null == primaryDS)
                 throw new ConfigurationException("You must have a DataSource named \"" + LABKEY_DATA_SOURCE + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
-
-            // When running in devMode, allow either database. When running in production mode, throw if the
-            // distribution doesn't support the primary database type.
-            if (!AppProps.getInstance().isDevMode())
-            {
-                SqlDialect primaryDialect = primaryDS.getDialect();
-                SupportedDatabase primaryDatabaseType = SupportedDatabase.get(primaryDialect);
-                if (!AppProps.getInstance().getDistributionSupportedDatabases().contains(primaryDatabaseType))
-                    throw new ConfigurationException("This distribution (" + AppProps.getInstance().getDistributionFilename() + ") does not support " + primaryDialect.getProductName());
-            }
 
             primaryDS.setPrimary();
 
@@ -1478,29 +1467,38 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        if (!conn.getAutoCommit())
-            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
-
-        //
-        // Handle one time per-connection setup
-        // relies on pool implementation reusing same connection/wrapper instances
-        //
-
-        Connection delegate = getDelegate(conn);
-        Integer spid = _initializedConnections.get(delegate);
-
-        if (null == spid)
+        try
         {
-            if (null != _dialect)
+            if (!conn.getAutoCommit())
+                throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
+            //
+            // Handle one time per-connection setup
+            // relies on pool implementation reusing same connection/wrapper instances
+            //
+
+            Connection delegate = getDelegate(conn);
+            Integer spid = _initializedConnections.get(delegate);
+
+            if (null == spid)
             {
-                _dialect.prepareConnection(conn);
-                spid = _dialect.getSPID(delegate);
+                if (null != _dialect)
+                {
+                    _dialect.prepareConnection(conn);
+                    spid = _dialect.getSPID(delegate);
+                }
+
+                _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
+            return new ConnectionWrapper(conn, this, spid, type, log);
         }
-
-        return new ConnectionWrapper(conn, this, spid, type, log);
+        catch (Throwable t)
+        {
+            // If the ConnectionWrapper didn't get created and returned, nothing else can close the connection
+            closeQuietly(conn, t);
+            throw t;
+        }
     }
 
     /**
@@ -1515,6 +1513,22 @@ public class DbScope
         catch (SQLException e)
         {
             LOG.warn("Error releasing connection", e);
+        }
+    }
+
+    /**
+     * Release a connection while an exception is already propagating. Pool implementations can throw unchecked from
+     * close(), which would otherwise replace the failure we're unwinding from.
+     **/
+    public void closeQuietly(Connection conn, Throwable propagating)
+    {
+        try
+        {
+            releaseConnection(conn);
+        }
+        catch (Throwable t)
+        {
+            propagating.addSuppressed(t);
         }
     }
 

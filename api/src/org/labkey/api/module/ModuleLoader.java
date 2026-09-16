@@ -56,7 +56,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -490,7 +489,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule) moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                pruneModulesForDatabaseSupport(moduleList);
                 initializeAndPruneModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
@@ -620,7 +618,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         synchronized (_modulesLock)
         {
             // _modules is in dependency order
-            pruneModulesForDatabaseSupport(_modules);
             pruneModulesForDependencies(_modules);
         }
 
@@ -948,26 +945,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private boolean isDevelopmentBuild(Module module)
     {
         return !PRODUCTION_BUILD_TYPE.equalsIgnoreCase(module.getBuildType());
-    }
-
-    /**
-     * Enumerates all the modules, removing the ones that don't support the primary database
-     */
-    private void pruneModulesForDatabaseSupport(List<Module> modules)
-    {
-        SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-        SupportedDatabase primaryType = SupportedDatabase.get(dialect);
-        // Enumerate a copy of the list to avoid ConcurrentModificationException
-        for (Module module : new ArrayList<>(modules))
-        {
-            if (!module.getSupportedDatabasesSet().contains(primaryType))
-            {
-                var e = new DatabaseNotSupportedException("This module does not support " + dialect.getProductName());
-                // In production mode, treat these exceptions as a module initialization error
-                // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
-            }
-        }
     }
 
     /**
