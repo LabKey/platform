@@ -26,7 +26,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.Directive;
 import org.labkey.api.security.User;
@@ -57,11 +56,39 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static org.labkey.api.settings.RandomStartupProperties.*;
-import static org.labkey.api.settings.SiteSettingsProperties.*;
+import static org.labkey.api.settings.RandomStartupProperties.BLASTBaseURL;
+import static org.labkey.api.settings.RandomStartupProperties.allowedFileExtensions;
+import static org.labkey.api.settings.RandomStartupProperties.externalRedirectHostURLs;
+import static org.labkey.api.settings.RandomStartupProperties.fileUploadDisabled;
+import static org.labkey.api.settings.RandomStartupProperties.invalidFilenameBlocked;
+import static org.labkey.api.settings.RandomStartupProperties.invalidFilenameUploadBlocked;
+import static org.labkey.api.settings.RandomStartupProperties.mailRecorderEnabled;
+import static org.labkey.api.settings.RandomStartupProperties.siteFileRoot;
+import static org.labkey.api.settings.RandomStartupProperties.webfilesEnabled;
+import static org.labkey.api.settings.SiteSettingsProperties.adminOnlyMessage;
+import static org.labkey.api.settings.SiteSettingsProperties.adminOnlyMode;
+import static org.labkey.api.settings.SiteSettingsProperties.administratorContactEmail;
+import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
+import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
+import static org.labkey.api.settings.SiteSettingsProperties.apiKeyExpirationSeconds;
+import static org.labkey.api.settings.SiteSettingsProperties.baseServerURL;
+import static org.labkey.api.settings.SiteSettingsProperties.exceptionReportingLevel;
+import static org.labkey.api.settings.SiteSettingsProperties.includeServerHttpHeader;
+import static org.labkey.api.settings.SiteSettingsProperties.maxBLOBSize;
+import static org.labkey.api.settings.SiteSettingsProperties.memoryUsageDumpInterval;
+import static org.labkey.api.settings.SiteSettingsProperties.navAccessOpen;
+import static org.labkey.api.settings.SiteSettingsProperties.pipelineToolsDirectory;
+import static org.labkey.api.settings.SiteSettingsProperties.readOnlyHttpRequestTimeout;
+import static org.labkey.api.settings.SiteSettingsProperties.ribbonMessage;
+import static org.labkey.api.settings.SiteSettingsProperties.scriptExecutionTimeout;
+import static org.labkey.api.settings.SiteSettingsProperties.selfReportExceptions;
+import static org.labkey.api.settings.SiteSettingsProperties.showRibbonMessage;
+import static org.labkey.api.settings.SiteSettingsProperties.sslPort;
+import static org.labkey.api.settings.SiteSettingsProperties.sslRequired;
+import static org.labkey.api.settings.SiteSettingsProperties.termsOfUseFrequencySeconds;
+import static org.labkey.api.settings.SiteSettingsProperties.usageReportingLevel;
 
 /**
  * Mutable backing implementation for server-side application settings.
@@ -87,7 +114,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private static final String DISTRIBUTION_PROPERTIES = "distribution.properties";
     private static final String DISTRIBUTION_NAME;
     private static final String DISTRIBUTION_FILENAME;
-    private static final Set<SupportedDatabase> DISTRIBUTION_SUPPORTED_DATABASES;
 
     private static final Logger LOG = LogHelper.getLogger(AppPropsImpl.class, "Site settings startup properties");
 
@@ -107,7 +133,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
         DISTRIBUTION_NAME = props.getProperty("name", "localBuild");
         DISTRIBUTION_FILENAME = props.getProperty("filename", "localBuild");
-        DISTRIBUTION_SUPPORTED_DATABASES = SupportedDatabase.parseSupportedDatabases(props.getProperty("supportedDatabases", "pgsql"));
     }
 
     @Override
@@ -717,12 +742,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public @NotNull String getDistributionFilename()
     {
         return DISTRIBUTION_FILENAME;
-    }
-
-    @Override
-    public @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases()
-    {
-        return DISTRIBUTION_SUPPORTED_DATABASES;
     }
 
     @Deprecated

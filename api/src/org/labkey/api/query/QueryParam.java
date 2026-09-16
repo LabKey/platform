@@ -29,6 +29,7 @@ public enum QueryParam implements SafeToRenderEnum
 
     offset,
     maxRows,
+    maxCount,
     showRows,
     ignoreFilter,
 
