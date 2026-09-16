@@ -825,7 +825,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final String LEGACY_USER_DEFAULTS_PARENT_PREFIX = "UserDefaultValueParent";
 
     /**
-     * Called from exp-26.005-26.006.sql
      * GitHub Issue #1569: re-key folder-level default values by domain kind. The old key was the container plus the
      * domain typeURI objectId, which repeats across kinds and is shared outright by an assay design's domains, so
      * unrelated domains silently overwrote each other's defaults. Rows written before 25.7 are keyed by domain name
