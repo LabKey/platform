@@ -844,6 +844,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             reparentUserDefaults();
             tx.commit();
         }
+
+        OntologyManager.clearCaches();
     }
 
     private static void migrateContainerDefaults()
