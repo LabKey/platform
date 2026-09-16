@@ -26,7 +26,9 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentFile;
@@ -49,6 +51,7 @@ import org.labkey.api.data.LookupResolutionType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.NowTimestamp;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleConvert;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableDescription;
@@ -58,7 +61,15 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -69,8 +80,12 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.IntegerUtils;
 import org.labkey.api.util.JunitUtil;
@@ -285,6 +300,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return _maps;
         }
 
+        /**
+         * Resolves {@code k} to the target table's primary key, trying in order: the primary key itself (only while
+         * includePkLookup is on), each single-column unique text index, then the title column. The first strategy that
+         * matches wins, and null means none did.
+         *
+         * Only a String can resolve by alternate key or title, so a value that arrives already typed as the pk -- a
+         * rowId, or a system column like createdBy -- is never matched against a name. Without that rule an integer
+         * would match whatever row is TITLED with its decimal string and resolve to an unrelated entity.
+         *
+         * Resolutions and misses are both cached per key, so repeated values cost one query at most. A key matching
+         * more than one row throws ConversionException rather than picking one.
+         */
         public Object mappedValue(Object k)
         {
             if (null == k)
@@ -313,7 +340,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             if (_titleColumnLookupMap != null)
             {
-                return fetch(_titleColumnLookupMap, String.valueOf(k));
+                // Pass the key as-is; fetch() applies the "alternate keys must be String" rule
+                return fetch(_titleColumnLookupMap, k);
             }
 
             return null;
@@ -321,9 +349,16 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         private final Object MISS = new Object();
 
-        // While there should be at most one matching value for lookup targets with a true unique constraint,
-        // using a multi-valued map allows us to also work with things that are almost always unique, like
-        // exp.Material names, when only a single value matches
+        /**
+         * The primary key of the row whose alternate key or title column holds {@code k}, or null when no row does.
+         * Throws ConversionException when more than one row matches.
+         *
+         * Only a String is looked up; anything else misses without querying, since a value already typed as the pk
+         * cannot be an alternate key and filtering a text column on it can fail in the database.
+         *
+         * While a target with a true unique constraint has at most one matching row, the multi-valued map lets this
+         * also serve columns that are only almost always unique, such as exp.Material names.
+         */
         private Object fetch(Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple, Object k)
         {
             final ColumnInfo pkCol = triple.getLeft();
@@ -375,7 +410,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 // If there are no values in the database, stash a MISS marker to avoid re-fetching.
                 assert vs != null;
                 if (vs.isEmpty())
+                {
+                    // Return here: 'vs' is still the empty collection, so getSingleValue() below would throw rather
+                    // than report the miss
                     map.put(k, MISS);
+                    return null;
+                }
             }
 
             Object v = getSingleValue(k, vs);
@@ -995,6 +1035,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return null;
         }
 
+        /**
+         * The value written to the column: whatever {@code o} resolves to by alternate key or title, else {@code o}
+         * coerced to the column's own type, else the configured RemapMissingBehavior.
+         *
+         * A String may take either route, so a name that reads as a number resolves to the row carrying that name
+         * rather than to the row with that rowId. A value already typed as the pk only takes the second, and is
+         * written through as the key it is -- no check that it names an existing row happens here.
+         */
         @Override
         protected Object convert(Object o)
         {
@@ -2246,6 +2294,40 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true);
         }
 
+        /** Unique indices dropped, so the title column isn't already claimed as an alternate key -- the shape of exp.MaterialSource, and the only shape that builds the title-column map. */
+        private EnumTableInfo<LookupValues> remapTitleColumnLookupTable()
+        {
+            var core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            return new EnumTableInfo<>(LookupValues.class, core, "fake enum", true)
+            {
+                @Override
+                public @NotNull List<IndexDefinition> getUniqueIndices()
+                {
+                    return List.of();
+                }
+            };
+        }
+
+        @Test
+        public void remapTitleColumnIgnoresNonStringKey()
+        {
+            RemapConverter converter = new RemapConverter(remapTitleColumnLookupTable(), true, false, true);
+
+            // convertWithRemapper turns the pk lookup off, which is what lets the key reach the title column at all
+            converter.setIncludePkLookup(false);
+            assertTrue("expected no alternate-key maps, so the title column is the only match left", converter.getMaps().isEmpty());
+
+            assertNotNull("fixture resolves through no title column, so it proves nothing", converter._titleColumnLookupMap);
+
+            // A row whose title is the decimal string of a different row's pk, e.g. a sample type named "2"
+            MultiValuedMap titleCache = converter._titleColumnLookupMap.getRight();
+            Integer rowTitledTwo = 42;
+            titleCache.put("2", rowTitledTwo);
+
+            assertEquals("a String key should still resolve against the title column", rowTitledTwo, converter.mappedValue("2"));
+            assertNull("integer pk 2 reached the title column and resolved to the row titled \"2\"", converter.mappedValue(2));
+        }
+
         @Test
         public void remapCacheSurvivesPkLookupToggle()
         {
@@ -2372,6 +2454,353 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public void builtinColumns()
         {
             TableInfo t = TestSchema.getInstance().getTableInfoTestTable();
+        }
+    }
+
+    /**
+     * Pins how RemapConverter reads an FK value when the lookup target resolves through its title column, which
+     * AbstractTableInfo.getUniqueIndices() makes the default: a String resolves to the row carrying that name, while a
+     * value already typed as the pk stays the key it is and is never matched against a name.
+     *
+     * Derive every colliding name from a rowId read back from the server, never a hardcoded number: a literal name
+     * collides only when the sequence happens to hand out that value.
+     */
+    @TestTimeout(120)
+    public static class RemapCollisionTestCase extends Assert
+    {
+        private static final String LIST_TITLE_COLUMN = "Label";
+        private static final String LIST_TAG_COLUMN = "Tag";
+        private static final String LIST_LOOKUP_COLUMN = "LookupCol";
+
+        private static User _user;
+        private static Container _container;
+        private static final List<Integer> _createdUserIds = new ArrayList<>();
+
+        /** Creates one row in a lookup table under the given name. */
+        private interface Named
+        {
+            void create(String name) throws Exception;
+        }
+
+        @BeforeClass
+        public static void doSetup()
+        {
+            JunitUtil.deleteTestContainer();
+            _user = TestContext.get().getUser();
+            _container = JunitUtil.getTestContainer();
+        }
+
+        @AfterClass
+        public static void doCleanup() throws Exception
+        {
+            try
+            {
+                for (Integer userId : _createdUserIds)
+                    UserManager.deleteUser(userId);
+            }
+            finally
+            {
+                _createdUserIds.clear();
+                JunitUtil.deleteTestContainer();
+            }
+        }
+
+        /** An integer primary key with a text title column is the generic shape of this hazard; the surfaces below are instances of it. */
+        @Test
+        public void listPkIsNotResolvedThroughACollidingLabel() throws Exception
+        {
+            TableInfo list = createList("RemapCollisionList");
+            assertPkKeyBeatsTitleCollision(list, name -> insertListRow(list, name));
+        }
+
+        @Test
+        public void sampleTypeIdIsNotResolvedThroughACollidingName() throws Exception
+        {
+            assertPkKeyBeatsTitleCollision(lookupTargetOf("Materials", "MaterialSourceId"), this::createSampleType);
+        }
+
+        @Test
+        public void dataClassIdIsNotResolvedThroughACollidingName() throws Exception
+        {
+            assertPkKeyBeatsTitleCollision(lookupTargetOf("Data", "DataClass"), this::createDataClass);
+        }
+
+        /** fetch()'s "alternate keys must be of type String" rule names createdBy/modifiedBy as the hazard, and a user whose display name is a number is exactly it. */
+        @Test
+        public void userIdIsNotResolvedThroughACollidingDisplayName() throws Exception
+        {
+            assertPkKeyBeatsTitleCollision(lookupTargetOf("Materials", "CreatedBy"), this::createUserWithDisplayName);
+        }
+
+        @Test
+        public void ambiguousTitleIsReportedRatherThanPicked() throws Exception
+        {
+            TableInfo list = createList("RemapAmbiguousTitleList");
+            String shared = uniqueName("shared");
+            insertListRow(list, shared);
+            insertListRow(list, shared);
+
+            RemapConverter converter = new RemapConverter(list, true, false, true);
+            converter.setIncludePkLookup(false);
+
+            try
+            {
+                Object resolved = converter.mappedValue(shared);
+                fail("two rows titled \"" + shared + "\" resolved to " + resolved + " rather than reporting the ambiguity");
+            }
+            catch (ConversionException x)
+            {
+                assertTrue("expected an ambiguity error, got: " + x.getMessage(),
+                        x.getMessage() != null && x.getMessage().contains("Found 2 values"));
+            }
+        }
+
+        /** The first lookup of an unmatched key must report the miss, not throw: RemapCache's callers already read null as unresolved. */
+        @Test
+        public void unmatchedKeyMissesOnEveryLookup() throws Exception
+        {
+            TableInfo list = createList("RemapUnmatchedKeyList");
+            insertListRow(list, uniqueName("seed"));
+
+            RemapConverter converter = new RemapConverter(list, true, false, true);
+            converter.setIncludePkLookup(false);
+
+            String absent = uniqueName("nobody");
+            assertNull("no row is titled \"" + absent + "\", so the first lookup must miss", converter.mappedValue(absent));
+            assertNull("the cached miss must read the same as the uncached one", converter.mappedValue(absent));
+        }
+
+        /**
+         * The rule is "a non-String key is never eligible for title resolution", not merely "a valid pk outranks a
+         * title match" -- a key that is no row's pk still must not reach the title column.
+         */
+        @Test
+        public void nonStringKeyIsNeverResolvedByTitle() throws Exception
+        {
+            TableInfo list = createList("RemapNonStringKeyList");
+            insertListRow(list, uniqueName("seed"));
+
+            RemapConverter converter = new RemapConverter(list, true, false, true);
+            converter.setIncludePkLookup(false);
+            converter.getMaps();
+            assertNotNull(list.getName() + " does not resolve through a title column, so this fixture proves nothing",
+                    converter._titleColumnLookupMap);
+            ColumnInfo pkCol = converter.getPkColumn();
+            ColumnInfo titleCol = converter._titleColumnLookupMap.getMiddle();
+
+            int absentPk = maxPk(pkCol) + 1000;
+            String absentPkName = String.valueOf(absentPk);
+            insertListRow(list, absentPkName);
+            int labelledPk = onlyPkTitled(pkCol, titleCol, absentPkName);
+            // The last assertion below only means anything while absentPk is no row's pk
+            assertEquals("absentPk is a real pk, so the pk lookup would legitimately resolve it", 0,
+                    new TableSelector(pkCol, new SimpleFilter(pkCol.getFieldKey(), absentPk), null).getArray(Integer.class).length);
+
+            String wrongEntity = "integer " + absentPk + " reached the title column and resolved to the row labelled \""
+                    + absentPkName + "\" (pk " + labelledPk + ")";
+            assertNull(wrongEntity, converter.mappedValue(absentPk));
+            assertEquals("the same value as a String must still resolve by title",
+                    labelledPk, converter.mappedValue(absentPkName));
+
+            // With the pk lookup on the integer misses there too, and still must not fall through to a title match
+            converter.setIncludePkLookup(true);
+            assertNull(wrongEntity + ", with the pk lookup on", converter.mappedValue(absentPk));
+        }
+
+        /**
+         * The same rule as seen by an API caller: RemappingConvertColumn decides whether a value resolves by display
+         * value or falls through to convertWithPrimaryColumn and is taken as a rowId, and only an import exercises that.
+         */
+        @Test
+        public void importedIntegerIsNotResolvedByTitle() throws Exception
+        {
+            TableInfo target = createList("RemapImportTargetList");
+            insertListRow(target, uniqueName("seed"));
+
+            ColumnInfo pkCol = target.getPkColumns().getFirst();
+            int absentPk = maxPk(pkCol) + 1000;
+            String absentPkName = String.valueOf(absentPk);
+            insertListRow(target, absentPkName);
+            int labelledPk = onlyPkTitled(pkCol, target.getColumn(LIST_TITLE_COLUMN), absentPkName);
+
+            TableInfo source = createListWithLookup("RemapImportSourceList", target.getName());
+            importRows(source, List.of(
+                    CaseInsensitiveHashMap.of(LIST_TAG_COLUMN, (Object) "asString", LIST_LOOKUP_COLUMN, absentPkName),
+                    CaseInsensitiveHashMap.of(LIST_TAG_COLUMN, (Object) "asInteger", LIST_LOOKUP_COLUMN, absentPk)));
+
+            assertEquals("a String must still import by display value", (Integer) labelledPk, importedLookup(source, "asString"));
+            assertEquals("an integer must import as a rowId, not by display value", (Integer) absentPk, importedLookup(source, "asInteger"));
+        }
+
+        /**
+         * Manufactures a rowId/name collision on one FK target and pins which interpretation wins: an integer that is
+         * already a primary key resolves to itself, never to a title match, while a String key still resolves by title.
+         *
+         * @param lookup the FK target as the production caller sees it, so the container filter under test is the real one
+         * @param factory creates one row in that table under a given name
+         */
+        private void assertPkKeyBeatsTitleCollision(TableInfo lookup, Named factory) throws Exception
+        {
+            RemapConverter converter = new RemapConverter(lookup, true, false, true);
+            // convertWithRemapper's setting, and what lets a key reach the title column at all
+            converter.setIncludePkLookup(false);
+            converter.getMaps();
+            assertNotNull(lookup.getName() + " does not resolve through a title column, so this fixture proves nothing",
+                    converter._titleColumnLookupMap);
+
+            // Read the columns off the converter, so the fixture matches on whatever the resolver itself matches on
+            ColumnInfo pkCol = converter.getPkColumn();
+            ColumnInfo titleCol = converter._titleColumnLookupMap.getMiddle();
+
+            String subjectName = uniqueName("collide");
+            factory.create(subjectName);
+            int subjectPk = onlyPkTitled(pkCol, titleCol, subjectName);
+
+            // The whole point: the colliding name is the rowId the server actually assigned, not a guess
+            String collidingName = String.valueOf(subjectPk);
+            factory.create(collidingName);
+            int collidingPk = onlyPkTitled(pkCol, titleCol, collidingName);
+            assertNotEquals("the colliding row has to be a different row than the subject", subjectPk, collidingPk);
+
+            String wrongEntity = "integer pk " + subjectPk + " resolved through the title column to \"" + collidingName
+                    + "\" (pk " + collidingPk + ") instead of being left as itself";
+            assertNull(wrongEntity, converter.mappedValue(subjectPk));
+            assertEquals("a String key must still resolve against the title column",
+                    collidingPk, converter.mappedValue(collidingName));
+
+            // RemappingConvertColumn flips this before every row, so neither answer may depend on it
+            converter.setIncludePkLookup(true);
+            assertEquals("with the pk lookup on, an integer key must resolve to itself",
+                    subjectPk, converter.mappedValue(subjectPk));
+            converter.setIncludePkLookup(false);
+
+            assertNull(wrongEntity + ", on a later lookup", converter.mappedValue(subjectPk));
+            assertEquals("title resolution drifted between lookups",
+                    collidingPk, converter.mappedValue(collidingName));
+        }
+
+        /**
+         * The primary key of the one row titled {@code title}, read through the resolver's own columns and container filter.
+         *
+         * Requiring exactly one matters as much as the name: with two the resolver reports an ambiguity instead of
+         * resolving, the import code swallows that error, and the collision silently disarms while the test passes.
+         */
+        private int onlyPkTitled(ColumnInfo pkCol, ColumnInfo titleCol, String title)
+        {
+            Integer[] pks = new TableSelector(pkCol, new SimpleFilter(titleCol.getFieldKey(), title), null).getArray(Integer.class);
+            assertEquals("expected exactly one row titled \"" + title + "\" in the resolver's scope", 1, pks.length);
+            return pks[0];
+        }
+
+        private int maxPk(ColumnInfo pkCol)
+        {
+            Integer[] pks = new TableSelector(pkCol).getArray(Integer.class);
+            return Arrays.stream(pks).mapToInt(Integer::intValue).max().orElse(0);
+        }
+
+        /** The lookup value actually stored for the row tagged {@code tag}, so the assertion is on what the import wrote. */
+        private Integer importedLookup(TableInfo table, String tag)
+        {
+            Integer[] values = new TableSelector(table.getColumn(LIST_LOOKUP_COLUMN),
+                    new SimpleFilter(table.getColumn(LIST_TAG_COLUMN).getFieldKey(), tag), null).getArray(Integer.class);
+            assertEquals("expected exactly one row tagged \"" + tag + "\"", 1, values.length);
+            return values[0];
+        }
+
+        /** Truncated because the user fixture builds an email address from this and core.Principals.Name is VARCHAR(64). */
+        private String uniqueName(String prefix)
+        {
+            return prefix + GUID.makeHash().substring(0, 8);
+        }
+
+        /** The table an FK actually resolves against, container filter included, rather than a stand-in for it. */
+        private TableInfo lookupTargetOf(String tableName, String columnName)
+        {
+            TableInfo table = QueryService.get().getUserSchema(_user, _container, "exp").getTable(tableName);
+            ColumnInfo col = table.getColumn(columnName);
+            assertNotNull("exp." + tableName + " has no " + columnName + " column", col);
+            ForeignKey fk = col.getFk();
+            assertNotNull(columnName + " carries no foreign key", fk);
+            assertTrue(columnName + " cannot be imported by alternate key, so the title column is never consulted",
+                    fk.allowImportByAlternateKey());
+            return fk.getLookupTableInfo();
+        }
+
+        private TableInfo createList(String name) throws Exception
+        {
+            ListDefinition list = ListService.get().createList(_container, name, ListDefinition.KeyType.AutoIncrementInteger);
+            list.setKeyName("RowId");
+            Domain domain = list.getDomain();
+            assertNotNull("new list has no domain", domain);
+            domain.addProperty(new PropertyStorageSpec(LIST_TITLE_COLUMN, JdbcType.VARCHAR, 100));
+            // Pin the title column rather than relying on "the first string column wins"
+            list.setTitleColumn(LIST_TITLE_COLUMN);
+            list.save(_user);
+
+            return QueryService.get().getUserSchema(_user, _container, "lists").getTable(name);
+        }
+
+        /** A list with an integer FK to {@code targetListName}, so importing into it runs RemappingConvertColumn. */
+        private TableInfo createListWithLookup(String name, String targetListName) throws Exception
+        {
+            ListDefinition list = ListService.get().createList(_container, name, ListDefinition.KeyType.AutoIncrementInteger);
+            list.setKeyName("RowId");
+            Domain domain = list.getDomain();
+            assertNotNull("new list has no domain", domain);
+            domain.addProperty(new PropertyStorageSpec(LIST_TAG_COLUMN, JdbcType.VARCHAR, 100));
+            DomainProperty lookup = domain.addProperty(new PropertyStorageSpec(LIST_LOOKUP_COLUMN, JdbcType.INTEGER));
+            lookup.setLookup(new Lookup(_container, "lists", targetListName));
+            list.setTitleColumn(LIST_TAG_COLUMN);
+            list.save(_user);
+
+            return QueryService.get().getUserSchema(_user, _container, "lists").getTable(name);
+        }
+
+        /** Alternate-key resolution is off by default, and without it the lookup column never reaches RemappingConvertColumn. */
+        private void importRows(TableInfo table, List<Map<String, Object>> rows) throws Exception
+        {
+            QueryUpdateService qus = table.getUpdateService();
+            assertNotNull("list " + table.getName() + " is not updatable", qus);
+
+            DataIteratorContext context = new DataIteratorContext();
+            context.setAllowImportLookupByAlternateKey(true);
+            qus.loadRows(_user, _container,
+                    new ListofMapsDataIterator.Builder(Set.of(LIST_TAG_COLUMN, LIST_LOOKUP_COLUMN), rows), context, null);
+            if (context.getErrors().hasErrors())
+                throw context.getErrors();
+        }
+
+        private void insertListRow(TableInfo list, String label) throws Exception
+        {
+            QueryUpdateService qus = list.getUpdateService();
+            assertNotNull("list " + list.getName() + " is not updatable", qus);
+
+            BatchValidationException errors = new BatchValidationException();
+            qus.insertRows(_user, _container,
+                    List.of(CaseInsensitiveHashMap.of(LIST_TITLE_COLUMN, (Object) label)), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private void createSampleType(String name) throws Exception
+        {
+            SampleTypeService.get().createSampleType(_container, _user, name, null,
+                    List.of(new GWTPropertyDescriptor("name", "string")), List.of(), -1, -1, -1, -1, null);
+        }
+
+        private void createDataClass(String name) throws Exception
+        {
+            ExperimentService.get().createDataClass(_container, _user, name, null,
+                    List.of(new GWTPropertyDescriptor("name", "string")), List.of(), null, null);
+        }
+
+        private void createUserWithDisplayName(String displayName) throws Exception
+        {
+            ValidEmail email = new ValidEmail("remapcollision_" + displayName.replaceAll("\\W", "") + "@test.labkey.com");
+            User user = SecurityManager.addUser(email, null).getUser();
+            _createdUserIds.add(user.getUserId());
+            user.setDisplayName(displayName);
+            UserManager.updateUser(user, user);
         }
     }
 }
