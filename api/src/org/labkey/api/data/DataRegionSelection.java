@@ -54,7 +54,8 @@ import java.util.Set;
  * <p>
  * The session selection sets are shared across every concurrent request on the session, so they are wrapped in
  * {@link Collections#synchronizedSet(Set)}. That guards individual methods but not iteration: anything that reads the
- * whole set (or passes to other code that does) must go through {@link #snapshot} first rather than receiving the live set.
+ * whole set must either hold the set's monitor for the whole read or take a {@link #snapshot}; never hand the live set to
+ * code that doesn't know this.
  */
 public class DataRegionSelection
 {
@@ -238,8 +239,7 @@ public class DataRegionSelection
 
     public static @NotNull ArrayList<String> getSnapshotSelected(ViewContext context, @Nullable String key)
     {
-        // No snapshot() needed: ArrayList's copy constructor goes through the set's synchronized toArray()
-        return new ArrayList<>(getSet(context, key, false, true));
+        return new ArrayList<>(snapshot(getSet(context, key, false, true)));
     }
 
     public static @NotNull ArrayList<Long> getSnapshotSelectedIntegers(ViewContext context, @Nullable String key)
