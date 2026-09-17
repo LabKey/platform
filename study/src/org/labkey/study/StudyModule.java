@@ -24,8 +24,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentParentType;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -66,12 +66,10 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
@@ -384,7 +382,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         if (null != SpecimenService.get())
             SystemMaintenance.addTask(new SpecimenRefreshMaintenanceTask());
         SystemMaintenance.addTask(new DefragmentParticipantVisitIndexesTask());
-        SystemMaintenance.addTask(new MasterPatientIndexMaintenanceTask());
 
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
@@ -525,7 +522,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             });
         }
 
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         DataStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
