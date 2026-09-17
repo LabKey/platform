@@ -758,15 +758,14 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                     INNER JOIN exp.DomainDescriptor DD ON DD.DomainId = PDM.DomainId
                 WHERE OP.ObjectId IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI LIKE ?)""").add(lsidPattern);
 
-        for (Map<String, Object> row : new SqlSelector(schema, sql).getMapCollection())
-        {
+        new SqlSelector(schema, sql).forEachMap(row -> {
             Integer propertyId = ((Number) row.get("PropertyId")).intValue();
             Object defaultValueType = row.get("DefaultValueType");
             Lsid domainLsid = new Lsid((String) row.get("DomainURI"));
 
             byDefaultValueType.computeIfAbsent(defaultValueType == null ? "null" : defaultValueType.toString(), k -> new HashSet<>()).add(propertyId);
             byDomainKind.computeIfAbsent(domainLsid.isValid() ? domainLsid.getNamespacePrefix() : "null", k -> new HashSet<>()).add(propertyId);
-        }
+        });
 
         return Map.of("byDefaultValueType", countDistinct(byDefaultValueType), "byDomainKind", countDistinct(byDomainKind));
     }

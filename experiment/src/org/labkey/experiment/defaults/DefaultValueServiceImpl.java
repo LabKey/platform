@@ -17,6 +17,7 @@ package org.labkey.experiment.defaults;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -85,7 +86,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
 
     // GitHub Issue #1569: Qualifying LSID by domain kind since multiple data types have distinct domain kinds
     // Ex: assay designs have AssayDomain-Batch, AssayDomain-Run, AssayDomain-Result
-    private String qualifyByDomainKind(String lsidPrefix, Lsid domainLsid)
+    private String qualifyByDomainKind(@NotNull String lsidPrefix, @NotNull Lsid domainLsid)
     {
         return lsidPrefix + "-" + domainLsid.getNamespacePrefix();
     }

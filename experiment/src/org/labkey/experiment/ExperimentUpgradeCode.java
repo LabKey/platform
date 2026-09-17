@@ -832,7 +832,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
      * holds, which is what disambiguates rows that several domains once shared.
      */
     @SuppressWarnings("unused")
-    @DeferredUpgrade
     public static void migrateDefaultValueLsids(ModuleContext context)
     {
         if (context.isNewInstall())
@@ -859,31 +858,31 @@ public class ExperimentUpgradeCode implements UpgradeCode
             .append("WHERE o.ObjectURI LIKE ?\n").add("%:" + LEGACY_CONTAINER_DEFAULTS_PREFIX + ".Folder-%")
             .append("GROUP BY o.ObjectId, o.ObjectURI");
 
-        List<DefaultValueRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(DefaultValueRow.class);
+        List<ContainerDefaultRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ContainerDefaultRow.class);
         int migrated = 0;
 
         // Both legacy forms can map onto the same target. The objectId form was written by 25.7 or later, so it is the
         // newer of the two and is moved first; the name form then loses the NOT EXISTS race below, as it should.
         for (boolean objectIdForm : new boolean[] {true, false})
         {
-            for (DefaultValueRow row : rows)
+            for (ContainerDefaultRow row : rows)
             {
                 Domain domain = resolveDomain(row);
                 if (domain == null)
                     continue;
 
                 Lsid domainLsid = new Lsid(domain.getTypeURI());
-                if (objectIdForm != new Lsid(row.getObjectURI()).getObjectId().equals(domainLsid.getObjectId()))
+                if (objectIdForm != new Lsid(row.objectURI()).getObjectId().equals(domainLsid.getObjectId()))
                     continue;
 
-                String newUri = qualifiedLsid(row.getObjectURI(), domainLsid);
-                if (newUri == null || newUri.equals(row.getObjectURI()))
+                String newUri = qualifiedLsid(row.objectURI(), domainLsid);
+                if (newUri == null || newUri.equals(row.objectURI()))
                     continue;
 
-                if (renameObject(row.getObjectId(), newUri))
+                if (renameObject(row.objectId(), newUri))
                     migrated++;
                 else
-                    LOG.warn("Leaving default values at {}: {} already exists.", row.getObjectURI(), newUri);
+                    LOG.warn("Leaving default values at {}: {} already exists.", row.objectURI(), newUri);
             }
         }
 
@@ -906,31 +905,31 @@ public class ExperimentUpgradeCode implements UpgradeCode
             .append("WHERE parent.ObjectURI LIKE ?\n").add("%:" + LEGACY_USER_DEFAULTS_PARENT_PREFIX + ".Folder-%")
             .append("GROUP BY child.ObjectId, child.ObjectURI, parent.ObjectId, parent.ObjectURI, parent.Container");
 
-        List<DefaultValueRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(DefaultValueRow.class);
+        List<UserDefaultRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(UserDefaultRow.class);
 
         // children of each legacy parent, bucketed by the qualified parent they now belong under
-        Map<Long, Map<String, List<DefaultValueRow>>> byLegacyParent = new LinkedHashMap<>();
-        for (DefaultValueRow row : rows)
+        Map<Long, Map<String, List<UserDefaultRow>>> byLegacyParent = new LinkedHashMap<>();
+        for (UserDefaultRow row : rows)
         {
             Domain domain = resolveDomain(row);
             if (domain == null)
                 continue;
 
-            String newParentUri = qualifiedLsid(row.getParentURI(), new Lsid(domain.getTypeURI()));
-            if (newParentUri == null || newParentUri.equals(row.getParentURI()))
+            String newParentUri = qualifiedLsid(row.parentURI(), new Lsid(domain.getTypeURI()));
+            if (newParentUri == null || newParentUri.equals(row.parentURI()))
                 continue;
 
-            byLegacyParent.computeIfAbsent(row.getParentId(), k -> new LinkedHashMap<>())
+            byLegacyParent.computeIfAbsent(row.parentId(), k -> new LinkedHashMap<>())
                 .computeIfAbsent(newParentUri, k -> new ArrayList<>()).add(row);
         }
 
         int reparented = 0;
 
-        for (Map.Entry<Long, Map<String, List<DefaultValueRow>>> legacyParent : byLegacyParent.entrySet())
+        for (Map.Entry<Long, Map<String, List<UserDefaultRow>>> legacyParent : byLegacyParent.entrySet())
         {
             boolean legacyParentReused = false;
 
-            for (Map.Entry<String, List<DefaultValueRow>> group : legacyParent.getValue().entrySet())
+            for (Map.Entry<String, List<UserDefaultRow>> group : legacyParent.getValue().entrySet())
             {
                 // Renaming the legacy parent for the first group leaves nothing behind; its children still point at it
                 if (!legacyParentReused && renameObject(legacyParent.getKey(), group.getKey()))
@@ -940,15 +939,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     continue;
                 }
 
-                Container container = ContainerManager.getForId(group.getValue().get(0).getContainer());
+                Container container = ContainerManager.getForId(group.getValue().get(0).container());
                 if (container == null)
                     continue;
 
                 long newParentId = OntologyManager.ensureObject(container, group.getKey());
-                for (DefaultValueRow row : group.getValue())
+                for (UserDefaultRow row : group.getValue())
                 {
                     SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
-                        .append(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.getObjectId());
+                        .append(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.objectId());
                     new SqlExecutor(ExperimentService.get().getSchema()).execute(update);
                     reparented++;
                 }
@@ -961,16 +960,16 @@ public class ExperimentUpgradeCode implements UpgradeCode
     /** The owning domain, or null when the object's properties don't identify exactly one resolvable user-created domain. */
     private static Domain resolveDomain(DefaultValueRow row)
     {
-        if (row.getDomainCount() != 1)
+        if (row.domainCount() != 1)
         {
-            LOG.warn("Leaving default values at {}: properties span {} domains, so the owner is ambiguous.", row.getObjectURI(), row.getDomainCount());
+            LOG.warn("Leaving default values at {}: properties span {} domains, so the owner is ambiguous.", row.objectURI(), row.domainCount());
             return null;
         }
 
-        Domain domain = PropertyService.get().getDomain(row.getDomainId());
+        Domain domain = PropertyService.get().getDomain(row.domainId());
         if (domain == null)
         {
-            LOG.warn("Leaving default values at {}: domain {} no longer exists.", row.getObjectURI(), row.getDomainId());
+            LOG.warn("Leaving default values at {}: domain {} no longer exists.", row.objectURI(), row.domainId());
             return null;
         }
 
@@ -998,29 +997,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
         return new SqlExecutor(ExperimentService.get().getSchema()).execute(update) > 0;
     }
 
-    public static class DefaultValueRow
+    private sealed interface DefaultValueRow permits ContainerDefaultRow, UserDefaultRow
     {
-        private long _objectId;
-        private String _objectURI;
-        private long _parentId;
-        private String _parentURI;
-        private String _container;
-        private int _domainId;
-        private int _domainCount;
-
-        public long getObjectId() { return _objectId; }
-        public void setObjectId(long objectId) { _objectId = objectId; }
-        public String getObjectURI() { return _objectURI; }
-        public void setObjectURI(String objectURI) { _objectURI = objectURI; }
-        public long getParentId() { return _parentId; }
-        public void setParentId(long parentId) { _parentId = parentId; }
-        public String getParentURI() { return _parentURI; }
-        public void setParentURI(String parentURI) { _parentURI = parentURI; }
-        public String getContainer() { return _container; }
-        public void setContainer(String container) { _container = container; }
-        public int getDomainId() { return _domainId; }
-        public void setDomainId(int domainId) { _domainId = domainId; }
-        public int getDomainCount() { return _domainCount; }
-        public void setDomainCount(int domainCount) { _domainCount = domainCount; }
+        String objectURI();
+        int domainId();
+        int domainCount();
     }
+
+    private record ContainerDefaultRow(long objectId, String objectURI, int domainId, int domainCount) implements DefaultValueRow {}
+
+    private record UserDefaultRow(long objectId, String objectURI, long parentId, String parentURI, String container, int domainId, int domainCount) implements DefaultValueRow {}
 }
