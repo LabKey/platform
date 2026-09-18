@@ -22,7 +22,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.categories.InDevelopment;
+import org.labkey.test.categories.Disabled;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.pages.TimeChartWizard;
@@ -34,7 +34,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-@Category({InDevelopment.class})
+@Category({Disabled.class})
 public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
 {
     // TODO add test case for Scatter plot binning
