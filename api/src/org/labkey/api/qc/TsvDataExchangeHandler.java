@@ -494,9 +494,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 map.put(Props.originalFileLocation.name(), originalFileLocation.toNioPathForRead().toFile().getPath());
 
             // Note: the replaced run isn't marked as replaced until after the transform, this is the RowId of the run that is being re-imported
-            Long reRunId = context.getReRunId();
-            if (reRunId != null)
-                map.put(Props.reRunId.name(), String.valueOf(reRunId));
+            if (!(context instanceof SampleRunUploadContext))
+            {
+                Long reRunId = context.getReRunId();
+                if (reRunId != null)
+                    map.put(Props.reRunId.name(), String.valueOf(reRunId));
+            }
         }
 
         map.put(Props.baseUrl.name(), AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath());
