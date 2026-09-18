@@ -47,6 +47,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
@@ -390,9 +391,13 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
         else
         {
-            // A descriptor's reportId can come straight from client input, so its owner and creator describe the save,
-            // not the row that save would overwrite. Authorize against the stored report whenever there is one.
             Report stored = getStoredReport(descriptor.getReportId());
+            if (null != stored && !context.getContainer().getId().equals(stored.getContainerId()))
+            {
+                errors.add(new SimpleValidationError("A report can only be saved from the folder that it belongs to."));
+                return false;
+            }
+
             Report toCheck = null != stored ? stored : report;
 
             if (toCheck.canEdit(context.getUser(), context.getContainer(), errors))
