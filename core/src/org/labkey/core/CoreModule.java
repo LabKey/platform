@@ -1509,6 +1509,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            org.labkey.api.util.DirectoryArchive.TestCase.class,
             AdminController.FileRootPermissionTestCase.class,
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
