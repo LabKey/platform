@@ -3786,16 +3786,17 @@ public class QueryServiceImpl implements QueryService
         @Test
         public void testRightAndIsnumeric() throws SQLException
         {
-            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape; isnumeric() reads
-            // back as 1/0 on both -- ISNUMERIC(x) on SQL Server, a regex-based CASE on PostgreSQL.
+            // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape; isnumeric() yields 1/0
+            // -- ISNUMERIC(x) on SQL Server, a regex-based CASE on PostgreSQL -- so it is compared with = 1 rather than
+            // selected bare, which QuerySelect wraps in CASE WHEN on SQL Server and the wrap then has no predicate.
             String sql =
                 "SELECT " +
                 "  right('hello', 2) AS r1, " +
                 "  right('xy', 5) AS r2, " +
-                "  isnumeric('5') AS n1, " +
-                "  isnumeric('-3.14') AS n2, " +
-                "  isnumeric('abc') AS n3, " +
-                "  isnumeric(NULL) AS n4 " +
+                "  CASE WHEN isnumeric('5') = 1 THEN 1 ELSE 0 END AS n1, " +
+                "  CASE WHEN isnumeric('-3.14') = 1 THEN 1 ELSE 0 END AS n2, " +
+                "  CASE WHEN isnumeric('abc') = 1 THEN 1 ELSE 0 END AS n3, " +
+                "  CASE WHEN isnumeric(NULL) = 1 THEN 1 ELSE 0 END AS n4 " +
                 "FROM core.Containers";
 
             QueryDef qd = new QueryDef();
