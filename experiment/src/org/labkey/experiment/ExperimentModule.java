@@ -277,8 +277,6 @@ public class ExperimentModule extends SpringModule
                 false,
                 false,
                 OptionalFeatureService.FeatureType.Deprecated));
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
-            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SAMPLE_FILES_TABLE, "Manage Unreferenced Sample Files",
                 "Enable 'Unreferenced Sample Files' table to view and delete sample files that are no longer referenced by samples", false);
 
