@@ -1336,7 +1336,7 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudyThrowIfNull();
             Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
             if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
-                throw new UnauthorizedException("Visit map import must is only allowed from the shared study root.");
+                throw new UnauthorizedException("Visit map import is only allowed from the shared study root.");
 
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<>();
