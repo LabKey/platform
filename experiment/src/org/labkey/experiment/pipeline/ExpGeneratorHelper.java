@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -50,7 +52,11 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -72,6 +78,8 @@ import java.util.stream.Collectors;
 */
 public class ExpGeneratorHelper
 {
+    private static final Logger LOG = LogManager.getLogger(ExpGeneratorHelper.class);
+
     static private ExpData addData(Container container, User user, Map<URI, ExpData> datas, URI originalURI, XarSource source) throws ExperimentException
     {
         ExpData data = datas.get(originalURI);
@@ -278,6 +286,30 @@ public class ExpGeneratorHelper
         return run;
     }
 
+    private static ExpMaterial resolveReadableMaterial(User user, String lsid)
+    {
+        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        if (material == null || !material.getContainer().hasPermission(user, ReadPermission.class))
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+        return material;
+    }
+
+    // Unresolved and unauthorized both return NotFoundException, so a foreign LSID is never confirmed.
+    private static void assertCanEditLineage(User user, String lsid, ExpMaterial material)
+    {
+        Class<? extends Permission> permission = SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
+        if (material == null || (permission != null && !material.getContainer().hasPermission(user, permission)))
+        {
+            if (material != null)
+                LOG.warn("User {} cannot edit lineage of material {} in {}", user, lsid, material.getContainer().getPath());
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+        }
+
+        if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                    List.of(material), SampleTypeService.SampleOperations.EditLineage));
+    }
+
     static private ExpRunImpl _insertRun(Container container,
                                          User user,
                                          String runName,
@@ -373,18 +405,19 @@ public class ExpGeneratorHelper
                 stepApp.setProperty(user, pd, prop.getValue());
             }
 
-            // material inputs
+            // material inputs - adds an edge
             for (String lsid : action.getMaterialInputs())
             {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                ExpMaterial material = resolveReadableMaterial(user, lsid);
                 material.setRun(run);
                 stepApp.addMaterialInput(user, material, null, null);
             }
 
-            // material outputs
+            // material outputs - these rewrite the material's lineage, so require edit rights
             for (String lsid : action.getMaterialOutputs())
             {
                 ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
+                assertCanEditLineage(user, lsid, material);
                 material.setSourceApplication(stepApp);
                 // set up the output to the run
                 if (action.isEnd())
@@ -537,9 +570,10 @@ public class ExpGeneratorHelper
         }
     }
 
+    // Promotes a step input to a run input
     static private void addMaterialInput(ExpRun run, ExpProtocolApplication app, String lsid, User user)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        ExpMaterial material = resolveReadableMaterial(user, lsid);
         material.setRun(run);
         app.addMaterialInput(user, material, null, null);
     }
