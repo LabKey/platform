@@ -85,19 +85,7 @@ public class SecurityQuery extends Query
         _recursive = searchScope.isRecursive();
         _iTimer = iTimer;
 
-        // For now, perform the permission checking twice, old way and new way. This allows us to verify the results
-        // are identical and evaluate the performance benefit. TODO: Remove the block below and comparison asserts before merging.
-        iTimer.setPhase(SearchService.SEARCH_PHASE.buildSecurityFilterOld);
-        HashMap<String, Container> oldContainerIds = searchScope.getSearchableContainers(user, currentContainer);
-        HashMap<String, Set<String>> categoryContainers = new HashMap<>();
-        SearchService.get().getSearchCategories().forEach(
-            category -> categoryContainers.put(category.getName(), category.getPermittedContainerIds(user, oldContainerIds))
-        );
-        iTimer.setPhase(SearchService.SEARCH_PHASE.buildSecurityFilter);
-
         _containerIds = searchScope.getSearchableContainers(user, currentContainer);
-
-        assert oldContainerIds.equals(_containerIds);
 
         // Categories that require only base container Read (already guaranteed for every container above) are
         // resolved directly; the rest are grouped by required permission so multiple categories that require the
@@ -142,8 +130,6 @@ public class SecurityQuery extends Query
             for (SearchCategory category : categories)
                 _categoryContainers.put(category.getName(), permittedContainerIds);
         });
-
-        assert categoryContainers.equals(_categoryContainers);
     }
 
     record CategoryPermissions(Map<Class<? extends Permission>, Collection<SearchCategory>> categoriesByPermission, Set<String> baseReadCategoryNames){}

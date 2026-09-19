@@ -116,6 +116,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.search.SearchService.SearchCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -220,24 +221,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     // when those calls are being made for a plate save operation.
     public static final String PLATE_SAVE_FLAG = ".plateSave";
 
-    // No getRequiredPermission() override needed: base container Read (already required to reach this category's
-    // containers) is sufficient. The old getPermittedContainerIds() override below is kept temporarily for
-    // old-vs-new comparison testing even though it's a redundant re-check of Read permission.
-    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Assay Plates", false) {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, ReadPermission.class);
-        }
-    };
-
-    public SearchService.SearchCategory PLATE_SET_CATEGORY = new SearchService.SearchCategory("plateSet", "Assay Plate Sets", false) {
-        @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return getPermittedContainerIds(user, containers, ReadPermission.class);
-        }
-    };
+    public SearchCategory PLATE_CATEGORY = new SearchCategory("plate", "Assay Plates", false);
+    public SearchCategory PLATE_SET_CATEGORY = new SearchCategory("plateSet", "Assay Plate Sets", false);
 
     public static PlateManager get()
     {
