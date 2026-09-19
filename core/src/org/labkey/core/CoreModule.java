@@ -90,6 +90,7 @@ import org.labkey.api.files.FileBrowserConfigImporter;
 import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -261,6 +262,7 @@ import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.metrics.WebSocketMXBean;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -345,6 +347,8 @@ import org.radeox.test.filter.WikiLinkFilterTest;
 import org.radeox.test.macro.list.AtoZListFormatterTest;
 import org.radeox.test.macro.list.ExampleListFormatterTest;
 import org.radeox.test.macro.list.SimpleListTest;
+
+import javax.management.StandardMBean;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -1292,6 +1296,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        LabKeyManagement.register(new StandardMBean(WebSocketConnectionManager.getInstance(), WebSocketMXBean.class, true), "WebSockets");
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());

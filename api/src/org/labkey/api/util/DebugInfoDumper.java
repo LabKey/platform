@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.ContainerManager;
@@ -27,6 +28,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryForm;
@@ -38,8 +40,12 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.websocket.WebSocketTracker;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.vfs.FileLike;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import java.io.File;
 import java.io.IOException;
@@ -356,6 +362,8 @@ public class DebugInfoDumper
                 logWriter.debug("CPU count: " + osBean.getAvailableProcessors());
             }
 
+            dumpConnectionCounts(logWriter);
+
             logWriter.debug("*********************************************");
 
             Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
@@ -446,6 +454,66 @@ public class DebugInfoDumper
         {
             DUMPING_THREADS.set(false);
         }
+    }
+
+    /**
+     * Connection counts per connector, plus the long-lived populations that fill them. A connector that reaches
+     * maxConnections stops accepting while its threads sit idle, so the stacks below show an untroubled server.
+     * See GH Issue 1574.
+     */
+    private static void dumpConnectionCounts(LoggerWriter logWriter)
+    {
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+        try
+        {
+            List<ObjectName> connectors = new ArrayList<>(mbs.queryNames(new ObjectName("Catalina:type=ThreadPool,name=*"), null));
+            connectors.sort(Comparator.comparing(ObjectName::getCanonicalName));
+
+            for (ObjectName connector : connectors)
+            {
+                logWriter.debug("Connector " + unquote(connector.getKeyProperty("name")) +
+                    ": connections " + getMBeanAttribute(mbs, connector, "connectionCount") +
+                    "/" + getMBeanLimit(mbs, connector, "maxConnections") +
+                    ", threads busy " + getMBeanAttribute(mbs, connector, "currentThreadsBusy") +
+                    "/" + getMBeanLimit(mbs, connector, "maxThreads"));
+            }
+        }
+        catch (Exception e)
+        {
+            logWriter.debug("Failed to read connector connection counts: " + e);
+        }
+
+        logWriter.debug("Open WebSocket connections: " + WebSocketTracker.getOpenCount());
+
+        // MCP ships in a premium module, so read its session count over JMX rather than depending on it
+        Object mcpSessions = getMBeanAttribute(mbs, LabKeyManagement.createName("MCP", null), "SessionCount");
+        if (null != mcpSessions)
+            logWriter.debug("Open MCP sessions: " + mcpSessions);
+    }
+
+    private static String unquote(@Nullable String name)
+    {
+        return null != name && name.startsWith("\"") ? ObjectName.unquote(name) : String.valueOf(name);
+    }
+
+    private static @Nullable Object getMBeanAttribute(MBeanServer mbs, ObjectName name, String attribute)
+    {
+        try
+        {
+            return mbs.getAttribute(name, attribute);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
+    /** Tomcat reports an unbounded maximum as -1 */
+    private static String getMBeanLimit(MBeanServer mbs, ObjectName name, String attribute)
+    {
+        Object value = getMBeanAttribute(mbs, name, attribute);
+        return value instanceof Number number && number.longValue() < 0 ? "unlimited" : String.valueOf(value);
     }
 
     private static void writeTable(LoggerWriter logWriter, UserSchema schema, String tableName, String header)
