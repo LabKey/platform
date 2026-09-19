@@ -312,6 +312,12 @@ public class DataTransformService
      */
     private String getSessionInfo(@Nullable HttpServletRequest request, String apiKey)
     {
+        if (request == null)
+        {
+            // GH Issue 1489: background/pipeline jobs have no live HTTP session, so use apikey authentication
+            // directly instead of the deprecated LabKeyTransformSessionId cookie.
+            return "labkey.setDefaults(apiKey = \"" + apiKey + "\")\n";
+        }
         return "labkey.sessionCookieName = \"" + getSessionCookieName(request) + "\"\n" +
                 "labkey.sessionCookieContents = \"" + getSessionId(request, apiKey) + "\"\n";
     }

@@ -536,6 +536,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
             "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
+            "Allow 'LabKeyTransformSessionId' cookie/parameter authentication",
+            "Allows pipeline/transform scripts to authenticate via the legacy 'LabKeyTransformSessionId' cookie or query parameter instead of 'apikey' authentication. This option will be removed in a future release of LabKey Server.",
+            false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",

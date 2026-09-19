@@ -174,6 +174,8 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
+    /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie/parameter; default off */
+    public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -672,7 +674,7 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most
         // LabKey client API implementations
         String apiKey = request.getHeader(API_KEY);
-        
+
         if (null == apiKey)
         {
             String authorization = request.getHeader("Authorization");
@@ -682,14 +684,11 @@ public class SecurityManager
 
         if (null == apiKey)
         {
-            // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
+            // Issue 40482 / GH Issue 1489: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
             // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-            if (null != apiKey)
-            {
-                AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
-            }
-            else
+            String transformSessionId = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+
+            if (null == transformSessionId)
             {
                 // Support as a GET parameter as well, not just as a cookie, to support authentication
                 // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
@@ -697,11 +696,25 @@ public class SecurityManager
                 try
                 {
                     Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    apiKey = params.get(TRANSFORM_SESSION_ID);
+                    transformSessionId = params.get(TRANSFORM_SESSION_ID);
                 }
                 catch (IllegalArgumentException e)
                 {
                     throw new UnsupportedEncodingException(e.getMessage());
+                }
+            }
+
+            if (null != transformSessionId)
+            {
+                if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+                {
+                    apiKey = transformSessionId;
+                    AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie/parameter for authentication is deprecated; use 'apikey' instead");
+                }
+                else
+                {
+                    AUTH_LOG.warn("Rejected deprecated '" + TRANSFORM_SESSION_ID + "' cookie/parameter authentication attempt; enable the '" +
+                        FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID + "' feature flag temporarily, or switch the script to 'apikey' authentication");
                 }
             }
         }
