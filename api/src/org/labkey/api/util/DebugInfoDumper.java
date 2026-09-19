@@ -467,8 +467,13 @@ public class DebugInfoDumper
 
         try
         {
-            List<ObjectName> connectors = new ArrayList<>(mbs.queryNames(new ObjectName("Catalina:type=ThreadPool,name=*"), null));
+            // Wildcard domain: embedded Tomcat registers these under "Tomcat" (the engine name Tomcat.getEngine()
+            // assigns), a standalone install under "Catalina"
+            List<ObjectName> connectors = new ArrayList<>(mbs.queryNames(new ObjectName("*:type=ThreadPool,name=*"), null));
             connectors.sort(Comparator.comparing(ObjectName::getCanonicalName));
+
+            if (connectors.isEmpty())
+                logWriter.debug("No connector ThreadPool MBeans found; connection counts are unavailable");
 
             for (ObjectName connector : connectors)
             {
