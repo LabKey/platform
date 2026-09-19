@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.TableInfo"%>
-<%@ page import="org.labkey.api.pipeline.PipelineService"%>
-<%@ page import="org.labkey.api.security.SecurityManager"%>
+<%@ page import="org.labkey.api.collections.IntHashMap" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
@@ -48,8 +49,8 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_DISPLAY" %>
-<%@ page import="org.labkey.api.collections.IntHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -71,7 +72,9 @@
     String schemaName = datasetTable.getSchema().getQuerySchemaName();
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
-    Set<Class<? extends Permission>> permissions = SecurityManager.getPermissions(c, user, Set.of());
+    Set<Class<? extends Permission>> permissions = SecurityManager.streamPermissions(c, user, Set.of())
+        .filter(p -> p.equals(AdminPermission.class) || p.equals(UpdatePermission.class))  // The only two permissions this JSP cares about
+        .collect(Collectors.toSet());
 
     // is definition inherited
     boolean isDatasetInherited = dataset.isInherited();

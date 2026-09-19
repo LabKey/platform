@@ -955,10 +955,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
-        return getPermissions(user, null);
+        return getPermissions(user, Set.of());
     }
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @Nullable Set<Role> contextualRoles)
+    private Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @NotNull Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> result = new HashSet<>();
 
@@ -968,7 +968,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityType securityType = getStudy().getSecurityType();
         SecurableResource securableResource = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ? getContainer() : getStudy();
 
-        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles);
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.streamPermissions(securableResource, user, contextualRoles)
+            .collect(Collectors.toSet());
 
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
@@ -998,7 +999,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(this, user, contextualRoles));
+                    SecurityManager.streamPermissions(this, user, contextualRoles)
+                        .forEach(result::add);
                 }
             }
         }
@@ -1016,12 +1018,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         READ_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
-    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+    private static final Set<Class<? extends Permission>> EDIT_PERMS = Set.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
 
     private void copyEditPerms(SecurableResource resource, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(resource, user, Set.of());
-        EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
+        SecurityManager.streamPermissions(resource, user, Set.of())
+            .filter(EDIT_PERMS::contains)
+            .forEach(result::add);
     }
 
     /** @deprecated use DatasetTableImpl.hasPermission()! */

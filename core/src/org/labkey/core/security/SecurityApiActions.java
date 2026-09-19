@@ -183,7 +183,7 @@ public class SecurityApiActions
 
             for (Group group : groups)
             {
-                List<String> effectivePermissions = SecurityManager.getPermissionNames(container, group);
+                Set<String> effectivePermissions = SecurityManager.getPermissionNames(container, group);
                 if (effectivePermissions.isEmpty() && !includeEmptyPermGroups)
                     continue;
 
@@ -553,7 +553,8 @@ public class SecurityApiActions
                 }
                 else
                 {
-                    permissions = SecurityManager.getPermissions(resource, user, Set.of());
+                    permissions = SecurityManager.streamPermissions(resource, user, Set.of())
+                        .collect(Collectors.toSet()); // Ensure no duplicates
                 }
 
                 for (Class<? extends Permission> permission : permissions)

@@ -26,11 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-/**
- * User: adam
- * Date: May 29, 2010
- * Time: 2:03:25 PM
- */
 public class MultiPhaseCPUTimer<K extends Enum<K>>
 {
     private final Map<K, MutableLong> _accumulationMap;

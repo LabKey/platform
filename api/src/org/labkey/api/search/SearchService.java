@@ -836,7 +836,7 @@ public interface SearchService extends SearchMXBean
             {
                 var list = SearchService.get().getCategories(categories);
                 if (null != list && !list.isEmpty())
-                this.categories = list;
+                    this.categories = list;
                 return this;
             }
 
@@ -846,5 +846,4 @@ public interface SearchService extends SearchMXBean
             }
         }
     }
-
 }

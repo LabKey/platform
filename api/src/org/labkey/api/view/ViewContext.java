@@ -15,8 +15,11 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -40,9 +43,6 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +71,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private Container _c = null;
 
 
-    private final Set<Role> _contextualRoles = new HashSet<>();
+    private final @NotNull Set<Role> _contextualRoles = new HashSet<>();
     private boolean _isAppView = false;
 
     transient protected HashMap<String, Object> _map = new HashMap<>();
