@@ -2521,7 +2521,7 @@ public class ContainerManager
 
     // Compliance module adds a locked project handler that checks permissions; without that, this implementation
     // is used, and projects are never locked
-    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, contextualRoles, lockState) -> false;
+    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (_, _, _, _) -> false;
 
     // Replaces any previously set LockedProjectHandler
     public static void setLockedProjectHandler(LockedProjectHandler handler)

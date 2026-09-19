@@ -2937,6 +2937,7 @@ public class SecurityManager
             SecurityLogger.indent(logMsg);
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
+            // Note: Must be a sequential stream (NOT parallel)
             var granted = streamPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
             SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
@@ -3040,7 +3041,7 @@ public class SecurityManager
         ALL
         {
             @Override
-            boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
+            boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
                 // hasPermissions() of an empty set is true, regardless of what's granted
                 if (required.isEmpty())

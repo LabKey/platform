@@ -1032,15 +1032,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return hasPermissions(user, Set.of(perm), null);
+        return hasPermissions(user, Set.of(perm), Set.of());
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
         return hasPermissions(user, Set.of(perm), contextualRoles);
     }
 
-    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @NotNull Set<Role> contextualRoles)
     {
         if (perms.isEmpty())
             throw new IllegalStateException();
@@ -1068,12 +1068,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
     public boolean canReadInternal(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
 
