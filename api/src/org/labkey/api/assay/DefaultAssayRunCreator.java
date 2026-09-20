@@ -458,7 +458,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 if (runInputLSIDs != null && !runInputLSIDs.isEmpty())
                 {
                     ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
-                    pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
+                    pvs.addProvenanceInputs(context.getUser(), container, inputProtocolApp, runInputLSIDs);
                 }
             }
 

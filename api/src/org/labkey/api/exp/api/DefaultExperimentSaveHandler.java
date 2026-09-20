@@ -38,6 +38,8 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
@@ -57,6 +59,24 @@ import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_L
 public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultExperimentSaveHandler.class);
+
+    // Editing a sample's lineage requires its EditLineage permission (UpdatePermission) on its own folder
+    // and a status that allows it; a null mapping denies, never fails open. Unresolved and unauthorized
+    // both throw NotFoundException, never confirming the LSID.
+    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material)
+    {
+        Class<? extends Permission> permission = SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
+        if (material == null || permission == null || !material.getContainer().hasPermission(user, permission))
+        {
+            if (material != null)
+                LOG.warn("User {} cannot edit lineage of material {} in {}", user, lsid, material.getContainer().getPath());
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+        }
+
+        if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                    List.of(material), SampleTypeService.SampleOperations.EditLineage));
+    }
 
     @Override
     public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)
@@ -437,6 +457,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             if (material != null)
             {
+                // an output rewrites the material's lineage, so require write access to its own folder
+                assertCanEditLineage(context.getUser(), material.getLSID(), material);
+
                 if (isAliquotProtocol)
                 {
                     material.setAliquotedFromLSID(aliquotParentLsid);
