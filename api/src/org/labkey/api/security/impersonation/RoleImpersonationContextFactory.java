@@ -205,7 +205,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     }
 
     // Throws if user is not authorized to impersonate all roles
-    private static void verifyPermissions(@Nullable Container project, User adminUser, Set<Role> roles, ImpersonationContextFactory factory)
+    private static void verifyPermissions(@Nullable Container project, User adminUser, @NotNull Set<Role> roles, ImpersonationContextFactory factory)
     {
         if (canImpersonate(project, adminUser))
         {
