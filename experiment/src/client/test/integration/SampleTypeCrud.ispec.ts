@@ -1452,3 +1452,40 @@ describe('Amount/Unit CRUD', () => {
 
 });
 
+describe('Name expression', () => {
+    it('GitHub Issue 1431: withCounter generate long values', async () => {
+        const sampleTypeWithCount = 'SampleTypeWithCounterExp';
+
+        const createPayload = {
+            kind: 'SampleSet',
+            domainDesign: { name: sampleTypeWithCount, fields: [{ name: 'Name' }] },
+            options: {
+                name: sampleTypeWithCount,
+                metricUnit: 'g',
+                nameExpression: "${WCE-:withCounter(1,'00000')}",
+            }
+        };
+        await server.post('property', 'createDomain', createPayload, {...topFolderOptions, ...designerReaderOptions}).expect(successfulResponse);
+
+        // insert a sample with a name whose counter suffix exceeds Integer.MAX_VALUE, seeding the counter above the int range
+        await insertRows(server, [{ name: 'WCE-123456789123456789' }], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+
+        // insert another sample without name, verify the generated name continues from the long seed
+        let inserted = await insertRows(server, [{description: 'withoutCounter with long value'}], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+        let rowId = caseInsensitive(inserted[0], 'rowId');
+        let data = await ExperimentCRUDUtils.getSamplesData(server, [rowId], sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(data[0], 'name')).toEqual('WCE-123456789123456790');
+
+        // repeat insert without name, verify name is correct
+        inserted = await insertRows(server, [{description: 'withoutCounter with long value'}], 'samples', sampleTypeWithCount, topFolderOptions, editorUserOptions);
+        rowId = caseInsensitive(inserted[0], 'rowId');
+        data = await ExperimentCRUDUtils.getSamplesData(server, [rowId], sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(data[0], 'name')).toEqual('WCE-123456789123456791');
+
+        // do import, without name, verify name is correct
+        await importSample(server, 'Name\tDescription\n\tgenerated via import', sampleTypeWithCount, 'IMPORT', topFolderOptions, editorUserOptions);
+        const importedSample = await ExperimentCRUDUtils.getSampleDataByName(server, 'WCE-123456789123456792', sampleTypeWithCount, 'Name', topFolderOptions, editorUserOptions);
+        expect(caseInsensitive(importedSample, 'name')).toEqual('WCE-123456789123456792');
+    })
+})
+

@@ -1443,6 +1443,16 @@ public class AssayController extends SpringActionController
 
             if (form.getRuns() != null && !form.getRuns().isEmpty())
             {
+                // GitHub Issue #1462: check permission in each run's own container
+                List<ExpRun> runs = new ArrayList<>();
+                for (Long runId : form.getRuns())
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(runId);
+                    if (run == null || !run.getContainer().hasPermission(getUser(), AssayReadPermission.class))
+                        throw new NotFoundException("Run " + runId + " not found.");
+                    runs.add(run);
+                }
+
                 if (getContainer().hasPermission(getUser(), QCAnalystPermission.class))
                 {
                     JspView<UpdateQCStateForm> jspView = new JspView<>("/org/labkey/assay/view/updateQCState.jsp", form, errors);
@@ -1450,13 +1460,13 @@ public class AssayController extends SpringActionController
                     view.addView(jspView);
                 }
 
-                if (form.getRuns().size() == 1)
+                if (runs.size() == 1)
                 {
-                    // construct the audit log query view
+                    // construct the audit log query view. Note: ensureCanSeeAuditLogRole grants the role in every container
                     User user = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
-                    ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
-                    if (run != null && schema != null)
+                    ExpRun run = runs.getFirst();
+                    if (schema != null)
                     {
                         QuerySettings settings = new QuerySettings(getViewContext(), "auditHistory");
                         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RunLsid"), run.getLSID());

@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -379,10 +380,49 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());
     }
 
+    /** @return "schema.query", using the public (Query) names when the table has them, otherwise the DB schema and table */
+    private String getAsyncQueryName()
+    {
+        String schema = _table.getPublicSchemaName();
+        String name = _table.getPublicName();
+        if (null == schema || null == name)
+        {
+            schema = null != _table.getSchema() ? _table.getSchema().getName() : null;
+            name = _table.getName();
+        }
+        return (null != schema ? schema + "." : "") + name;
+    }
+
+    /** @return the schema name, preferring the public (Query) name over the DB schema, or null if the table has neither */
+    private @Nullable String getAsyncSchemaName()
+    {
+        String schema = _table.getPublicSchemaName();
+        if (null == schema && null != _table.getSchema())
+            schema = _table.getSchema().getName();
+        return schema;
+    }
+
+    /** Query names are user-defined and unbounded, and resource.name is a trace-metric dimension, so the resource stops at the schema and the query goes in a tag. */
+    private String getAsyncResourceName(String operation)
+    {
+        String schema = getAsyncSchemaName();
+        return null != schema ? operation + " " + schema : operation;
+    }
+
+    /** APM span tags. The only place the query being run is identified, since resource.name deliberately stops at the schema. */
+    private Map<String, String> getAsyncSpanTags()
+    {
+        Map<String, String> tags = new HashMap<>();
+        tags.put("labkey.query", getAsyncQueryName());
+        if (null != _table.getSchema())
+            tags.put("labkey.db_schema", _table.getSchema().getName());
+        return tags;
+    }
+
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
@@ -515,14 +555,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
+        return getAggregates(aggregates, 0);
+    }
+
+    /**
+     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the database can stop early.
+     */
+    public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates, int maxCount)
+    {
         // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
         // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
         // the join between the exp schema base table and the materialized table for the given table.
-        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.getFirst().isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+        boolean countStarOnly = aggregates.size() == 1 && aggregates.getFirst().isCountStar();
+        Collection<ColumnInfo> aggColumns = countStarOnly ? getRowCountingSelectColumns(_table) : _columns;
 
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
+        // Setting _maxRows threads LIMIT maxCount + 1 through TableSqlFactory.getSql() into the inner select; restore it after.
+        boolean cap = maxCount > 0 && countStarOnly;
+        var maxRows = _maxRows;
+        if (cap)
+            _maxRows = maxCount + 1;
+
+        try
+        {
         return resultSetFactory.handleResultSet((rs, conn) -> {
             Map<String, List<Result>> results = new CaseInsensitiveHashMap<>();
 
@@ -549,17 +606,28 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
             return results;
         });
+        }
+        finally
+        {
+            if (cap)
+                _maxRows = maxRows;
+        }
     }
 
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
     {
+        return getAggregatesAsync(aggregates, response, 0);
+    }
+
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response, int maxCount)
+    {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response);
+        AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
         {
-            return asyncRequest.waitForResult(() -> getAggregates(aggregates));
+            return asyncRequest.waitForResult(() -> getAggregates(aggregates, maxCount));
         }
         catch (SQLException e)
         {

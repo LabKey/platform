@@ -1110,6 +1110,7 @@ public class UserManager
         public static final String LOGGED_IN = "logged in";
         public static final String LOGGED_OUT = "logged out";
         public static final String API_KEY = "an API key";
+        public static final String REAUTHENTICATED = "reauthenticated";
 
         int _user;
 

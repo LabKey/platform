@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -100,26 +101,28 @@ public class WikiTOC extends NavTreeMenu
         ViewContext context = getViewContext();
         User user = context.getUser();
 
-        //output only this one if wiki contains no pages
-        boolean bHasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
-        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && !getElements().isEmpty();
-        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && !getElements().isEmpty();
+        //output "New" if wiki contains no pages
+        boolean hasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
+        boolean hasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && !getElements().isEmpty();
+        // Must have update in the container since this is a folder-wide, potentially expensive operation. GitHub Issue #1415.
+        boolean hasUpdate = _cToc.hasPermission("WikiTOC.getNavMenu()", user, UpdatePermission.class);
+        boolean hasPrintAll = hasUpdate && !isInWebPart(context) && !getElements().isEmpty();
 
         NavTree menu = new NavTree();
-        if (bHasInsert)
+        if (hasInsert)
         {
             ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, _cToc);
             newPageUrl.addParameter("cancel", context.getActionURL().getLocalURIString());
             menu.addChild("New", newPageUrl.getLocalURIString());
         }
-        if (bHasCopy)
+        if (hasCopy)
         {
             URLHelper copyUrl = new ActionURL(WikiController.CopyWikiLocationAction.class, _cToc);
             //pass in source container as a param.
             copyUrl.addParameter("sourceContainer", _cToc.getPath());
             menu.addChild("Copy", copyUrl.toString());
         }
-        if (bHasPrint)
+        if (hasPrintAll)
         {
             menu.addChild("Print all", new ActionURL(WikiController.PrintAllAction.class, _cToc).toString());
         }

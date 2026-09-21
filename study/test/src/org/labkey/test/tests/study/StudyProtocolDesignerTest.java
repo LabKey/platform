@@ -40,7 +40,6 @@ import org.labkey.test.components.studydesigner.TreatmentDialog;
 import org.labkey.test.components.studydesigner.VaccineDesignWebpart;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.TestDataGenerator;
 import org.openqa.selenium.WebElement;
 
@@ -59,7 +58,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
-public class StudyProtocolDesignerTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
     private static final File STUDY_ARCHIVE = TestFileUtils.getSampleData("studies/CohortStudy.zip");
     // Cohorts: defined in folder archive

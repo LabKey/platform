@@ -56,17 +56,13 @@ public class DateValidator extends AbstractColumnValidator
     private final long _maxDate;
     private final String _errMsg;
 
-    public DateValidator(String columnName)
-    {
-        this(columnName, MIN_TIMESTAMP_SQLSERVER, MAX_TIMESTAMP_SQLSERVER, ERRMSG_SQLSERVER);
-    }
-
     public DateValidator(String columnName, @Nullable SqlDialect dialect)
     {
+        // Only an external SQL Server data source gets the narrow DATETIME range; the primary database is PostgreSQL
         this(columnName,
-             null != dialect && dialect.isPostgreSQL() ? MIN_TIMESTAMP_POSTGRESQL : MIN_TIMESTAMP_SQLSERVER,
-             null != dialect && dialect.isPostgreSQL() ? MAX_TIMESTAMP_POSTGRESQL : MAX_TIMESTAMP_SQLSERVER,
-             null != dialect && dialect.isPostgreSQL() ? ERRMSG_POSTGRESQL : ERRMSG_SQLSERVER);
+             null != dialect && dialect.isSqlServer() ? MIN_TIMESTAMP_SQLSERVER : MIN_TIMESTAMP_POSTGRESQL,
+             null != dialect && dialect.isSqlServer() ? MAX_TIMESTAMP_SQLSERVER : MAX_TIMESTAMP_POSTGRESQL,
+             null != dialect && dialect.isSqlServer() ? ERRMSG_SQLSERVER : ERRMSG_POSTGRESQL);
     }
 
     private DateValidator(String columnName, long minDate, long maxDate, String errMsg)

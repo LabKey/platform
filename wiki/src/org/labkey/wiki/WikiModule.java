@@ -199,7 +199,8 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     {
         return Set.of(
             WikiManager.TestCase.class,
-            WikiController.CopyWikiContainerScopingTestCase.class
+            WikiController.CopyWikiContainerScopingTestCase.class,
+            WikiController.PermissionTestCase.class
         );
     }
 

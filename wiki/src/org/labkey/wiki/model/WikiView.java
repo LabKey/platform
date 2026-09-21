@@ -16,21 +16,15 @@
 
 package org.labkey.wiki.model;
 
-/**
- * User: adam
- * Date: Aug 11, 2007
- * Time: 3:30:42 PM
- */
 public class WikiView extends BaseWikiView
 {
-    public WikiView(Wiki wiki, WikiVersion wikiversion, boolean hasContent)
+    public WikiView(Wiki wiki, WikiVersion wikiVersion, boolean hasContent)
     {
         super();
         this.wiki = wiki;
-        this.wikiVersion = wikiversion;
         this.hasContent = hasContent;
 
-        init(getViewContext().getContainer(), wiki.getName());
+        init(getViewContext().getContainer(), wiki.getName(), wikiVersion);
 
         // For the webpart version, see sibling class WikiWebPart
         setIsWebPart(false);

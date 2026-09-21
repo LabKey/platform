@@ -78,7 +78,7 @@ public class FileRootMaintenanceTask implements MaintenanceTask
             String updateLastCrawledSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ? WHERE EntityId = ?";
             String updateLastCrawledAndSizeSql = "UPDATE " + containers.getSelectName() + " SET FileRootLastCrawled = ?, FileRootSize = ? WHERE EntityId = ?";
             SqlExecutor executor = new SqlExecutor(containers.getSchema());
-            String orderBy = " ORDER BY FileRootLastCrawled" + (containers.getSqlDialect().isPostgreSQL() ? " NULLS FIRST" : "");
+            String orderBy = " ORDER BY FileRootLastCrawled NULLS FIRST";
             SQLFragment selectSql = new SQLFragment("SELECT RowId, EntityId, FileRootSize FROM " + containers.getSelectName() + orderBy);
 
             new SqlSelector(containers.getSchema(), selectSql)

@@ -435,7 +435,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
 
     /* Subclass can override to support per-table roles */
-    protected Set<Role> getContextualRoles()
+    protected @NotNull Set<Role> getContextualRoles()
     {
         return getUserSchema().getContextualRoles();
     }
@@ -497,8 +497,6 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         specimenCommentJoin(parentAlias, map);
                     }
                 }).setHidden(true);
-                if (getSqlDialect().isSqlServer())
-                    field = "CAST((" + field + ") AS VARCHAR(500))";
                 commentFields.add(new Pair<>(field, "'Vial: '"));
             }
             if (ptidCommentTable != null && ptidCommentAlias != null)
@@ -594,8 +592,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
             for (int i = 0; i < fields.size(); i++)
             {
-                castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR" +
-                        (getSqlDialect().isSqlServer() ? "(500)" : "") + ")";
+                castFields[i] = "CAST((" + getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first) + ") AS VARCHAR)";
                 sep = "', '";
             }
 

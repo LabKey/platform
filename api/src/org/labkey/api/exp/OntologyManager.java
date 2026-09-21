@@ -1952,8 +1952,7 @@ public class OntologyManager
                 .append("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").append(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
-                if (expSchema.getSqlDialect().isPostgreSQL())
-                    insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
+                insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
                 int count;
                 try (var tx = expSchema.getScope().ensureTransaction())
                 {

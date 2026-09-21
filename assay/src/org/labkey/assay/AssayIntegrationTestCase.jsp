@@ -580,7 +580,7 @@
         updated.put("ResultProp", 200);
         updated.put("RowId", resultRowId);
         errors = new BatchValidationException();
-        Thread.sleep(schema.getDbSchema().getSqlDialect().isSqlServer() ? 100 : 5); // SQL Server timestamps aren't granular enough to guarantee different modified time
+        Thread.sleep(5);
         resultsQUS.updateRows(user, c, Collections.singletonList(updated), null, errors, null, null);
 
         // verify result created matches run's created in query table, but result modified now differs from run's created

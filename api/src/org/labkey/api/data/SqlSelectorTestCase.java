@@ -190,22 +190,15 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         try (Connection conn = scope.getConnection())
         {
             // Default (no explicit setJdbcCaching() call) now auto-disables JDBC caching when it's safe: a separate,
-            // uncached Connection on PostgreSQL (outside a transaction), but still the shared Connection on SQL Server.
+            // uncached Connection outside a transaction.
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
             {
-                if (scope.getSqlDialect().isPostgreSQL())
-                {
-                    assertNotEquals(conn, conn2);
-                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
-                    assertFalse(conn2.getAutoCommit());
-                }
-                else
-                {
-                    assertEquals(conn, conn2);
-                }
+                assertNotEquals(conn, conn2);
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
+                assertFalse(conn2.getAutoCommit());
             }
 
-            // Explicitly requesting caching shares the connection, even on PostgreSQL
+            // Explicitly requesting caching shares the connection
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
             {
                 assertEquals(conn, conn2);
@@ -217,28 +210,19 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 assertEquals(conn, conn2);
             }
 
-            // Here we expect a different Connection object on PostgreSQL, but still shared on SQL Server
+            // Here we expect a different Connection object
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).getConnection())
             {
-                if (scope.getSqlDialect().isPostgreSQL())
-                {
-                    assertNotEquals(conn, conn2);
-                    assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
-                    assertFalse(conn2.getAutoCommit());
-                }
-                else
-                {
-                    assertEquals(conn, conn2);
-                    assertEquals(TRANSACTION_READ_COMMITTED, conn2.getTransactionIsolation());
-                    assertTrue(conn2.getAutoCommit());
-                }
+                assertNotEquals(conn, conn2);
+                assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
+                assertFalse(conn2.getAutoCommit());
             }
         }
 
         // A "self-contained" read (getArrayList(), forEach(), getRowCount(), etc., which fully consume and close the
         // ResultSet within the call) borrows the thread's shared connection rather than a dedicated one, so nested
-        // queries reuse it and connection-local state stays visible. On PostgreSQL the outermost borrower puts it into
-        // no-caching mode and restores it on release; on SQL Server it's simply the shared connection.
+        // queries reuse it and connection-local state stays visible. The outermost borrower puts it into no-caching
+        // mode and restores it on release.
         Connection borrowed = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection(true);
         try
         {
@@ -254,11 +238,8 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 assertEquals(borrowed, nested);
             }
 
-            if (scope.getSqlDialect().isPostgreSQL())
-            {
-                assertEquals(TRANSACTION_READ_UNCOMMITTED, borrowed.getTransactionIsolation());
-                assertFalse(borrowed.getAutoCommit());
-            }
+            assertEquals(TRANSACTION_READ_UNCOMMITTED, borrowed.getTransactionIsolation());
+            assertFalse(borrowed.getAutoCommit());
         }
         finally
         {

@@ -576,7 +576,7 @@ public class ApiModule extends CodeOnlyModule
             TabLoader.TabLoaderTestCase.class,
             Table.DataIteratorTestCase.class,
             Table.TestCase.class,
-            TableSelectorTestCase.class,
+            TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
             UserManager.TestCase.class,

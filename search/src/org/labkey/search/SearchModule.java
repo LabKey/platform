@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -59,6 +58,7 @@ import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchSchema;
 import org.labkey.search.model.SearchStartupProperties;
+import org.labkey.search.model.SecurityQuery;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
@@ -98,14 +98,6 @@ public class SearchModule extends DefaultModule
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set("search");
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        // Should test the "search" schema, but it differs between SQL Server & PostgreSQL
-        return Collections.emptySet();
     }
 
     @Override
@@ -268,7 +260,7 @@ public class SearchModule extends DefaultModule
     @Override
     public @NotNull Set<Class<?>> getUnitTests()
     {
-        return Set.of(AbstractSearchService.TestCase.class);
+        return Set.of(AbstractSearchService.TestCase.class, SecurityQuery.TestCase.class);
     }
 
     @Override

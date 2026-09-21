@@ -261,8 +261,6 @@ public class LocationTable extends BaseStudyTable
         var inUseColumn = getRealTable().getColumn("InUse");
         SQLFragment existsSQL = new SQLFragment();
         existsSQL.append(inUseColumn.getValueSql(locationTableAlias));
-        if (schema.getSqlDialect().isSqlServer())
-            existsSQL.append(" = 1");
 
         existsSQL
             .append(" OR\n")

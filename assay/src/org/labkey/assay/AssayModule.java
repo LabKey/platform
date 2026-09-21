@@ -201,6 +201,14 @@ public class AssayModule extends SpringModule
                 false,
                 false,
                 OptionalFeatureService.FeatureType.Deprecated));
+
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
+                PlateService.DEPRECATE_PRIMARY_PLATE_SET_FLAG,
+                "Allow for Primary Plate Sets to be created",
+                "Enables the creation of Primary Plate Sets. This option will be removed in a future release of LabKey Server.",
+                false,
+                false,
+                OptionalFeatureService.FeatureType.Deprecated));
     }
 
     @Override

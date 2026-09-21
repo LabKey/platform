@@ -444,7 +444,7 @@ public class DomainImpl implements Domain
         lock.lock();
 
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
-        if (null != getStorageTableName() && lockSchema.getSqlDialect().isPostgreSQL())
+        if (null != getStorageTableName())
         {
             SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN ACCESS EXCLUSIVE MODE").appendEOS().append("\n");
             new SqlExecutor(lockSchema).execute(lockSQL);
@@ -623,15 +623,6 @@ public class DomainImpl implements Domain
 
         try (DbScope.Transaction transaction = scope.ensureTransaction(domainLock))
         {
-            // This is a pretty heavy-handed way to fix a deadlock problem, but it works
-            // CONSIDER: another approach might be to fine tune the filters/indexes used in the Table.insert/OntologyManager.getDomainDescriptor calls
-            // or using LSID as the primary key on DomainDescriptor?
-            if (scope.getSqlDialect().isSqlServer())
-            {
-                String sql = "SELECT * FROM " + OntologyManager.getTinfoDomainDescriptor() + " WITH (UPDLOCK)";
-                new SqlSelector(schema, sql).getArrayList(DomainDescriptor.class);
-            }
-
             // Issue 32406: Need to capture because _new changes during the process
             boolean isDomainNew = isNew();
             if (saveOnlyIfNotExists && !isDomainNew)

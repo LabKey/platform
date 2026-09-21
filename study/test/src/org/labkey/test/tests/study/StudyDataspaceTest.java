@@ -33,7 +33,6 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
@@ -46,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
-public class StudyDataspaceTest extends StudyBaseTest implements PostgresOnlyTest
+public class StudyDataspaceTest extends StudyBaseTest
 {
     protected final String FOLDER_STUDY1 = "Study 1";
     protected final String FOLDER_STUDY2 = "Study 2";

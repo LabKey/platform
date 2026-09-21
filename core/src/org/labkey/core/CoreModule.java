@@ -55,7 +55,6 @@ import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.ContainerServiceImpl;
 import org.labkey.api.data.ContainerTypeRegistry;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -79,6 +78,7 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
@@ -349,7 +349,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -365,6 +364,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -517,30 +517,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+        DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
         {
-            DefaultSchema.registerProvider(BasePostgreSqlDialect.POSTGRES_SCHEMA_NAME, new DefaultSchema.SchemaProvider(this)
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                @Override
-                public boolean isAvailable(DefaultSchema schema, Module module)
-                {
-                    return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
-                }
+                return schema.getContainer().isRoot() && schema.getContainer().hasPermission(schema.getUser(), TroubleshooterPermission.class);
+            }
 
-                @Override
-                public QuerySchema createSchema(DefaultSchema schema, Module module)
-                {
-                    return new PostgresUserSchema(schema.getUser(), schema.getContainer());
-                }
-            });
-        }
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new PostgresUserSchema(schema.getUser(), schema.getContainer());
+            }
+        });
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
-            "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
-            "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-            "search to find the other select values.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
             "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
@@ -587,6 +580,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void registerHealthChecks()
     {
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
             {
                 Map<String, Object> healthValues = new HashMap<>();
@@ -598,10 +594,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         dbConnected = conn != null;
                     }
-                    catch (SQLException e)
+                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                    // we return a 200 saying we're not healthy instead of a 500
+                    catch (Exception e)
                     {
+                        if (failedDataSources.add(dbScope.getDataSourceName()))
+                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
+
+                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
                     healthValues.put(dbScope.getDatabaseName(), dbConnected);
                     allConnected &= dbConnected;
@@ -1255,17 +1258,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("archivedFolderCount", ContainerManager.getArchivedContainerCount());
             results.put("databaseSize", CoreSchema.getInstance().getSchema().getScope().getDatabaseSize());
 
-            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
-                // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
-                // Note that they can be non-trivial in size.
-                SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
-                sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
-                sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
+            // Exclude temp schema to avoid PG exceptions when tables are appearing/disappearing during execution
+            // Note that they can be non-trivial in size.
+            SQLFragment sql = new SQLFragment("SELECT table_schema, SUM(total_size) FROM ");
+            sql.append(new PostgresTableSizesTable(new PostgresUserSchema(User.getAdminServiceUser(), ContainerManager.getRoot())), "t");
+            sql.append(" WHERE table_schema != 'temp' GROUP BY table_schema");
 
-                var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
-                results.put("databaseSchemaSize", schemaSizes);
-            }
+            var schemaSizes = new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getValueMap();
+            results.put("databaseSchemaSize", schemaSizes);
 
             results.put("scriptEngines", LabKeyScriptEngineManager.get().getScriptEngineMetrics());
             results.put("customLabels", CustomLabelService.get().getCustomLabelMetrics());
@@ -1484,6 +1484,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
             SqlDialect.DialectTestCase.class,
+            SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
@@ -1508,6 +1509,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public @NotNull Set<Class<?>> getUnitTests()
     {
         return Set.of(
+            AdminController.FileRootPermissionTestCase.class,
             ApiJsonWriter.TestCase.class,
             ClassLoaderTestCase.class,
             CopyFileRootPipelineJob.TestCase.class,

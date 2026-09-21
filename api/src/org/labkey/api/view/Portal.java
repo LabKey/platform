@@ -1037,7 +1037,7 @@ public class Portal implements ModuleChangeListener
                     .append(portalTable)
                     .append(" WHERE Container = ?)")
                     .add(p.getContainer())
-                    .append(getSqlDialect().isPostgreSQL() ? " FOR UPDATE)" : ")");
+                    .append(" FOR UPDATE)");
             count = new SqlExecutor(portalTable.getSchema()).execute(insertSQL);
         }
 
@@ -1055,42 +1055,27 @@ public class Portal implements ModuleChangeListener
                     .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").appendIdentifier(columnIndex.getSelectIdentifier()).append(" END\n")
                     .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
 
-            if (portalTable.getSqlDialect().isPostgreSQL())
-            {
-                List<String> updateColumns = new ArrayList<>();
-                updateColumns.add("Index");
-                updateColumns.add("Caption");
-                updateColumns.add("Hidden");
-                updateColumns.add("Type");
-                updateColumns.add("Action");
-                updateColumns.add("TargetFolder");
-                updateColumns.add("Permanent");
-                updateColumns.add("Properties");
+            List<String> updateColumns = new ArrayList<>();
+            updateColumns.add("Index");
+            updateColumns.add("Caption");
+            updateColumns.add("Hidden");
+            updateColumns.add("Type");
+            updateColumns.add("Action");
+            updateColumns.add("TargetFolder");
+            updateColumns.add("Permanent");
+            updateColumns.add("Properties");
 
-                updateSQL.append("\nSET (");
-                String comma = "";
-                for (String name : updateColumns)
-                {
-                    updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
-                    comma = ",";
-                }
-                updateSQL.append(") =\n")
-                        .append("(")
-                        .append(indexSQL)
-                        .append(", ?, ?, ?, ?, ?, ?, ?)\n");
+            updateSQL.append("\nSET (");
+            String comma = "";
+            for (String name : updateColumns)
+            {
+                updateSQL.append(comma).appendIdentifier(portalTable.getColumn(name).getSelectIdentifier());
+                comma = ",";
             }
-            else
-            {       // SQL Server
-                updateSQL.append("\nSET ")
-                        .appendIdentifier(columnIndex.getSelectIdentifier()).append(" = ").append(indexSQL).append(", ")
-                        .append("Caption").append(" = ?, ")
-                        .append("Hidden").append(" = ?, ")
-                        .append("Type").append(" = ?, ")
-                        .append("Action").append(" = ?, ")
-                        .append("TargetFolder").append(" = ?, ")
-                        .append("Permanent").append(" = ?, ")        
-                        .append("Properties").append(" = ? \n");
-            }
+            updateSQL.append(") =\n")
+                    .append("(")
+                    .append(indexSQL)
+                    .append(", ?, ?, ?, ?, ?, ?, ?)\n");
 
             updateSQL.add(p.getCaption()).add(p.isHidden()).add(p.getType()).add(p.getAction())
                     .add(p.getTargetFolder()).add(p.isPermanent()).add(p.getProperties())

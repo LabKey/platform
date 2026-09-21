@@ -955,10 +955,10 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
-        return getPermissions(user, null);
+        return getPermissions(user, Set.of());
     }
 
-    public Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @Nullable Set<Role> contextualRoles)
+    private Set<Class<? extends Permission>> getPermissions(UserPrincipal user, @NotNull Set<Role> contextualRoles)
     {
         Set<Class<? extends Permission>> result = new HashSet<>();
 
@@ -968,7 +968,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityType securityType = getStudy().getSecurityType();
         SecurableResource securableResource = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ? getContainer() : getStudy();
 
-        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles);
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.streamPermissions(securableResource, user, contextualRoles)
+            .collect(Collectors.toSet());
 
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
@@ -998,7 +999,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    result.addAll(SecurityManager.getPermissions(this, user, contextualRoles));
+                    SecurityManager.streamPermissions(this, user, contextualRoles)
+                        .forEach(result::add);
                 }
             }
         }
@@ -1016,12 +1018,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         READ_PERMS.stream().filter(granted::contains).forEach(result::add);
     }
 
-    private static final Collection<Class<? extends Permission>> EDIT_PERMS = List.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
+    private static final Set<Class<? extends Permission>> EDIT_PERMS = Set.of(InsertPermission.class, UpdatePermission.class, DeletePermission.class);
 
     private void copyEditPerms(SecurableResource resource, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        Set<Class<? extends Permission>> granted = SecurityManager.getPermissions(resource, user, Set.of());
-        EDIT_PERMS.stream().filter(granted::contains).forEach(result::add);
+        SecurityManager.streamPermissions(resource, user, Set.of())
+            .filter(EDIT_PERMS::contains)
+            .forEach(result::add);
     }
 
     /** @deprecated use DatasetTableImpl.hasPermission()! */
@@ -1029,15 +1032,15 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return hasPermissions(user, Set.of(perm), null);
+        return hasPermissions(user, Set.of(perm), Set.of());
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
         return hasPermissions(user, Set.of(perm), contextualRoles);
     }
 
-    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @Nullable Set<Role> contextualRoles)
+    private boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> perms, @NotNull Set<Role> contextualRoles)
     {
         if (perms.isEmpty())
             throw new IllegalStateException();
@@ -1065,12 +1068,12 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     @Deprecated
     public boolean canRead(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
     public boolean canReadInternal(UserPrincipal user)
     {
-        return hasPermission(user, ReadPermission.class, null);
+        return hasPermission(user, ReadPermission.class);
     }
 
 
@@ -1790,9 +1793,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                         Map<String, Object> row = rows.get(i);
                         Map<String, Object> existingRow = null==existingRows ? null : existingRows.get(i);
                         // note switched order (oldRecord, newRecord)
-                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null);
+                        var event = createDetailedAuditRecord(user, c, (AuditConfigurable)table, action, userComment, row, existingRow, null, List.of());
                         batch.add(event);
-                        if (batch.size() > 1000)
+                        if (batch.size() > AbstractAuditHandler.AUDIT_BATCH_SIZE)
                         {
                             auditLog.addEvents(user, batch);
                             batch.clear();
@@ -1808,7 +1811,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         }
 
         @Override
-        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+        protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
         {
             throw new UnsupportedOperationException();
         }
@@ -1817,7 +1820,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
          * NOTE: userComment field is not supported for this domain and will be ignored
          */
         @Override
-        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues)
+        protected DatasetAuditProvider.DatasetAuditEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> record, Map<String, Object> existingRecord, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
         {
             String auditComment = switch (action)
                     {

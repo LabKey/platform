@@ -15,8 +15,11 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -40,9 +43,6 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +71,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private Container _c = null;
 
 
-    private final Set<Role> _contextualRoles = new HashSet<>();
+    private final @NotNull Set<Role> _contextualRoles = new HashSet<>();
     private boolean _isAppView = false;
 
     transient protected HashMap<String, Object> _map = new HashMap<>();
@@ -164,6 +164,18 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return new StackResetter(context, stackSize);
     }
 
+    /**
+     * Ensures a view context is available without disturbing one that's already there: if a view is
+     * already on the stack, returns it wrapped in a no-op resetter; otherwise pushes a new mock context
+     * via {@link #pushMockViewContext}.
+     */
+    public static StackResetter ensureViewContext(User user, Container c, ActionURL url)
+    {
+        if (HttpView.hasCurrentView())
+            return new StackResetter(HttpView.currentContext(), HttpView.getStackSize());
+        else
+            return pushMockViewContext(user, c, url);
+    }
 
     // Needed by background threads that call entrypoints that require ViewContexts
     // TODO: Well-behaved interfaces should not take ViewContexts -- clean up query, et al to remove ViewContext params
@@ -178,7 +190,11 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         if (null != url)
             context.setBindPropertyValues(url.getPropertyValues());
 
-        HttpServletRequest request = ViewServlet.mockRequest("GET", url, user, null, null);
+        // Inherit current request's method, if present.
+        HttpServletRequest currentRequest = HttpView.currentRequest();
+        String mockRequestMethod = pushViewContext && currentRequest != null ? currentRequest.getMethod() : "GET";
+
+        HttpServletRequest request = ViewServlet.mockRequest(mockRequestMethod, url, user, null, null);
         context.setRequest(request);
 
         // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 

@@ -45,7 +45,6 @@ public class StudyDatasetIndexTest extends StudyBaseTest
     private static final File STUDY_WITH_DATASET_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetIndex.folder.zip");
     private static final File STUDY_WITH_DATASET_SHARED_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetSharedIndex.folder.zip");
     private static final String METADATA = "Table Meta Data";
-    boolean IS_POSTGRES = WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL;
 
     @Override
     protected String getProjectName()
@@ -205,10 +204,8 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
     private void verifyTableIndexNonUnique(String prefix, String suffix, boolean isUnique)
     {
-        String boolDisplay = isUnique ? "0" : "1";
-        if (IS_POSTGRES) boolDisplay = isUnique ? "false" : "true";
-        String fieldKey = prefix + suffix;
-        if (IS_POSTGRES) fieldKey = fieldKey.toLowerCase();
+        String boolDisplay = isUnique ? "false" : "true";
+        String fieldKey = (prefix + suffix).toLowerCase();
         Locator locator = Locator.xpath("//td[contains(text(), '" + fieldKey + "')]/preceding-sibling::td[2][text()='" + boolDisplay + "']");
         checker().verifyTrue("Non_Unique value not as expected in metadata for locator: " + locator, locator.existsIn(getDriver()));
     }

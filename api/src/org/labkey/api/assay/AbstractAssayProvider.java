@@ -34,8 +34,8 @@ import org.labkey.api.assay.transform.AnalysisScript;
 import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
+import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -51,7 +51,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
@@ -1659,7 +1658,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // Just need to check DesignAssayPermission here.
         // Experiment/ConfirmDelete.jsp checks for getRunsWithoutPermission
         // ExperimentServiceImpl.deleteProtocolByRowIds checks for AdminPermission for assay runs
-        return container.hasPermissions(viewContext.getUser(), Set.of(DesignAssayPermission.class));
+        return container.hasPermission(viewContext.getUser(), DesignAssayPermission.class);
     }
 
     @Override
@@ -1805,11 +1804,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected boolean hasFilterCriteria(ExpProtocol protocol, Domain resultsDomain)
     {
         return false;
-    }
-
-    @Override
-    public void removeFilterCriteriaForProperty(PropertyDescriptor pd)
-    {
     }
 
     public record AssayFileMoveData(ExpRun run, Container sourceContainer, String fieldName, File sourceFile, File targetFile) {}

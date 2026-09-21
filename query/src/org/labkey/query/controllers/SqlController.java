@@ -34,7 +34,6 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -622,15 +621,12 @@ public class SqlController extends SpringActionController
             list.getDomain().addProperty(new PropertyStorageSpec("Age", JdbcType.INTEGER));
             list.getDomain().addProperty(new PropertyStorageSpec("Score", JdbcType.DOUBLE));
 
-            if (CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
-                DomainProperty tagsProp = list.getDomain().addProperty(new PropertyStorageSpec("Tags", JdbcType.VARCHAR));
-                tagsProp.setRangeURI(PropertyType.MULTI_CHOICE.getTypeUri());
-                IPropertyValidator tcValidator = PropertyService.get().createValidator("urn:lsid:labkey.com:PropertyValidator:textchoice");
-                tcValidator.setName("Text Choice Validator");
-                tcValidator.setExpressionValue("Red|Green|Blue");
-                tagsProp.addValidator(tcValidator);
-            }
+            DomainProperty tagsProp = list.getDomain().addProperty(new PropertyStorageSpec("Tags", JdbcType.VARCHAR));
+            tagsProp.setRangeURI(PropertyType.MULTI_CHOICE.getTypeUri());
+            IPropertyValidator tcValidator = PropertyService.get().createValidator("urn:lsid:labkey.com:PropertyValidator:textchoice");
+            tcValidator.setName("Text Choice Validator");
+            tcValidator.setExpressionValue("Red|Green|Blue");
+            tagsProp.addValidator(tcValidator);
 
             list.save(user);
 
@@ -721,12 +717,6 @@ public class SqlController extends SpringActionController
         @Test
         public void testExecute() throws Exception
         {
-            if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-            {
-                testExecute_basic();
-                return;
-            }
-
             MockHttpServletResponse response = executeSql("lists",
                 "SELECT Name, Age, Score, Tags FROM " + LIST_NAME + " ORDER BY Name", Format.split);
             assertEquals(HttpServletResponse.SC_OK, response.getStatus());

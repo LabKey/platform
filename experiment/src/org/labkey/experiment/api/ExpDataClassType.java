@@ -65,9 +65,9 @@ public class ExpDataClassType implements AttachmentParentType
         TableInfo tableInfo = ExperimentService.get().getTinfoDataClass();
         SqlDialect dialect = tableInfo.getSqlDialect();
 
-        // Get a dialect-specific expression that can extract an ObjectId from the LSID column and a WHERE clause to
-        // filter the rows to LSIDs containing ObjectIds
-        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"), tableInfo.getSqlDialect());
+        // Get an expression that can extract an ObjectId from the LSID column and a WHERE clause to filter the rows
+        // to LSIDs containing ObjectIds
+        Pair<SQLFragment, SQLFragment> pair = Lsid.getSqlExpressionToExtractObjectId(new SQLFragment("LSID"));
         SQLFragment expressionToExtractObjectId = pair.first;
         SQLFragment where = pair.second;
 

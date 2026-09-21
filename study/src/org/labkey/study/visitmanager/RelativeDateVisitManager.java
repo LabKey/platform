@@ -223,11 +223,7 @@ public class RelativeDateVisitManager extends VisitManager
                 .append(" AND ").append(tableParticipant.getColumn("Container").getValueSql(tableParticipantSelectName))
                 .append("=").append(tableParticipantVisit.getColumn("Container").getValueSql(tableParticipantVisitSelectName)).append(")");
 
-        SQLFragment sqlVisitDate = new SQLFragment("CAST(VisitDate AS DATE)");
-        if (schema.getSqlDialect().isPostgreSQL())
-        {
-            sqlVisitDate.append("::TIMESTAMP");
-        }
+        SQLFragment sqlVisitDate = new SQLFragment("CAST(VisitDate AS DATE)::TIMESTAMP");
         sqlStartDate = new SQLFragment("CAST(").append(sqlStartDate).append(" AS DATE)");
 
         SQLFragment sqlUpdateDays = new SQLFragment("UPDATE ");

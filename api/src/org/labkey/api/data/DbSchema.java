@@ -612,31 +612,20 @@ public class DbSchema
         public void testDDLMethods() throws Exception
         {
             DbSchema testSchema = test.getSchema();
+            DbScope testScope = testSchema.getScope();
 
             // create test objects
             //start with cleanup
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
-            testSchema.getSqlDialect().dropSchema(testSchema,"testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope,"testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
             testSchema.dropTableIfExists(tempTableName);
 
-            SqlExecutor executor = new SqlExecutor(testSchema);
+            SqlExecutor executor = new SqlExecutor(testScope);
 
-            if (testSchema.getSqlDialect().isSqlServer())
-            {
-                // test the 3 ways to create a schema on SQLServer
-                executor.execute("EXEC sp_addapprole 'testdrop', 'password'");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute(testSchema.getSqlDialect().getCreateSchemaSql("testdrop3"));
-            }
-            else if (testSchema.getSqlDialect().isPostgreSQL())
-            {
-                executor.execute("CREATE SCHEMA testdrop");
-                executor.execute("CREATE SCHEMA testdrop2");
-                executor.execute("CREATE SCHEMA testdrop3");
-            }
-            else
-                return;
+            executor.execute("CREATE SCHEMA testdrop");
+            executor.execute("CREATE SCHEMA testdrop2");
+            executor.execute("CREATE SCHEMA testdrop3");
 
             executor.execute("CREATE TABLE testdrop.T0 (c0 INT NOT NULL PRIMARY KEY)");
             executor.execute("CREATE TABLE testdrop.T (c1 CHAR(1), fk_c0 INT REFERENCES testdrop.T0(c0))");
@@ -666,16 +655,16 @@ public class DbSchema
             testSchema.dropTableIfExists(tempTableName);
             executor.execute(sqlCreateTempTable);
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
             // these don't exist
             testSchema.dropIndexIfExists("T", "T_notexist") ;
             testSchema.dropTableIfExists("V1");
             testSchema.dropTableIfExists("Tnot");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop");
 
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop2");
-            testSchema.getSqlDialect().dropSchema(testSchema, "testdrop3");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop2");
+            testSchema.getSqlDialect().dropSchema(testScope, "testdrop3");
         }
 
         @After

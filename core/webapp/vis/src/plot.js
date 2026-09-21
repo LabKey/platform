@@ -469,8 +469,15 @@ boxPlot.render();
         return domain;
     };
 
+    // size/color scales map data onto an aesthetic range rather than a visible axis, so they are never domain-padded.
+    var isAxisAes = function(aesName) {
+        return aesName == 'x' || aesName == 'xTop' || aesName == 'xSub' || aesName == 'yLeft' || aesName == 'yRight';
+    };
+
     var getContinuousDomain = function(aesName, userScale, data, acc, errorAes) {
         var userMin, userMax, min, max, minAcc, maxAcc;
+        var minFromUser = false, maxFromUser = false;
+        var PADDING = 0.05; // GitHub Issue #1434: 5% padding on auto-computed domain bounds
 
         if (userScale && userScale.domain) {
             userMin = userScale.domain[0];
@@ -479,6 +486,7 @@ boxPlot.render();
 
         if (LABKEY.vis.isValid(userMin)) {
             min = userMin;
+            minFromUser = true;
         } else {
             if ((aesName == 'yLeft' || aesName == 'yRight') && errorAes) {
                 minAcc = function(d) {
@@ -498,6 +506,7 @@ boxPlot.render();
 
         if (LABKEY.vis.isValid(userMax)) {
             max = userMax;
+            maxFromUser = true;
         } else {
             if ((aesName == 'yLeft' || aesName == 'yRight') && errorAes) {
                 maxAcc = function(d) {
@@ -518,6 +527,23 @@ boxPlot.render();
             else {
                 max = max + 1;
                 min = min - 1;
+            }
+        }
+        else if (isAxisAes(aesName) && LABKEY.vis.isValid(min) && LABKEY.vis.isValid(max)
+                && (!minFromUser || !maxFromUser)) {
+            // Add padding so data points don't sit on the plot edges. Only pad
+            // bounds that were auto-computed; respect any user-specified bound exactly.
+            if (userScale && userScale.trans && userScale.trans === 'log' && min > 0) {
+                // Pad in log space so proportions are preserved and values stay > 0.
+                var logRange = (Math.log(max) - Math.log(min)) * PADDING;
+                if (!minFromUser) min = Math.exp(Math.log(min) - logRange);
+                if (!maxFromUser) max = Math.exp(Math.log(max) + logRange);
+            }
+            else {
+                var range = (max - min) * PADDING;
+                // Don't push a non-negative min below zero (zero-anchored data reads better flush)
+                if (!minFromUser) min = (min >= 0) ? Math.max(0, min - range) : min - range;
+                if (!maxFromUser) max = max + range;
             }
         }
 

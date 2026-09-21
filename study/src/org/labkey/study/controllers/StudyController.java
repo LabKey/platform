@@ -55,7 +55,6 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.assay.AssayUrls;
@@ -111,11 +110,8 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageDataStatesForm;
@@ -184,7 +180,6 @@ import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.DatasetTable;
-import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -220,7 +215,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
@@ -230,7 +224,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishConfirmAction;
@@ -269,7 +262,6 @@ import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
-import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
@@ -7562,247 +7554,6 @@ public class StudyController extends BaseStudyController
         public void setRefresh(boolean refresh)
         {
             _refresh = refresh;
-        }
-    }
-
-    /**
-     * Set up the site wide settings for a master patient provider
-     */
-    @RequiresPermission(AdminPermission.class)
-    public static class MasterPatientProviderAction extends FormViewAction<MasterPatientProviderSettings>
-    {
-        @Override
-        public void validateCommand(MasterPatientProviderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public ModelAndView getView(MasterPatientProviderSettings form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/masterPatientProvider.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(MasterPatientProviderSettings form, BindException errors) throws Exception
-        {
-            if (form.getType() != null)
-            {
-                try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
-                {
-                    MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
-                    if (svc != null)
-                    {
-                        WritablePropertyMap map = PropertyManager.getNormalStore().getWritableProperties(MasterPatientProviderSettings.CATEGORY, true);
-
-                        map.put(MasterPatientProviderSettings.TYPE, form.getType());
-                        map.save();
-
-                        svc.setServerSettings(form);
-                        transaction.commit();
-                    }
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(MasterPatientProviderSettings form)
-        {
-            return urlProvider(AdminUrls.class).getAdminConsoleURL();
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Configure Master Patient Index", getClass(), getContainer());
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class TestMasterPatientProviderAction extends MutatingApiAction<MasterPatientProviderSettings>
-    {
-        @Override
-        public void validateForm(MasterPatientProviderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public Object execute(MasterPatientProviderSettings form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            if (form.getType() != null)
-            {
-                MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
-                if (svc != null)
-                {
-                    if (svc.checkServerSettings(form))
-                    {
-                        response.put("success", true);
-                        response.put("message", "The specified settings are valid.");
-                    }
-                    else
-                    {
-                        response.put("success", false);
-                        response.put("message", "The specified settings are not valid.");
-                    }
-                }
-            }
-            return response;
-        }
-    }
-
-    public static class MasterPatientProviderSettings extends MasterPatientIndexService.ServerSettings
-    {
-        public static final String CATEGORY = "MASTER_PATIENT_PROVIDER";
-        public static final String TYPE = "TYPE";
-
-        private String _type;
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void setType(String type)
-        {
-            _type = type;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ConfigureMasterPatientSettingsAction extends FormViewAction<MasterPatientIndexService.FolderSettings>
-    {
-        private MasterPatientIndexService _svc;
-
-        @Override
-        public void validateCommand(MasterPatientIndexService.FolderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public ModelAndView getView(MasterPatientIndexService.FolderSettings form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/manageMasterPatientConfig.jsp", getService(), errors);
-        }
-
-        @Override
-        public boolean handlePost(MasterPatientIndexService.FolderSettings form, BindException errors) throws Exception
-        {
-            MasterPatientIndexService svc = getService();
-            if (svc != null)
-            {
-                form.setReloadUser(getUser().getUserId());
-                svc.setFolderSettings(getContainer(), form);
-            }
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(MasterPatientIndexService.FolderSettings form)
-        {
-            return new ActionURL(ManageStudyAction.class, getContainer());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            MasterPatientIndexService svc = getService();
-            if (svc != null)
-                root.addChild("Manage " + svc.getName() + " Configuration");
-            else
-                root.addChild("Manage Master Patient Index Configuration");
-        }
-
-        private MasterPatientIndexService getService()
-        {
-            if (_svc == null)
-            {
-                _svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-            }
-            return _svc;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class RefreshMasterPatientIndexAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            try
-            {
-                ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL());
-                MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-
-                MasterPatientIndexService.FolderSettings settings = svc.getFolderSettings(getContainer());
-                if (settings.isEnabled())
-                {
-                    PipelineJob job = new MasterPatientIndexUpdateTask(info, PipelineService.get().findPipelineRoot(getContainer()), svc);
-
-                    PipelineService.get().queueJob(job);
-
-                    response.put("success", true);
-                    response.put(ActionURL.Param.returnUrl.name(), urlProvider(PipelineUrls.class).urlBegin(getContainer()));
-                }
-                else
-                {
-                    response.put("success", false);
-                    response.put("message", "The specified configuration is not enabled.");
-                }
-            }
-            catch (PipelineValidationException e)
-            {
-                throw new IOException(e);
-            }
-            return response;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class DeleteMasterPatientRecordsAction extends MutatingApiAction<DeleteMPIForm>
-    {
-        @Override
-        public ApiResponse execute(DeleteMPIForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            List<Pair<String, String>> params = form.getParams();
-            MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-            if (svc != null && !params.isEmpty())
-            {
-                int count = svc.deleteMatchingRecords(params);
-
-                response.put("success", true);
-                response.put("count", count);
-            }
-            return response;
-        }
-    }
-
-    public static class DeleteMPIForm implements ApiJsonForm
-    {
-        private final List<Pair<String, String>> _params = new ArrayList<>();
-
-        public List<Pair<String, String>> getParams()
-        {
-            return _params;
-        }
-
-        @Override
-        public void bindJson(JSONObject json)
-        {
-            for (String key : json.keySet())
-            {
-                _params.add(new Pair<>(key, String.valueOf(json.get(key))));
-            }
         }
     }
 

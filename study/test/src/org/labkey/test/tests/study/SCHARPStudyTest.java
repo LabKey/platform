@@ -22,7 +22,6 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.PostgresOnlyTest;
 
 import java.io.File;
 import java.util.Arrays;
@@ -33,7 +32,7 @@ import static org.junit.Assert.fail;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
-public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class SCHARPStudyTest extends BaseWebDriverTest
 {
     public static final String PROJECT_NAME="SCHARP Study Test";
 

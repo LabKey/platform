@@ -152,10 +152,12 @@ public interface McpService extends ToolCallbackProvider
 
     boolean isReady();
 
-    // Convenience for in-product AI features: the AI feature flag is on AND the service has started.
+    boolean isModelReady();
+
+    // Convenience for in-product AI features: the AI feature flag is on, the service is ready, and the model is ready.
     default boolean isAIFeaturesReady()
     {
-        return isAIFeaturesEnabled() && isReady();
+        return isAIFeaturesEnabled() && isReady() && isModelReady();
     }
 
     // Register MCPs in Module.startup()

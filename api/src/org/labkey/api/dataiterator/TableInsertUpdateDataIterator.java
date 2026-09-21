@@ -422,12 +422,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
             if (autoIncCol == null)
                 return;
 
-            if (_scope.getSqlDialect().isSqlServer())
-            {
-                SQLFragment check = new SQLFragment("SET IDENTITY_INSERT ").append(t).append(" ").append(bound.toString());
-                new SqlExecutor(_scope, _conn).execute(check);
-            }
-            else if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
+            if (_scope.getSqlDialect().isPostgreSQL() && bound == INSERT.OFF)
             {
                 // Update the sequence for the serial column with the max+1 and handle empty tables
                 if (autoIncCol.getSelectIdentifier() != null)

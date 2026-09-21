@@ -308,7 +308,6 @@ import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_DATA;
 import static org.labkey.api.data.NameGenerator.ANCESTOR_INPUT_PREFIX_MATERIAL;
 import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_ALLOW_GAP_COUNTER;
-import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.exp.OntologyManager.getTinfoDomainDescriptor;
 import static org.labkey.api.exp.OntologyManager.getTinfoObject;
@@ -2783,20 +2782,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         String edgesToken = null;
 
-        boolean recursive = dialect.isPostgreSQL();
-
         String parentsToken = null;
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
             SQLFragment parentsInnerSelectFrag = SQLFragment.unsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, recursive);
+            String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, true);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), recursive);
+            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), true);
         }
 
         String childrenToken = null;
@@ -2806,12 +2803,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             childrenInnerSelect = Strings.CS.replace(childrenInnerSelect, "$EDGES$", edgesToken);
             SQLFragment childrenInnerSelectFrag = SQLFragment.unsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
-            String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, recursive);
+            String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, true);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), recursive);
+            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), true);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -2996,7 +2993,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private void removeEdgesForRun(long runId)
     {
         TableInfo edge = getTinfoEdge();
-        int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge /* + (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "")  */ + " WHERE runId=?", runId);
+        int count = new SqlExecutor(edge.getSchema().getScope()).execute("DELETE FROM " + edge + " WHERE runId=?", runId);
         LOG.debug("Removed edges for run {}; count = {}", runId, count);
     }
 
@@ -3215,7 +3212,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             TableInfo edge = getTinfoEdge();
             String edgeSql = "INSERT INTO " + edge +
-                    /* (edge.getSqlDialect().isSqlServer() ? " WITH (TABLOCK, HOLDLOCK)" : "") + */
                     " (fromObjectId, toObjectId, runId)\n"+
                     "VALUES (?, ?, ?)";
             Table.batchExecute(getExpSchema(), edgeSql, params);
@@ -7488,7 +7484,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             TableInfo pa = getTinfoProtocolApplication();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("LSID"), protAppRowMap.keySet(), IN).getSQLFragment(pa, "pa");
-            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa /* + (pa.getSqlDialect().isSqlServer() ? " WITH (UPDLOCK, HOLDLOCK)" : "") */ + " ")
+            new SqlSelector(pa.getSchema(), new SQLFragment("SELECT Lsid, RowId FROM " + pa + " ")
                     .append(sqlfilter)).forEach(rs ->
             {
                 if (protAppRowMap.containsKey(rs.getString("Lsid")))
@@ -10384,14 +10380,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public boolean useStrictCounter()
     {
-        if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
-        {
-            return AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER);
-        }
-        else
-        {
-            return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
-        }
+        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_ALLOW_GAP_COUNTER);
     }
 
     @Override
@@ -10899,22 +10888,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         List<InnerResult> getParents(long seed)
         {
-            SqlDialect d = getExpSchema().getSqlDialect();
             var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
             String parentsInner = maps.get("$PARENTS_INNER$").replace("$SELF$", "parents");
             SQLFragment sql = new SQLFragment()
-                    .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" parents AS (").append(parentsInner).append(")\n")
+                    .append("WITH RECURSIVE").append(" parents AS (").append(parentsInner).append(")\n")
                     .append("SELECT * FROM parents WHERE self != fromObjectId");
             return new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
         }
 
         List<InnerResult> getChildren(long seed)
         {
-            SqlDialect d = getExpSchema().getSqlDialect();
             var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
             String childrenInner = maps.get("$CHILDREN_INNER$").replace("$SELF$", "children");
             SQLFragment sql = new SQLFragment()
-                    .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" children AS (").append(childrenInner).append(")\n")
+                    .append("WITH RECURSIVE").append(" children AS (").append(childrenInner).append(")\n")
                     .append("SELECT * FROM children WHERE self != toObjectId");
             return new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
         }

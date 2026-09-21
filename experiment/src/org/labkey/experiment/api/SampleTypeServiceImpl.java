@@ -1274,13 +1274,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
     {
         return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
     }
 
     @Override
-    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
     {
         return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
@@ -1411,10 +1411,37 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
+        AuditLogService.get().addEvent(user, createTimelineAuditRecord(container, comment, userComment, sample, metadata, updateType));
+    }
+
+    @Override
+    public SampleTimelineAuditEvent createTimelineAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    {
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         event.setUserComment(userComment);
-        AuditLogService.get().addEvent(user, event);
+        return event;
+    }
+
+    @Override
+    public void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata)
+    {
+        AuditLogService auditLog = AuditLogService.get();
+        List<SampleTimelineAuditEvent> events = new ArrayList<>(Math.min(samples.size(), AUDIT_BATCH_SIZE));
+
+        for (ExpMaterial sample : samples)
+        {
+            events.add(createAuditRecord(container, comment, userComment, sample, metadata));
+
+            if (events.size() >= AUDIT_BATCH_SIZE)
+            {
+                auditLog.addEvents(user, events);
+                events.clear();
+            }
+        }
+
+        if (!events.isEmpty())
+            auditLog.addEvents(user, events);
     }
 
     @Override
@@ -1633,38 +1660,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     SQLFragment quickRollUpSql = null;
 
-                    if (tableInfo.getSchema().getSqlDialect().isSqlServer())
-                    {
-                        /*
-                         * SqlServer needs to specify the alias in the FROM clause, and use that alias as the target of the update.
-                         */
-                        quickRollUpSql = new SQLFragment("UPDATE exp.material SET \n")
-                                .append("aliquotvolume = ROUND(CAST(COALESCE(stats.total_volume, 0) AS NUMERIC(38,12)) , ?),\n").add(precisionScale)
-                                .append("aliquotunit = stats.common_unit,\n")
-                                .append("availablealiquotvolume = ROUND(CAST(COALESCE(stats.avail_volume, 0) AS NUMERIC(38,12)), ?)\n").add(precisionScale)
-                                .append("FROM exp.material m INNER JOIN (")
-                                .append(statsSql)
-                                .append(") AS stats\n")
-                                .append("ON m.rowid = stats.rootmaterialrowid"
-                                );
-                    }
-                    else
-                    {
-                        /*
-                         * Alias usage: PostgreSQL allows you to use an alias in the UPDATE clause itself
-                         * Type casting: PostgreSQL uses ::NUMERIC for type casting.
-                         * JOIN condition: The WHERE clause is used for joining the tables instead of an INNER JOIN with ON.
-                         */
-                        quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
-                                .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
-                                .append("aliquotunit = stats.common_unit,\n")
-                                .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
-                                .append("FROM (")
-                                .append(statsSql)
-                                .append(") AS stats\n")
-                                .append("WHERE m.rowid = stats.rootmaterialrowid"
-                                );
-                    }
+                    quickRollUpSql = new SQLFragment("UPDATE exp.material AS m SET \n")
+                            .append("aliquotvolume = ROUND(COALESCE(stats.total_volume, 0)::NUMERIC, ?),\n").add(precisionScale)
+                            .append("aliquotunit = stats.common_unit,\n")
+                            .append("availablealiquotvolume = ROUND(COALESCE(stats.avail_volume, 0)::NUMERIC, ?)\n").add(precisionScale)
+                            .append("FROM (")
+                            .append(statsSql)
+                            .append(") AS stats\n")
+                            .append("WHERE m.rowid = stats.rootmaterialrowid"
+                            );
 
                     new SqlExecutor(tableInfo.getSchema()).execute(quickRollUpSql);
 
@@ -2421,7 +2425,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         User searchUser = User.getSearchUser();
         ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
-        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, Set.of());
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);

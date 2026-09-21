@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
@@ -52,6 +53,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -78,6 +80,7 @@ import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -88,6 +91,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.inventory.InventoryService;
@@ -146,6 +150,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -1284,7 +1289,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
+    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
@@ -1388,16 +1393,90 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .unlogged(true)
+                // RowId and Container are used in many places so ensure they're created before use. Other indices can
+                // be added as a followup step
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
-                .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)");
+                .addDeferredIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
+                // Deferred despite being UNIQUE. Source data guarantees uniqueness, and this is very expensive to build
+                .addDeferredIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)");
+
+            getDomainIndexDdl().forEach(builder::addDeferredIndex);
 
             if (isIncrementalUpdateDisabled())
                 builder.addInvalidCheck(() -> String.valueOf(getInvalidateCounters(_ss.getLSID()).update.get()));
 
             return (_MaterializedQueryHelper) builder.build();
         });
+    }
+
+    /**
+     * DDL mirroring the sample type domain's admin-defined indices onto the materialized table. Read from the
+     * provisioned table's own indices, not {@link Domain#getPropertyIndices()} -- that set is only ever populated by
+     * the caller that is saving a domain, so it is empty on a domain read back from the database. Never unique:
+     * {@link #getJoinSQL} selects root-scoped columns from the root sample's row, so a value that is unique in the
+     * provisioned table repeats across every aliquot sharing that root. PostgreSQL only: SQL Server refuses an index
+     * over a column as wide as a default string property, so a mirrored index there would fail the materialization.
+     */
+    private List<String> getDomainIndexDdl()
+    {
+        if (!getExpSchema().getDbSchema().getSqlDialect().isPostgreSQL())
+            return List.of();
+
+        TableInfo provisioned = _ss.getTinfo();
+        if (null == provisioned)
+            return List.of();
+
+        Domain domain = _ss.getDomain();
+        DomainKind<?> kind = domain.getDomainKind();
+        if (null == kind)
+            return List.of();
+
+        List<String> ddl = new ArrayList<>();
+        Set<String> distinctColumnLists = new HashSet<>();
+
+        // Seeded with the provisioned columns the builder already indexes above: the kind's own indices (rowid, name)
+        // and lsid. Its other indices are over exp.material columns, which cannot appear in a provisioned index.
+        for (PropertyStorageSpec.Index index : kind.getPropertyIndices(domain))
+            distinctColumnLists.add(indexKey(Arrays.asList(index.translateToStorageNames(domain).columnNames)));
+        distinctColumnLists.add(indexKey(List.of("lsid")));
+
+        for (TableInfo.IndexDefinition index : StorageProvisioner.get().getSchemaTableInfo(domain).getAllIndices())
+        {
+            if (TableInfo.IndexType.Primary == index.indexType())
+                continue;
+
+            List<String> names = new ArrayList<>();
+            List<String> identifiers = new ArrayList<>();
+
+            for (ColumnInfo indexColumn : index.columns())
+            {
+                ColumnInfo column = provisioned.getColumn(indexColumn.getName());
+
+                if (null == column)
+                {
+                    _log.warn("Sample type {} is indexed on {}, which is not in its provisioned table; that index is not mirrored onto the materialized table.", _ss.getName(), indexColumn.getName());
+                    names.clear();
+                    break;
+                }
+
+                names.add(column.getName());
+                identifiers.add(column.getSelectIdentifier().getSql().getSQL());
+            }
+
+            if (names.isEmpty() || !distinctColumnLists.add(indexKey(names)))
+                continue;
+
+            // Ordinal names because ${NAME} is already 33 of the 63 chars Postgres allows before it silently truncates and collides.
+            ddl.add("CREATE INDEX idx_${NAME}_d" + ddl.size() + " ON temp.${NAME} (" + String.join(", ", identifiers) + ")");
+        }
+
+        return ddl;
+    }
+
+    private static String indexKey(List<String> columnNames)
+    {
+        return columnNames.stream().map(name -> name.toLowerCase(Locale.ROOT)).collect(Collectors.joining(","));
     }
 
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
@@ -1472,7 +1551,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
             }
         }
 
@@ -1485,12 +1564,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Nullable SQLFragment uptodate,
             Supplier<String> supplier,
             @Nullable Collection<String> indexes,
+            @Nullable Collection<String> deferredIndexes,
             long maxTimeToCache,
             boolean isSelectIntoSql,
             boolean unlogged
         )
         {
-            super(prefix, scope, select, uptodate, supplier, indexes, maxTimeToCache, isSelectIntoSql, unlogged);
+            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
         }
@@ -1517,10 +1597,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (Materialized.LoadingState.ERROR == materialized._loadingState.get())
                     throw materialized._loadException;
 
-                runIncremental(materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
-                runIncremental(materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
-                runIncremental(materialized.incrementalRollupCheck, this::executeIncrementalRollup);
-                runIncremental(materialized.incrementalInsertCheck, this::executeIncrementalInsert);
+                // The lock is held by a full rebuild (including its deferred indexes). Leave the counters untouched so
+                // readers stay on the live query and the next materializeAsync retries, rather than racing that rebuild.
+                if (!lockAcquired)
+                {
+                    _log.info("Skipping incremental update of {}; a rebuild still holds the lock.", getMaterializationName());
+                    return;
+                }
+
+                runIncremental("delete", materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
+                runIncremental("update", materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
+                runIncremental("rollup", materialized.incrementalRollupCheck, this::executeIncrementalRollup);
+                runIncremental("insert", materialized.incrementalInsertCheck, this::executeIncrementalInsert);
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1548,13 +1636,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          * reflects the change, instead of briefly serving a stale materialized view. Must be called while holding the
          * materialized's loading lock so only one updater runs at a time.
          */
-        private static void runIncremental(MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
+        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
         {
             if (check.peekValid())
                 return;
             String token = check.current();
-            work.run();
+            traced("incremental." + kind, getMaterializationName(), work);
             check.markValidAs(token);
+        }
+
+        @Override
+        protected String getMaterializationName()
+        {
+            return StringUtils.defaultIfEmpty(Lsid.parse(_lsid).getObjectId(), _lsid);
         }
 
         void upsertWithRetry(SQLFragment sql)
@@ -1587,9 +1681,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             SQLFragment incremental = new SQLFragment();
-            if (d.isPostgreSQL())
-            {
-                incremental
+            incremental
                     .append("UPDATE temp.${NAME} AS st\n")
                     .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
                     .append("FROM exp.Material AS expm\n")
@@ -1600,22 +1692,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
                     .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
                     .append(")");
-            }
-            else
-            {
-                // SQL Server 2022 supports IS DISTINCT FROM
-                incremental
-                    .append("UPDATE st\n")
-                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                    .append("FROM temp.${NAME} st, exp.Material expm\n")
-                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
-                    .append("    COALESCE(st.aliquotcount,-2147483648) <> COALESCE(expm.aliquotcount,-2147483648) OR ")
-                    .append("    COALESCE(st.availablealiquotcount,-2147483648) <> COALESCE(expm.availablealiquotcount,-2147483648) OR ")
-                    .append("    COALESCE(st.aliquotvolume,-2147483648) <> COALESCE(expm.aliquotvolume,-2147483648) OR ")
-                    .append("    COALESCE(st.availablealiquotvolume,-2147483648) <> COALESCE(expm.availablealiquotvolume,-2147483648) OR ")
-                    .append("    COALESCE(st.aliquotunit,'-') <> COALESCE(expm.aliquotunit,'-')")
-                    .append(")");
-            }
             upsertWithRetry(incremental);
         }
 
@@ -1640,12 +1716,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
-            SqlDialect d = CoreSchema.getInstance().getSchema().getSqlDialect();
-            // SQL Server's datetime type lacks microsecond precision
-            Timestamp comparison = d.isSqlServer() ? new Timestamp(changedSince.getTime() - 500) : changedSince;
-
             SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
-                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(comparison)
+                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
                     .append(")\n");
 
             SQLFragment src = new SQLFragment()
@@ -1653,18 +1725,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     .append("UNION\n")
                     .append(getViewSourceSql()).append(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
 
-            if (d.isPostgreSQL())
-            {
-                sql.append("UPDATE temp.${NAME} AS st\nSET ");
-                appendSetFromSrc(sql);
-                sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
-            }
-            else
-            {
-                sql.append("UPDATE st\nSET ");
-                appendSetFromSrc(sql);
-                sql.append("\nFROM temp.${NAME} st INNER JOIN (").append(src).append("\n) src ON st.rowid = src.rowid");
-            }
+            sql.append("UPDATE temp.${NAME} AS st\nSET ");
+            appendSetFromSrc(sql);
+            sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
 
             return sql;
         }
@@ -1833,7 +1896,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" / ? AS ")
-                            .append(parent.getSqlDialect().isPostgreSQL() ? "DECIMAL" : "DOUBLE PRECISION")
+                            .append("DECIMAL")
                             .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())
@@ -2277,7 +2340,30 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 
+        @Test
+        public void testDomainIndexMirroredNonUnique() throws Exception
+        {
+            Assume.assumeTrue("Domain indices are only mirrored on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
+
+            ExpSampleType st = createSampleType("IncrUpdIndexed", List.of(new GWTIndex(List.of("rootProp"), true)));
+            insertRoots(st, "R1");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            List<String> ddl = table.getDomainIndexDdl();
+            assertEquals("Expected the domain's one index to be mirrored: " + ddl, 1, ddl.size());
+            assertFalse("Mirrored index must not be unique: " + ddl.getFirst(), ddl.getFirst().contains("UNIQUE"));
+
+            // All four rows share the root's rootProp, so mirroring the domain's unique index as-is would fail the build.
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
         private ExpSampleType createSampleType(String name) throws Exception
+        {
+            return createSampleType(name, Collections.emptyList());
+        }
+
+        private ExpSampleType createSampleType(String name, List<GWTIndex> indices) throws Exception
         {
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("name", "string"));
@@ -2287,7 +2373,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             GWTPropertyDescriptor aliquotProp = new GWTPropertyDescriptor("aliquotProp", "string");
             aliquotProp.setDerivationDataScope(ExpSchema.DerivationDataScopeType.ChildOnly.name()); // -> m_aliquot join
             props.add(aliquotProp);
-            return SampleTypeService.get().createSampleType(_c, _user, name, null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            return SampleTypeService.get().createSampleType(_c, _user, name, null, props, indices, -1, -1, -1, -1, null);
         }
 
         private ExpMaterialTableImpl getSamplesTable(ExpSampleType st)

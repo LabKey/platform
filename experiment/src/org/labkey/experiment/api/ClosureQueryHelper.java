@@ -36,7 +36,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -130,63 +129,10 @@ public class ClosureQueryHelper
                 WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)
             """;
 
-    static String mssqlAncestorClosureCTE = String.format("""
-            WITH CTE_ AS (
-
-                SELECT
-                    RowId,
-                    ObjectId as End_,
-                    '/' + CAST(ObjectId AS VARCHAR(MAX)) + '/' as Path_,
-                    0 as Depth_
-                /*FROM*/
-
-                    UNION ALL
-
-                SELECT CTE_.RowId, Edge.FromObjectId as End_, CTE_.Path_ + CAST(Edge.FromObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
-                FROM CTE_ INNER JOIN exp.Edge ON CTE_.End_ = Edge.ToObjectId
-                WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.FromObjectId AS VARCHAR) + '/', Path_)
-            )
-            """, (MAX_ANCESTOR_LOOKUP_DEPTH));
-
-    static String mssqlAncestorClosureSql = """
-            SELECT RowId, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(ancestorRowId) ELSE -1 * COUNT(*) END AS INT) AS ancestorRowId, ancestorTypeId
-            /*INTO*/
-            FROM (
-                SELECT DISTINCT CTE_.RowId,
-                    COALESCE(material.rowid, data.rowid) as ancestorRowId,
-                    COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as ancestorTypeId
-                FROM CTE_
-                    LEFT OUTER JOIN exp.material ON End_ = material.objectId  LEFT OUTER JOIN exp.materialsource ON material.cpasType = materialsource.lsid
-                    LEFT OUTER JOIN exp.data on End_ = data.objectId LEFT OUTER JOIN exp.dataclass ON data.cpasType = dataclass.lsid
-                WHERE Depth_ > 0 AND (materialsource.rowid IS NOT NULL OR dataclass.rowid IS NOT NULL)) _inner_
-            GROUP BY ancestorTypeId, RowId
-            """;
-
-    static String mssqlDescendantClosureCTE = String.format("""
-            DCTE_ AS (
-
-                SELECT
-                    RowId,
-                    ObjectId as End_,
-                    '/' + CAST(ObjectId AS VARCHAR(MAX)) + '/' as Path_,
-                    0 as Depth_
-                /*FROM*/
-
-                    UNION ALL
-
-                SELECT DCTE_.RowId, Edge.ToObjectId as End_, DCTE_.Path_ + CAST(Edge.ToObjectId AS VARCHAR) + '/' as Path_, Depth_ + 1 as Depth_
-                FROM DCTE_ INNER JOIN exp.Edge ON DCTE_.End_ = Edge.FromObjectId
-                WHERE Depth_ < %d AND 0 = CHARINDEX('/' + CAST(Edge.ToObjectId AS VARCHAR) + '/', Path_)
-            )
-            """, (MAX_ANCESTOR_LOOKUP_DEPTH));
-
-    public static SQLFragment selectAndInsertSql(SqlDialect d, SQLFragment from, @Nullable SQLFragment into, @Nullable String insert)
+    public static SQLFragment selectAndInsertSql(SQLFragment from, @Nullable SQLFragment into, @Nullable String insert)
     {
-        String cte;
-        String select;
-
-        cte = d.isPostgreSQL() ? pgAncestorClosureCTE : mssqlAncestorClosureCTE;
-        select = d.isPostgreSQL() ? pgAncestorClosureSql : mssqlAncestorClosureSql;
+        String cte = pgAncestorClosureCTE;
+        String select = pgAncestorClosureSql;
 
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
@@ -205,12 +151,12 @@ public class ClosureQueryHelper
         return sql;
     }
 
-    public static SQLFragment selectIntoTempTableSql(SqlDialect d, SQLFragment from, @Nullable SQLFragment tempTable)
+    public static SQLFragment selectIntoTempTableSql(SQLFragment from, @Nullable SQLFragment tempTable)
     {
         SQLFragment into = new SQLFragment(" INTO temp.${NAME} ");
         if (null != tempTable)
             into = new SQLFragment(" INTO temp.").append(tempTable).append(" ");
-        return selectAndInsertSql(d, from, into, null);
+        return selectAndInsertSql(from, into, null);
     }
 
     /*
@@ -322,7 +268,7 @@ public class ClosureQueryHelper
             tableNameSql.addTempToken(ref);
             ttt = TempTableTracker.track(tempTableName, ref);
             SQLFragment from = new SQLFragment("FROM temp.").append(familyTempTable).append(" WHERE ObjectType = ").appendValue(isSampleType ? "m" : "d").append(" ");
-            SQLFragment selectInto = selectIntoTempTableSql(getScope().getSqlDialect(), from, tableNameSql);
+            SQLFragment selectInto = selectIntoTempTableSql(from, tableNameSql);
             selectInto.addTempToken(ref);
             int count = new SqlExecutor(getScope()).execute(selectInto);
             logger.debug("Selected {} rows into temp.{} for recompute of {} ancestors.", count, tempTableName, isSampleType ? "sample" : "data");
@@ -330,7 +276,6 @@ public class ClosureQueryHelper
             SQLFragment upsert;
             TableInfo tInfo = isSampleType ? ExperimentServiceImpl.get().getTinfoMaterialAncestors() : ExperimentServiceImpl.get().getTinfoDataAncestors();
             DbScope scope = tInfo.getSchema().getScope();
-            SqlDialect dialect = scope.getSqlDialect();
 
             // delete the ancestor data for the ids in the family
             new SqlExecutor(getScope()).execute(invalidateAncestorData(tInfo, familyTempTable, isSampleType));
@@ -338,23 +283,11 @@ public class ClosureQueryHelper
             if (count == 0)
                 return;
 
-            if (dialect.isPostgreSQL())
-            {
-                upsert = new SQLFragment()
-                        .append("INSERT INTO ").append(tInfo)
-                        .append(" (RowId, AncestorRowId, AncestorTypeId)\n")
-                        .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tableNameSql).append(" TMP\n")
-                        .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
-            }
-            else
-            {
-                upsert = new SQLFragment()
-                        .append("MERGE ").append(tInfo, "Target")
-                        .append(" USING (SELECT RowId, AncestorRowId, AncestorTypeId FROM temp.").append(tableNameSql)
-                        .append(") AS Source ON Target.RowId=Source.RowId AND Target.AncestorTypeId=Source.ancestorTypeId\n")
-                        .append("WHEN MATCHED THEN UPDATE SET Target.AncestorTypeId = Source.ancestorTypeId\n")
-                        .append("WHEN NOT MATCHED THEN INSERT (RowId, AncestorRowId, AncestorTypeId) VALUES (Source.RowId, Source.ancestorRowId, Source.ancestorTypeId)").appendEOS();
-            }
+            upsert = new SQLFragment()
+                    .append("INSERT INTO ").append(tInfo)
+                    .append(" (RowId, AncestorRowId, AncestorTypeId)\n")
+                    .append("SELECT RowId, ancestorRowId, ancestorTypeId FROM temp.").append(tableNameSql).append(" TMP\n")
+                    .append("ON CONFLICT(RowId,ancestorTypeId) DO UPDATE SET ancestorRowId = EXCLUDED.ancestorRowId").appendEOS();
             upsert.addTempToken(ref);
             new SqlExecutor(scope).execute(upsert);
         }
@@ -399,7 +332,7 @@ public class ClosureQueryHelper
                 {
                     logger.debug("   Adding rows from samples in sampleType {}", sampleType.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.material WHERE materialSourceId = ?").add(sampleType.getRowId());
-                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
+                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(from, null, "INSERT INTO exp.materialAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
                     logger.debug("    Added {} rows for data class {}", numRows, sampleType.getName());
@@ -422,7 +355,7 @@ public class ClosureQueryHelper
                 {
                     logger.debug("   Adding rows to exp.dataAncestors from data class {}", dataClass.getName());
                     SQLFragment from = new SQLFragment(" FROM exp.data WHERE classId = ?").add(dataClass.getRowId());
-                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(schema.getSqlDialect(), from, null,
+                    SQLFragment sql = ClosureQueryHelper.selectAndInsertSql(from, null,
                             "INSERT INTO exp.dataAncestors (RowId, AncestorRowId, AncestorTypeId) ");
                     int numRows = new SqlExecutor(schema.getScope()).execute(sql);
                     totalRows += numRows;
@@ -466,9 +399,6 @@ public class ClosureQueryHelper
 
             // add the seed ids to the temp table
             SQLFragment selectIntoSql = new SQLFragment("SELECT RowId, ObjectId, ObjectType INTO temp.").append(tableNameSql).append(" FROM (").append(selectSeedsSql).append(") x");
-            if (getScope().getSqlDialect().isSqlServer())
-                // complete hack to get SQLServer to not make RowId an identity column in the target table so the subsequent insert will work without complaint
-                selectIntoSql.append(" UNION ALL SELECT RowId, ObjectId, 'x' AS ObjectType FROM " ).append(isSampleType ? "exp.material" : "exp.data").append(" WHERE 1 <> 1");
             int numSeeds = new SqlExecutor(getScope()).execute(selectIntoSql);
             logger.debug("Added {} seed {} rows to temp.{}", numSeeds, isSampleType ? "sample" : "data", familyTableName);
             // if we didn't actually insert any items into the table, there's nothing more to be done
@@ -477,7 +407,7 @@ public class ClosureQueryHelper
 
             // add the descendants ids to the temp table
             SQLFragment descendants = new SQLFragment();
-            String cte = getScope().getSqlDialect().isPostgreSQL() ?  "WITH RECURSIVE " + pgDescendantClosureCTE : "WITH " + mssqlDescendantClosureCTE;
+            String cte = "WITH RECURSIVE " + pgDescendantClosureCTE;
             String[] cteParts = StringUtils.splitByWholeSeparator(cte, "/*FROM*/");
             SQLFragment descendantsCte = new SQLFragment();
             descendantsCte.append(cteParts[0]).append("FROM (SELECT * FROM temp.").append(tableNameSql).append(") s ").append(cteParts[1]);

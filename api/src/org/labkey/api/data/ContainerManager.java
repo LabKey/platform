@@ -916,6 +916,23 @@ public class ContainerManager
 
         clearCache();
 
+        // GH Issue 1504: Clear again after the commit has propagated the new state to other threads and transactions. Do this in a
+        // commit task since the caller may have started (or joined) a transaction; if not, it runs immediately.
+        CORE.getSchema().getScope().addCommitTask(() ->
+        {
+            // Be sure that we've waited until any threads that might be populating the cache have finished, otherwise
+            // one of them could put the pre-commit LockState back into the cache after we've cleared it
+            DATABASE_QUERY_LOCK.lock();
+            try
+            {
+                clearCache();
+            }
+            finally
+            {
+                DATABASE_QUERY_LOCK.unlock();
+            }
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
+
         addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
     }
 
@@ -988,24 +1005,24 @@ public class ContainerManager
     // Default is to include all types of children, as seems only appropriate
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, null, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, String typeIncluded)
     {
-        return getChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getChildren(parent, u, perm, Set.of(), Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> includedTypes)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> includedTypes)
     {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, roles))
+            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, contextualRoles))
                 children.add(child);
 
         return children;
@@ -1013,33 +1030,33 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class, null, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, ReadPermission.class, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, null,  ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     // Default is to include all types of children
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getAllChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  String typeIncluded)
     {
-        return getAllChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getAllChildren(parent, u, perm, Set.of(),Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> typesIncluded)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> typesIncluded)
     {
         Set<Container> allChildren = getAllChildren(parent);
         List<Container> result = new ArrayList<>(allChildren.size());
 
         for (Container container : allChildren)
         {
-            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, roles))
+            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, contextualRoles))
             {
                 result.add(container);
             }
@@ -2504,7 +2521,7 @@ public class ContainerManager
 
     // Compliance module adds a locked project handler that checks permissions; without that, this implementation
     // is used, and projects are never locked
-    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, contextualRoles, lockState) -> false;
+    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (_, _, _, _) -> false;
 
     // Replaces any previously set LockedProjectHandler
     public static void setLockedProjectHandler(LockedProjectHandler handler)

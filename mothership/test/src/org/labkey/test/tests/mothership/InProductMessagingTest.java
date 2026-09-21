@@ -25,7 +25,6 @@ import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
 import org.labkey.test.util.OptionalFeatureHelper;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.TestUser;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -41,7 +40,7 @@ import static org.labkey.test.util.PermissionsHelper.AUTHOR_ROLE;
 
 
 @Category({Daily.class})
-public class InProductMessagingTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class InProductMessagingTest extends BaseWebDriverTest
 {
     private static final TestUser TEST_AUTHOR = new TestUser("inproductmessageauthor@test.test");
 

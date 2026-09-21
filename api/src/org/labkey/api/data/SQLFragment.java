@@ -850,7 +850,8 @@ public class SQLFragment implements Appendable, CharSequence
         if (s != null)
             return append(s);
 
-        String alias = table.getSqlDialect().makeLegalIdentifier(table.getName());
+        // GitHub 1432: Cannot delete a multi-choice option on a source type
+        String alias = AliasManager.makeLegalName(table.getName(), table.getSchema().getSqlDialect());
         return append(table.getFromSQL(alias));
     }
 

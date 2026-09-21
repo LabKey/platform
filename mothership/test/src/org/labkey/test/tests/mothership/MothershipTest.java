@@ -34,7 +34,6 @@ import org.labkey.test.pages.mothership.ShowExceptionsPage.ExceptionSummaryDataR
 import org.labkey.test.pages.mothership.StackTraceDetailsPage;
 import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.PermissionsHelper.MemberType;
-import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.mothership.MothershipHelper;
 
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ import static org.labkey.test.util.mothership.MothershipHelper.MOTHERSHIP_PROJEC
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
-public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTest
+public class MothershipTest extends BaseWebDriverTest
 {
     private static final String ASSIGNEE = "assignee@mothership.test";
     private static final String ASSIGNEE2 = "assignee2@mothership.test";

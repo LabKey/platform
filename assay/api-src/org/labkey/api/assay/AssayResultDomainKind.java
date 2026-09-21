@@ -24,8 +24,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.dataiterator.SimpleTranslator.SpecialColumn;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainUtil;
@@ -153,25 +151,6 @@ public class AssayResultDomainKind extends AssayDomainKind
     public boolean allowCalculatedFields()
     {
         return true;
-    }
-
-    @Override
-    public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
-    {
-        super.deletePropertyDescriptor(domain, user, pd);
-
-        // SQL Server does not allow for multiple foreign keys to the same table to utilize ON DELETE CASCADE as it may
-        // cause cycles or multiple cascade paths. The solution is to only ON DELETE CASCADE for one foreign key and
-        // clean up upon delete of the property for other changes. See the "CREATE TABLE assay.FilterCriteria"
-        // statement in assay schema upgrade scripts.
-        if (!OntologyManager.getSqlDialect().isSqlServer())
-            return;
-
-        Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
-        if (pair == null)
-            return;
-
-        pair.first.removeFilterCriteriaForProperty(pd);
     }
 
     @Override
