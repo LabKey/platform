@@ -63,6 +63,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -97,9 +98,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory(categoryName, "Sample Types", false);
     public static final SearchService.SearchCategory mediaSearchCategory = new SearchService.SearchCategory(mediaCategoryName, "Media Sample Types", false) {
         @Override
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        public Class<? extends Permission> getRequiredPermission()
         {
-            return getPermittedContainerIds(user, containers, MediaReadPermission.class);
+            return MediaReadPermission.class;
         }
     };
 
