@@ -68,6 +68,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
@@ -370,9 +371,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean canWrite(User user, boolean forWrite)
     {
-        Set<Role> roles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
+        Set<Role> contextualRoles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), roles);
+                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), contextualRoles);
     }
 
     @Override
@@ -418,9 +419,11 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
+    // TODO: Return a Stream like other permissions methods do
     public Set<Class<? extends Permission>> getPermissions(User user)
     {
-        return SecurityManager.getPermissions(getSecurableResource(), user, Set.of());
+        return SecurityManager.streamPermissions(getSecurableResource(), user, Set.of())
+            .collect(Collectors.toSet());
     }
 
     @Override
