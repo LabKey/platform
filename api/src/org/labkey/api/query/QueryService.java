@@ -323,6 +323,18 @@ public interface QueryService
     {
         Object getDefault();
         boolean isRequired();
+
+        default JSONObject toJSON()
+        {
+            JSONObject json = new JSONObject();
+
+            json.put("name", getName());
+            json.put("defaultValue", getDefault());
+            json.put("isRequired", isRequired());
+            json.put("jdbcType", getJdbcType().toString());
+
+            return json;
+        }
     }
 
     class ParameterDeclaration extends ParameterDescriptionImpl implements ParameterDecl

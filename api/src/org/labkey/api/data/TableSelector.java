@@ -555,14 +555,31 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     // TODO: Convert to return Map<FieldKey, List<Aggregate.Result>>
     public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates)
     {
+        return getAggregates(aggregates, 0);
+    }
+
+    /**
+     * @param maxCount when > 0 and the only aggregate is COUNT(*), bounds the inner select to maxCount + 1 rows so the database can stop early.
+     */
+    public Map<String, List<Result>> getAggregates(final List<Aggregate> aggregates, int maxCount)
+    {
         // If we are only asking for the COUNT(*) aggregate, then we don't need to include all of the table columns in the subselect.
         // This can make a big performance difference for Sample Type and Data Class tables as they can then skip
         // the join between the exp schema base table and the materialized table for the given table.
-        Collection<ColumnInfo> aggColumns = aggregates.size() == 1 && aggregates.getFirst().isCountStar() ? getRowCountingSelectColumns(_table) : _columns;
+        boolean countStarOnly = aggregates.size() == 1 && aggregates.getFirst().isCountStar();
+        Collection<ColumnInfo> aggColumns = countStarOnly ? getRowCountingSelectColumns(_table) : _columns;
 
         final AggregateSqlFactory sqlFactory = new AggregateSqlFactory(_filter, aggregates, aggColumns);
         ResultSetFactory resultSetFactory = new ExecutingResultSetFactory(sqlFactory);
 
+        // Setting _maxRows threads LIMIT maxCount + 1 through TableSqlFactory.getSql() into the inner select; restore it after.
+        boolean cap = maxCount > 0 && countStarOnly;
+        var maxRows = _maxRows;
+        if (cap)
+            _maxRows = maxCount + 1;
+
+        try
+        {
         return resultSetFactory.handleResultSet((rs, conn) -> {
             Map<String, List<Result>> results = new CaseInsensitiveHashMap<>();
 
@@ -589,9 +606,20 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
             return results;
         });
+        }
+        finally
+        {
+            if (cap)
+                _maxRows = maxRows;
+        }
     }
 
     public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response)
+    {
+        return getAggregatesAsync(aggregates, response, 0);
+    }
+
+    public Map<String, List<Result>> getAggregatesAsync(final List<Aggregate> aggregates, HttpServletResponse response, int maxCount)
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
         AsyncQueryRequest<Map<String, List<Result>>> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getAggregates"), getAsyncSpanTags());
@@ -599,7 +627,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
 
         try
         {
-            return asyncRequest.waitForResult(() -> getAggregates(aggregates));
+            return asyncRequest.waitForResult(() -> getAggregates(aggregates, maxCount));
         }
         catch (SQLException e)
         {
