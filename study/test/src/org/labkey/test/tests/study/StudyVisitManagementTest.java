@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -85,7 +86,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
         List<String> definedVisits = Arrays.asList("301.0 - 391.0", "401.0", "411.0 - 491.0", "501.0", "601.0 - 691.0", "701.0");
         verifyStudyVisits(definedVisits, null);
-        verifySpecimenDataRowCount(189);
+        if (_studyHelper.isSpecimenModulePresent())
+            verifySpecimenDataRowCount(189);
         verifyDatasetRowCount("VAC-1", 7);
 
         // verify dataset and specimen row counts on delete multiple visits page
@@ -110,13 +112,15 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         definedVisits = Arrays.asList("301.0 - 391.0", "401.0", "411.0 - 491.0", "501.0", "701.0");
         List<String> undefinedVisits = Arrays.asList("601.0 - 691.0");
         verifyStudyVisits(definedVisits, undefinedVisits);
-        verifySpecimenDataRowCount(139);
+        if (_studyHelper.isSpecimenModulePresent())
+            verifySpecimenDataRowCount(139);
         verifyDatasetRowCount("VAC-1", 0);
 
         // delete all of the rest and verify dataset/specimen data removed
         goToDeleteMultipleVisits();
         deleteMultipleVisits(Arrays.asList("1 week Post-V#1", "2 week Post-V#1", "411.0 - 491.0", "3 week Post-V#1", "1 week Post-V#2"));
-        verifySpecimenDataRowCount(4); // 4 left because they do not have visit values
+        if (_studyHelper.isSpecimenModulePresent())
+            verifySpecimenDataRowCount(4); // 4 left because they do not have visit values
         verifyDatasetRowCount("APX-1", 0);
     }
 
@@ -126,7 +130,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         for (Map.Entry<String, Pair<Integer, Integer>> countEntry : visitDataCounts.entrySet())
         {
             assertEquals("Unexpected visit dataset row count", countEntry.getValue().getLeft().intValue(), deleteMultipleVisitsPage.getVisitDatasetRowCount(countEntry.getKey()));
-            assertEquals("Unexpected visit specimen row count", countEntry.getValue().getRight().intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
+            if (_studyHelper.isSpecimenModulePresent())
+                assertEquals("Unexpected visit specimen row count", countEntry.getValue().getRight().intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
         }
     }
 
@@ -155,6 +160,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     @Test
     public void testFailForUndefinedVisitsSpecimen()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
         testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, STUDY_UNDEFINED_VISIT_MSG, 3);
     }
