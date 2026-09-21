@@ -1019,20 +1019,17 @@ public class AssayTest extends AbstractAssayTest
         assayRuns = DataRegionTable.findDataRegionWithinWebpart(this, TEST_ASSAY + " Runs");
         assayRuns.checkAllOnPage();
         clickButton("Show Results", defaultWaitForPage);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(3, 2, 3);
+        verifySpecimensPresent(3, 2, 3);
 
         log("Testing clicking on a run");
         clickProject(getProjectName());
         clickAndWait(Locator.linkWithText(TEST_RUN1));
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(3, 2, 0);
+        verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
         DataRegionTable region = new DataRegionTable("Data", this);
         region.clearAllFilters("SpecimenID");
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(3, 2, 3);
+        verifySpecimensPresent(3, 2, 3);
 
         log("Testing assay-study linkage");
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_STUDY1);
@@ -1043,14 +1040,12 @@ public class AssayTest extends AbstractAssayTest
         assertTextPresent(TEST_RUN1, TEST_RUN2);
 
         clickAndWait(Locator.linkWithText(TEST_RUN1));
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(3, 2, 0);
+        verifySpecimensPresent(3, 2, 0);
 
         clickAndWait(Locator.linkWithText("view results"));
         region = new DataRegionTable("Data", this);
         region.clearAllFilters("SpecimenID");
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(3, 2, 3);
+        verifySpecimensPresent(3, 2, 3);
 
         // Verify that the correct linked to study column is present
         assertTextPresent("Linked to Study 1 Study");
@@ -1064,8 +1059,7 @@ public class AssayTest extends AbstractAssayTest
         region.clickHeaderButtonAndWait("Link to Study");
         clickButton("Next");
 
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimensPresent(0, 0, 3);
+        verifySpecimensPresent(0, 0, 3);
 
         clickButton("Cancel");
     }
@@ -1112,10 +1106,13 @@ public class AssayTest extends AbstractAssayTest
 
     private void verifySpecimensPresent(int aaa07Count, int controlCount, int baq00051Count)
     {
-        // need to double the count, once for the label and once for the param in the link url
-        assertTextPresent("AAA07", aaa07Count * 2);
-        assertTextPresent("AssayTestControl", controlCount * 2);
-        assertTextPresent("BAQ00051", baq00051Count * 2);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            // need to double the count, once for the label and once for the param in the link url
+            assertTextPresent("AAA07", aaa07Count * 2);
+            assertTextPresent("AssayTestControl", controlCount * 2);
+            assertTextPresent("BAQ00051", baq00051Count * 2);
+        }
     }
 
     @Test // Issue 53625

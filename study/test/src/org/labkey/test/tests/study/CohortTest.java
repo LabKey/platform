@@ -28,6 +28,7 @@ import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.PortalHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -414,8 +415,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // All cohorts are enrolled... should not see "Enrolled" filter item
         verifyDatasetEnrolledCohortFilter("Test Results", false, 16, 0);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenEnrolledCohortFilter("By Individual Vial", false, 20, 0);
+        verifySpecimenEnrolledCohortFilter("By Individual Vial", false, 20, 0);
 
         // unenroll all cohorts
         table = getCohortDataRegionTable();
@@ -439,8 +439,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // All cohorts are unenrolled... should not see "Enrolled" filter item
         verifyDatasetEnrolledCohortFilter("Test Results", false, 16, 0);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenEnrolledCohortFilter("By Individual Vial", false, 20, 0);
+        verifySpecimenEnrolledCohortFilter("By Individual Vial", false, 20, 0);
 
         // test both enrolled and unenrolled cohorts
         table = getCohortDataRegionTable();
@@ -465,8 +464,7 @@ public class CohortTest extends BaseWebDriverTest
         verifyCohortSelection(false, COHORT_POSITIVE, COHORT_NOCOHORT, PTIDS_NOCOHORT, false, "Found 1 participant of 5.");
 
         verifyDatasetEnrolledCohortFilter("Test Results", true, 16, 12);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenEnrolledCohortFilter("By Individual Vial", true, 20, 16);
+        verifySpecimenEnrolledCohortFilter("By Individual Vial", true, 20, 16);
 
         // Verify "Enrolled" filtering with advanced cohorts
         log("Check enrolled filtering with advanced cohorts");
@@ -590,17 +588,20 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifySpecimenEnrolledCohortFilter(String specimenLink, boolean enrolledMenu, int allRowCount, int enrolledRowCount)
     {
-        verifyUnfilteredSpecimens(specimenLink, allRowCount);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            verifyUnfilteredSpecimens(specimenLink, allRowCount);
 
-        if (enrolledMenu)
-        {
-            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-            DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
-            verifyVialCount(specimenTable, enrolledRowCount);
-        }
-        else
-        {
-            assertFalse("Enrolled menu should not be present", _extHelper.isExtMenuPresent("Groups", "Enrolled"));
+            if (enrolledMenu)
+            {
+                DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
+                DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
+                verifyVialCount(specimenTable, enrolledRowCount);
+            }
+            else
+            {
+                assertFalse("Enrolled menu should not be present", _extHelper.isExtMenuPresent("Groups", "Enrolled"));
+            }
         }
     }
 

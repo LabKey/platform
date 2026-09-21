@@ -86,8 +86,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         importFolderArchiveWithFailureFlag(INITIAL_FOLDER_ARCHIVE, true, 1, false);
         List<String> definedVisits = Arrays.asList("301.0 - 391.0", "401.0", "411.0 - 491.0", "501.0", "601.0 - 691.0", "701.0");
         verifyStudyVisits(definedVisits, null);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenDataRowCount(189);
+        verifySpecimenDataRowCount(189);
         verifyDatasetRowCount("VAC-1", 7);
 
         // verify dataset and specimen row counts on delete multiple visits page
@@ -112,15 +111,13 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         definedVisits = Arrays.asList("301.0 - 391.0", "401.0", "411.0 - 491.0", "501.0", "701.0");
         List<String> undefinedVisits = Arrays.asList("601.0 - 691.0");
         verifyStudyVisits(definedVisits, undefinedVisits);
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenDataRowCount(139);
+        verifySpecimenDataRowCount(139);
         verifyDatasetRowCount("VAC-1", 0);
 
         // delete all of the rest and verify dataset/specimen data removed
         goToDeleteMultipleVisits();
         deleteMultipleVisits(Arrays.asList("1 week Post-V#1", "2 week Post-V#1", "411.0 - 491.0", "3 week Post-V#1", "1 week Post-V#2"));
-        if (_studyHelper.isSpecimenModulePresent())
-            verifySpecimenDataRowCount(4); // 4 left because they do not have visit values
+        verifySpecimenDataRowCount(4); // 4 left because they do not have visit values
         verifyDatasetRowCount("APX-1", 0);
     }
 
@@ -142,11 +139,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void verifySpecimenDataRowCount(int expectedRowCount)
     {
-        DataRegionTable table = ExecuteQueryPage.beginAt(this,"study", "SpecimenDetail").getDataRegion();
-        if (expectedRowCount < 100)
-            assertEquals("Unexpected number of specimen rows", expectedRowCount, table.getDataRowCount());
-        else
-            assertElementPresent(Locator.paginationText(1, 100, expectedRowCount));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            DataRegionTable table = ExecuteQueryPage.beginAt(this, "study", "SpecimenDetail").getDataRegion();
+            if (expectedRowCount < 100)
+                assertEquals("Unexpected number of specimen rows", expectedRowCount, table.getDataRowCount());
+            else
+                assertElementPresent(Locator.paginationText(1, 100, expectedRowCount));
+        }
     }
 
     private void verifyDatasetRowCount(String datasetName, int expectedRowCount)
