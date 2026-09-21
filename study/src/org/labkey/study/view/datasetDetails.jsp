@@ -73,7 +73,6 @@
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     Set<Class<? extends Permission>> permissions = SecurityManager.streamPermissions(c, user, Set.of())
-        .filter(p -> p.equals(AdminPermission.class) || p.equals(UpdatePermission.class))  // The only two permissions this JSP cares about
         .collect(Collectors.toSet());
 
     // is definition inherited
