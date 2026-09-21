@@ -465,17 +465,28 @@ public class DebugInfoDumper
     {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
+        List<ObjectName> connectors;
+
         try
         {
             // Wildcard domain: embedded Tomcat registers these under "Tomcat" (the engine name Tomcat.getEngine()
             // assigns), a standalone install under "Catalina"
-            List<ObjectName> connectors = new ArrayList<>(mbs.queryNames(new ObjectName("*:type=ThreadPool,name=*"), null));
+            connectors = new ArrayList<>(mbs.queryNames(new ObjectName("*:type=ThreadPool,name=*"), null));
             connectors.sort(Comparator.comparing(ObjectName::getCanonicalName));
+        }
+        catch (Exception e)
+        {
+            logWriter.debug("Failed to find connector ThreadPool MBeans: " + e);
+            connectors = List.of();
+        }
 
-            if (connectors.isEmpty())
-                logWriter.debug("No connector ThreadPool MBeans found; connection counts are unavailable");
+        if (connectors.isEmpty())
+            logWriter.debug("No connector ThreadPool MBeans found; connection counts are unavailable");
 
-            for (ObjectName connector : connectors)
+        // The saturated connector is the one worth reading, so don't let an earlier one's failure hide it
+        for (ObjectName connector : connectors)
+        {
+            try
             {
                 logWriter.debug("Connector " + unquote(connector.getKeyProperty("name")) +
                     ": connections " + getMBeanAttribute(mbs, connector, "connectionCount") +
@@ -483,10 +494,10 @@ public class DebugInfoDumper
                     ", threads busy " + getMBeanAttribute(mbs, connector, "currentThreadsBusy") +
                     "/" + getMBeanLimit(mbs, connector, "maxThreads"));
             }
-        }
-        catch (Exception e)
-        {
-            logWriter.debug("Failed to read connector connection counts: " + e);
+            catch (Exception e)
+            {
+                logWriter.debug("Failed to read connection counts for " + connector.getCanonicalName() + ": " + e);
+            }
         }
 
         logWriter.debug("Open WebSocket connections: " + WebSocketTracker.getOpenCount());
