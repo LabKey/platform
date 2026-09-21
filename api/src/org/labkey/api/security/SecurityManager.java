@@ -704,7 +704,7 @@ public class SecurityManager
                 else
                 {
                     AUTH_LOG.warn("Rejected deprecated \"" + TRANSFORM_SESSION_ID + "\" cookie authentication attempt; " +
-                        "enable the \"Allow 'LabKeyTransformSessionId' cookie authentication\" feature flag temporarily, " +
+                        "enable the \"Allow script authentication via legacy substitution parameters\" feature flag temporarily, " +
                         "or switch the script to 'apikey' header authentication.");
                 }
             }
