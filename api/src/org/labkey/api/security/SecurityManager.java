@@ -174,7 +174,7 @@ public class SecurityManager
     static final String CIRCULAR_GROUP_ERROR_MESSAGE = "Can't add a group that results in a circular group relation";
 
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
-    /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie/parameter; default off */
+    /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
     public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
     public static final String API_KEY = "apikey";
 
@@ -419,11 +419,13 @@ public class SecurityManager
         }
     }
 
-    private static @Nullable Pair<String, String> getBasicCredentials(HttpServletRequest request)
+    private record Credentials(String username, String password) {}
+
+    private static @Nullable Credentials getBasicCredentials(HttpServletRequest request)
     {
         // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
         String authorization = request.getHeader("Authorization");
-        Pair<String, String> ret = null;
+        Credentials ret = null;
 
         if (null != authorization && authorization.startsWith("Basic"))
         {
@@ -436,19 +438,19 @@ public class SecurityManager
             String username = auth.substring(0, colon);
             String password = auth.substring(colon+1);
 
-            ret = new Pair<>(username, password);
+            ret = new Credentials(username, password);
         }
 
         return ret;
     }
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Pair<String, String> basicCredentials)
+    private static @Nullable User authenticateBasic(HttpServletRequest request, @NotNull Credentials basicCredentials)
     {
         try
         {
-            String rawEmail = basicCredentials.getKey();
-            String password = basicCredentials.getValue();
+            String rawEmail = basicCredentials.username();
+            String password = basicCredentials.password();
             if (rawEmail.equalsIgnoreCase("guest"))
                 return AuthFilter.getGuestUser();
 
@@ -533,29 +535,31 @@ public class SecurityManager
         return sessionUser;
     }
 
-    public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
+    public record AuthenticationAttempt(User user, HttpServletRequest request) {}
+
+    public static @Nullable AuthenticationAttempt attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
         AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header for request \"{}\"", request.getRequestURI());
 
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
-        @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password");
+        @Nullable Credentials basicCredentials = getBasicCredentials(request);
+        AUTH_LOG.debug("   {}", null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character password");
 
         if (null == basicCredentials)
         {
             basicCredentials = getApiKey(request);
-            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key");
+            AUTH_LOG.debug("   {}", null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.username() + " and " + basicCredentials.password().length() + " character key");
         }
 
         // Handle session API key early, if present and valid
         if (basicCredentials != null)
         {
-            String username = basicCredentials.first;
+            String username = basicCredentials.username();
 
             if (API_KEY.equals(username))
             {
-                String apiKey = basicCredentials.second;
+                String apiKey = basicCredentials.password();
                 HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
 
                 if (null != session)
@@ -641,7 +645,7 @@ public class SecurityManager
                     AUTH_LOG.debug("   Basic authentication succeeded: {}", u);
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
                     // accept Guest as valid credentials from authenticateBasic()
-                    return new Pair<>(u, request);
+                    return new AuthenticationAttempt(u, request);
                 }
                 else
                 {
@@ -655,7 +659,7 @@ public class SecurityManager
 //            u = AuthenticationManager.attemptRequestAuthentication(request);
 //        }
 
-            return null == u || u.isGuest() ? null : new Pair<>(u, request);
+            return null == u || u.isGuest() ? null : new AuthenticationAttempt(u, request);
         }
         finally
         {
@@ -664,12 +668,14 @@ public class SecurityManager
     }
 
     /**
-     * Determine if an API key is present, checking "apikey" header first and then the special "transform" parameter
-     * supported only for SSRS. Return a pair with the API key if it's present; otherwise return null.
+     * Determine if an API key is present, checking the "apikey" header first, then the deprecated
+     * "LabKeyTransformSessionId" cookie (gated behind {@link #FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID}), and finally
+     * the "LabKeyTransformSessionId" GET parameter (supported permanently, since SSRS can't be made to use the header
+     * or a cookie). Return the credentials if an API key is present via any of these; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable Pair<String, String> getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
+    private static @Nullable Credentials getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
     {
         // Passing via the "apikey" HTTP header is our preferred approach and used by most LabKey client API
         // implementations
@@ -719,7 +725,7 @@ public class SecurityManager
             }
         }
 
-        return null != apiKey ? Pair.of(API_KEY, apiKey) : null;
+        return null != apiKey ? new Credentials(API_KEY, apiKey) : null;
     }
 
     public static final int SECONDS_PER_DAY = 60*60*24;

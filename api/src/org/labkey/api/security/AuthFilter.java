@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.SecurityManager.AuthenticationAttempt;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
@@ -39,7 +40,6 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 
@@ -168,12 +168,12 @@ public class AuthFilter implements Filter
 
         try
         {
-            Pair<User, HttpServletRequest> pair = SecurityManager.attemptAuthentication(req, resp);
+            AuthenticationAttempt attempt = SecurityManager.attemptAuthentication(req, resp);
 
-            if (null != pair)
+            if (null != attempt)
             {
-                user = pair.getKey();
-                req = pair.getValue();
+                user = attempt.user();
+                req = attempt.request();
             }
         }
         catch (UnauthorizedImpersonationException uie)
