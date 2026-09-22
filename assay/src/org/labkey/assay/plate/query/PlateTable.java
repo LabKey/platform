@@ -48,6 +48,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -85,6 +86,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final List<FieldKey> _storageColumns = new ArrayList<>();
     private final boolean _allowInsert;
     public static final String PLATE_BARCODE_SEQUENCE = "org.labkey.assay.plate.barcode";
 
@@ -147,6 +149,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         super.addColumns();
         addColumn(createPropertiesColumn());
         addWellCountColumns();
+
+        if (InventoryService.get() != null)
+            _storageColumns.addAll(InventoryService.get().addPlateInventoryStatusColumns(this, getContainer(), getUserSchema().getUser()));
     }
 
     @Override
@@ -164,7 +169,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return defaultVisibleColumns;
+        // A fresh list per call: the storage columns are per-container, and handing out the static one would let a
+        // caller's edits leak across containers for the life of the process.
+        List<FieldKey> columns = new ArrayList<>(defaultVisibleColumns);
+        columns.addAll(_storageColumns);
+        return columns;
     }
 
     private MutableColumnInfo createPropertiesColumn()
