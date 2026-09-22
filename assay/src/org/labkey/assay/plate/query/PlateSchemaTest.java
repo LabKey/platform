@@ -26,6 +26,8 @@ import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -37,10 +39,13 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.assay.AssayModule;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,6 +66,15 @@ public final class PlateSchemaTest
 
         container = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
+
+        Module assayModule = ModuleLoader.getInstance().getModule(AssayModule.NAME);
+        Set<Module> activeModules = container.getActiveModules();
+        if (!activeModules.contains(assayModule))
+        {
+            Set<Module> newActiveModules = new HashSet<>(activeModules);
+            newActiveModules.add(assayModule);
+            container.setActiveModules(newActiveModules);
+        }
 
         PLATE_TYPE_12_WELL = PlateManager.get().getPlateType(3, 4);
         assertNotNull("12-well plate type was not found", PLATE_TYPE_12_WELL);
@@ -131,7 +145,7 @@ public final class PlateSchemaTest
     public void testGetStoragePlates() throws Exception
     {
         PlateStorageService svc = PlateStorageService.get();
-        assertNotNull("PlateStorageService was not registered", svc);
+        assertTrue("Plate storage is expected to be available where the assay module is active", svc.isAvailable(container));
 
         Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
         long rowId = plate.getRowId();
