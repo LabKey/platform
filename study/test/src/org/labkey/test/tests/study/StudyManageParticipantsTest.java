@@ -229,7 +229,8 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         setFormElement(OLD_ID_FIELD, PTID_WITH_ALIAS);
         setFormElement(NEW_ID_FIELD, PTID_NEW_1);
         waitAndClick(Ext4Helper.Locators.ext4ButtonEnabled("Preview"));
-        waitForElement(Locator.tag("span").containing("Specimen data is not editable"), MERGE_SUCCESS_TIMEOUT);
+        if (_studyHelper.isSpecimenModulePresent())
+            waitForElement(Locator.tag("span").containing("Specimen data is not editable"), MERGE_SUCCESS_TIMEOUT);
         // Error on missing value for source field.
         assertElementPresent(Locator.tag("span").containing("Missing value for required property"));
 

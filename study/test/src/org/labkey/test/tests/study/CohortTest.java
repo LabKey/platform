@@ -672,7 +672,7 @@ public class CohortTest extends BaseWebDriverTest
         String statusText = participantListWebPart.getStatusMessage();
 
         // we should not see the "enrolled" text in the participant list status message if no participants are unenrolled
-        if (!expectEnrolledText)
+        if (!expectEnrolledText || !_studyHelper.isSpecimenModulePresent())
         {
             assertFalse("Should not see text: enrolled", statusText.contains("enrolled"));
         }

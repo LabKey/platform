@@ -690,7 +690,14 @@ public class AssayTest extends AbstractAssayTest
         clickButton("Next");
         assertTextPresent("Link to " + TEST_ASSAY_FLDR_STUDY1 + " Study: Verify Results");
 
-        setFormElement(Locator.name("visitId"), "301.5");
+        if (!_studyHelper.isSpecimenModulePresent())
+        {
+            setFormElement(Locator.name("visitId"), "301.5");
+            for (int i = 1; i <= 3; i++)
+            {
+                uncheckCheckbox(Locator.checkboxByNameAndValue(".select", String.valueOf(i + 1)));
+            }
+        }
         clickButton("Link to Study");
 
         log("Verifying that the data was published");
@@ -705,31 +712,37 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "1", "2"};
+        String[] row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "8", "1", "1", "1", "1", "1", "1", "2"}
+                : new String[]{TEST_ASSAY, "6", "1", "1", "1", "1", "1", "1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "8 / 9", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"};
+        row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "8 / 9", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "2 / 3"}
+                : new String[]{TEST_ASSAY, "6 / 6", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1", "1 / 1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         doAndWaitForPageToLoad(() -> uncheckCheckbox(Locator.checkboxByNameAndValue("visitStatistic", "ParticipantCount")));
-        row2 = new String[]{TEST_ASSAY, "9", "1", "1", "1", "1", "1", "1", "3"};
+        row2 = _studyHelper.isSpecimenModulePresent() ? new String[]{TEST_ASSAY, "9", "1", "1", "1", "1", "1", "1", "3"}
+                : new String[]{TEST_ASSAY, "6", "1", "1", "1", "1", "1", "1"};
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
-        clickAndWait(Locator.linkWithText("9"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickAndWait(Locator.linkWithText("9"));
 
-        assertElementPresent(Locator.linkWithText("999320885"), 1);
-        assertElementPresent(Locator.linkWithText("999320885"), 1);
-        assertTextPresent(
-                "301.0",
-                "9.0",
-                "8.0",
-                TEST_RUN1_COMMENTS,
-                TEST_RUN2_COMMENTS,
-                TEST_RUN1,
-                TEST_RUN2,
-                "2000-06-06",
-                TEST_ASSAY_RUN_PROP1,
-                "18");
+            assertElementPresent(Locator.linkWithText("999320885"), 1);
+            assertElementPresent(Locator.linkWithText("999320885"), 1);
+            assertTextPresent(
+                    "301.0",
+                    "9.0",
+                    "8.0",
+                    TEST_RUN1_COMMENTS,
+                    TEST_RUN2_COMMENTS,
+                    TEST_RUN1,
+                    TEST_RUN2,
+                    "2000-06-06",
+                    TEST_ASSAY_RUN_PROP1,
+                    "18");
+        }
 
         // test recall
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
@@ -820,7 +833,7 @@ public class AssayTest extends AbstractAssayTest
         linkStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
-        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td[text()='301.0']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Day 32 - 39' and following-sibling::td/a[text()='AAA07XMC-02'] and following-sibling::td["+(_studyHelper.isSpecimenModulePresent() ? "text()='301.0'" : "not(text())") +"]]"));
         assertElementPresent(Locator.xpath("//td[text()='Preexisting Timepoint' and following-sibling::td/a[text()='AAA07XMC-04'] and following-sibling::td[not(text())]]"));
         assertElementPresent(Locator.xpath("//td[text()='Day 90 - 95' and following-sibling::td/a[text()='AAA07XSF-02'] and following-sibling::td[not(text())]]"));
 
@@ -941,11 +954,13 @@ public class AssayTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText("Study Navigator"));
 
         log("Test participant counts and row counts in study overview");
-        String[] row2 = new String[]{TEST_ASSAY, "9", " ", " ", " ", "1", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " "};
+        List<String> rowList = Stream.of(TEST_ASSAY, "9", " ", " ", " ", "1", " ", " ", "1", " ", " ", "4", " ", " ", " ", " ", "1", "1", " ", " ", " ", "1", " ", " ", " ", " ", " ")
+                .filter(v -> _studyHelper.isSpecimenModulePresent() || !v.isBlank()).toList();
+        String[] row2 = rowList.toArray(new String[]{});
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
         // Manually click the checkbox -- normal checkCheckbox() method doesn't seem to work for checkbox that reloads using onchange event
         clickAndWait(Locator.checkboxByNameAndValue("visitStatistic", "RowCount"));
-        row2 = new String[]{TEST_ASSAY, "9 / 9", " ", " ", " ", "1 / 1", " ", " ", "1 / 1", " ", " ", "4 / 4", " ", " ", " ", " ", "1 / 1", "1 / 1", " ", " ", " ", "1 / 1", " ", " ", " ", " ", " "};
+        row2 = rowList.stream().map(v -> !v.isBlank() && v.length() == 1 ? v + " / " + v : v).toList().toArray(new String[]{});
         assertTableRowsEqual("studyOverview", 1, new String[][]{row2});
 
         log("Test that correct timepoints were created");

@@ -32,7 +32,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -44,6 +43,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -267,6 +267,11 @@ public class SpecimenForeignKey extends LookupForeignKey
     @Override
     public StringExpression getURL(ColumnInfo parent)
     {
+        if (SpecimenService.get() == null)
+        {
+            return super.getURL(parent);
+        }
+
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
         Container targetStudy;
 
