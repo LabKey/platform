@@ -69,7 +69,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.labkey.api.data.ContainerManager.REQUIRE_USER_COMMENTS_PROPERTY_NAME;
 
@@ -383,8 +385,7 @@ public class AuditController extends SpringActionController
         {
             AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
-            // GitHub Issue 1307: use product folder data CF
-            ContainerFilter cf = getContainer().getProductFoldersDataContainerFilter(elevatedUser);
+            ContainerFilter cf = getReadableContainerFilter(elevatedUser);
             if (form.isSampleType())
                 results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), form.isInsertOnly(), elevatedUser, getContainer(), cf);
             else
@@ -396,6 +397,19 @@ public class AuditController extends SpringActionController
             response.put("dataTypeRowCounts", results.dataTypeRowCounts());
 
             return response;
+        }
+
+        /**
+         * GitHub Issue 1370: Resolve the containers against the unelevated user's read permission to use for for elevation to CanSeeAuditLog.
+         */
+        private ContainerFilter getReadableContainerFilter(User elevatedUser)
+        {
+            // GitHub Issue 1307: use product folder data CF
+            List<Container> readable = getContainer().getProductFoldersDataContainerFilter(getUser()).getIds().stream()
+                    .map(ContainerManager::getForId)
+                    .filter(Objects::nonNull)
+                    .toList();
+            return new ContainerFilter.SimpleContainerFilterWithUser(elevatedUser, readable);
         }
     }
 
