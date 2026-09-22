@@ -88,6 +88,7 @@ public class AuditModule extends DefaultModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            AuditController.ContainerScopeTestCase.class,
             AuditLogImpl.TransactionScopeTestCase.class
         );
     }
