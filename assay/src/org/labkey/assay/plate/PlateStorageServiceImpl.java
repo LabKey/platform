@@ -24,6 +24,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.assay.AssayModule;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -33,6 +34,12 @@ import java.util.Map;
 
 public class PlateStorageServiceImpl implements PlateStorageService
 {
+    @Override
+    public boolean isAvailable(@NotNull Container container)
+    {
+        return container.hasActiveModuleByName(AssayModule.NAME);
+    }
+
     @Override
     public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user)
     {

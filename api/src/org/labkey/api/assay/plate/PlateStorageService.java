@@ -16,7 +16,6 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -36,11 +35,18 @@ public interface PlateStorageService
         ServiceRegistry.get().registerService(PlateStorageService.class, impl);
     }
 
-    /** Null when the assay module is absent, which callers are expected to degrade on rather than fail. */
-    static @Nullable PlateStorageService get()
+    /** Never null: with the assay module absent, returns an implementation that reports itself unavailable. */
+    static @NotNull PlateStorageService get()
     {
-        return ServiceRegistry.get().getService(PlateStorageService.class);
+        PlateStorageService svc = ServiceRegistry.get().getService(PlateStorageService.class);
+        return svc != null ? svc : Unavailable.INSTANCE;
     }
+
+    /**
+     * Whether plate storage can be used in this container -- the assay module both deployed and active here.
+     * Every other method on this interface requires it, so callers gate on it rather than on a null service.
+     */
+    boolean isAvailable(@NotNull Container container);
 
     /**
      * Storage-relevant projection of a plate. Deliberately not Plate itself, whose Well, WellGroup, Position and
@@ -69,4 +75,26 @@ public interface PlateStorageService
      */
     @NotNull
     Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user);
+
+    /**
+     * Stands in when the assay module is absent. Throws rather than returning an empty result so that a caller which
+     * skipped isAvailable() fails loudly: an empty map would be indistinguishable from "no plate is readable", which
+     * is the meaning getStoragePlates callers rely on.
+     */
+    class Unavailable implements PlateStorageService
+    {
+        private static final Unavailable INSTANCE = new Unavailable();
+
+        @Override
+        public boolean isAvailable(@NotNull Container container)
+        {
+            return false;
+        }
+
+        @Override
+        public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user)
+        {
+            throw new IllegalStateException("Plate storage requires the Assay module.");
+        }
+    }
 }
