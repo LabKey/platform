@@ -127,6 +127,13 @@ public interface InventoryService
      */
     List<FieldKey> addPlateInventoryStatusColumns(TableInfo plateTable, Container container, User user);
 
+    /**
+     * Of the given plates, those currently in a storage location. The lifecycle guards on the assay side read this to
+     * reject the whole call rather than orphan a storage row; there is no DB FK from inventory.PlateItem to stop them.
+     */
+    @NotNull
+    Collection<Long> getStoredPlateRowIds(Collection<Long> plateRowIds);
+
     DataIteratorBuilder getPersistStorageItemDataIteratorBuilder(DataIteratorBuilder data, Container container, User user, ExpSampleType sampleType);
 
     @NotNull
