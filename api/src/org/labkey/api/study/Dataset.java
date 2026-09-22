@@ -340,6 +340,7 @@ public interface Dataset extends StudyEntity
      */
     boolean canUpdateDefinition(User user);
 
+    // TODO: Return a Stream instead like other permissions methods
     Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
