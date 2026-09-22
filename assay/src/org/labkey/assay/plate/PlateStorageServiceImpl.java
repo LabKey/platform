@@ -48,7 +48,9 @@ public class PlateStorageServiceImpl implements PlateStorageService
             return plates;
 
         AssayDbSchema schema = AssayDbSchema.getInstance();
-        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(null, container, user);
+        // Read permission only, not folder scope: callers scope for themselves, and a lookup filter would make a
+        // readable plate in a sibling or child folder indistinguishable from an unreadable one
+        ContainerFilter cf = ContainerFilter.Type.AllFolders.create(container, user);
 
         // A projection query rather than PlateCache.getPlate per id: that loader runs populatePlate, which
         // materializes every well, well group and custom field only for these few scalars to be read off it.
