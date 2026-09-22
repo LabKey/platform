@@ -446,7 +446,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
         private boolean isInStorage(Integer plateId)
         {
-            return InventoryService.get() != null && InventoryService.get().getStoredPlateRowIds(List.of(plateId.longValue())).isEmpty();
+            return InventoryService.get() != null && !InventoryService.get().getStoredPlateRowIds(List.of(plateId.longValue())).isEmpty();
         }
     }
 }
