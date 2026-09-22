@@ -689,14 +689,10 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public Set<Class<? extends Permission>> getPermissions(User user)
+        public boolean hasPermission(User user, Class<? extends Permission> perm)
         {
             // READ-WRITE for now
-            Set<Class<? extends Permission>> perms = super.getPermissions(user);
-            perms.add(ReadPermission.class);
-            perms.add(UpdatePermission.class);
-            return perms;
+            return super.hasPermission(user, perm) || perm.equals(ReadPermission.class) || perm.equals(UpdatePermission.class);
         }
-
     }
 }

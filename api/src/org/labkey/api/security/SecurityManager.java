@@ -2941,7 +2941,9 @@ public class SecurityManager
 
     public static boolean hasAllPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
     {
-        return hasPermissions(logMsg, resource, principal, perms, contextualRoles, HasPermissionOption.ALL);
+        // Short circuit for no permissions required -- always true.
+        // Optimize for one permission required (use ANY, which is more efficient than ALL).
+        return perms.isEmpty() || hasPermissions(logMsg, resource, principal, perms, contextualRoles, perms.size() == 1 ? HasPermissionOption.ANY : HasPermissionOption.ALL);
     }
 
     public static boolean hasAnyPermissions(@Nullable String logMsg, SecurableResource resource, UserPrincipal principal, Set<Class<? extends Permission>> perms, Set<Role> contextualRoles)
@@ -2957,7 +2959,7 @@ public class SecurityManager
             permissions.forEach(SecurityPolicy::testPermissionIsRegistered);
 
             // Note: Must be a sequential stream (NOT parallel)
-            var granted = streamPermissions(resource, principal, contextualRoles);
+            var granted = getPermissions(resource, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
             SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, resource, ret);
 
@@ -2976,7 +2978,7 @@ public class SecurityManager
      * Note: The returned stream may contain duplicate permissions; if a distinct stream of permissions is required,
      * callers should invoke {@code distinct()} or collect to a set.
      */
-    public static Stream<Class<? extends Permission>> streamPermissions(SecurableResource resource, UserPrincipal principal, @NotNull Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         if (null == resource || null == principal || !principal.isActive())
             return Stream.empty();
@@ -2984,20 +2986,20 @@ public class SecurityManager
         if (principal instanceof User user && resource.getResourceContainer().isForbiddenProject(user, contextualRoles))
             return Stream.empty();
 
-        return streamPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
+        return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
-    @Deprecated // Left behind temporarily so we don't immediately break existing premiumModules & ehrModules FBs. TODO: Remove
-    public static Set<Class<? extends Permission>> getPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
+    @Deprecated // Left behind temporarily so we don't immediately break existing ehrModules FBs. TODO: Remove
+    public static Set<Class<? extends Permission>> streamPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
     {
-        return streamPermissions(resource, principal, contextualRoles).collect(Collectors.toSet());
+        return getPermissions(resource, principal, contextualRoles).collect(Collectors.toSet());
     }
 
     /**
      * This method exists to allow isForbiddenProject() to check permissions on the project without reentrancy loops.
      * Do not call this method unless you're isForbiddenProject().
      */
-    public static Stream<Class<? extends Permission>> streamPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, @NotNull Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
         Stream<Role> roles = principal.getAssignedRoles(resource)
             .filter(Objects::nonNull);
@@ -3014,15 +3016,15 @@ public class SecurityManager
     }
 
     @Deprecated // Left behind temporarily so we don't immediately break existing premiumModules FBs. TODO: Remove
-    public static Set<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
+    public static Stream<Class<? extends Permission>> streamPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
     {
-        return streamPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles).collect(Collectors.toSet());
+        return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
     @NotNull
     public static Set<String> getPermissionNames(SecurableResource resource, @NotNull UserPrincipal principal)
     {
-        return streamPermissions(resource, principal, Set.of())
+        return getPermissions(resource, principal, Set.of())
             .map(RoleManager::getPermission)
             .filter(Objects::nonNull)
             .map(Permission::getUniqueName)
@@ -3048,7 +3050,7 @@ public class SecurityManager
 
     private enum HasPermissionOption
     {
-        ANY()
+        ANY
         {
             @Override
             boolean accept(Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> desired)
@@ -3062,12 +3064,9 @@ public class SecurityManager
             @Override
             boolean accept(/* Must be a sequential stream (NOT parallel) */ Stream<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required)
             {
-                // hasPermissions() of an empty set is true, regardless of what's granted
-                if (required.isEmpty())
-                    return true;
-
                 // Create a mutable copy to track missing elements
-                Set<Class<? extends Permission>> remainder = new HashSet<>(required);
+                Set<Class<? extends Permission>> remainder = new HashSet<>(required.size());
+                remainder.addAll(required);
 
                 // Short-circuits as soon as remainder.isEmpty() becomes true
                 return granted.anyMatch(perm -> {

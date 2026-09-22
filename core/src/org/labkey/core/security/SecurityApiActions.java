@@ -553,7 +553,7 @@ public class SecurityApiActions
                 }
                 else
                 {
-                    permissions = SecurityManager.streamPermissions(resource, user, Set.of())
+                    permissions = SecurityManager.getPermissions(resource, user, Set.of())
                         .collect(Collectors.toSet()); // Ensure no duplicates
                 }
 
