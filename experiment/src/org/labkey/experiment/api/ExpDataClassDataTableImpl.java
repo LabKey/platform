@@ -822,7 +822,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass(), null);
+        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass());
     }
 
     private @NotNull Class<? extends Permission> getReadPermissionClass()
