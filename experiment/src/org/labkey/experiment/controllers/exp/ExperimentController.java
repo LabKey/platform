@@ -749,7 +749,7 @@ public class ExperimentController extends SpringActionController
                 for (int i = 0; i < runIds.length(); i++)
                 {
                     // Kanban #1924: Make sure the run belongs to the current container.
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i), getContainer());
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(getContainer(), runIds.getInt(i));
                     if (run != null)
                     {
                         runs.add(run);
@@ -762,7 +762,7 @@ public class ExperimentController extends SpringActionController
                 Set<Long> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, false);
                 for (Long id : ids)
                 {
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(id);
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(getContainer(), id);
                     if (run != null)
                     {
                         runs.add(run);
@@ -4906,8 +4906,8 @@ public class ExperimentController extends SpringActionController
 
             if (_protocolId != null)
             {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId.intValue());
-                if (protocol == null || !protocol.getContainer().equals(context.getContainer()))
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(context.getContainer(), _protocolId.intValue());
+                if (protocol == null)
                 {
                     throw new NotFoundException();
                 }
@@ -4919,8 +4919,8 @@ public class ExperimentController extends SpringActionController
             {
                 try
                 {
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                    if (protocol == null || !protocol.getContainer().equals(context.getContainer()))
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(context.getContainer(), protocolId);
+                    if (protocol == null)
                     {
                         throw new NotFoundException();
                     }
@@ -6574,8 +6574,8 @@ public class ExperimentController extends SpringActionController
             List<ExpRun> runs = new ArrayList<>();
             for (Long runId : runIds)
             {
-                ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (run == null || !run.getContainer().equals(getContainer()))
+                ExpRun run = ExperimentService.get().getExpRun(getContainer(), runId);
+                if (run == null)
                 {
                     throw new NotFoundException("Could not find run with RowId " + runId + " in this folder");
                 }
