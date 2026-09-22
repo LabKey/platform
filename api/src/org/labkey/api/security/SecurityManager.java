@@ -3430,6 +3430,64 @@ public class SecurityManager
         }
 
         @Test
+        public void testHasAllPermissionsEmptySet()
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_empty", testUser);
+
+                // hasAllPermissions() of an empty required-permission set must always be true, regardless of grants
+                assertTrue("empty set, guest", hasAllPermissions(null, testFolder, User.guest, Set.of(), Set.of()));
+                assertTrue("empty set, admin user", hasAllPermissions(null, testFolder, testUser, Set.of(), Set.of()));
+            }
+            finally
+            {
+                if (null != testFolder)
+                    ContainerManager.delete(testFolder, testUser);
+            }
+        }
+
+        @Test
+        public void testHasAllPermissionsMultiplePermissions() throws InvalidEmailException, UserManagementException
+        {
+            Container parentFolder = JunitUtil.getTestContainer();
+            User testUser = TestContext.get().getUser();
+            User user = addUser(new ValidEmail("hasallperms@test.net"), null, false).getUser();
+            Container testFolder = null;
+
+            try
+            {
+                testFolder = ContainerManager.createContainer(parentFolder, "hasAllPermissions_multi", testUser);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(testFolder);
+                addRoleAssignment(policy, user, ReaderRole.class, testUser);
+
+                // Reader grants Read but not Insert -- requiring both should fail
+                assertFalse("Reader role should not satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+
+                addRoleAssignment(policy, user, EditorRole.class, testUser);
+
+                // Editor grants Read, Insert, Update, Delete -- multi-permission requirements should now succeed
+                assertTrue("Editor role should satisfy {Read, Insert}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class), Set.of()));
+                assertTrue("Editor role should satisfy {Read, Insert, Update}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, InsertPermission.class, UpdatePermission.class), Set.of()));
+                // ... but Editor does not grant AdminPermission, so a set requiring it should still fail
+                assertFalse("Editor role should not satisfy {Read, Admin}",
+                    hasAllPermissions(null, testFolder, user, Set.of(ReadPermission.class, AdminPermission.class), Set.of()));
+            }
+            finally
+            {
+                ContainerManager.delete(testFolder, testUser);
+                UserManager.deleteUser(user.getUserId());
+            }
+        }
+
+        @Test
         public void testEmailValidation()
         {
             testEmail("this@that.com", true);
