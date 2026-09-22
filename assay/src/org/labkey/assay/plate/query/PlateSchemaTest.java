@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateStorageService;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -29,6 +30,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -44,6 +46,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public final class PlateSchemaTest
 {
@@ -122,6 +125,38 @@ public final class PlateSchemaTest
             var row = plateRow(plate, PlateTable.Column.PlateType, 4);
             assertThrows(String.format("Expected attempted update of the %s column to fail.", PlateTable.Column.PlateType.name()), QueryUpdateServiceException.class, () -> updatePlate(row));
         }
+    }
+
+    @Test
+    public void testGetStoragePlates() throws Exception
+    {
+        PlateStorageService svc = PlateStorageService.get();
+        assertNotNull("PlateStorageService was not registered", svc);
+
+        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
+        long rowId = plate.getRowId();
+
+        assertTrue("An empty request is expected to issue no query and return no plates", svc.getStoragePlates(List.of(), container, user).isEmpty());
+
+        // An id that resolves to no plate is simply absent, which is what callers read as "absent or unreadable"
+        var plates = svc.getStoragePlates(List.of(rowId, rowId + 100_000), container, user);
+        assertEquals("Expected only the existing plate", 1, plates.size());
+
+        var storagePlate = plates.get(rowId);
+        assertNotNull("Expected the created plate", storagePlate);
+        assertEquals("Unexpected plate name", plate.getName(), storagePlate.name());
+        assertEquals("Unexpected plate id", plate.getPlateId(), storagePlate.plateId());
+        assertEquals("Unexpected container", container.getEntityId(), storagePlate.containerId());
+        assertEquals("Unexpected plate type", PLATE_TYPE_12_WELL.getDescription(), storagePlate.plateTypeName());
+        assertFalse("Plate is not a template", storagePlate.template());
+        assertFalse("Plate is not archived", storagePlate.archived());
+        assertTrue("A plate set created alongside a plate defaults to the assay type", storagePlate.assayPlateSet());
+        assertNotNull("Expected a plate set", storagePlate.plateSetId());
+        assertNotNull("Expected a plate set name", storagePlate.plateSetName());
+
+        // The read check callers depend on: no ReadPermission, no entry -- not an unreadable projection
+        User noPermissions = new LimitedUser(user);
+        assertTrue("A user without read permission is expected to resolve no plates", svc.getStoragePlates(List.of(rowId), container, noPermissions).isEmpty());
     }
 
     @Test
