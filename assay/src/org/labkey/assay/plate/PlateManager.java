@@ -104,6 +104,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
@@ -3032,6 +3033,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
         if (!archivingPlates && !archivingPlateSets)
             throw new ValidationException(String.format("Failed to %s. Neither plates nor plate sets were specified.", getArchiveAction(archive)));
+
+        if (archivingPlates && archive && InventoryService.get() != null)
+        {
+            Collection<Long> storedPlateIds = InventoryService.get().getStoredPlateRowIds(plateIds);
+            if (!storedPlateIds.isEmpty())
+                throw new ValidationException(String.format("Failed to archive plates. %d of the selected plates are in storage and must be removed from storage first.", storedPlateIds.size()));
+        }
 
         try (DbScope.Transaction tx = ensureTransaction())
         {

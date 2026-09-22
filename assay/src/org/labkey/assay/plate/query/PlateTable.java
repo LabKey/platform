@@ -416,6 +416,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
+            if (InventoryService.get() != null && !InventoryService.get().getStoredPlateRowIds(List.of(plateId.longValue())).isEmpty())
+                throw new QueryUpdateServiceException(String.format("%s is in storage and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate"));
+
             PlateManager.get().beforePlateDelete(container, plateId);
             Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
