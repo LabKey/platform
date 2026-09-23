@@ -4644,6 +4644,14 @@ public class QueryController extends SpringActionController
 
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction, @Nullable Integer commandIndex) throws Exception
         {
+            try (TracedOperation op = TracedOperation.builder("labkey.saveRows").tag("labkey.command_index", commandIndex).start())
+            {
+                return executeJson(op, json, commandType, allowTransaction, errors, isNestedTransaction, commandIndex);
+            }
+        }
+
+        private JSONObject executeJson(TracedOperation op, JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction, @Nullable Integer commandIndex) throws Exception
+        {
             JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
@@ -4679,212 +4687,212 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName +
                         "' is not updatable via the HTTP-based APIs.");
 
-            try (TracedOperation op = TracedOperation.start("labkey.saveRows")
-                    .resource(commandType.name() + " " + schemaName)
+            op.resource(commandType.name() + " " + schemaName)
                     .describedAs(commandType.name() + " " + schemaName + "." + queryName + " in " + container.getPath())
                     .tag("labkey.query", schemaName + "." + queryName)
-                    .tag("labkey.db_schema", null == table.getSchema() ? null : table.getSchema().getName())
-                    .tag("labkey.command_index", commandIndex))
+                    .tag("labkey.db_schema", null == table.getSchema() ? null : table.getSchema().getName());
+
+            int rowsAffected = 0;
+            boolean committed = false;
+
+            List<Map<String, Object>> rowsToProcess = new ArrayList<>();
+
+            // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
+            // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
+            RowMapFactory<Object> f = null;
+            if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
+                f = new RowMapFactory<>();
+            CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
+            boolean loggedConflictingCasing = false;
+
+            for (int idx = 0; idx < rows.length(); ++idx)
             {
-                int rowsAffected = 0;
-
-                List<Map<String, Object>> rowsToProcess = new ArrayList<>();
-
-                // NOTE RowMapFactory is faster, but for update it's important to preserve missing v explicit NULL values
-                // Do we need to support some sort of UNDEFINED and NULL instance of MvFieldWrapper?
-                RowMapFactory<Object> f = null;
-                if (commandType == CommandType.insert || commandType == CommandType.insertWithKeys || commandType == CommandType.delete)
-                    f = new RowMapFactory<>();
-                CaseInsensitiveHashMap<Object> referenceCasing = new CaseInsensitiveHashMap<>();
-                boolean loggedConflictingCasing = false;
-
-                for (int idx = 0; idx < rows.length(); ++idx)
+                JSONObject jsonObj;
+                try
                 {
-                    JSONObject jsonObj;
-                    try
-                    {
-                        jsonObj = rows.getJSONObject(idx);
-                    }
-                    catch (JSONException x)
-                    {
-                        throw new IllegalArgumentException("rows[" + idx + "] is not an object.");
-                    }
-                    if (null != jsonObj)
-                    {
-                        Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
-                        // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
-                        boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
-                        if (conflictingCasing && !loggedConflictingCasing)
-                        {
-                            loggedConflictingCasing = true;
-                            // Issue 52616; GH Issue 1332: log once per request, not once per conflicting row
-                            LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
-                        }
-                        if (allowRowAttachments())
-                            addRowAttachments(rowMap, idx, commandIndex);
-
-                        rowsToProcess.add(rowMap);
-                        rowsAffected++;
-                    }
+                    jsonObj = rows.getJSONObject(idx);
                 }
-
-                Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
-
-                Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
-
-                Map<Enum, Object> configParameters = new HashMap<>();
-
-                if (extraContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
-                    configParameters.put(AbstractQueryImportAction.Params.useTransactionAuditCache, extraContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
-
-                if (WorkflowService.get() != null)
-                    WorkflowService.get().populateConfigParams(extraContext, configParameters);
-
-                // Check first if the audit behavior has been defined for the table either in code or through XML.
-                // If not defined there, check for the audit behavior defined in the action form (json).
-                AuditBehaviorType behaviorType = table.getEffectiveAuditBehavior(json.optString("auditBehavior", null));
-                if (behaviorType != null)
+                catch (JSONException x)
                 {
-                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
-                    String auditComment = json.optString("auditUserComment", null);
-                    if (!StringUtils.isEmpty(auditComment))
-                        configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+                    throw new IllegalArgumentException("rows[" + idx + "] is not an object.");
                 }
-
-                boolean skipReselectRows = json.optBoolean("skipReselectRows", false);
-                if (skipReselectRows)
-                    configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
-
-                if (getTargetContainerProp() != null)
+                if (null != jsonObj)
                 {
-                    Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
-                    configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
+                    Map<String, Object> rowMap = null == f ? new CaseInsensitiveHashMap<>(new HashMap<>(), referenceCasing) : f.getRowMap();
+                    // Use shallow copy since jsonObj.toMap() will translate contained JSONObjects into Maps, which we don't want
+                    boolean conflictingCasing = JsonUtil.fillMapShallow(jsonObj, rowMap);
+                    if (conflictingCasing && !loggedConflictingCasing)
+                    {
+                        loggedConflictingCasing = true;
+                        // Issue 52616; GH Issue 1332: log once per request, not once per conflicting row
+                        LOG.error("Row contained conflicting casing for key names in the incoming row: {}", jsonObj);
+                    }
+                    if (allowRowAttachments())
+                        addRowAttachments(rowMap, idx, commandIndex);
+
+                    rowsToProcess.add(rowMap);
+                    rowsAffected++;
                 }
+            }
 
-                //set up the response, providing the schema name, query name, and operation
-                //so that the client can sort out which request this response belongs to
-                //(clients often submit these async)
-                response.put(PROP_SCHEMA_NAME, schemaName);
-                response.put(PROP_QUERY_NAME, queryName);
-                response.put("command", commandType.name());
-                response.put("containerPath", container.getPath());
+            Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
-                //we will transact operations by default, but the user may
-                //override this by sending a "transacted" property set to false
-                // 11741: A transaction may already be active if we're trying to
-                // insert/update/delete from within a transformation/validation script.
-                boolean transacted = allowTransaction && json.optBoolean("transacted", true);
-                TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
-                try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
+            Map<String, Object> auditDetails = json.has("auditDetails") ? json.getJSONObject("auditDetails").toMap() : new CaseInsensitiveHashMap<>();
+
+            Map<Enum, Object> configParameters = new HashMap<>();
+
+            if (extraContext.containsKey(AbstractQueryImportAction.Params.useTransactionAuditCache.name()))
+                configParameters.put(AbstractQueryImportAction.Params.useTransactionAuditCache, extraContext.get(AbstractQueryImportAction.Params.useTransactionAuditCache.name()));
+
+            if (WorkflowService.get() != null)
+                WorkflowService.get().populateConfigParams(extraContext, configParameters);
+
+            // Check first if the audit behavior has been defined for the table either in code or through XML.
+            // If not defined there, check for the audit behavior defined in the action form (json).
+            AuditBehaviorType behaviorType = table.getEffectiveAuditBehavior(json.optString("auditBehavior", null));
+            if (behaviorType != null)
+            {
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                String auditComment = json.optString("auditUserComment", null);
+                if (!StringUtils.isEmpty(auditComment))
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
+            }
+
+            boolean skipReselectRows = json.optBoolean("skipReselectRows", false);
+            if (skipReselectRows)
+                configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
+
+            if (getTargetContainerProp() != null)
+            {
+                Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
+                configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
+            }
+
+            //set up the response, providing the schema name, query name, and operation
+            //so that the client can sort out which request this response belongs to
+            //(clients often submit these async)
+            response.put(PROP_SCHEMA_NAME, schemaName);
+            response.put(PROP_QUERY_NAME, queryName);
+            response.put("command", commandType.name());
+            response.put("containerPath", container.getPath());
+
+            //we will transact operations by default, but the user may
+            //override this by sending a "transacted" property set to false
+            // 11741: A transaction may already be active if we're trying to
+            // insert/update/delete from within a transformation/validation script.
+            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
+            TransactionAuditProvider.TransactionAuditEvent auditEvent = null;
+            try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
+            {
+                if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 {
-                    if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
-                    {
-                        DbScope.Transaction auditTransaction = !transacted && isNestedTransaction ? table.getSchema().getScope().getCurrentTransaction() : transaction;
-                        if (auditTransaction == null)
-                            auditTransaction = NO_OP_TRANSACTION;
+                    DbScope.Transaction auditTransaction = !transacted && isNestedTransaction ? table.getSchema().getScope().getCurrentTransaction() : transaction;
+                    if (auditTransaction == null)
+                        auditTransaction = NO_OP_TRANSACTION;
 
-                        if (auditTransaction.getAuditEvent() != null)
-                        {
-                            auditEvent = auditTransaction.getAuditEvent();
-                        }
-                        else
-                        {
-                            Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
-                            TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetails);
-                            auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), transactionDetails);
-                            AbstractQueryUpdateService.addTransactionAuditEvent(auditTransaction,  getUser(), auditEvent);
-                        }
-                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.QueryCommand, commandType.name());
-                    }
-
-                    QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
-                    List<Map<String, Object>> responseRows =
-                            commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
-                    if (auditEvent != null)
+                    if (auditTransaction.getAuditEvent() != null)
                     {
-                        auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
-                        if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.DataIteratorUsed)))
-                            auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
-                    }
-
-                    if (commandType == CommandType.moveRows)
-                    {
-                        // moveRows returns a single map of updateCounts
-                        response.put("updateCounts", responseRows.getFirst());
-                    }
-                    else if (commandType != CommandType.importRows)
-                    {
-                        response.put("rows", AbstractQueryImportAction.prepareRowsResponse(responseRows));
-                    }
-
-                    // if there is any provenance information, save it here
-                    ProvenanceService svc = ProvenanceService.get();
-                    if (json.has("provenance"))
-                    {
-                        JSONObject provenanceJSON = json.getJSONObject("provenance");
-                        ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
-                        RecordedAction action = svc.createRecordedAction(getViewContext(), params);
-                        if (action != null && params.getRecordingId() != null)
-                        {
-                            // check for any row level provenance information
-                            if (json.has("rows"))
-                            {
-                                Object rowObject = json.get("rows");
-                                if (rowObject instanceof JSONArray jsonArray)
-                                {
-                                    // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
-                                    // be the row lsid but it configurable in the provenance recording params
-                                    //
-                                    List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonArray, responseRows);
-                                    if (!provenanceMap.isEmpty())
-                                    {
-                                        action.getProvenanceMap().addAll(provenanceMap);
-                                    }
-                                    svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
-                                }
-                                else
-                                {
-                                    errors.reject(SpringActionController.ERROR_MSG, "Unable to process provenance information, the rows object was not an array");
-                                }
-                            }
-                        }
-                    }
-                    transaction.commit();
-                }
-                catch (OptimisticConflictException e)
-                {
-                    //issue 13967: provide better message for OptimisticConflictException
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                }
-                catch (QueryUpdateServiceException | ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
-                {
-                    //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
-                }
-                catch (BatchValidationException e)
-                {
-                    if (isSuccessOnValidationError())
-                    {
-                        response.put("errors", createResponseWriter().toJSON(e));
+                        auditEvent = auditTransaction.getAuditEvent();
                     }
                     else
                     {
-                        ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                        throw e;
+                        Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
+                        TransactionAuditProvider.TransactionDetail.addAuditDetails(transactionDetails, auditDetails);
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction(), transactionDetails);
+                        AbstractQueryUpdateService.addTransactionAuditEvent(auditTransaction,  getUser(), auditEvent);
                     }
+                    auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.QueryCommand, commandType.name());
                 }
+
+                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, container);
+                List<Map<String, Object>> responseRows =
+                        commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
                 {
-                    response.put("transactionAuditId", auditEvent.getRowId());
-                    response.put("reselectRowCount", auditEvent.hasMultiActions());
+                    auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
+                    if (Boolean.TRUE.equals(configParameters.get(TransactionAuditProvider.TransactionDetail.DataIteratorUsed)))
+                        auditEvent.addDetail(TransactionAuditProvider.TransactionDetail.DataIteratorUsed, true);
                 }
 
-                response.put("rowsAffected", rowsAffected);
+                if (commandType == CommandType.moveRows)
+                {
+                    // moveRows returns a single map of updateCounts
+                    response.put("updateCounts", responseRows.getFirst());
+                }
+                else if (commandType != CommandType.importRows)
+                {
+                    response.put("rows", AbstractQueryImportAction.prepareRowsResponse(responseRows));
+                }
 
-                op.completed(rowsAffected);
-
-                return response;
+                // if there is any provenance information, save it here
+                ProvenanceService svc = ProvenanceService.get();
+                if (json.has("provenance"))
+                {
+                    JSONObject provenanceJSON = json.getJSONObject("provenance");
+                    ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
+                    RecordedAction action = svc.createRecordedAction(getViewContext(), params);
+                    if (action != null && params.getRecordingId() != null)
+                    {
+                        // check for any row level provenance information
+                        if (json.has("rows"))
+                        {
+                            Object rowObject = json.get("rows");
+                            if (rowObject instanceof JSONArray jsonArray)
+                            {
+                                // we need to match any provenance object inputs to the object outputs from the response rows, this typically would
+                                // be the row lsid but it configurable in the provenance recording params
+                                //
+                                List<Pair<String, String>> provenanceMap = svc.createProvenanceMapFromRows(getViewContext(), params, jsonArray, responseRows);
+                                if (!provenanceMap.isEmpty())
+                                {
+                                    action.getProvenanceMap().addAll(provenanceMap);
+                                }
+                                svc.addRecordingStep(getViewContext().getRequest(), params.getRecordingId(), action);
+                            }
+                            else
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Unable to process provenance information, the rows object was not an array");
+                            }
+                        }
+                    }
+                }
+                transaction.commit();
+                committed = true;
             }
+            catch (OptimisticConflictException e)
+            {
+                //issue 13967: provide better message for OptimisticConflictException
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+            catch (QueryUpdateServiceException | ConversionException | DuplicateKeyException | DataIntegrityViolationException e)
+            {
+                //Issue 14294: improve handling of ConversionException (and DuplicateKeyException (Issue 28037), and DataIntegrity (uniqueness) (Issue 22779)
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+            catch (BatchValidationException e)
+            {
+                if (isSuccessOnValidationError())
+                {
+                    response.put("errors", createResponseWriter().toJSON(e));
+                }
+                else
+                {
+                    ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                    throw e;
+                }
+            }
+            if (auditEvent != null)
+            {
+                response.put("transactionAuditId", auditEvent.getRowId());
+                response.put("reselectRowCount", auditEvent.hasMultiActions());
+            }
+
+            response.put("rowsAffected", rowsAffected);
+
+            op.completed(rowsAffected);
+            op.committed(committed);
+
+            return response;
         }
 
         protected boolean allowRowAttachments()
@@ -5175,6 +5183,14 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
+            try (TracedOperation op = TracedOperation.builder("labkey.saveRows.batch").resource("saveRows").start())
+            {
+                return execute(op, errors);
+            }
+        }
+
+        private ApiResponse execute(TracedOperation op, BindException errors) throws Exception
+        {
             // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more
             // specific permissions later once we've figured out exactly what they're trying to do. This helps us
             // give a better HTTP response code when they're trying to access a resource that's not available to guests
@@ -5195,6 +5211,8 @@ public class QueryController extends SpringActionController
             {
                 throw new NotFoundException("Empty request");
             }
+            op.describedAs("saveRows " + commands.length() + " commands in " + getContainer().getPath())
+                    .tag("labkey.saveRows.commands", commands.length());
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -5236,85 +5254,80 @@ public class QueryController extends SpringActionController
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
 
-            try (TracedOperation op = TracedOperation.start("labkey.saveRows.batch")
-                    .resource("saveRows")
-                    .describedAs("saveRows " + commands.length() + " commands in " + getContainer().getPath())
-                    .tag("labkey.saveRows.commands", commands.length()))
+            try (DbScope.Transaction transaction = transacted ? scope.ensureTransaction() : NO_OP_TRANSACTION)
             {
-                try (DbScope.Transaction transaction = transacted ? scope.ensureTransaction() : NO_OP_TRANSACTION)
+                for (int i = 0; i < commands.length(); i++)
                 {
-                    for (int i = 0; i < commands.length(); i++)
+                    JSONObject commandObject = commands.getJSONObject(i);
+                    String commandName = commandObject.getString(PROP_COMMAND);
+                    if (commandName == null)
                     {
-                        JSONObject commandObject = commands.getJSONObject(i);
-                        String commandName = commandObject.getString(PROP_COMMAND);
-                        if (commandName == null)
-                        {
-                            throw new ApiUsageException(PROP_COMMAND + " is required but was missing");
-                        }
-                        CommandType command = CommandType.valueOf(commandName);
+                        throw new ApiUsageException(PROP_COMMAND + " is required but was missing");
+                    }
+                    CommandType command = CommandType.valueOf(commandName);
 
-                        // Copy the top-level 'extraContext' and merge in the command-level extraContext.
-                        Map<String, Object> commandExtraContext = new HashMap<>();
-                        if (extraContext != null)
-                            commandExtraContext.putAll(extraContext.toMap());
-                        if (commandObject.has("extraContext"))
-                        {
-                            commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
-                        }
-                        commandObject.put("extraContext", commandExtraContext);
-                        Map<String, Object> commandAuditDetails = new HashMap<>();
-                        if (auditDetails != null)
-                            commandAuditDetails.putAll(auditDetails.toMap());
-                        if (commandObject.has("auditDetails"))
-                        {
-                            commandAuditDetails.putAll(commandObject.getJSONObject("auditDetails").toMap());
-                        }
-                        commandObject.put("auditDetails", commandAuditDetails);
+                    // Copy the top-level 'extraContext' and merge in the command-level extraContext.
+                    Map<String, Object> commandExtraContext = new HashMap<>();
+                    if (extraContext != null)
+                        commandExtraContext.putAll(extraContext.toMap());
+                    if (commandObject.has("extraContext"))
+                    {
+                        commandExtraContext.putAll(commandObject.getJSONObject("extraContext").toMap());
+                    }
+                    commandObject.put("extraContext", commandExtraContext);
+                    Map<String, Object> commandAuditDetails = new HashMap<>();
+                    if (auditDetails != null)
+                        commandAuditDetails.putAll(auditDetails.toMap());
+                    if (commandObject.has("auditDetails"))
+                    {
+                        commandAuditDetails.putAll(commandObject.getJSONObject("auditDetails").toMap());
+                    }
+                    commandObject.put("auditDetails", commandAuditDetails);
 
-                        JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted, i);
-                        // Bail out immediately if we're going to return a failure-type response message
-                        if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
-                            return null;
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transacted, i);
+                    // Bail out immediately if we're going to return a failure-type response message
+                    if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
+                        return null;
 
-                        //this would be populated in executeJson when a BatchValidationException is thrown
-                        if (commandResponse.has("errors"))
-                        {
-                            errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
-                        }
-
-                        // If we encountered errors with this particular command and the client requested that don't treat
-                        // the whole request as a failure (non-200 HTTP status code), stash the errors for this particular
-                        // command in its response section.
-                        // NOTE: executeJson should handle and serialize BatchValidationException
-                        // these errors upstream
-                        if (errors.getErrorCount() > startingErrorIndex && isSuccessOnValidationError())
-                        {
-                            commandResponse.put("errors", ApiResponseWriter.convertToJSON(errors, startingErrorIndex).getValue());
-                            startingErrorIndex = errors.getErrorCount();
-                        }
-
-                        totalRows += commandResponse.optInt("rowsAffected", 0);
-                        resultArray.put(commandResponse);
+                    //this would be populated in executeJson when a BatchValidationException is thrown
+                    if (commandResponse.has("errors"))
+                    {
+                        errorCount += commandResponse.getJSONObject("errors").getInt("errorCount");
                     }
 
-                    // Don't commit if we had errors or if the client requested that we only validate (and not commit)
-                    if (!errors.hasErrors() && !validateOnly && errorCount == 0)
+                    // If we encountered errors with this particular command and the client requested that don't treat
+                    // the whole request as a failure (non-200 HTTP status code), stash the errors for this particular
+                    // command in its response section.
+                    // NOTE: executeJson should handle and serialize BatchValidationException
+                    // these errors upstream
+                    if (errors.getErrorCount() > startingErrorIndex && isSuccessOnValidationError())
                     {
-                        transaction.commit();
-                        committed = true;
+                        commandResponse.put("errors", ApiResponseWriter.convertToJSON(errors, startingErrorIndex).getValue());
+                        startingErrorIndex = errors.getErrorCount();
                     }
+
+                    totalRows += commandResponse.optInt("rowsAffected", 0);
+                    resultArray.put(commandResponse);
                 }
 
-                errorCount += errors.getErrorCount();
-                JSONObject result = new JSONObject();
-                result.put("result", resultArray);
-                result.put("committed", committed);
-                result.put("errorCount", errorCount);
-
-                op.completed(totalRows);
-
-                return new ApiSimpleResponse(result);
+                // Don't commit if we had errors or if the client requested that we only validate (and not commit)
+                if (!errors.hasErrors() && !validateOnly && errorCount == 0)
+                {
+                    transaction.commit();
+                    committed = true;
+                }
             }
+
+            errorCount += errors.getErrorCount();
+            JSONObject result = new JSONObject();
+            result.put("result", resultArray);
+            result.put("committed", committed);
+            result.put("errorCount", errorCount);
+
+            op.completed(totalRows);
+            op.committed(committed);
+
+            return new ApiSimpleResponse(result);
         }
     }
 

@@ -185,7 +185,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.logging.LogHelper;
@@ -1528,7 +1527,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ScriptEngineManagerImpl.TestCase.class,
             SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,
-            TracedOperation.TestCase.class,
 
 
             // Radeox tests

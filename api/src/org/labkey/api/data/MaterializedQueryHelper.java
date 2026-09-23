@@ -641,7 +641,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      */
     protected static void traced(String resource, String viewName, Runnable work)
     {
-        TracedOperation.start("labkey.materialize")
+        TracedOperation.builder("labkey.materialize")
                 .resource(resource)
                 .describedAs("materialize " + resource + " " + viewName)
                 .tag("labkey.materialized_view", viewName)
