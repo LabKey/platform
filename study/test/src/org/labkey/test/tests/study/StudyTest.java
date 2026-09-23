@@ -384,12 +384,12 @@ public class StudyTest extends StudyBaseTest
 
     protected int getVisitCount()
     {
-        return _studyHelper.isSpecimenModulePresent() ? 66 : 55;
+        return 66;
     }
 
     protected int getUnusedVisitCount()
     {
-        return _studyHelper.isSpecimenModulePresent() ? 24 : 26;
+        return _studyHelper.isSpecimenModulePresent() ? 24 : 35;
     }
 
     protected static final String SUBJECT_NOUN = "Mouse";

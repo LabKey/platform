@@ -232,7 +232,7 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         if (_studyHelper.isSpecimenModulePresent())
             waitForElement(Locator.tag("span").containing("Specimen data is not editable"), MERGE_SUCCESS_TIMEOUT);
         // Error on missing value for source field.
-        assertElementPresent(Locator.tag("span").containing("Missing value for required property"));
+        waitForElement(Locator.tag("span").containing("Missing value for required property"));
 
         log("Check not reporting conflict when no conflict exists, and warning on existing alias");
         setFormElement(ALIAS_SOURCE_FIELD, ALIAS_SOURCE_2);

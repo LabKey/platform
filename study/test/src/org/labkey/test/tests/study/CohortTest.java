@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -26,6 +27,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.params.study.DatasetDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
@@ -35,6 +37,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -65,7 +68,7 @@ public class CohortTest extends BaseWebDriverTest
     private static final String[] PTIDS_POSITIVE_NOCOHORT = {INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1};
 
     @Test
-    public void testSteps()
+    public void testSteps() throws Exception
     {
         doSetup();
         cohortTest();
@@ -75,7 +78,7 @@ public class CohortTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    private void doSetup()
+    private void doSetup() throws Exception
     {
         log("Check advanced cohort features.");
         _containerHelper.createProject(PROJECT_NAME, "Study");
@@ -84,7 +87,17 @@ public class CohortTest extends BaseWebDriverTest
         importStudyFromZip(COHORT_STUDY_ZIP);
         clickProject(PROJECT_NAME);
         if (_studyHelper.isSpecimenModulePresent())
+        {
             new PortalHelper(this).addWebPart("Specimens");
+        }
+        else
+        {
+            // Ensure Unassigned participant exists (otherwise created by specimen import)
+            Connection connection = createDefaultConnection();
+            new DatasetDefinition("Dummy Dataset")
+                    .create(connection, PROJECT_NAME)
+                    .insertRows(connection, List.of(Map.of("ParticipantID", UNASSIGNED_1, "SequenceNum", "1")));
+        }
         // Check all cohorts after initial import.
     }
 
@@ -285,7 +298,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // Check that participant view respects filter.
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.addSort("ParticipantId", SortDirection.ASC);
@@ -486,7 +499,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         // Regression test for Issue: 30616
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Cohort Assignments"));
         DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
         clickAndWait(dataset.updateLink(0));
@@ -504,7 +517,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         log("Create cohort filtered views");
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
 
         setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT); // 4 rows
@@ -575,7 +588,7 @@ public class CohortTest extends BaseWebDriverTest
     private DataRegionTable verifyUnfilteredDataset(String datasetName, int allRowCount)
     {
         clickTab("Overview");
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText(datasetName));
 
         assertTextNotPresent("Current cohort is enrolled or unassigned");
@@ -672,7 +685,7 @@ public class CohortTest extends BaseWebDriverTest
         String statusText = participantListWebPart.getStatusMessage();
 
         // we should not see the "enrolled" text in the participant list status message if no participants are unenrolled
-        if (!expectEnrolledText || !_studyHelper.isSpecimenModulePresent())
+        if (!expectEnrolledText)
         {
             assertFalse("Should not see text: enrolled", statusText.contains("enrolled"));
         }
@@ -683,7 +696,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // make sure everyone in the group is there
         List<String> actualPtids = getTexts(Locator.tagWithClass("li", "ptid").findElements(getDriver()));
-        assertEquals("Wrong ptids visible", Arrays.stream(ptids).filter(v -> !v.equals(UNASSIGNED_1)).toList(), actualPtids);
+        assertEquals("Wrong ptids visible", Arrays.asList(ptids), actualPtids);
     }
 
     @Override

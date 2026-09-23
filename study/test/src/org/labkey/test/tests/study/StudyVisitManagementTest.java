@@ -241,7 +241,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0", "601.0", "701.0");
         verifyStudyVisits(definedVisits, null);
 
-        checkExpectedErrors(6);
+        checkExpectedErrors(_studyHelper.isSpecimenModulePresent() ? 6 : 5);
     }
 
     private void startFolderImport(boolean failForUndefinedVisits)

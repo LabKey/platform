@@ -255,20 +255,23 @@ public class TargetStudyTest extends AbstractAssayTest
         log("** Link to studies");
         clickButton("Link to Study");
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/dataset.view?datasetId=5001");
-        DataRegionTable dataset = new DataRegionTable("Dataset", this);
-        assertEquals(3, dataset.getDataRowCount());
-        dataset.setSort("ParticipantId", SortDirection.ASC);
-        assertEquals(3, dataset.getDataRowCount());
-        assertEquals("999320396", dataset.getDataAsText(0, "Participant ID"));
-        assertEquals("999320396", dataset.getDataAsText(1, "Participant ID"));
-        assertEquals("999320812", dataset.getDataAsText(2, "Participant ID"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/study-dataset.view?datasetId=5001");
+            DataRegionTable dataset = new DataRegionTable("Dataset", this);
+            assertEquals(3, dataset.getDataRowCount());
+            dataset.setSort("ParticipantId", SortDirection.ASC);
+            assertEquals(3, dataset.getDataRowCount());
+            assertEquals("999320396", dataset.getDataAsText(0, "Participant ID"));
+            assertEquals("999320396", dataset.getDataAsText(1, "Participant ID"));
+            assertEquals("999320812", dataset.getDataAsText(2, "Participant ID"));
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/dataset.view?datasetId=5001");
-        assertEquals(1, dataset.getDataRowCount());
-        assertEquals("999320706", dataset.getDataAsText(0, "Participant ID"));
+            beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/study-dataset.view?datasetId=5001");
+            assertEquals(1, dataset.getDataRowCount());
+            assertEquals("999320706", dataset.getDataAsText(0, "Participant ID"));
+        }
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/dataset.view?datasetId=5001");
+        beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/study-dataset.view?datasetId=5001");
         assertEquals(404, getResponseCode());
     }
 
