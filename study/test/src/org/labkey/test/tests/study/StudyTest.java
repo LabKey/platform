@@ -384,7 +384,7 @@ public class StudyTest extends StudyBaseTest
 
     protected int getVisitCount()
     {
-        return 66;
+        return _studyHelper.isSpecimenModulePresent() ? 66 : 55;
     }
 
     protected int getUnusedVisitCount()

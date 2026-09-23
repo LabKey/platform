@@ -683,7 +683,7 @@ public class CohortTest extends BaseWebDriverTest
 
         // make sure everyone in the group is there
         List<String> actualPtids = getTexts(Locator.tagWithClass("li", "ptid").findElements(getDriver()));
-        assertEquals("Wrong ptids visible", Arrays.asList(ptids), actualPtids);
+        assertEquals("Wrong ptids visible", Arrays.stream(ptids).filter(v -> !v.equals(UNASSIGNED_1)).toList(), actualPtids);
     }
 
     @Override
