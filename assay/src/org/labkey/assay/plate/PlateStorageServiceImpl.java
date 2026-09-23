@@ -18,10 +18,15 @@ package org.labkey.assay.plate;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateStorageService;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.assay.AssayModule;
@@ -29,6 +34,7 @@ import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,5 +91,17 @@ public class PlateStorageServiceImpl implements PlateStorageService
         });
 
         return plates;
+    }
+
+    @Override
+    public @NotNull Collection<Long> getExistingPlateRowIds(@NotNull Collection<Long> plateRowIds)
+    {
+        if (plateRowIds.isEmpty())
+            return Collections.emptyList();
+
+        TableInfo table = AssayDbSchema.getInstance().getTableInfoPlate();
+        return new TableSelector(table, Collections.singleton(PlateTable.Column.RowId.name()),
+                new SimpleFilter(FieldKey.fromParts(PlateTable.Column.RowId.name()), plateRowIds, CompareType.IN), null)
+                .getCollection(Long.class);
     }
 }

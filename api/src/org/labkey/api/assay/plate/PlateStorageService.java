@@ -76,6 +76,10 @@ public interface PlateStorageService
     @NotNull
     Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user);
 
+    /** The rowIds that still name a plate, with no permission check -- tells a deleted plate from an unreadable one. */
+    @NotNull
+    Collection<Long> getExistingPlateRowIds(@NotNull Collection<Long> plateRowIds);
+
     /**
      * Stands in when the assay module is absent. Throws rather than returning an empty result so that a caller which
      * skipped isAvailable() fails loudly: an empty map would be indistinguishable from "no plate is readable", which
@@ -93,6 +97,12 @@ public interface PlateStorageService
 
         @Override
         public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user)
+        {
+            throw new IllegalStateException("Plate storage requires the Assay module.");
+        }
+
+        @Override
+        public @NotNull Collection<Long> getExistingPlateRowIds(@NotNull Collection<Long> plateRowIds)
         {
             throw new IllegalStateException("Plate storage requires the Assay module.");
         }
