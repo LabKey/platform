@@ -1751,6 +1751,63 @@ public abstract class SqlDialect
             }
         }
 
+        /**
+         * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle. Every count
+         * is cumulative since the pool was created, except numWaiters, which is a current reading.
+         */
+        public record PoolStatistics(
+            /** Connections opened */
+            long createdCount,
+            /** Connections closed, for any reason */
+            long destroyedCount,
+            /** Connections closed because they sat idle longer than the pool allows */
+            long destroyedByEvictorCount,
+            /** Connections closed because they failed validation when a caller tried to borrow them */
+            long destroyedByBorrowValidationCount,
+            /** Connections handed out */
+            long borrowedCount,
+            /** Threads currently blocked waiting for a connection */
+            long numWaiters,
+            /** Mean time callers have waited to borrow a connection */
+            long meanBorrowWaitMillis,
+            /** Longest a caller has ever waited to borrow a connection */
+            long maxBorrowWaitMillis
+        ) {}
+
+        public @Nullable PoolStatistics getPoolStatistics()
+        {
+            try
+            {
+                Object pool = _ds.getClass().getMethod("getConnectionPool").invoke(_ds);
+
+                // BasicDataSource creates the pool lazily, on the first connection request
+                if (null == pool)
+                    return null;
+
+                return new PoolStatistics(
+                    getPoolStatistic(pool, "getCreatedCount"),
+                    getPoolStatistic(pool, "getDestroyedCount"),
+                    getPoolStatistic(pool, "getDestroyedByEvictorCount"),
+                    getPoolStatistic(pool, "getDestroyedByBorrowValidationCount"),
+                    getPoolStatistic(pool, "getBorrowedCount"),
+                    getPoolStatistic(pool, "getNumWaiters"),
+                    getPoolStatistic(pool, "getMeanBorrowWaitTimeMillis"),
+                    getPoolStatistic(pool, "getMaxBorrowWaitTimeMillis")
+                );
+            }
+            catch (Exception e)
+            {
+                LOG.error("Could not extract connection pool statistics from data source \"{}\"", _dsName);
+                return null;
+            }
+        }
+
+        private static long getPoolStatistic(Object pool, String methodName) throws ReflectiveOperationException
+        {
+            return ((Number)pool.getClass().getMethod(methodName).invoke(pool)).longValue();
+        }
+
         public @Nullable Properties getConnectionProperties()
         {
             try

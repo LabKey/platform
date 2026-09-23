@@ -1407,11 +1407,26 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            DataSourcePropertyReader props = getDbScopeLoader().getDsProps();
+
             log.info("Data source " + this +
-                    ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
-                    ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
-                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
+                    ". Max connections: " + props.getMaxTotal() +
+                    ", active: " + props.getNumActive() +
+                    ", idle: " + props.getNumIdle() +
+                    ", maxWaitMillis: " + props.getMaxWaitMillis());
+
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+
+            if (null != pool)
+                log.info("Connection pool for data source " + this +
+                        ". Opened: " + pool.createdCount() +
+                        ", closed: " + pool.destroyedCount() +
+                        " (idle: " + pool.destroyedByEvictorCount() +
+                        ", failed validation: " + pool.destroyedByBorrowValidationCount() +
+                        "), borrowed: " + pool.borrowedCount() +
+                        ", waiting threads: " + pool.numWaiters() +
+                        ", meanBorrowWaitMillis: " + pool.meanBorrowWaitMillis() +
+                        ", maxBorrowWaitMillis: " + pool.maxBorrowWaitMillis());
 
             if (_transaction.isEmpty())
             {
