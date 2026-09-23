@@ -80,9 +80,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         recordDataIteratorUsed(configParameters);
-        List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-        afterInsertUpdate(result == null ? 0 : result.size(), errors);
-        return result;
+        return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
     }
 
     protected boolean supportUpdateUsingDIB()
@@ -144,9 +142,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
             recordDataIteratorUsed(configParameters);
             DataIteratorContext context = getDataIteratorContext(errors, InsertOption.UPDATE, configParameters);
             context.putConfigParameter(PreferPKOverObjectUriAsKey, shouldPreferPKOverObjectUriAsUpdateKey(rows));
-            List<Map<String, Object>> result = super._updateRowsUsingDIB(user, container, rows, context, extraScriptContext);
-            afterInsertUpdate(result == null ? 0 : result.size(), errors);
-            return result;
+            return super._updateRowsUsingDIB(user, container, rows, context, extraScriptContext);
         }
 
         return super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
