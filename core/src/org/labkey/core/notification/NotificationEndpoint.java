@@ -21,7 +21,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.websocket.WebSocketTracker;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 
 import jakarta.servlet.http.HttpSession;
@@ -57,6 +59,7 @@ public class NotificationEndpoint extends Endpoint
     private Session session;
     private int userId;
     private boolean errored;
+    private QuietCloser tracked;
 
     public NotificationEndpoint()
     {
@@ -75,6 +78,10 @@ public class NotificationEndpoint extends Endpoint
         this.userId = null==id ? 0 : id;
 
         LOG.debug("{} onOpen", this);
+        // endpointsMap holds only authenticated endpoints, but a guest's socket occupies a connection slot just the
+        // same - on a public site they're nearly all guests. GH Issue 1574
+        tracked = WebSocketTracker.opened();
+
         synchronized (endpointsMap)
         {
             if (this.userId > 0)
@@ -101,6 +108,8 @@ public class NotificationEndpoint extends Endpoint
         {
             endpointsMap.removeMapping(this.userId, this);
         }
+        if (null != tracked)
+            tracked.close();
         super.onClose(session, closeReason);
     }
 
