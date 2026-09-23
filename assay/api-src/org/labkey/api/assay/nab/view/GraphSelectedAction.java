@@ -50,7 +50,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
     @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
-        _protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
+        _protocol = ExperimentService.get().getExpProtocol(getContainer(), form.getProtocolId());
         if (_protocol == null)
         {
             throw new NotFoundException();

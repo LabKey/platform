@@ -37,7 +37,7 @@
     if (form.getRuns().size() == 1)
     {
         // for single row selections, display the current QC state
-        ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
+        ExpRun run = ExperimentService.get().getExpRun(getContainer(), form.getRuns().stream().findFirst().get());
         if (run != null)
         {
             DataState state = AssayQCService.getProvider().getQCState(run.getProtocol(), run.getRowId());
@@ -46,7 +46,7 @@
     }
 
     // get the protocol container to determine the folder where QC states are defined
-    ExpRun expRun = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
+    ExpRun expRun = ExperimentService.get().getExpRun(getContainer(), form.getRuns().stream().findFirst().get());
     if (expRun != null)
     {
         protocolContainerPath = expRun.getProtocol().getContainer().getPath();
