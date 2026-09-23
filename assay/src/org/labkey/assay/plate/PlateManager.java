@@ -3034,26 +3034,19 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (!archivingPlates && !archivingPlateSets)
             throw new ValidationException(String.format("Failed to %s. Neither plates nor plate sets were specified.", getArchiveAction(archive)));
 
-        if (archivingPlates && archive && InventoryService.get() != null)
-        {
-            Collection<Long> storedPlateIds = InventoryService.get().getStoredPlateRowIds(plateIds);
-            if (!storedPlateIds.isEmpty())
-                throw new ValidationException(String.format("Failed to archive plates. %d of the selected plates are in storage and must be removed from storage first.", storedPlateIds.size()));
-        }
-
         try (DbScope.Transaction tx = ensureTransaction())
         {
             ensureTransactionAuditId(tx, container, user, QueryService.AuditAction.UPDATE);
 
             if (archivingPlates)
             {
-                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlate(), "plates", plateIds, archive);
+                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlate(), "plates", plateIds, archive, true);
                 tx.addCommitTask(() -> clearCache(plateIds), DbScope.CommitTaskOption.POSTCOMMIT);
             }
 
             if (archivingPlateSets)
             {
-                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive);
+                archive(container, user, AssayDbSchema.getInstance().getTableInfoPlateSet(), "plate sets", plateSetIds, archive, false);
                 tx.addCommitTask(() -> clearPlateSetCache(container, plateSetIds), DbScope.CommitTaskOption.POSTCOMMIT);
 
                 List<PlateSetAuditEvent> auditEvents = PlateSetAuditProvider.EventFactory.plateSetsArchived(container, tx.getAuditEvent(), plateSetIds, archive);
@@ -3064,7 +3057,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
-    private void archive(Container container, User user, @NotNull TableInfo table, String type, @NotNull List<Long> rowIds, boolean archive) throws Exception
+    private void archive(Container container, User user, @NotNull TableInfo table, String type, @NotNull List<Long> rowIds, boolean archive, boolean arePlates) throws Exception
     {
         Class<? extends Permission> perm = UpdatePermission.class;
 
@@ -3089,6 +3082,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                     if (c != null && !c.hasPermission(user, perm))
                         throw new UnauthorizedException(String.format("Failed to %s %s. Insufficient permissions in %s.", getArchiveAction(archive), type, c.getPath()));
                 }
+            }
+
+            if (archive && arePlates && InventoryService.get() != null)
+            {
+                Collection<Long> storedPlateIds = InventoryService.get().getStoredPlateRowIds(rowIds);
+                if (!storedPlateIds.isEmpty())
+                    throw new ValidationException(String.format("Failed to archive plates. %d of the selected plates are in storage and must be removed from storage first.", storedPlateIds.size()));
             }
 
             SQLFragment sql = new SQLFragment("UPDATE ").append(table)
