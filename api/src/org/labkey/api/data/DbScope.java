@@ -1421,11 +1421,11 @@ public class DbScope
                 log.info("Connection pool for data source " + this +
                         ". Opened: " + pool.createdCount() +
                         ", closed: " + pool.destroyedCount() +
-                        " (idle: " + pool.destroyedByEvictorCount() +
+                        " (evictor: " + pool.destroyedByEvictorCount() +
                         ", failed validation: " + pool.destroyedByBorrowValidationCount() +
                         "), borrowed: " + pool.borrowedCount() +
                         ", waiting threads: " + pool.numWaiters() +
-                        ", meanBorrowWaitMillis: " + pool.meanBorrowWaitMillis() +
+                        ", meanBorrowWaitMillis (last 100): " + pool.meanBorrowWaitMillis() +
                         ", maxBorrowWaitMillis: " + pool.maxBorrowWaitMillis());
 
             if (_transaction.isEmpty())

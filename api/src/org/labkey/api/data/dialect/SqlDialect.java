@@ -1753,15 +1753,16 @@ public abstract class SqlDialect
 
         /**
          * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
-         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle. Every count
-         * is cumulative since the pool was created, except numWaiters, which is a current reading.
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle. Values are
+         * cumulative since the pool was created, except numWaiters (a current reading) and meanBorrowWaitMillis (the
+         * mean of the most recent 100 borrows).
          */
         public record PoolStatistics(
             /** Connections opened */
             long createdCount,
             /** Connections closed, for any reason */
             long destroyedCount,
-            /** Connections closed because they sat idle longer than the pool allows */
+            /** Connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation */
             long destroyedByEvictorCount,
             /** Connections closed because they failed validation when a caller tried to borrow them */
             long destroyedByBorrowValidationCount,
@@ -1769,7 +1770,7 @@ public abstract class SqlDialect
             long borrowedCount,
             /** Threads currently blocked waiting for a connection */
             long numWaiters,
-            /** Mean time callers have waited to borrow a connection */
+            /** Mean time callers waited to borrow a connection, over the most recent 100 borrows */
             long meanBorrowWaitMillis,
             /** Longest a caller has ever waited to borrow a connection */
             long maxBorrowWaitMillis
@@ -1798,7 +1799,7 @@ public abstract class SqlDialect
             }
             catch (Exception e)
             {
-                LOG.error("Could not extract connection pool statistics from data source \"{}\"", _dsName);
+                LOG.warn("Could not extract connection pool statistics from data source \"{}\"", _dsName, e);
                 return null;
             }
         }

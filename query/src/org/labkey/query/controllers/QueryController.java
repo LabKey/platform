@@ -231,7 +231,6 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
@@ -822,7 +821,7 @@ public class QueryController extends SpringActionController
 
         private static String formatCount(@Nullable Number value)
         {
-            return null != value ? Formats.commaf0.format(value) : "";
+            return null != value ? String.format("%,d", value.longValue()) : "";
         }
 
         // .labkey-data-region pads header cells but not data cells, so the two rows sit 4px out of line
@@ -834,7 +833,7 @@ public class QueryController extends SpringActionController
         private static final String POOL_STATS_CSS = """
             details.lk-pool-stats summary { display: block; width: fit-content; }
             details.lk-pool-stats summary:hover { text-decoration: underline; }
-            details.lk-pool-stats .lk-pool-caret { display: inline-block; width: 10px; margin-right: 5px; color: #116596; }
+            details.lk-pool-stats .lk-pool-caret { display: inline-block; width: 10px; margin-right: 5px; }
             details.lk-pool-stats[open] .lk-pool-caret { transform: rotate(90deg); }
             details.lk-pool-stats table { margin: 3px 0 6px 17px; }
             details.lk-pool-stats td.lk-pool-stat-value { text-align: right; padding-left: 30px; }
@@ -857,17 +856,17 @@ public class QueryController extends SpringActionController
 
             return DETAILS(cl("lk-pool-stats"),
                 SUMMARY(
-                    I(cl("fa", "fa-caret-right", "lk-pool-caret")),
+                    I(cl("fa", "fa-caret-right", "lk-pool-caret", "labkey-link")),
                     SPAN(cl("labkey-link"), "Connection pool statistics")
                 ),
                 TABLE(
                     stat.apply("Threads waiting for a connection", pool.numWaiters()),
                     stat.apply("Connections opened", pool.createdCount()),
                     stat.apply("Connections closed", pool.destroyedCount()),
-                    stat.apply("Closed after sitting idle", pool.destroyedByEvictorCount()),
+                    stat.apply("Closed by idle evictor", pool.destroyedByEvictorCount()),
                     stat.apply("Closed after failed validation", pool.destroyedByBorrowValidationCount()),
                     stat.apply("Connections borrowed", pool.borrowedCount()),
-                    stat.apply("Mean wait to borrow (ms)", pool.meanBorrowWaitMillis()),
+                    stat.apply("Mean wait to borrow, last 100 (ms)", pool.meanBorrowWaitMillis()),
                     stat.apply("Longest wait to borrow (ms)", pool.maxBorrowWaitMillis())
                 )
             );
