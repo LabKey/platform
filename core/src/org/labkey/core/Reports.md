@@ -131,7 +131,7 @@ The older bare inline form (`${id:name}` with no leading `#`) still works but is
 
 Use `regex(...)` inside a token — e.g. `${fileout:regex(.*?\.gct)}` — when the script generates files whose exact names aren't known ahead of time; LabKey maps any file matching the pattern to that output slot.
 
-A separate set of tokens is substituted both into the engine invocation command line *and* — if you reference them directly — into the script body itself, since both substitution passes share the same replacement map: `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${rLabkeySessionId}`, `${httpSessionId}`, `${sessionCookieName}`, `${baseServerURL}`, `${containerPath}`.
+A separate set of tokens is substituted both into the engine invocation command line *and* — if you reference them directly — into the script body itself, since both substitution passes share the same replacement map: `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${baseServerURL}`, `${containerPath}`.
 
 **`${srcDirectory}` does not work for Reports** despite being defined alongside this family — it's only ever populated for assay *transform* scripts, a different feature. If you reference it in a report script (e.g. `source("${srcDirectory}/util.R")`), it will not resolve, and — unlike the command-line substitution pass, which silently strips unmatched tokens — the script-body substitution pass writes it out **verbatim**, so the script fails at runtime trying to open a file literally named `${srcDirectory}/...`. Don't use it when porting a script into an R report.
 

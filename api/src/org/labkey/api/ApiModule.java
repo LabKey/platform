@@ -124,6 +124,7 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.reports.report.r.RReport;
@@ -440,6 +441,7 @@ public class ApiModule extends CodeOnlyModule
             ExcelWriter.TestCase.class,
             ExistingRecordDataIterator.TestCase.class,
             ExperimentJSONConverter.TestCase.class,
+            ExternalScriptEngine.TestCase.class,
             ExtUtil.TestCase.class,
             FieldKey.TestCase.class,
             FileType.TestCase.class,

@@ -19,6 +19,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -39,6 +43,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import javax.script.SimpleScriptContext;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,8 +54,10 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +65,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.labkey.api.reports.report.r.ParamReplacementSvc.SubstitutionSyntax.INLINE;
 
 /*
 * User: Karl Lum
@@ -146,7 +155,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      * Prepare the on-disk script file that will be executed. The default writes the script as-is; subclasses (e.g. the
      * R engine's knitr handling) may wrap it in a different driver script.
      */
-    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions)
+    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions) throws ScriptException
     {
         return writeScriptFile(script, context, extensions);
     }
@@ -552,7 +561,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
         }
     }
 
-    protected FileLike writeScriptFile(String script, ScriptContext context, List<String> extensions)
+    protected FileLike writeScriptFile(String script, ScriptContext context, List<String> extensions) throws ScriptException
     {
         // write out the script file to disk using the first extension as the default
         FileLike scriptFile;
@@ -590,11 +599,24 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                 }
 
+                // Fail fast if there are unreplaced substitutions, to provide a much better user-facing error message.
+                Matcher matcher = INLINE.getMatchPattern().matcher(script);
+                Set<String> unreplaced = new LinkedHashSet<>();
+                while (matcher.find())
+                    unreplaced.add(matcher.group(1));
+
+                if (!unreplaced.isEmpty())
+                    throw new ScriptException("Unreplaced substitution parameter(s) found in script: " + String.join(", ", unreplaced));
+
                 try (PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(scriptFile.openOutputStream(), StandardCharsets.UTF_8))))
                 {
                     pw.write(script);
                 }
             }
+        }
+        catch (ScriptException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -704,5 +726,58 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
     public boolean supportsContext(LabKeyScriptEngineManager.EngineContext context)
     {
         return true;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String KNOWN_PARAM = "knownParam";
+        private static final String KNOWN_VALUE = "replacement value";
+
+        private ExternalScriptEngine _engine;
+        private ScriptContext _context;
+        private FileLike _scriptFile;
+
+        @Before
+        public void setUp()
+        {
+            _engine = new ExternalScriptEngine(null);
+            _context = new SimpleScriptContext();
+            Bindings bindings = _engine.createBindings();
+            bindings.put(PARAM_REPLACEMENT_MAP, Map.of(KNOWN_PARAM, KNOWN_VALUE));
+            _context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+        }
+
+        @After
+        public void tearDown() throws IOException
+        {
+            if (null != _scriptFile && _scriptFile.exists())
+                _scriptFile.delete();
+        }
+
+        @Test
+        public void testFullyReplacedScriptSucceeds() throws ScriptException
+        {
+            String script = "print(\"${" + KNOWN_PARAM + "}\")";
+            _scriptFile = _engine.writeScriptFile(script, _context, List.of("R"));
+            assertTrue("Script file should have been written", _scriptFile.exists());
+        }
+
+        @Test
+        public void testUnreplacedSubstitutionThrows()
+        {
+            String script = "print(\"${unknownParam}\")";
+            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
+            assertTrue("Exception message should name the unreplaced parameter", e.getMessage().contains("unknownParam"));
+        }
+
+        @Test
+        public void testMultipleUnreplacedSubstitutionsAreAllNamed()
+        {
+            String script = "${firstUnknown} and ${" + KNOWN_PARAM + "} and ${secondUnknown}";
+            ScriptException e = assertThrows(ScriptException.class, () -> _engine.writeScriptFile(script, _context, List.of("R")));
+            assertTrue("Exception message should name the first unreplaced parameter", e.getMessage().contains("firstUnknown"));
+            assertTrue("Exception message should name the second unreplaced parameter", e.getMessage().contains("secondUnknown"));
+            assertFalse("Exception message should not include the known, replaced parameter", e.getMessage().contains(KNOWN_PARAM));
+        }
     }
 }
