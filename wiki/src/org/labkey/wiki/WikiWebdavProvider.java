@@ -692,7 +692,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         public boolean hasPermission(User user, Class<? extends Permission> perm)
         {
             // READ-WRITE for now
-            return super.hasPermission(user, perm) || perm.equals(ReadPermission.class) || perm.equals(UpdatePermission.class);
+            return perm.equals(ReadPermission.class) || perm.equals(UpdatePermission.class) || super.hasPermission(user, perm);
         }
     }
 }
