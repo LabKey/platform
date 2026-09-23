@@ -266,16 +266,12 @@ public class XmlBeansUtil
      */
     public static DOMParser hardenXercesParser(DOMParser parser)
     {
-        hardenXercesParser(parser::setFeature, parser::setProperty);
+        require(() -> parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false));
+        require(() -> parser.setFeature("http://xml.org/sax/features/external-general-entities", false));
+        require(() -> parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false));
+        // Xerces has no FEATURE_SECURE_PROCESSING of its own; the security manager is what imposes the entity expansion limit
+        require(() -> parser.setProperty("http://apache.org/xml/properties/security-manager", new org.apache.xerces.util.SecurityManager()));
         return parser;
-    }
-
-    private static void hardenXercesParser(XmlFeature feature, XmlProperty property)
-    {
-        require(() -> feature.set("http://apache.org/xml/features/nonvalidating/load-external-dtd", false));
-        require(() -> feature.set("http://xml.org/sax/features/external-general-entities", false));
-        require(() -> feature.set("http://xml.org/sax/features/external-parameter-entities", false));
-        require(() -> property.set("http://apache.org/xml/properties/security-manager", new org.apache.xerces.util.SecurityManager()));
     }
 
     /** Resolves to nothing, so a refused reference expands to the empty string instead of being fetched. */
@@ -363,18 +359,6 @@ public class XmlBeansUtil
     private interface XmlSetting
     {
         void apply() throws SAXException;
-    }
-
-    @FunctionalInterface
-    private interface XmlFeature
-    {
-        void set(String name, boolean value) throws SAXException;
-    }
-
-    @FunctionalInterface
-    private interface XmlProperty
-    {
-        void set(String name, Object value) throws SAXException;
     }
 
     // FEATURE_SECURE_PROCESSING is honored by every JAXP implementation, so failure to set it is fatal.
