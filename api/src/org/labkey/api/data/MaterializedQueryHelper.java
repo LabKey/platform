@@ -40,9 +40,10 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -640,27 +641,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      */
     protected static void traced(String resource, String viewName, Runnable work)
     {
-        Tracer tracer = GlobalTracer.get();
-        Span span = tracer.buildSpan("labkey.materialize").start();
-        span.setTag(DDTags.RESOURCE_NAME, resource);
-        // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
-        span.setTag(DDTags.MEASURED, true);
-        span.setTag("labkey.materialized_view", viewName);
-
-        try (Scope ignored = tracer.activateSpan(span))
-        {
-            work.run();
-        }
-        catch (Throwable t)
-        {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of(Fields.ERROR_OBJECT, t));
-            throw t;
-        }
-        finally
-        {
-            span.finish();
-        }
+        TracedOperation.start("labkey.materialize")
+                .resource(resource)
+                .describedAs("materialize " + resource + " " + viewName)
+                .tag("labkey.materialized_view", viewName)
+                .run(work);
     }
 
     /** Identifies the view in APM. Carried as a tag, never a resource name, to keep per-view cardinality out of trace metrics. */
