@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.GUID;
 
 import java.util.Collection;
@@ -30,6 +31,11 @@ import java.util.Map;
  */
 public interface PlateStorageService
 {
+    /** Registered by the inventory module, which owns plate storage; declared here so assay can read it too. */
+    String EXPERIMENTAL_PLATE_STORAGE = "plateStorage";
+    /** Page context key carrying isAvailable() for the current container. */
+    String PLATE_STORAGE_AVAILABLE = "plateStorageAvailable";
+
     static void setInstance(PlateStorageService impl)
     {
         ServiceRegistry.get().registerService(PlateStorageService.class, impl);
@@ -43,9 +49,15 @@ public interface PlateStorageService
     }
 
     /**
-     * Whether plate storage can be used in this container -- the assay module both deployed and active here.
-     * Every other method on this interface requires it, so callers gate on it rather than on a null service.
+     * Whether the plate storage experimental feature is enabled site-wide.
+     * NOTE: You should likely be using isAvailable() instead.
      */
+    default boolean isEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_PLATE_STORAGE);
+    }
+
+    /** Whether plate storage is available for use in this container. */
     boolean isAvailable(@NotNull Container container);
 
     /**

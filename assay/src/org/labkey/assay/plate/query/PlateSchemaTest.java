@@ -37,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.assay.AssayModule;
@@ -58,6 +59,7 @@ public final class PlateSchemaTest
     private static Container container;
     private static User user;
     private static PlateType PLATE_TYPE_12_WELL;
+    private static boolean plateStorageFlag;
 
     @BeforeClass
     public static void setupTest()
@@ -76,6 +78,9 @@ public final class PlateSchemaTest
             container.setActiveModules(newActiveModules);
         }
 
+        plateStorageFlag = OptionalFeatureService.get().isFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE);
+        OptionalFeatureService.get().setFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE, true, user);
+
         PLATE_TYPE_12_WELL = PlateManager.get().getPlateType(3, 4);
         assertNotNull("12-well plate type was not found", PLATE_TYPE_12_WELL);
     }
@@ -83,6 +88,9 @@ public final class PlateSchemaTest
     @AfterClass
     public static void cleanup()
     {
+        // Restore feature flag state
+        OptionalFeatureService.get().setFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE, plateStorageFlag, user);
+
         deleteTestContainer();
         container = null;
         user = null;
