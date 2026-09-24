@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -342,6 +343,39 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
+        // GH Issue 1595: an InClauseInnerJoin opts in to being driven from its value set's temp table (INNER JOIN at the
+        // base-table level) instead of a "PK IN (...)" semi-join, which the planner otherwise
+        // satisfies with a full backward index scan of the base table on ORDER BY + LIMIT.
+        TempTableInfo drivingTempTable = null;
+        ColumnInfo drivingPkColumn = null;
+        Filter effectiveFilter = filter;
+        if (filter instanceof SimpleFilter driveFilter)
+        {
+            List<ColumnInfo> pkCols = table.getPkColumns();
+            ColumnInfo pkColumn = pkCols.size() == 1 ? columnMap.get(pkCols.get(0).getFieldKey()) : null;
+            if (null != pkColumn)
+            {
+                for (SimpleFilter.FilterClause c : driveFilter.getClauses())
+                {
+                    if (c instanceof SimpleFilter.InClauseInnerJoin inClause && pkColumn.getFieldKey().equals(inClause.getFieldKey()))
+                    {
+                        TempTableInfo tt = inClause.getDrivingTempTable(dialect, pkColumn);
+                        if (null != tt)
+                        {
+                            drivingTempTable = tt;
+                            drivingPkColumn = pkColumn;
+                            SimpleFilter reduced = new SimpleFilter();
+                            for (SimpleFilter.FilterClause other : driveFilter.getClauses())
+                                if (other != c)
+                                    reduced.addClause(other);
+                            effectiveFilter = reduced;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = new TreeSet<>();
         allColumns.stream()
@@ -356,6 +390,12 @@ public class QuerySelectView extends AbstractQueryRelation
         fromFrag.append(getFromSql);
         fromFrag.append(" ");
 
+        if (null != drivingTempTable)
+        {
+            fromFrag.append("\nINNER JOIN ").append(drivingTempTable).append(" _drive_ ON ").append(drivingPkColumn.getValueSql(tableAlias)).append(" = _drive_.Id");
+            fromFrag.addTempToken(drivingTempTable);
+        }
+
         for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
         {
             fromFrag.append("\n").append(entry.getValue());
@@ -363,9 +403,9 @@ public class QuerySelectView extends AbstractQueryRelation
 
         SQLFragment filterFrag = null;
 
-        if (filter != null)
+        if (effectiveFilter != null)
         {
-            if (filter instanceof SimpleFilter simpleFilter)
+            if (effectiveFilter instanceof SimpleFilter simpleFilter)
             {
                 for (var c : simpleFilter.getClauses())
                 {
@@ -373,7 +413,7 @@ public class QuerySelectView extends AbstractQueryRelation
                         qcc.setQuery(_query);
                 }
             }
-            filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
+            filterFrag = effectiveFilter.getSQLFragment(dialect, "x", columnMap);
         }
 
         SQLFragment orderBy = null;
@@ -383,7 +423,7 @@ public class QuerySelectView extends AbstractQueryRelation
             orderBy = sort.getOrderByClause(dialect, columnMap);
         }
 
-        if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
+        if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct && null == drivingTempTable)
         {
             selectFrag.append("\n").append(fromFrag);
             return selectFrag;
