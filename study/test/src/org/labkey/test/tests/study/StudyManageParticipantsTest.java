@@ -238,7 +238,9 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         setFormElement(ALIAS_SOURCE_FIELD, ALIAS_SOURCE_2);
         waitAndClick(Ext4Helper.Locators.ext4ButtonEnabled("Preview"));
         waitForElement(Locator.tag("span").containing("Preview Complete"), MERGE_SUCCESS_TIMEOUT);
-        assertElementPresent(Locator.tag("td").containing("Warning: Specimen data is not editable"));
+        waitForElementToDisappear(Locator.tag("td").withText("Loading..."));
+        if (_studyHelper.isSpecimenModulePresent())
+            assertElementPresent(Locator.tag("td").containing("Warning: Specimen data is not editable"));
         assertElementNotPresent(Locator.linkContainingText("Conflict!"));
         assertElementPresent(Locator.tag("td").containing("Aliases are not updated by this process"));
         assertElementPresent(Locator.tag("td").containing("Warning: " + PTID_WITH_ALIAS + " has existing aliases"));
