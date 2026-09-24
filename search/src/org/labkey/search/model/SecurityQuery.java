@@ -111,7 +111,7 @@ public class SecurityQuery extends Query
         {
             for (Container c : _containerIds.values())
             {
-                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> SecurityManager.streamPermissions(c, user, Set.of())
+                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> SecurityManager.getPermissions(c, user, Set.of())
                     .filter(requiredPermissions::contains)
                     .collect(Collectors.toSet()));
             }
