@@ -62,6 +62,8 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.writer.ContainerUser;
 
@@ -265,6 +267,12 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
 
     public void generateFolders(String namePrefix)
     {
+        if (!getContainer().hasPermission(_job.getUser(), AdminPermission.class))
+        {
+            _log.error("No folders generated because user lacks the proper permissions");
+            return;
+        }
+
         checkAlive(_job);
         int numFolders = _config.getNumFolders();
         if (numFolders <= 0)
@@ -294,6 +302,11 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
     public void generateSampleTypes(String namePrefix, String namingPatternPrefix) throws ExperimentException, SQLException
     {
         checkAlive(_job);
+        if (!getContainer().hasPermission(_job.getUser(), DesignSampleTypePermission.class))
+        {
+            _log.error("No custom sample types generated because the user lacks the proper permissions in this container.");
+            return;
+        }
         int numSampleTypes = _config.getNumSampleTypes();
         if (numSampleTypes <= 0) {
             _log.info("No sample types generated because {}={}", Config.NUM_SAMPLE_TYPES, numSampleTypes);
