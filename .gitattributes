@@ -4,7 +4,6 @@ announcements/module.properties -text
 announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
-announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/src/org/labkey/announcements/announcementListLinkBar.jsp -text
 announcements/src/org/labkey/announcements/AnnouncementModule.java -text
 announcements/src/org/labkey/announcements/announcementThread.jsp -text
@@ -15,8 +14,6 @@ announcements/src/org/labkey/announcements/config/AnnouncementEmailConfig.java -
 announcements/src/org/labkey/announcements/confirmDelete.jsp -text
 announcements/src/org/labkey/announcements/confirmRemoveUser.jsp -text
 announcements/src/org/labkey/announcements/customize.jsp -text
-announcements/src/org/labkey/announcements/customizeDiscussionWebPart.jsp -text
-announcements/src/org/labkey/announcements/discussionMenu.jsp -text
 announcements/src/org/labkey/announcements/emailPreferences.jsp -text
 announcements/src/org/labkey/announcements/EmailPreferencesPage.java -text
 announcements/src/org/labkey/announcements/insert.jsp -text
@@ -26,8 +23,6 @@ announcements/src/org/labkey/announcements/model/AnnouncementManager.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementModel.java -text
 announcements/src/org/labkey/announcements/model/AnnouncementType.java -text
 announcements/src/org/labkey/announcements/model/DailyDigestEmailPrefsSelector.java -text
-announcements/src/org/labkey/announcements/model/DiscussionServiceImpl.java -text
-announcements/src/org/labkey/announcements/model/DiscussionWebPartFactory.java -text
 announcements/src/org/labkey/announcements/model/EmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/IndividualEmailPrefsSelector.java -text
 announcements/src/org/labkey/announcements/model/InsertMessagePermission.java -text
@@ -51,7 +46,6 @@ announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/SendMessageAction.java -text
 announcements/src/org/labkey/announcements/update.jsp -text
-api/src/org/labkey/api/gwt/client/assay/model/GWTPropertyDescriptorMixin.java -text
 api/src/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 api/src/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 api/src/org/labkey/api/gwt/client/DefaultScaleType.java -text
@@ -246,7 +240,6 @@ api/src/org/labkey/api/attachments/AttachmentParent.java -text
 api/src/org/labkey/api/attachments/AttachmentParentType.java -text
 api/src/org/labkey/api/attachments/AttachmentParentFactory.java -text
 api/src/org/labkey/api/attachments/AttachmentService.java -text
-api/src/org/labkey/api/attachments/AttachmentType.java -text
 api/src/org/labkey/api/attachments/BaseBackgroundImageAction.java -text
 api/src/org/labkey/api/attachments/BaseDownloadAction.java -text
 api/src/org/labkey/api/attachments/ByteArrayAttachmentFile.java -text
@@ -256,7 +249,6 @@ api/src/org/labkey/api/attachments/FileAttachmentFile.java -text
 api/src/org/labkey/api/attachments/InputStreamAttachmentFile.java -text
 api/src/org/labkey/api/attachments/LookAndFeelResourceAttachmentParent.java -text
 api/src/org/labkey/api/attachments/LookAndFeelResourceType.java -text
-api/src/org/labkey/api/attachments/SecureDocumentType.java -text
 api/src/org/labkey/api/attachments/SpringAttachmentFile.java -text
 api/src/org/labkey/api/audit/AbstractAuditTypeProvider.java -text
 api/src/org/labkey/api/audit/AuditLogService.java -text
@@ -292,7 +284,6 @@ api/src/org/labkey/api/cache/CacheType.java -text
 api/src/org/labkey/api/cache/CacheWrapper.java -text
 api/src/org/labkey/api/cache/ehcache/EhCacheProvider.java -text
 api/src/org/labkey/api/cache/ehcache/EhSimpleCache.java -text
-api/src/org/labkey/api/cache/ehcache/SafeCacheManager.java -text
 api/src/org/labkey/api/cache/NoopCacheProvider.java -text
 api/src/org/labkey/api/cache/SimpleCache.java -text
 api/src/org/labkey/api/cache/Stats.java -text
@@ -357,7 +348,6 @@ api/src/org/labkey/api/data/Builder.java -text
 api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedResultSet.java -text
 api/src/org/labkey/api/data/CachedResultSetMetaData.java -text
-api/src/org/labkey/api/data/CachedResultSets.java -text
 api/src/org/labkey/api/data/ColumnRenderProperties.java -text
 api/src/org/labkey/api/data/CompareType.java -text
 api/src/org/labkey/api/data/ConditionalFormat.java -text
@@ -633,7 +623,6 @@ api/src/org/labkey/api/exp/Identifiable.java -text
 api/src/org/labkey/api/exp/IdentifiableBase.java -text
 api/src/org/labkey/api/exp/ImportTypesHelper.java -text
 api/src/org/labkey/api/exp/list/ListDefinition.java -text
-api/src/org/labkey/api/exp/list/ListImportProgress.java -text
 api/src/org/labkey/api/exp/list/ListItem.java -text
 api/src/org/labkey/api/exp/list/ListService.java -text
 api/src/org/labkey/api/exp/list/ListUrls.java -text
@@ -769,7 +758,6 @@ api/src/org/labkey/api/module/SimpleModule.java -text
 api/src/org/labkey/api/module/SimpleModuleContainerListener.java -text
 api/src/org/labkey/api/module/SimpleWebPartFactory.java -text
 api/src/org/labkey/api/module/SpringModule.java -text
-api/src/org/labkey/api/module/TomcatVersion.java -text
 api/src/org/labkey/api/notification/EmailMessage.java -text
 api/src/org/labkey/api/notification/EmailPref.java -text
 api/src/org/labkey/api/notification/EmailService.java -text
@@ -910,7 +898,6 @@ api/src/org/labkey/api/query/FieldKey.java -text
 api/src/org/labkey/api/query/FilteredTable.java -text
 api/src/org/labkey/api/query/FolderSchemaProvider.java -text
 api/src/org/labkey/api/query/InvalidKeyException.java -text
-api/src/org/labkey/api/query/InvalidNamedSetException.java -text
 api/src/org/labkey/api/query/JavaExportScriptFactory.java -text
 api/src/org/labkey/api/query/JavaExportScriptModel.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
@@ -947,7 +934,6 @@ api/src/org/labkey/api/query/QueryUpdateServiceException.java -text
 api/src/org/labkey/api/query/QueryUrls.java -text
 api/src/org/labkey/api/query/QueryView.java -text
 api/src/org/labkey/api/query/QueryWebPart.java -text
-api/src/org/labkey/api/query/QueryWrapperDynaClass.java -text
 api/src/org/labkey/api/query/ReportDataRegion.java -text
 api/src/org/labkey/api/query/RExportScriptFactory.java -text
 api/src/org/labkey/api/query/RExportScriptModel.java -text
@@ -1108,9 +1094,7 @@ api/src/org/labkey/api/security/IgnoresTermsOfUse.java -text
 api/src/org/labkey/api/security/impersonation/AbstractImpersonationContext.java -text
 api/src/org/labkey/api/security/impersonation/AbstractImpersonationContextFactory.java -text
 api/src/org/labkey/api/security/impersonation/GroupImpersonationContextFactory.java -text
-api/src/org/labkey/api/security/impersonation/ImpersonationContext.java -text
 api/src/org/labkey/api/security/impersonation/ImpersonationContextFactory.java -text
-api/src/org/labkey/api/security/impersonation/NotImpersonatingContext.java -text
 api/src/org/labkey/api/security/impersonation/RoleImpersonationContextFactory.java -text
 api/src/org/labkey/api/security/impersonation/UnauthorizedImpersonationException.java -text
 api/src/org/labkey/api/security/impersonation/UserImpersonationContextFactory.java -text
@@ -1300,7 +1284,6 @@ api/src/org/labkey/api/util/ContextListener.java -text
 api/src/org/labkey/api/util/DemoMode.java -text
 api/src/org/labkey/api/util/DisplayElementBuilder.java -text
 api/src/org/labkey/api/util/DOMUtil.java -text
-api/src/org/labkey/api/util/DotRunner.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplate.java -text
 api/src/org/labkey/api/util/emailTemplate/EmailTemplateService.java -text
 api/src/org/labkey/api/util/ErrorRenderer.java -text
@@ -1584,7 +1567,6 @@ assay/src/org/labkey/assay/actions/AssayBatchDetailsAction.java -text
 assay/src/org/labkey/assay/actions/AssayBatchesAction.java -text
 assay/src/org/labkey/assay/actions/AssayResultsAction.java -text
 assay/src/org/labkey/assay/actions/BaseProtocolAPIAction.java -text
-assay/src/org/labkey/assay/actions/DeleteAction.java -text
 assay/src/org/labkey/assay/actions/DeleteProtocolAction.java -text
 assay/src/org/labkey/assay/actions/GetAssayBatchAction.java -text
 assay/src/org/labkey/assay/actions/GetProtocolAction.java -text
@@ -1605,7 +1587,6 @@ assay/src/org/labkey/assay/pipeline/AssayImportRunTaskId.java -text
 assay/src/org/labkey/assay/plate/CurveFitFactory.java -text
 assay/src/org/labkey/assay/plate/EmptyCurveImpl.java -text
 assay/src/org/labkey/assay/plate/ParameterCurveImpl.java -text
-assay/src/org/labkey/assay/plate/PlateDataServiceImpl.java -text
 assay/src/org/labkey/assay/plate/PlateImpl.java -text
 assay/src/org/labkey/assay/plate/PlateManager.java -text
 assay/src/org/labkey/assay/plate/PlateUrls.java -text
@@ -1653,7 +1634,6 @@ audit/src/org/labkey/audit/AuditLogImpl.java -text
 audit/src/org/labkey/audit/AuditModule.java -text
 audit/src/org/labkey/audit/AuditSchema.java -text
 audit/src/org/labkey/audit/model/LogManager.java -text
-audit/src/org/labkey/audit/query/AuditLogUnionTable.java -text
 audit/src/org/labkey/audit/query/AuditLogUpdateService.java -text
 audit/src/org/labkey/audit/query/AuditQuerySchema.java -text
 audit/src/org/labkey/audit/query/AuditQueryView.java -text
@@ -1668,7 +1648,6 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -tex
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/module.properties -text
-core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
@@ -1678,12 +1657,6 @@ core/resources/schemas/dbscripts/postgresql/prop-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/test-0.00-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/test-create.sql -text
 core/resources/schemas/dbscripts/postgresql/test-drop.sql -text
-core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
-core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
-core/resources/schemas/dbscripts/sqlserver/group_concat_install_1.00.23696.sql -text
-core/resources/schemas/dbscripts/sqlserver/group_concat_uninstall.sql -text
-core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
-core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/scripts/ExtAdapter.js -text
 core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/views/ModulePropertyAdmin.html -text
@@ -1776,7 +1749,6 @@ core/src/org/labkey/core/dialect/PostgreSql94Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql95Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql96Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSqlDialectFactory.java -text
-core/src/org/labkey/core/dialect/PostgreSqlNonConformingStringHandler.java -text
 core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text
@@ -1829,7 +1801,6 @@ core/src/org/labkey/core/user/deleteUsers.jsp -text
 core/src/org/labkey/core/user/DeleteUsersBean.java -text
 core/src/org/labkey/core/user/securityAccess.jsp -text
 core/src/org/labkey/core/user/SecurityAccessView.java -text
-core/src/org/labkey/core/user/toggleInactive.jsp -text
 core/src/org/labkey/core/user/toggleShowAll.jsp -text
 core/src/org/labkey/core/view/configReportsAndScripts.jsp -text
 core/src/org/labkey/core/view/ShortURLFilter.java -text
@@ -1896,7 +1867,6 @@ experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/exp.xml -text
 experiment/src/org/labkey/experiment/api/AbstractProtocolInput.java -text
 experiment/src/org/labkey/experiment/api/AbstractRunInput.java -text
@@ -2057,7 +2027,6 @@ experiment/webapp/experiment/QCFlagToggleWindow.js -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 filecontent/module.properties -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-14.20.sql -text
-filecontent/resources/schemas/dbscripts/sqlserver/filecontent-0.00-14.20.sql -text
 filecontent/resources/schemas/filecontent.xml -text
 filecontent/src/org/labkey/filecontent/FileContentContainerListener.java -text
 filecontent/src/org/labkey/filecontent/FileContentController.java -text
@@ -2068,7 +2037,6 @@ filecontent/src/org/labkey/filecontent/FilePropertiesDomainKind.java -text
 filecontent/src/org/labkey/filecontent/FileQueryUpdateService.java -text
 filecontent/src/org/labkey/filecontent/FileRootManager.java -text
 filecontent/src/org/labkey/filecontent/FileSystemAttachmentParent.java -text
-filecontent/src/org/labkey/filecontent/FileSystemAttachmentType.java -text
 filecontent/src/org/labkey/filecontent/FileWebdavProvider.java -text
 filecontent/src/org/labkey/filecontent/FileWriter.java -text
 filecontent/src/org/labkey/filecontent/message/FileContentDigestProvider.java -text
@@ -2194,7 +2162,6 @@ mothership/src/org/labkey/mothership/ServerInstallation.java -text
 mothership/src/org/labkey/mothership/ServerSession.java -text
 mothership/src/org/labkey/mothership/SoftwareRelease.java -text
 mothership/src/org/labkey/mothership/StackTraceDisplayColumn.java -text
-mothership/src/org/labkey/mothership/view/createIssue.jsp -text
 mothership/src/org/labkey/mothership/view/linkBar.jsp -text
 mothership/test/src/org/labkey/test/tests/mothership/MothershipReportTest.java -text
 pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerConfig.java -text
@@ -2326,9 +2293,6 @@ query/src/org/labkey/query/AutoGeneratedDetailsCustomView.java -text
 query/src/org/labkey/query/AutoGeneratedInsertCustomView.java -text
 query/src/org/labkey/query/AutoGeneratedUpdateCustomView.java -text
 query/src/org/labkey/query/controllers/DeleteViewForm.java -text
-query/src/org/labkey/query/controllers/InternalNewViewForm.java -text
-query/src/org/labkey/query/controllers/InternalSourceViewForm.java -text
-query/src/org/labkey/query/controllers/InternalViewForm.java -text
 query/src/org/labkey/query/controllers/NewQueryForm.java -text
 query/src/org/labkey/query/controllers/Page.java -text
 query/src/org/labkey/query/controllers/PropertiesForm.java -text
@@ -2413,7 +2377,6 @@ query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
-query/src/org/labkey/query/reports/view/shareReport.jsp -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/IConstant.java -text
 query/src/org/labkey/query/sql/JoinType.java -text
@@ -2476,11 +2439,7 @@ query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/src/org/labkey/query/view/exportTables.jsp -text
 query/src/org/labkey/query/view/InheritedQueryDataViewProvider.java -text
-query/src/org/labkey/query/view/internalDeleteView.jsp -text
-query/src/org/labkey/query/view/internalNewView.jsp -text
-query/src/org/labkey/query/view/internalSourceView.jsp -text
 query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
-query/src/org/labkey/query/view/manageViews.jsp -text
 query/src/org/labkey/query/view/newQuery.jsp -text
 query/src/org/labkey/query/view/propertiesQuery.jsp -text
 query/src/org/labkey/query/view/QueryDataViewProvider.java -text
@@ -2547,7 +2506,6 @@ search/src/org/labkey/search/view/testJson.jsp -text
 study/module.properties -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
-study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
 study/schemas/studySecurityPolicy.xsd -text
 study/src/org/labkey/study/assay/ExperimentListenerImpl.java -text
@@ -2738,7 +2696,6 @@ study/src/org/labkey/study/view/manageStudyPropertiesExt.jsp -text
 study/src/org/labkey/study/view/manageTimepoints.jsp -text
 study/src/org/labkey/study/view/manageTypes.jsp -text
 study/src/org/labkey/study/view/manageVisits.jsp -text
-study/src/org/labkey/study/view/masterPatientProvider.jsp -text
 study/src/org/labkey/study/view/mergeParticipants.jsp -text
 study/src/org/labkey/study/view/overview.jsp -text
 study/src/org/labkey/study/view/participantAll.jsp -text
@@ -2775,7 +2732,6 @@ study/src/org/labkey/study/writer/AssayScheduleWriter.java -text
 study/src/org/labkey/study/writer/CohortWriter.java -text
 study/src/org/labkey/study/writer/DefaultStudyDesignWriter.java -text
 study/src/org/labkey/study/writer/InternalStudyWriter.java -text
-study/src/org/labkey/study/writer/OutputStreamWrapper.java -text
 study/src/org/labkey/study/writer/ParticipantCommentWriter.java -text
 study/src/org/labkey/study/writer/ParticipantGroupWriter.java -text
 study/src/org/labkey/study/writer/ProtocolDocumentWriter.java -text
@@ -2812,8 +2768,6 @@ study/test/sampledata/study/commondata/Specimens.tsv -text
 study/test/sampledata/study/commondata/TM-1.tsv -text
 study/test/sampledata/study/commondata/URF-1.tsv -text
 study/test/sampledata/study/commondata/VAC-1.tsv -text
-study/test/src/org/labkey/test/pages/AssayQueryConfig.java -text
-study/test/src/org/labkey/test/pages/DesignerController/DesignerTester.java -text
 study/test/src/org/labkey/test/tests/search/SearchSyntaxTest.java -text
 study/test/src/org/labkey/test/tests/search/SearchTest.java -text
 study/test/src/org/labkey/test/tests/study/AbstractStudyTimeKeyFieldTest.java -text
@@ -2879,35 +2833,6 @@ survey/webapp/survey/surveyDesignPanel.js -text
 survey/webapp/survey/SurveyGridQuestion.js -text
 survey/webapp/survey/SurveyPanel.js -text
 survey/webapp/survey/UsersCombo.js -text
-timeline/module.properties -text
-timeline/resources/credits/scripts.txt -text
-timeline/src/org/labkey/timeline/TimelineController.java -text
-timeline/src/org/labkey/timeline/TimelineModule.java -text
-timeline/src/org/labkey/timeline/TimelineSettings.java -text
-timeline/src/org/labkey/timeline/view/customizeTimeline.jsp -text
-timeline/src/org/labkey/timeline/view/timeline.jsp -text
-timeline/src/org/labkey/timeline/view/TimelineView.java -text
-timeline/webapp/similetimeline/ext/geochrono/scripts/geochrono.js -text
-timeline/webapp/similetimeline/ext/geochrono/scripts/units.js -text
-timeline/webapp/similetimeline/scripts/ext/japanese-eras.js -text
-timeline/webapp/similetimeline/scripts/l10n/cs/labellers.js -text
-timeline/webapp/similetimeline/scripts/l10n/cs/timeline.js -text
-timeline/webapp/similetimeline/scripts/l10n/se/labellers.js -text
-timeline/webapp/similetimeline/scripts/units.js -text
-timeline/webapp/similetimeline/scripts/util/dom.js -text
-timeline/webapp/similetimeline/scripts/util/graphics.js -text
-timeline/webapp/similetimeline/scripts/util/platform.js -text
-timeline/webapp/similetimeline/scripts/util/xmlhttp.js -text
-timeline/webapp/timeline.js -text
-timeline/webapp/timeline/loadTimeline.js -text
-timeline/webapp/timeline/Timeline.js -text
-timeline/webapp/timeline/timeline_2.3.0/CHANGES.txt -text
-timeline/webapp/timeline/timeline_2.3.0/LICENSE.txt -text
-timeline/webapp/timeline/timeline_2.3.0/timeline_ajax/styles/graphics-ie6.css -text
-timeline/webapp/timeline/timeline_2.3.0/timeline_ajax/styles/graphics.css -text
-timeline/webapp/timeline/timeline_2.3.0/timeline_js/scripts/l10n/cs/labellers.js -text
-timeline/webapp/timeline/timeline_2.3.0/timeline_js/scripts/l10n/cs/timeline.js -text
-timeline/webapp/timeline/timeline_2.3.0/timeline_js/scripts/l10n/se/labellers.js -text
 visualization/resources/views/querySummary.html -text
 visualization/resources/views/querySummary.view.xml -text
 visualization/resources/web/vis/chartWizard/baseChartWizardPanel.js -text
