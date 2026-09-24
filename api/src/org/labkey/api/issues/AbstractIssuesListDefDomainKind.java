@@ -259,7 +259,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     {
     }
 
-    public Map<String, List<Pair<String, ActionURL>>> getAdditionalDetailInfo(TableInfo tableInfo, Container container, int issueId)
+    public Map<String, List<Pair<String, ActionURL>>> getAdditionalDetailInfo(TableInfo tableInfo, int issueId)
     {
         return null;
     }
