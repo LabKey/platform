@@ -2969,6 +2969,21 @@ public class WikiController extends SpringActionController
         }
 
         @Test
+        public void testCopyWikiChecksSourceBeforeCreatingFolder() throws Exception
+        {
+            // Caller administers the destination's parent but not the source. The source check has to come first,
+            // otherwise the folder would be created and then left behind when the source check fails.
+            User limitedAdmin = createUserInRole(_dest, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+            ActionURL url = new ActionURL(CopyWikiAction.class, _dest)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", newPath);
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, limitedAdmin));
+            assertNull("The destination folder should not have been created", ContainerManager.getForPath(newPath));
+        }
+
+        @Test
         public void testCopyWikiCannotCreateProjectWithoutSiteAdmin() throws Exception
         {
             User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
