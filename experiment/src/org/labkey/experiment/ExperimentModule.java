@@ -767,27 +767,6 @@ public class ExperimentModule extends SpringModule
                         map -> (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
                 ).count());
 
-                UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
-                FilteredTable<?> table = (FilteredTable<?>) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
-
-                SQLFragment sql = new SQLFragment("SELECT COUNT(*)\n" +
-                        "                        FROM (\n" +
-                        "                                 -- updates that are marked as lineage updates\n" +
-                        "                                 (SELECT DISTINCT transactionId\n" +
-                        "                                  FROM " + table.getRealTable().getFromSQL("").getSQL() +"\n" +
-                        "                                  WHERE islineageupdate = " + schema.getSqlDialect().getBooleanTRUE() + "\n" +
-                        "                                    AND comment = 'Sample was updated.'\n" +
-                        "                                 ) a1\n" +
-                        "                                     JOIN\n" +
-                        "                                     -- but have associated entries that are not lineage updates\n" +
-                        "                                     (SELECT DISTINCT transactionid\n" +
-                        "                                      FROM " + table.getRealTable().getFromSQL("").getSQL() + "\n" +
-                        "                                      WHERE islineageupdate = " + schema.getSqlDialect().getBooleanFALSE() + ") a2\n" +
-                        "                                 ON a1.transactionid = a2.transactionid\n" +
-                        "                                 )");
-
-                results.put("sampleLineageAuditDiscrepancyCount", new SqlSelector(schema, sql.getSQL()).getObject(Long.class));
-
                 results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
                 results.put("sampleNullAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount IS NULL").getObject(Long.class));
