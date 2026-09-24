@@ -45,15 +45,15 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
 
     public void generateAssayDesigns(String namePrefix) throws ValidationException
     {
-        if (!getContainer().hasPermission(_job.getUser(), DesignAssayPermission.class))
-        {
-            _log.error("No assay designs generated because the user lacks the proper permissions in this container.");
-            return;
-        }
         int numAssayDesigns = _config.getNumAssayDesigns();
         if (numAssayDesigns <= 0)
         {
             _log.info("No assay designs generated because {}={}", Config.NUM_ASSAY_DESIGNS, numAssayDesigns);
+            return;
+        }
+        if (!getContainer().hasPermission(_job.getUser(), DesignAssayPermission.class))
+        {
+            _log.error("No assay designs generated because the user lacks the proper permissions in this container.");
             return;
         }
         checkAlive(_job);
