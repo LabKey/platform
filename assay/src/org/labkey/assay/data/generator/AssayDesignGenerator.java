@@ -53,7 +53,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         }
         if (!getContainer().hasPermission(_job.getUser(), DesignAssayPermission.class))
         {
-            _log.error("No assay designs generated because the user lacks the proper permissions in this container.");
+            _log.warn("No assay designs generated because the user lacks the proper permissions in this container.");
             return;
         }
         checkAlive(_job);

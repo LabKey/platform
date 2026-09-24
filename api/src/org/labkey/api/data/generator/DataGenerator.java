@@ -276,7 +276,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         }
         if (!getContainer().hasPermission(_job.getUser(), AdminPermission.class))
         {
-            _log.error("No folders generated because user lacks the proper permissions");
+            _log.warn("No folders generated because user lacks the proper permissions");
             return;
         }
         CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
@@ -308,7 +308,7 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         }
         if (!getContainer().hasPermission(_job.getUser(), DesignSampleTypePermission.class))
         {
-            _log.error("No custom sample types generated because the user lacks the proper permissions in this container.");
+            _log.warn("No custom sample types generated because the user lacks the proper permissions in this container.");
             return;
         }
         int minFields = _config.getMinFields();
