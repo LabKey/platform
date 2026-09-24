@@ -43,7 +43,7 @@ public class PlateStorageServiceImpl implements PlateStorageService
     @Override
     public boolean isAvailable(@NotNull Container container)
     {
-        return container.hasActiveModuleByName(AssayModule.NAME);
+        return isEnabled() && container.hasActiveModuleByName(AssayModule.NAME);
     }
 
     @Override
