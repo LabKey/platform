@@ -39,10 +39,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 6/11/13
- */
 public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
     private ExpProtocol _protocol;
@@ -53,7 +49,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         _protocol = ExperimentService.get().getExpProtocol(getContainer(), form.getProtocolId());
         if (_protocol == null)
         {
-            throw new NotFoundException();
+            throw new NotFoundException("Protocol does not exist.");
         }
         long[] objectIds;
         if (form.getId() != null)

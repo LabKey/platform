@@ -32,10 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 6/11/13
- */
 public abstract class MultiGraphAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
     @Override
@@ -46,7 +42,7 @@ public abstract class MultiGraphAction<FormType extends GraphSelectedForm> exten
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(getContainer(), form.getProtocolId());
         if (protocol == null)
         {
-            throw new NotFoundException();
+            throw new NotFoundException("Protocol does not exist.");
         }
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), ids);
