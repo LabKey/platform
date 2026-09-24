@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2026 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-plugins {
-    id 'org.labkey.build.module'
+package org.labkey.core.metrics;
+
+/** WebSocket connection counts, exported over JMX as LabKey:name=WebSockets. See GH Issue 1574. */
+public interface WebSocketMXBean
+{
+    /** @return inbound WebSocket connections the server is currently holding, guests included */
+    int getOpenConnectionCount();
+
+    /** @return connections opened since startup by signed-in users */
+    int getSuccessCount();
+
+    /** @return connection attempts that browsers have reported back as failed */
+    int getFailureCount();
 }
