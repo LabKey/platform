@@ -41,6 +41,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchema.HasContextualRoles;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -75,9 +76,9 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     {
         if (!isAllowedPermission(perm))
             return false;
-        if (_userSchema instanceof UserSchema.HasContextualRoles)
+        if (_userSchema instanceof HasContextualRoles hasRoles)
         {
-            if (!getContainer().hasPermission(user, perm, ((UserSchema.HasContextualRoles)_userSchema).getContextualRoles()))
+            if (!getContainer().hasPermission(user, perm, hasRoles.getContextualRoles()))
                 return false;
         }
         else if (!getContainer().hasPermission(user, perm))

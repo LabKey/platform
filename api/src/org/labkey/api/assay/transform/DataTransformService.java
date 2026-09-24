@@ -48,6 +48,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.security.SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID;
+
 public class DataTransformService
 {
     private static final DataTransformService _instance = new DataTransformService();
@@ -172,13 +174,14 @@ public class DataTransformService
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+                        bindings.put(ExternalScriptEngine.FAIL_ON_UNREPLACED_PARAMS, true);
 
                         Object output = engine.eval(script);
 
                         FileLike rewrittenScriptFile;
                         if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike file)
                         {
-                                rewrittenScriptFile = file;
+                            rewrittenScriptFile = file;
                         }
                         else
                         {
@@ -257,12 +260,14 @@ public class DataTransformService
             if (srcDir != null && srcDir.exists())
                 paramMap.put(SRC_DIR_REPLACEMENT, srcDir.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
         }
-        paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
-        paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
-        paramMap.put(LEGACY_SESSION_ID_REPLACEMENT, getSessionId(request, apiKey));
+        if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID))
+        {
+            paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(request, apiKey));
+            paramMap.put(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(request));
+            paramMap.put(LEGACY_SESSION_ID_REPLACEMENT, getSessionId(request, apiKey));
+        }
         paramMap.put(SecurityManager.API_KEY, apiKey);
-        paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl()
-                + AppProps.getInstance().getContextPath());
+        paramMap.put(BASE_SERVER_URL_REPLACEMENT, AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath());
         paramMap.put(CONTAINER_PATH, container == null ? null : container.getPath());
     }
 
@@ -312,6 +317,12 @@ public class DataTransformService
      */
     private String getSessionInfo(@Nullable HttpServletRequest request, String apiKey)
     {
+        if (request == null)
+        {
+            // GH Issue 1489: background/pipeline jobs have no live HTTP session, so use apikey authentication
+            // directly instead of the deprecated LabKeyTransformSessionId cookie.
+            return "labkey.setDefaults(apiKey = \"" + apiKey + "\")\n";
+        }
         return "labkey.sessionCookieName = \"" + getSessionCookieName(request) + "\"\n" +
                 "labkey.sessionCookieContents = \"" + getSessionId(request, apiKey) + "\"\n";
     }

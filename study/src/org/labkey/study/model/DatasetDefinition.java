@@ -968,7 +968,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         SecurityType securityType = getStudy().getSecurityType();
         SecurableResource securableResource = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ? getContainer() : getStudy();
 
-        Set<Class<? extends Permission>> studyPermissions = SecurityManager.streamPermissions(securableResource, user, contextualRoles)
+        Set<Class<? extends Permission>> studyPermissions = SecurityManager.getPermissions(securableResource, user, contextualRoles)
             .collect(Collectors.toSet());
 
         //need to check both the study's policy and the dataset's policy
@@ -999,7 +999,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
                     // In this case, we return all permissions, important for EHR-specific per-dataset role assignments
-                    SecurityManager.streamPermissions(this, user, contextualRoles)
+                    SecurityManager.getPermissions(this, user, contextualRoles)
                         .forEach(result::add);
                 }
             }
@@ -1022,7 +1022,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
     private void copyEditPerms(SecurableResource resource, UserPrincipal user, Set<Class<? extends Permission>> result)
     {
-        SecurityManager.streamPermissions(resource, user, Set.of())
+        SecurityManager.getPermissions(resource, user, Set.of())
             .filter(EDIT_PERMS::contains)
             .forEach(result::add);
     }

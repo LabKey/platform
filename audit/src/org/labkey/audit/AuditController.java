@@ -18,6 +18,10 @@ package org.labkey.audit;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
@@ -44,6 +48,7 @@ import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ElevatedUser;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -53,6 +58,8 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -66,10 +73,14 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static org.labkey.api.data.ContainerManager.REQUIRE_USER_COMMENTS_PROPERTY_NAME;
 
@@ -383,8 +394,7 @@ public class AuditController extends SpringActionController
         {
             AuditLogImpl.TransactionRowIds results;
             User elevatedUser = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
-            // GitHub Issue 1307: use product folder data CF
-            ContainerFilter cf = getContainer().getProductFoldersDataContainerFilter(elevatedUser);
+            ContainerFilter cf = getReadableContainerFilter(getContainer(), getUser(), elevatedUser);
             if (form.isSampleType())
                 results = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), form.isInsertOnly(), elevatedUser, getContainer(), cf);
             else
@@ -397,6 +407,31 @@ public class AuditController extends SpringActionController
 
             return response;
         }
+    }
+
+    static ContainerFilter getReadableContainerFilter(Container container, User user, User elevatedUser)
+    {
+        // GitHub Issue 1307: use product folder data CF
+        return toElevatedContainerFilter(container, container.getProductFoldersDataContainerFilter(user), elevatedUser);
+    }
+
+    /**
+     * GitHub Issue 1370: ensureCanSeeAuditLogRole() grants the role in every container, so the scope has to come from the
+     * unelevated user's read access; the elevated user only decides which of those containers expose their audit log.
+     */
+    static ContainerFilter toElevatedContainerFilter(Container container, ContainerFilter readScope, User elevatedUser)
+    {
+        Collection<GUID> readable = readScope.getIds();
+
+        // Null ids restrict nothing while an empty collection restricts everything, so this case can't fall through below
+        if (null == readable)
+            return container.getProductFoldersDataContainerFilter(elevatedUser);
+
+        List<Container> containers = readable.stream()
+                .map(ContainerManager::getForId)
+                .filter(Objects::nonNull)
+                .toList();
+        return new ContainerFilter.SimpleContainerFilterWithUser(elevatedUser, containers);
     }
 
     public static class AuditTransactionForm
@@ -580,6 +615,111 @@ public class AuditController extends SpringActionController
             if (!container.isAppHomeFolder())
                 container = container.getProject();
             return container == null ? Collections.emptyMap() : Map.of(REQUIRE_USER_COMMENTS_PROPERTY_NAME, container.getAuditCommentsRequired());
+        }
+    }
+
+    /**
+     * The elevated user decides audit-log visibility but must not decide which containers are in play, since
+     * ensureCanSeeAuditLogRole() grants the role in every container.
+     */
+    public static class ContainerScopeTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "AuditContainerScopeTest Project";
+
+        private static User _admin;
+        private static Container _project;
+        private static Container _subfolder;
+
+        @BeforeClass
+        public static void setup()
+        {
+            _admin = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, _admin);
+            _subfolder = ContainerManager.createContainer(_project, "Subfolder", _admin);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _subfolder = null;
+            _project = null;
+            _admin = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        /** The containers the audit queries actually see, scoped the way DefaultAuditTypeTable scopes them. */
+        private static Set<GUID> auditScope(ContainerFilter cf)
+        {
+            Collection<GUID> ids = ((ContainerFilter.ContainerFilterWithPermission)cf)
+                    .generateIds(_project, CanSeeAuditLogPermission.class, Set.of());
+
+            return null == ids ? null : Set.copyOf(ids);
+        }
+
+        @Test
+        public void scopeComesFromTheUnelevatedUser()
+        {
+            User stranger = new LimitedUser(_admin);
+            User elevated = ElevatedUser.ensureCanSeeAuditLogRole(_project, stranger);
+
+            assertFalse("expected the stranger to be unable to read the project", _project.hasPermission(stranger, ReadPermission.class));
+            assertTrue("expected elevation to grant the audit log permission", _project.hasPermission(elevated, CanSeeAuditLogPermission.class));
+
+            assertEquals("the elevated role must not pull back in a container the user cannot read",
+                    Set.of(), auditScope(getReadableContainerFilter(_project, stranger, elevated)));
+            assertTrue("a user who can read the project should see it",
+                    auditScope(getReadableContainerFilter(_project, _admin, _admin)).contains(_project.getEntityId()));
+        }
+
+        @Test
+        public void containersOutsideTheReadScopeAreExcluded()
+        {
+            User reader = new LimitedUser(_admin, ReaderRole.class);
+            User elevated = ElevatedUser.ensureCanSeeAuditLogRole(_project, reader);
+
+            // The subfolder is left out of the read scope even though the elevated user can see its audit log
+            assertTrue("expected elevation to reach the subfolder", _subfolder.hasPermission(elevated, CanSeeAuditLogPermission.class));
+            ContainerFilter readScope = new ContainerFilter.SimpleContainerFilterWithUser(reader, List.of(_project));
+
+            assertEquals(Set.of(_project.getEntityId()), auditScope(toElevatedContainerFilter(_project, readScope, elevated)));
+        }
+
+        @Test
+        public void auditVisibilityStillComesFromTheElevatedUser()
+        {
+            User reader = new LimitedUser(_admin, ReaderRole.class);
+            ContainerFilter readScope = new ContainerFilter.SimpleContainerFilterWithUser(reader, List.of(_project, _subfolder));
+
+            assertEquals("a reader without the audit log permission should see nothing",
+                    Set.of(), auditScope(toElevatedContainerFilter(_project, readScope, reader)));
+            assertEquals("elevation should make the whole read scope visible",
+                    Set.of(_project.getEntityId(), _subfolder.getEntityId()),
+                    auditScope(toElevatedContainerFilter(_project, readScope, ElevatedUser.ensureCanSeeAuditLogRole(_project, reader))));
+        }
+
+        @Test
+        public void unboundedReadScopeIsNotTreatedAsEmpty()
+        {
+            User reader = new LimitedUser(_admin, ReaderRole.class);
+            User elevated = ElevatedUser.ensureCanSeeAuditLogRole(_project, reader);
+
+            // A null id set means "no restriction"; collapsing it to an empty list would silently filter everything out
+            ContainerFilter unbounded = new ContainerFilter.InternalNoContainerFilter();
+            assertNull("this fixture is only interesting while its ids are null", unbounded.getIds());
+
+            assertTrue("an unbounded read scope should not filter everything out",
+                    auditScope(toElevatedContainerFilter(_project, unbounded, elevated)).contains(_project.getEntityId()));
         }
     }
 }

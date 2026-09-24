@@ -124,13 +124,13 @@ public class AssayFilesResourceProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return getPermissions(user).contains(AdminPermission.class);
+            return hasPermission(user, AdminPermission.class);
         }
 
         @Override
         public boolean canRead(User user, boolean forRead)
         {
-            return getPermissions(user).contains(ReadPermission.class);
+            return hasPermission(user, ReadPermission.class);
         }
     }
 }
