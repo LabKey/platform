@@ -83,7 +83,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.TroubleshooterRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
@@ -1745,12 +1744,6 @@ public class AttachmentServiceImpl implements AttachmentService
                 }
                 return 0;
             }
-        }
-
-		@Override
-        public Set<Class<? extends Permission>> getPermissions(User user)
-        {
-            return super.getPermissions(user);
         }
 
 		@Override
