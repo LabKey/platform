@@ -48,6 +48,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -85,6 +86,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private List<FieldKey> _storageColumns = List.of();
     private final boolean _allowInsert;
     public static final String PLATE_BARCODE_SEQUENCE = "org.labkey.assay.plate.barcode";
 
@@ -147,6 +149,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         super.addColumns();
         addColumn(createPropertiesColumn());
         addWellCountColumns();
+
+        if (InventoryService.get() != null)
+            _storageColumns = InventoryService.get().addPlateInventoryStatusColumns(this, getContainer(), getUserSchema().getUser());
     }
 
     @Override
@@ -164,7 +169,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
-        return defaultVisibleColumns;
+        // A fresh list per call: the storage columns are per-container, and handing out the static one would let a
+        // caller's edits leak across containers for the life of the process.
+        List<FieldKey> columns = new ArrayList<>(defaultVisibleColumns);
+        columns.addAll(_storageColumns);
+        return columns;
     }
 
     private MutableColumnInfo createPropertiesColumn()
@@ -354,6 +363,13 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             // disallow updates of certain columns
             preventUpdates(row, oldRow, Column.AssayType, Column.PlateSet, Column.PlateType);
 
+            if (!plate.isArchived() && row.containsKey(Column.Archived.name())
+                    && Boolean.TRUE.equals(JdbcType.BOOLEAN.convert(row.get(Column.Archived.name())))
+                    && isInStorage(plateId))
+            {
+                throw new QueryUpdateServiceException(String.format("%s is in storage and cannot be archived", plate.isTemplate() ? "Plate template" : "Plate"));
+            }
+
             // if the name is changing, check for duplicates
             if (row.containsKey(Column.Name.name()))
             {
@@ -407,6 +423,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
+            if (isInStorage(plateId))
+                throw new QueryUpdateServiceException(String.format("%s is in storage and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate"));
+
             PlateManager.get().beforePlateDelete(container, plateId);
             Map<String, Object> result = super.deleteRow(user, container, oldRowMap);
 
@@ -423,6 +442,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 if (newRow.containsKey(columnName) && ObjectUtils.notEqual(oldRow.get(columnName), newRow.get(columnName)))
                     throw new QueryUpdateServiceException(String.format("Updating \"%s\" is not allowed.", columnName));
             }
+        }
+
+        private boolean isInStorage(Integer plateId)
+        {
+            return InventoryService.get() != null && !InventoryService.get().getStoredPlateRowIds(List.of(plateId.longValue())).isEmpty();
         }
     }
 }

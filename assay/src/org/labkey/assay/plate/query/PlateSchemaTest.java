@@ -21,35 +21,45 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateStorageService;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.assay.AssayModule;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public final class PlateSchemaTest
 {
     private static Container container;
     private static User user;
     private static PlateType PLATE_TYPE_12_WELL;
+    private static boolean plateStorageFlag;
 
     @BeforeClass
     public static void setupTest()
@@ -59,6 +69,18 @@ public final class PlateSchemaTest
         container = JunitUtil.getTestContainer();
         user = TestContext.get().getUser();
 
+        Module assayModule = ModuleLoader.getInstance().getModule(AssayModule.NAME);
+        Set<Module> activeModules = container.getActiveModules();
+        if (!activeModules.contains(assayModule))
+        {
+            Set<Module> newActiveModules = new HashSet<>(activeModules);
+            newActiveModules.add(assayModule);
+            container.setActiveModules(newActiveModules);
+        }
+
+        plateStorageFlag = OptionalFeatureService.get().isFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE);
+        OptionalFeatureService.get().setFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE, true, user);
+
         PLATE_TYPE_12_WELL = PlateManager.get().getPlateType(3, 4);
         assertNotNull("12-well plate type was not found", PLATE_TYPE_12_WELL);
     }
@@ -66,6 +88,9 @@ public final class PlateSchemaTest
     @AfterClass
     public static void cleanup()
     {
+        // Restore feature flag state
+        OptionalFeatureService.get().setFeatureEnabled(PlateStorageService.EXPERIMENTAL_PLATE_STORAGE, plateStorageFlag, user);
+
         deleteTestContainer();
         container = null;
         user = null;
@@ -122,6 +147,38 @@ public final class PlateSchemaTest
             var row = plateRow(plate, PlateTable.Column.PlateType, 4);
             assertThrows(String.format("Expected attempted update of the %s column to fail.", PlateTable.Column.PlateType.name()), QueryUpdateServiceException.class, () -> updatePlate(row));
         }
+    }
+
+    @Test
+    public void testGetStoragePlates() throws Exception
+    {
+        PlateStorageService svc = PlateStorageService.get();
+        assertTrue("Plate storage is expected to be available where the assay module is active", svc.isAvailable(container));
+
+        Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
+        long rowId = plate.getRowId();
+
+        assertTrue("An empty request is expected to issue no query and return no plates", svc.getStoragePlates(List.of(), container, user).isEmpty());
+
+        // An id that resolves to no plate is simply absent, which is what callers read as "absent or unreadable"
+        var plates = svc.getStoragePlates(List.of(rowId, rowId + 100_000), container, user);
+        assertEquals("Expected only the existing plate", 1, plates.size());
+
+        var storagePlate = plates.get(rowId);
+        assertNotNull("Expected the created plate", storagePlate);
+        assertEquals("Unexpected plate name", plate.getName(), storagePlate.name());
+        assertEquals("Unexpected plate id", plate.getPlateId(), storagePlate.plateId());
+        assertEquals("Unexpected container", container.getEntityId(), storagePlate.containerId());
+        assertEquals("Unexpected plate type", PLATE_TYPE_12_WELL.getDescription(), storagePlate.plateTypeName());
+        assertFalse("Plate is not a template", storagePlate.template());
+        assertFalse("Plate is not archived", storagePlate.archived());
+        assertTrue("A plate set created alongside a plate defaults to the assay type", storagePlate.assayPlateSet());
+        assertNotNull("Expected a plate set", storagePlate.plateSetId());
+        assertNotNull("Expected a plate set name", storagePlate.plateSetName());
+
+        // The read check callers depend on: no ReadPermission, no entry -- not an unreadable projection
+        User noPermissions = new LimitedUser(user);
+        assertTrue("A user without read permission is expected to resolve no plates", svc.getStoragePlates(List.of(rowId), container, noPermissions).isEmpty());
     }
 
     @Test
