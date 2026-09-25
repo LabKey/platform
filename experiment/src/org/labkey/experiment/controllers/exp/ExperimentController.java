@@ -3939,7 +3939,7 @@ public class ExperimentController extends SpringActionController
             List<ExpRun> runs = getRuns(datas);
             ConfirmDeleteView view = new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
 
-            // GitHub Issue #1446: only proceed to ConfirmDeleteView if we have resolved all of the ids within the container context
+            // GitHub Issue #1446: show ConfirmDeleteView with a message indicating if not all of the ids resolve within the container context
             int unresolved = deleteForm.getIds(false).size() - datas.size();
             if (unresolved == 0)
                 return view;
