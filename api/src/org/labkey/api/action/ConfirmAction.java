@@ -77,7 +77,10 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
                     ModelAndView mv = getSuccessView(form);
                     if (null != mv)
                         return mv;
-                    throw new RedirectException(getSuccessURL(form));
+                    URLHelper redirect = getSuccessURL(form);
+                    if (null != redirect)
+                        throw new RedirectException(redirect);
+                    return null;
                 }
             }
             else
@@ -137,7 +140,6 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     /* Generic version of validate */
     public abstract void validateCommand(FORM form, Errors errors);
 
-    @NotNull
     public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...
