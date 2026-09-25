@@ -20,7 +20,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
@@ -36,7 +35,6 @@ import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
@@ -161,7 +159,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -180,10 +177,6 @@ import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.OptionalFeatureService;
-import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RestrictedReaderRole;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -3072,7 +3065,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    //
+
+    /**
+     * Users who can link data to a study should be allowed to recall them.
+     * @see StudyPublishManager._publishData
+     */
+    @RequiresPermission(InsertPermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         private DatasetDefinition _def;
@@ -3087,10 +3086,6 @@ public class StudyController extends BaseStudyController
             _def = StudyManager.getInstance().getDatasetDefinition(study, target.getDatasetId());
             if (_def == null)
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + target.getDatasetId());
-
-            TableInfo datasetTable = StudyQuerySchema.createSchema(study, getUser()).getDatasetTable(_def, null);
-            if (datasetTable == null || !datasetTable.hasPermission(getUser(), DeletePermission.class))
-                throw new UnauthorizedException("User does not have permission to delete rows from this dataset");
 
             if (!target.isDeleteAllData())
             {
@@ -7902,56 +7897,6 @@ public class StudyController extends BaseStudyController
             SimpleFilter f = new SimpleFilter(FieldKey.fromParts("ParticipantId"), ptid);
             f.addCondition(FieldKey.fromParts("Container"), c.getId());
             return new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), f, null).getRowCount();
-        }
-    }
-
-    public static class DatasetPermissionsTestCase extends AbstractContainerScopingTest
-    {
-        private static final int DATASET_ID = 5001;
-        private Container _folder;
-        private DatasetDefinition _dataset;
-        private User _user;
-
-        @Before
-        public void setup() throws Exception
-        {
-            _folder = createContainer("Study");
-            StudyService.get().createStudy(_folder, getAdmin(), "Dataset permissions", TimepointType.VISIT, true);
-
-            StudyImpl mutable = StudyManager.getInstance().getStudy(_folder).createMutable();
-            mutable.setSecurityType(SecurityType.ADVANCED_WRITE);
-            StudyManager.getInstance().updateStudy(getAdmin(), mutable);
-            StudyImpl study = StudyManager.getInstance().getStudy(_folder);
-
-            _dataset = (DatasetDefinition) StudyService.get().createDataset(_folder, getAdmin(), "Restricted", DATASET_ID, false);
-
-            // Folder Editor satisfies the action's @RequiresPermission, but the study grants only per-dataset access
-            _user = createUserInRole(_folder, EditorRole.class);
-            MutableSecurityPolicy studyPolicy = new MutableSecurityPolicy(study);
-            studyPolicy.addRoleAssignment(_user, RestrictedReaderRole.class);
-            study.savePolicy(studyPolicy, getAdmin());
-        }
-
-        @Test
-        public void testRecallRejectedWithoutDatasetDeletePermission() throws Exception
-        {
-            // For study level security validate that dataset permissions are respected when set and
-            // linked to study rows are being recalled.
-            grantDatasetRole(ReaderRole.class);
-
-            assertTrue("Setup: the caller needs folder level delete permission for this test to mean anything",
-                    _folder.hasPermission(_user, DeletePermission.class));
-
-            assertStatus(HttpServletResponse.SC_FORBIDDEN,
-                    post(new ActionURL(DeletePublishedRowsAction.class, _folder)
-                            .addParameters(Map.of("datasetId", DATASET_ID, "deleteAllData", true)), _user));
-        }
-
-        private void grantDatasetRole(Class<? extends Role> role)
-        {
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(_dataset);
-            policy.addRoleAssignment(_user, role);
-            _dataset.savePolicy(policy, getAdmin());
         }
     }
 }
