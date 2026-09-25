@@ -176,7 +176,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun getExpRun(long rowId);
 
     @Nullable
-    ExpRun getExpRun(long rowId, @Nullable Container container);
+    ExpRun getExpRun(@NotNull Container container, long rowId);
 
     List<? extends ExpRun> getExpRuns(Collection<Long> rowIds);
 
@@ -230,6 +230,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExpData getExpData(long rowId);
+
+    @Nullable
+    ExpData getExpData(@NotNull Container container, long rowId);
 
     @Nullable
     ExpData getExpData(String lsid);
@@ -458,6 +461,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     @Nullable ExpProtocol getExpProtocol(long rowId);
+
+    @Nullable ExpProtocol getExpProtocol(@NotNull Container container, long rowId);
 
     @Nullable ExpProtocol getExpProtocol(String lsid);
 
