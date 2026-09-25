@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2026 LabKey Corporation
+ * Copyright (c) 2026 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.devtools;
+package org.labkey.core.metrics;
 
-import jakarta.websocket.OnMessage;
-import jakarta.websocket.server.ServerEndpoint;
-
-@ServerEndpoint("/org.labkey.devtools.EchoEndpoint")
-public class EchoEndpoint
+/** WebSocket connection counts, exported over JMX as LabKey:name=WebSockets. See GH Issue 1574. */
+public interface WebSocketMXBean
 {
-    @OnMessage(maxMessageSize = 10240)
-    public String handleTextMessage(String message)
-    {
-        return message;
-    }
+    /** @return inbound WebSocket connections the server is currently holding, guests included */
+    int getOpenConnectionCount();
 
-    @OnMessage(maxMessageSize = 1024000)
-    public byte[] handleBinaryMessage(byte[] buffer)
-    {
-        return buffer;
-    }
+    /** @return connections opened since startup by signed-in users */
+    int getSuccessCount();
+
+    /** @return connection attempts that browsers have reported back as failed */
+    int getFailureCount();
 }

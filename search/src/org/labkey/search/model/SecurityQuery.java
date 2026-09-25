@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -110,11 +111,9 @@ public class SecurityQuery extends Query
         {
             for (Container c : _containerIds.values())
             {
-                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> {
-                    Set<Class<? extends Permission>> permitted = new HashSet<>(requiredPermissions);
-                    permitted.retainAll(SecurityManager.getPermissions(c, user, null));
-                    return permitted;
-                });
+                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> SecurityManager.getPermissions(c, user, Set.of())
+                    .filter(requiredPermissions::contains)
+                    .collect(Collectors.toSet()));
             }
         }
 

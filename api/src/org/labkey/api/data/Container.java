@@ -497,17 +497,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), Set.of());
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(logMsg, this, user, Set.of(perm), Set.of());
     }
 
-    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(logMsg, this, user, Set.of(perm), contextualRoles);
     }
 
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return SecurityManager.hasAllPermissions(null, this, user, Set.of(perm), contextualRoles);
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(null, this, user, Set.of(perm), contextualRoles);
     }
 
     public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions)
@@ -515,7 +518,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAllPermissions(null, this, user, permissions, Set.of());
     }
 
-    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @Nullable Set<Role> contextualRoles)
+    public boolean hasPermissions(@NotNull UserPrincipal user, @NotNull Set<Class<? extends Permission>> permissions, @NotNull Set<Role> contextualRoles)
     {
         return SecurityManager.hasAllPermissions(null, this, user, permissions, contextualRoles);
     }
@@ -531,7 +534,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return SecurityManager.hasAnyPermissions(null, this, user, new HashSet<>(Arrays.asList(perms)), Set.of());
     }
 
-    public boolean isForbiddenProject(User user, Set<Role> contextualRoles)
+    public boolean isForbiddenProject(User user, @NotNull Set<Role> contextualRoles)
     {
         return handleForbiddenProject(user, contextualRoles, false);
     }
@@ -541,7 +544,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         handleForbiddenProject(user, Set.of(), true);
     }
 
-    private boolean handleForbiddenProject(User user, Set<Role> contextualRoles, boolean shouldThrow)
+    private boolean handleForbiddenProject(User user, @NotNull Set<Role> contextualRoles, boolean shouldThrow)
     {
         if (null != user && !user.isSearchUser())
         {

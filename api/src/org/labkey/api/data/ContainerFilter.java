@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -163,17 +164,23 @@ public abstract class ContainerFilter
     }
 
     /** Create a FilterClause that restricts based on the containers that meet the filter */
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn)
+    public FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn)
     {
         return new ContainerClause(schema, containerFilterColumn, this);
     }
 
     /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission, Set<Role> contextualRoles)
+    public FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission)
+    {
+        return new ContainerClause(schema, containerFilterColumn, this, permission, Set.of());
+    }
+
+    /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
+    @Deprecated // TODO: only one use, which we should refactor away. GH Issue 1353
+    public FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
     {
         return new ContainerClause(schema, containerFilterColumn, this, permission, contextualRoles);
     }
-
 
     /** Create an expression for a WHERE clause */
     public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Map<FieldKey, ? extends ColumnInfo> columnMap)
@@ -542,29 +549,29 @@ public abstract class ContainerFilter
             return getDefaultCacheKey(_container, _user);
         }
 
-        public final SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Class<? extends Permission> permission, Set<Role> roles)
+        public final SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
-            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), permission, roles, true);
+            return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), permission, contextualRoles, true);
         }
 
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles, boolean allowNulls)
         {
             SecurityLogger.indent("ContainerFilter");
             Collection<GUID> ids;
-            if (permission == ReadPermission.class && null == roles)
+            if (permission == ReadPermission.class && contextualRoles.isEmpty())
                 ids = getIds();
             else
-                 ids = generateIds(_container, permission, roles);
+                ids = generateIds(_container, permission, contextualRoles);
             SecurityLogger.outdent();
             return getSQLFragment(schema, _container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
         /** return null means return all rows (1=1), empty collection means return no rows (1=0) */
         @Nullable
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
             Set<GUID> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, permission, roles))
+            if (currentContainer.hasPermission(_user, permission, contextualRoles))
             {
                 result.add(currentContainer.getEntityId());
             }
@@ -579,7 +586,7 @@ public abstract class ContainerFilter
         public final Collection<GUID> getIds()
         {
             if (null == _cached)
-                _cached = generateIds(_container, ReadPermission.class, null);
+                _cached = generateIds(_container, ReadPermission.class, Set.of());
             return _cached;
         }
 
@@ -643,13 +650,13 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
             Set<GUID> result;
             result = _ids.stream()
                 .map(ContainerManager::getForId)
                 .filter(Objects::nonNull)
-                .filter(c -> c.hasPermission(_user, permission, roles))
+                .filter(c -> c.hasPermission(_user, permission, contextualRoles))
                 .map(Container::getEntityId)
                 .collect(Collectors.toSet());
             return result;
@@ -688,16 +695,16 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
+            if (currentContainer.hasPermission(_user, perm, contextualRoles))
                 containers.add(currentContainer);
             for (Container extraContainer : _extraContainers)
             {
-                if (extraContainer.hasPermission(_user, perm, roles))
+                if (extraContainer.hasPermission(_user, perm, contextualRoles))
                 {
                     containers.add(extraContainer);
                 }
@@ -720,19 +727,19 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
-            for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, roles))
+            for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, contextualRoles))
             {
-                if (c.isInFolderNav() && c.hasPermission(_user, perm, roles))
+                if (c.isInFolderNav() && c.hasPermission(_user, perm, contextualRoles))
                 {
                     containers.add(c);
                 }
             }
-            if (currentContainer.hasPermission(_user, perm, roles))
+            if (currentContainer.hasPermission(_user, perm, contextualRoles))
                 containers.add(currentContainer);
             return toIds(containers);
         }
@@ -752,20 +759,20 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
+        public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles, boolean allowNulls)
         {
             if (_user.hasRootAdminPermission() && _container.isRoot())
                 return new SQLFragment("1 = 1");
-            return super.getSQLFragment(schema, containerColumnSQL, permission, roles, allowNulls);
+            return super.getSQLFragment(schema, containerColumnSQL, permission, contextualRoles, allowNulls);
         }
 
         @Override
-        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
-            List<Container> containers = new ArrayList<>(removeDuplicatedContainers(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
-            if (currentContainer.hasPermission(_user, perm, roles))
+            List<Container> containers = new ArrayList<>(removeDuplicatedContainers(ContainerManager.getAllChildren(currentContainer, _user, perm, contextualRoles)));
+            if (currentContainer.hasPermission(_user, perm, contextualRoles))
                 containers.add(currentContainer);
             return toIds(containers);
         }
@@ -786,21 +793,21 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
-            Set<Container> containers = getContainers(currentContainer, perm, roles);
+            Set<Container> containers = getContainers(currentContainer, perm, contextualRoles);
             return toIds(containers);
         }
 
-        private @NotNull Set<Container> getContainers(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        private @NotNull Set<Container> getContainers(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
+            if (currentContainer.hasPermission(_user, perm, contextualRoles))
                 containers.add(currentContainer);
             Container project = currentContainer.getProject();
-            if (project != null && project.hasPermission(_user, perm, roles))
+            if (project != null && project.hasPermission(_user, perm, contextualRoles))
             {
                 containers.add(project);
             }
@@ -822,14 +829,14 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = new HashSet<>();
             do
             {
-                if (currentContainer.hasPermission(_user, perm, roles))
+                if (currentContainer.hasPermission(_user, perm, contextualRoles))
                 {
                     containers.add(currentContainer);
                 }
@@ -854,13 +861,13 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.protocol);
             return containers.stream()
-                    .filter(container -> container.hasPermission(_user, perm, roles))
+                    .filter(container -> container.hasPermission(_user, perm, contextualRoles))
                     .map(Container::getEntityId)
                     .collect(Collectors.toList());
         }
@@ -880,16 +887,16 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
-            if (currentContainer.hasPermission(_user, perm, roles))
+            if (currentContainer.hasPermission(_user, perm, contextualRoles))
             {
                 result.add(currentContainer.getEntityId());
             }
-            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm, roles))
+            if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm, contextualRoles))
             {
                 result.add(currentContainer.getParent().getEntityId());
             }
@@ -920,7 +927,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
@@ -928,12 +935,12 @@ public abstract class ContainerFilter
 
             if (_includedChildTypes.contains(currentContainer.getType()))
             {
-                if (currentContainer.getParent().hasPermission(_user, perm, roles))
+                if (currentContainer.getParent().hasPermission(_user, perm, contextualRoles))
                     result.add(currentContainer.getParent().getEntityId());
             }
             else
             {
-                if (currentContainer.hasPermission(_user, perm, roles))
+                if (currentContainer.hasPermission(_user, perm, contextualRoles))
                     result.add(currentContainer.getEntityId());
             }
 
@@ -969,13 +976,13 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
 
-            if (currentContainer.isRoot() && currentContainer.hasPermission(_user, perm, roles))
+            if (currentContainer.isRoot() && currentContainer.hasPermission(_user, perm, contextualRoles))
                 result.add(currentContainer.getEntityId());  //if not root, we will add the current container below
 
             Container parent = currentContainer.getParent();
@@ -983,7 +990,7 @@ public abstract class ContainerFilter
             {
                 for(Container c : parent.getChildren())
                 {
-                    if (c.hasPermission(_user, perm, roles))
+                    if (c.hasPermission(_user, perm, contextualRoles))
                     {
                         result.add(c.getEntityId());
                     }
@@ -1017,12 +1024,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
             Set<GUID> result = new HashSet<>();
-            if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm, roles))
+            if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm, contextualRoles))
             {
                 result.add(currentContainer.getEntityId());
             }
@@ -1045,10 +1052,10 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
             Container project = currentContainer.getProject();
-            if (null == project || !project.hasPermission(_user, permission, roles))
+            if (null == project || !project.hasPermission(_user, permission, contextualRoles))
                 return Collections.emptyList();
             return Collections.singleton(project.getEntityId());
         }
@@ -1069,11 +1076,11 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
-            Set<Container> containers = new CurrentPlusProject(_container, _user).getContainers(currentContainer, perm, roles);
+            Set<Container> containers = new CurrentPlusProject(_container, _user).getContainers(currentContainer, perm, contextualRoles);
             Container shared = ContainerManager.getSharedContainer();
-            if (shared.hasPermission(_user, perm, roles))
+            if (shared.hasPermission(_user, perm, contextualRoles))
             {
                 containers.add(shared);
             }
@@ -1096,12 +1103,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
-            var containers = super.generateIds(currentContainer, perm, roles);
+            var containers = super.generateIds(currentContainer, perm, contextualRoles);
             var shared = ContainerManager.getSharedContainer();
 
-            if (shared.hasPermission(_user, perm, roles))
+            if (shared.hasPermission(_user, perm, contextualRoles))
                 containers.add(shared.getEntityId());
 
             return containers;
@@ -1123,7 +1130,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             assert _container.equals(currentContainer);
 
@@ -1133,8 +1140,8 @@ public abstract class ContainerFilter
                 // Don't allow anything
                 return Collections.emptySet();
             }
-            Set<Container> containers = new HashSet<>(removeDuplicatedContainers(ContainerManager.getAllChildren(project, _user, perm, roles)));
-            if (project.hasPermission(_user, perm, roles))
+            Set<Container> containers = new HashSet<>(removeDuplicatedContainers(ContainerManager.getAllChildren(project, _user, perm, contextualRoles)));
+            if (project.hasPermission(_user, perm, contextualRoles))
                 containers.add(project);
             return toIds(containers);
         }
@@ -1154,12 +1161,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public @NotNull Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
-            Collection<GUID> containers = super.generateIds(currentContainer, perm, roles);
+            Collection<GUID> containers = super.generateIds(currentContainer, perm, contextualRoles);
             var shared = ContainerManager.getSharedContainer();
 
-            if (shared.hasPermission(_user, perm, roles))
+            if (shared.hasPermission(_user, perm, contextualRoles))
                 containers.add(shared.getEntityId());
 
             return containers;
@@ -1180,19 +1187,19 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
         {
             if (_user.hasRootAdminPermission())
             {
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm, roles);
+            List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm, contextualRoles);
             Set<GUID> ids = containers.stream()
                 .filter(c -> !c.isDuplicatedInContainerFilter())
                 .map(Container::getEntityId)
                 .collect(Collectors.toSet());
-            if (ContainerManager.getRoot().hasPermission(_user, perm, roles))
+            if (ContainerManager.getRoot().hasPermission(_user, perm, contextualRoles))
             {
                 ids.add(ContainerManager.getRoot().getEntityId());
             }
@@ -1229,9 +1236,9 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
-            return _cf.generateIds(currentContainer, permission, roles);
+            return _cf.generateIds(currentContainer, permission, contextualRoles);
         }
 
         public @NotNull ContainerFilter getContainerFilterForLookups(Container container, User user)
@@ -1294,34 +1301,31 @@ public abstract class ContainerFilter
 
     public static @NotNull Set<GUID> toIds(Collection<Container> containers)
     {
-        Set<GUID> ids = new HashSet<>();
-        for (Container container : containers)
-        {
-            ids.add(container.getEntityId());
-        }
-        return ids;
+        return containers.stream()
+            .map(Container::getEntityId)
+            .collect(Collectors.toSet());
     }
 
-    public static class ContainerClause extends SimpleFilter.FilterClause
+    public static class ContainerClause extends FilterClause
     {
         private final DbSchema _schema;
         private final FieldKey _fieldKey;
         private final ContainerFilter _filter;
         private final Class<? extends Permission> _permission;
-        private final Set<Role> _roles;
+        private final @NotNull Set<Role> _contextualRoles;
 
         public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter)
         {
-            this(schema, fieldKey, filter, null, null);
+            this(schema, fieldKey, filter, null, Set.of());
         }
 
-        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, Class<? extends Permission> permission, Set<Role> roles)
+        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, @Nullable Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
         {
             _schema = schema;
             _fieldKey = fieldKey;
             _filter = filter;
-            _permission = (permission != null) ? permission : ReadPermission.class;
-            _roles = roles;
+            _permission = permission != null ? permission : ReadPermission.class;
+            _contextualRoles = contextualRoles;
         }
 
         @Override
@@ -1341,7 +1345,7 @@ public abstract class ContainerFilter
         {
             if (_filter instanceof ContainerFilterWithPermission filter)
             {
-                return filter.getSQLFragment(_schema, _fieldKey, _permission, _roles);
+                return filter.getSQLFragment(_schema, _fieldKey, _permission, _contextualRoles);
             }
             return _filter.getSQLFragment(_schema, _fieldKey, columnMap);
         }
