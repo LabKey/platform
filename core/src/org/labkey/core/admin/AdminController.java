@@ -138,6 +138,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -510,6 +511,7 @@ public class AdminController extends SpringActionController
         {
             AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+            AdminConsole.addLink(Diagnostics, "postgres snapshot", new ActionURL(PostgresSnapshotAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
         }
 
@@ -2734,6 +2736,57 @@ public class AdminController extends SpringActionController
         public PostgresTableSizesAction()
         {
             super(BasePostgreSqlDialect.POSTGRES_TABLE_SIZES_TABLE_NAME);
+        }
+    }
+
+    private static void validatePostgresSnapshotRequest(Container c)
+    {
+        if (!c.isRoot())
+            throw new NotFoundException("Available only in the root container");
+
+        if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            throw new NotFoundException("Available only with Postgres as the primary database");
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class PostgresSnapshotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String warning = switch (PostgresSnapshot.getStatementsStatus())
+            {
+                case AVAILABLE -> null;
+                case NOT_INSTALLED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;";
+                case NOT_LOADED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is installed but its library is not loaded. To load it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, then restart Postgres.";
+            };
+
+            return new HtmlView(DIV(
+                null == warning ? null : DIV(cl("labkey-warning-messages"), warning),
+                P("Captures Postgres configuration and cumulative statistics as a JSON file. Comparing a snapshot taken before a workload against one taken after it shows the work the database actually did and can be useful for evaluating bottlenecks and optimizing resources."),
+                PageFlowUtil.button("Download Snapshot").href(new ActionURL(DownloadPostgresSnapshotAction.class, getContainer())).getHtmlString()
+            ));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Postgres Snapshot", this.getClass(), getContainer());
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class DownloadPostgresSnapshotAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String filename = FileUtil.makeFileNameWithTimestamp("pg-snapshot", "json");
+            PageFlowUtil.streamFileBytes(response, filename, PostgresSnapshot.capture().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
         }
     }
 
