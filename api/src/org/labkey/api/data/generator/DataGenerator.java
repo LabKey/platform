@@ -62,6 +62,8 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.writer.ContainerUser;
 
@@ -272,6 +274,11 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
             _log.info("No folders generated because {}={}", Config.NUM_FOLDERS, numFolders);
             return;
         }
+        if (!getContainer().hasPermission(_job.getUser(), AdminPermission.class))
+        {
+            _log.warn("No folders generated because user lacks the proper permissions");
+            return;
+        }
         CPUTimer timer = addTimer(String.format("%d sub-folders", numFolders));
         timer.start();
         Set<String> currentChildren = new CaseInsensitiveHashSet(ContainerManager.getChildren(getContainer()).stream().map(Container::getName).collect(Collectors.toSet()));
@@ -297,6 +304,11 @@ public class DataGenerator<T extends DataGenerator.Config> implements ContainerU
         int numSampleTypes = _config.getNumSampleTypes();
         if (numSampleTypes <= 0) {
             _log.info("No sample types generated because {}={}", Config.NUM_SAMPLE_TYPES, numSampleTypes);
+            return;
+        }
+        if (!getContainer().hasPermission(_job.getUser(), DesignSampleTypePermission.class))
+        {
+            _log.warn("No custom sample types generated because the user lacks the proper permissions in this container.");
             return;
         }
         int minFields = _config.getMinFields();
