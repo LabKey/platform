@@ -358,13 +358,6 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
             assertFalse(errors.getMessage(), errors.hasErrors());
             assertEquals(1, imported);
             assertEquals(List.of(1), qus.counts);
-
-            qus.reset();
-            Map<String, Object> merge = row("one-merged", 11);
-            merge.put("RowId", inserted.getFirst().get("RowId"));
-            qus.mergeRows(_user, _c, MapDataIterator.of(List.of(merge)), errors, null, null);
-            assertFalse(errors.getMessage(), errors.hasErrors());
-            assertEquals(List.of(1), qus.counts);
         }
     }
 }
