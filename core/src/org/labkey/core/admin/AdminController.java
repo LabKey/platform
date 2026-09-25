@@ -138,6 +138,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -339,7 +340,6 @@ import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.query.CoreQuerySchema;
-import org.labkey.core.query.PostgresSnapshot;
 import org.labkey.core.query.PostgresUserSchema;
 import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.security.AllowedExternalResourceHosts;
@@ -511,7 +511,7 @@ public class AdminController extends SpringActionController
         {
             AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
-            AdminConsole.addLink(Diagnostics, "postgres snapshot (download)", new ActionURL(PostgresSnapshotAction.class, root));
+            AdminConsole.addLink(Diagnostics, "postgres snapshot", new ActionURL(PostgresSnapshotAction.class, root));
             AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
         }
 
@@ -2739,17 +2739,46 @@ public class AdminController extends SpringActionController
         }
     }
 
+    private static void validatePostgresSnapshotRequest(Container c)
+    {
+        if (!c.isRoot())
+            throw new NotFoundException("Available only in the root container");
+
+        if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            throw new NotFoundException("Available only with Postgres as the primary database");
+    }
+
     @RequiresPermission(TroubleshooterPermission.class)
-    public static class PostgresSnapshotAction extends ExportAction<Object>
+    public static class PostgresSnapshotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            if (!PostgresSnapshot.isStatementsExtensionInstalled())
+                return HtmlView.err("Snapshots require the pg_stat_statements extension, which is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;");
+
+            return new HtmlView(DIV(
+                P("Captures Postgres configuration and cumulative statistics as a JSON file. Comparing a snapshot taken before a workload against one taken after it shows the work the database actually did and can be useful for evaluating bottlenecks and optimizing resources."),
+                PageFlowUtil.button("Download Snapshot").href(new ActionURL(DownloadPostgresSnapshotAction.class, getContainer())).getHtmlString()
+            ));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Postgres Snapshot", this.getClass(), getContainer());
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class DownloadPostgresSnapshotAction extends ExportAction<Object>
     {
         @Override
         public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
         {
-            if (!getContainer().isRoot())
-                throw new NotFoundException("Available only in the root container");
-
-            if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
-                throw new NotFoundException("Available only with Postgres as the primary database");
+            validatePostgresSnapshotRequest(getContainer());
 
             String filename = FileUtil.makeFileNameWithTimestamp("pg-snapshot", "json");
             PageFlowUtil.streamFileBytes(response, filename, PostgresSnapshot.capture().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);

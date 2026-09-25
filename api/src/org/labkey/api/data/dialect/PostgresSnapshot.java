@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core.query;
+package org.labkey.api.data.dialect;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +51,7 @@ public class PostgresSnapshot
                     ))
                     FROM pg_settings
                 ),
+                'statementsExtensionInstalled', %s,
                 'statements', (%s)
             )::text""";
 
@@ -61,6 +62,7 @@ public class PostgresSnapshot
             WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
               AND queryid IS NOT NULL""";
 
+    // statementsExtensionInstalled distinguishes this empty result from an installed extension that has recorded nothing
     private static final String NO_STATEMENTS_SQL = "SELECT '{}'::json";
 
     public static @NotNull String capture()
@@ -69,7 +71,13 @@ public class PostgresSnapshot
         String view = resolveStatementsView(schema);
         String statementsSql = null != view ? STATEMENTS_SQL.formatted(view) : NO_STATEMENTS_SQL;
 
-        return new SqlSelector(schema, SNAPSHOT_SQL.formatted(statementsSql)).getObject(String.class);
+        return new SqlSelector(schema, SNAPSHOT_SQL.formatted(null != view, statementsSql)).getObject(String.class);
+    }
+
+    /** Per-query statistics come from pg_stat_statements; snapshots are far less useful without it. */
+    public static boolean isStatementsExtensionInstalled()
+    {
+        return null != resolveStatementsView(CoreSchema.getInstance().getSchema());
     }
 
     /**
