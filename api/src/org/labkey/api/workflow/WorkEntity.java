@@ -40,9 +40,22 @@ public class WorkEntity
 
     public enum EntityType
     {
-        Sample,
-        Source,
-        Plate,
+        Sample("samples"),
+        Source("sources"),
+        Plate("plates"),
+        ;
+
+        private final String _nounPlural;
+
+        EntityType(String nounPlural)
+        {
+            this._nounPlural = nounPlural;
+        }
+
+        public String getNounPlural()
+        {
+            return _nounPlural;
+        }
     }
 
     protected Long _rowId;
