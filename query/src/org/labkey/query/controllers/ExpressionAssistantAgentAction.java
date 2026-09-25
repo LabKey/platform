@@ -71,6 +71,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     {
         try (var _ = McpContext.withContext(getViewContext()))
         {
+            McpContext.get().put(McpContext.AGENT_NAME_ATTR, getAgentName());
+
             boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
             String composedPrompt = composePrompt(firstTurn, prompt, form.getField(), form.getDomainFields(), form.getFieldExpression(), form.getFieldError());
