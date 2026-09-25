@@ -75,6 +75,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -935,29 +936,53 @@ public class WikiController extends SpringActionController
         return cSource;
     }
 
-    private Container getDestContainer(String destContainer, String path, BindException errors)
+    private static final String DEST_NOT_FOUND_MESSAGE = "No destination container found, or you do not have permission to copy to it.";
+
+    // Returns the destination folder, creating it if it doesn't exist yet. The user must be an admin of the folder,
+    // or, if it's going to be created, an admin of the closest folder above it that already exists.
+    private @NotNull Container getDestContainer(String destContainer, String path, BindException errors)
     {
         if (destContainer == null)
-        {
             destContainer = path;
-            if (destContainer == null)
-                return null;
-        }
+        if (destContainer == null)
+            throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
 
         Container c = ContainerManager.getForPath(destContainer);
 
-        // Check for existence ourselves so we know whether to set the folder type or not
-        if (null == c)
+        if (null != c)
         {
-            // Ensure the destination container and set collaboration folder type, #30597
-            c = ContainerManager.ensureContainer(destContainer, User.getAdminServiceUser());
-            FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
-
-            if (null != collaboration)
-                ContainerManager.setFolderType(c, collaboration, getUser(), errors);
+            if (!c.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
+            return c;
         }
 
+        // Check permission before creating anything. Admin on the root means site or application admin, so only
+        // they can create a new top-level project this way.
+        Container ancestor = getNearestExistingAncestor(Path.parse(destContainer));
+        if (!ancestor.hasPermission(getUser(), AdminPermission.class))
+            throw new NotFoundException(DEST_NOT_FOUND_MESSAGE);
+
+        // Create the folder as the user and make it a Collaboration folder, #30597. Only a newly created folder gets
+        // this folder type; an existing one keeps its own, which is why we looked it up first.
+        c = ContainerManager.ensureContainer(destContainer, getUser());
+        FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
+
+        if (null != collaboration)
+            ContainerManager.setFolderType(c, collaboration, getUser(), errors);
+
         return c;
+    }
+
+    // Walks up the path and returns the first folder that exists, falling back to the root
+    private static @NotNull Container getNearestExistingAncestor(Path path)
+    {
+        for (Path p = path.getParent(); p != null && !p.isEmpty(); p = p.getParent())
+        {
+            Container c = ContainerManager.getForPath(p);
+            if (null != c)
+                return c;
+        }
+        return ContainerManager.getRoot();
     }
 
     private void displayWikiModuleInDestContainer(Container cDest)
@@ -994,18 +1019,16 @@ public class WikiController extends SpringActionController
         {
             //user must have admin perms on both source and destination container
 
-            //Get source container. Handle both post and get cases.
+            // Check the source first, since getting the destination may create folders
             Container cSrc = getSourceContainer(form.getSourceContainer());
-            //Get destination container. Handle both post and get cases.
+            if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
+                throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
+
+            // Checks destination permissions and creates the folder if needed
             _cDest = getDestContainer(form.getDestContainer(), form.getPath(), errors);
 
             if (errors.hasErrors())
                 return false;
-
-            if (cSrc == null || !cSrc.hasPermission(getUser(), AdminPermission.class))
-                throw new NotFoundException("No source container found, or you do not have permission to copy from it.");
-            if (_cDest == null || !_cDest.hasPermission(getUser(), AdminPermission.class))
-                throw new NotFoundException("No destination container found, or you do not have permission to copy to it.");
 
             if (cSrc.equals(_cDest))
             {
@@ -2932,6 +2955,73 @@ public class WikiController extends SpringActionController
 
             assertStatus(HttpServletResponse.SC_FOUND, post(url, getAdmin()));
             assertFalse("An admin copy across both folders should have copied the wiki page", WikiSelectManager.getPageNames(_dest).isEmpty());
+        }
+
+        @Test
+        public void testCopyWikiCannotCreateFolderWithoutParentAdmin() throws Exception
+        {
+            // Caller administers the source only, so must not be able to create a folder under the destination
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(copyUrl(newPath), limitedAdmin));
+            assertNull("The destination folder should not have been created", ContainerManager.getForPath(newPath));
+        }
+
+        @Test
+        public void testCopyWikiChecksSourceBeforeCreatingFolder() throws Exception
+        {
+            // Caller administers the destination's parent but not the source. The source check has to come first,
+            // otherwise the folder would be created and then left behind when the source check fails.
+            User limitedAdmin = createUserInRole(_dest, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+            ActionURL url = new ActionURL(CopyWikiAction.class, _dest)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", newPath);
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(url, limitedAdmin));
+            assertNull("The destination folder should not have been created", ContainerManager.getForPath(newPath));
+        }
+
+        @Test
+        public void testCopyWikiCannotCreateProjectWithoutSiteAdmin() throws Exception
+        {
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            String newPath = "/" + getClass().getName().replaceAll("[^A-Za-z0-9]", "_") + "-NewProject";
+
+            try
+            {
+                assertStatus(HttpServletResponse.SC_NOT_FOUND, post(copyUrl(newPath), limitedAdmin));
+                assertNull("A new top-level project should not have been created", ContainerManager.getForPath(newPath));
+            }
+            finally
+            {
+                Container leftover = ContainerManager.getForPath(newPath);
+                if (leftover != null)
+                    ContainerManager.deleteAll(leftover, getAdmin());
+            }
+        }
+
+        @Test
+        public void testCopyWikiCreatesFolderUnderAdministeredParent() throws Exception
+        {
+            // Caller administers both the source and the parent of the new destination folder
+            User limitedAdmin = createUserInRole(_source, FolderAdminRole.class);
+            grantRole(limitedAdmin, _dest, FolderAdminRole.class);
+            String newPath = _dest.getPath() + "/NewChild";
+
+            assertStatus(HttpServletResponse.SC_FOUND, post(copyUrl(newPath), limitedAdmin));
+            Container created = ContainerManager.getForPath(newPath);
+            assertNotNull("The destination folder should have been created", created);
+            assertEquals("Collaboration", created.getFolderType().getName());
+            assertFalse("The wiki page should have been copied", WikiSelectManager.getPageNames(created).isEmpty());
+        }
+
+        private ActionURL copyUrl(String destPath)
+        {
+            return new ActionURL(CopyWikiAction.class, _source)
+                    .addParameter("sourceContainer", _source.getPath())
+                    .addParameter("destContainer", destPath);
         }
 
         @Test
