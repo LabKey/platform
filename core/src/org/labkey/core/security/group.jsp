@@ -331,7 +331,7 @@ if (!bean.isSystemGroup)
     {
         %>
         <labkey:form action="<%=urlFor(StandardDeleteGroupAction.class)%>" method="POST">
-        <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
+        <%= button("Delete Empty Group").submit(true).onClick("return confirm(" + q("Permanently delete group " + bean.groupName + "?") + ")") %>
         <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>
         <%
