@@ -2756,10 +2756,15 @@ public class AdminController extends SpringActionController
         {
             validatePostgresSnapshotRequest(getContainer());
 
-            if (!PostgresSnapshot.isStatementsExtensionInstalled())
-                return HtmlView.err("Snapshots require the pg_stat_statements extension, which is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;");
+            String warning = switch (PostgresSnapshot.getStatementsStatus())
+            {
+                case AVAILABLE -> null;
+                case NOT_INSTALLED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;";
+                case NOT_LOADED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is installed but its library is not loaded. To load it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, then restart Postgres.";
+            };
 
             return new HtmlView(DIV(
+                null == warning ? null : DIV(cl("labkey-warning-messages"), warning),
                 P("Captures Postgres configuration and cumulative statistics as a JSON file. Comparing a snapshot taken before a workload against one taken after it shows the work the database actually did and can be useful for evaluating bottlenecks and optimizing resources."),
                 PageFlowUtil.button("Download Snapshot").href(new ActionURL(DownloadPostgresSnapshotAction.class, getContainer())).getHtmlString()
             ));
