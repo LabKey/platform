@@ -117,8 +117,8 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         {
             for (long dataId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
             {
-                ExpData data = ExperimentService.get().getExpData(dataId);
-                if (data == null || !data.getContainer().equals(container))
+                ExpData data = ExperimentService.get().getExpData(container, dataId);
+                if (data == null)
                 {
                     throw new NotFoundException("Could not find all selected datas");
                 }

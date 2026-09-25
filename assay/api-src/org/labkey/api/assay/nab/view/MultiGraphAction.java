@@ -24,6 +24,7 @@ import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -31,10 +32,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 6/11/13
- */
 public abstract class MultiGraphAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
     @Override
@@ -42,7 +39,11 @@ public abstract class MultiGraphAction<FormType extends GraphSelectedForm> exten
     {
         long[] ids = form.getId();
         verifyObjectIdsReadable(ids);
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(getContainer(), form.getProtocolId());
+        if (protocol == null)
+        {
+            throw new NotFoundException("Protocol does not exist.");
+        }
         DilutionAssayProvider provider = (DilutionAssayProvider)AssayService.get().getProvider(protocol);
         Map<DilutionSummary, DilutionAssayRun> summaries = provider.getDataHandler().getDilutionSummaries(getUser(), form.getFitTypeEnum(), ids);
         Set<Integer> cutoffSet = new HashSet<>();

@@ -1573,7 +1573,7 @@ public class CoreController extends SpringActionController
                     included.add(m.getModuleProperties().get(name));
             }
 
-            if(form.isIncludePropertyValues())
+            if (form.isIncludePropertyValues())
             {
                 JSONObject siteValues = new JSONObject();
                 for (ModuleProperty mp : included)
@@ -1589,7 +1589,9 @@ public class CoreController extends SpringActionController
                     for (Container ct : propValues.keySet())
                     {
                         JSONObject o = new JSONObject();
-                        o.put("value", propValues.get(ct) != null && propValues.get(ct).get(propUserId) != null ? propValues.get(ct).get(propUserId) : "");
+                        // Ancestor containers may include a parent project or the root the caller lacks Read on; don't leak their configured value
+                        boolean canReadContainer = ct.hasPermission(getUser(), ReadPermission.class);
+                        o.put("value", canReadContainer && propValues.get(ct) != null && propValues.get(ct).get(propUserId) != null ? propValues.get(ct).get(propUserId) : "");
                         o.put("container", ct.toJSON(getUser()));
                         boolean canEdit = true;
                         for (Class<? extends Permission> p : mp.getEditPermissions())
