@@ -251,21 +251,24 @@ public class StudyPHIExportTest extends StudyExportTest
 //        }
 //        assertEquals("Unexpected number of clinics", clinicCount, foundClinics);
 
-        clickTab("Specimen Data");
-        sleep(2000); // the link moves while the specimen search form finishes layout
-        waitAndClickAndWait(Locator.linkWithText("Blood (Whole)"));
-        DataRegionTable vialsTable = new DataRegionTable("SpecimenDetail", this);
-        List<String> procLocs = vialsTable.getColumnDataAsText("Processing Location");
-        procLocs.removeLast(); // Skip aggregate row
-        for (String procLoc : procLocs)
+        if (_studyHelper.isSpecimenModuleActive())
         {
-            assertTrue("Processing Locations was not masked", procLoc.equals("Clinic") || nonClinics.contains(procLoc));
-        }
-        List<String> siteNames = vialsTable.getColumnDataAsText("Site Name");
-        siteNames.removeLast(); // Skip aggregate row
-        for (String siteName : siteNames)
-        {
-            assertTrue("Site Name was not masked", siteName.equals("Clinic") || siteName.equals("In Transit"));
+            clickTab("Specimen Data");
+            sleep(2000); // the link moves while the specimen search form finishes layout
+            waitAndClickAndWait(Locator.linkWithText("Blood (Whole)"));
+            DataRegionTable vialsTable = new DataRegionTable("SpecimenDetail", this);
+            List<String> procLocs = vialsTable.getColumnDataAsText("Processing Location");
+            procLocs.removeLast(); // Skip aggregate row
+            for (String procLoc : procLocs)
+            {
+                assertTrue("Processing Locations was not masked", procLoc.equals("Clinic") || nonClinics.contains(procLoc));
+            }
+            List<String> siteNames = vialsTable.getColumnDataAsText("Site Name");
+            siteNames.removeLast(); // Skip aggregate row
+            for (String siteName : siteNames)
+            {
+                assertTrue("Site Name was not masked", siteName.equals("Clinic") || siteName.equals("In Transit"));
+            }
         }
     }
 

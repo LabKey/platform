@@ -35,7 +35,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
-import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.ImportDataPage;
@@ -75,7 +74,7 @@ import static org.labkey.test.util.DataRegionTable.DataRegion;
 import static org.labkey.test.util.PasswordUtil.getUsername;
 import static org.labkey.test.util.PermissionsHelper.AUTHOR_ROLE;
 
-@Category({Specimen.class, Daily.class})
+@Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 15)
 public class StudyTest extends StudyBaseTest
 {
@@ -385,12 +384,12 @@ public class StudyTest extends StudyBaseTest
 
     protected int getVisitCount()
     {
-        return _studyHelper.isSpecimenModulePresent() ? 66 : 55;
+        return 66;
     }
 
     protected int getUnusedVisitCount()
     {
-        return _studyHelper.isSpecimenModulePresent() ? 24 : 26;
+        return _studyHelper.isSpecimenModulePresent() ? 24 : 35;
     }
 
     protected static final String SUBJECT_NOUN = "Mouse";
