@@ -40,9 +40,10 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -162,7 +163,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 DbSchema temp = DbSchema.getTemp();
                 TempTableTracker.track(_tableName, this);
 
-                traced("full", _mqh.getMaterializationName(), () -> {
+                _mqh.traced("full", () -> {
                     SQLFragment selectInto;
                     if (isSelectInto)
                     {
@@ -193,7 +194,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 _loadingState.set(LoadingState.LOADED);
 
                 if (!_mqh._deferredIndexes.isEmpty())
-                    traced("full.deferredIndexes", _mqh.getMaterializationName(), () -> createIndexes(_mqh._deferredIndexes, true));
+                    _mqh.traced("full.deferredIndexes", () -> createIndexes(_mqh._deferredIndexes, true));
 
                 return true;
             }
@@ -406,8 +407,22 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return (null == t ? "-" : t.getId());
     }
 
+    /**
+     * Names the view in APM and logs. The kind goes in resource names, so keep it to one value per kind of view,
+     * like "samples"; the query and the container it's defined in carry the specifics.
+     */
+    public record TraceLabel(@NotNull String kind, @Nullable String query, @Nullable String containerId)
+    {
+        // Held by cached helpers, so keep the container's id rather than the Container itself
+        public TraceLabel(@NotNull String kind, @Nullable String query, @Nullable Container container)
+        {
+            this(kind, query, null == container ? null : container.getId());
+        }
+    }
+
     protected final String _prefix;
     protected final DbScope _scope;
+    protected final @Nullable TraceLabel _traceLabel;
     private final SQLFragment _selectQuery;
     private final boolean _isSelectIntoSql;
     private final boolean _unlogged;
@@ -437,10 +452,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private boolean _closed = false;
 
     protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, @Nullable Collection<String> deferredIndexes, long maxTimeToCache,
-                                    boolean isSelectIntoSql, boolean unlogged)
+                                    boolean isSelectIntoSql, boolean unlogged, @Nullable TraceLabel traceLabel)
     {
         _prefix = Objects.toString(prefix,"mat");
         _scope = scope;
+        _traceLabel = traceLabel;
         _selectQuery = select;
         _uptodateQuery = uptodate;
         _supplier = supplier;
@@ -485,7 +501,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 // Materialization outlives the request that triggers it and then serves every later request, so it gets its own trace; the trigger is recorded as tags rather than as a parent
                 Tracer tracer = GlobalTracer.get();
                 Span span = tracer.buildSpan("MaterializeAsync").ignoreActiveSpan().start();
-                span.setTag(DDTags.RESOURCE_NAME, StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName()));
+                span.setTag(DDTags.RESOURCE_NAME, getTraceKind());
                 span.setTag("labkey.materialized_view", getMaterializationName());
                 if (!"0".equals(triggeringTraceId))
                 {
@@ -638,29 +654,22 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      * Runs DB work inside its own Datadog APM span so each kind of materialization is a separate resource. Nests under
      * MaterializeAsync on the background thread and under the HTTP request when a stale view is rebuilt inline.
      */
-    protected static void traced(String resource, String viewName, Runnable work)
+    protected void traced(String phase, Runnable work)
     {
-        Tracer tracer = GlobalTracer.get();
-        Span span = tracer.buildSpan("labkey.materialize").start();
-        span.setTag(DDTags.RESOURCE_NAME, resource);
-        // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
-        span.setTag(DDTags.MEASURED, true);
-        span.setTag("labkey.materialized_view", viewName);
+        String description = null == _traceLabel || null == _traceLabel.query() ? getMaterializationName() : _traceLabel.query();
+        Container c = null == _traceLabel || null == _traceLabel.containerId() ? null : ContainerManager.getForId(_traceLabel.containerId());
+        TracedOperation.builder("labkey.materialize")
+                .resource(phase + " " + getTraceKind())
+                .describedAs("materialize " + phase + " " + description + (null == c ? "" : " defined in " + c.getPath()))
+                .tag("labkey.materialized_view", getMaterializationName())
+                .tag("labkey.query", null == _traceLabel ? null : _traceLabel.query())
+                .container(c)
+                .run(work);
+    }
 
-        try (Scope ignored = tracer.activateSpan(span))
-        {
-            work.run();
-        }
-        catch (Throwable t)
-        {
-            Tags.ERROR.set(span, true);
-            span.log(Map.of(Fields.ERROR_OBJECT, t));
-            throw t;
-        }
-        finally
-        {
-            span.finish();
-        }
+    private String getTraceKind()
+    {
+        return null != _traceLabel ? _traceLabel.kind() : StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName());
     }
 
     /** Identifies the view in APM. Carried as a tag, never a resource name, to keep per-view cardinality out of trace metrics. */
@@ -797,14 +806,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, null, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, null, maxTimeToCache, false, false, null);
     }
 
 
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, null, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, null, maxTimeToCache, false, false, null);
     }
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
@@ -820,6 +829,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         protected Supplier<String> _supplier = null;
         protected Collection<String> _indexes = new ArrayList<>();
         protected Collection<String> _deferredIndexes = new ArrayList<>();
+        protected TraceLabel _traceLabel = null;
 
         public Builder(String prefix, DbScope scope, SQLFragment select)
         {
@@ -877,10 +887,16 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return this;
         }
 
+        public Builder traceLabel(@NotNull TraceLabel traceLabel)
+        {
+            _traceLabel = traceLabel;
+            return this;
+        }
+
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged, _traceLabel);
         }
     }
 

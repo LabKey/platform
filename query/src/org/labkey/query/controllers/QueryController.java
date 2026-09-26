@@ -243,6 +243,7 @@ import org.labkey.api.util.SqlUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
@@ -4643,6 +4644,14 @@ public class QueryController extends SpringActionController
 
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction, @Nullable Integer commandIndex) throws Exception
         {
+            try (TracedOperation op = TracedOperation.builder("labkey.saveRows").tag("labkey.command_index", commandIndex).start())
+            {
+                return executeJson(op, json, commandType, allowTransaction, errors, isNestedTransaction, commandIndex);
+            }
+        }
+
+        private JSONObject executeJson(TracedOperation op, JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, boolean isNestedTransaction, @Nullable Integer commandIndex) throws Exception
+        {
             JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
@@ -4678,7 +4687,14 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName +
                         "' is not updatable via the HTTP-based APIs.");
 
+            op.resource(commandType.name() + " " + TracedOperation.boundedSchemaName(schemaName))
+                    .describedAs(commandType.name() + " " + schemaName + "." + queryName + " in " + container.getPath())
+                    .tag("labkey.query", schemaName + "." + queryName)
+                    .container(container)
+                    .tag("labkey.db_schema", null == table.getSchema() ? null : table.getSchema().getName());
+
             int rowsAffected = 0;
+            boolean committed = false;
 
             List<Map<String, Object>> rowsToProcess = new ArrayList<>();
 
@@ -4842,6 +4858,7 @@ public class QueryController extends SpringActionController
                     }
                 }
                 transaction.commit();
+                committed = true;
             }
             catch (OptimisticConflictException e)
             {
@@ -4872,6 +4889,9 @@ public class QueryController extends SpringActionController
             }
 
             response.put("rowsAffected", rowsAffected);
+
+            op.completed(rowsAffected);
+            op.committed(committed);
 
             return response;
         }
@@ -5164,6 +5184,14 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
+            try (TracedOperation op = TracedOperation.builder("labkey.saveRows.batch").resource("saveRows").start())
+            {
+                return execute(op, errors);
+            }
+        }
+
+        private ApiResponse execute(TracedOperation op, BindException errors) throws Exception
+        {
             // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more
             // specific permissions later once we've figured out exactly what they're trying to do. This helps us
             // give a better HTTP response code when they're trying to access a resource that's not available to guests
@@ -5184,6 +5212,9 @@ public class QueryController extends SpringActionController
             {
                 throw new NotFoundException("Empty request");
             }
+            op.describedAs("saveRows " + commands.length() + " commands in " + getContainer().getPath())
+                    .tag("labkey.saveRows.commands", commands.length())
+                    .container(getContainer());
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,
@@ -5221,6 +5252,7 @@ public class QueryController extends SpringActionController
 
             int startingErrorIndex = 0;
             int errorCount = 0;
+            int totalRows = 0;
             // 11741: A transaction may already be active if we're trying to
             // insert/update/delete from within a transformation/validation script.
 
@@ -5276,6 +5308,7 @@ public class QueryController extends SpringActionController
                         startingErrorIndex = errors.getErrorCount();
                     }
 
+                    totalRows += commandResponse.optInt("rowsAffected", 0);
                     resultArray.put(commandResponse);
                 }
 
@@ -5292,6 +5325,9 @@ public class QueryController extends SpringActionController
             result.put("result", resultArray);
             result.put("committed", committed);
             result.put("errorCount", errorCount);
+
+            op.completed(totalRows);
+            op.committed(committed);
 
             return new ApiSimpleResponse(result);
         }
