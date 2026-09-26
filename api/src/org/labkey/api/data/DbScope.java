@@ -1457,6 +1457,7 @@ public class DbScope
         }
 
         Connection conn;
+        long acquireStart = System.nanoTime();
 
         try
         {
@@ -1491,7 +1492,9 @@ public class DbScope
                 _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            return new ConnectionWrapper(conn, this, spid, type, log);
+            ConnectionWrapper wrapper = new ConnectionWrapper(conn, this, spid, type, log);
+            wrapper.trackUsage(acquireStart);
+            return wrapper;
         }
         catch (Throwable t)
         {

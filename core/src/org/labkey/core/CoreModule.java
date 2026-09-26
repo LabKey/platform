@@ -215,6 +215,7 @@ import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.AllowListType;
+import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -1049,24 +1050,25 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                 }
 
-                Logger logger = LogManager.getLogger(ActionsTsvWriter.class);
+                logTsv(new ActionsTsvWriter());
+                logTsv(new ConnectionUsageTsvWriter());
+                LOG.info("Completed logging statistics for actions prior to web application shut down");
+            }
 
-                if (null != logger)
+            private void logTsv(TSVWriter writer)
+            {
+                StringBuilder buf = new StringBuilder();
+
+                try (writer)
                 {
-                    StringBuilder buf = new StringBuilder();
-
-                    try (TSVWriter writer = new ActionsTsvWriter())
-                    {
-                        writer.write(buf);
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.error("Exception exporting action stats", e);
-                    }
-
-                    logger.info(buf.toString());
-                    LOG.info("Completed logging statistics for actions prior to web application shut down");
+                    writer.write(buf);
                 }
+                catch (IOException e)
+                {
+                    LOG.error("Exception exporting {}", writer.getClass().getSimpleName(), e);
+                }
+
+                LogManager.getLogger(writer.getClass()).info(buf.toString());
             }
 
             @Override

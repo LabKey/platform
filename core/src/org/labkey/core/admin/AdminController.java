@@ -3037,6 +3037,19 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class ExportConnectionUsageAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try (ConnectionUsageTsvWriter writer = new ConnectionUsageTsvWriter())
+            {
+                writer.write(response);
+            }
+        }
+    }
+
     private static ActionURL getQueriesURL(@Nullable String statName)
     {
         ActionURL url = new ActionURL(QueriesAction.class, ContainerManager.getRoot());
@@ -12710,6 +12723,7 @@ public class AdminController extends SpringActionController
                 controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
+                new ExportConnectionUsageAction(),
                 new ExportQueriesAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()

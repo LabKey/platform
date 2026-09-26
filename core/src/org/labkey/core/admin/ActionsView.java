@@ -26,6 +26,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.PrintWriter;
+import java.text.NumberFormat;
 import java.util.Map;
 
 class ActionsView extends HttpView
@@ -41,7 +42,10 @@ class ActionsView extends HttpView
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
         if (!_summary)
+        {
             out.println(PageFlowUtil.button("Export").href(new ActionURL(AdminController.ExportActionsAction.class, ContainerManager.getRoot())));
+            out.println(PageFlowUtil.button("Export Connection Usage").href(new ActionURL(AdminController.ExportConnectionUsageAction.class, ContainerManager.getRoot())));
+        }
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
@@ -62,7 +66,14 @@ class ActionsView extends HttpView
             out.print("<td class=\"labkey-column-header\">Invocations</td>");
             out.print("<td class=\"labkey-column-header\">Cumulative Time</td>");
             out.print("<td class=\"labkey-column-header\">Average Time</td>");
-            out.print("<td class=\"labkey-column-header\">Max Time</td></tr>");
+            out.print("<td class=\"labkey-column-header\">Max Time</td>");
+            out.print("<td class=\"labkey-column-header\">Borrows</td>");
+            out.print("<td class=\"labkey-column-header\">Borrows/Invocation</td>");
+            out.print("<td class=\"labkey-column-header\">Hold Time</td>");
+            out.print("<td class=\"labkey-column-header\">Hold %</td>");
+            out.print("<td class=\"labkey-column-header\">Max Concurrent</td>");
+            out.print("<td class=\"labkey-column-header\">Acquire Time</td>");
+            out.print("<td class=\"labkey-column-header\">Unreturned</td></tr>");
         }
 
         int totalActions = 0;
@@ -116,6 +127,13 @@ class ActionsView extends HttpView
                     renderTd(out, stats.getElapsedTime());
                     renderTd(out, 0 == stats.getCount() ? 0 : stats.getElapsedTime() / stats.getCount());
                     renderTd(out, stats.getMaxTime());
+                    renderTd(out, stats.getBorrows());
+                    renderTd(out, stats.getBorrowsPerInvocation(), Formats.f2);
+                    renderTd(out, stats.getConnectionWallTime());
+                    renderTd(out, stats.getConnectionHoldFraction(), Formats.percent1);
+                    renderTd(out, stats.getMaxConcurrent());
+                    renderTd(out, stats.getAcquireTime());
+                    renderTd(out, stats.getUnreturned());
 
                     out.print("</tr>");
                     rowCount++;
@@ -129,7 +147,7 @@ class ActionsView extends HttpView
                 if (!_summary)
                 {
                     out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-                    out.print("<td>&nbsp;</td><td colspan=5>Action Coverage</td>");
+                    out.print("<td>&nbsp;</td><td colspan=12>Action Coverage</td>");
                 }
                 else
                 {
@@ -148,7 +166,7 @@ class ActionsView extends HttpView
                 if (!_summary)
                 {
                     out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-                    out.print("<td colspan=7>&nbsp;</td></tr>");
+                    out.print("<td colspan=14>&nbsp;</td></tr>");
                     rowCount++;
                 }
             }
@@ -168,7 +186,7 @@ class ActionsView extends HttpView
         else
         {
             out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-            out.print("<td colspan=6><b>Total Action Coverage</b></td>");
+            out.print("<td colspan=13><b>Total Action Coverage</b></td>");
         }
 
         out.print("<td align=\"right\">");
@@ -180,8 +198,13 @@ class ActionsView extends HttpView
 
     private void renderTd(PrintWriter out, Number d)
     {
+        renderTd(out, d, Formats.commaf0);
+    }
+
+    private void renderTd(PrintWriter out, Number d, NumberFormat format)
+    {
         out.print("<td align=\"right\">");
-        out.print(Formats.commaf0.format(d));
+        out.print(format.format(d));
         out.print("</td>");
     }
 }

@@ -159,6 +159,10 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private volatile boolean _allowClose = true;
 
+    // Captured at borrow because the return can happen on another thread, e.g. the Cleaner
+    private volatile @Nullable ConnectionUsage.Usage _usage;
+    private long _borrowedAt;
+
     static
     {
         // Issue 51483: DB query can be left running after shutting down server
@@ -222,6 +226,14 @@ public class ConnectionWrapper implements java.sql.Connection
         _log = log != null ? log : getConnectionLogger();
         _state = new ConnectionState(_connection, _scope, this, _log);
         _cleanable = CLEANER.register(this, _state);
+    }
+
+    /** Called only for real pool borrows, so wrappers created without one never record a return */
+    void trackUsage(long acquireStart)
+    {
+        long now = System.nanoTime();
+        _borrowedAt = now;
+        _usage = ConnectionUsage.recordBorrow(now - acquireStart, now);
     }
 
     /** this is a best guess logger, pass one in to be predictable */
@@ -555,6 +567,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private void realCloseInternal() throws SQLException
     {
         _openConnections.remove(this);
+        ConnectionUsage.recordReturn(_usage, _borrowedAt);
         _loggedLeaks.remove(this);
 
         // The Tomcat connection pool violates the API for close() - it throws an exception

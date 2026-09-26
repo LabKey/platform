@@ -53,6 +53,7 @@ import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -531,6 +532,7 @@ public class ApiModule extends CodeOnlyModule
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
+            ConnectionUsage.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
