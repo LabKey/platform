@@ -16,6 +16,7 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -24,7 +25,6 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public enum ModuleLoaderStartupProperties implements StartupProperty
 {
@@ -79,7 +79,7 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
      */
     abstract void handle(String value);
 
-    private static Set<String> splitValues(String value)
+    private static CaseInsensitiveHashSet splitValues(String value)
     {
         return Arrays.stream(StringUtils.split(value, ","))
             .map(StringUtils::trimToNull)

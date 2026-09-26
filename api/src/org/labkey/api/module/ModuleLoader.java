@@ -405,6 +405,17 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         @Override
         public Object invoke(Object proxy, Method m, Object[] args) throws Throwable
         {
+            // Proxies route Object's toString(), hashCode(), and equals() through here
+            if (m.getDeclaringClass() == Object.class)
+            {
+                return switch (m.getName())
+                {
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    default -> "ExplodedModuleService proxy for " + _delegate.getClass().getName();
+                };
+            }
+
             try
             {
                 Method delegate_method = _methods.get(m.getName());
@@ -2095,25 +2106,25 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _distributionNameOverride = distributionNameOverride;
     }
 
-    Set<String> getModuleIncludeSet()
+    // Case-insensitive
+    private Set<String> getModuleIncludeSet()
     {
         return _moduleIncludeSet;
     }
 
-    // Case-insensitive
-    void setModuleIncludeSet(Set<String> moduleIncludeSet)
+    void setModuleIncludeSet(CaseInsensitiveHashSet moduleIncludeSet)
     {
         checkStartupPropertyState("Module include set");
         _moduleIncludeSet = Collections.unmodifiableSet(moduleIncludeSet);
     }
 
-    Set<String> getModuleExcludeSet()
+    // Case-insensitive
+    private Set<String> getModuleExcludeSet()
     {
         return _moduleExcludeSet;
     }
 
-    // Case-insensitive
-    void setModuleExcludeSet(Set<String> moduleExcludeSet)
+    void setModuleExcludeSet(CaseInsensitiveHashSet moduleExcludeSet)
     {
         checkStartupPropertyState("Module exclude set");
         _moduleExcludeSet = Collections.unmodifiableSet(moduleExcludeSet);
