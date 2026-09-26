@@ -33,6 +33,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.Term;
@@ -52,6 +53,7 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.apache.tika.config.LoadErrorHandler;
@@ -69,7 +71,9 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.admin.AdminBean;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -132,6 +136,8 @@ import java.io.Reader;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystemException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -147,7 +153,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -168,6 +176,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     // is initialized).
     private static final WritableIndexManager NOOP_WRITABLE_INDEX = new NoopWritableIndex("the search service is in the process of starting up.", _log);
     private volatile WritableIndexManager _indexManager = NOOP_WRITABLE_INDEX;
+
+    private static final int MAX_CONSECUTIVE_INDEX_FAILURES = 25;
+    private final AtomicInteger _consecutiveIndexFailures = new AtomicInteger();
+    private final ReentrantLock _reopenLock = new ReentrantLock();
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
@@ -453,17 +465,19 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
         // Commit and close current index
         commit();
-        try
-        {
-            _indexManager.close();
-        }
-        catch (Exception e)
-        {
-            _log.error("Closing index", e);
-        }
+        withReopenLock(() -> {
+            try
+            {
+                _indexManager.close();
+            }
+            catch (Exception e)
+            {
+                _log.error("Closing index", e);
+            }
 
-        // Initialize new index and clear last indexed
-        initializeIndex();
+            // Initialize new index
+            initializeIndex();
+        });
         clearLastIndexed(reason);
     }
 
@@ -472,7 +486,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     {
         try
         {
-            initializeIndex();
+            withReopenLock(this::initializeIndex);
         }
         catch (Exception e)
         {
@@ -525,8 +539,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Override
     public void resetIndex()
     {
-        closeIndex();
-        initializeIndex();
+        withReopenLock(() -> {
+            closeIndex();
+            initializeIndex();
+        });
     }
 
     public static final String SERVER_GUID_NAME = "ServerGuid";
@@ -947,6 +963,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             logAsWarning(r, "Unrecognized exception message \"" + message + "\"");
             logAsPreProcessingException(r, err);
             handledException[0] = err;
+        }
+        catch (IndexCommitException e)
+        {
+            throw e;
         }
         catch (TikaException e)
         {
@@ -1501,10 +1521,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     private boolean index(String id, Document doc)
     {
+        WritableIndexManager indexManager = _indexManager;
         try
         {
-            _indexManager.index(id, doc);
+            indexManager.index(id, doc);
             _countIndexedSinceClearLastIndexed.incrementAndGet();
+            _consecutiveIndexFailures.set(0);
             return true;
         }
         catch (IndexManagerClosedException x)
@@ -1514,9 +1536,32 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories,
             // so everything's getting reindexed anyway.
         }
+        catch (AlreadyClosedException e)
+        {
+            // The IndexWriter is permanently unusable, so every subsequent document would fail. Reopen it (unless the
+            // disk is full) and let the outer loop handle backoff.
+            if (!WritableIndexManagerImpl.isDiskFull(e))
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+                reopenIndex(indexManager);
+            }
+            throw new IndexCommitException("Search index writer is closed", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Problem with this document's content (e.g., an immense term), so don't count it toward backing off
+            _log.error("Indexing error with {}", id, e);
+        }
         catch(Throwable e)
         {
-            _log.error("Indexing error with {}", id, e);
+            int failures = _consecutiveIndexFailures.incrementAndGet();
+            if (failures == 1)
+                _log.error("Indexing error with {}", id, e);
+            else
+                _log.error("Indexing error with {} ({} consecutive documents failed across indexer threads; backing off at {}): {}", id, failures, MAX_CONSECUTIVE_INDEX_FAILURES, e.toString());
+
+            if (failures >= MAX_CONSECUTIVE_INDEX_FAILURES)
+                throw new IndexCommitException(failures + " consecutive documents failed to index", e);
         }
 
         return false;
@@ -1575,10 +1620,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     @Override
     protected void commitIndex() throws ConfigurationException, IndexCommitException
     {
+        WritableIndexManager indexManager = _indexManager;
         try
         {
             _log.debug("Committing index");
-            _indexManager.commit();
+            indexManager.commit();
         }
         catch (ConfigurationException e)
         {
@@ -1590,8 +1636,51 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
             // the IndexManager unusable. Attempt to reset the index, then let the outer loop handle backoff.
             ExceptionUtil.logExceptionToMothership(null, t);
+            reopenIndex(indexManager);
+            throw new IndexCommitException("Search index commit failed", t);
+        }
+    }
+
+    /** Serializes deliberate index replacement with failure-driven reopens, which back off rather than wait */
+    private void withReopenLock(Runnable r)
+    {
+        _reopenLock.lock();
+        try
+        {
+            r.run();
+        }
+        finally
+        {
+            _reopenLock.unlock();
+        }
+    }
+
+    /** Replaces an index manager whose IndexWriter failed, unless another thread already has or is doing so */
+    private void reopenIndex(WritableIndexManager failed)
+    {
+        // Don't block: initializeIndex() can wait on indexing threads, which may be waiting here
+        if (!_reopenLock.tryLock())
+            return;
+
+        try
+        {
+            if (_indexManager != failed)
+                return;
+
+            // Close first to release the write lock in case the writer is still open
+            try
+            {
+                failed.close();
+            }
+            catch (Exception e)
+            {
+                _log.warn("Error closing failed index", e);
+            }
             initializeIndex();
-            throw new IndexCommitException(t);
+        }
+        finally
+        {
+            _reopenLock.unlock();
         }
     }
 
@@ -2452,6 +2541,69 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             tempFileWrapper.close();
             byteBuffer.clear();
             bufferStash.set(new SoftReference<>(byteBuffer));
+        }
+    }
+
+    public static class IndexWriterTestCase extends Assert
+    {
+        private java.nio.file.Path _indexPath;
+        private WritableIndexManagerImpl _manager;
+
+        @Before
+        public void setUp() throws IOException
+        {
+            _indexPath = Files.createTempDirectory("WritableIndexManagerTest");
+            _manager = (WritableIndexManagerImpl) WritableIndexManagerImpl.get(_indexPath, LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer());
+        }
+
+        @After
+        public void tearDown() throws IOException
+        {
+            try
+            {
+                _manager.close();
+            }
+            finally
+            {
+                FileUtil.deleteDir(_indexPath.toFile());
+            }
+        }
+
+        private static Document newDocument(String id)
+        {
+            Document doc = new Document();
+            doc.add(new StringField(FIELD_NAME.uniqueId.toString(), id, Field.Store.YES));
+            return doc;
+        }
+
+        @Test
+        public void testClosedWriterFailsFast() throws IOException
+        {
+            _manager.getIndexWriter().rollback();
+            assertThrows(AlreadyClosedException.class, () -> _manager.index("test:closed", newDocument("test:closed")));
+        }
+
+        // The per-document carve-out in index() relies on Lucene treating this as non-aborting
+        @Test
+        public void testImmenseTermLeavesWriterOpen() throws IOException
+        {
+            Document doc = newDocument("test:immense");
+            doc.add(new StringField("immense", "x".repeat(IndexWriter.MAX_TERM_LENGTH + 1), Field.Store.NO));
+            assertThrows(IllegalArgumentException.class, () -> _manager.index("test:immense", doc));
+            assertTrue(_manager.getIndexWriter().isOpen());
+
+            _manager.index("test:good", newDocument("test:good"));
+            _manager.commit();
+            assertEquals(1, _manager.getIndexWriter().getDocStats().numDocs);
+        }
+
+        @Test
+        public void testIsDiskFull()
+        {
+            assertTrue(WritableIndexManagerImpl.isDiskFull(new AlreadyClosedException("closed", new IOException("No space left on device"))));
+            assertFalse(WritableIndexManagerImpl.isDiskFull(new AlreadyClosedException("closed", new IOException((String) null))));
+            assertFalse(WritableIndexManagerImpl.isDiskFull(new AlreadyClosedException("closed", new NoSuchFileException("_3fld_Lucene104_0.tip"))));
+            assertFalse(WritableIndexManagerImpl.isDiskFull(new AlreadyClosedException("closed")));
         }
     }
 }

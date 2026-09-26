@@ -77,6 +77,9 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     private boolean _closed = false;
 
+    // For manual testing only: set via the debugger to make every index() call throw this exception
+    static volatile RuntimeException _testIndexFailure = null;
+
     static
     {
         // Never ever cache queries, #26416
@@ -148,10 +151,18 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     @Override
     public void index(String id, Document doc) throws IOException
     {
+        RuntimeException testFailure = _testIndexFailure;
+        if (testFailure != null)
+            throw testFailure;
+
         synchronized (_writerLock)
         {
+            IndexWriter iw = getIndexWriter();
+            // A major failure, such as in a background merge, closes the writer on its own
+            if (!iw.isOpen())
+                throw new AlreadyClosedException("this IndexWriter is closed", iw.getTragicException());
             deleteDocument(id);
-            getIndexWriter().addDocument(doc);
+            iw.addDocument(doc);
             maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
         }
     }
@@ -189,7 +200,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (AlreadyClosedException e)
         {
-            if (e.getCause() instanceof IOException && e.getCause().getMessage() != null && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            if (isDiskFull(e))
             {
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
@@ -220,7 +231,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
         catch (AlreadyClosedException e)
         {
-            if (e.getCause() instanceof IOException && e.getCause().getMessage().equalsIgnoreCase("No space left on device"))
+            if (isDiskFull(e))
             {
                 throw new ConfigurationException("Unable to write to search index, Disk is full", e);
             }
@@ -231,6 +242,11 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         {
             // Configuration was changed
         }
+    }
+
+    static boolean isDiskFull(AlreadyClosedException e)
+    {
+        return e.getCause() instanceof IOException && "No space left on device".equalsIgnoreCase(e.getCause().getMessage());
     }
 
     @Override
