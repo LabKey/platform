@@ -154,6 +154,7 @@ import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleChangeNotify;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -219,7 +220,11 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -241,6 +246,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -7036,7 +7042,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != runInputLsids)
             {
-                protApp1.addProvenanceInput(runInputLsids);
+                protApp1.addProvenanceInput(user, runInputLsids);
             }
 
             addDataInputs(inputDatas, protApp1._object, user);
@@ -7140,7 +7146,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != finalOutputLsids && !finalOutputLsids.isEmpty())
             {
-                protApp3.addProvenanceMapping(finalOutputLsids);
+                protApp3.addProvenanceMapping(user, finalOutputLsids);
             }
 
             addDataInputs(allOutputDatas, protApp3._object, user);
@@ -10722,6 +10728,46 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // assert we deleted all MaterialInput exp.object
             assertEquals(0L, countMaterialInputObjects(c));
+        }
+
+        @Test
+        public void testEditLineagePermission() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "LineageGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+            UserSchema schema = QueryService.get().getUserSchema(admin, c, SchemaKey.fromParts("Samples"));
+            QueryUpdateService svc = schema.getTable("LineageGuardSamples").getUpdateService();
+            BatchValidationException errors = new BatchValidationException();
+            svc.insertRows(admin, c, List.of(CaseInsensitiveHashMap.of("name", "sample")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial sample = st.getSample(c, "sample");
+            String lsid = sample.getLSID();
+
+            // Read-only and insert-only (Author) cannot rewrite lineage; denial is NotFoundException, not a leak
+            for (Class<? extends Role> role : List.<Class<? extends Role>>of(ReaderRole.class, AuthorRole.class))
+            {
+                try
+                {
+                    DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, role), lsid, sample);
+                    fail("User with role " + role.getSimpleName() + " should not be able to edit lineage");
+                }
+                catch (NotFoundException expected)
+                {
+                }
+            }
+
+            // Update access (Editor) and full access (admin) are allowed
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
+            DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
         }
 
         private int countMaterialInputObjects(Container c)
