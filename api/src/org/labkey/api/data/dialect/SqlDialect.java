@@ -1753,26 +1753,24 @@ public abstract class SqlDialect
 
         /**
          * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
-         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle. Values are
-         * cumulative since the pool was created, except numWaiters (a current reading) and meanBorrowWaitMillis (the
-         * mean of the most recent 100 borrows).
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle.
          */
         public record PoolStatistics(
-            /** Connections opened */
+            // Total connections opened
             long createdCount,
-            /** Connections closed, for any reason */
+            // Tocal connections closed, for any reason
             long destroyedCount,
-            /** Connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation */
+            // Total connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation
             long destroyedByEvictorCount,
-            /** Connections closed because they failed validation when a caller tried to borrow them */
+            // Total connections closed because they failed validation when a caller tried to borrow them
             long destroyedByBorrowValidationCount,
-            /** Connections handed out */
+            // Total connections handed out
             long borrowedCount,
-            /** Threads currently blocked waiting for a connection */
+            // Threads currently blocked waiting for a connection
             long numWaiters,
-            /** Mean time callers waited to borrow a connection, over the most recent 100 borrows */
+            // Mean wait time to borrow a connection, over the most recent 100 borrows
             long meanBorrowWaitMillis,
-            /** Longest a caller has ever waited to borrow a connection */
+            // Longest a caller has ever waited to borrow a connection
             long maxBorrowWaitMillis
         ) {}
 

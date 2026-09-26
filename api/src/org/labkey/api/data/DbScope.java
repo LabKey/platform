@@ -3788,5 +3788,31 @@ public class DbScope
             }
         }
     }
+
+    public static class PoolStatisticsTestCase extends Assert
+    {
+        @Test
+        public void testPoolStatistics() throws SQLException
+        {
+            DataSourcePropertyReader props = getLabKeyScope().getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics before = props.getPoolStatistics();
+            assertNotNull("Could not read connection pool statistics; see log for the reflection failure", before);
+
+            assertTrue(before.createdCount() >= 1);
+            assertTrue(before.destroyedCount() <= before.createdCount());
+            assertTrue(before.destroyedByEvictorCount() <= before.destroyedCount());
+            assertTrue(before.destroyedByBorrowValidationCount() <= before.destroyedCount());
+            assertTrue(before.numWaiters() >= 0);
+            assertTrue(before.meanBorrowWaitMillis() >= 0);
+            assertTrue(before.maxBorrowWaitMillis() >= before.meanBorrowWaitMillis());
+
+            try (Connection ignored = getLabKeyScope().getPooledConnection())
+            {
+                DataSourcePropertyReader.PoolStatistics after = props.getPoolStatistics();
+                assertNotNull(after);
+                assertTrue(after.borrowedCount() > before.borrowedCount());
+            }
+        }
+    }
 }
 
