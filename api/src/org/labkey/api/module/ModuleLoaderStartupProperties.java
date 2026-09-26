@@ -16,12 +16,13 @@
 package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -32,13 +33,15 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Comma-separated list of modules to enable during this server session. Note: Respected only when the \"startup\" modifier is specified.";
+            return "Comma-separated list of modules to enable during this server session. Note: Respected only when " +
+                "the \"startup\" modifier is specified. Not respected for the \"externalModules\" directory, i.e., " +
+                "external modules are always loaded, unless their names are specified in the exclude list.";
         }
 
         @Override
         void handle(String value)
         {
-            ModuleLoader.getInstance().setModuleIncludeList(splitValues(value));
+            ModuleLoader.getInstance().setModuleIncludeSet(splitValues(value));
         }
     },
     exclude
@@ -46,13 +49,14 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Comma-separated list of modules to disable during this server session. Note: Respected only when the \"startup\" modifier is specified.";
+            return "Comma-separated list of modules to disable during this server session. Note: Respected only when " +
+                "the \"startup\" modifier is specified.";
         }
 
         @Override
         void handle(String value)
         {
-            ModuleLoader.getInstance().setModuleExcludeList(splitValues(value));
+            ModuleLoader.getInstance().setModuleExcludeSet(splitValues(value));
         }
     },
     distributionName
@@ -78,12 +82,12 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
      */
     abstract void handle(String value);
 
-    private static List<String> splitValues(String value)
+    private static CaseInsensitiveHashSet splitValues(String value)
     {
         return Arrays.stream(StringUtils.split(value, ","))
             .map(StringUtils::trimToNull)
             .filter(Objects::nonNull)
-            .toList();
+            .collect(LabKeyCollectors.toCaseInsensitiveHashSet());
     }
 
     static void populate()
