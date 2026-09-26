@@ -72,7 +72,7 @@
     String schemaName = datasetTable.getSchema().getQuerySchemaName();
 
     StudyImpl study = StudyManager.getInstance().getStudy(c);
-    Set<Class<? extends Permission>> permissions = SecurityManager.streamPermissions(c, user, Set.of())
+    Set<Class<? extends Permission>> permissions = SecurityManager.getPermissions(c, user, Set.of())
         .collect(Collectors.toSet());
 
     // is definition inherited
