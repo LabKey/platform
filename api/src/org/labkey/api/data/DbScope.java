@@ -1407,11 +1407,26 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            DataSourcePropertyReader props = getDbScopeLoader().getDsProps();
+
             log.info("Data source " + this +
-                    ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
-                    ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
-                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
+                    ". Max connections: " + props.getMaxTotal() +
+                    ", active: " + props.getNumActive() +
+                    ", idle: " + props.getNumIdle() +
+                    ", maxWaitMillis: " + props.getMaxWaitMillis());
+
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+
+            if (null != pool)
+                log.info("Connection pool for data source " + this +
+                        ". Opened: " + pool.createdCount() +
+                        ", closed: " + pool.destroyedCount() +
+                        " (evictor: " + pool.destroyedByEvictorCount() +
+                        ", failed validation: " + pool.destroyedByBorrowValidationCount() +
+                        "), borrowed: " + pool.borrowedCount() +
+                        ", waiting threads: " + pool.numWaiters() +
+                        ", meanBorrowWaitMillis (last 100): " + pool.meanBorrowWaitMillis() +
+                        ", maxBorrowWaitMillis: " + pool.maxBorrowWaitMillis());
 
             if (_transaction.isEmpty())
             {
@@ -3773,6 +3788,32 @@ public class DbScope
             catch (IllegalArgumentException x)
             {
                 // expected!
+            }
+        }
+    }
+
+    public static class PoolStatisticsTestCase extends Assert
+    {
+        @Test
+        public void testPoolStatistics() throws SQLException
+        {
+            DataSourcePropertyReader props = getLabKeyScope().getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics before = props.getPoolStatistics();
+            assertNotNull("Could not read connection pool statistics; see log for the reflection failure", before);
+
+            assertTrue(before.createdCount() >= 1);
+            assertTrue(before.destroyedCount() <= before.createdCount());
+            assertTrue(before.destroyedByEvictorCount() <= before.destroyedCount());
+            assertTrue(before.destroyedByBorrowValidationCount() <= before.destroyedCount());
+            assertTrue(before.numWaiters() >= 0);
+            assertTrue(before.meanBorrowWaitMillis() >= 0);
+            assertTrue(before.maxBorrowWaitMillis() >= before.meanBorrowWaitMillis());
+
+            try (Connection ignored = getLabKeyScope().getPooledConnection())
+            {
+                DataSourcePropertyReader.PoolStatistics after = props.getPoolStatistics();
+                assertNotNull(after);
+                assertTrue(after.borrowedCount() > before.borrowedCount());
             }
         }
     }
