@@ -418,7 +418,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         if (null != _table.getSchema())
             tags.put("labkey.db_schema", _table.getSchema().getName());
         if (null != _table.getUserSchema())
-            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getEntityId().toString());
+            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getPath());
         return tags;
     }
 

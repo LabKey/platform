@@ -50,7 +50,7 @@ public class TracedOperation implements AutoCloseable
     /** Operations at least this slow log at INFO, so they're visible on the deployments that send no APM data */
     private static final long SLOW_MS = 30_000;
 
-    /** Entity ID rather than path, so a folder rename doesn't split its history */
+    /** Path rather than entity id, so it reads in Datadog; a folder rename splits its history */
     public static final String CONTAINER_TAG = "labkey.container";
 
     /**
@@ -113,7 +113,7 @@ public class TracedOperation implements AutoCloseable
 
         public Builder container(@Nullable Container c)
         {
-            return tag(CONTAINER_TAG, null == c ? null : c.getEntityId());
+            return tag(CONTAINER_TAG, null == c ? null : c.getPath());
         }
 
         /** Starts and activates the span. Call only as the resource of a try-with-resources. */
@@ -182,7 +182,7 @@ public class TracedOperation implements AutoCloseable
 
     public TracedOperation container(@Nullable Container c)
     {
-        return tag(CONTAINER_TAG, null == c ? null : c.getEntityId());
+        return tag(CONTAINER_TAG, null == c ? null : c.getPath());
     }
 
     public void completed(int rows)

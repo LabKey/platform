@@ -411,7 +411,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      * Names the view in APM and logs. The kind goes in resource names, so keep it to one value per kind of view,
      * like "samples"; the query and the container it's defined in carry the specifics.
      */
-    public record TraceLabel(@NotNull String kind, @Nullable String query, @Nullable Container container) {}
+    public record TraceLabel(@NotNull String kind, @Nullable String query, @Nullable String containerId)
+    {
+        // Held by cached helpers, so keep the container's id rather than the Container itself
+        public TraceLabel(@NotNull String kind, @Nullable String query, @Nullable Container container)
+        {
+            this(kind, query, null == container ? null : container.getId());
+        }
+    }
 
     protected final String _prefix;
     protected final DbScope _scope;
@@ -650,7 +657,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     protected void traced(String phase, Runnable work)
     {
         String description = null == _traceLabel || null == _traceLabel.query() ? getMaterializationName() : _traceLabel.query();
-        Container c = null == _traceLabel ? null : _traceLabel.container();
+        Container c = null == _traceLabel || null == _traceLabel.containerId() ? null : ContainerManager.getForId(_traceLabel.containerId());
         TracedOperation.builder("labkey.materialize")
                 .resource(phase + " " + getTraceKind())
                 .describedAs("materialize " + phase + " " + description + (null == c ? "" : " defined in " + c.getPath()))
