@@ -252,8 +252,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     // If non-null, overrides the name specified in the distribution.properties file
     private volatile String _distributionNameOverride;
     // Modules to include and exclude in this server session; consumed by loadModules()
-    private volatile List<String> _moduleIncludeList = List.of();
-    private volatile List<String> _moduleExcludeList = List.of();
+    private volatile Set<String> _moduleIncludeSet = Set.of();
+    private volatile Set<String> _moduleExcludeSet = Set.of();
 
     private ModuleLoader()
     {
@@ -1176,18 +1176,35 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
 
         // filter by startup properties if they were specified
-        LinkedList<String> includeList = getModuleIncludeList();
-        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(getModuleExcludeList());
 
+        // Mutable copy since we add to it below, and loadModules() runs again for modules created later
+        Set<String> includeSet = Sets.newCaseInsensitiveHashSet(getModuleIncludeSet());
+        Set<String> excludeSet = getModuleExcludeSet();
         List<String> missingModules = new ArrayList<>();
         CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
-        if (!includeList.isEmpty())
+
+        if (!includeSet.isEmpty())
         {
-            includeList.addAll(Arrays.asList("Core", "API"));
-            includedModules = new CaseInsensitiveTreeMap<>();
-            while (!includeList.isEmpty())
+            // Base modules required by every deployment
+            includeSet.addAll(List.of("api", "audit", "core", "experiment", "filecontent", "pipeline", "query"));
+            var ems = ServiceRegistry.get().getService(ExplodedModuleService.class);
+            File externalModulesDir = null == ems ? null : ems.getExternalModulesDirectory();
+            if (null != externalModulesDir)
             {
-                String moduleName = includeList.removeFirst();
+                // All modules in externalModules are included, regardless of the "include" property. GH Issue 1610
+                // But they can be excluded if specified via "exclude"; see below.
+                // Stream all modules and match on location since directory names needn't match module names (e.g., devtools is "DeveloperTools")
+                java.nio.file.Path externalDir = externalModulesDir.toPath().toAbsolutePath();
+                moduleNameToModule.values().stream()
+                    .filter(m -> externalDir.equals(m.getExplodedFileLike().toNioPathForRead().getParent()))
+                    .map(Module::getName)
+                    .forEach(includeSet::add);
+            }
+            includedModules = new CaseInsensitiveTreeMap<>();
+            LinkedList<String> toProcess = new LinkedList<>(includeSet);
+            while (!toProcess.isEmpty())
+            {
+                String moduleName = toProcess.removeFirst();
                 if (!excludeSet.contains(moduleName)) // Don't look up excluded modules or include their dependencies
                 {
                     Module m = moduleNameToModule.get(moduleName);
@@ -1197,9 +1214,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     }
                     else
                     {
-                        // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies)
+                        // add module to includedModules, add dependencies to toProcess (of course it's too soon to call getResolvedModuleDependencies)
                         if (null == includedModules.put(m.getName(), m))
-                            includeList.addAll(m.getModuleDependenciesAsSet());
+                            toProcess.addAll(m.getModuleDependenciesAsSet());
                     }
                 }
             }
@@ -2066,27 +2083,28 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _distributionNameOverride = distributionNameOverride;
     }
 
-    // Returns a mutable copy because loadModules() consumes the list destructively
-    LinkedList<String> getModuleIncludeList()
+    Set<String> getModuleIncludeSet()
     {
-        return new LinkedList<>(_moduleIncludeList);
+        return _moduleIncludeSet;
     }
 
-    void setModuleIncludeList(List<String> moduleIncludeList)
+    // Case-insensitive
+    void setModuleIncludeSet(Set<String> moduleIncludeSet)
     {
-        checkStartupPropertyState("Module include list");
-        _moduleIncludeList = List.copyOf(moduleIncludeList);
+        checkStartupPropertyState("Module include set");
+        _moduleIncludeSet = Collections.unmodifiableSet(moduleIncludeSet);
     }
 
-    List<String> getModuleExcludeList()
+    Set<String> getModuleExcludeSet()
     {
-        return _moduleExcludeList;
+        return _moduleExcludeSet;
     }
 
-    void setModuleExcludeList(List<String> moduleExcludeList)
+    // Case-insensitive
+    void setModuleExcludeSet(Set<String> moduleExcludeSet)
     {
-        checkStartupPropertyState("Module exclude list");
-        _moduleExcludeList = List.copyOf(moduleExcludeList);
+        checkStartupPropertyState("Module exclude set");
+        _moduleExcludeSet = Collections.unmodifiableSet(moduleExcludeSet);
     }
 
     private void checkStartupPropertyState(String description)
