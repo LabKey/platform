@@ -1713,6 +1713,19 @@ public abstract class SqlDialect
             }
         }
 
+        public Integer getMaxIdle()
+        {
+            try
+            {
+                return callGetter("getMaxIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max idle from data source \"{}\"", _dsName);
+                return null;
+            }
+        }
+
         public Integer getNumActive()
         {
             try

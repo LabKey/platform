@@ -138,6 +138,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -3047,6 +3048,44 @@ public class AdminController extends SpringActionController
             {
                 writer.write(response);
             }
+        }
+    }
+
+    @AdminConsoleAction
+    public static class GetConnectionPoolStatsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            // Initialized scopes only, so an unreachable external data source isn't probed
+            return Map.of("dataSources", DbScope.getInitializedDbScopes().stream()
+                .map(GetConnectionPoolStatsAction::getPoolStats)
+                .toList());
+        }
+
+        private static Map<String, Object> getPoolStats(DbScope scope)
+        {
+            DataSourcePropertyReader props = scope.getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("name", scope.getDataSourceName());
+            result.put("isLabKeyScope", scope.isLabKeyScope());
+            result.put("maxTotal", props.getMaxTotal());
+            result.put("maxIdle", props.getMaxIdle());
+            result.put("numActive", props.getNumActive());
+            result.put("numIdle", props.getNumIdle());
+            if (null != pool)
+            {
+                result.put("createdCount", pool.createdCount());
+                result.put("destroyedCount", pool.destroyedCount());
+                result.put("destroyedByEvictorCount", pool.destroyedByEvictorCount());
+                result.put("destroyedByBorrowValidationCount", pool.destroyedByBorrowValidationCount());
+                result.put("borrowedCount", pool.borrowedCount());
+                result.put("numWaiters", pool.numWaiters());
+                result.put("meanBorrowWaitMillis", pool.meanBorrowWaitMillis());
+                result.put("maxBorrowWaitMillis", pool.maxBorrowWaitMillis());
+            }
+            return result;
         }
     }
 
@@ -12724,6 +12763,7 @@ public class AdminController extends SpringActionController
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
                 new ExportConnectionUsageAction(),
+                new GetConnectionPoolStatsAction(),
                 new ExportQueriesAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()
