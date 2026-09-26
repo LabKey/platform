@@ -8796,6 +8796,8 @@ public class QueryController extends SpringActionController
 
             try (var _ = McpContext.withContext(getViewContext()))
             {
+                McpContext.get().put(McpContext.AGENT_NAME_ATTR, getAgentName());
+
                 String prompt = form.getPrompt();
 
                 JSONObject escapeResponse = escapeResponse(prompt);

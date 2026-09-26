@@ -541,7 +541,6 @@ public class SecurityApiActions
             if (_includePermissions)
             {
                 User user = getUser();
-                List<String> permNames = new ArrayList<>();
 
                 //horrible, nasty, icky, awful HACK! See bug 8183.
                 //Study datasets use special logic for determining read/write so we need to ask it directly.
@@ -553,14 +552,13 @@ public class SecurityApiActions
                 }
                 else
                 {
-                    permissions = SecurityManager.streamPermissions(resource, user, Set.of())
+                    permissions = SecurityManager.getPermissions(resource, user, Set.of())
                         .collect(Collectors.toSet()); // Ensure no duplicates
                 }
 
-                for (Class<? extends Permission> permission : permissions)
-                {
-                    permNames.add(RoleManager.getPermission(permission).getUniqueName());
-                }
+                List<String> permNames = permissions.stream()
+                    .map(permission -> RoleManager.getPermission(permission).getUniqueName())
+                    .collect(Collectors.toList());
 
                 props.put("effectivePermissions", permNames);
             }
