@@ -251,7 +251,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     // If non-null, overrides the name specified in the distribution.properties file
     private volatile String _distributionNameOverride;
-    // Modules to include and exclude in this server session; consumed by filterModules()
+    // Modules to include and exclude in this server session; consumed by filterModulesForStartupProperties()
     private volatile Set<String> _moduleIncludeSet = Set.of();
     private volatile Set<String> _moduleExcludeSet = Set.of();
 
@@ -341,7 +341,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        // Populate early so module include/exclude properties are available for filterModules()
+        // Populate early so module include/exclude properties are available for filterModulesForStartupProperties()
         ModuleLoaderStartupProperties.populate();
         // Load module instances using Spring, then apply "include/exclude" startup properties
         List<Module> moduleList = filterModulesForStartupProperties(loadModules(explodedModuleDirs));
