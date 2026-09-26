@@ -251,7 +251,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     // If non-null, overrides the name specified in the distribution.properties file
     private volatile String _distributionNameOverride;
-    // Modules to include and exclude in this server session; consumed by loadModules()
+    // Modules to include and exclude in this server session; consumed by filterModules()
     private volatile Set<String> _moduleIncludeSet = Set.of();
     private volatile Set<String> _moduleExcludeSet = Set.of();
 
@@ -341,11 +341,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        // Populate early so module include/exclude properties are available for loadModules()... and not reloaded when
-        // creating and loading modules using the module editor.
+        // Populate early so module include/exclude properties are available for filterModules()
         ModuleLoaderStartupProperties.populate();
-        // Load module instances using Spring
-        List<Module> moduleList = loadModules(explodedModuleDirs);
+        // Load module instances using Spring, then apply "include/exclude" startup properties
+        List<Module> moduleList = filterModulesForStartupProperties(loadModules(explodedModuleDirs));
 
         //sort the modules by dependencies
         synchronized (_modulesLock)
@@ -1175,15 +1174,26 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             }
         }
 
-        // filter by startup properties if they were specified
+        return new ArrayList<>(moduleNameToModule.values());
+    }
 
-        // Mutable copy since we add to it below, and loadModules() runs again for modules created later
+    // Filter by include/exclude startup properties, if specified. Called only at startup; modules created or updated
+    // later (e.g., by the module editor) aren't subject to these properties.
+    private List<Module> filterModulesForStartupProperties(List<Module> modules)
+    {
+        CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
+        modules.forEach(m -> moduleNameToModule.put(m.getName(), m));
+
+        // Mutable copy since we add to it below
         Set<String> includeSet = Sets.newCaseInsensitiveHashSet(getModuleIncludeSet());
         Set<String> excludeSet = getModuleExcludeSet();
-        List<String> missingModules = new ArrayList<>();
-        CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
+        CaseInsensitiveTreeMap<Module> includedModules;
 
-        if (!includeSet.isEmpty())
+        if (includeSet.isEmpty())
+        {
+            includedModules = moduleNameToModule;
+        }
+        else
         {
             // Base modules required by every deployment
             includeSet.addAll(List.of("api", "audit", "core", "experiment", "filecontent", "pipeline", "query"));
@@ -1200,7 +1210,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     .map(Module::getName)
                     .forEach(includeSet::add);
             }
+
             includedModules = new CaseInsensitiveTreeMap<>();
+            List<String> missingModules = new ArrayList<>();
             LinkedList<String> toProcess = new LinkedList<>(includeSet);
             while (!toProcess.isEmpty())
             {
@@ -1220,11 +1232,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     }
                 }
             }
-        }
 
-        if (!missingModules.isEmpty())
-        {
-            _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): {}", String.join(", ", missingModules));
+            if (!missingModules.isEmpty())
+            {
+                _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): {}", String.join(", ", missingModules));
+            }
         }
 
         for (String e : excludeSet)
