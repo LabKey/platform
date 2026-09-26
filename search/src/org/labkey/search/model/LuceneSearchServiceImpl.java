@@ -180,6 +180,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     private static final int MAX_CONSECUTIVE_INDEX_FAILURES = 25;
     private final AtomicInteger _consecutiveIndexFailures = new AtomicInteger();
     private final ReentrantLock _reopenLock = new ReentrantLock();
+    // The no-op placeholder left by a failed reopen; indexing retries the reopen while it's current
+    private volatile WritableIndexManager _failedReopen = null;
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
@@ -1522,6 +1524,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     private boolean index(String id, Document doc)
     {
         WritableIndexManager indexManager = _indexManager;
+        if (indexManager == _failedReopen)
+        {
+            reopenIndex(indexManager);
+            indexManager = _indexManager;
+            if (indexManager == _failedReopen)
+                throw new IndexCommitException("Unable to reopen search index", null);
+        }
+
         try
         {
             indexManager.index(id, doc);
@@ -1560,6 +1570,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             else
                 _log.error("Indexing error with {} ({} consecutive documents failed across indexer threads; backing off at {}): {}", id, failures, MAX_CONSECUTIVE_INDEX_FAILURES, e.toString());
 
+            // Only a success resets the count, so once past the threshold every failure backs off again
             if (failures >= MAX_CONSECUTIVE_INDEX_FAILURES)
                 throw new IndexCommitException(failures + " consecutive documents failed to index", e);
         }
@@ -1676,7 +1687,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             {
                 _log.warn("Error closing failed index", e);
             }
-            initializeIndex();
+
+            try
+            {
+                initializeIndex();
+            }
+            catch (Throwable _)
+            {
+                // Already logged by misconfigured()
+            }
+
+            if (isIndexManagerReady())
+            {
+                _failedReopen = null;
+                _log.warn("Reopened search index after a failure; it may lack recently indexed changes until those documents are next modified");
+            }
+            else
+            {
+                // Mark misconfigured()'s no-op for retry so a transient failure doesn't disable indexing until restart
+                _failedReopen = _indexManager;
+                _log.warn("Unable to reopen search index; will retry with backoff");
+            }
         }
         finally
         {
