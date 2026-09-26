@@ -27,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.LinkedHashMap;
@@ -47,6 +49,23 @@ public class TracedOperation implements AutoCloseable
 
     /** Operations at least this slow log at INFO, so they're visible on the deployments that send no APM data */
     private static final long SLOW_MS = 30_000;
+
+    /** Entity ID rather than path, so a folder rename doesn't split its history */
+    public static final String CONTAINER_TAG = "labkey.container";
+
+    /**
+     * Caps a public schema name at two parts for use in a resource name. Deeper parts are admin-defined, like the
+     * protocol in assay.General.MyAssay, and would give every assay design its own resource.
+     */
+    public static @Nullable String boundedSchemaName(@Nullable String publicSchemaName)
+    {
+        if (null == publicSchemaName)
+            return null;
+        SchemaKey key = SchemaKey.fromString(publicSchemaName);
+        while (key.size() > 2)
+            key = key.getParent();
+        return key.toString();
+    }
 
     private final Span _span;
     private final Scope _scope;
@@ -90,6 +109,11 @@ public class TracedOperation implements AutoCloseable
             if (value != null)
                 _tags.put(name, value.toString());
             return this;
+        }
+
+        public Builder container(@Nullable Container c)
+        {
+            return tag(CONTAINER_TAG, null == c ? null : c.getEntityId());
         }
 
         /** Starts and activates the span. Call only as the resource of a try-with-resources. */
@@ -156,6 +180,11 @@ public class TracedOperation implements AutoCloseable
         return this;
     }
 
+    public TracedOperation container(@Nullable Container c)
+    {
+        return tag(CONTAINER_TAG, null == c ? null : c.getEntityId());
+    }
+
     public void completed(int rows)
     {
         _span.setTag("labkey.rows", rows);
@@ -218,6 +247,16 @@ public class TracedOperation implements AutoCloseable
                     formatMessage("materialize exp.Material", true, null, null, 3));
             assertEquals("update lists.People in /Home: did not complete after 12 ms",
                     formatMessage("update lists.People in /Home", false, null, null, 12));
+        }
+
+        @Test
+        public void testBoundedSchemaName()
+        {
+            assertNull(boundedSchemaName(null));
+            assertEquals("samples", boundedSchemaName("samples"));
+            assertEquals("exp.materials", boundedSchemaName("exp.materials"));
+            assertEquals("assay.General", boundedSchemaName("assay.General.MyAssay"));
+            assertEquals("assay.General", boundedSchemaName("assay.General.My$DAssay"));
         }
 
         @Test

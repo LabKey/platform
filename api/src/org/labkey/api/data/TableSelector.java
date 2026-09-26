@@ -26,6 +26,7 @@ import org.labkey.api.data.Aggregate.Result;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.logging.LogHelper;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -405,7 +406,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     /** Query names are user-defined and unbounded, and resource.name is a trace-metric dimension, so the resource stops at the schema and the query goes in a tag. */
     private String getAsyncResourceName(String operation)
     {
-        String schema = getAsyncSchemaName();
+        String schema = TracedOperation.boundedSchemaName(getAsyncSchemaName());
         return null != schema ? operation + " " + schema : operation;
     }
 
@@ -416,6 +417,8 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         tags.put("labkey.query", getAsyncQueryName());
         if (null != _table.getSchema())
             tags.put("labkey.db_schema", _table.getSchema().getName());
+        if (null != _table.getUserSchema())
+            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getEntityId().toString());
         return tags;
     }
 

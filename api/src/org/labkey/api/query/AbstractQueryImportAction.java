@@ -635,10 +635,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             String targetName = null == _target ? "unknown" : _target.getPublicSchemaName() + "." + _target.getPublicName();
             JSONObject response;
             try (TracedOperation op = TracedOperation.builder("labkey.importData")
-                    .resource(null == _target ? "importData" : "importData " + _target.getPublicSchemaName())
+                    .resource(null == _target ? "importData" : "importData " + TracedOperation.boundedSchemaName(_target.getPublicSchemaName()))
                     .describedAs("importData " + targetName + " in " + getContainer().getPath())
                     .tag("labkey.query", null == _target ? null : targetName)
                     .tag("labkey.db_schema", null == _target || null == _target.getSchema() ? null : _target.getSchema().getName())
+                    .container(getContainer())
                     .start())
             {
                 response = handleImportData(loader, dataFiles, file, originalName, behaviorType, auditEvent, (form instanceof QueryForm qf ? qf.getQueryName() : null));

@@ -4687,9 +4687,10 @@ public class QueryController extends SpringActionController
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName +
                         "' is not updatable via the HTTP-based APIs.");
 
-            op.resource(commandType.name() + " " + schemaName)
+            op.resource(commandType.name() + " " + TracedOperation.boundedSchemaName(schemaName))
                     .describedAs(commandType.name() + " " + schemaName + "." + queryName + " in " + container.getPath())
                     .tag("labkey.query", schemaName + "." + queryName)
+                    .container(container)
                     .tag("labkey.db_schema", null == table.getSchema() ? null : table.getSchema().getName());
 
             int rowsAffected = 0;
@@ -5212,7 +5213,8 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Empty request");
             }
             op.describedAs("saveRows " + commands.length() + " commands in " + getContainer().getPath())
-                    .tag("labkey.saveRows.commands", commands.length());
+                    .tag("labkey.saveRows.commands", commands.length())
+                    .container(getContainer());
 
             boolean validateOnly = json.optBoolean("validateOnly", false);
             // If we are going to validate and not commit, we need to be sure we're transacted as well. Otherwise,

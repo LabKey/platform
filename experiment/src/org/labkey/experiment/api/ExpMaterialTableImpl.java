@@ -1392,6 +1392,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
+                .traceLabel(new MaterializedQueryHelper.TraceLabel(SamplesSchema.SCHEMA_NAME, SamplesSchema.SCHEMA_NAME + "." + _ss.getName(), _ss.getContainer()))
                 .unlogged(true)
                 // RowId and Container are used in many places so ensure they're created before use. Other indices can
                 // be added as a followup step
@@ -1551,7 +1552,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Override
             public _MaterializedQueryHelper build()
             {
-                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged);
+                return new _MaterializedQueryHelper(_lsid, _updateColumns, _prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged, _traceLabel);
             }
         }
 
@@ -1567,10 +1568,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             @Nullable Collection<String> deferredIndexes,
             long maxTimeToCache,
             boolean isSelectIntoSql,
-            boolean unlogged
+            boolean unlogged,
+            @Nullable TraceLabel traceLabel
         )
         {
-            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged);
+            super(prefix, scope, select, uptodate, supplier, indexes, deferredIndexes, maxTimeToCache, isSelectIntoSql, unlogged, traceLabel);
             this._lsid = lsid;
             this._updateColumns = updateColumns;
         }
@@ -1641,7 +1643,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (check.peekValid())
                 return;
             String token = check.current();
-            traced("incremental." + kind, getMaterializationName(), work);
+            traced("incremental." + kind, work);
             check.markValidAs(token);
         }
 
