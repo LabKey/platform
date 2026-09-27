@@ -22,6 +22,7 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
@@ -528,6 +529,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,

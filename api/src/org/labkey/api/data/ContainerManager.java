@@ -168,6 +168,9 @@ public class ContainerManager
     private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     // Maps to EntityId rather than Container so the RowId path inherits CACHE_ENTITY_ID's invalidation
     private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
+    // RowIds and EntityIds are never reused, so a lookup miss (typically a deleted container) stays a miss
+    private static final GUID CACHE_MISS_GUID = new GUID("00000000-0000-0000-0000-000000000000");
+    private static final Cache<GUID, Boolean> CACHE_MISSING_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Missing container EntityIds");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -349,6 +352,10 @@ public class ContainerManager
                 else
                     throw new RuntimeException("Container for path '" + path + "' was not created properly.");
             }
+
+            // DATABASE_QUERY_LOCK is released before an outer transaction commits, so another thread can cache a miss for these ids in the meantime
+            int rowId = c.getRowId();
+            CORE.getSchema().getScope().addCommitTask(() -> _removeMissesFromCache(rowId, entityId), DbScope.CommitTaskOption.POSTCOMMIT);
 
             User savePolicyUser = user;
             if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
@@ -1144,10 +1151,12 @@ public class ContainerManager
     public static @Nullable Container getForRowId(int id)
     {
         GUID entityId = CACHE_ROW_ID.get(id);
+        if (CACHE_MISS_GUID == entityId)
+            return null;
         if (null != entityId)
             return getForId(entityId);
 
-        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id), () -> CACHE_ROW_ID.put(id, CACHE_MISS_GUID));
     }
 
     /** Bypasses the cache, for rereading a container right after updating its row */
@@ -1164,8 +1173,10 @@ public class ContainerManager
         Container d = CACHE_ENTITY_ID.get(guid);
         if (null != d)
             return d;
+        if (null != CACHE_MISSING_ENTITY_ID.get(guid))
+            return null;
 
-        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid));
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid), () -> CACHE_MISSING_ENTITY_ID.put(guid, true));
     }
 
     public static @Nullable Container getForId(@Nullable String id)
@@ -1179,15 +1190,15 @@ public class ContainerManager
         return getForId(new GUID(id));
     }
 
-    private static @Nullable Container selectAndCache(SQLFragment sql)
+    private static @Nullable Container selectAndCache(SQLFragment sql, Runnable cacheMiss)
     {
         try (DbScope.Transaction t = ensureTransaction())
         {
             Container result = new SqlSelector(CORE.getSchema(), sql).getObject(Container.class);
             if (result != null)
-            {
-                result = _addToCache(result);
-            }
+                _addToCache(result);
+            else
+                cacheMiss.run();
             // No database changes to commit, but need to decrement the counter
             t.commit();
 
@@ -2102,7 +2113,24 @@ public class ContainerManager
         CACHE_ENTITY_ID.put(c.getEntityId(), c);
         CACHE_PATH.put(c.getParsedPath(), c);
         CACHE_ROW_ID.put(c.getRowId(), c.getEntityId());
+        CACHE_MISSING_ENTITY_ID.remove(c.getEntityId());
         return c;
+    }
+
+    /** Drops misses cached by a lookup that ran before the container's creating transaction committed */
+    private static void _removeMissesFromCache(int rowId, GUID entityId)
+    {
+        DATABASE_QUERY_LOCK.lock();
+        try
+        {
+            if (CACHE_MISS_GUID == CACHE_ROW_ID.get(rowId))
+                CACHE_ROW_ID.remove(rowId);
+            CACHE_MISSING_ENTITY_ID.remove(entityId);
+        }
+        finally
+        {
+            DATABASE_QUERY_LOCK.unlock();
+        }
     }
 
     private static void _clearChildrenFromCache(Container c)
@@ -2134,6 +2162,7 @@ public class ContainerManager
         CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
         CACHE_ROW_ID.clear();
+        CACHE_MISSING_ENTITY_ID.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2923,6 +2952,44 @@ public class ContainerManager
 
             assertTrue(delete(parentA, user));
             assertTrue(delete(parentB, user));
+        }
+
+        @Test
+        public void testMissesCached()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "misses", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            assertNull(getForRowId(rowId));
+            assertSame(CACHE_MISS_GUID, CACHE_ROW_ID.get(rowId));
+            assertNull(getForRowId(rowId));
+
+            assertNull(getForId(entityId));
+            assertEquals(Boolean.TRUE, CACHE_MISSING_ENTITY_ID.get(entityId));
+            assertNull(getForId(entityId.toString()));
+        }
+
+        @Test
+        public void testMissesClearedWhenCreateCommits()
+        {
+            User user = TestContext.get().getUser();
+            Container c;
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                c = createContainer(_testRoot, "uncommitted", user);
+                // Simulate another thread that looked up the new ids before this transaction committed
+                CACHE_ROW_ID.put(c.getRowId(), CACHE_MISS_GUID);
+                CACHE_ENTITY_ID.remove(c.getEntityId());
+                CACHE_MISSING_ENTITY_ID.put(c.getEntityId(), true);
+                tx.commit();
+            }
+
+            assertEquals(c, getForRowId(c.getRowId()));
+            assertEquals(c, getForId(c.getEntityId()));
+            assertTrue(delete(c, user));
         }
 
         @Test

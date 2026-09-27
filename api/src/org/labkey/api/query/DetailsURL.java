@@ -63,7 +63,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     private ActionURL _parsedUrl;
     private boolean _strictContainerContextEval;
 
-    // A Container's path never changes, so rows sharing a container can skip rebuilding the path
+    // Keyed by Container identity; rename/move replace the cached instance, so a stale path can't be served
     private record ContainerPath(Container container, String path) {}
     private volatile ContainerPath _lastContainerPath;
 
