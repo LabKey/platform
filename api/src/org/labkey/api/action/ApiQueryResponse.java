@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,6 +87,7 @@ public class ApiQueryResponse implements ApiResponse
     private boolean _includeDisplayValues;
     private List<FieldKey> _columnFilter;
     private boolean _includeMetaData;
+    private List<DisplayColumn> _rowColumns;
 
     // TODO: This is silly... switch to builder pattern, or at least a constructor that takes reasonable strategies
     public ApiQueryResponse(QueryView view, boolean schemaEditable, boolean includeLookupInfo,
@@ -559,13 +561,62 @@ public class ApiQueryResponse implements ApiResponse
             while (results.next())
             {
                 _ctx.setRow(factory.getRowMap(results));
-                writer.writeListEntry(getRow());
+                writeRow(writer);
                 ++_numRespRows;
             }
             complete = results.isComplete();
         }
         writer.endList();
         return complete;
+    }
+
+    /** Streams JSON rows directly instead of building a map per row */
+    protected void writeRow(ApiResponseWriter writer) throws IOException
+    {
+        if (writer instanceof ApiJsonWriter jsonWriter)
+        {
+            jsonWriter.startObject();
+            try
+            {
+                for (DisplayColumn dc : getRowColumns())
+                    writeValue(jsonWriter, dc);
+            }
+            finally
+            {
+                jsonWriter.endObject();
+            }
+        }
+        else
+        {
+            writer.writeListEntry(getRow());
+        }
+    }
+
+    /** Included columns, deduplicated by name so streamed rows keep the last-one-wins semantics of {@link #getRow()} */
+    private List<DisplayColumn> getRowColumns()
+    {
+        if (null == _rowColumns)
+        {
+            Map<String, DisplayColumn> byName = new LinkedHashMap<>();
+            for (DisplayColumn dc : _displayColumns)
+            {
+                if (includeColumnInResponse(dc))
+                    byName.put(getColumnName(dc), dc);
+            }
+            _rowColumns = new ArrayList<>(byName.values());
+        }
+        return _rowColumns;
+    }
+
+    /** Streaming equivalent of {@link #putValue(Map, DisplayColumn)} */
+    protected void writeValue(ApiJsonWriter writer, DisplayColumn dc) throws IOException
+    {
+        String colName = String.valueOf(getColumnName(dc));
+        writer.writeProperty(colName, getColumnValue(dc));
+
+        //Issue 23773: even for null urls include it so as not to cause ordering to change.
+        if (dc.includeURL())
+            writer.writeProperty(URL_COL_PREFIX + colName, dc.renderURL(_ctx));
     }
 
     protected Map<String,Object> getRow()

@@ -166,6 +166,8 @@ public class ContainerManager
     private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
     private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
     private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    // Maps to EntityId rather than Container so the RowId path inherits CACHE_ENTITY_ID's invalidation
+    private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -821,7 +823,7 @@ public class ContainerManager
         
         String oldValue = container.getDescription();
         _removeFromCache(container, false);
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Description, oldValue, description);
         firePropertyChangeEvent(evt);
     }
@@ -978,7 +980,7 @@ public class ContainerManager
 
         _removeFromCache(container, false);
         String oldValue = container.getTitle();
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
         firePropertyChangeEvent(evt);
     }
@@ -1139,15 +1141,31 @@ public class ContainerManager
         return Collections.unmodifiableMap(ret);
     }
 
-    public static Container getForRowId(int id)
+    public static @Nullable Container getForRowId(int id)
     {
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
-        return selector.getObject(Container.class);
+        GUID entityId = CACHE_ROW_ID.get(id);
+        if (null != entityId)
+            return getForId(entityId);
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
     }
 
-    public static @Nullable Container getForId(@NotNull GUID guid)
+    /** Bypasses the cache, for rereading a container right after updating its row */
+    private static @Nullable Container selectForRowId(int id)
     {
-        return guid != null ? getForId(guid.toString()) : null;
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id)).getObject(Container.class);
+    }
+
+    public static @Nullable Container getForId(@Nullable GUID guid)
+    {
+        if (null == guid)
+            return null;
+
+        Container d = CACHE_ENTITY_ID.get(guid);
+        if (null != d)
+            return d;
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid));
     }
 
     public static @Nullable Container getForId(@Nullable String id)
@@ -1158,18 +1176,14 @@ public class ContainerManager
         if (!GUID.isGUID(id))
             return null;
 
-        GUID guid = new GUID(id);
+        return getForId(new GUID(id));
+    }
 
-        Container d = CACHE_ENTITY_ID.get(guid);
-        if (null != d)
-            return d;
-
+    private static @Nullable Container selectAndCache(SQLFragment sql)
+    {
         try (DbScope.Transaction t = ensureTransaction())
         {
-            Container result = new SqlSelector(
-                    CORE.getSchema(),
-                    "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?",
-                    id).getObject(Container.class);
+            Container result = new SqlSelector(CORE.getSchema(), sql).getObject(Container.class);
             if (result != null)
             {
                 result = _addToCache(result);
@@ -1721,7 +1735,7 @@ public class ContainerManager
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
                 // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-                c = getForRowId(c.getRowId());
+                c = selectForRowId(c.getRowId());
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
                 if (changedProjects)
@@ -2087,6 +2101,7 @@ public class ContainerManager
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         CACHE_ENTITY_ID.put(c.getEntityId(), c);
         CACHE_PATH.put(c.getParsedPath(), c);
+        CACHE_ROW_ID.put(c.getRowId(), c.getEntityId());
         return c;
     }
 
@@ -2101,6 +2116,7 @@ public class ContainerManager
     {
         CACHE_ENTITY_ID.remove(c.getEntityId());
         CACHE_PATH.remove(c.getParsedPath());
+        CACHE_ROW_ID.remove(c.getRowId());
 
         if (hierarchyChange)
         {
@@ -2117,6 +2133,7 @@ public class ContainerManager
         CACHE_PATH.clear();
         CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
+        CACHE_ROW_ID.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2877,6 +2894,35 @@ public class ContainerManager
             assertTrue(delete(one, TestContext.get().getUser()));
             assertEquals(0, getChildren(_testRoot).size());
             assertEquals(0, _containers.size());
+        }
+
+        @Test
+        public void testRowIdCache() throws ValidationException
+        {
+            User user = TestContext.get().getUser();
+            Container parentA = createContainer(_testRoot, "rowIdA", user);
+            Container parentB = createContainer(_testRoot, "rowIdB", user);
+            Container child = createContainer(parentA, "child", user);
+            int rowId = child.getRowId();
+
+            assertSame(getForId(child.getEntityId()), getForRowId(rowId));
+            assertSame(getForRowId(rowId), getForRowId(rowId));
+
+            updateTitle(getForRowId(rowId), "New Title", user);
+            assertEquals("New Title", getForRowId(rowId).getTitle());
+
+            move(getForRowId(rowId), parentB, user);
+            assertEquals(parentB, getForRowId(rowId).getParent());
+
+            rename(getForRowId(rowId), user, "renamed");
+            assertEquals("renamed", getForRowId(rowId).getName());
+
+            assertTrue(delete(getForRowId(rowId), user));
+            assertNull(getForRowId(rowId));
+            assertNull(getForId(child.getEntityId()));
+
+            assertTrue(delete(parentA, user));
+            assertTrue(delete(parentB, user));
         }
 
         @Test

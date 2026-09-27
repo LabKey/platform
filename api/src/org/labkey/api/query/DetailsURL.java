@@ -25,6 +25,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.JunitUtil;
@@ -37,6 +38,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -60,6 +62,10 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     // parsed fields
     private ActionURL _parsedUrl;
     private boolean _strictContainerContextEval;
+
+    // A Container's path never changes, so rows sharing a container can skip rebuilding the path
+    private record ContainerPath(Container container, String path) {}
+    private volatile ContainerPath _lastContainerPath;
 
 
     public static String validateURL(String str)
@@ -252,6 +258,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     protected void parse() throws IllegalArgumentException
     {
         assert null == _url || null == _urlSource;
+        _lastContainerPath = null;
 
         if (null != _url)
         {
@@ -384,12 +391,27 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         {
             return null;
         }
-        if (null != c)
-            _parsedUrl.setContainer(c);
+        String path = getPath(c);
         if (query.isBlank())
-            return _parsedUrl.getPath();
+            return path;
         else
-            return _parsedUrl.getPath() + "?" + query;
+            return path + "?" + query;
+    }
+
+    private String getPath(@Nullable Container c)
+    {
+        if (null == c)
+            return _parsedUrl.getPath();
+
+        ContainerPath last = _lastContainerPath;
+        if (null != last && last.container() == c)
+            return last.path();
+
+        _parsedUrl.setContainer(c);
+        // Build from a clone so a concurrent eval() can't get another container's path memoized here
+        String path = _parsedUrl.clone().setContainer(c).getPath();
+        _lastContainerPath = new ContainerPath(c, path);
+        return path;
     }
 
 
@@ -539,6 +561,20 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
             var testHash = new DetailsURL("project-begin.view?id=${RowId}#/section/player/${Player}", JunitUtil.getTestContainer());
 
             assertEquals(expectedHashURL.toString(), testHash.eval(context));
+        }
+
+        @Test
+        public void testContainerPerRow()
+        {
+            Container a = JunitUtil.getTestContainer();
+            Container b = ContainerManager.getSharedContainer();
+            DetailsURL url = DetailsURL.fromString("project-begin.view?id=${RowId}").setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Folder")));
+
+            for (Container c : List.of(a, a, b, a, b, b))
+            {
+                var expected = new ActionURL("project", "begin", c).addParameter("id", 1);
+                assertEquals(expected.toString(), url.eval(Map.of("RowId", 1, "Folder", c)));
+            }
         }
     }
 }
