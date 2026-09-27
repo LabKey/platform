@@ -20,12 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -34,6 +36,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.settings.AppProps;
@@ -505,12 +508,11 @@ public class QuerySelectView extends AbstractQueryRelation
     /* Sort fields after the PK can't change the order, but they stop Postgres from reading in PK index order under a LIMIT */
     private static @Nullable Sort trimSortAfterPk(TableInfo table, @Nullable Sort sort)
     {
-        // LabKey SQL queries can declare key fields that aren't unique
-        if (sort == null || table instanceof QueryTableInfo)
+        if (sort == null)
             return sort;
 
         List<ColumnInfo> pkColumns = table.getPkColumns();
-        if (pkColumns.isEmpty() || !pkColumns.stream().allMatch(QuerySelectView::sortsByOwnValue))
+        if (pkColumns.isEmpty() || !hasDatabasePk(table) || !pkColumns.stream().allMatch(QuerySelectView::sortsByOwnValue))
             return sort;
 
         Set<FieldKey> unsortedPks = pkColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toCollection(HashSet::new));
@@ -527,6 +529,19 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
         return sort;
+    }
+
+    /* Declared keys (LabKey SQL, schema XML on views, metadata overrides) aren't guaranteed unique, so require the database's PK constraint */
+    private static boolean hasDatabasePk(TableInfo table)
+    {
+        TableInfo real = table;
+        while (real instanceof FilteredTable<?> ft)
+            real = ft.getRealTable();
+        if (!(real instanceof SchemaTableInfo schemaTable) || null == schemaTable.getPrimaryKeyName())
+            return false;
+
+        Set<String> realPks = new CaseInsensitiveHashSet(schemaTable.getPkColumnNames());
+        return realPks.size() == table.getPkColumnNames().size() && realPks.containsAll(table.getPkColumnNames());
     }
 
     /* A lookup's sort field keys can point at its display value, which isn't unique */

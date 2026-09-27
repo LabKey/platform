@@ -3541,6 +3541,11 @@ public class QueryServiceImpl implements QueryService
             Sort sort = new Sort("UserId,Name");
             orderBy(principals, sort);
             assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
         }
 
         private String orderBy(TableInfo table, String sort)

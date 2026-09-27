@@ -1192,12 +1192,14 @@ public class ContainerManager
 
     private static @Nullable Container selectAndCache(SQLFragment sql, Runnable cacheMiss)
     {
+        // A miss inside an outer transaction may be an uncommitted delete or a stale REPEATABLE READ snapshot, so don't cache it
+        boolean outerTransaction = CORE.getSchema().getScope().isTransactionActive();
         try (DbScope.Transaction t = ensureTransaction())
         {
             Container result = new SqlSelector(CORE.getSchema(), sql).getObject(Container.class);
             if (result != null)
                 _addToCache(result);
-            else
+            else if (!outerTransaction)
                 cacheMiss.run();
             // No database changes to commit, but need to decrement the counter
             t.commit();
@@ -2970,6 +2972,26 @@ public class ContainerManager
             assertNull(getForId(entityId));
             assertEquals(Boolean.TRUE, CACHE_MISSING_ENTITY_ID.get(entityId));
             assertNull(getForId(entityId.toString()));
+        }
+
+        @Test
+        public void testMissesNotCachedInTransaction()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "missesInTx", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                assertNull(getForRowId(rowId));
+                assertNull(getForId(entityId));
+                tx.commit();
+            }
+
+            assertNull(CACHE_ROW_ID.get(rowId));
+            assertNull(CACHE_MISSING_ENTITY_ID.get(entityId));
         }
 
         @Test
