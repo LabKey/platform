@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Test;
 import org.junit.runner.notification.Failure;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -174,23 +173,26 @@ public class JunitController extends SpringActionController
         @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
-            List<Class<?>> testClasses = getTestClasses(form);
+            String methodName = StringUtils.trimToNull(form.getMethodName());
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
+            List<Class<?>> ranClasses = new LinkedList<>();
             List<JunitRunner.RunnerResult> results = new LinkedList<>();
 
-            for (Class<?> testClass : testClasses)
+            for (Class<?> testClass : getTestClasses(form))
             {
                 // check if the client has gone away
                 getViewContext().getResponse().getWriter().print(" ");
                 getViewContext().getResponse().flushBuffer();
-                if (form.getMethodName() == null)
-                    results.add(JunitRunner.run(testClass));
-                else
-                    results.add(JunitRunner.run(testClass, form.getMethodName()));
+                JunitRunner.RunnerResult result = methodName == null ? JunitRunner.run(testClass) : JunitRunner.run(testClass, methodName);
+                if (result != null)
+                {
+                    ranClasses.add(testClass);
+                    results.add(result);
+                }
             }
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
-            return new TestResultView(testClasses, results);
+            return new TestResultView(ranClasses, results);
         }
 
 
@@ -304,10 +306,9 @@ public class JunitController extends SpringActionController
                     : "No registered test class: " + testCase);
 
             String methodName = StringUtils.trimToNull(form.getMethodName());
-            if (methodName != null && Arrays.stream(clazz.getMethods()).noneMatch(m -> m.getName().equals(methodName) && m.isAnnotationPresent(Test.class)))
-                throw new NotFoundException("No @Test method " + methodName + " in " + testCase);
-
             JunitRunner.RunnerResult result = methodName == null ? JunitRunner.run(clazz) : JunitRunner.run(clazz, methodName);
+            if (result == null)
+                throw new NotFoundException("No test method " + methodName + " in " + testCase);
 
             if (!result.junitResult.wasSuccessful())
                 getViewContext().getResponse().setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
