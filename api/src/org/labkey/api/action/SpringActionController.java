@@ -223,6 +223,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getConnectionWallTime();
         int getMaxConcurrent();
         long getAcquireTime();
+        /** Portion of acquire time inside the pool's getConnection() */
+        long getAcquirePoolTime();
+        /** Portion of acquire time in per-connection setup */
+        long getAcquireSetupTime();
+        /** Thread CPU time consumed while acquiring */
+        long getAcquireCpuTime();
         long getUnreturned();
         boolean hasExceptions();
         List<Exception> getExceptions();
@@ -810,6 +816,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _wallNanos = 0;
         private int _maxConcurrent = 0;
         private long _acquireNanos = 0;
+        private long _acquirePoolNanos = 0;
+        private long _acquireSetupNanos = 0;
+        private long _acquireCpuNanos = 0;
         private long _unreturned = 0;
         private List<Exception> _exceptions = null;
 
@@ -827,6 +836,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _wallNanos += connectionUsage.wallNanos();
             _maxConcurrent = Math.max(_maxConcurrent, connectionUsage.maxConcurrent());
             _acquireNanos += connectionUsage.acquireNanos();
+            _acquirePoolNanos += connectionUsage.poolNanos();
+            _acquireSetupNanos += connectionUsage.setupNanos();
+            _acquireCpuNanos += connectionUsage.acquireCpuNanos();
             _unreturned += connectionUsage.unreturned();
         }
 
@@ -842,7 +854,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         synchronized public ActionStats getStats()
         {
-            return new BaseActionStats(_count, _elapsedTime, _maxTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _unreturned, _exceptions);
+            return new BaseActionStats(_count, _elapsedTime, _maxTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _acquirePoolNanos, _acquireSetupNanos, _acquireCpuNanos, _unreturned, _exceptions);
         }
 
         // Immutable stats holder to eliminate external synchronization needs
@@ -856,10 +868,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private final long _wallNanos;
             private final int _maxConcurrent;
             private final long _acquireNanos;
+            private final long _acquirePoolNanos;
+            private final long _acquireSetupNanos;
+            private final long _acquireCpuNanos;
             private final long _unreturned;
             private final List<Exception> _exceptions;
 
-            private BaseActionStats(long count, long elapsedTime, long maxTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long unreturned, List<Exception> ex)
+            private BaseActionStats(long count, long elapsedTime, long maxTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long acquirePoolNanos, long acquireSetupNanos, long acquireCpuNanos, long unreturned, List<Exception> ex)
             {
                 _count = count;
                 _elapsedTime = elapsedTime;
@@ -869,6 +884,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _wallNanos = wallNanos;
                 _maxConcurrent = maxConcurrent;
                 _acquireNanos = acquireNanos;
+                _acquirePoolNanos = acquirePoolNanos;
+                _acquireSetupNanos = acquireSetupNanos;
+                _acquireCpuNanos = acquireCpuNanos;
                 _unreturned = unreturned;
                 _exceptions = ex;
             }
@@ -919,6 +937,24 @@ public abstract class SpringActionController implements Controller, HasViewConte
             public long getAcquireTime()
             {
                 return TimeUnit.NANOSECONDS.toMillis(_acquireNanos);
+            }
+
+            @Override
+            public long getAcquirePoolTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquirePoolNanos);
+            }
+
+            @Override
+            public long getAcquireSetupTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireSetupNanos);
+            }
+
+            @Override
+            public long getAcquireCpuTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireCpuNanos);
             }
 
             @Override

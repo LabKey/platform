@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,10 +37,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ConnectionUsage
 {
     private static final Map<Thread, Usage> USAGE = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final ThreadMXBean THREADS = ManagementFactory.getThreadMXBean();
+    private static final boolean CPU_TIME = THREADS.isCurrentThreadCpuTimeSupported() && THREADS.isThreadCpuTimeEnabled();
 
-    public record Snapshot(long borrows, long acquireNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned)
+    /** acquireNanos is the whole borrow: poolNanos in getConnection(), setupNanos for per-connection setup, and the remainder building the wrapper */
+    public record Snapshot(long borrows, long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned)
     {
-        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0);
+        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    /** Current thread's CPU time, or 0 when the JVM can't measure it */
+    static long currentThreadCpuNanos()
+    {
+        return CPU_TIME ? THREADS.getCurrentThreadCpuTime() : 0;
     }
 
     /** Opaque token returned by {@link #mark()} */
@@ -47,6 +58,9 @@ public class ConnectionUsage
         private final Usage _usage;
         private final long _borrows;
         private final long _acquireNanos;
+        private final long _poolNanos;
+        private final long _setupNanos;
+        private final long _acquireCpuNanos;
         private final long _heldNanos;
         private final long _wallNanos;
         private final int _active;
@@ -57,6 +71,9 @@ public class ConnectionUsage
             _usage = usage;
             _borrows = usage._borrows;
             _acquireNanos = usage._acquireNanos;
+            _poolNanos = usage._poolNanos;
+            _setupNanos = usage._setupNanos;
+            _acquireCpuNanos = usage._acquireCpuNanos;
             _heldNanos = usage.held(now);
             _wallNanos = usage.wall(now);
             _active = usage._active;
@@ -69,6 +86,9 @@ public class ConnectionUsage
     {
         private long _borrows;
         private long _acquireNanos;
+        private long _poolNanos;
+        private long _setupNanos;
+        private long _acquireCpuNanos;
         private long _heldClosedNanos;
         private long _openStartSum;
         private long _wallClosedNanos;
@@ -86,10 +106,13 @@ public class ConnectionUsage
             return _wallClosedNanos + (_active > 0 ? now - _wallStart : 0);
         }
 
-        private synchronized void borrow(long acquireNanos, long now)
+        private synchronized void borrow(long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long now)
         {
             _borrows++;
             _acquireNanos += acquireNanos;
+            _poolNanos += poolNanos;
+            _setupNanos += setupNanos;
+            _acquireCpuNanos += acquireCpuNanos;
             if (_active++ == 0)
                 _wallStart = now;
             _openStartSum += now;
@@ -120,6 +143,9 @@ public class ConnectionUsage
             return new Snapshot(
                 _borrows - mark._borrows,
                 _acquireNanos - mark._acquireNanos,
+                _poolNanos - mark._poolNanos,
+                _setupNanos - mark._setupNanos,
+                _acquireCpuNanos - mark._acquireCpuNanos,
                 held(now) - mark._heldNanos,
                 wall(now) - mark._wallNanos,
                 mark._maxActive,
@@ -141,11 +167,11 @@ public class ConnectionUsage
     }
 
     /** @return the Usage to credit when this connection is returned, or null if the thread has never been marked */
-    static @Nullable Usage recordBorrow(long acquireNanos, long borrowedAt)
+    static @Nullable Usage recordBorrow(long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long borrowedAt)
     {
         Usage usage = USAGE.get(DbScope.getEffectiveThread());
         if (null != usage)
-            usage.borrow(acquireNanos, borrowedAt);
+            usage.borrow(acquireNanos, poolNanos, setupNanos, acquireCpuNanos, borrowedAt);
         return usage;
     }
 
@@ -199,6 +225,7 @@ public class ConnectionUsage
             });
             assertEquals(3, snapshot.borrows());
             assertEquals(3, snapshot.maxConcurrent());
+            assertTrue("Acquire phases can't exceed the whole", snapshot.poolNanos() + snapshot.setupNanos() <= snapshot.acquireNanos());
             assertEquals(0, snapshot.unreturned());
             assertTrue("Summed hold time should exceed the union", snapshot.heldNanos() > snapshot.wallNanos());
             assertTrue(snapshot.wallNanos() >= 5_000_000);
