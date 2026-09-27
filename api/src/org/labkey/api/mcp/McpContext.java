@@ -34,6 +34,9 @@ import java.util.Map;
  */
 public class McpContext implements ContainerUser
 {
+    /** Attribute key under which AbstractAgentAction records its getAgentName(), for guardrail-denial logging. */
+    public static final String AGENT_NAME_ATTR = "agentName";
+
     final User user;
     final Container container;
     final Map<String, Object> attributes = new HashMap<>();

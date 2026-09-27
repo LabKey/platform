@@ -307,9 +307,9 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         if (!(cf instanceof ContainerFilter.ContainerFilterWithPermission cfp))
             return cf.getIds();
 
-        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
+        Set<Role> contextualRoles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : Set.of();
 
-        return cfp.generateIds(container, CanSeeAuditLogPermission.class, roles);
+        return cfp.generateIds(container, CanSeeAuditLogPermission.class, contextualRoles);
     }
 
     public TransactionRowIds getTransactionSampleIds(long transactionAuditId, boolean includeInsertEventOnly, User user, Container container, @Nullable ContainerFilter containerFilter)

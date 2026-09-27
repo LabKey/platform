@@ -2425,7 +2425,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         User searchUser = User.getSearchUser();
         ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
-        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, Set.of());
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);

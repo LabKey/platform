@@ -17,6 +17,7 @@
 package org.labkey.study.controllers.reports;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -34,7 +35,11 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -44,11 +49,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.security.permissions.AbstractContainerScopingTest;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.writer.DefaultContainerUser;
-import jakarta.servlet.http.HttpServletResponse;
-import org.junit.Test;
+import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -59,9 +60,12 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -86,6 +90,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -101,6 +106,7 @@ import org.labkey.vfs.FileLike;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1345,6 +1351,56 @@ public class ReportsController extends BaseStudyController
             // proving the guard rejects only the unauthorized reader.
             assertNotEquals("The report owner must pass the read check, not be blocked at 403",
                     HttpServletResponse.SC_FORBIDDEN, get(url, getAdmin()).getStatus());
+        }
+
+        // GH Issue 1398
+        @Test
+        public void testOverwritingSavedReports() throws Exception
+        {
+            assertReportNotStolen(SaveReportAction.class, false);
+            // shareReport leaves the descriptor's owner null, so the save is checked as a shared report and the
+            // caller's Editor role in their own folder satisfies the only permission the save path consults.
+            assertReportNotStolen(SaveReportViewAction.class, true);
+        }
+
+        /**
+         * Both save actions seed the descriptor from the client-supplied params string, which ReportDescriptor copies
+         * verbatim into its property map -- reportId included -- so the save targets a row of the caller's choosing.
+         * The shared path then authorizes against the request container and updates by primary key alone.
+         */
+        private void assertReportNotStolen(Class<? extends Controller> action, boolean shareReport) throws Exception
+        {
+            Container attackerFolder = createContainer("A");
+            Container victimFolder = createContainer("B");
+
+            // Shared (no descriptor owner), the case the save path treats as editable by any container Editor.
+            Report victimReport = ReportService.get().createReportInstance(QueryReport.TYPE);
+            victimReport.getDescriptor().setReportName("scoping-victim-report");
+            int victimRowId = ReportService.get()
+                    .saveReportEx(new DefaultContainerUser(victimFolder, getAdmin()), "scoping-victim-key", victimReport)
+                    .getRowId();
+
+            User attacker = createUserInRole(attackerFolder, EditorRole.class);
+
+            ActionURL url = new ActionURL(action, attackerFolder)
+                    .addParameter("reportType", QueryReport.TYPE)
+                    .addParameter("label", "scoping-stolen-report")
+                    .addParameter("params", "reportId=db%3A" + victimRowId);
+            if (shareReport)
+                url.addParameter("shareReport", "true");
+
+            post(url, attacker);
+
+            // Read the row itself rather than ReportService: a cross-container save invalidates only the request
+            // container's cache, so a cached read could still show the victim's report after it had been clobbered.
+            ReportDB row = new TableSelector(CoreSchema.getInstance().getTableInfoReport(),
+                    new SimpleFilter(FieldKey.fromParts("RowId"), victimRowId), null).getObject(ReportDB.class);
+
+            assertNotNull("The victim's report was deleted by a caller with no permission in its folder", row);
+            assertEquals("The victim's report was re-homed into a folder the caller controls",
+                    victimFolder.getId(), row.getContainerId());
+            assertEquals("The victim's report was overwritten by a caller with no permission in its folder",
+                    "scoping-victim-key", row.getReportKey());
         }
     }
 

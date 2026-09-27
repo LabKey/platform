@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
-import org.labkey.api.module.SupportedDatabase;
 import org.labkey.api.secrets.SecretService;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
@@ -48,7 +47,6 @@ public interface AppProps
     String OPTIONAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP = "deriveSamplesNotInApp";
-    String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
@@ -273,8 +271,6 @@ public interface AppProps
     @NotNull String getDistributionName();
 
     @NotNull String getDistributionFilename();
-
-    @NotNull Set<SupportedDatabase> getDistributionSupportedDatabases();
 
     @NotNull List<String> getAllowedExtensions();
 

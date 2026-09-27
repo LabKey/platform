@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -28,7 +29,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.wiki.model.Wiki;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -47,12 +47,10 @@ public class BaseWikiPermissions
         _container = container;
     }
 
-    protected Set<Role> getContextualRoles(Wiki wiki)
+    protected @NotNull Set<Role> getContextualRoles(Wiki wiki)
     {
-        Set<Role> roles = new HashSet<>();
-        if (userIsCreator(wiki) && allowRead() && allowInsert()) //31077
-            roles.add(RoleManager.getRole(OwnerRole.class));
-        return roles;
+        // Issue 31077
+        return userIsCreator(wiki) && allowRead() && allowInsert() ? Set.of(RoleManager.getRole(OwnerRole.class)) : Set.of();
     }
 
     public boolean allowRead()

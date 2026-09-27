@@ -88,6 +88,7 @@ import org.labkey.api.files.FileBrowserConfigImporter;
 import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -259,6 +260,7 @@ import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.metrics.WebSocketMXBean;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -344,11 +346,12 @@ import org.radeox.test.macro.list.AtoZListFormatterTest;
 import org.radeox.test.macro.list.ExampleListFormatterTest;
 import org.radeox.test.macro.list.SimpleListTest;
 
+import javax.management.StandardMBean;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -364,6 +367,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -535,6 +539,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
             "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
+            "Allow script authentication via legacy substitution parameters",
+            "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
+            false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
@@ -579,6 +587,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void registerHealthChecks()
     {
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
             {
                 Map<String, Object> healthValues = new HashMap<>();
@@ -590,10 +601,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         dbConnected = conn != null;
                     }
-                    catch (SQLException e)
+                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                    // we return a 200 saying we're not healthy instead of a 500
+                    catch (Exception e)
                     {
+                        if (failedDataSources.add(dbScope.getDataSourceName()))
+                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
+
+                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
                     healthValues.put(dbScope.getDatabaseName(), dbConnected);
                     allConnected &= dbConnected;
@@ -1276,6 +1294,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        LabKeyManagement.register(new StandardMBean(WebSocketConnectionManager.getInstance(), WebSocketMXBean.class, true), "WebSockets");
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());

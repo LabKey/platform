@@ -530,34 +530,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ONLY_POSTGRESQL = Set.of(SupportedDatabase.pgsql);
-
-    private Set<SupportedDatabase> _supportedDatabases = ONLY_POSTGRESQL;
-
-    @NotNull
-    @Override
-    public final Set<SupportedDatabase> getSupportedDatabasesSet()
-    {
-        return _supportedDatabases;
-    }
-
-    // Used by Spring configuration reflection
-    @SuppressWarnings("UnusedDeclaration")
-    public final String getSupportedDatabases()
-    {
-        Set<SupportedDatabase> set = getSupportedDatabasesSet();
-        return StringUtils.join(set, ",");
-    }
-
-    // Used by Spring configuration reflection
-    @SuppressWarnings("UnusedDeclaration")
-    public final void setSupportedDatabases(String list)
-    {
-        Set<SupportedDatabase> supported = SupportedDatabase.parseSupportedDatabases(list);
-
-        if (!supported.isEmpty())
-            _supportedDatabases = supported;
-    }
 
     @Override
     public String getName()

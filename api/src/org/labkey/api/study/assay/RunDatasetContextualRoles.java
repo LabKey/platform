@@ -16,7 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -58,25 +58,25 @@ public class RunDatasetContextualRoles implements HasContextualRoles
      * <b>at least one of</b> the study datasets that the run results have
      * been linked to.
      *
-     * @return a singleton ReaderRole set or null
+     * @return a singleton ReaderRole set, or an empty set if no contextual role applies
      */
     @Override
-    @Nullable
+    @NotNull
     public Set<Role> getContextualRoles(ViewContext context)
     {
         // skip the check if the user has ReadPermission to the container
         Container container = context.getContainer();
         User user = context.getUser();
         if (container.hasPermission(user, ReadPermission.class))
-            return null;
+            return Set.of();
 
-        String rowIdStr = context.getRequest().getParameter("rowId");
+        String rowIdStr = context.getRequestOrThrow().getParameter("rowId");
         if (rowIdStr != null)
         {
             int runRowId = NumberUtils.toInt(rowIdStr);
             return RunDatasetContextualRoles.getContextualRolesForRun(container, user, runRowId);
         }
-        return null;
+        return Set.of();
     }
 
     /**
@@ -87,42 +87,42 @@ public class RunDatasetContextualRoles implements HasContextualRoles
      * @param container the container
      * @param user the user
      * @param runId the run to check
-     * @return a singleton ReaderRole set or null
+     * @return a singleton ReaderRole set, or an empty set if no contextual role applies
      */
-    @Nullable
+    @NotNull
     public static Set<Role> getContextualRolesForRun(Container container, User user, int runId)
     {
         ExpRun run = ExperimentService.get().getExpRun(runId);
         if (run == null)
-            return null;
+            return Set.of();
 
         return getContextualRolesForRun(container, user, run, FieldKey.fromParts("runid"));
     }
 
     /** caller should have already checked that the user does not have ReadPermission to the container */
-    @Nullable
+    @NotNull
     public static Set<Role> getContextualRolesForRun(Container container, User user, ExpRun run, FieldKey runIdFieldKey)
     {
         if (container == null || user == null)
-            return null;
+            return Set.of();
 
         ExpProtocol protocol = run.getProtocol();
         if (protocol == null)
-            return null;
+            return Set.of();
 
         AssayProvider provider = AssayService.get().getProvider(protocol);
         if (provider == null)
-            return null;
+            return Set.of();
 
         // use a user with elevated permissions to do the query to figure out permissions
         AssayProtocolSchema schema = provider.createProtocolSchema(User.getSearchUser(), container, protocol, null);
         if (schema == null)
-            return null;
+            return Set.of();
 
         // get the results table and the set of dataset columns
         TableInfo resultsTable = schema.createDataTable(null);
         if (resultsTable == null)
-            return null;
+            return Set.of();
 
         Set<String> columnNames = resultsTable.getColumnNameSet();
         Set<String> datasetColumnNames = new LinkedHashSet<>();
@@ -134,12 +134,12 @@ public class RunDatasetContextualRoles implements HasContextualRoles
 
         // table contains no dataset columns if results haven't been linked
         if (datasetColumnNames.isEmpty())
-            return null;
+            return Set.of();
 
         Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter(runIdFieldKey, run.getRowId()), null).getMapArray();
 
         if (results.length == 0)
-            return null;
+            return Set.of();
 
         List<ColumnInfo> datasetColumns = resultsTable.getColumns(datasetColumnNames.toArray(new String[0]));
 
@@ -156,12 +156,12 @@ public class RunDatasetContextualRoles implements HasContextualRoles
                 Container studyContainer = ((StudyDatasetLinkedColumn)datasetColumn).getStudyContainer();
                 Dataset dataset = StudyService.get().getDataset(studyContainer, datasetId.intValue());
                 if (null == dataset)
-                    return null;
+                    return Set.of();
                 if (dataset.hasPermission(user, ReadPermission.class))
                     return Collections.singleton(new ReaderRole());
             }
         }
 
-        return null;
+        return Set.of();
     }
 }

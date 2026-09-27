@@ -459,13 +459,6 @@ public class MockModule implements Module
         return new LinkedList<>();
     }
 
-    @NotNull
-    @Override
-    public Set<SupportedDatabase> getSupportedDatabasesSet()
-    {
-        return DefaultModule.ONLY_POSTGRESQL;
-    }
-
     @Nullable
     @Override
     public UpgradeCode getUpgradeCode()
