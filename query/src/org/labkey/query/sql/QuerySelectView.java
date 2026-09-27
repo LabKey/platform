@@ -235,6 +235,8 @@ public class QuerySelectView extends AbstractQueryRelation
             appendDefaultSort(sort, selectColumns);
         }
 
+        sort = trimSortAfterPk(table, sort);
+
         Map<String, SQLFragment> joins = new LinkedHashMap<>();
         List<ColumnInfo> allColumns = new ArrayList<>(selectColumns);
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
@@ -499,6 +501,40 @@ public class QuerySelectView extends AbstractQueryRelation
         return sort;
     }
 
+
+    /* Sort fields after the PK can't change the order, but they stop Postgres from reading in PK index order under a LIMIT */
+    private static @Nullable Sort trimSortAfterPk(TableInfo table, @Nullable Sort sort)
+    {
+        // LabKey SQL queries can declare key fields that aren't unique
+        if (sort == null || table instanceof QueryTableInfo)
+            return sort;
+
+        List<ColumnInfo> pkColumns = table.getPkColumns();
+        if (pkColumns.isEmpty() || !pkColumns.stream().allMatch(QuerySelectView::sortsByOwnValue))
+            return sort;
+
+        Set<FieldKey> unsortedPks = pkColumns.stream().map(ColumnInfo::getFieldKey).collect(Collectors.toCollection(HashSet::new));
+        List<Sort.SortField> sortFields = sort.getSortList();
+        for (int i = 0; i < sortFields.size() - 1; i++)
+        {
+            unsortedPks.remove(sortFields.get(i).getFieldKey());
+            if (unsortedPks.isEmpty())
+            {
+                // Copy so the caller's Sort is untouched
+                Sort trimmed = new Sort();
+                sortFields.subList(0, i + 1).forEach(trimmed::appendSortColumn);
+                return trimmed;
+            }
+        }
+        return sort;
+    }
+
+    /* A lookup's sort field keys can point at its display value, which isn't unique */
+    private static boolean sortsByOwnValue(ColumnInfo col)
+    {
+        List<FieldKey> sortFieldKeys = col.getSortFieldKeys();
+        return col.isSortable() && (sortFieldKeys == null || sortFieldKeys.isEmpty() || sortFieldKeys.equals(List.of(col.getFieldKey())));
+    }
 
     /* see if columns in column.getSortFieldKeys() are resolvable, so we avoid proposing a default sort that won't work */
     private static List<ColumnInfo> resolveSortFieldKeys(ColumnInfo col, Map<FieldKey, ColumnInfo> selectColumns)
