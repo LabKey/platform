@@ -128,7 +128,7 @@ public class ReportsTable extends FilteredTable<CoreQuerySchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class);
     }
 
     @Override

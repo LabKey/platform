@@ -62,7 +62,8 @@ public interface SecurableResource extends HasPermission
     @Override
     default boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return SecurityManager.hasAllPermissions(this.getClass().getName() + ":" + getResourceName(),
+        // Prefer hasAnyPermissions() for a singleton since it's less expensive than hasAllPermissions()
+        return SecurityManager.hasAnyPermissions(this.getClass().getName() + ":" + getResourceName(),
                 this, user, Set.of(perm), Set.of());
     }
 }

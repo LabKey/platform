@@ -373,10 +373,10 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}",
+            "net.sf.ehcache:ehcache:${ehcacheVersion}",
             "Ehcache",
             "Terracotta",
-            "http://ehcache.org/documentation/overview.html",
+            "https://www.ehcache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Caching library",

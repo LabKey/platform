@@ -1407,11 +1407,26 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            DataSourcePropertyReader props = getDbScopeLoader().getDsProps();
+
             log.info("Data source " + this +
-                    ". Max connections: " + getDbScopeLoader().getDsProps().getMaxTotal() +
-                    ", active: " + getDbScopeLoader().getDsProps().getNumActive() +
-                    ", idle: " + getDbScopeLoader().getDsProps().getNumIdle() +
-                    ", maxWaitMillis: " + getDbScopeLoader().getDsProps().getMaxWaitMillis());
+                    ". Max connections: " + props.getMaxTotal() +
+                    ", active: " + props.getNumActive() +
+                    ", idle: " + props.getNumIdle() +
+                    ", maxWaitMillis: " + props.getMaxWaitMillis());
+
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+
+            if (null != pool)
+                log.info("Connection pool for data source " + this +
+                        ". Opened: " + pool.createdCount() +
+                        ", closed: " + pool.destroyedCount() +
+                        " (evictor: " + pool.destroyedByEvictorCount() +
+                        ", failed validation: " + pool.destroyedByBorrowValidationCount() +
+                        "), borrowed: " + pool.borrowedCount() +
+                        ", waiting threads: " + pool.numWaiters() +
+                        ", meanBorrowWaitMillis (last 100): " + pool.meanBorrowWaitMillis() +
+                        ", maxBorrowWaitMillis: " + pool.maxBorrowWaitMillis());
 
             if (_transaction.isEmpty())
             {
@@ -1467,29 +1482,38 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        if (!conn.getAutoCommit())
-            throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
-
-        //
-        // Handle one time per-connection setup
-        // relies on pool implementation reusing same connection/wrapper instances
-        //
-
-        Connection delegate = getDelegate(conn);
-        Integer spid = _initializedConnections.get(delegate);
-
-        if (null == spid)
+        try
         {
-            if (null != _dialect)
+            if (!conn.getAutoCommit())
+                throw new ConfigurationException("A database connection is in an unexpected state: auto-commit is false. This indicates a configuration problem with the datasource definition or the database connection pool.");
+
+            //
+            // Handle one time per-connection setup
+            // relies on pool implementation reusing same connection/wrapper instances
+            //
+
+            Connection delegate = getDelegate(conn);
+            Integer spid = _initializedConnections.get(delegate);
+
+            if (null == spid)
             {
-                _dialect.prepareConnection(conn);
-                spid = _dialect.getSPID(delegate);
+                if (null != _dialect)
+                {
+                    _dialect.prepareConnection(conn);
+                    spid = _dialect.getSPID(delegate);
+                }
+
+                _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
+            return new ConnectionWrapper(conn, this, spid, type, log);
         }
-
-        return new ConnectionWrapper(conn, this, spid, type, log);
+        catch (Throwable t)
+        {
+            // If the ConnectionWrapper didn't get created and returned, nothing else can close the connection
+            closeQuietly(conn, t);
+            throw t;
+        }
     }
 
     /**
@@ -1504,6 +1528,22 @@ public class DbScope
         catch (SQLException e)
         {
             LOG.warn("Error releasing connection", e);
+        }
+    }
+
+    /**
+     * Release a connection while an exception is already propagating. Pool implementations can throw unchecked from
+     * close(), which would otherwise replace the failure we're unwinding from.
+     **/
+    public void closeQuietly(Connection conn, Throwable propagating)
+    {
+        try
+        {
+            releaseConnection(conn);
+        }
+        catch (Throwable t)
+        {
+            propagating.addSuppressed(t);
         }
     }
 
@@ -3745,6 +3785,32 @@ public class DbScope
             catch (IllegalArgumentException x)
             {
                 // expected!
+            }
+        }
+    }
+
+    public static class PoolStatisticsTestCase extends Assert
+    {
+        @Test
+        public void testPoolStatistics() throws SQLException
+        {
+            DataSourcePropertyReader props = getLabKeyScope().getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics before = props.getPoolStatistics();
+            assertNotNull("Could not read connection pool statistics; see log for the reflection failure", before);
+
+            assertTrue(before.createdCount() >= 1);
+            assertTrue(before.destroyedCount() <= before.createdCount());
+            assertTrue(before.destroyedByEvictorCount() <= before.destroyedCount());
+            assertTrue(before.destroyedByBorrowValidationCount() <= before.destroyedCount());
+            assertTrue(before.numWaiters() >= 0);
+            assertTrue(before.meanBorrowWaitMillis() >= 0);
+            assertTrue(before.maxBorrowWaitMillis() >= before.meanBorrowWaitMillis());
+
+            try (Connection ignored = getLabKeyScope().getPooledConnection())
+            {
+                DataSourcePropertyReader.PoolStatistics after = props.getPoolStatistics();
+                assertNotNull(after);
+                assertTrue(after.borrowedCount() > before.borrowedCount());
             }
         }
     }

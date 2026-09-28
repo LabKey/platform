@@ -128,8 +128,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     @Override
     public FileLike getSampleMetadataFile(Container container, int runId)
     {
-        ExpRun run = ExperimentService.get().getExpRun(runId);
-        if (!run.getContainer().equals(container))
+        ExpRun run = ExperimentService.get().getExpRun(container, runId);
+        if (run == null)
             return null;
         if (getMetadataInputFormat(run.getProtocol()) == SampleMetadataInputFormat.MANUAL)
             return null;

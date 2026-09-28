@@ -128,7 +128,7 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class);
     }
 
     @Override

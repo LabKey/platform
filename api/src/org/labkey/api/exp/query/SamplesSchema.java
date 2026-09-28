@@ -70,7 +70,7 @@ public class SamplesSchema extends AbstractExpSchema implements UserSchema.HasCo
 
     boolean withLinkToStudyColumns = true;
     boolean supportTableRules = true;
-    Set<Role> contextualRoles = Set.of();
+    @NotNull Set<Role> contextualRoles = Set.of();
 
 
     static private Map<String, ExpSampleType> getSampleTypeMap(Container container, User user)
