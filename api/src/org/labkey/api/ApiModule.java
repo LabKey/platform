@@ -118,6 +118,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.JSONDataLoader;
@@ -540,6 +541,7 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
             DbScope.SchemaNameTestCase.class,
+            DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
                 DisplayColumn.TestCase.class,
@@ -570,6 +572,7 @@ public class ApiModule extends CodeOnlyModule
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
             SecurityManager.TestCase.class,
+            SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
