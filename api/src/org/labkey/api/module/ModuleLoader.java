@@ -163,9 +163,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private static final CopyOnWriteHashMap<String, Collection<ResourceFinder>> _resourceFinders = new CopyOnWriteHashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
+    private static final Object STARTUP_LOCK = new Object();
     // Base modules required by every deployment
     private static final Set<String> REQUIRED_MODULES = Set.of("API", "Audit", "Core", "Experiment", "FileContent", "Pipeline", "Query");
-    private static final Object STARTUP_LOCK = new Object();
 
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";

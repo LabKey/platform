@@ -33,9 +33,9 @@ public enum ModuleLoaderStartupProperties implements StartupProperty
         @Override
         public String getDescription()
         {
-            return "Comma-separated list of modules to enable during this server session. Note: Respected only when " +
-                "the \"startup\" modifier is specified. Not respected for the \"externalModules\" directory, i.e., " +
-                "external modules are always loaded, unless their names are specified in the exclude list.";
+            return "Comma-separated list of modules to enable during this server session. The modules every deployment " +
+                "requires and all modules in the external modules directory are always loaded, unless named in the " +
+                "exclude list. Note: Respected only when the \"startup\" modifier is specified.";
         }
 
         @Override
