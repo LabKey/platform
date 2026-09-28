@@ -321,6 +321,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         private final Object MISS = new Object();
 
+        private static final int SELECTOR_MAX_ROWS = 100_000;
+        // Above SELECTOR_MAX_ROWS so a bulk load alone never trips it; a cleared bulk-loaded map falls back to per-key fetches
+        static final int MAX_CACHED_KEYS = 2 * SELECTOR_MAX_ROWS;
+
         // While there should be at most one matching value for lookup targets with a true unique constraint,
         // using a multi-valued map allows us to also work with things that are almost always unique, like
         // exp.Material names, when only a single value matches
@@ -339,6 +343,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
+                // keySet().size() because MultiValuedMap.size() walks every value collection
+                if (map.keySet().size() >= MAX_CACHED_KEYS)
+                    map.clear();
+
                 Collection<Object> bulkLoaded = null;
                 if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, altKeyCol)))
                 {
@@ -412,6 +420,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
+                if (map.size() >= MAX_CACHED_KEYS)
+                    map.clear();
+
                 if (pkCol.getJdbcType() == JdbcType.GUID)
                 {
                     if (k == null || (k instanceof String strKey && !GUID.isGUID(strKey)))
@@ -456,7 +467,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             // Load a bunch of rows in the hopes of not needing to fetch for every value we encounter,
             // but if we have a miss, we'll do per-value fetches as needed
-            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(100_000);
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(SELECTOR_MAX_ROWS);
         }
 
 
@@ -2332,7 +2343,38 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             assertSame("pk lookup map was rebuilt rather than retained", pkMap, converter.pkLookupMap());
         }
 
-        /** Before caching survived the toggle, every lookup of a non-String key threw here; a later lookup must too, rather than falling through to the title column. */
+        @Test
+        public void remapAlternateKeyCacheIsCapped()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+            converter.setIncludePkLookup(false);
+
+            MultiValuedMap cache = converter.getMaps().getFirst().getRight();
+            for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
+                cache.put("seeded-" + i, i);
+
+            assertEquals("a cache hit must not clear the full cache", 0, converter.mappedValue("seeded-0"));
+            assertNotNull(converter.mappedValue(LookupValues.Two.name()));
+            assertFalse("a miss on a full cache should clear it", cache.containsKey("seeded-0"));
+            assertTrue(cache.containsKey(LookupValues.Two.name()));
+        }
+
+        @Test
+        public void remapPkCacheIsCapped()
+        {
+            RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
+
+            Map pkCache = converter.pkLookupMap().getValue();
+            int seedBase = 1_000_000;
+            for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
+                pkCache.put(seedBase + i, seedBase + i);
+
+            assertEquals(0, converter.mappedValue(0));
+            assertFalse("a miss on a full cache should clear it", pkCache.containsKey(seedBase));
+            assertTrue(pkCache.containsKey(0));
+        }
+
+        /** Every lookup of a non-String key must throw, not just the first, rather than falling through to the title column. */
         @Test
         public void remapNonStringMissIsNotMemoized()
         {
