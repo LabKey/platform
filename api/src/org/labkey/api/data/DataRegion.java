@@ -899,8 +899,8 @@ public class DataRegion extends DisplayElement
 
         Aggregate.Result countStarResult = result.getFirst();
         _totalRows = 0L;
-        if (countStarResult.getValue() instanceof Number)
-            _totalRows = ((Number) countStarResult.getValue()).longValue();
+        if (countStarResult.getValue() instanceof Number n)
+            _totalRows = n.longValue();
     }
 
     @NotNull
