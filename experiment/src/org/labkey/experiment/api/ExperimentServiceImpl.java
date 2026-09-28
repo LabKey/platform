@@ -337,6 +337,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
+    /** ExcludedContainer id -> excluded data type row ids, by data type */
+    private final Cache<String, Map<DataTypeForExclusion, Set<Long>>> DATA_TYPE_EXCLUSION_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Data type exclusions",
+        (containerId, _) -> loadContainerDataTypeExclusions(containerId));
+
     /** DataClass LSID -> Container */
     private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
 
@@ -8954,6 +8958,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         fields.put("DataType", dataType.name());
         fields.put("ExcludedContainer", excludedContainerId);
         Table.insert(user, getTinfoDataTypeExclusion(), fields);
+        DATA_TYPE_EXCLUSION_CACHE.remove(excludedContainerId);
     }
 
     @Override
@@ -8964,6 +8969,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE excludedContainer = ? ");
         sql.add(containerId);
         new SqlExecutor(getExpSchema()).execute(sql);
+        DATA_TYPE_EXCLUSION_CACHE.remove(containerId);
     }
 
     @Override
@@ -8987,6 +8993,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         new SqlExecutor(getExpSchema()).execute(sql);
+
+        if (StringUtils.isEmpty(excludedContainerId))
+            DATA_TYPE_EXCLUSION_CACHE.clear();
+        else
+            DATA_TYPE_EXCLUSION_CACHE.remove(excludedContainerId);
     }
 
     @NotNull private List<Map<String, Object>> _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Long dataTypeRowId)
@@ -9034,7 +9045,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    public @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerIdOrPath)
+    {
+        String excludedContainerId = excludedContainerIdOrPath;
+        if (!GUID.isGUID(excludedContainerIdOrPath))
+        {
+            Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
+            if (container == null)
+                return Collections.emptyMap();
+            excludedContainerId = container.getId();
+        }
+
+        return DATA_TYPE_EXCLUSION_CACHE.get(excludedContainerId);
+    }
+
+    private @NotNull Map<DataTypeForExclusion, Set<Long>> loadContainerDataTypeExclusions(@NotNull String excludedContainerId)
     {
         List<Map<String, Object>> exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
 
@@ -9043,12 +9068,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String dataTypeStr = (String) exclusion.get("DataType");
             DataTypeForExclusion dataType = DataTypeForExclusion.valueOf(dataTypeStr);
-            if (!typeExclusions.containsKey(dataType))
-                typeExclusions.put(dataType, new HashSet<>());
-            typeExclusions.get(dataType).add(asLong(exclusion.get("DataTypeRowId")));
+            typeExclusions.computeIfAbsent(dataType, _ -> new HashSet<>()).add(asLong(exclusion.get("DataTypeRowId")));
         }
 
-        return typeExclusions;
+        typeExclusions.replaceAll((_, rowIds) -> Collections.unmodifiableSet(rowIds));
+        return Collections.unmodifiableMap(typeExclusions);
     }
 
     @Override

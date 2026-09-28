@@ -118,6 +118,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1046,6 +1047,15 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
 
         return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Collections.singleton("Description"), filter, null).getMapCollection();
+    }
+
+    @Override
+    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerNames, CompareType.IN);
+        filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
+
+        return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Set.of("Provider", "Description"), filter, null).getMapCollection();
     }
 
     public static class TestCase extends Assert

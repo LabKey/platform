@@ -28,12 +28,17 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extends DataColumn
 {
     protected ColumnInfo _containerId;
     protected ColumnInfo _defaultName;
+    // Keyed by bound value + container id, since the same object typically repeats across rows
+    private final Map<Pair<Object, String>, Optional<Pair<ObjectType, ActionURL>>> _expValues = new HashMap<>();
 
     public static final String KEY_SEPARATOR = "~~KEYSEP~~";
 
@@ -63,10 +68,18 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     @Nullable
     protected abstract Pair<ObjectType, ActionURL> getExpValue(RenderContext ctx);
 
+    @Nullable
+    private Pair<ObjectType, ActionURL> getCachedExpValue(RenderContext ctx)
+    {
+        Container c = getContainer(ctx);
+        Pair<Object, String> key = Pair.of(getBoundColumn().getValue(ctx), c == null ? null : c.getId());
+        return _expValues.computeIfAbsent(key, _ -> Optional.ofNullable(getExpValue(ctx))).orElse(null);
+    }
+
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        Pair<ObjectType, ActionURL> value = getExpValue(ctx);
+        Pair<ObjectType, ActionURL> value = getCachedExpValue(ctx);
         if (value != null)
         {
             return value.first.getName();
@@ -101,7 +114,7 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     @Override
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        Pair<ObjectType, ActionURL> value = getExpValue(ctx);
+        Pair<ObjectType, ActionURL> value = getCachedExpValue(ctx);
         if (value != null && value.second != null)
         {
             out.write(LinkBuilder.simpleLink(value.first.getName(), value.second));

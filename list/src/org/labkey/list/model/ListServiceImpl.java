@@ -153,6 +153,16 @@ public class ListServiceImpl implements ListService
     @Override
     public ListDefinition getList(Domain domain)
     {
+        Container c = domain.getContainer();
+        if (c != null)
+        {
+            for (ListDef def : ListManager.get().getLists(c))
+            {
+                if (def.getDomainId() == domain.getTypeId())
+                    return new ListDefinitionImpl(def);
+            }
+        }
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("domainid"), domain.getTypeId());
         ListDef def = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDef.class);
         return ListDefinitionImpl.of(def);

@@ -1053,7 +1053,7 @@ public class OntologyManager
         }
         finally
         {
-            PROPERTY_MAP_CACHE.clear();
+            clearPropertyCache(c);
             OBJECT_ID_CACHE.clear();
         }
     }
@@ -1166,7 +1166,7 @@ public class OntologyManager
         }
         finally
         {
-            PROPERTY_MAP_CACHE.clear();
+            clearPropertyCache(c);
             OBJECT_ID_CACHE.clear();
         }
     }
@@ -2916,8 +2916,19 @@ public class OntologyManager
 
     public static void invalidateDomain(Domain d)
     {
-        // TODO can we please implement a surgical version of this
-        clearCaches();
+        String domainURI = d.getTypeURI();
+        Set<String> propertyURIs = d.getProperties().stream().map(DomainProperty::getPropertyURI).collect(Collectors.toSet());
+
+        // Keys are per lookup project and nulls are cached, so drop this domain's entries under every project
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
+        DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> propertyURIs.contains(key.first));
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
+
+        // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
+        PROPERTY_MAP_CACHE.clear();
+        ExperimentService.get().clearCaches();
     }
 
 
@@ -2939,6 +2950,12 @@ public class OntologyManager
         PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
+
+    /** Owned objects share their owner's container, so this also covers deleted children whose URIs aren't known */
+    private static void clearPropertyCache(Container c)
+    {
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> key.first == null || key.first.equals(c));
+    }
 
     public static void clearPropertyCache()
     {
