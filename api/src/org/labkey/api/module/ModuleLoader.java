@@ -163,6 +163,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private static final CopyOnWriteHashMap<String, Collection<ResourceFinder>> _resourceFinders = new CopyOnWriteHashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
+    // Base modules required by every deployment
+    private static final Set<String> REQUIRED_MODULES = Set.of("API", "Audit", "Core", "Experiment", "FileContent", "Pipeline", "Query");
     private static final Object STARTUP_LOCK = new Object();
 
     public static final String MODULE_NAME_REGEX = "\\w+";
@@ -1202,7 +1204,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     }
 
     // excludeSet must be case-insensitive
-    static List<Module> filterModules(Collection<Module> modules, Set<String> moduleIncludeSet, Set<String> excludeSet, @Nullable File externalModulesDir)
+    private static List<Module> filterModules(Collection<Module> modules, Set<String> moduleIncludeSet, Set<String> excludeSet, @Nullable File externalModulesDir)
     {
         CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
         modules.forEach(m -> moduleNameToModule.put(m.getName(), m));
@@ -1217,8 +1219,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         }
         else
         {
-            // Base modules required by every deployment
-            includeSet.addAll(List.of("api", "audit", "core", "experiment", "filecontent", "pipeline", "query"));
+            includeSet.addAll(REQUIRED_MODULES);
             if (null != externalModulesDir)
             {
                 // All modules in externalModules are included, regardless of the "include" property. GH Issue 1610
@@ -2781,8 +2782,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     public static class TestCase extends Assert
     {
-        private static final Set<String> REQUIRED = Set.of("API", "Audit", "Core", "Experiment", "FileContent", "Pipeline", "Query");
-
         private File _root;
         private File _externalModulesDir;
         private List<Module> _modules;
@@ -2795,7 +2794,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             _externalModulesDir = FileUtil.appendName(_root, "externalModules");
 
             _modules = new ArrayList<>();
-            for (String name : REQUIRED)
+            for (String name : REQUIRED_MODULES)
             {
                 _modules.add(module(modulesDir, name.toLowerCase(), name));
             }
@@ -2834,7 +2833,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
         private static Set<String> requiredPlus(String... names)
         {
-            Set<String> expected = new TreeSet<>(REQUIRED);
+            Set<String> expected = new TreeSet<>(REQUIRED_MODULES);
             expected.addAll(List.of(names));
             return expected;
         }
