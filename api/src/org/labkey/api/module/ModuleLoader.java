@@ -24,6 +24,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
@@ -1193,12 +1197,18 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     // later (e.g., by the module editor) aren't subject to these properties.
     private List<Module> filterModulesForStartupProperties(List<Module> modules)
     {
+        var ems = ServiceRegistry.get().getService(ExplodedModuleService.class);
+        return filterModules(modules, getModuleIncludeSet(), getModuleExcludeSet(), null == ems ? null : ems.getExternalModulesDirectory());
+    }
+
+    // excludeSet must be case-insensitive
+    static List<Module> filterModules(Collection<Module> modules, Set<String> moduleIncludeSet, Set<String> excludeSet, @Nullable File externalModulesDir)
+    {
         CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
         modules.forEach(m -> moduleNameToModule.put(m.getName(), m));
 
         // Mutable copy since we add to it below
-        Set<String> includeSet = Sets.newCaseInsensitiveHashSet(getModuleIncludeSet());
-        Set<String> excludeSet = getModuleExcludeSet();
+        Set<String> includeSet = Sets.newCaseInsensitiveHashSet(moduleIncludeSet);
         CaseInsensitiveTreeMap<Module> includedModules;
 
         if (includeSet.isEmpty())
@@ -1209,8 +1219,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         {
             // Base modules required by every deployment
             includeSet.addAll(List.of("api", "audit", "core", "experiment", "filecontent", "pipeline", "query"));
-            var ems = ServiceRegistry.get().getService(ExplodedModuleService.class);
-            File externalModulesDir = null == ems ? null : ems.getExternalModulesDirectory();
             if (null != externalModulesDir)
             {
                 // All modules in externalModules are included, regardless of the "include" property. GH Issue 1610
@@ -2769,5 +2777,129 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public void beforeReport(Set<Object> set)
     {
         set.addAll(getModules());
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final Set<String> REQUIRED = Set.of("API", "Audit", "Core", "Experiment", "FileContent", "Pipeline", "Query");
+
+        private File _root;
+        private File _externalModulesDir;
+        private List<Module> _modules;
+
+        @Before
+        public void setUp() throws IOException
+        {
+            _root = java.nio.file.Files.createTempDirectory("moduleLoaderTest").toFile();
+            File modulesDir = FileUtil.appendName(_root, "modules");
+            _externalModulesDir = FileUtil.appendName(_root, "externalModules");
+
+            _modules = new ArrayList<>();
+            for (String name : REQUIRED)
+            {
+                _modules.add(module(modulesDir, name.toLowerCase(), name));
+            }
+            _modules.add(module(modulesDir, "a", "A", "B"));
+            _modules.add(module(modulesDir, "b", "B", "C"));
+            _modules.add(module(modulesDir, "c", "C"));
+            _modules.add(module(modulesDir, "d", "D"));
+            _modules.add(module(modulesDir, "e", "E", "X"));
+            _modules.add(module(modulesDir, "x", "X", "Y"));
+            _modules.add(module(modulesDir, "y", "Y"));
+            _modules.add(module(_externalModulesDir, "devtools", "DeveloperTools"));
+            _modules.add(module(_externalModulesDir, "exttwo", "ExtTwo", "C"));
+        }
+
+        @After
+        public void tearDown()
+        {
+            FileUtil.deleteDir(_root.toPath(), null);
+        }
+
+        private static Module module(File parentDir, String dirName, String name, String... dependencies) throws IOException
+        {
+            File dir = FileUtil.appendName(parentDir, dirName);
+            assertTrue("Couldn't create " + dir, FileUtil.mkdirs(dir));
+            MockModule module = new MockModule(name, dependencies);
+            module.setExplodedPath(dir);
+            return module;
+        }
+
+        private Set<String> filter(Set<String> include, Set<String> exclude, @Nullable File externalModulesDir)
+        {
+            return filterModules(_modules, include, Sets.newCaseInsensitiveHashSet(exclude), externalModulesDir).stream()
+                .map(Module::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
+        }
+
+        private static Set<String> requiredPlus(String... names)
+        {
+            Set<String> expected = new TreeSet<>(REQUIRED);
+            expected.addAll(List.of(names));
+            return expected;
+        }
+
+        private Set<String> allModuleNames()
+        {
+            return _modules.stream()
+                .map(Module::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
+        }
+
+        @Test
+        public void testNoIncludeOrExclude()
+        {
+            assertEquals(allModuleNames(), filter(Set.of(), Set.of(), _externalModulesDir));
+        }
+
+        @Test
+        public void testExcludeOnly()
+        {
+            // Without "include" there's no dependency walk, so B stays even though only A needs it
+            Set<String> expected = allModuleNames();
+            expected.remove("A");
+            assertEquals(expected, filter(Set.of(), Set.of("a"), _externalModulesDir));
+        }
+
+        @Test
+        public void testIncludeAddsRequiredAndTransitiveDependencies()
+        {
+            // Lowercase "a" also verifies case-insensitive matching
+            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a"), Set.of(), null));
+        }
+
+        @Test
+        public void testIncludeMissingModule()
+        {
+            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a", "nonexistent"), Set.of(), null));
+        }
+
+        @Test
+        public void testExcludeDependency()
+        {
+            // Y is reachable only through excluded X
+            assertEquals(requiredPlus("E"), filter(Set.of("e"), Set.of("X"), null));
+        }
+
+        @Test
+        public void testExternalModulesIncluded()
+        {
+            // DeveloperTools matches by location despite its "devtools" directory; ExtTwo brings in its dependency, C
+            assertEquals(requiredPlus("D", "DeveloperTools", "ExtTwo", "C"), filter(Set.of("d"), Set.of(), _externalModulesDir));
+        }
+
+        @Test
+        public void testExternalModuleExcluded()
+        {
+            assertEquals(requiredPlus("D", "ExtTwo", "C"), filter(Set.of("d"), Set.of("developertools"), _externalModulesDir));
+        }
+
+        @Test
+        public void testIncludeSetUnchanged()
+        {
+            Set<String> include = Sets.newCaseInsensitiveHashSet("a");
+            filterModules(_modules, include, Sets.newCaseInsensitiveHashSet(), _externalModulesDir);
+            assertEquals(Set.of("a"), include);
+        }
     }
 }
