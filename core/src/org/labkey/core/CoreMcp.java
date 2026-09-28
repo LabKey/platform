@@ -57,15 +57,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
-    // Lazily created, then reused for the lifetime of this instance -- see McpToolProxy's class javadoc.
-    private volatile McpToolProxy documentationProxy;
-
-    public CoreMcp()
+    private static boolean isDocumentationSourceRemote(ToolContext context)
     {
-    }
-
-    private static boolean isDocumentationSourceRemote()
-    {
+        if (McpToolProxy.isForwarded(context))
+            return false;
         if (DocumentationService.get() instanceof DocumentationService s && s.isEnabled())
             return false;
         var documentationServer = AppProps.getInstance().getDocumentationServer();
@@ -84,27 +79,9 @@ public class CoreMcp implements McpService.McpImpl
         }
     }
 
-    private McpToolProxy getDocumentationProxy()
-    {
-        McpToolProxy proxy = documentationProxy;
-        if (proxy == null)
-        {
-            synchronized (this)
-            {
-                proxy = documentationProxy;
-                if (proxy == null)
-                {
-                    proxy = new McpToolProxy(AppProps.getInstance().getDocumentationServer());
-                    documentationProxy = proxy;
-                }
-            }
-        }
-        return proxy;
-    }
-
     private String forward(String remoteToolName, Map<String, Object> arguments)
     {
-        return getDocumentationProxy().forward(remoteToolName, arguments);
+        return McpToolProxy.forward(AppProps.getInstance().getDocumentationServer(), remoteToolName, arguments);
     }
 
 
@@ -113,11 +90,11 @@ public class CoreMcp implements McpService.McpImpl
             "source document. Returns each chunk's content, metadata (title, source URL, content type), a similarity score, and " +
             "an id identifying the source document; pass that id to retrieveDocument to fetch the entire document.")
     @RequiresNoPermission
-    String searchDocumentation(
+    String searchDocumentation(ToolContext context,
             @ToolParam(description = "Natural language search query describing what you're looking for") String query,
             @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") Integer topK)
     {
-        if (isDocumentationSourceRemote())
+        if (isDocumentationSourceRemote(context))
         {
             Map<String, Object> arguments = new HashMap<>();
             arguments.put("query", query);
@@ -134,10 +111,10 @@ public class CoreMcp implements McpService.McpImpl
 
     @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
     @RequiresNoPermission
-    String retrieveDocument(
+    String retrieveDocument(ToolContext context,
             @ToolParam(description = "Id of the document to return") String id)
     {
-        if (isDocumentationSourceRemote())
+        if (isDocumentationSourceRemote(context))
         {
             return forward("retrieveDocument", Map.of("id", id));
         }

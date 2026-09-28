@@ -18,91 +18,72 @@ package org.labkey.api.mcp;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
+import io.modelcontextprotocol.spec.McpError;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.logging.LogHelper;
+import org.springframework.ai.chat.model.ToolContext;
 
+import java.net.http.HttpRequest;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Proxy for calling an MCP tool on a remote server.
- *
- * A single {@link McpSyncClient} is created lazily and reused for the lifetime of this instance; the MCP
- * initialize handshake only happens once, on the first forwarded call.
+ * Calls a tool on a remote MCP server. Each call opens its own session, so remote restarts and session expiry need no handling.
  */
 public class McpToolProxy
 {
     private static final Logger LOG = LogHelper.getLogger(McpToolProxy.class, "MCP tool forwarding");
+    private static final McpSchema.Implementation CLIENT_INFO = McpSchema.Implementation.builder("labkey-server-forwarder", "1.0").build();
 
-    private final String remoteBaseUrl;
-    private volatile McpSyncClient client;
+    // Marks a request as already forwarded so the receiving server never forwards it again
+    public static final String FORWARDED_HEADER = "X-LABKEY-MCP-Forwarded";
+    public static final String FORWARDED_CONTEXT_KEY = "mcpForwarded";
 
-    public McpToolProxy(@NotNull String remoteBaseUrl)
+    private McpToolProxy()
     {
-        this.remoteBaseUrl = remoteBaseUrl;
-    }
-
-    private McpSyncClient getClient()
-    {
-        McpSyncClient c = client;
-        if (c == null)
-        {
-            synchronized (this)
-            {
-                c = client;
-                if (c == null)
-                {
-                    var transport = HttpClientStreamableHttpTransport.builder(remoteBaseUrl)
-                            .connectTimeout(Duration.ofSeconds(10))
-                            .build();
-                    c = McpClient.sync(transport)
-                            .clientInfo(McpSchema.Implementation.builder("labkey-server-forwarder", "1.0").build())
-                            .build();
-                    c.initialize();
-                    client = c;
-                }
-            }
-        }
-        return c;
-    }
-
-    // Drop the cached client after a failed call, so the next attempt reconnects instead of reusing a dead session
-    private synchronized void resetClient()
-    {
-        if (client != null)
-        {
-            try
-            {
-                client.closeGracefully();
-            }
-            catch (RuntimeException ignore)
-            {
-                // already broken; nothing to do
-            }
-            client = null;
-        }
     }
 
     /**
-     * Calls {@code remoteToolName} on the remote MCP server with {@code arguments} and returns its text content
+     * Calls {@code remoteToolName} on the MCP server at {@code remoteBaseUrl} with {@code arguments} and returns its text content
      * (joined, if the tool returned more than one text content block). Throws if the remote server can't be
      * reached or the remote tool itself reports an error.
      */
-    public String forward(@NotNull String remoteToolName, @NotNull Map<String, Object> arguments)
+    public static String forward(@NotNull String remoteBaseUrl, @NotNull String remoteToolName, @NotNull Map<String, Object> arguments)
     {
+        var transport = HttpClientStreamableHttpTransport.builder(remoteBaseUrl)
+                .connectTimeout(Duration.ofSeconds(10))
+                .requestBuilder(HttpRequest.newBuilder().header(FORWARDED_HEADER, "true"))
+                .build();
+
         McpSchema.CallToolResult result;
-        try
+        try (McpSyncClient client = McpClient.sync(transport).clientInfo(CLIENT_INFO).build())
         {
-            result = getClient().callTool(McpSchema.CallToolRequest.builder(remoteToolName).arguments(arguments).build());
-        }
-        catch (RuntimeException e)
-        {
-            LOG.error("Failed to forward MCP tool call '{}' to {}", remoteToolName, remoteBaseUrl, e);
-            resetClient();
-            throw new McpException("Unable to reach " + remoteBaseUrl + " to forward '" + remoteToolName + "': " + e.getMessage());
+            try
+            {
+                client.initialize();
+            }
+            catch (RuntimeException e)
+            {
+                throw unreachable(remoteBaseUrl, remoteToolName, e);
+            }
+
+            try
+            {
+                result = client.callTool(McpSchema.CallToolRequest.builder(remoteToolName).arguments(arguments).build());
+            }
+            catch (McpError e)
+            {
+                // The remote tool threw, so pass its error through as-is
+                LOG.debug("Remote MCP tool '{}' at {} failed: {}", remoteToolName, remoteBaseUrl, e.getMessage());
+                throw e;
+            }
+            catch (RuntimeException e)
+            {
+                throw unreachable(remoteBaseUrl, remoteToolName, e);
+            }
         }
 
         String text = result.content().stream()
@@ -114,5 +95,16 @@ public class McpToolProxy
             throw new McpException("Remote tool '" + remoteToolName + "' at " + remoteBaseUrl + " reported an error: " + text);
 
         return text;
+    }
+
+    public static boolean isForwarded(@NotNull ToolContext toolContext)
+    {
+        return Boolean.TRUE.equals(toolContext.getContext().get(FORWARDED_CONTEXT_KEY));
+    }
+
+    private static McpException unreachable(String remoteBaseUrl, String remoteToolName, RuntimeException e)
+    {
+        LOG.error("Failed to forward MCP tool call '{}' to {}", remoteToolName, remoteBaseUrl, e);
+        return new McpException("Unable to reach " + remoteBaseUrl + " to forward '" + remoteToolName + "': " + e.getMessage());
     }
 }
