@@ -101,6 +101,10 @@ public class PropertyQueryChangeListener implements QueryChangeListener
             else
                 updateLookupQuery(newValue, schema, oldValue, container);
         }
+
+        // Updated lookups can belong to any domain, so a targeted invalidateDomain() won't reach them
+        if (!queryNameChangeMap.isEmpty())
+            OntologyManager.clearCaches();
     }
 
     @Override
