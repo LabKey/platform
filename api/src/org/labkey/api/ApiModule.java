@@ -118,6 +118,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.JSONDataLoader;
@@ -185,6 +186,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SvgUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.VersionNumber;
@@ -497,6 +499,7 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
@@ -540,6 +543,7 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
             DbScope.SchemaNameTestCase.class,
+            DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
                 DisplayColumn.TestCase.class,
@@ -570,6 +574,7 @@ public class ApiModule extends CodeOnlyModule
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
             SecurityManager.TestCase.class,
+            SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
