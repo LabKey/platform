@@ -16,6 +16,7 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -25,10 +26,6 @@ import org.labkey.api.util.GUID;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * Plate facts for modules that must not depend on assay, such as inventory's plate storage. Lives in API for the
- * same reason AssayPlateMetadataService does: the alternative is moving PlateService and its transitive types here.
- */
 public interface PlateStorageService
 {
     /** Registered by the inventory module, which owns plate storage; declared here so assay can read it too. */
@@ -80,20 +77,20 @@ public interface PlateStorageService
     {
     }
 
+    @Nullable StoragePlate getStoragePlate(@NotNull Container container, @NotNull User user, long plateRowId);
+
     /**
      * Resolves plates by rowId, omitting any that don't exist or that the user cannot read. A missing entry is
      * therefore the read check itself, which is what lets a caller skip re-checking downstream — see the inventory
      * trigger's SKIP_PLATE_VALIDATION. Folder scope is not applied; callers that need it must check containerId.
      */
-    @NotNull
-    Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user);
+    @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Container container, @NotNull User user, @NotNull Collection<Long> plateRowIds);
 
     /** The rowIds that still name a plate, with no permission check -- tells a deleted plate from an unreadable one. */
-    @NotNull
-    Collection<Long> getExistingPlateRowIds(@NotNull Collection<Long> plateRowIds);
+    @NotNull Collection<Long> getExistingPlateRowIds(@NotNull Collection<Long> plateRowIds);
 
     /**
-     * Stands in when the assay module is absent. Throws rather than returning an empty result so that a caller which
+     * Stands in when the assay module is absent. Throws rather than returning an empty result so that a caller that
      * skipped isAvailable() fails loudly: an empty map would be indistinguishable from "no plate is readable", which
      * is the meaning getStoragePlates callers rely on.
      */
@@ -108,7 +105,13 @@ public interface PlateStorageService
         }
 
         @Override
-        public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user)
+        public @Nullable StoragePlate getStoragePlate(@NotNull Container container, @NotNull User user, long plateRowId)
+        {
+            throw new IllegalStateException("Plate storage requires the Assay module.");
+        }
+
+        @Override
+        public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Container container, @NotNull User user, @NotNull Collection<Long> plateRowIds)
         {
             throw new IllegalStateException("Plate storage requires the Assay module.");
         }

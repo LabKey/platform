@@ -158,10 +158,10 @@ public final class PlateSchemaTest
         Plate plate = PlateManager.get().createAndSavePlate(container, user, new PlateImpl(container, null, null, PLATE_TYPE_12_WELL), null, null);
         long rowId = plate.getRowId();
 
-        assertTrue("An empty request is expected to issue no query and return no plates", svc.getStoragePlates(List.of(), container, user).isEmpty());
+        assertTrue("An empty request is expected to issue no query and return no plates", svc.getStoragePlates(container, user, List.of()).isEmpty());
 
         // An id that resolves to no plate is simply absent, which is what callers read as "absent or unreadable"
-        var plates = svc.getStoragePlates(List.of(rowId, rowId + 100_000), container, user);
+        var plates = svc.getStoragePlates(container, user, List.of(rowId, rowId + 100_000));
         assertEquals("Expected only the existing plate", 1, plates.size());
 
         var storagePlate = plates.get(rowId);
@@ -178,7 +178,7 @@ public final class PlateSchemaTest
 
         // The read check callers depend on: no ReadPermission, no entry -- not an unreadable projection
         User noPermissions = new LimitedUser(user);
-        assertTrue("A user without read permission is expected to resolve no plates", svc.getStoragePlates(List.of(rowId), container, noPermissions).isEmpty());
+        assertTrue("A user without read permission is expected to resolve no plates", svc.getStoragePlates(container, noPermissions, List.of(rowId)).isEmpty());
     }
 
     @Test

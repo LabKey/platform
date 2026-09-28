@@ -16,6 +16,7 @@
 package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateStorageService;
 import org.labkey.api.data.CompareType;
@@ -36,6 +37,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PlateStorageServiceImpl implements PlateStorageService
@@ -47,7 +49,14 @@ public class PlateStorageServiceImpl implements PlateStorageService
     }
 
     @Override
-    public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Collection<Long> plateRowIds, @NotNull Container container, @NotNull User user)
+    public @Nullable StoragePlate getStoragePlate(@NotNull Container container, @NotNull User user, long plateRowId)
+    {
+        Map<Long, StoragePlate> plates = getStoragePlates(container, user, List.of(plateRowId));
+        return plates.get(plateRowId);
+    }
+
+    @Override
+    public @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Container container, @NotNull User user, @NotNull Collection<Long> plateRowIds)
     {
         Map<Long, StoragePlate> plates = new HashMap<>();
         if (plateRowIds.isEmpty())
