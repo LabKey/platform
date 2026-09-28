@@ -18,15 +18,21 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.wiki.WikiController.WikiDeleteBean" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Wiki> me = HttpView.currentView();
-    Wiki wiki = me.getModelBean();
+    JspView<WikiDeleteBean> me = HttpView.currentView();
+    WikiDeleteBean bean = me.getModelBean();
+    Wiki wiki = bean.wiki();
+    Wiki undeletableDescendant = bean.undeletableDescendant();
 %>
 
 Are you sure you want to delete this page?
 <p/>
 <b>name: <%=h(wiki.getName())%></b><br/>
 <b>title: <%=h(wiki.getLatestVersion().getTitle())%></b><br/>
-<br/><labkey:checkbox id="isDeletingSubtree" name="isDeletingSubtree" value="true" checked="false"/> Delete Entire Wiki Subtree
+<br/><labkey:checkbox id="isDeletingSubtree" name="isDeletingSubtree" value="true" checked="false" disabled="<%=null != undeletableDescendant%>"/> Delete Entire Wiki Subtree
+<% if (null != undeletableDescendant) { %>
+<br/><span class="labkey-error">You can't delete the entire subtree because you don't have permission to delete the child page '<%=h(undeletableDescendant.getName())%>'.</span>
+<% } %>
