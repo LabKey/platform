@@ -75,6 +75,7 @@ public class ApiQueryResponse implements ApiResponse
     private RenderContext _ctx = null;
     private boolean _schemaEditable = false;
     private boolean _metaDataOnly;
+    private boolean _countOnly = false;
     private DataRegion _dataRegion;
     private TableInfo _tinfo = null;
     private List<DisplayColumn> _displayColumns = null;
@@ -147,6 +148,16 @@ public class ApiQueryResponse implements ApiResponse
                 if (_metaDataOnlyIncludesEmptyRowset)
                     writeEmptyRowset(writer);
             }
+            else if (_countOnly)
+            {
+                loadTotalRowsOnly();
+                if (_dataRegion.getTotalRows() != null)
+                    _rowCount = _dataRegion.getTotalRows();
+
+                if (_includeMetaData)
+                    writeMetaData(writer);
+                writeEmptyRowset(writer);
+            }
             else
             {
                 // First run the query, so on potential SQLException we only serialize the exception instead of outputting all the metadata before the exception
@@ -170,7 +181,10 @@ public class ApiQueryResponse implements ApiResponse
                         _rowCount = _dataRegion.getTotalRows();
                     }
                 }
+            }
 
+            if (!_metaDataOnly)
+            {
                 long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
                 writer.writeProperty("rowCount", rowCount);
 
@@ -268,9 +282,7 @@ public class ApiQueryResponse implements ApiResponse
 
     protected Results getResults() throws Exception
     {
-        // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
-        // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
-        _dataRegion.setAllowAsync(ApiResponseWriter.getResponseFormat(_viewContext.getRequest(), ApiResponseWriter.Format.JSON).isJson());
+        _dataRegion.setAllowAsync(isAllowAsync());
         try
         {
             return _dataRegion.getResults(_ctx);
@@ -279,6 +291,26 @@ public class ApiQueryResponse implements ApiResponse
         {
             throw new ApiUsageException(e);
         }
+    }
+
+    protected void loadTotalRowsOnly()
+    {
+        _dataRegion.setAllowAsync(isAllowAsync());
+        try
+        {
+            _dataRegion.loadTotalRowsOnly(_ctx);
+        }
+        catch (ConversionException e)
+        {
+            throw new ApiUsageException(e);
+        }
+    }
+
+    // If we're going to be writing JSON back, which is tolerant of extra spaces, allow async so we
+    // can monitor if the client has stopped listening. XML doesn't take kindly to leading spaces
+    private boolean isAllowAsync()
+    {
+        return ApiResponseWriter.getResponseFormat(_viewContext.getRequest(), ApiResponseWriter.Format.JSON).isJson();
     }
 
     public List<FieldKey> getFieldKeys()
@@ -326,6 +358,12 @@ public class ApiQueryResponse implements ApiResponse
     public void includeStyle(boolean withStyle)
     {
         _doItWithStyle = withStyle;
+    }
+
+    /** Return only rowCount (and metadata, if requested) via a COUNT(*) query, skipping the rows query. */
+    public void countOnly(boolean countOnly)
+    {
+        _countOnly = countOnly;
     }
 
     protected double getFormatVersion()
