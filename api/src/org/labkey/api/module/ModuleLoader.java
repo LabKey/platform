@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
+import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveKeyedHashSetValuedMap;
@@ -2112,7 +2113,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return _moduleIncludeSet;
     }
 
-    void setModuleIncludeSet(CaseInsensitiveHashSet moduleIncludeSet)
+    <CIS extends Set<String> & CaseInsensitiveCollection> void setModuleIncludeSet(CIS moduleIncludeSet)
     {
         checkStartupPropertyState("Module include set");
         _moduleIncludeSet = Collections.unmodifiableSet(moduleIncludeSet);
@@ -2124,7 +2125,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         return _moduleExcludeSet;
     }
 
-    void setModuleExcludeSet(CaseInsensitiveHashSet moduleExcludeSet)
+    <CIS extends Set<String> & CaseInsensitiveCollection> void setModuleExcludeSet(CIS moduleExcludeSet)
     {
         checkStartupPropertyState("Module exclude set");
         _moduleExcludeSet = Collections.unmodifiableSet(moduleExcludeSet);
