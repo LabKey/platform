@@ -233,6 +233,7 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
             waitForElement(Locator.tag("span").containing("Specimen data is not editable"), MERGE_SUCCESS_TIMEOUT);
         // Error on missing value for source field.
         waitForElement(Locator.tag("span").containing("Missing value for required property"));
+        waitForElementToDisappear(Locator.tag("td").withText("Loading..."));
 
         log("Check not reporting conflict when no conflict exists, and warning on existing alias");
         setFormElement(ALIAS_SOURCE_FIELD, ALIAS_SOURCE_2);
@@ -261,6 +262,7 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         setFormElement(NEW_ID_FIELD, PTID_NEW_2);
         waitAndClick(Ext4Helper.Locators.ext4ButtonEnabled("Preview"));
         waitForElement(Locator.tag("span").containing("Preview Complete"), MERGE_SUCCESS_TIMEOUT);
+        waitForElementToDisappear(Locator.tag("td").withText("Loading..."));
         assertElementNotPresent(Locator.linkContainingText(PTID_NO_ALIAS + " has existing aliases"));
         assertElementPresent(Locator.linkContainingText("Conflict!"));
         clickButton("Merge", 0);
