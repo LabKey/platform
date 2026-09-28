@@ -851,16 +851,7 @@ public class DataRegion extends DisplayElement
 
                     newAggregates.add(Aggregate.createCountStar());
                     _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
-                    List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
-
-                    //Issue 14863: add null check
-                    if (result != null && !result.isEmpty())
-                    {
-                        Aggregate.Result countStarResult = result.getFirst();
-                        _totalRows = 0L;
-                        if (countStarResult.getValue() instanceof Number)
-                            _totalRows = ((Number) countStarResult.getValue()).longValue();
-                    }
+                    setTotalRowsFromCountStar(_aggregateResults.remove(Aggregate.STAR));
                 }
             }
             else
@@ -874,6 +865,42 @@ public class DataRegion extends DisplayElement
         }
 
         return _aggregateResults;
+    }
+
+    /** Sets the total row count from a COUNT(*) aggregate alone, without selecting any rows. */
+    public void loadTotalRowsOnly(RenderContext ctx)
+    {
+        if (!hasPermission(ctx, ReadPermission.class))
+            throw new UnauthorizedException();
+
+        TableInfo table = getTable();
+        if (null == table)
+            throw new NotFoundException("Table or query not found: " + getSettings().getQueryName());
+
+        DataRegion oldRegion = ctx.getCurrentRegion();
+        ctx.setCurrentRegion(this);
+        try
+        {
+            Map<String, List<Aggregate.Result>> aggregates = ctx.getAggregates(_displayColumns, table, getSettings(), getName(), List.of(Aggregate.createCountStar()), getQueryParameters(), isAllowAsync());
+            setTotalRowsFromCountStar(aggregates.get(Aggregate.STAR));
+            _aggregateResults = Collections.emptyMap();
+        }
+        finally
+        {
+            ctx.setCurrentRegion(oldRegion);
+        }
+    }
+
+    private void setTotalRowsFromCountStar(@Nullable List<Aggregate.Result> result)
+    {
+        //Issue 14863: add null check
+        if (result == null || result.isEmpty())
+            return;
+
+        Aggregate.Result countStarResult = result.getFirst();
+        _totalRows = 0L;
+        if (countStarResult.getValue() instanceof Number)
+            _totalRows = ((Number) countStarResult.getValue()).longValue();
     }
 
     @NotNull
