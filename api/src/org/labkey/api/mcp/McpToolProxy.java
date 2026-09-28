@@ -20,8 +20,10 @@ import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientStreamableHttpTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -38,7 +40,7 @@ public class McpToolProxy
     private final String remoteBaseUrl;
     private volatile McpSyncClient client;
 
-    public McpToolProxy(String remoteBaseUrl)
+    public McpToolProxy(@NotNull String remoteBaseUrl)
     {
         this.remoteBaseUrl = remoteBaseUrl;
     }
@@ -53,7 +55,9 @@ public class McpToolProxy
                 c = client;
                 if (c == null)
                 {
-                    var transport = HttpClientStreamableHttpTransport.builder(remoteBaseUrl).build();
+                    var transport = HttpClientStreamableHttpTransport.builder(remoteBaseUrl)
+                            .connectTimeout(Duration.ofSeconds(10))
+                            .build();
                     c = McpClient.sync(transport)
                             .clientInfo(McpSchema.Implementation.builder("labkey-server-forwarder", "1.0").build())
                             .build();
@@ -87,7 +91,7 @@ public class McpToolProxy
      * (joined, if the tool returned more than one text content block). Throws if the remote server can't be
      * reached or the remote tool itself reports an error.
      */
-    public String forward(String remoteToolName, Map<String, Object> arguments)
+    public String forward(@NotNull String remoteToolName, @NotNull Map<String, Object> arguments)
     {
         McpSchema.CallToolResult result;
         try

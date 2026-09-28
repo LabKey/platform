@@ -15,6 +15,7 @@
  */
 package org.labkey.api.mcp;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
@@ -44,8 +45,8 @@ public interface DocumentationService
     boolean isEnabled();
 
     /** Returns a JSON string; see CoreMcp's searchDocumentation tool description for the response shape. */
-    String searchDocumentation(String query, @Nullable Integer topK);
+    String searchDocumentation(@NotNull String query, @Nullable Integer topK);
 
     /** Returns a JSON string; see CoreMcp's retrieveDocument tool description for the response shape. */
-    String retrieveDocument(String id);
+    String retrieveDocument(@NotNull String id);
 }
