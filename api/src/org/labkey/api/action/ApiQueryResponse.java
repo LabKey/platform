@@ -185,7 +185,7 @@ public class ApiQueryResponse implements ApiResponse
 
             if (!_metaDataOnly)
             {
-                long rowCount = _rowCount > 0 ? _rowCount : _offset + _numRespRows;
+                long rowCount = _rowCount > 0 || _countOnly ? _rowCount : _offset + _numRespRows;
                 writer.writeProperty("rowCount", rowCount);
 
                 if (_includeMetaData)
