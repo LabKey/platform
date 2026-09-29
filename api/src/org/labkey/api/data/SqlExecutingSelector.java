@@ -70,6 +70,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private @Nullable ConnectionFactory _connectionFactory = null; // null means "no explicit choice"; see getEffectiveConnectionFactory()
     private boolean _jdbcCachingExplicitlySet = false;
     private Integer _fetchSize = null; // By default, use the standard fetch size
+    private @Nullable Integer _queryTimeout = null; // Seconds; null means no timeout
 
     private @Nullable AsyncQueryRequest<?> _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
@@ -256,6 +257,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     public SELECTOR setFetchSize(int fetchSize)
     {
         _fetchSize = fetchSize;
+        return getThis();
+    }
+
+    /** Cancels each statement this selector executes after the given number of seconds. */
+    public SELECTOR setQueryTimeout(int seconds)
+    {
+        _queryTimeout = seconds;
         return getThis();
     }
 
@@ -660,6 +668,11 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             if (null != _fetchSize)
             {
                 stmt.setFetchSize(_fetchSize);
+            }
+
+            if (null != _queryTimeout)
+            {
+                stmt.setQueryTimeout(_queryTimeout);
             }
 
             if (asyncRequest != null)

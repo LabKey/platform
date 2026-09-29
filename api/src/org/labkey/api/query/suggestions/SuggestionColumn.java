@@ -45,6 +45,7 @@ public class SuggestionColumn
     // Number for numeric columns, LocalDate for date columns
     private @Nullable Object _min;
     private @Nullable Object _max;
+    private @Nullable String _changeToken;
 
     public SuggestionColumn(@NotNull String fieldKey, @NotNull String caption, @NotNull Type type, @Nullable ColumnInfo columnInfo)
     {
@@ -162,5 +163,17 @@ public class SuggestionColumn
     {
         _min = min;
         _max = max;
+    }
+
+    /** Extra token for a column whose data changes independently of its table, such as storage columns on samples. */
+    public @Nullable String getChangeToken()
+    {
+        return _changeToken;
+    }
+
+    /** Cached facts for this column are keyed by the table's change token plus this one. */
+    public void setChangeToken(@Nullable String changeToken)
+    {
+        _changeToken = changeToken;
     }
 }
