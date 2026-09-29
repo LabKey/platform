@@ -49,6 +49,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.column.ColumnInfoTransformer;
 import org.labkey.api.query.column.ConceptURIColumnInfoTransformer;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
+import org.labkey.api.query.suggestions.FilterSuggestionProvider;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
@@ -286,6 +287,10 @@ public interface QueryService
     void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider);
 
     @NotNull List<QueryIconURLProvider> getQueryIconURLProviders();
+
+    void registerFilterSuggestionProvider(FilterSuggestionProvider provider);
+
+    @NotNull List<FilterSuggestionProvider> getFilterSuggestionProviders();
 
     //
     // Thread local environment for executing a query

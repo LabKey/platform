@@ -300,6 +300,8 @@ import org.labkey.query.reports.getdata.DataRequest;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.suggestions.FilterSuggestionService;
+import org.labkey.query.suggestions.FilterSuggestionService.FilterSuggestionsRequest;
 import org.labkey.query.xml.ApiTestsDocument;
 import org.labkey.query.xml.TestCaseType;
 import org.labkey.remoteapi.RemoteConnections;
@@ -4144,6 +4146,19 @@ public class QueryController extends SpringActionController
                 errors.reject(ERROR_MSG, e.getMessage());
                 return null;
             }
+        }
+    }
+
+    /** Targeted filters for a grid search term, ranked ahead of the "search all columns" Q filter. */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public static class GetFilterSuggestionsAction extends ReadOnlyApiAction<FilterSuggestionsRequest>
+    {
+        @Override
+        public Object execute(FilterSuggestionsRequest request, BindException errors)
+        {
+            return FilterSuggestionService.getSuggestions(getUser(), getContainer(), request);
         }
     }
 
