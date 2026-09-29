@@ -4831,8 +4831,10 @@ public class QueryController extends SpringActionController
 
             if (getTargetContainerProp() != null)
             {
-                Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
-                configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
+                // GH Issue 1449: resolve by id or path and apply full move-target validation, not a bare path lookup
+                Container targetContainer = ContainerManager.getMoveTargetContainer(schemaName, queryName, container, user, getTargetContainerProp(), errors);
+                if (targetContainer != null)
+                    configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
             }
 
             //set up the response, providing the schema name, query name, and operation
