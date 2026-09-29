@@ -176,6 +176,7 @@ public class SecurityManager
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
     /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
     public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER = "AllowApiKeyParameter";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -710,13 +711,26 @@ public class SecurityManager
             }
             else
             {
-                // Continue to support "LabKeyTransformSessionId" as a GET parameter, to support authentication through
-                // SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers. Do not use
-                // request.getParameter() since that will consume the POST body, #32711.
+                // Continue to support "apikey" as a GET parameter, to support authentication through SSRS which can't
+                // be made to use BasicAuth, pass cookies, or use HTTP headers. Do not use request.getParameter()
+                // since that will consume the POST body, #32711.
                 try
                 {
                     Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    apiKey = params.get(TRANSFORM_SESSION_ID);
+                    String apiKeyParameter = params.get(API_KEY);
+
+                    if (apiKeyParameter != null)
+                    {
+                        if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                        {
+                            apiKey = apiKeyParameter;
+                        }
+                        else
+                        {
+                            AUTH_LOG.warn("Rejected \"" + API_KEY + "\" parameter; enable the \"Allow authentication " +
+                                "via 'apikey' URL parameter\" optional feature flag or authenticate via a different approach.");
+                        }
+                    }
                 }
                 catch (IllegalArgumentException e)
                 {
