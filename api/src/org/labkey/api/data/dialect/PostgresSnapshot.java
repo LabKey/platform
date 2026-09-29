@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data.dialect;
 
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -141,7 +142,7 @@ public class PostgresSnapshot
 
         try
         {
-            new SqlSelector(schema, "SELECT 1 FROM " + view).exists();
+            new SqlSelector(schema, "SELECT 1 FROM " + view).setLogLevel(Level.OFF).exists();
             return new StatementsSource(StatementsStatus.AVAILABLE, view);
         }
         catch (DataAccessException e)
