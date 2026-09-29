@@ -373,6 +373,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
+import static org.labkey.api.security.SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -544,7 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
             false, false, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER,
-            "Allow authentication via 'apikey' URL parameter",
+            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION,
             "Allows tools such as SSRS to authenticate by providing an API key via an 'apikey' parameter. Providing " +
             "a credential via a URL parameter is not generally recommended, but in some cases this is the only option.",
             false, false, FeatureType.Optional));

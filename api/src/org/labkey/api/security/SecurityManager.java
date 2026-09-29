@@ -177,6 +177,7 @@ public class SecurityManager
     /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
     public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
     public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER = "AllowApiKeyParameter";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION = "Allow authentication via 'apikey' URL parameter";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -671,8 +672,8 @@ public class SecurityManager
     /**
      * Determine if an API key is present, checking the "apikey" header first, then the deprecated
      * "LabKeyTransformSessionId" cookie (gated behind {@link #FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID}), and finally
-     * the "LabKeyTransformSessionId" GET parameter (supported permanently, since SSRS can't be made to use the header
-     * or a cookie). Return the credentials if an API key is present via any of these; otherwise return null.
+     * the "apikey" GET parameter (supported since SSRS can't be made to use a header, but only if the optional feature
+     * flag is enabled). Return the credentials if an API key is present via any of these; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
@@ -711,11 +712,12 @@ public class SecurityManager
             }
             else
             {
-                // Continue to support "apikey" as a GET parameter, to support authentication through SSRS which can't
-                // be made to use BasicAuth, pass cookies, or use HTTP headers. Do not use request.getParameter()
-                // since that will consume the POST body, #32711.
+                // Continue to support "apikey" as a GET parameter only if the optional feature flag is enabled. This
+                // supports authentication through SSRS, which can't be made to use BasicAuth, pass cookies, or use HTTP
+                // headers.
                 try
                 {
+                    // Do not use request.getParameter() since that will consume the POST body, #32711.
                     Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
                     String apiKeyParameter = params.get(API_KEY);
 
@@ -727,14 +729,25 @@ public class SecurityManager
                         }
                         else
                         {
-                            AUTH_LOG.warn("Rejected \"" + API_KEY + "\" parameter; enable the \"Allow authentication " +
-                                "via 'apikey' URL parameter\" optional feature flag or authenticate via a different approach.");
+                            AUTH_LOG.warn("Rejected \"" + API_KEY + "\" parameter; enable the \"" +
+                                FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature flag or " +
+                                "authenticate via a different approach.");
                         }
+                    }
+                    else if (params.get(SecurityManager.TRANSFORM_SESSION_ID) != null)
+                    {
+                        throw new IllegalArgumentException("Rejected \"" + SecurityManager.TRANSFORM_SESSION_ID +
+                            "\" parameter because it's no longer supported. Enable the \"" +
+                            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature flag and use the " +
+                            "\"apikey\" parameter instead.");
                     }
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw new UnsupportedEncodingException(e.getMessage());
+                    if (e.getCause() instanceof UnsupportedEncodingException uee)
+                        throw uee;
+                    else
+                        throw e;
                 }
             }
         }
