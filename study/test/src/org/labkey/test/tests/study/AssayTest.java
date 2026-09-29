@@ -934,15 +934,15 @@ public class AssayTest extends AbstractAssayTest
         linkStudy.clickHeaderButtonAndWait("Re-Validate");
 
         //validate timepoints:
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td/a[text()='AAA07XMC-02']]"));
-        assertElementPresent(Locator.xpath("//td[text()='33.0' and following-sibling::td/a[text()='AAA07XMC-04']]"));
-        assertElementPresent(Locator.xpath("//td[text()='4.0' and following-sibling::td/a[text()='AAA07XSF-02']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit3' and following-sibling::td[normalize-space()='AAA07XMC-02']]"));
+        assertElementPresent(Locator.xpath("//td[text()='33.0' and following-sibling::td[normalize-space()='AAA07XMC-04']]"));
+        assertElementPresent(Locator.xpath("//td[text()='4.0' and following-sibling::td[normalize-space()='AAA07XSF-02']]"));
 
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td/a[text()='AssayTestControl1']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='AssayTestControl2']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-09']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-08']]"));
-        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td/a[text()='BAQ00051-11']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit2' and following-sibling::td[normalize-space()='AssayTestControl1']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='AssayTestControl2']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-09']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-08']]"));
+        assertElementPresent(Locator.xpath("//td[text()='Test Visit1' and following-sibling::td[normalize-space()='BAQ00051-11']]"));
 
         linkStudy.clickHeaderButtonAndWait("Link to Study");
 
