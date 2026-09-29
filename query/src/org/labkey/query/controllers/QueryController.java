@@ -4829,9 +4829,12 @@ public class QueryController extends SpringActionController
             if (skipReselectRows)
                 configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
 
-            if (getTargetContainerProp() != null)
+            if (commandType == CommandType.moveRows && getTargetContainerProp() != null)
             {
-                Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
+                // GH Issue 1449: resolve by id or path and apply full move-target validation, not a bare path lookup
+                Container targetContainer = ContainerManager.getMoveTargetContainer(schemaName, queryName, container, user, getTargetContainerProp(), errors);
+                if (targetContainer == null)
+                    return null; // errors already populated; running the move with a null target would NPE downstream
                 configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
             }
 
