@@ -70,7 +70,7 @@ public class JunitRunner
         return run(Request.runner(runner));
     }
 
-    // Unlike Request.method(), also matches each Parameterized invocation, which JUnit names "method[0]", "method[1]", ...
+    // A bare method name also matches every Parameterized invocation ("method[0]", "method[1]", ...); Request.method() needs the full invocation name
     private static Filter methodFilter(String method)
     {
         return new Filter()
