@@ -134,10 +134,6 @@ api/src/org/labkey/api/action/SimpleRedirectAction.java -text
 api/src/org/labkey/api/action/SimpleStreamAction.java -text
 api/src/org/labkey/api/action/SimpleViewAction.java -text
 api/src/org/labkey/api/action/SpringActionController.java -text
-api/src/org/labkey/api/action/StatusAppender.java -text
-api/src/org/labkey/api/action/statusReport.jsp -text
-api/src/org/labkey/api/action/StatusReportingRunnable.java -text
-api/src/org/labkey/api/action/StatusReportingRunnableAction.java -text
 api/src/org/labkey/api/action/UrlProvider.java -text
 api/src/org/labkey/api/admin/AbstractFolderContext.java -text
 api/src/org/labkey/api/admin/AbstractFolderImportFactory.java -text
