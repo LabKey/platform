@@ -424,7 +424,13 @@ public class SecurityManager
         }
     }
 
-    private record Credentials(String username, String password) {}
+    private record Credentials(String username, String password, boolean shouldSetSessionCookie)
+    {
+        Credentials(String username, String password)
+        {
+            this(username, password, true);
+        }
+    }
 
     private static @Nullable Credentials getBasicCredentials(HttpServletRequest request)
     {
@@ -573,12 +579,16 @@ public class SecurityManager
                     String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
                     if (!session.getId().equals(sessionId))
                     {
-                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
-                        sessionCookie.setPath("/");
-                        sessionCookie.setHttpOnly(true);
-                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
-                            sessionCookie.setSecure(true);
-                        response.addCookie(sessionCookie);
+                        // A URL can be planted in a victim's browser, so a URL parameter key must not set the session cookie
+                        if (basicCredentials.shouldSetSessionCookie())
+                        {
+                            Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                            sessionCookie.setPath("/");
+                            sessionCookie.setHttpOnly(true);
+                            if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                                sessionCookie.setSecure(true);
+                            response.addCookie(sessionCookie);
+                        }
                         request = new SessionReplacingRequest(request, session);
                     }
                 }
@@ -685,6 +695,7 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most LabKey client API
         // implementations
         String apiKey = request.getHeader(API_KEY);
+        boolean shouldSetSessionCookie = true;
 
         if (null == apiKey)
         {
@@ -737,6 +748,7 @@ public class SecurityManager
                     if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
                     {
                         apiKey = apiKeyParameter;
+                        shouldSetSessionCookie = false;
                     }
                     else
                     {
@@ -756,7 +768,7 @@ public class SecurityManager
             }
         }
 
-        return null != apiKey ? new Credentials(API_KEY, apiKey) : null;
+        return null != apiKey ? new Credentials(API_KEY, apiKey, shouldSetSessionCookie) : null;
     }
 
     // Unauthenticated callers can trigger these warnings on every request
