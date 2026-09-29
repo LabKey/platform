@@ -561,7 +561,7 @@ dependencies {
             "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
             "Jackson support for org.json",
             "Jackson",
-            "https://github.com/FasterXML/jackson-datatype-json-org",
+            "https://github.com/FasterXML/jackson-modules-java8",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Add-on module to support JSR-310 (Java 8 Date & Time API) data types",
