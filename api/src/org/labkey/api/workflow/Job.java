@@ -16,6 +16,7 @@
 package org.labkey.api.workflow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -319,7 +320,15 @@ public abstract class Job extends CreatedModified implements Identifiable
         _attachments = attachments;
     }
 
+    @JsonIgnore
     public abstract List<WorkEntity> getEntities();
+
+    // Serialize only preloaded entities; getEntities() lazily queries them
+    @JsonProperty("entities") @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<WorkEntity> getLoadedEntities()
+    {
+        return _entities;
+    }
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
