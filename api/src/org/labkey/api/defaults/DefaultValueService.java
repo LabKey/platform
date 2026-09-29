@@ -41,6 +41,7 @@ import java.util.Map;
 public interface DefaultValueService
 {
     String DOMAIN_DEFAULT_VALUE_LSID_PREFIX = "DomainDefaultValue";
+    String USER_DEFAULT_VALUE_LSID_PREFIX = "UserDefaultValue";
 
     static DefaultValueService get()
     {
