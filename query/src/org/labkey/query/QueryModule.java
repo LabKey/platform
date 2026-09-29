@@ -135,6 +135,8 @@ import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.QNumber;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.suggestions.FilterSuggestionRanker;
+import org.labkey.query.suggestions.SuggestionTerm;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
 import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
@@ -379,6 +381,7 @@ public class QueryModule extends DefaultModule
     public @NotNull Set<Class<?>> getIntegrationTests()
     {
         return Set.of(
+            FilterSuggestionRanker.TestCase.class,
             ModuleReportCache.TestCase.class,
             OlapController.TestCase.class,
             OlapController.ContainerScopingTestCase.class,
@@ -426,6 +429,7 @@ public class QueryModule extends DefaultModule
             RemoteConnections.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,
+            SuggestionTerm.TestCase.class,
             TableWriter.TestCase.class,
             QueryUserSchema.TestCase.class
         );

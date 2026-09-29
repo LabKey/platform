@@ -2469,6 +2469,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
     }
 
+    @Override
+    public @NotNull String getDataChangeToken(@NotNull ExpSampleType sampleType)
+    {
+        return ExpMaterialTableImpl.getDataChangeToken(sampleType.getLSID());
+    }
+
     public static class TestCase extends Assert
     {
         @Test

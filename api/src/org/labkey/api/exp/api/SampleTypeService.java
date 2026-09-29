@@ -268,6 +268,9 @@ public interface SampleTypeService
 
     int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
 
+    /** @return a token that changes whenever the sample type's samples change; read it before reading the data it guards */
+    @NotNull String getDataChangeToken(@NotNull ExpSampleType sampleType);
+
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     long getCurrentCount(NameGenerator.EntityCounter counterType, Container container);
