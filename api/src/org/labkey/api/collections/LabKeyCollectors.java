@@ -208,7 +208,7 @@ public class LabKeyCollectors
     /**
      * Returns a {@link Collector} that builds a {@link CaseInsensitiveHashSet} from a {@link Stream} of {@link String}s
      */
-    public static Collector<String, ?, Set<String>> toCaseInsensitiveHashSet()
+    public static Collector<String, ?, CaseInsensitiveHashSet> toCaseInsensitiveHashSet()
     {
         return Collectors.toCollection(CaseInsensitiveHashSet::new);
     }
