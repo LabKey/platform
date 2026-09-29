@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -59,11 +60,14 @@ public class FilterSuggestionColumns
 
     private record Candidate(ColumnInfo column, @Nullable String caption) {}
 
+    /** @param lookups the lookup column whose target table supplies each lookup-valued column's values */
+    public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups) {}
+
     /**
      * @param fieldKeys the grid's display columns; only those that resolve and that the user may read are kept, plus
      *                  integer primary keys, which Q matches even when they are not displayed
      */
-    public static @NotNull List<SuggestionColumn> describe(@NotNull TableInfo table, @Nullable CustomView view, @Nullable Collection<String> fieldKeys)
+    public static @NotNull Described describe(@NotNull TableInfo table, @Nullable CustomView view, @Nullable Collection<String> fieldKeys)
     {
         Set<FieldKey> requested = new LinkedHashSet<>();
         if (fieldKeys != null)
@@ -104,13 +108,18 @@ public class FilterSuggestionColumns
         String titleColumn = table.getTitleColumn();
         Set<String> seen = new HashSet<>();
         List<SuggestionColumn> columns = new ArrayList<>();
+        Map<SuggestionColumn, ColumnInfo> lookups = new IdentityHashMap<>();
         for (Candidate candidate : candidates)
         {
             SuggestionColumn column = toSuggestionColumn(candidate, pkFieldKeys.contains(candidate.column().getFieldKey()), titleColumn);
             if (column != null && seen.add(column.getFieldKey().toLowerCase(Locale.ROOT)))
+            {
                 columns.add(column);
+                if (column.getType() == SuggestionColumn.Type.STRING && column.getValues() == null && isLookup(candidate.column()))
+                    lookups.put(column, candidate.column());
+            }
         }
-        return columns;
+        return new Described(columns, lookups);
     }
 
     private static Map<FieldKey, String> getViewCaptions(@Nullable CustomView view)
@@ -128,7 +137,7 @@ public class FilterSuggestionColumns
         return captions;
     }
 
-    private static boolean isAllowed(@NotNull ColumnInfo column, @NotNull PHI maxAllowedPhi)
+    static boolean isAllowed(@NotNull ColumnInfo column, @NotNull PHI maxAllowedPhi)
     {
         return !(column instanceof PhiTransformedColumnInfo) && column.getPHI().isLevelAllowed(maxAllowedPhi);
     }
@@ -230,7 +239,7 @@ public class FilterSuggestionColumns
             case BOOLEAN -> suggestionColumn.setValues(List.of("true", "false"));
             case FIXED -> suggestionColumn.setValues(List.copyOf(Objects.requireNonNull(validValues)));
             case KEY -> suggestionColumn.setKey(true);
-            // No stats pass yet, so range checks are skipped and these stay compose candidates
+            // ColumnFactsCache replaces this with a range when it can read the column's data
             case DATE, FLOAT, INT -> suggestionColumn.setRangeUnknown(true);
             default -> {}
         }
