@@ -1,0 +1,292 @@
+{
+  "description": "Ranking cases for grid search suggestions: a term plus what is known about each column yields an ordered suggestion list. Shared by the client engine's tests and the planned server endpoint's tests.",
+  "columnSets": {
+    "plasma": [
+      { "fieldKey": "Name", "caption": "Sample ID", "type": "string", "isTitle": true, "nameExpression": "PL-${genId}", "shapes": ["AA-9999999", "AA-9999999-9"] },
+      { "fieldKey": "TubeType", "caption": "Tube Type", "type": "string", "values": ["ACD-B", "EDTA K3", "Heparin Li", "Heparin Na", "Sodium Citrate"] },
+      { "fieldKey": "BloodType", "caption": "Blood Type", "type": "string", "values": ["A+", "A-", "AB+", "B+", "B-", "O+", "O-"] },
+      { "fieldKey": "ProcessingMethod", "caption": "Processing Method", "type": "string", "values": ["Double Spin", "PRP", "Single Spin", "Standard"] },
+      { "fieldKey": "HemolysisGrade", "caption": "Hemolysis Grade", "type": "string", "values": ["1+", "2+", "3+", "4+", "None"] },
+      { "fieldKey": "SampleState/Label", "caption": "Status", "type": "string", "values": ["Available", "Consumed", "Locked"] },
+      { "fieldKey": "SubjectID", "caption": "Subject ID", "type": "string", "shapes": ["AAAA-999999"] },
+      { "fieldKey": "Barcode", "caption": "Barcode", "type": "string", "isUniqueId": true, "shapes": ["999999999"] },
+      { "fieldKey": "Concentration", "caption": "Concentration Mg ML", "type": "float", "min": 50.1, "max": 120.5 },
+      { "fieldKey": "Amount", "caption": "Amount", "type": "float", "min": 0.1, "max": 60 },
+      { "fieldKey": "Units", "caption": "Units", "type": "string", "values": ["blocks", "bottles", "mL"] },
+      { "fieldKey": "FreezeThawCount", "caption": "Freeze/Thaw Count", "type": "int", "min": 0, "max": 5, "values": ["0", "1", "2", "3", "4", "5"] },
+      { "fieldKey": "StorageCol", "caption": "Storage Col", "type": "int", "min": 1, "max": 10, "values": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] },
+      { "fieldKey": "AliquotCount", "caption": "Aliquots Created Count", "type": "int", "min": 0, "max": 40, "values": ["0", "32"] },
+      { "fieldKey": "AliquotVolume", "caption": "Aliquot Total Amount", "type": "float", "min": 0, "max": 17 },
+      { "fieldKey": "TimeToProcessing", "caption": "Time To Processing", "type": "int", "min": 0, "max": 0, "values": ["0"] },
+      { "fieldKey": "CollectionDate", "caption": "Collection Date", "type": "date", "min": "2018-01-01", "max": "2024-12-31" },
+      { "fieldKey": "ProcessingDate", "caption": "Processing Date", "type": "date", "min": "2018-01-01", "max": "2024-12-31" },
+      { "fieldKey": "MaterialExpDate", "caption": "Expiration Date", "type": "date", "min": "2026-07-04", "max": "2026-07-04" },
+      { "fieldKey": "Created", "caption": "Created", "type": "date", "min": "2026-05-24", "max": "2026-06-04" },
+      { "fieldKey": "CreatedBy/DisplayName", "caption": "Created By", "type": "string", "values": ["hannahb"] },
+      { "fieldKey": "IsAliquot", "caption": "Is Aliquot", "type": "boolean", "values": ["true", "false"] },
+      { "fieldKey": "RowId", "caption": "Row Id", "type": "int", "isKey": true }
+    ],
+    "unknownRanges": [
+      { "fieldKey": "Concentration", "caption": "Concentration", "type": "float", "rangeUnknown": true },
+      { "fieldKey": "Collected", "caption": "Collected", "type": "date", "rangeUnknown": true },
+      { "fieldKey": "Notes", "caption": "Notes", "type": "string" }
+    ]
+  },
+  "cases": [
+    {
+      "name": "aliquot name matches the name expression",
+      "columnSet": "plasma",
+      "term": "PL-5000000-1",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-5000000-1", "label": "Sample ID is PL-5000000-1", "source": "identity" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-5000000-1", "valueType": "string", "label": "Compose a filter on Sample ID…", "source": "compose" },
+        { "kind": "search", "value": "PL-5000000-1", "label": "Search all columns for \"PL-5000000-1\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "partial value match",
+      "columnSet": "plasma",
+      "term": "Sodium",
+      "expected": [
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "partialValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Sodium", "valueType": "string", "label": "Compose a filter on Tube Type…", "source": "compose" },
+        { "kind": "search", "value": "Sodium", "label": "Search all columns for \"Sodium\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "each partial match is its own option",
+      "columnSet": "plasma",
+      "term": "Hep",
+      "expected": [
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue" },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Na", "label": "Tube Type is Heparin Na", "source": "partialValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Compose a filter on Tube Type…", "source": "compose" },
+        { "kind": "search", "value": "Hep", "label": "Search all columns for \"Hep\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "direct filters are capped to leave room for compose and search",
+      "columnSet": "plasma",
+      "term": "Hep",
+      "maxSuggestions": 3,
+      "expected": [
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Compose a filter on Tube Type…", "source": "compose" },
+        { "kind": "search", "value": "Hep", "label": "Search all columns for \"Hep\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "case-insensitive exact value match uses the stored value",
+      "columnSet": "plasma",
+      "term": "sodium citrate",
+      "expected": [
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "exactValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "sodium citrate", "valueType": "string", "label": "Compose a filter on Tube Type…", "source": "compose" },
+        { "kind": "search", "value": "sodium citrate", "label": "Search all columns for \"sodium citrate\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "exact match does not also partially match a longer value",
+      "columnSet": "plasma",
+      "term": "A+",
+      "expected": [
+        { "kind": "filter", "fieldKey": "BloodType", "op": "eq", "value": "A+", "label": "Blood Type is A+", "source": "exactValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "BloodType", "op": "contains" }], "value": "A+", "valueType": "string", "label": "Compose a filter on Blood Type…", "source": "compose" },
+        { "kind": "search", "value": "A+", "label": "Search all columns for \"A+\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "lookup display values",
+      "columnSet": "plasma",
+      "term": "Avail",
+      "expected": [
+        { "kind": "filter", "fieldKey": "SampleState/Label", "op": "eq", "value": "Available", "label": "Status is Available", "source": "partialValue" },
+        { "kind": "compose", "fields": [{ "fieldKey": "SampleState/Label", "op": "contains" }], "value": "Avail", "valueType": "string", "label": "Compose a filter on Status…", "source": "compose" },
+        { "kind": "search", "value": "Avail", "label": "Search all columns for \"Avail\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "value shape of a high-cardinality column",
+      "columnSet": "plasma",
+      "term": "SUBJ-028504",
+      "expected": [
+        { "kind": "filter", "fieldKey": "SubjectID", "op": "eq", "value": "SUBJ-028504", "label": "Subject ID is SUBJ-028504", "source": "shape" },
+        { "kind": "compose", "fields": [{ "fieldKey": "SubjectID", "op": "eq" }], "value": "SUBJ-028504", "valueType": "string", "label": "Compose a filter on Subject ID…", "source": "compose" },
+        { "kind": "search", "value": "SUBJ-028504", "label": "Search all columns for \"SUBJ-028504\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "decimal only fits decimal columns whose range contains it",
+      "columnSet": "plasma",
+      "term": "86.76",
+      "expected": [
+        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "86.76", "valueType": "number", "label": "Compose a filter on Concentration Mg ML…", "source": "compose" },
+        { "kind": "search", "value": "86.76", "label": "Search all columns for \"86.76\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "small integer: numeric key, low-cardinality integers, then every column in range",
+      "columnSet": "plasma",
+      "term": "3",
+      "expected": [
+        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "3", "label": "Row Id is 3", "source": "key" },
+        { "kind": "filter", "fieldKey": "FreezeThawCount", "op": "eq", "value": "3", "label": "Freeze/Thaw Count is 3", "source": "integerValue" },
+        { "kind": "filter", "fieldKey": "StorageCol", "op": "eq", "value": "3", "label": "Storage Col is 3", "source": "integerValue" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Amount", "op": "eq" },
+            { "fieldKey": "FreezeThawCount", "op": "eq" },
+            { "fieldKey": "StorageCol", "op": "eq" },
+            { "fieldKey": "AliquotCount", "op": "eq" },
+            { "fieldKey": "AliquotVolume", "op": "eq" }
+          ],
+          "value": "3",
+          "valueType": "number",
+          "label": "Compose a number filter for \"3\"… (5 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "3", "label": "Search all columns for \"3\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "a year that is out of range for every number column composes a date range",
+      "columnSet": "plasma",
+      "term": "2023",
+      "expected": [
+        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "2023", "label": "Row Id is 2023", "source": "key" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "CollectionDate", "op": "between" },
+            { "fieldKey": "ProcessingDate", "op": "between" }
+          ],
+          "value": "2023-01-01,2023-12-31",
+          "valueType": "date",
+          "label": "Compose a date filter for \"2023\"… (2 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "2023", "label": "Search all columns for \"2023\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "month name and year",
+      "columnSet": "plasma",
+      "term": "Mar 2023",
+      "expected": [
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "CollectionDate", "op": "between" },
+            { "fieldKey": "ProcessingDate", "op": "between" }
+          ],
+          "value": "2023-03-01,2023-03-31",
+          "valueType": "date",
+          "label": "Compose a date filter for \"Mar 2023\"… (2 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "Mar 2023", "label": "Search all columns for \"Mar 2023\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "full date",
+      "columnSet": "plasma",
+      "term": "2019-02-03",
+      "expected": [
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "CollectionDate", "op": "dateeq" },
+            { "fieldKey": "ProcessingDate", "op": "dateeq" }
+          ],
+          "value": "2019-02-03",
+          "valueType": "date",
+          "label": "Compose a date filter for \"2019-02-03\"… (2 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "2019-02-03", "label": "Search all columns for \"2019-02-03\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "zero-padded barcode is an identifier, not a number",
+      "columnSet": "plasma",
+      "term": "005004441",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Barcode", "op": "eq", "value": "005004441", "label": "Barcode is 005004441", "source": "identity" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Barcode", "op": "eq" }], "value": "005004441", "valueType": "string", "label": "Compose a filter on Barcode…", "source": "compose" },
+        { "kind": "search", "value": "005004441", "label": "Search all columns for \"005004441\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "no signal composes over every string column, title first",
+      "columnSet": "plasma",
+      "term": "asdf",
+      "expected": [
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "asdf",
+          "valueType": "string",
+          "label": "Compose a string filter for \"asdf\"… (10 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "asdf", "label": "Search all columns for \"asdf\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "boolean value",
+      "columnSet": "plasma",
+      "term": "true",
+      "expected": [
+        { "kind": "filter", "fieldKey": "IsAliquot", "op": "eq", "value": "true", "label": "Is Aliquot is true", "source": "exactValue" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "true",
+          "valueType": "string",
+          "label": "Compose a string filter for \"true\"… (10 columns)",
+          "source": "compose"
+        },
+        { "kind": "search", "value": "true", "label": "Search all columns for \"true\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "columns whose range failed to load are kept rather than dropped",
+      "columnSet": "unknownRanges",
+      "term": "1000",
+      "expected": [
+        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "1000", "valueType": "number", "label": "Compose a filter on Concentration…", "source": "compose" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Collected", "op": "between" }], "value": "1000-01-01,1000-12-31", "valueType": "date", "label": "Compose a filter on Collected…", "source": "compose" },
+        { "kind": "search", "value": "1000", "label": "Search all columns for \"1000\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "blank term",
+      "columnSet": "plasma",
+      "term": "   ",
+      "expected": []
+    }
+  ]
+}
