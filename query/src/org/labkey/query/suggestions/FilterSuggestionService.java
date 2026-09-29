@@ -50,7 +50,7 @@ public class FilterSuggestionService
 
     /**
      * @param columns    the grid's display column fieldKeys
-     * @param parameters values for a parameterized query; unused until suggestions read the table's data
+     * @param parameters values for a parameterized query, applied to every read of the table's data
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FilterSuggestionsRequest(
@@ -113,7 +113,8 @@ public class FilterSuggestionService
         if (!table.hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException();
 
-        List<SuggestionColumn> columns = FilterSuggestionColumns.describe(table, getView(schema, request, user), request.columns());
+        FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, getView(schema, request, user), request.columns());
+        List<SuggestionColumn> columns = described.columns();
 
         boolean complete = true;
         FilterSuggestionContext context = new Context(table, container, user);
@@ -131,7 +132,39 @@ public class FilterSuggestionService
             }
         }
 
+        try
+        {
+            complete &= ColumnFactsCache.get().fill(context, request.parameters(), described, FilterSuggestionService::getChangeToken, ColumnFactsCache.DEFAULT_BUDGET_MS);
+        }
+        catch (RuntimeException e)
+        {
+            LOG.warn("Unable to read column facts for {}.{}", request.schemaName(), request.queryName(), e);
+            complete = false;
+        }
+
         return new FilterSuggestionsResponse(FilterSuggestionRanker.rank(term, columns, getMaxSuggestions(request)), complete);
+    }
+
+    /** The first non-null token from a provider that handles the table; null keeps its facts per user. */
+    private static @Nullable String getChangeToken(TableInfo table)
+    {
+        for (FilterSuggestionProvider provider : QueryService.get().getFilterSuggestionProviders())
+        {
+            try
+            {
+                if (provider.handles(table))
+                {
+                    String token = provider.getChangeToken(table);
+                    if (token != null)
+                        return token;
+                }
+            }
+            catch (RuntimeException e)
+            {
+                LOG.warn("Filter suggestion provider {} failed to supply a change token for {}", provider.getClass().getName(), table.getName(), e);
+            }
+        }
+        return null;
     }
 
     private static @Nullable ContainerFilter getContainerFilter(FilterSuggestionsRequest request, Container container, User user)
