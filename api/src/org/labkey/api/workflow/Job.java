@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class Job extends CreatedModified implements Identifiable
 {
@@ -334,13 +335,13 @@ public abstract class Job extends CreatedModified implements Identifiable
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
 
     @JsonIgnore
-    public abstract @NotNull List<String> getSampleNames();
+    public abstract @NotNull Stream<String> getSampleNames();
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpData> getSources();
 
     @JsonIgnore
-    public abstract @NotNull List<String> getSourceNames();
+    public abstract @NotNull Stream<String> getSourceNames();
 
     public void setEntities(List<WorkEntity> entities)
     {
