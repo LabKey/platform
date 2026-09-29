@@ -2746,7 +2746,6 @@ study/test/src/org/labkey/test/tests/study/AssayTest.java -text
 study/test/src/org/labkey/test/tests/study/CohortTest.java -text
 study/test/src/org/labkey/test/tests/study/ExtraKeyStudyTest.java -text
 study/test/src/org/labkey/test/tests/study/QuerySnapshotTest.java -text
-study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyContinuousTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDateBasedTest.java -text
