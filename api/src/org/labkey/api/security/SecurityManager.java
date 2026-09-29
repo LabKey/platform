@@ -44,6 +44,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -111,6 +113,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -715,45 +718,49 @@ public class SecurityManager
                 // Continue to support "apikey" as a GET parameter only if the optional feature flag is enabled. This
                 // supports authentication through SSRS, which can't be made to use BasicAuth, pass cookies, or use HTTP
                 // headers.
+                Map<String, String> params;
                 try
                 {
                     // Do not use request.getParameter() since that will consume the POST body, #32711.
-                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    String apiKeyParameter = params.get(API_KEY);
-
-                    if (apiKeyParameter != null)
-                    {
-                        if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
-                        {
-                            apiKey = apiKeyParameter;
-                        }
-                        else
-                        {
-                            AUTH_LOG.warn("Rejected \"" + API_KEY + "\" parameter; enable the \"" +
-                                FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature flag or " +
-                                "authenticate via a different approach.");
-                        }
-                    }
-                    else if (params.get(SecurityManager.TRANSFORM_SESSION_ID) != null)
-                    {
-                        throw new IllegalArgumentException("Rejected \"" + SecurityManager.TRANSFORM_SESSION_ID +
-                            "\" parameter because it's no longer supported. Enable the \"" +
-                            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature flag and use the " +
-                            "\"apikey\" parameter instead.");
-                    }
+                    params = PageFlowUtil.mapFromQueryString(request.getQueryString());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    if (e.getCause() instanceof UnsupportedEncodingException uee)
-                        throw uee;
+                    // URLDecoder throws on malformed escapes; AuthFilter maps this to a 400
+                    throw new UnsupportedEncodingException(e.getMessage());
+                }
+
+                String apiKeyParameter = params.get(API_KEY);
+
+                if (apiKeyParameter != null)
+                {
+                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    {
+                        apiKey = apiKeyParameter;
+                    }
                     else
-                        throw e;
+                    {
+                        API_KEY_PARAMETER_WARNING_THROTTLE.execute("Rejected \"" + API_KEY + "\" parameter; " +
+                            "enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature " +
+                            "flag or authenticate via a different approach.");
+                    }
+                }
+                else if (params.get(TRANSFORM_SESSION_ID) != null)
+                {
+                    String message = "Rejected \"" + TRANSFORM_SESSION_ID + "\" parameter because it's no longer " +
+                        "supported. Enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional " +
+                        "feature flag and use the \"" + API_KEY + "\" parameter instead.";
+                    API_KEY_PARAMETER_WARNING_THROTTLE.execute(message);
+                    throw new BadRequestException(message);
                 }
             }
         }
 
         return null != apiKey ? new Credentials(API_KEY, apiKey) : null;
     }
+
+    // Unauthenticated callers can trigger these warnings on every request
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>("apikey parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
