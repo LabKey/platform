@@ -549,7 +549,9 @@ public class QueryPivot extends AbstractQueryRelation
 
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
-                        _columns.put(pivotName, pvt);
+                        // _makePivotedAggColumn() returns null when parse errors are present
+                        if (null != pvt)
+                            _columns.put(pivotName, pvt);
                     }
                 }
             }
@@ -824,7 +826,12 @@ public class QueryPivot extends AbstractQueryRelation
                 if (value instanceof QNull)
                     sql.append(" IS NULL");
                 else
-                    sql.append("=").append(value.getSourceText());
+                {
+                    // Let the constant write itself into sql, quoting through the dialect. Never splice in its source text:
+                    // text carrying ';' or an unbalanced quote trips SQLFragment's guardrail.
+                    sql.append("=");
+                    ((QExpr) value).appendSql(sql, _query);
+                }
                 sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
