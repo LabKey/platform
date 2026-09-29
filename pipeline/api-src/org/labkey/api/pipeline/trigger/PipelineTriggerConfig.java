@@ -17,6 +17,10 @@ package org.labkey.api.pipeline.trigger;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ImpersonatePermission;
+import org.labkey.api.security.permissions.ImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.nio.file.Path;
 import java.util.Date;
@@ -54,4 +58,23 @@ public interface PipelineTriggerConfig
     boolean matches(Path directory, Path entry, /*out*/ @Nullable Map<String, String> namedGroupSubstitutions);
 
     String getStatus();
+
+    /**
+     * GH Issue 1466: a trigger job runs with the run-as user's full roles, so the saving user must be entitled to
+     * impersonate that user, and a privileged target additionally requires the privileged-impersonation permission.
+     */
+    static boolean canRunAs(Container container, User user, User runAsUser)
+    {
+        if (runAsUser.equals(user))
+            return true;
+        if (!runAsUser.isActive())
+            return false;
+        if (runAsUser.hasPrivilegedRole() && !user.hasRootPermission(ImpersonatePrivilegedSiteRolesPermission.class))
+            return false;
+        if (user.hasRootPermission(ImpersonatePermission.class))
+            return true;
+
+        Container project = container.getProject();
+        return project != null && project.hasPermission(user, ImpersonatePermission.class) && project.hasPermission(runAsUser, ReadPermission.class);
+    }
 }

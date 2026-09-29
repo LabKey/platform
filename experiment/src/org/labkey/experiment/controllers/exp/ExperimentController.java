@@ -7326,7 +7326,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(SiteAdminPermission.class)
     public static class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
@@ -7388,7 +7388,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(SiteAdminPermission.class)
     public static class RebuildAncestorsAction extends MutatingApiAction<Object>
     {
         @Override
