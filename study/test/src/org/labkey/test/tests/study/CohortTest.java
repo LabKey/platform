@@ -18,6 +18,7 @@ package org.labkey.test.tests.study;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.Connection;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -26,6 +27,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.pages.study.ManageVisitPage;
+import org.labkey.test.params.study.DatasetDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
@@ -35,6 +37,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -65,7 +68,7 @@ public class CohortTest extends BaseWebDriverTest
     private static final String[] PTIDS_POSITIVE_NOCOHORT = {INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1};
 
     @Test
-    public void testSteps()
+    public void testSteps() throws Exception
     {
         doSetup();
         cohortTest();
@@ -75,14 +78,26 @@ public class CohortTest extends BaseWebDriverTest
     }
 
     @LogMethod
-    private void doSetup()
+    private void doSetup() throws Exception
     {
         log("Check advanced cohort features.");
         _containerHelper.createProject(PROJECT_NAME, "Study");
-        _containerHelper.enableModule("Specimen");
+        if (_studyHelper.isSpecimenModulePresent())
+            _containerHelper.enableModule("Specimen");
         importStudyFromZip(COHORT_STUDY_ZIP);
         clickProject(PROJECT_NAME);
-        new PortalHelper(this).addWebPart("Specimens");
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            new PortalHelper(this).addWebPart("Specimens");
+        }
+        else
+        {
+            // Ensure Unassigned participant exists (otherwise created by specimen import)
+            Connection connection = createDefaultConnection();
+            new DatasetDefinition("Dummy Dataset")
+                    .create(connection, PROJECT_NAME)
+                    .insertRows(connection, List.of(Map.of("ParticipantID", UNASSIGNED_1, "SequenceNum", "1")));
+        }
         // Check all cohorts after initial import.
     }
 
@@ -90,121 +105,126 @@ public class CohortTest extends BaseWebDriverTest
     private void cohortTest()
     {
         Locator.XPathLocator specimenReportTableLoc = Locators.bodyPanel().append(Locator.tagWithClass("table", "labkey-data-region-legacy"));
-        
-        waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
+        DataRegionTable specimenTable = null;
+        List<WebElement> specimenReportTables;
 
-        DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-        assertEquals("Incorrect number of vials.", "Count (non-blank): 25", specimenTable.getSummaryStatFooterText("Global Unique Id")); // 5 participants x 5 visits
-        List<String> cohortValues = specimenTable.getColumnDataAsText("Collection Cohort");
-        assertEquals(10, Collections.frequency(cohortValues, "Positive"));
-        assertEquals(10, Collections.frequency(cohortValues, "Negative"));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
-        verifyVialCount(specimenTable, 20); // One participant has no cohorts.
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
-        verifyVialCount(specimenTable, 0); // All participants initially negative
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
-        verifyVialCount(specimenTable, 0); // All participants are positive by the last visit
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
-        verifyVialCount(specimenTable, 20); // All participants are positive by the last visit
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
-        verifyVialCount(specimenTable, 10);
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
-        verifyVialCount(specimenTable, 10);
+            specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
+            assertEquals("Incorrect number of vials.", "Count (non-blank): 25", specimenTable.getSummaryStatFooterText("Global Unique Id")); // 5 participants x 5 visits
+            List<String> cohortValues = specimenTable.getColumnDataAsText("Collection Cohort");
+            assertEquals(10, Collections.frequency(cohortValues, "Positive"));
+            assertEquals(10, Collections.frequency(cohortValues, "Negative"));
 
-        clickAndWait(Locator.linkWithText("Reports"));
-        clickButtonByIndex("View", 2); // Specimen Report: Type by Cohort
-        assertTextPresent("Specimen Report: Type by Cohort");
-        checkCheckbox(Locator.checkboxByName("viewPtidList"));
-        clickButton("Refresh");
-        List<WebElement> specimenReportTables = specimenReportTableLoc.findElements(getDriver());
-        assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
-        assignId(specimenReportTables.get(1), TABLE_POSITIVE);
-        assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1, INFECTED_4);
-        assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1);
-        assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2);
-        assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellContains(TABLE_POSITIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 3, INFECTED_2, INFECTED_3, INFECTED_4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 4, INFECTED_3, INFECTED_4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 5, INFECTED_4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 6, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
+            verifyVialCount(specimenTable, 20); // One participant has no cohorts.
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
+            verifyVialCount(specimenTable, 0); // All participants initially negative
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
+            verifyVialCount(specimenTable, 0); // All participants are positive by the last visit
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
+            verifyVialCount(specimenTable, 20); // All participants are positive by the last visit
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
+            verifyVialCount(specimenTable, 10);
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
+            verifyVialCount(specimenTable, 10);
 
-        selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.INITIAL.toString());
-        clickButton("Refresh");
-        specimenReportTables = specimenReportTableLoc.findElements(getDriver());
-        assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
-        assignId(specimenReportTables.get(1), TABLE_POSITIVE);
-        assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 6, UNASSIGNED_1);
-        assertTableCellContains(TABLE_POSITIVE, 2, 0, "No data to show.");
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            clickAndWait(Locator.linkWithText("Reports"));
+            clickButtonByIndex("View", 2); // Specimen Report: Type by Cohort
+            assertTextPresent("Specimen Report: Type by Cohort");
+            checkCheckbox(Locator.checkboxByName("viewPtidList"));
+            clickButton("Refresh");
+            specimenReportTables = specimenReportTableLoc.findElements(getDriver());
+            assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
+            assignId(specimenReportTables.get(1), TABLE_POSITIVE);
+            assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1, INFECTED_4);
+            assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1);
+            assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2);
+            assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellContains(TABLE_POSITIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 3, INFECTED_2, INFECTED_3, INFECTED_4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 4, INFECTED_3, INFECTED_4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 5, INFECTED_4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 6, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
 
-        selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.CURRENT.toString());
-        clickButton("Refresh");
-        specimenReportTables = specimenReportTableLoc.findElements(getDriver());
-        assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
-        assignId(specimenReportTables.get(1), TABLE_POSITIVE);
-        assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 0, "No data to show.");
-        assertTableCellContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellContains(TABLE_POSITIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 2, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 5, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 6, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.INITIAL.toString());
+            clickButton("Refresh");
+            specimenReportTables = specimenReportTableLoc.findElements(getDriver());
+            assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
+            assignId(specimenReportTables.get(1), TABLE_POSITIVE);
+            assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 6, UNASSIGNED_1);
+            assertTableCellContains(TABLE_POSITIVE, 2, 0, "No data to show.");
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+
+            selectOptionByText(Locator.name("cohortFilterType"), AdvancedCohortType.CURRENT.toString());
+            clickButton("Refresh");
+            specimenReportTables = specimenReportTableLoc.findElements(getDriver());
+            assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
+            assignId(specimenReportTables.get(1), TABLE_POSITIVE);
+            assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 0, "No data to show.");
+            assertTableCellContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellContains(TABLE_POSITIVE, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 2, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 5, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 6, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 6, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 6, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+        }
 
         // Check that cohort filters persist through participant view
 
@@ -220,23 +240,26 @@ public class CohortTest extends BaseWebDriverTest
         clickButtonByIndex("Move Up", 1, 0);
         clickButtonByIndex("Move Up", 1, 0);
         clickButton("Save");
-        clickProject(PROJECT_NAME);
-        click(Locator.tagContainingText("span", "Specimen Reports")); // expand
-        clickAndWait(Locator.linkWithText("View Available Reports"));
-        clickButtonByIndex("View", 2);
-        checkCheckbox(Locator.checkboxByName("viewPtidList"));
-        clickButton("Refresh");
-        specimenReportTables = specimenReportTableLoc.findElements(getDriver());
-        assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
-        assignId(specimenReportTables.get(1), TABLE_POSITIVE);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_3);
-        assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_4, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 5, INFECTED_4, UNASSIGNED_1);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickProject(PROJECT_NAME);
+            click(Locator.tagContainingText("span", "Specimen Reports")); // expand
+            clickAndWait(Locator.linkWithText("View Available Reports"));
+            clickButtonByIndex("View", 2);
+            checkCheckbox(Locator.checkboxByName("viewPtidList"));
+            clickButton("Refresh");
+            specimenReportTables = specimenReportTableLoc.findElements(getDriver());
+            assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
+            assignId(specimenReportTables.get(1), TABLE_POSITIVE);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_3);
+            assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_4, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 5, INFECTED_4, UNASSIGNED_1);
+        }
 
         // Check that deleting a visit changes the cohort.
         clickProject(PROJECT_NAME);
@@ -251,28 +274,31 @@ public class CohortTest extends BaseWebDriverTest
         assertTableCellTextEquals(COHORT_ASSIGNMENT_TABLE_ID, 4, 1, "Negative"); // Infected4
 
         // Check all cohorts after manipulation.
-        clickProject(PROJECT_NAME);
-        waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickProject(PROJECT_NAME);
+            waitAndClick(WAIT_FOR_JAVASCRIPT, Locator.linkWithText("Blood"), WAIT_FOR_PAGE);
 
-        specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-        verifyVialCount(specimenTable, 20); // 5 participants x 4 visits (was five visits, but one was just deleted)
+            specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
+            verifyVialCount(specimenTable, 20); // 5 participants x 4 visits (was five visits, but one was just deleted)
 
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
-        verifyVialCount(specimenTable, 16); // One participant has no cohorts.
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
-        verifyVialCount(specimenTable, 0); // All participants initially negative
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
-        verifyVialCount(specimenTable, 4); // Final visit (where Infected4 joins Positive cohort) has been deleted.
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
-        verifyVialCount(specimenTable, 12);
-        setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
-        verifyVialCount(specimenTable, 10);
-        setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
-        verifyVialCount(specimenTable, 6); // Visit4 samples no longer have a cohort, and are thus not shown.
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.INITIAL);
+            verifyVialCount(specimenTable, 16); // One participant has no cohorts.
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.INITIAL);
+            verifyVialCount(specimenTable, 0); // All participants initially negative
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT);
+            verifyVialCount(specimenTable, 4); // Final visit (where Infected4 joins Positive cohort) has been deleted.
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.CURRENT);
+            verifyVialCount(specimenTable, 12);
+            setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.DATA_COLLECTION);
+            verifyVialCount(specimenTable, 10);
+            setCohortFilter(COHORT_POSITIVE, AdvancedCohortType.DATA_COLLECTION);
+            verifyVialCount(specimenTable, 6); // Visit4 samples no longer have a cohort, and are thus not shown.
+        }
 
         // Check that participant view respects filter.
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.addSort("ParticipantId", SortDirection.ASC);
@@ -300,50 +326,53 @@ public class CohortTest extends BaseWebDriverTest
             assertAlertContains("Update cohort assignments now?");
         });
 
-        clickProject(PROJECT_NAME);
-        waitAndClick(Locator.linkWithText("Blood"));
-        DataRegionTable vials = new DataRegionTable("SpecimenDetail", getDriver());
-        vials.setFilter("CollectionCohort", "Equals", COHORT_POSITIVE);
-        assertEquals("Unexpected number of collection cohort rows", 12, vials.getDataRowCount());
-        vials.setFilter("CollectionCohort", "Equals", COHORT_NEGATIVE);
-        assertEquals("Unexpected number of collection cohort rows", 4, vials.getDataRowCount());
-        vials.clearFilter("CollectionCohort");
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            clickProject(PROJECT_NAME);
+            waitAndClick(Locator.linkWithText("Blood"));
+            DataRegionTable vials = new DataRegionTable("SpecimenDetail", getDriver());
+            vials.setFilter("CollectionCohort", "Equals", COHORT_POSITIVE);
+            assertEquals("Unexpected number of collection cohort rows", 12, vials.getDataRowCount());
+            vials.setFilter("CollectionCohort", "Equals", COHORT_NEGATIVE);
+            assertEquals("Unexpected number of collection cohort rows", 4, vials.getDataRowCount());
+            vials.clearFilter("CollectionCohort");
 
-        clickAndWait(Locator.linkWithText("Reports"));
-        clickButtonByIndex("View", 2); // Specimen Report: Type by Cohort
-        assertTextPresent("Specimen Report: Type by Cohort");
-        checkCheckbox(Locator.checkboxByName("viewPtidList"));
-        clickButton("Refresh");
+            clickAndWait(Locator.linkWithText("Reports"));
+            clickButtonByIndex("View", 2); // Specimen Report: Type by Cohort
+            assertTextPresent("Specimen Report: Type by Cohort");
+            checkCheckbox(Locator.checkboxByName("viewPtidList"));
+            clickButton("Refresh");
 
-        // Basic cohorts should be determined only by the most recent cohort assignment.
-        specimenReportTables = specimenReportTableLoc.findElements(getDriver());
-        assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
-        assignId(specimenReportTables.get(1), TABLE_POSITIVE);
-        assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_4);
-        assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 2, UNASSIGNED_1, INFECTED_4);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 3, UNASSIGNED_1, INFECTED_4);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 4, UNASSIGNED_1, INFECTED_4);
-        assertTableCellNotContains(TABLE_POSITIVE, 2, 5, UNASSIGNED_1, INFECTED_4);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
-        assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
-        assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            // Basic cohorts should be determined only by the most recent cohort assignment.
+            specimenReportTables = specimenReportTableLoc.findElements(getDriver());
+            assignId(specimenReportTables.get(0), TABLE_NEGATIVE);
+            assignId(specimenReportTables.get(1), TABLE_POSITIVE);
+            assignId(specimenReportTables.get(2), TABLE_UNASSIGNED);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 2, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 3, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 4, INFECTED_4);
+            assertTableCellContains(TABLE_NEGATIVE, 2, 5, INFECTED_4);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_NEGATIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_POSITIVE, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellContains(TABLE_POSITIVE, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellContains(TABLE_POSITIVE, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellContains(TABLE_POSITIVE, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 2, UNASSIGNED_1, INFECTED_4);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 3, UNASSIGNED_1, INFECTED_4);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 4, UNASSIGNED_1, INFECTED_4);
+            assertTableCellNotContains(TABLE_POSITIVE, 2, 5, UNASSIGNED_1, INFECTED_4);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 2, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 3, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 4, UNASSIGNED_1);
+            assertTableCellContains(TABLE_UNASSIGNED, 2, 5, UNASSIGNED_1);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 2, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 3, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 4, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+            assertTableCellNotContains(TABLE_UNASSIGNED, 2, 5, INFECTED_1, INFECTED_2, INFECTED_3, INFECTED_4);
+        }
     }
 
     private void assignId(WebElement el, String id)
@@ -461,7 +490,8 @@ public class CohortTest extends BaseWebDriverTest
         });
 
         verifyDatasetEnrolledCohortFilterAdvanced("Test Results", 16, 0, 12, 6);
-        verifySpecimenEnrolledCohortFilterAdvanced("By Individual Vial", 20, 4, 16, 10);
+        if (_studyHelper.isSpecimenModulePresent())
+            verifySpecimenEnrolledCohortFilterAdvanced("By Individual Vial", 20, 4, 16, 10);
     }
 
     @LogMethod
@@ -469,7 +499,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         // Regression test for Issue: 30616
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Cohort Assignments"));
         DataRegionTable dataset = new DataRegionTable("Dataset", getDriver());
         clickAndWait(dataset.updateLink(0));
@@ -487,7 +517,7 @@ public class CohortTest extends BaseWebDriverTest
     {
         log("Create cohort filtered views");
         clickProject(PROJECT_NAME);
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText("Test Results"));
 
         setCohortFilter(COHORT_NEGATIVE, AdvancedCohortType.CURRENT); // 4 rows
@@ -558,7 +588,7 @@ public class CohortTest extends BaseWebDriverTest
     private DataRegionTable verifyUnfilteredDataset(String datasetName, int allRowCount)
     {
         clickTab("Overview");
-        clickAndWait(Locator.linkWithText("2 datasets"));
+        clickAndWait(Locator.linkContainingText("datasets"));
         clickAndWait(Locator.linkWithText(datasetName));
 
         assertTextNotPresent("Current cohort is enrolled or unassigned");
@@ -571,17 +601,20 @@ public class CohortTest extends BaseWebDriverTest
 
     private void verifySpecimenEnrolledCohortFilter(String specimenLink, boolean enrolledMenu, int allRowCount, int enrolledRowCount)
     {
-        verifyUnfilteredSpecimens(specimenLink, allRowCount);
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            verifyUnfilteredSpecimens(specimenLink, allRowCount);
 
-        if (enrolledMenu)
-        {
-            DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
-            DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
-            verifyVialCount(specimenTable, enrolledRowCount);
-        }
-        else
-        {
-            assertFalse("Enrolled menu should not be present", _extHelper.isExtMenuPresent("Groups", "Enrolled"));
+            if (enrolledMenu)
+            {
+                DataRegionTable specimenTable = new DataRegionTable("SpecimenDetail", getDriver());
+                DataRegionTable.findDataRegion(this).clickHeaderMenu("Groups", "Enrolled");
+                verifyVialCount(specimenTable, enrolledRowCount);
+            }
+            else
+            {
+                assertFalse("Enrolled menu should not be present", _extHelper.isExtMenuPresent("Groups", "Enrolled"));
+            }
         }
     }
 
