@@ -229,7 +229,7 @@ public class LookupColumn extends BaseColumnInfo
             strJoin.append(_joinType.getSQL());
             strJoin.append(" JOIN ");
 
-            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
+            addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias, baseAlias);
             strJoin.append(" ON ");
             strJoin.append(getJoinCondition(baseAlias));
             SQLFragment sqlJoinPrev = map.get(colTableAlias);
@@ -242,6 +242,13 @@ public class LookupColumn extends BaseColumnInfo
 
         if (includeLookupJoins())
             _lookupColumn.declareJoins(colTableAlias, map);
+    }
+
+
+    /** @param baseAlias alias of the table on the left-hand side of the join, for lookups that correlate to it */
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias, String baseAlias)
+    {
+        addLookupSql(strJoin, lookupTable, alias);
     }
 
 

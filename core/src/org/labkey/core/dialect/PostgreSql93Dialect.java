@@ -34,4 +34,10 @@ abstract class PostgreSql93Dialect extends PostgreSql92Dialect
 
         return words;
     }
+
+    @Override
+    public boolean supportsLateralJoin()
+    {
+        return getServerType() == PostgreSqlServerType.PostgreSQL;
+    }
 }

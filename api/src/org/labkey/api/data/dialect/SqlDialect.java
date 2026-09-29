@@ -762,6 +762,12 @@ public abstract class SqlDialect
         return true;
     }
 
+    /** Whether the dialect supports {@code JOIN LATERAL (subquery)} that references earlier FROM items */
+    public boolean supportsLateralJoin()
+    {
+        return false;
+    }
+
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
     // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter);
