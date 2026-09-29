@@ -18,7 +18,7 @@ package org.labkey.api.dataiterator;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.AbstractListValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
@@ -91,7 +91,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -233,7 +235,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 return null;
 
             if (_pkColumnLookupMap == null)
-                _pkColumnLookupMap = Pair.of(getPkColumn(), new HashMap<>());
+                _pkColumnLookupMap = Pair.of(getPkColumn(), lruMap());
 
             return _pkColumnLookupMap;
         }
@@ -246,6 +248,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
                 ColumnInfo pkCol = getPkColumn();
                 Set<ColumnInfo> seen = new HashSet<>();
+                // Match the lookup table's text comparison, or a per-key fetch finds "ABC" for "abc" but files it where get("abc") misses
+                boolean caseInsensitive = !_targetTable.getSqlDialect().isCaseSensitive();
 
                 // See similar check in AbstractForeignKey.allowImportByAlternateKey()
                 // The lookup table must meet the following requirements:
@@ -270,7 +274,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     if (!col.getJdbcType().isText())
                         continue;
 
-                    _maps.add(Triple.of(pkCol, col, new ArrayListValuedHashMap()));
+                    _maps.add(Triple.of(pkCol, col, lruMultiValuedMap(caseInsensitive)));
                 }
 
                 if (_includeTitleColumn)
@@ -278,7 +282,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     ColumnInfo titleColumn = _targetTable.getTitleColumn() != null ? _targetTable.getColumn(_targetTable.getTitleColumn()) : null;
                     if (titleColumn != null && !seen.contains(titleColumn))
                     {
-                        _titleColumnLookupMap = Triple.of(pkCol, titleColumn, new ArrayListValuedHashMap());
+                        _titleColumnLookupMap = Triple.of(pkCol, titleColumn, lruMultiValuedMap(caseInsensitive));
                     }
                 }
             }
@@ -294,8 +298,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             if (k instanceof Map || k instanceof List)
                 return k;
 
-            List<Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>>> maps = getMaps();
-
             Pair<ColumnInfo, Map<?, ?>> pkLookupMap = pkLookupMap();
             if (pkLookupMap != null)
             {
@@ -304,7 +306,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     return v;
             }
 
-            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : maps)
+            // Also initializes _titleColumnLookupMap
+            for (Triple<ColumnInfo, ColumnInfo, MultiValuedMap<?,?>> triple : getMaps())
             {
                 Object v = fetch(triple, k);
                 if (v != null)
@@ -322,8 +325,62 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final Object MISS = new Object();
 
         private static final int SELECTOR_MAX_ROWS = 100_000;
-        // Above SELECTOR_MAX_ROWS so a bulk load alone never trips it; a cleared bulk-loaded map falls back to per-key fetches
+        // Above SELECTOR_MAX_ROWS so a bulk load never evicts its own rows
         static final int MAX_CACHED_KEYS = 2 * SELECTOR_MAX_ROWS;
+
+        private static <K, V> Map<K, V> lruMap()
+        {
+            return new LinkedHashMap<>(16, 0.75f, true)
+            {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<K, V> eldest)
+                {
+                    return size() > MAX_CACHED_KEYS;
+                }
+            };
+        }
+
+        // Normalizes keys itself: CaseInsensitiveMapWrapper's case-mapping side map is never pruned on eviction, so it would defeat the cap
+        private static <V> MultiValuedMap<Object, V> lruMultiValuedMap(boolean caseInsensitive)
+        {
+            return new AbstractListValuedMap<>(RemapConverter.<Object, List<V>>lruMap())
+            {
+                @Override
+                protected List<V> createCollection()
+                {
+                    return new ArrayList<>();
+                }
+
+                private Object normalize(Object key)
+                {
+                    return caseInsensitive && key instanceof String s ? s.toLowerCase(Locale.ROOT) : key;
+                }
+
+                @Override
+                public List<V> get(Object key)
+                {
+                    return super.get(normalize(key));
+                }
+
+                @Override
+                public boolean put(Object key, V value)
+                {
+                    return super.put(normalize(key), value);
+                }
+
+                @Override
+                public boolean containsKey(Object key)
+                {
+                    return super.containsKey(normalize(key));
+                }
+
+                @Override
+                public List<V> remove(Object key)
+                {
+                    return super.remove(normalize(key));
+                }
+            };
+        }
 
         // While there should be at most one matching value for lookup targets with a true unique constraint,
         // using a multi-valued map allows us to also work with things that are almost always unique, like
@@ -343,10 +400,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
-                // keySet().size() because MultiValuedMap.size() walks every value collection
-                if (map.keySet().size() >= MAX_CACHED_KEYS)
-                    map.clear();
-
                 Collection<Object> bulkLoaded = null;
                 if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, altKeyCol)))
                 {
@@ -355,7 +408,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     bulkLoaded = map.get(k);
                 }
 
-                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
+                // The multi-valued map returns an empty collection if 'k' is not in the map.
                 if (bulkLoaded == null || bulkLoaded.isEmpty() )
                 {
                     // when the given key (e.g., a rowId value) cannot be assigned to the alternate key value,
@@ -379,7 +432,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     vs = bulkLoaded;
                 }
 
-                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
+                // The multi-valued map returns an empty collection if 'k' is not in the map.
                 // If there are no values in the database, stash a MISS marker to avoid re-fetching.
                 // A non-String key's detached empty list makes getSingleValue() throw, which keeps it away from the
                 // title column; memoizing it would turn that into a null that falls through to a title match
@@ -420,9 +473,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
-                if (map.size() >= MAX_CACHED_KEYS)
-                    map.clear();
-
                 if (pkCol.getJdbcType() == JdbcType.GUID)
                 {
                     if (k == null || (k instanceof String strKey && !GUID.isGUID(strKey)))
@@ -2344,7 +2394,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
 
         @Test
-        public void remapAlternateKeyCacheIsCapped()
+        public void remapAlternateKeyCacheEvictsLeastRecentlyUsed()
         {
             RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
             converter.setIncludePkLookup(false);
@@ -2353,14 +2403,18 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
                 cache.put("seeded-" + i, i);
 
-            assertEquals("a cache hit must not clear the full cache", 0, converter.mappedValue("seeded-0"));
+            // A hit makes seeded-0 the most recently used, so the miss below evicts seeded-1 instead
+            assertEquals(0, converter.mappedValue("seeded-0"));
             assertNotNull(converter.mappedValue(LookupValues.Two.name()));
-            assertFalse("a miss on a full cache should clear it", cache.containsKey("seeded-0"));
+
+            assertTrue("a recently used entry was evicted", cache.containsKey("seeded-0"));
+            assertFalse("the least recently used entry should be evicted", cache.containsKey("seeded-1"));
             assertTrue(cache.containsKey(LookupValues.Two.name()));
+            assertEquals(RemapConverter.MAX_CACHED_KEYS, cache.keySet().size());
         }
 
         @Test
-        public void remapPkCacheIsCapped()
+        public void remapPkCacheEvictsLeastRecentlyUsed()
         {
             RemapConverter converter = new RemapConverter(remapLookupTable(), true, false, true);
 
@@ -2369,9 +2423,30 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             for (int i = 0; i < RemapConverter.MAX_CACHED_KEYS; i++)
                 pkCache.put(seedBase + i, seedBase + i);
 
+            assertEquals(seedBase, converter.mappedValue(seedBase));
             assertEquals(0, converter.mappedValue(0));
-            assertFalse("a miss on a full cache should clear it", pkCache.containsKey(seedBase));
+
+            assertTrue("a recently used entry was evicted", pkCache.containsKey(seedBase));
+            assertFalse("the least recently used entry should be evicted", pkCache.containsKey(seedBase + 1));
             assertTrue(pkCache.containsKey(0));
+            assertEquals(RemapConverter.MAX_CACHED_KEYS, pkCache.size());
+        }
+
+        @Test
+        public void remapCaseInsensitiveCacheMatchesAnyCase()
+        {
+            MultiValuedMap<Object, Object> insensitive = RemapConverter.lruMultiValuedMap(true);
+            insensitive.put("ABC", 1);
+            assertTrue(insensitive.containsKey("abc"));
+            assertEquals(List.of(1), insensitive.get("aBc"));
+            insensitive.put("abc", 2);
+            assertEquals("differently cased keys should share one entry", 1, insensitive.keySet().size());
+            insensitive.put(7, 3);
+            assertTrue("non-String keys should be left as is", insensitive.containsKey(7));
+
+            MultiValuedMap<Object, Object> sensitive = RemapConverter.lruMultiValuedMap(false);
+            sensitive.put("ABC", 1);
+            assertFalse(sensitive.containsKey("abc"));
         }
 
         /** Every lookup of a non-String key must throw, not just the first, rather than falling through to the title column. */
