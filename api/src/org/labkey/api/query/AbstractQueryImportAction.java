@@ -63,6 +63,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -631,7 +632,19 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (isCrossTypeImport || (behaviorType != null && behaviorType != AuditBehaviorType.NONE))
                 auditEvent = createTransactionAuditEvent(getContainer(), _insertOption.auditAction, transactionDetails);
 
-            JSONObject response = handleImportData(loader, dataFiles, file, originalName, behaviorType, auditEvent, (form instanceof QueryForm qf ? qf.getQueryName() : null));
+            String targetName = null == _target ? "unknown" : _target.getPublicSchemaName() + "." + _target.getPublicName();
+            JSONObject response;
+            try (TracedOperation op = TracedOperation.builder("labkey.importData")
+                    .resource(null == _target ? "importData" : "importData " + TracedOperation.boundedSchemaName(_target.getPublicSchemaName()))
+                    .describedAs("importData " + targetName + " in " + getContainer().getPath())
+                    .tag("labkey.query", null == _target ? null : targetName)
+                    .tag("labkey.db_schema", null == _target || null == _target.getSchema() ? null : _target.getSchema().getName())
+                    .container(getContainer())
+                    .start())
+            {
+                response = handleImportData(loader, dataFiles, file, originalName, behaviorType, auditEvent, (form instanceof QueryForm qf ? qf.getQueryName() : null));
+                op.completed(response.optInt("rowCount", 0));
+            }
             if (auditEvent != null)
             {
                 response.put("transactionAuditId", auditEvent.getRowId());

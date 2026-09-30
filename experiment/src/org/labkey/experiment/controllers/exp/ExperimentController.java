@@ -5241,19 +5241,18 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private void addSelectedRunsToExperiment(ExpExperiment exp, String dataRegionSelectionKey)
+    private List<ExpRun> resolveSelectedRunsForInsert(String dataRegionSelectionKey)
     {
         Collection<Long> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, true);
         List<ExpRun> runs = new ArrayList<>();
         for (long runId : runIds)
         {
             ExpRun run = ExperimentServiceImpl.get().getExpRun(runId);
-            if (run != null)
-            {
-                runs.add(run);
-            }
+            if (run == null || !run.getContainer().hasPermission(getUser(), InsertPermission.class)) // GH Issue 1465
+                throw new NotFoundException("Could not find run with RowId " + runId);
+            runs.add(run);
         }
-        exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
+        return runs;
     }
 
 
@@ -6443,12 +6442,17 @@ public class ExperimentController extends SpringActionController
 
                 if (errors.getErrorCount() == 0)
                 {
+                    // Resolve and permission-check the selection before creating the group
+                    List<ExpRun> selectedRuns = form.isAddSelectedRuns()
+                            ? resolveSelectedRunsForInsert(form.getDataRegionSelectionKey())
+                            : Collections.emptyList();
+
                     ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
                     wrapper.save(getUser());
 
-                    if (form.isAddSelectedRuns())
+                    if (!selectedRuns.isEmpty())
                     {
-                        addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
+                        wrapper.addRuns(getUser(), selectedRuns.toArray(new ExpRun[0]));
                     }
 
                     if (form.getReturnUrl() != null)
@@ -8503,6 +8507,49 @@ public class ExperimentController extends SpringActionController
             ActionURL ownUrl = new ActionURL(AddRunsToExperimentAction.class, folderB)
                     .addParameter("expRowId", String.valueOf(expRowId));
             assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+        }
+
+        @Test
+        public void testCreateRunGroupAddSelectedRunsContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run that lives in folder B
+            ExpRun run = createRun(folderB, "scoping-test-create-run-group-run");
+            long runId = run.getRowId();
+
+            // A caller who can Insert in folder A but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Creating a run group in folder A while selecting B's run must 404: runs are resolved by global RowId
+            // (skipping the container check) and ExpExperimentImpl.addRuns inserts with no authorization, so without
+            // the per-run guard a folder-A user would attach a run they cannot read.
+            ActionURL foreignUrl = new ActionURL(CreateRunGroupAction.class, folderA)
+                    .addParameter("name", "cross-container-group")
+                    .addParameter("addSelectedRuns", "true")
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // B's run must not have been attached to any run group
+            assertTrue("Run must not have been added to a run group cross-container",
+                    ExperimentService.get().getExpRun(runId).getExperiments().isEmpty());
+
+            // The selection is resolved before the group is saved, so a rejected request creates no empty run group
+            assertTrue("Rejected request must not create an empty run group",
+                    ExperimentService.get().getExperiments(folderA, admin, false, false).stream()
+                            .noneMatch(e -> "cross-container-group".equals(e.getName())));
+
+            // Positive control: an admin (who can read folder B) creating the group in folder B with B's run selected
+            // succeeds (302) and adds it -- proving the guard rejects only the cross-container case.
+            ActionURL ownUrl = new ActionURL(CreateRunGroupAction.class, folderB)
+                    .addParameter("name", "same-container-group")
+                    .addParameter("addSelectedRuns", "true")
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertFalse("Run should be added to the run group by a same-container request",
+                    ExperimentService.get().getExpRun(runId).getExperiments().isEmpty());
         }
 
         @Test
