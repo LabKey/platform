@@ -15,8 +15,12 @@
  */
 package org.labkey.pipeline.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
@@ -27,6 +31,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
@@ -71,6 +77,10 @@ import java.util.Set;
 
 public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<PipelineQuerySchema>
 {
+    private static final String CONFIGURATION = "Configuration";
+    private static final String CUSTOM_CONFIGURATION = "CustomConfiguration";
+    private static final String PARAMETER_FUNCTION = "parameterFunction";
+
     public TriggerConfigurationsTable(PipelineQuerySchema schema, ContainerFilter cf)
     {
         super(schema, PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), cf);
@@ -251,6 +261,18 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             return ret;
         }
 
+        /**
+         * The data iterator skips insertRow()/updateRow(), so it would bypass validateConfiguration() and never start or stop listeners.
+         * Reports an error instead of throwing UnsupportedOperationException because the import action shows context errors
+         * to the user but lets runtime exceptions escape as a 500.
+         */
+        @Override
+        public int loadRows(User user, Container container, DataIteratorBuilder rows, @Nullable ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+        {
+            context.getErrors().addRowError(new ValidationException("Bulk loading pipeline trigger configurations is not supported."));
+            return 0;
+        }
+
         @Override
         public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
@@ -306,6 +328,78 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String newName = getStringFromRow(newRow, "Name");
             startIfEnabled(container, newName, newRow);
             return newRow;
+        }
+
+        // Checked here rather than in insertRow()/updateRow() because alias keys (label, propertyURI) are resolved or dropped by now
+        @Override
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        {
+            validateConfiguration(user, null, row);
+            return super._insert(user, c, row);
+        }
+
+        @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            validateConfiguration(user, oldRow, row);
+            return super._update(user, c, row, oldRow, keys);
+        }
+
+        private void validateConfiguration(User user, @Nullable Map<String, Object> oldRow, Map<String, Object> newRow) throws ValidationException
+        {
+            Map<String, Object> row = new CaseInsensitiveHashMap<>(newRow);
+            parseJson(row, CUSTOM_CONFIGURATION);
+            if (oldRow != null && !row.containsKey(CONFIGURATION))
+                return;
+
+            JSONObject configuration = parseJson(row, CONFIGURATION);
+
+            // GH Issue 1524: the Parameter Function runs as server-side script, so only script authors may add, change, or clear it
+            if (user.isTrustedAnalyst())
+                return;
+
+            JSONObject oldConfiguration = null;
+            if (oldRow != null)
+            {
+                try
+                {
+                    oldConfiguration = parseJson(new CaseInsensitiveHashMap<>(oldRow), CONFIGURATION);
+                }
+                catch (ValidationException ignored)
+                {
+                    // A stored value that isn't valid JSON can't run, so it has no function to preserve
+                }
+            }
+
+            if (!Objects.equals(getParameterFunction(oldConfiguration), getParameterFunction(configuration)))
+                throw new ValidationException("You must be either a PlatformDeveloper or TrustedAnalyst to set a Parameter Function.");
+        }
+
+        /** Empty is allowed because FileWatcherPipelineTriggerConfig reads it as {}; anything else must parse there too */
+        private static @Nullable JSONObject parseJson(Map<String, Object> row, String column) throws ValidationException
+        {
+            Object value = row.get(column);
+            if (value == null || StringUtils.isEmpty(value.toString()))
+                return null;
+
+            try
+            {
+                return new JSONObject(value.toString());
+            }
+            catch (JSONException e)
+            {
+                throw new ValidationException("Invalid JSON for " + column + ": " + e.getMessage(), column);
+            }
+        }
+
+        /** Extracts the function as FileWatcherPipelineTriggerConfig does, where any non-null value runs via toString() */
+        private static @Nullable String getParameterFunction(@Nullable JSONObject configuration)
+        {
+            if (configuration == null)
+                return null;
+
+            String function = Objects.toString(configuration.toMap().get(PARAMETER_FUNCTION), null);
+            return StringUtils.isBlank(function) ? null : function;
         }
 
         /** Implement to make sure the listener gets unregistered */

@@ -1804,6 +1804,7 @@ public class PipelineController extends SpringActionController
         private static final String TEST_TRIGGER_TYPE = "scoping-test-type";
         private static final String PARAMETER_FUNCTION = "parameterFunction";
         private static final String FUNCTION = "var x = 1;";
+        private static final String INVALID_JSON = "{not json";
 
         @Test
         public void testFolderAdminCanManageTriggerWithoutParameterFunction() throws Exception
@@ -1961,18 +1962,74 @@ public class PipelineController extends SpringActionController
             assertNull(storedFunction(rowId));
         }
 
+        /** Trigger lookups parse both JSON columns of every matching row, so one invalid row breaks listener startup and management for all of them. */
         @Test
-        public void testLoadRowsRejected() throws Exception
+        public void testInvalidJsonRejectedForAllUsers() throws Exception
+        {
+            Container c = createContainer("InvalidJson");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            User developer = createUserInRole(c, FolderAdminRole.class);
+            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+
+            for (User user : List.of(folderAdmin, developer))
+            {
+                for (String column : List.of("Configuration", "CustomConfiguration"))
+                {
+                    Map<String, Object> row = triggerRow(configJson(null));
+                    row.put(column, INVALID_JSON);
+                    assertTrue(column + " must be valid JSON on insert", insert(user, c, row).hasErrors());
+                    assertFalse(triggerExists(c, (String) row.get("Name")));
+
+                    int rowId = seedTrigger(c, null);
+                    Map<String, Object> change = keyRow(rowId);
+                    change.put(column, INVALID_JSON);
+                    assertTrue(column + " must be valid JSON on update", update(user, c, change).hasErrors());
+                    assertNotEquals(INVALID_JSON, storedRow(rowId).get(column));
+                }
+            }
+        }
+
+        /** A stored Configuration that isn't valid JSON can't run a function, so a folder admin may replace it with one that has none. */
+        @Test
+        public void testFolderAdminCanRepairInvalidConfiguration() throws Exception
+        {
+            Container c = createContainer("RepairJson");
+            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            int rowId = seedTrigger(c, null);
+            Table.update(getAdmin(), triggerTable(), new CaseInsensitiveHashMap<>(Map.of("Configuration", INVALID_JSON)), rowId);
+
+            Map<String, Object> withFunction = keyRow(rowId);
+            withFunction.put("Configuration", configJson(FUNCTION));
+            assertTrue("Repair must not add a function", update(folderAdmin, c, withFunction).hasErrors());
+            assertEquals(INVALID_JSON, storedRow(rowId).get("Configuration"));
+
+            Map<String, Object> repair = keyRow(rowId);
+            repair.put("Configuration", configJson(null));
+            assertNoErrors(update(folderAdmin, c, repair));
+            assertNull(storedFunction(rowId));
+        }
+
+        /** loadRows skips insertRow/updateRow, and with them the Parameter Function check and listener startup, so it's rejected for every caller. */
+        @Test
+        public void testLoadRowsRejectedInFavorOfInsertRows() throws Exception
         {
             Container c = createContainer("LoadRows");
-            User folderAdmin = createUserInRole(c, FolderAdminRole.class);
+            User developer = createUserInRole(c, FolderAdminRole.class);
+            grantRole(developer, ContainerManager.getRoot(), PlatformDeveloperRole.class);
+            Map<String, Object> row = triggerRow(configJson(null));
 
-            Map<String, Object> row = triggerRow(configJson(FUNCTION));
-            DataIteratorContext context = new DataIteratorContext();
-            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-            updateService(folderAdmin, c).loadRows(folderAdmin, c, MapDataIterator.of(List.of(row)), context, null);
-            assertTrue("loadRows must be rejected", context.getErrors().hasErrors());
-            assertFalse(triggerExists(c, (String) row.get("Name")));
+            // IMPORT backs the import action; MERGE backs ETL targets
+            for (QueryUpdateService.InsertOption option : List.of(QueryUpdateService.InsertOption.IMPORT, QueryUpdateService.InsertOption.MERGE))
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                context.setInsertOption(option);
+                updateService(developer, c).loadRows(developer, c, MapDataIterator.of(List.of(row)), context, null);
+                assertTrue(option + " via loadRows must be rejected", context.getErrors().hasErrors());
+                assertFalse(triggerExists(c, (String) row.get("Name")));
+            }
+
+            assertNoErrors(insert(developer, c, row));
+            assertTrue(triggerExists(c, (String) row.get("Name")));
         }
 
         private static TableInfo triggerTable()
