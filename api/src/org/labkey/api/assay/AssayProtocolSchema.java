@@ -41,8 +41,8 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -711,7 +711,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                             QuerySettings qs = getSettings(viewContext, settings.getDataRegionName(), settings.getQueryName());
 
                             // we want all the rows
-                            qs.setMaxRows(Table.ALL_ROWS);
+                            qs.setShowRows(ShowRows.ALL);
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
