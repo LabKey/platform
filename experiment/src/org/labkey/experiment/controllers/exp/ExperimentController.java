@@ -198,6 +198,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
@@ -7326,7 +7327,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(SiteAdminPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public static class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
@@ -7388,7 +7389,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(SiteAdminPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public static class RebuildAncestorsAction extends MutatingApiAction<Object>
     {
         @Override
