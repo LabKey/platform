@@ -15,6 +15,8 @@
  */
 package org.labkey.announcements;
 
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
@@ -34,6 +36,7 @@ import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -55,6 +58,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -68,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -174,6 +179,27 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         if (null != fsr)
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
+        }
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (svc != null)
+        {
+            svc.registerUsageMetrics(NAME, () -> {
+                MultiSet<String> secure = new HashMultiSet<>();
+                MultiSet<String> moderator = new HashMultiSet<>();
+                ContainerManager.getChildren(ContainerManager.getRoot()).stream()
+                    .map(AnnouncementManager::getMessageBoardSettings)
+                    .forEach(settings -> {
+                        secure.add(settings.getSecure());
+                        moderator.add(settings.getModeratorReview());
+                    });
+                return Map.of(
+                    "settings", Map.of(
+                        "secure", MultiSetUtils.getOccurrenceMap(secure),
+                        "moderator", MultiSetUtils.getOccurrenceMap(moderator)
+                    )
+                );
+            });
         }
     }
 
