@@ -22,6 +22,7 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
@@ -166,6 +167,7 @@ import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
@@ -449,6 +451,7 @@ public class ApiModule extends CodeOnlyModule
             FileType.TestCase.class,
             FileUtil.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
+            GUID.TestCase.class,
             HelpTopic.TestCase.class,
             ImpersonationTestCase.class,
             InlineInClauseGenerator.TestCase.class,
@@ -529,6 +532,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,
