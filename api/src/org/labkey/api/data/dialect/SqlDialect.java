@@ -42,6 +42,7 @@ import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -762,10 +763,16 @@ public abstract class SqlDialect
         return true;
     }
 
-    /** Whether the dialect supports {@code JOIN LATERAL (subquery)} that references earlier FROM items */
+    /** Whether the dialect supports {@link #appendLateralJoin} */
     public boolean supportsLateralJoin()
     {
         return false;
+    }
+
+    /** Append a join to an aliased subquery that references earlier FROM items; the correlation lives in the subquery, so there's no join condition */
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        throw new UnsupportedOperationException("Lateral joins are not supported by " + getProductName());
     }
 
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.

@@ -17,6 +17,8 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.SQLFragment;
 
 import java.util.Set;
 
@@ -39,5 +41,11 @@ abstract class PostgreSql93Dialect extends PostgreSql92Dialect
     public boolean supportsLateralJoin()
     {
         return true;
+    }
+
+    @Override
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        sql.append(joinType.getSQL()).append(" JOIN LATERAL ").append(aliasedSubquery).append(" ON TRUE");
     }
 }

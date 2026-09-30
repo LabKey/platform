@@ -90,18 +90,22 @@ public class MultiValuedLookupColumn extends LookupColumn
         _lateralJoin = lateralJoin;
     }
 
-    private boolean isLateralJoin()
+    @Override
+    protected boolean isLateralJoin()
     {
         return _lateralJoin && getSqlDialect().supportsLateralJoin() && getSqlDialect().supportsGroupConcat();
     }
 
     @Override
-    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias, String baseAlias)
+    protected SQLFragment getLateralLookupSql(TableInfo lookupTable, String alias, String baseAlias)
     {
-        if (isLateralJoin())
-            strJoin.append("LATERAL ").append(getLookupSql(lookupTable, alias, baseAlias));
-        else
-            strJoin.append(getLookupSql(lookupTable, alias));
+        return getLookupSql(lookupTable, alias, baseAlias);
+    }
+
+    @Override
+    protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
+    {
+        strJoin.append(getLookupSql(lookupTable, alias));
     }
 
     protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
