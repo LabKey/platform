@@ -39,6 +39,7 @@ public class MultiValuedForeignKey implements ForeignKey
     private final ForeignKey _fk;
     private final String _junctionLookup;
     private final String _displayField;
+    private boolean _lateralJoin = false;
 
     /**
      * @param fk the foreign key from the current column to its target in the junction table
@@ -78,6 +79,14 @@ public class MultiValuedForeignKey implements ForeignKey
         _fk = source._fk.remapFieldKeys(parent, mapping);
         _junctionLookup = source._junctionLookup;
         _displayField = source._displayField;
+        _lateralJoin = source._lateralJoin;
+    }
+
+    /** @see MultiValuedLookupColumn#setLateralJoin(boolean) */
+    public MultiValuedForeignKey setLateralJoin(boolean lateralJoin)
+    {
+        _lateralJoin = lateralJoin;
+        return this;
     }
 
     //TODO ContainerFilter
@@ -184,7 +193,10 @@ public class MultiValuedForeignKey implements ForeignKey
             ((MutableColumnInfo) lookupColumn).setURL(url);
         }
 
-        return createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+        MultiValuedLookupColumn result = createMultiValuedLookupColumn(lookupColumn, parent, childKey, junctionKey, fk);
+        if (_lateralJoin)
+            result.setLateralJoin(true);
+        return result;
     }
 
     // Give subclasses a chance to alter these parameters before MVLC construction
