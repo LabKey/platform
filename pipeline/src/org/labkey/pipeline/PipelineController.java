@@ -2043,7 +2043,7 @@ public class PipelineController extends SpringActionController
         /**
          * On create the wizard is pre-filled from URL parameters, so a crafted link could plant a function that a
          * trusted user saves without seeing it.
-         * */
+         */
         @Test
         public void testCreateTriggerIgnoresParameterFunctionFromUrl() throws Exception
         {
@@ -2061,10 +2061,24 @@ public class PipelineController extends SpringActionController
             {
                 MockHttpServletResponse response = get(url, getAdmin());
                 assertStatus(HttpServletResponse.SC_OK, response);
-                String content = response.getContentAsString();
-                assertTrue("Other URL values must still pre-fill the wizard", content.contains(location));
-                assertFalse("A function from the URL must not pre-fill the wizard", content.contains(function));
+                String triggerConfig = renderedTriggerConfig(response);
+                assertTrue("Other URL values must still pre-fill the wizard", triggerConfig.contains(location));
+                assertFalse("A function from the URL must not pre-fill the wizard", triggerConfig.contains(function));
             }
+        }
+
+        /**
+         * Scoped to the wizard's initial state because the rest of the page echoes the request URL (e.g. the admin
+         * menu's returnUrl links)
+         */
+        private static String renderedTriggerConfig(MockHttpServletResponse response) throws Exception
+        {
+            String content = response.getContentAsString();
+            String prefix = "const triggerConfig = JSON.parse(";
+            int start = content.indexOf(prefix);
+            assertTrue("Wizard's triggerConfig not found in the page", start >= 0);
+            start += prefix.length();
+            return content.substring(start, content.indexOf(");", start));
         }
 
         private static TableInfo triggerTable()
