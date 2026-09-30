@@ -1932,10 +1932,8 @@ public class PipelineController extends SpringActionController
             }
 
             // Key supplied via oldKeys rather than the row
-            BatchValidationException errors = new BatchValidationException();
             Map<String, Object> keyless = new CaseInsensitiveHashMap<>(Map.of("Name", "hacked"));
-            updateService(adminA, folderA).updateRows(adminA, folderA, List.of(keyless), List.of(keyRow(rowId)), errors, null, null);
-            assertTrue("Cross-container update via oldKeys must be rejected", errors.hasErrors());
+            assertTrue("Cross-container update via oldKeys must be rejected", update(adminA, folderA, keyless, keyRow(rowId)).hasErrors());
             assertUnchanged(rowId, name, folderB);
         }
 
@@ -2039,8 +2037,20 @@ public class PipelineController extends SpringActionController
 
         private static BatchValidationException update(User user, Container c, Map<String, Object> row) throws Exception
         {
+            return update(user, c, row, null);
+        }
+
+        private static BatchValidationException update(User user, Container c, Map<String, Object> row, @Nullable Map<String, Object> oldKey) throws Exception
+        {
             BatchValidationException errors = new BatchValidationException();
-            updateService(user, c).updateRows(user, c, List.of(row), null, errors, null, null);
+            try
+            {
+                updateService(user, c).updateRows(user, c, List.of(row), oldKey == null ? null : List.of(oldKey), errors, null, null);
+            }
+            catch (BatchValidationException e)
+            {
+                return e;
+            }
             return errors;
         }
 
