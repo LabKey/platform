@@ -56,8 +56,6 @@ import java.util.Set;
 /**
  * Holds many of the key pieces of context about an HTTP request, including the {@link HttpServletRequest} and
  * {@link HttpServletResponse} objects, the {@link User} making the request, etc.
- * User: matthewb
- * Date: Mar 20, 2005
  */
 public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission, HasHttpRequest
 {
@@ -213,9 +211,23 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _map;
     }
 
-    public Object get(Object key)
+    public Object get(String key)
     {
         return _map.get(key);
+    }
+
+    /*
+     * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's a String or null.
+     * Otherwise, throws IllegalArgumentException. See GH Issue 1631.
+     */
+    public @Nullable String getString(String key)
+    {
+        Object value = _map.get(key);
+        if (value == null)
+            return null;
+        if (value instanceof String stringValue)
+            return stringValue;
+        throw new IllegalArgumentException(String.format("Expected a string value for key: %s", key));
     }
 
     public Object put(String key, Object value)
