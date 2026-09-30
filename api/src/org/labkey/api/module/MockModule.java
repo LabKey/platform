@@ -37,6 +37,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
+import org.labkey.vfs.FileSystemLike;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -59,6 +60,7 @@ public class MockModule implements Module
     private final String _name;
     private final Double _schemaVersion;
     private final String[] _dependencies;
+    private File _explodedPath;
 
     public MockModule(String name, String... dependencies)
     {
@@ -352,6 +354,7 @@ public class MockModule implements Module
     @Override
     public void setExplodedPath(File path)
     {
+        _explodedPath = path;
     }
 
     @Override
@@ -369,13 +372,13 @@ public class MockModule implements Module
     @Override
     public File getExplodedPath()
     {
-        return null;
+        return _explodedPath;
     }
 
     @Override
     public FileLike getExplodedFileLike()
     {
-        return null;
+        return null == _explodedPath ? null : new FileSystemLike.Builder(_explodedPath).readonly().root();
     }
 
     @Override
@@ -457,13 +460,6 @@ public class MockModule implements Module
     public @NotNull List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
         return new LinkedList<>();
-    }
-
-    @NotNull
-    @Override
-    public Set<SupportedDatabase> getSupportedDatabasesSet()
-    {
-        return DefaultModule.ONLY_POSTGRESQL;
     }
 
     @Nullable

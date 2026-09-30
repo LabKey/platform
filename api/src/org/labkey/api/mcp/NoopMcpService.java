@@ -55,6 +55,12 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public boolean isModelReady()
+    {
+        return false;
+    }
+
+    @Override
     public void registerTools(@NotNull List<ToolCallback> tools, McpImpl mcp)
     {
     }

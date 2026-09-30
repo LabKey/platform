@@ -872,10 +872,8 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             // Not sure the historical reason why this code did not just call AbstractTable.hasPermission()
             // however this is a useful place to handle UserSchema.HasContextualRoles()
-            Set<Role> roles = null;
-            if (_userSchema instanceof UserSchema.HasContextualRoles)
-                roles = ((UserSchema.HasContextualRoles) _userSchema).getContextualRoles();
-            if (_userSchema.getContainer().hasPermission(user, perm, roles))
+            Set<Role> contextualRoles = _userSchema instanceof UserSchema.HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            if (_userSchema.getContainer().hasPermission(user, perm, contextualRoles))
                 return true;
         }
         return super.hasPermission(user, perm);

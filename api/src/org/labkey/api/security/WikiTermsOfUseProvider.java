@@ -95,7 +95,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
     // termsContainer is guaranteed to have a terms-of-use wiki
     public static boolean isTermsOfUseApproved(ViewContext ctx, @NotNull Container termsContainer)
     {
-        HttpSession session = ctx.getRequest().getSession(false);
+        HttpSession session = ctx.getRequestOrThrow().getSession(false);
         if (null == session)
             return false;
         boolean approved;
@@ -114,6 +114,9 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
                 int frequencySeconds = AppProps.getInstance().getTermsOfUseFrequencySeconds();
                 if (frequencySeconds > 0)
                 {
+                    // Look up the LAST_TERMS_ACCEPTANCE dates of the impersonator
+                    if (user.isImpersonated())
+                        user = user.getImpersonatingUser();
                     String isoDateString = PropertyManager.getProperties(user, termsContainer, LAST_TERMS_ACCEPTANCE).get(DATE);
                     if (isoDateString != null)
                     {
@@ -127,7 +130,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
                         {
                             try (var ignored = SpringActionController.ignoreSqlUpdates())
                             {
-                                setTermsOfUseApprovedInSession(ctx, termsContainer);
+                                setTermsOfUseApprovedInSession(ctx, termsContainer, ctx.getUser());
                             }
                         }
                     }
@@ -203,29 +206,46 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
 
     public static void setTermsOfUseApproved(ViewContext ctx, @NotNull Container termsContainer)
     {
-        setTermsOfUseApprovedInSession(ctx, termsContainer);
-        User user = ctx.getUser();
-        if (!user.isGuest() && AppProps.getInstance().getTermsOfUseFrequencySeconds() > 0)
+        setTermsOfUseApproved(ctx, termsContainer, ctx.getUser());
+    }
+
+    // Callers mid-authentication (e.g., LoginApiAction) can't rely on ctx.getUser(), since the ViewContext's user
+    // isn't updated until after this request completes, and the fully-authenticated User may not exist yet if
+    // secondary authentication is pending. Resolve and pass the accepting user explicitly instead.
+    public static void setTermsOfUseApproved(ViewContext ctx, @NotNull Container termsContainer, @Nullable User user)
+    {
+        setTermsOfUseApprovedInSession(ctx, termsContainer, user);
+        if (null != user && !user.isGuest())
         {
-            if (user.isImpersonated())
-                user = user.getImpersonatingUser();
-            WritablePropertyMap map = PropertyManager.getWritableProperties(user, termsContainer, LAST_TERMS_ACCEPTANCE, true);
-            map.put(DATE, Instant.now().toString());
-            map.save();
-            LOG.debug("Saving terms acceptance timestamp for {} in {}", user, termsContainer);
+            // If impersonating, terms-of-use audit event gets logged as accept by impersonated user while being
+            // impersonated by impersonator
+            UserManager.addAuditEvent(user, termsContainer, user, "Agreed to terms of use");
+            if (AppProps.getInstance().getTermsOfUseFrequencySeconds() > 0)
+            {
+                // Unlike the audit entry above (which will clearly show if the user was being impersonated), we want
+                // to attribute LAST_TERMS_ACCEPTANCE dates to the impersonator.
+                if (user.isImpersonated())
+                    user = user.getImpersonatingUser();
+                WritablePropertyMap map = PropertyManager.getWritableProperties(user, termsContainer, LAST_TERMS_ACCEPTANCE, true);
+                map.put(DATE, Instant.now().toString());
+                map.save();
+                LOG.debug("Saving terms acceptance timestamp for {} in {}", user, termsContainer);
+            }
         }
     }
 
-    private static void setTermsOfUseApprovedInSession(ViewContext ctx, @NotNull Container termsContainer)
+    // Same ctx.getUser() caveat as setTermsOfUseApproved(): callers mid-authentication must pass the accepting user
+    // explicitly, since ctx.getUser() won't reflect this request's authentication and may be Guest or unavailable.
+    private static void setTermsOfUseApprovedInSession(ViewContext ctx, @NotNull Container termsContainer, @Nullable User user)
     {
-        HttpSession session = ctx.getRequest().getSession(true);
+        HttpSession session = ctx.getRequestOrThrow().getSession(true);
         synchronized (SessionHelper.getSessionLock(session))
         {
             Set<Container> termsApproved = getApprovedTerms(session);
             termsApproved.add(termsContainer);
         }
-        User user = ctx.getUser();
-        LOG.debug("Stashing terms acceptance in session for {} in {}", user + (user.isImpersonated() ? " (impersonated by " + user.getImpersonatingUser() + ")" : ""), termsContainer);
+        String userDescription = null != user ? user + (user.isImpersonated() ? " (impersonated by " + user.getImpersonatingUser() + ")" : "") : "<no user>";
+        LOG.debug("Stashing terms acceptance in session for {} in {}", userDescription, termsContainer);
     }
 
     public enum TermsOfUseType implements SafeToRenderEnum

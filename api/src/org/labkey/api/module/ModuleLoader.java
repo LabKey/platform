@@ -24,9 +24,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderService;
+import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveKeyedHashSetValuedMap;
@@ -56,7 +61,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -160,6 +164,8 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
+    // Base modules required by every deployment
+    private static final Set<String> REQUIRED_MODULES = Set.of("API", "Audit", "Core", "Experiment", "FileContent", "Pipeline", "Query");
 
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
@@ -252,9 +258,9 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
 
     // If non-null, overrides the name specified in the distribution.properties file
     private volatile String _distributionNameOverride;
-    // Modules to include and exclude in this server session; consumed by loadModules()
-    private volatile List<String> _moduleIncludeList = List.of();
-    private volatile List<String> _moduleExcludeList = List.of();
+    // Modules to include and exclude in this server session; consumed by filterModulesForStartupProperties()
+    private volatile Set<String> _moduleIncludeSet = Set.of();
+    private volatile Set<String> _moduleExcludeSet = Set.of();
 
     private ModuleLoader()
     {
@@ -342,11 +348,10 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         // make sure ConvertHelper is initialized
         ConvertHelper.getPropertyEditorRegistrar();
 
-        // Populate early so module include/exclude properties are available for loadModules()... and not reloaded when
-        // creating and loading modules using the module editor.
+        // Populate early so module include/exclude properties are available for filterModulesForStartupProperties()
         ModuleLoaderStartupProperties.populate();
-        // Load module instances using Spring
-        List<Module> moduleList = loadModules(explodedModuleDirs);
+        // Load module instances using Spring, then apply "include/exclude" startup properties
+        List<Module> moduleList = filterModulesForStartupProperties(loadModules(explodedModuleDirs));
 
         //sort the modules by dependencies
         synchronized (_modulesLock)
@@ -407,6 +412,17 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         @Override
         public Object invoke(Object proxy, Method m, Object[] args) throws Throwable
         {
+            // Proxies route Object's toString(), hashCode(), and equals() through here
+            if (m.getDeclaringClass() == Object.class)
+            {
+                return switch (m.getName())
+                {
+                    case "equals" -> proxy == args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    default -> "ExplodedModuleService proxy for " + _delegate.getClass().getName();
+                };
+            }
+
             try
             {
                 Method delegate_method = _methods.get(m.getName());
@@ -490,7 +506,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                 // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
                 ((DefaultModule) moduleCreated).unregister();
                 _moduleFailures.remove(moduleCreated.getName());
-                pruneModulesForDatabaseSupport(moduleList);
                 initializeAndPruneModules(moduleList);
 
                 Throwable t = _moduleFailures.get(moduleCreated.getName());
@@ -620,7 +635,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         synchronized (_modulesLock)
         {
             // _modules is in dependency order
-            pruneModulesForDatabaseSupport(_modules);
             pruneModulesForDependencies(_modules);
         }
 
@@ -951,26 +965,6 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     }
 
     /**
-     * Enumerates all the modules, removing the ones that don't support the primary database
-     */
-    private void pruneModulesForDatabaseSupport(List<Module> modules)
-    {
-        SqlDialect dialect = DbScope.getLabKeyScope().getSqlDialect();
-        SupportedDatabase primaryType = SupportedDatabase.get(dialect);
-        // Enumerate a copy of the list to avoid ConcurrentModificationException
-        for (Module module : new ArrayList<>(modules))
-        {
-            if (!module.getSupportedDatabasesSet().contains(primaryType))
-            {
-                var e = new DatabaseNotSupportedException("This module does not support " + dialect.getProductName());
-                // In production mode, treat these exceptions as a module initialization error
-                // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e, "load");
-            }
-        }
-    }
-
-    /**
      * Remove modules if any of their module dependencies are missing
      */
     private void pruneModulesForDependencies(List<Module> modules)
@@ -1198,19 +1192,52 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
             }
         }
 
-        // filter by startup properties if they were specified
-        LinkedList<String> includeList = getModuleIncludeList();
-        Set<String> excludeSet = Sets.newCaseInsensitiveHashSet(getModuleExcludeList());
+        return new ArrayList<>(moduleNameToModule.values());
+    }
 
-        List<String> missingModules = new ArrayList<>();
-        CaseInsensitiveTreeMap<Module> includedModules = moduleNameToModule;
-        if (!includeList.isEmpty())
+    // Filter by include/exclude startup properties, if specified. Called only at startup; modules created or updated
+    // later (e.g., by the module editor) aren't subject to these properties.
+    private List<Module> filterModulesForStartupProperties(List<Module> modules)
+    {
+        var ems = ServiceRegistry.get().getService(ExplodedModuleService.class);
+        return filterModules(modules, getModuleIncludeSet(), getModuleExcludeSet(), null == ems ? null : ems.getExternalModulesDirectory());
+    }
+
+    // excludeSet must be case-insensitive
+    private static List<Module> filterModules(Collection<Module> modules, Set<String> moduleIncludeSet, Set<String> excludeSet, @Nullable File externalModulesDir)
+    {
+        CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
+        modules.forEach(m -> moduleNameToModule.put(m.getName(), m));
+
+        // Mutable copy since we add to it below
+        Set<String> includeSet = Sets.newCaseInsensitiveHashSet(moduleIncludeSet);
+        CaseInsensitiveTreeMap<Module> includedModules;
+
+        if (includeSet.isEmpty())
         {
-            includeList.addAll(Arrays.asList("Core", "API"));
-            includedModules = new CaseInsensitiveTreeMap<>();
-            while (!includeList.isEmpty())
+            includedModules = moduleNameToModule;
+        }
+        else
+        {
+            includeSet.addAll(REQUIRED_MODULES);
+            if (null != externalModulesDir)
             {
-                String moduleName = includeList.removeFirst();
+                // All modules in externalModules are included, regardless of the "include" property. GH Issue 1610
+                // But they can be excluded if specified via "exclude"; see below.
+                // Stream all modules and match on location since directory names needn't match module names (e.g., devtools is "DeveloperTools")
+                java.nio.file.Path externalDir = externalModulesDir.toPath().toAbsolutePath();
+                moduleNameToModule.values().stream()
+                    .filter(m -> externalDir.equals(m.getExplodedFileLike().toNioPathForRead().getParent()))
+                    .map(Module::getName)
+                    .forEach(includeSet::add);
+            }
+
+            includedModules = new CaseInsensitiveTreeMap<>();
+            List<String> missingModules = new ArrayList<>();
+            LinkedList<String> toProcess = new LinkedList<>(includeSet);
+            while (!toProcess.isEmpty())
+            {
+                String moduleName = toProcess.removeFirst();
                 if (!excludeSet.contains(moduleName)) // Don't look up excluded modules or include their dependencies
                 {
                     Module m = moduleNameToModule.get(moduleName);
@@ -1220,17 +1247,17 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
                     }
                     else
                     {
-                        // add module to includedModules, add dependencies to includeList (of course it's too soon to call getResolvedModuleDependencies)
+                        // add module to includedModules, add dependencies to toProcess (of course it's too soon to call getResolvedModuleDependencies)
                         if (null == includedModules.put(m.getName(), m))
-                            includeList.addAll(m.getModuleDependenciesAsSet());
+                            toProcess.addAll(m.getModuleDependenciesAsSet());
                     }
                 }
             }
-        }
 
-        if (!missingModules.isEmpty())
-        {
-            _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): {}", String.join(", ", missingModules));
+            if (!missingModules.isEmpty())
+            {
+                _log.info("Problem in startup property 'ModuleLoader.include'. Unable to find requested module(s): {}", String.join(", ", missingModules));
+            }
         }
 
         for (String e : excludeSet)
@@ -1885,11 +1912,11 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         Module m = getModule(moduleName);
         SchemaActions schemaActions = getSchemaActions(m, context);
 
-        schemaActions.deleteList().forEach(schema -> {
-            _log.info("Dropping schema \"{}\"", schema);
-            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schema + "-%");
-            scope.getSqlDialect().dropSchema(_core.getSchema(), schema);
-            scope.invalidateSchema(schema, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
+        schemaActions.deleteList().forEach(schemaName -> {
+            _log.info("Dropping schema \"{}\"", schemaName);
+            new SqlExecutor(_core.getSchema()).execute(sql, moduleName, schemaName + "-%");
+            scope.getSqlDialect().dropSchema(scope, schemaName);
+            scope.invalidateSchema(schemaName, DbSchemaType.Unknown); // Invalidates all versions of the schema and tables in the non-provisioned caches (e.g., module, bare, fast)
             SchemaNameCache.get().remove(scope); // Invalidates the list of schema names associated with this scope
         });
 
@@ -2089,27 +2116,28 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
         _distributionNameOverride = distributionNameOverride;
     }
 
-    // Returns a mutable copy because loadModules() consumes the list destructively
-    LinkedList<String> getModuleIncludeList()
+    // Case-insensitive
+    private Set<String> getModuleIncludeSet()
     {
-        return new LinkedList<>(_moduleIncludeList);
+        return _moduleIncludeSet;
     }
 
-    void setModuleIncludeList(List<String> moduleIncludeList)
+    <CIS extends Set<String> & CaseInsensitiveCollection> void setModuleIncludeSet(CIS moduleIncludeSet)
     {
-        checkStartupPropertyState("Module include list");
-        _moduleIncludeList = List.copyOf(moduleIncludeList);
+        checkStartupPropertyState("Module include set");
+        _moduleIncludeSet = Collections.unmodifiableSet(moduleIncludeSet);
     }
 
-    List<String> getModuleExcludeList()
+    // Case-insensitive
+    private Set<String> getModuleExcludeSet()
     {
-        return _moduleExcludeList;
+        return _moduleExcludeSet;
     }
 
-    void setModuleExcludeList(List<String> moduleExcludeList)
+    <CIS extends Set<String> & CaseInsensitiveCollection> void setModuleExcludeSet(CIS moduleExcludeSet)
     {
-        checkStartupPropertyState("Module exclude list");
-        _moduleExcludeList = List.copyOf(moduleExcludeList);
+        checkStartupPropertyState("Module exclude set");
+        _moduleExcludeSet = Collections.unmodifiableSet(moduleExcludeSet);
     }
 
     private void checkStartupPropertyState(String description)
@@ -2750,5 +2778,127 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     public void beforeReport(Set<Object> set)
     {
         set.addAll(getModules());
+    }
+
+    public static class TestCase extends Assert
+    {
+        private File _root;
+        private File _externalModulesDir;
+        private List<Module> _modules;
+
+        @Before
+        public void setUp() throws IOException
+        {
+            _root = java.nio.file.Files.createTempDirectory("moduleLoaderTest").toFile();
+            File modulesDir = FileUtil.appendName(_root, "modules");
+            _externalModulesDir = FileUtil.appendName(_root, "externalModules");
+
+            _modules = new ArrayList<>();
+            for (String name : REQUIRED_MODULES)
+            {
+                _modules.add(module(modulesDir, name.toLowerCase(), name));
+            }
+            _modules.add(module(modulesDir, "a", "A", "B"));
+            _modules.add(module(modulesDir, "b", "B", "C"));
+            _modules.add(module(modulesDir, "c", "C"));
+            _modules.add(module(modulesDir, "d", "D"));
+            _modules.add(module(modulesDir, "e", "E", "X"));
+            _modules.add(module(modulesDir, "x", "X", "Y"));
+            _modules.add(module(modulesDir, "y", "Y"));
+            _modules.add(module(_externalModulesDir, "devtools", "DeveloperTools"));
+            _modules.add(module(_externalModulesDir, "exttwo", "ExtTwo", "C"));
+        }
+
+        @After
+        public void tearDown()
+        {
+            FileUtil.deleteDir(_root.toPath(), null);
+        }
+
+        private static Module module(File parentDir, String dirName, String name, String... dependencies) throws IOException
+        {
+            File dir = FileUtil.appendName(parentDir, dirName);
+            assertTrue("Couldn't create " + dir, FileUtil.mkdirs(dir));
+            MockModule module = new MockModule(name, dependencies);
+            module.setExplodedPath(dir);
+            return module;
+        }
+
+        private Set<String> filter(Set<String> include, Set<String> exclude, @Nullable File externalModulesDir)
+        {
+            return filterModules(_modules, include, Sets.newCaseInsensitiveHashSet(exclude), externalModulesDir).stream()
+                .map(Module::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
+        }
+
+        private static Set<String> requiredPlus(String... names)
+        {
+            Set<String> expected = new TreeSet<>(REQUIRED_MODULES);
+            expected.addAll(List.of(names));
+            return expected;
+        }
+
+        private Set<String> allModuleNames()
+        {
+            return _modules.stream()
+                .map(Module::getName)
+                .collect(Collectors.toCollection(TreeSet::new));
+        }
+
+        @Test
+        public void testNoIncludeOrExclude()
+        {
+            assertEquals(allModuleNames(), filter(Set.of(), Set.of(), _externalModulesDir));
+        }
+
+        @Test
+        public void testExcludeOnly()
+        {
+            // Without "include" there's no dependency walk, so B stays even though only A needs it
+            Set<String> expected = allModuleNames();
+            expected.remove("A");
+            assertEquals(expected, filter(Set.of(), Set.of("a"), _externalModulesDir));
+        }
+
+        @Test
+        public void testIncludeAddsRequiredAndTransitiveDependencies()
+        {
+            // Lowercase "a" also verifies case-insensitive matching
+            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a"), Set.of(), null));
+        }
+
+        @Test
+        public void testIncludeMissingModule()
+        {
+            assertEquals(requiredPlus("A", "B", "C"), filter(Set.of("a", "nonexistent"), Set.of(), null));
+        }
+
+        @Test
+        public void testExcludeDependency()
+        {
+            // Y is reachable only through excluded X
+            assertEquals(requiredPlus("E"), filter(Set.of("e"), Set.of("X"), null));
+        }
+
+        @Test
+        public void testExternalModulesIncluded()
+        {
+            // DeveloperTools matches by location despite its "devtools" directory; ExtTwo brings in its dependency, C
+            assertEquals(requiredPlus("D", "DeveloperTools", "ExtTwo", "C"), filter(Set.of("d"), Set.of(), _externalModulesDir));
+        }
+
+        @Test
+        public void testExternalModuleExcluded()
+        {
+            assertEquals(requiredPlus("D", "ExtTwo", "C"), filter(Set.of("d"), Set.of("developertools"), _externalModulesDir));
+        }
+
+        @Test
+        public void testIncludeSetUnchanged()
+        {
+            Set<String> include = Sets.newCaseInsensitiveHashSet("a");
+            filterModules(_modules, include, Sets.newCaseInsensitiveHashSet(), _externalModulesDir);
+            assertEquals(Set.of("a"), include);
+        }
     }
 }

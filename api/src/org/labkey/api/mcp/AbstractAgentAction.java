@@ -83,7 +83,7 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     @Override
     public void validateForm(F form, Errors errors)
     {
-        if (!McpService.get().isAIFeaturesEnabled())
+        if (!McpService.get().isAIFeaturesReady())
         {
             errors.reject(ERROR_GENERIC, "Agent actions are not available.");
             return;
@@ -130,6 +130,8 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
     {
         try (var _ = McpContext.withContext(getViewContext()))
         {
+            McpContext.get().put(McpContext.AGENT_NAME_ATTR, getAgentName());
+
             String prompt = form.getPrompt();
 
             JSONObject escapeResponse = escapeResponse(prompt);

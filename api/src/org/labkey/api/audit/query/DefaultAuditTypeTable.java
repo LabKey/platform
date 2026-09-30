@@ -125,7 +125,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         // this up soon, but not for 26.3. Note that this is the only code path that passes contextual roles into
         // createFilterClause(), so we could eliminate that option during clean up.
         User user = (null == getUserSchema()) ? null : getUserSchema().getUser();
-        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
+        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : Set.of();
         return filter.createFilterClause(getSchema(), fieldKey, CanSeeAuditLogPermission.class, roles);
     }
 

@@ -435,7 +435,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
 
     /* Subclass can override to support per-table roles */
-    protected Set<Role> getContextualRoles()
+    protected @NotNull Set<Role> getContextualRoles()
     {
         return getUserSchema().getContextualRoles();
     }

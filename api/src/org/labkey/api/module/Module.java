@@ -299,8 +299,6 @@ public interface Module
     @NotNull
     Collection<String> getProvisionedSchemaNames();
 
-    @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
-
     @JsonIgnore
     ModuleResourceResolver getModuleResolver();
     Resource getModuleResource(String path);

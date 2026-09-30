@@ -211,8 +211,8 @@ public class SecurityPolicy
 
     /**
      * Does not return any contextual roles, just the roles explicitly granted by this SecurityPolicy.
-     * Note: The returned stream may duplicate some roles; if a distinct stream of roles is required, callers should
-     * invoke {@code distinct()} or collect to a set.
+     * Note: The returned stream may contain duplicate roles; if a distinct stream of roles is required,
+     * callers should invoke {@code distinct()} or collect to a set.
      **/
     @NotNull
     public Stream<Role> getRoles(PrincipalArray principalArray)

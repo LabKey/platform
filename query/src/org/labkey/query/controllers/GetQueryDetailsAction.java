@@ -41,6 +41,8 @@ import org.labkey.api.data.triggers.Trigger;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.formSchema.Field;
+import org.labkey.api.formSchema.FormSchema;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -69,6 +71,7 @@ import org.labkey.query.persist.QueryDef;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
+import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -167,6 +170,9 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
         resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
+
+        var namedParams = tinfo.getNamedParameters().stream().map(QueryService.ParameterDecl::toJSON).toList();
+        resp.put("namedParameters", new JSONArray(namedParams));
 
         // check if this query is shadowing a local table
         if (isUserDefined)

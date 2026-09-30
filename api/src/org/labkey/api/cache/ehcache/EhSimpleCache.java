@@ -109,19 +109,19 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public int size()
     {
-        return (int)_cache.getStatistics().getObjectCount();
+        return (int)_cache.getStatistics().getSize();
     }
 
     @Override
     public int getExpirations()
     {
-        return (int)_cache.getLiveCacheStatistics().getExpiredCount();
+        return (int)_cache.getStatistics().cacheExpiredCount();
     }
 
     @Override
     public int getEvictions()
     {
-        return (int)_cache.getStatistics().getEvictionCount();
+        return (int)_cache.getStatistics().cacheEvictedCount();
     }
 
     @Override

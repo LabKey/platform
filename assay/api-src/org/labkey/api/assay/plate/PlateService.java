@@ -30,6 +30,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.view.ActionURL;
 
 import java.sql.SQLException;
@@ -38,6 +39,7 @@ import java.util.List;
 public interface PlateService
 {
     long NO_RUNID = -1;
+    String DEPRECATE_PRIMARY_PLATE_SET_FLAG = "primaryPlateSets";
 
     class NameConflictException extends Exception
     {
@@ -271,5 +273,10 @@ public interface PlateService
          * @return A valid and complete ActionURL if the plate is recognized, or null if it is not.
          */
         ActionURL getDetailsURL(Plate plate);
+    }
+
+    static boolean isPrimaryPlateSetsEnabled()
+    {
+        return OptionalFeatureService.get().isFeatureEnabled(DEPRECATE_PRIMARY_PLATE_SET_FLAG);
     }
 }

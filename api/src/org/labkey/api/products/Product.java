@@ -18,6 +18,8 @@ package org.labkey.api.products;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.SequencedSet;
+import java.util.Set;
 
 public abstract class Product implements Comparable<Product>
 {
@@ -31,7 +33,7 @@ public abstract class Product implements Comparable<Product>
 
     public abstract boolean isEnabled();
 
-    public abstract @NotNull List<String> getFeatureFlags();
+    public abstract @NotNull SequencedSet<String> getFeatureFlags();
 
     @Override
     public int compareTo(@NotNull Product o)

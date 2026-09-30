@@ -243,6 +243,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     {
         return Set.of(
             AnnouncementManager.TestCase.class,
+            AnnouncementManager.UpdateTest.class,
             AnnouncementsController.ContainerScopingTestCase.class
         );
     }

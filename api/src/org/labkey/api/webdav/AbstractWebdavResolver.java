@@ -94,9 +94,9 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
         @Override
-        public Set<Class<? extends Permission>> getPermissions(User user)
+        public boolean hasPermission(User user, Class<? extends Permission> perm)
         {
-            return Collections.emptySet();
+            return false;
         }
 
         @Override

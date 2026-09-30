@@ -188,7 +188,7 @@ public class PageFlowUtil
      */
     private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
 
-    private static final String NONPRINTING_ALTCHAR = "~";
+    private static final char NONPRINTING_ALTCHAR = '~';
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
 
@@ -349,14 +349,25 @@ public class PageFlowUtil
             return "";
 
         int len = s.length();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; ++i)
+        int first = 0;
+        while (first < len && isPrintable(s.charAt(first)))
+            first++;
+        if (first == len)
+            return s;
+
+        StringBuilder sb = new StringBuilder(len).append(s, 0, first);
+        for (int i = first; i < len; ++i)
         {
             char c = s.charAt(i);
-            sb.append(c >= ' ' || c == '\n' || c == '\r' || c == '\t' ? c : NONPRINTING_ALTCHAR);
+            sb.append(isPrintable(c) ? c : NONPRINTING_ALTCHAR);
         }
 
         return sb.toString();
+    }
+
+    private static boolean isPrintable(char c)
+    {
+        return c >= ' ' || c == '\n' || c == '\r' || c == '\t';
     }
 
     /**
@@ -2759,6 +2770,17 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testFilterControlChars()
+        {
+            assertEquals("", filterControlChars(null));
+            assertEquals("", filterControlChars(""));
+            String clean = "plain text\twith\r\nwhitespace";
+            assertSame(clean, filterControlChars(clean));
+            assertEquals("42", filterControlChars(42));
+            assertEquals("~a~b\n~", filterControlChars("\u0000a\u0007b\n\u001F"));
+        }
+
         @Test
         public void testScriptDetection()
         {

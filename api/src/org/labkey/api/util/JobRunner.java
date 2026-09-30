@@ -98,7 +98,9 @@ public class JobRunner implements Executor
     }
 
     /**
-     * Waits for all submitted jobs to complete. Does not require shutdown.
+     * Waits for all submitted jobs to complete. Jobs can be scheduled in the future, so this can be a long wait.
+     * Does not require shutdown.
+     * Callers should prefer using Future.get() from the result of JobRunner.execute().
      */
     public void waitForCompletion()
     {

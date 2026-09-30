@@ -8,6 +8,8 @@ Jump to the track that matches your language:
 
 Everything else on this page (data-bound vs. not, authorization, UI vs. file-based module) applies to both languages.
 
+For report topics not covered here (e.g. additional export formats, less common report types), call `searchDocumentation`.
+
 ## Report Type Landscape
 
 LabKey has several built-in report types: Query Report (renders a query view, no script), Attachment Report (uploaded static document), Link Report (URL pointer), JavaScript Report (runs in the *viewer's browser*, not server-side), R Report, Jupyter Report, and Query Snapshot (a persisted table, not really a "report"). **R Reports** and **Jupyter Reports** are the two paths this guide covers for turning an analyst-authored script into a server-side report. (A generic `ExternalScriptEngineReport`/`InternalScriptEngineReport` mechanism also exists for other JSR223-compatible engines an admin configures — historically used for Perl — but there's no conversion track for it here.)
@@ -131,7 +133,7 @@ The older bare inline form (`${id:name}` with no leading `#`) still works but is
 
 Use `regex(...)` inside a token — e.g. `${fileout:regex(.*?\.gct)}` — when the script generates files whose exact names aren't known ahead of time; LabKey maps any file matching the pattern to that output slot.
 
-A separate set of tokens is substituted both into the engine invocation command line *and* — if you reference them directly — into the script body itself, since both substitution passes share the same replacement map: `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${rLabkeySessionId}`, `${httpSessionId}`, `${sessionCookieName}`, `${baseServerURL}`, `${containerPath}`.
+A separate set of tokens is substituted both into the engine invocation command line *and* — if you reference them directly — into the script body itself, since both substitution passes share the same replacement map: `${scriptName}`, `${scriptFile}`, `${workingDir}`, `${apikey}`, `${baseServerURL}`, `${containerPath}`.
 
 **`${srcDirectory}` does not work for Reports** despite being defined alongside this family — it's only ever populated for assay *transform* scripts, a different feature. If you reference it in a report script (e.g. `source("${srcDirectory}/util.R")`), it will not resolve, and — unlike the command-line substitution pass, which silently strips unmatched tokens — the script-body substitution pass writes it out **verbatim**, so the script fails at runtime trying to open a file literally named `${srcDirectory}/...`. Don't use it when porting a script into an R report.
 

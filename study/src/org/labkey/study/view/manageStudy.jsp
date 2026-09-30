@@ -43,7 +43,6 @@
 <%@ page import="org.labkey.study.StudyInternalServiceImpl" %>
 <%@ page import="org.labkey.study.controllers.CohortController.ManageCohortsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ConfigureMasterPatientSettingsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DeleteStudyAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.DemoModeAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageExternalReloadAction" %>
@@ -302,11 +301,6 @@
                             }
                         }
                     %>
-                    <tr>
-                        <td class="lk-study-prop-label">Master Patient Index</td>
-                        <td class="lk-study-prop-desc">Configure the Master Patient Index settings for this folder</td>
-                        <td><%= link("Master Patient Index", ConfigureMasterPatientSettingsAction.class) %></td>
-                    </tr>
                 </table>
             </labkey:panel>
 

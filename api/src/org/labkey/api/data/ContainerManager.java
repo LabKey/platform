@@ -166,6 +166,11 @@ public class ContainerManager
     private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
     private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
     private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    // Maps to EntityId rather than Container so the RowId path inherits CACHE_ENTITY_ID's invalidation
+    private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
+    // RowIds and EntityIds are never reused, so a lookup miss (typically a deleted container) stays a miss
+    private static final GUID CACHE_MISS_GUID = new GUID("00000000-0000-0000-0000-000000000000");
+    private static final Cache<GUID, Boolean> CACHE_MISSING_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Missing container EntityIds");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -347,6 +352,10 @@ public class ContainerManager
                 else
                     throw new RuntimeException("Container for path '" + path + "' was not created properly.");
             }
+
+            // DATABASE_QUERY_LOCK is released before an outer transaction commits, so another thread can cache a miss for these ids in the meantime
+            int rowId = c.getRowId();
+            CORE.getSchema().getScope().addCommitTask(() -> _removeMissesFromCache(rowId, entityId), DbScope.CommitTaskOption.POSTCOMMIT);
 
             User savePolicyUser = user;
             if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
@@ -821,7 +830,7 @@ public class ContainerManager
         
         String oldValue = container.getDescription();
         _removeFromCache(container, false);
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Description, oldValue, description);
         firePropertyChangeEvent(evt);
     }
@@ -916,6 +925,23 @@ public class ContainerManager
 
         clearCache();
 
+        // GH Issue 1504: Clear again after the commit has propagated the new state to other threads and transactions. Do this in a
+        // commit task since the caller may have started (or joined) a transaction; if not, it runs immediately.
+        CORE.getSchema().getScope().addCommitTask(() ->
+        {
+            // Be sure that we've waited until any threads that might be populating the cache have finished, otherwise
+            // one of them could put the pre-commit LockState back into the cache after we've cleared it
+            DATABASE_QUERY_LOCK.lock();
+            try
+            {
+                clearCache();
+            }
+            finally
+            {
+                DATABASE_QUERY_LOCK.unlock();
+            }
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
+
         addAuditEvent(user, container, archive ? "Container has been archived." : "Archived container has been restored.");
     }
 
@@ -961,7 +987,7 @@ public class ContainerManager
 
         _removeFromCache(container, false);
         String oldValue = container.getTitle();
-        container = getForRowId(container.getRowId());
+        container = selectForRowId(container.getRowId());
         ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
         firePropertyChangeEvent(evt);
     }
@@ -988,24 +1014,24 @@ public class ContainerManager
     // Default is to include all types of children, as seems only appropriate
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, null, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, String typeIncluded)
     {
-        return getChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getChildren(parent, u, perm, Set.of(), Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> includedTypes)
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> includedTypes)
     {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, roles))
+            if (includedTypes.contains(child.getContainerType().getName()) && child.hasPermission(u, perm, contextualRoles))
                 children.add(child);
 
         return children;
@@ -1013,33 +1039,33 @@ public class ContainerManager
 
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class, null, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, ReadPermission.class, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, null,  ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, Set.of(), ContainerTypeRegistry.get().getTypeNames());
     }
 
     // Default is to include all types of children
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
-        return getAllChildren(parent, u, perm, roles, ContainerTypeRegistry.get().getTypeNames());
+        return getAllChildren(parent, u, perm, contextualRoles, ContainerTypeRegistry.get().getTypeNames());
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm,  String typeIncluded)
     {
-        return getAllChildren(parent, u, perm, null, Collections.singleton(typeIncluded));
+        return getAllChildren(parent, u, perm, Set.of(),Collections.singleton(typeIncluded));
     }
 
-    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, Set<String> typesIncluded)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles, Set<String> typesIncluded)
     {
         Set<Container> allChildren = getAllChildren(parent);
         List<Container> result = new ArrayList<>(allChildren.size());
 
         for (Container container : allChildren)
         {
-            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, roles))
+            if (typesIncluded.contains(container.getContainerType().getName()) && container.hasPermission(u, perm, contextualRoles))
             {
                 result.add(container);
             }
@@ -1122,15 +1148,35 @@ public class ContainerManager
         return Collections.unmodifiableMap(ret);
     }
 
-    public static Container getForRowId(int id)
+    public static @Nullable Container getForRowId(int id)
     {
-        Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id));
-        return selector.getObject(Container.class);
+        GUID entityId = CACHE_ROW_ID.get(id);
+        if (CACHE_MISS_GUID == entityId)
+            return null;
+        if (null != entityId)
+            return getForId(entityId);
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id), () -> CACHE_ROW_ID.put(id, CACHE_MISS_GUID));
     }
 
-    public static @Nullable Container getForId(@NotNull GUID guid)
+    /** Bypasses the cache, for rereading a container right after updating its row */
+    private static @Nullable Container selectForRowId(int id)
     {
-        return guid != null ? getForId(guid.toString()) : null;
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE RowId = ?", id)).getObject(Container.class);
+    }
+
+    public static @Nullable Container getForId(@Nullable GUID guid)
+    {
+        if (null == guid)
+            return null;
+
+        Container d = CACHE_ENTITY_ID.get(guid);
+        if (null != d)
+            return d;
+        if (null != CACHE_MISSING_ENTITY_ID.get(guid))
+            return null;
+
+        return selectAndCache(new SQLFragment("SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?", guid), () -> CACHE_MISSING_ENTITY_ID.put(guid, true));
     }
 
     public static @Nullable Container getForId(@Nullable String id)
@@ -1141,22 +1187,20 @@ public class ContainerManager
         if (!GUID.isGUID(id))
             return null;
 
-        GUID guid = new GUID(id);
+        return getForId(new GUID(id));
+    }
 
-        Container d = CACHE_ENTITY_ID.get(guid);
-        if (null != d)
-            return d;
-
+    private static @Nullable Container selectAndCache(SQLFragment sql, Runnable cacheMiss)
+    {
+        // A miss inside an outer transaction may be an uncommitted delete or a stale REPEATABLE READ snapshot, so don't cache it
+        boolean outerTransaction = CORE.getSchema().getScope().isTransactionActive();
         try (DbScope.Transaction t = ensureTransaction())
         {
-            Container result = new SqlSelector(
-                    CORE.getSchema(),
-                    "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE EntityId = ?",
-                    id).getObject(Container.class);
+            Container result = new SqlSelector(CORE.getSchema(), sql).getObject(Container.class);
             if (result != null)
-            {
-                result = _addToCache(result);
-            }
+                _addToCache(result);
+            else if (!outerTransaction)
+                cacheMiss.run();
             // No database changes to commit, but need to decrement the counter
             t.commit();
 
@@ -1704,7 +1748,7 @@ public class ContainerManager
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET Parent = ? WHERE EntityId = ?", newParent.getId(), c.getId());
 
                 // Refresh the container directly from the database so the container reflects the new parent, isProject(), etc.
-                c = getForRowId(c.getRowId());
+                c = selectForRowId(c.getRowId());
 
                 // this could be done in the trigger, but I prefer to put it in the transaction
                 if (changedProjects)
@@ -2070,7 +2114,25 @@ public class ContainerManager
                 "higher level so that we ensure that the container to be inserted still exists and hasn't been deleted";
         CACHE_ENTITY_ID.put(c.getEntityId(), c);
         CACHE_PATH.put(c.getParsedPath(), c);
+        CACHE_ROW_ID.put(c.getRowId(), c.getEntityId());
+        CACHE_MISSING_ENTITY_ID.remove(c.getEntityId());
         return c;
+    }
+
+    /** Drops misses cached by a lookup that ran before the container's creating transaction committed */
+    private static void _removeMissesFromCache(int rowId, GUID entityId)
+    {
+        DATABASE_QUERY_LOCK.lock();
+        try
+        {
+            if (CACHE_MISS_GUID == CACHE_ROW_ID.get(rowId))
+                CACHE_ROW_ID.remove(rowId);
+            CACHE_MISSING_ENTITY_ID.remove(entityId);
+        }
+        finally
+        {
+            DATABASE_QUERY_LOCK.unlock();
+        }
     }
 
     private static void _clearChildrenFromCache(Container c)
@@ -2084,6 +2146,7 @@ public class ContainerManager
     {
         CACHE_ENTITY_ID.remove(c.getEntityId());
         CACHE_PATH.remove(c.getParsedPath());
+        CACHE_ROW_ID.remove(c.getRowId());
 
         if (hierarchyChange)
         {
@@ -2100,6 +2163,8 @@ public class ContainerManager
         CACHE_PATH.clear();
         CACHE_ENTITY_ID.clear();
         CACHE_CHILDREN.clear();
+        CACHE_ROW_ID.clear();
+        CACHE_MISSING_ENTITY_ID.clear();
 
         // UNDONE: NavTreeManager should register a ContainerListener
         NavTreeManager.uncacheAll();
@@ -2504,7 +2569,7 @@ public class ContainerManager
 
     // Compliance module adds a locked project handler that checks permissions; without that, this implementation
     // is used, and projects are never locked
-    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (project, user, contextualRoles, lockState) -> false;
+    static volatile LockedProjectHandler LOCKED_PROJECT_HANDLER = (_, _, _, _) -> false;
 
     // Replaces any previously set LockedProjectHandler
     public static void setLockedProjectHandler(LockedProjectHandler handler)
@@ -2860,6 +2925,93 @@ public class ContainerManager
             assertTrue(delete(one, TestContext.get().getUser()));
             assertEquals(0, getChildren(_testRoot).size());
             assertEquals(0, _containers.size());
+        }
+
+        @Test
+        public void testRowIdCache() throws ValidationException
+        {
+            User user = TestContext.get().getUser();
+            Container parentA = createContainer(_testRoot, "rowIdA", user);
+            Container parentB = createContainer(_testRoot, "rowIdB", user);
+            Container child = createContainer(parentA, "child", user);
+            int rowId = child.getRowId();
+
+            assertSame(getForId(child.getEntityId()), getForRowId(rowId));
+            assertSame(getForRowId(rowId), getForRowId(rowId));
+
+            updateTitle(getForRowId(rowId), "New Title", user);
+            assertEquals("New Title", getForRowId(rowId).getTitle());
+
+            move(getForRowId(rowId), parentB, user);
+            assertEquals(parentB, getForRowId(rowId).getParent());
+
+            rename(getForRowId(rowId), user, "renamed");
+            assertEquals("renamed", getForRowId(rowId).getName());
+
+            assertTrue(delete(getForRowId(rowId), user));
+            assertNull(getForRowId(rowId));
+            assertNull(getForId(child.getEntityId()));
+
+            assertTrue(delete(parentA, user));
+            assertTrue(delete(parentB, user));
+        }
+
+        @Test
+        public void testMissesCached()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "misses", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            assertNull(getForRowId(rowId));
+            assertSame(CACHE_MISS_GUID, CACHE_ROW_ID.get(rowId));
+            assertNull(getForRowId(rowId));
+
+            assertNull(getForId(entityId));
+            assertEquals(Boolean.TRUE, CACHE_MISSING_ENTITY_ID.get(entityId));
+            assertNull(getForId(entityId.toString()));
+        }
+
+        @Test
+        public void testMissesNotCachedInTransaction()
+        {
+            User user = TestContext.get().getUser();
+            Container c = createContainer(_testRoot, "missesInTx", user);
+            int rowId = c.getRowId();
+            GUID entityId = c.getEntityId();
+            assertTrue(delete(c, user));
+
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                assertNull(getForRowId(rowId));
+                assertNull(getForId(entityId));
+                tx.commit();
+            }
+
+            assertNull(CACHE_ROW_ID.get(rowId));
+            assertNull(CACHE_MISSING_ENTITY_ID.get(entityId));
+        }
+
+        @Test
+        public void testMissesClearedWhenCreateCommits()
+        {
+            User user = TestContext.get().getUser();
+            Container c;
+            try (DbScope.Transaction tx = CORE.getSchema().getScope().ensureTransaction())
+            {
+                c = createContainer(_testRoot, "uncommitted", user);
+                // Simulate another thread that looked up the new ids before this transaction committed
+                CACHE_ROW_ID.put(c.getRowId(), CACHE_MISS_GUID);
+                CACHE_ENTITY_ID.remove(c.getEntityId());
+                CACHE_MISSING_ENTITY_ID.put(c.getEntityId(), true);
+                tx.commit();
+            }
+
+            assertEquals(c, getForRowId(c.getRowId()));
+            assertEquals(c, getForId(c.getEntityId()));
+            assertTrue(delete(c, user));
         }
 
         @Test

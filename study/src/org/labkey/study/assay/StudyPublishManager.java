@@ -1118,7 +1118,7 @@ public class StudyPublishManager implements StudyPublishService
         if (sampleType != null && sampleType.getAutoLinkTargetContainer() != null)
         {
             // Issue 51454 : QueryView needs a view context to initialize properly. Ensure a mock view context when running in the background
-            try (EnsureViewContext ignore = new EnsureViewContext(container, user))
+            try (ViewContext.StackResetter _ = ViewContext.ensureViewContext(user, container, new ActionURL()))
             {
                 // attempt to auto link the results
                 QuerySettings qs = new QuerySettings(new MutablePropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
@@ -1208,7 +1208,7 @@ public class StudyPublishManager implements StudyPublishService
                 if (validStudies.contains(study))
                 {
                     // Issue 49253 : QueryView needs a view context to initialize properly. Ensure a mock view context when running in the background
-                    try (EnsureViewContext ignore = new EnsureViewContext(container, user))
+                    try (ViewContext.StackResetter _ = ViewContext.ensureViewContext(user, container, new ActionURL()))
                     {
                         LOG.debug("Resolved target study in container {} for auto-linking with {} from container {}", targetContainerPath, sampleTypeName, containerPath);
                         List<Map<String, Object>> dataMaps = new ArrayList<>();
@@ -1751,25 +1751,4 @@ public class StudyPublishManager implements StudyPublishService
         }
     }
 
-    private static class EnsureViewContext implements Closeable
-    {
-        private final boolean _hasCurrentView;
-        private final int _stackSize;
-
-        private EnsureViewContext(Container container, User user)
-        {
-            _hasCurrentView =  HttpView.hasCurrentView();
-            _stackSize = HttpView.getStackSize();
-
-            if (!_hasCurrentView)
-                ViewContext.getMockViewContext(user, container, new ActionURL(), true);
-        }
-
-        @Override
-        public void close()
-        {
-            if (!_hasCurrentView)
-                HttpView.resetStackSize(_stackSize);
-        }
-    }
 }

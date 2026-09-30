@@ -98,7 +98,6 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         addTextColumn("VcsURL");
         addTextColumn("SourcePath");
         addTextColumn("Dependencies");
-        addTextColumn("SupportedDatabases");
 
         addWrapColumn(getRealTable().getColumn("Schemas"));
 
@@ -192,7 +191,6 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             appendStringLiteral(h, cte,",",module.getVcsUrl());
             appendStringLiteral(h, cte,",",module.getSourcePath());
             appendStringLiteral(h, cte,",",StringUtils.join(module.getModuleDependenciesAsSet(), ", "));
-            appendStringLiteral(h, cte,",",module.getSupportedDatabasesSet().toString());
             cte.append(")");
         }
         cte.append(") AS T (");
@@ -208,7 +206,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         cte.append(",License, LicenseURL");
         cte.append(",VcsRevision, VcsURL");
         cte.append(",SourcePath");
-        cte.append(",Dependencies, SupportedDatabases");
+        cte.append(",Dependencies");
         cte.append(")\n");
 
         String tableName = getSqlDialect().truncate(alias + "$m", 0);

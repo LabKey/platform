@@ -15,9 +15,18 @@
  */
 package org.labkey.api.data;
 
+import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.DDTags;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
+import io.opentracing.util.GlobalTracer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -31,9 +40,10 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.JobRunner;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -153,33 +163,39 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 DbSchema temp = DbSchema.getTemp();
                 TempTableTracker.track(_tableName, this);
 
-                SQLFragment selectInto;
-                if (isSelectInto)
-                {
-                    String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
-                    List<Object> params = selectQuery.getParams();
-                    selectInto = new SQLFragment(sql,params);
-                }
-                else
-                {
-                    // UNLOGGED skips WAL when populating and indexing the table.
-                    selectInto = new SQLFragment("SELECT * INTO ")
-                            .append(_mqh._unlogged ? "UNLOGGED " : "")
-                            .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
-                    selectInto.append(selectQuery);
-                    selectInto.append("\n) _sql_");
-                }
-                new SqlExecutor(_mqh._scope).execute(selectInto);
-
-                try (var ignored = SpringActionController.ignoreSqlUpdates())
-                {
-                    for (String index : _mqh._indexes)
+                _mqh.traced("full", () -> {
+                    SQLFragment selectInto;
+                    if (isSelectInto)
                     {
-                        new SqlExecutor(_mqh._scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                        String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
+                        List<Object> params = selectQuery.getParams();
+                        selectInto = new SQLFragment(sql,params);
                     }
-                }
+                    else
+                    {
+                        // UNLOGGED skips WAL when populating and indexing the table.
+                        selectInto = new SQLFragment("SELECT * INTO ")
+                                .append(_mqh._unlogged ? "UNLOGGED " : "")
+                                .appendIdentifier(temp.getName()).append(".").appendIdentifier(_tableName).append("\nFROM (\n");
+                        selectInto.append(selectQuery);
+                        selectInto.append("\n) _sql_");
+                    }
+                    new SqlExecutor(_mqh._scope).execute(selectInto);
 
+                    try (var ignored = SpringActionController.ignoreSqlUpdates())
+                    {
+                        createIndexes(_mqh._indexes, false);
+                        analyze();
+                    }
+                });
+
+                // Published here, not after the deferred indexes: those only make the table faster, and building them
+                // first keeps every reader on the unmaterialized query for the length of the slowest index.
                 _loadingState.set(LoadingState.LOADED);
+
+                if (!_mqh._deferredIndexes.isEmpty())
+                    _mqh.traced("full.deferredIndexes", () -> createIndexes(_mqh._deferredIndexes, true));
+
                 return true;
             }
             catch (RuntimeException rex)
@@ -191,6 +207,44 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             {
                 if (lockAcquired)
                     _loadingLock.unlock();
+            }
+        }
+
+        /**
+         * @param tolerateFailure true once the table is serving reads, where a missing index costs speed but nothing else,
+         *                        so the failure is logged and the remaining indexes are still attempted
+         */
+        private void createIndexes(List<String> indexes, boolean tolerateFailure)
+        {
+            for (String index : indexes)
+            {
+                String sql = StringUtils.replace(index, "${NAME}", _tableName);
+                try
+                {
+                    new SqlExecutor(_mqh._scope).execute(sql);
+                }
+                catch (RuntimeException x)
+                {
+                    if (!tolerateFailure)
+                        throw x;
+                    LOG.error("Failed to create index on materialized table {}. The table is serving queries without it. DDL: {}", _tableName, sql, x);
+                }
+            }
+        }
+
+        /** SELECT INTO leaves the table with no statistics, so the planner guesses until autovacuum eventually analyzes it. */
+        private void analyze()
+        {
+            try
+            {
+                SQLFragment sql = _mqh._scope.getSqlDialect().getAnalyzeCommandForTable(_fromSql);
+                if (null != sql)
+                    new SqlExecutor(_mqh._scope).execute(sql);
+            }
+            catch (RuntimeException x)
+            {
+                // Statistics are an optimization, so a dialect that can't analyze must not fail the materialization
+                LOG.error("Failed to update statistics for materialized table {}", _tableName, x);
             }
         }
 
@@ -353,14 +407,29 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return (null == t ? "-" : t.getId());
     }
 
+    /**
+     * Names the view in APM and logs. The kind goes in resource names, so keep it to one value per kind of view,
+     * like "samples"; the query and the container it's defined in carry the specifics.
+     */
+    public record TraceLabel(@NotNull String kind, @Nullable String query, @Nullable String containerId)
+    {
+        // Held by cached helpers, so keep the container's id rather than the Container itself
+        public TraceLabel(@NotNull String kind, @Nullable String query, @Nullable Container container)
+        {
+            this(kind, query, null == container ? null : container.getId());
+        }
+    }
+
     protected final String _prefix;
     protected final DbScope _scope;
+    protected final @Nullable TraceLabel _traceLabel;
     private final SQLFragment _selectQuery;
     private final boolean _isSelectIntoSql;
     private final boolean _unlogged;
     protected final SQLFragment _uptodateQuery;
     protected final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
+    private final List<String> _deferredIndexes = new ArrayList<>();
     protected final long _maxTimeToCache;
     private final Map<String, Materialized> _map = Collections.synchronizedMap(new LinkedHashMap<>()
     {
@@ -382,17 +451,20 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     private boolean _closed = false;
 
-    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, long maxTimeToCache,
-                                    boolean isSelectIntoSql, boolean unlogged)
+    protected MaterializedQueryHelper(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Supplier<String> supplier, @Nullable Collection<String> indexes, @Nullable Collection<String> deferredIndexes, long maxTimeToCache,
+                                    boolean isSelectIntoSql, boolean unlogged, @Nullable TraceLabel traceLabel)
     {
         _prefix = Objects.toString(prefix,"mat");
         _scope = scope;
+        _traceLabel = traceLabel;
         _selectQuery = select;
         _uptodateQuery = uptodate;
         _supplier = supplier;
         _maxTimeToCache = maxTimeToCache;
         if (null != indexes)
             _indexes.addAll(indexes);
+        if (null != deferredIndexes)
+            _deferredIndexes.addAll(deferredIndexes);
         _isSelectIntoSql = isSelectIntoSql;
         _unlogged = unlogged;
         assert MemTracker.get().put(this);
@@ -422,17 +494,43 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         if (_backgroundTaskRunning.compareAndSet(false, true))
         {
+            String triggeringTraceId = CorrelationIdentifier.getTraceId();
+            String triggeringSpanId = CorrelationIdentifier.getSpanId();
+
             _materializationRunner.execute(() -> {
-                try
+                // Materialization outlives the request that triggers it and then serves every later request, so it gets its own trace; the trigger is recorded as tags rather than as a parent
+                Tracer tracer = GlobalTracer.get();
+                Span span = tracer.buildSpan("MaterializeAsync").ignoreActiveSpan().start();
+                span.setTag(DDTags.RESOURCE_NAME, getTraceKind());
+                span.setTag("labkey.materialized_view", getMaterializationName());
+                if (!"0".equals(triggeringTraceId))
                 {
+                    span.setTag("labkey.triggering_trace_id", triggeringTraceId);
+                    span.setTag("labkey.triggering_span_id", triggeringSpanId);
+                }
+
+                try (Scope ignored = tracer.activateSpan(span))
+                {
+                    // Connect log messages with the active trace and span
+                    ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                    ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+
                     getFromSql("_bg_");
                 }
-                catch (Exception e)
+                catch (Throwable t)
                 {
-                    LOG.warn("Background materialization failed.", e);
+                    Tags.ERROR.set(span, true);
+                    span.log(Map.of(Fields.ERROR_OBJECT, t));
+                    LOG.warn("Background materialization failed.", t);
+                    // Broad enough to tag an Error on the span, but only Exceptions are swallowed
+                    if (t instanceof Error e)
+                        throw e;
                 }
                 finally
                 {
+                    span.finish();
+                    ThreadContext.remove(CorrelationIdentifier.getTraceIdKey());
+                    ThreadContext.remove(CorrelationIdentifier.getSpanIdKey());
                     _backgroundTaskRunning.set(false);
                 }
             });
@@ -550,6 +648,34 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     protected void incrementalUpdateBeforeSelect(Materialized m)
     {
+    }
+
+    /**
+     * Runs DB work inside its own Datadog APM span so each kind of materialization is a separate resource. Nests under
+     * MaterializeAsync on the background thread and under the HTTP request when a stale view is rebuilt inline.
+     */
+    protected void traced(String phase, Runnable work)
+    {
+        String description = null == _traceLabel || null == _traceLabel.query() ? getMaterializationName() : _traceLabel.query();
+        Container c = null == _traceLabel || null == _traceLabel.containerId() ? null : ContainerManager.getForId(_traceLabel.containerId());
+        TracedOperation.builder("labkey.materialize")
+                .resource(phase + " " + getTraceKind())
+                .describedAs("materialize " + phase + " " + description + (null == c ? "" : " defined in " + c.getPath()))
+                .tag("labkey.materialized_view", getMaterializationName())
+                .tag("labkey.query", null == _traceLabel ? null : _traceLabel.query())
+                .container(c)
+                .run(work);
+    }
+
+    private String getTraceKind()
+    {
+        return null != _traceLabel ? _traceLabel.kind() : StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName());
+    }
+
+    /** Identifies the view in APM. Carried as a tag, never a resource name, to keep per-view cardinality out of trace metrics. */
+    protected String getMaterializationName()
+    {
+        return StringUtils.defaultIfEmpty(_prefix, getClass().getSimpleName());
     }
 
     /**
@@ -680,14 +806,14 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, @Nullable SQLFragment uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, uptodate, null, indexes, null, maxTimeToCache, false, false, null);
     }
 
 
     @Deprecated // use Builder
     public static MaterializedQueryHelper create(String prefix, DbScope scope, SQLFragment select, Supplier<String> uptodate, Collection<String> indexes, long maxTimeToCache)
     {
-        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, maxTimeToCache, false, false);
+        return new MaterializedQueryHelper(prefix, scope, select, null, uptodate, indexes, null, maxTimeToCache, false, false, null);
     }
 
     public static class Builder implements org.labkey.api.data.Builder<MaterializedQueryHelper>
@@ -702,6 +828,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         protected SQLFragment _uptodate = null;
         protected Supplier<String> _supplier = null;
         protected Collection<String> _indexes = new ArrayList<>();
+        protected Collection<String> _deferredIndexes = new ArrayList<>();
+        protected TraceLabel _traceLabel = null;
 
         public Builder(String prefix, DbScope scope, SQLFragment select)
         {
@@ -745,16 +873,30 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return this;
         }
 
+        /** Index built before the table is published, for anything a reader or the incremental maintenance SQL cannot go without. */
         public Builder addIndex(String index)
         {
             _indexes.add(index);
             return this;
         }
 
+        /** Index built after the table is published to readers; a failure is logged and the table serves without it. */
+        public Builder addDeferredIndex(String index)
+        {
+            _deferredIndexes.add(index);
+            return this;
+        }
+
+        public Builder traceLabel(@NotNull TraceLabel traceLabel)
+        {
+            _traceLabel = traceLabel;
+            return this;
+        }
+
         @Override
         public MaterializedQueryHelper build()
         {
-            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _max, _isSelectInto, _unlogged);
+            return new MaterializedQueryHelper(_prefix, _scope, _select, _uptodate, _supplier, _indexes, _deferredIndexes, _max, _isSelectInto, _unlogged, _traceLabel);
         }
     }
 

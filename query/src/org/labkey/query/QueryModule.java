@@ -417,6 +417,7 @@ public class QueryModule extends DefaultModule
             JdbcType.TestCase.class,
             MemberSet.TestCase.class,
             MetadataElementBase.TestCase.class,
+            Method.IsDistinctFromMethodTestCase.class,
             Method.TestCase.class,
             ExpressionAssistantAgentAction.TestCase.class,
             QNode.TestCase.class,

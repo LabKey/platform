@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.util.QuietCloser;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -54,6 +55,7 @@ public abstract class BrowserEndpoint extends Endpoint
 
     protected Session browserSession;
     ServerEndpoint serverEndpoint = null;
+    private QuietCloser tracked;
 
     private void close()
     {
@@ -90,6 +92,9 @@ public abstract class BrowserEndpoint extends Endpoint
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig)
     {
+        // Only the inbound browser socket counts against the connector; serverEndpoint's socket is outbound
+        tracked = WebSocketTracker.opened();
+
         String uri = null;
         try
         {
@@ -113,6 +118,8 @@ public abstract class BrowserEndpoint extends Endpoint
     public void onClose(Session session, CloseReason closeReason)
     {
         LOG.debug("BrowserEndpoint.onClose()");
+        if (null != tracked)
+            tracked.close();
         if (null != serverEndpoint)
             serverEndpoint.close();
     }

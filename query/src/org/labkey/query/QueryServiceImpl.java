@@ -68,6 +68,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -2996,7 +2997,7 @@ public class QueryServiceImpl implements QueryService
         return new AbstractAuditHandler()
         {
             @Override
-            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row, null);
                 event.setUserComment(userComment);
@@ -3004,7 +3005,7 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);
@@ -3525,6 +3526,38 @@ public class QueryServiceImpl implements QueryService
                     assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
+        }
+
+        @Test
+        public void testSortTrimmedAfterPk()
+        {
+            TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
+            assertEquals(List.of("userid"), principals.getPkColumnNames().stream().map(String::toLowerCase).toList());
+
+            assertEquals("order by userid asc", orderBy(principals, "UserId,Name,-Type"));
+            assertEquals("order by name asc, userid desc", orderBy(principals, "Name,-UserId,Type"));
+            assertEquals("order by name asc, type asc, userid asc", orderBy(principals, "Name,Type"));
+
+            Sort sort = new Sort("UserId,Name");
+            orderBy(principals, sort);
+            assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
+        }
+
+        private String orderBy(TableInfo table, String sort)
+        {
+            return orderBy(table, new Sort(sort));
+        }
+
+        private String orderBy(TableInfo table, Sort sort)
+        {
+            String sql = QueryService.get().getSelectBuilder(table).sort(sort).maxRows(10).buildSqlFragment().getRawSQL();
+            String orderBy = sql.substring(sql.indexOf("ORDER BY"), sql.indexOf("LIMIT")).trim();
+            return orderBy.replaceAll("\\s+", " ").replace("\"", "").toLowerCase();
         }
 
         @Test
