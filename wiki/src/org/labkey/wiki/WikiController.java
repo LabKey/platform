@@ -433,7 +433,8 @@ public class WikiController extends SpringActionController
             return true;
         }
 
-        // Returns the first descendant (depth-first) the user isn't permitted to delete, or null if all are deletable
+        // Returns the first descendant (depth-first) the user cannot delete, or null if all are deletable.
+        // A single blocked page prevents the subtree delete, so there's no need to collect every blocked page.
         private @Nullable Wiki findUndeletableDescendant(BaseWikiPermissions perms, Wiki wiki)
         {
             for (Wiki child : wiki.children())
