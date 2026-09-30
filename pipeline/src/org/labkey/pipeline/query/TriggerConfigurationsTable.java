@@ -28,6 +28,7 @@ import org.labkey.api.data.AbstractValueTransformingDisplayColumn;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -323,7 +324,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
 
             // call the stop() method for this config if it was successfully updated
             if (config != null)
-                config.stop();
+                afterCommit(config::stop);
 
             String newName = getStringFromRow(newRow, "Name");
             startIfEnabled(container, newName, newRow);
@@ -436,7 +437,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
 
             // call the stop() method for this config if it was successfully deleted
             if (config != null)
-                config.stop();
+                afterCommit(config::stop);
 
             return deleteRow;
         }
@@ -444,15 +445,24 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         private void startIfEnabled(Container container, String name, Map<String, Object> row)
         {
             boolean enabled = Boolean.parseBoolean(row.getOrDefault("Enabled", false).toString());
-            PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
-            if (config != null)
-            {
-                if (enabled)
-                    config.start();
-                else
-                    config.stop();
-            }
+            afterCommit(() -> {
+                PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
+
+                if (config != null)
+                {
+                    if (enabled)
+                        config.start();
+                    else
+                        config.stop();
+                }
+            });
+        }
+
+        /** Listeners aren't transactional, so change them only once the caller's transaction commits (immediately if there is none) */
+        private void afterCommit(Runnable task)
+        {
+            getDbTable().getSchema().getScope().addCommitTask(task, DbScope.CommitTaskOption.POSTCOMMIT);
         }
 
         private String getStringFromRow(Map<String, Object> row, String key)
