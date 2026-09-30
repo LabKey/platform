@@ -16,11 +16,12 @@
 package org.labkey.core.metrics;
 
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.websocket.WebSocketTracker;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WebSocketConnectionManager implements UsageMetricsProvider
+public class WebSocketConnectionManager implements UsageMetricsProvider, WebSocketMXBean
 {
     private static final WebSocketConnectionManager _instance = new WebSocketConnectionManager();
 
@@ -44,6 +45,24 @@ public class WebSocketConnectionManager implements UsageMetricsProvider
             failureCounter.incrementAndGet();
     }
 
+    @Override
+    public int getOpenConnectionCount()
+    {
+        return WebSocketTracker.getOpenCount();
+    }
+
+    @Override
+    public int getSuccessCount()
+    {
+        return successCounter.get();
+    }
+
+    @Override
+    public int getFailureCount()
+    {
+        return failureCounter.get();
+    }
+
     public boolean showWarning()
     {
         return successCounter.get() == 0 && failureCounter.get() > 0;
@@ -55,7 +74,8 @@ public class WebSocketConnectionManager implements UsageMetricsProvider
         return Map.of(
             "webSocketConnections", Map.of(
                     "success", successCounter.get(),
-                    "failure", failureCounter.get()
+                    "failure", failureCounter.get(),
+                    "open", WebSocketTracker.getOpenCount()
                 )
         );
     }

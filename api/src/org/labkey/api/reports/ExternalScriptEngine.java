@@ -68,11 +68,6 @@ import java.util.regex.Pattern;
 
 import static org.labkey.api.reports.report.r.ParamReplacementSvc.SubstitutionSyntax.INLINE;
 
-/*
-* User: Karl Lum
-* Date: Dec 2, 2008
-* Time: 4:33:23 PM
-*/
 public class ExternalScriptEngine extends AbstractScriptEngine implements LabKeyScriptEngine
 {
     /**
@@ -81,6 +76,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
      */
     public static final String WORKING_DIRECTORY = "external.script.engine.workingDirectory";
     public static final String PARAM_REPLACEMENT_MAP = "external.script.engine.replacementMap";
+    public static final String FAIL_ON_UNREPLACED_PARAMS = "external.script.engine.failOnUnreplacedParams";
 
     public static final String PARAM_SCRIPT = "scriptFile";
     public static final String SCRIPT_PATH = "scriptPath";
@@ -599,14 +595,19 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
                     }
                 }
 
-                // Fail fast if there are unreplaced substitutions, to provide a much better user-facing error message.
-                Matcher matcher = INLINE.getMatchPattern().matcher(script);
-                Set<String> unreplaced = new LinkedHashSet<>();
-                while (matcher.find())
-                    unreplaced.add(matcher.group(1));
+                // If requested, fail fast when unreplaced substitutions remain to provide a much better user-facing
+                // error message. This is set in the assay transform case, but not in the pipeline case, where further
+                // substitutions may be performed after this.
+                if (Boolean.TRUE.equals(bindings.get(FAIL_ON_UNREPLACED_PARAMS)))
+                {
+                    Matcher matcher = INLINE.getMatchPattern().matcher(script);
+                    Set<String> unreplaced = new LinkedHashSet<>();
+                    while (matcher.find())
+                        unreplaced.add(matcher.group(1));
 
-                if (!unreplaced.isEmpty())
-                    throw new ScriptException("Unreplaced substitution parameter(s) found in script: " + String.join(", ", unreplaced));
+                    if (!unreplaced.isEmpty())
+                        throw new ScriptException("Unreplaced substitution parameter(s) found in script: " + String.join(", ", unreplaced));
+                }
 
                 try (PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(scriptFile.openOutputStream(), StandardCharsets.UTF_8))))
                 {
@@ -744,6 +745,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             _context = new SimpleScriptContext();
             Bindings bindings = _engine.createBindings();
             bindings.put(PARAM_REPLACEMENT_MAP, Map.of(KNOWN_PARAM, KNOWN_VALUE));
+            bindings.put(FAIL_ON_UNREPLACED_PARAMS, true);
             _context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
         }
 

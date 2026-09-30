@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.search.model;
+package org.labkey.core.metrics;
 
-/**
- * Thrown when a Lucene index commit fails or indexing can't make progress. Propagates to the outer indexer loop so that
- * backoff and retry are handled there, consistent with the pattern used by {@link DavCrawler}.
- */
-public class IndexCommitException extends RuntimeException
+/** WebSocket connection counts, exported over JMX as LabKey:name=WebSockets. See GH Issue 1574. */
+public interface WebSocketMXBean
 {
-    IndexCommitException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    /** @return inbound WebSocket connections the server is currently holding, guests included */
+    int getOpenConnectionCount();
+
+    /** @return connections opened since startup by signed-in users */
+    int getSuccessCount();
+
+    /** @return connection attempts that browsers have reported back as failed */
+    int getFailureCount();
 }

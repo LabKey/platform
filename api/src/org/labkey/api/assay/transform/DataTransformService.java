@@ -174,13 +174,14 @@ public class DataTransformService
                         addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+                        bindings.put(ExternalScriptEngine.FAIL_ON_UNREPLACED_PARAMS, true);
 
                         Object output = engine.eval(script);
 
                         FileLike rewrittenScriptFile;
                         if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike file)
                         {
-                                rewrittenScriptFile = file;
+                            rewrittenScriptFile = file;
                         }
                         else
                         {

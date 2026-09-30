@@ -114,7 +114,7 @@ public abstract class SecurityEscalator implements AutoCloseable
 
             // We can cut out everything below this, because that's just boring Servlet/Tomcat traces, which
             // doesn't matter for our auditing.
-            if (stackTraceElement.getClassName().equals("javax.servlet.http.HttpServlet")) {
+            if (stackTraceElement.getClassName().equals("jakarta.servlet.http.HttpServlet")) {
                 break;
             }
 

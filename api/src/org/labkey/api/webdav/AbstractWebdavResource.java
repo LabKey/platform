@@ -68,7 +68,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public abstract class AbstractWebdavResource extends AbstractResource implements WebdavResource
 {
@@ -360,7 +359,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
                 SecurityLogger.log("hasAccess()==false", user, null, false);
                 return false;
             }
-            return getPermissions(user).contains(ReadPermission.class);
+            return hasPermission(user, ReadPermission.class);
         }
         finally
         {
@@ -373,14 +372,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         Set<Role> contextualRoles = user.equals(getCreatedBy()) ? RoleManager.roleSet(OwnerRole.class) : Set.of();
         return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), contextualRoles);
+            SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(UpdatePermission.class), contextualRoles);
     }
 
     @Override
     public boolean canCreate(User user, boolean forCreate)
     {
-        return hasAccess(user) && !user.isGuest() &&
-                SecurityManager.hasAllPermissions(null, getSecurableResource(), user, Set.of(InsertPermission.class), Set.of());
+        return hasAccess(user) && !user.isGuest() && getSecurableResource().hasPermission(user, InsertPermission.class);
     }
 
     @Override
@@ -400,8 +398,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         if (user.isGuest() || !hasAccess(user))
             return false;
-        Set<Class<? extends Permission>> perms = getPermissions(user);
-        return perms.contains(DeletePermission.class);
+        return hasPermission(user, DeletePermission.class);
     }
 
     @Override
@@ -419,11 +416,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename, null);
     }
 
-    // TODO: Return a Stream like other permissions methods do
-    public Set<Class<? extends Permission>> getPermissions(User user)
+    public boolean hasPermission(User user, Class<? extends Permission> perm)
     {
-        return SecurityManager.streamPermissions(getSecurableResource(), user, Set.of())
-            .collect(Collectors.toSet());
+        return getSecurableResource().hasPermission(user, perm);
     }
 
     @Override
