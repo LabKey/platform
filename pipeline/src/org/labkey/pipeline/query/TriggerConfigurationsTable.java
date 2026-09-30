@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<PipelineQuerySchema>
@@ -253,16 +254,25 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         @Override
         public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            List<Map<String, Object>> ret = new LinkedList<>();
-            for (Map<String, Object> row : rows)
+            if (oldKeys != null && rows.size() != oldKeys.size())
+                throw new IllegalArgumentException("rows and oldKeys are required to be the same length, but were " + rows.size() + " and " + oldKeys.size() + " in length, respectively");
+
+            List<Map<String, Object>> ret = new ArrayList<>(rows.size());
+            for (int i = 0; i < rows.size(); i++)
             {
+                Map<String, Object> row = rows.get(i);
                 try
                 {
-                    ret.add(updateRow(user, container, row, row, false, true));
+                    Map<String, Object> oldRow = getRow(user, container, oldKeys == null ? row : oldKeys.get(i));
+                    // getRow() selects by RowId alone, so the row may belong to another folder
+                    if (oldRow == null || !container.getId().equals(Objects.toString(oldRow.get("Container"), null)))
+                        throw new ValidationException("Pipeline trigger configuration not found in this folder.");
+
+                    ret.add(updateRow(user, container, row, oldRow, false, true));
                 }
                 catch (ValidationException e)
                 {
-                    ret.remove(row);
+                    errors.addRowError(e);
                 }
             }
             return ret;

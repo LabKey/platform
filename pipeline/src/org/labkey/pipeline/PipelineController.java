@@ -128,7 +128,7 @@ import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.labkey.pipeline.api.PipelineSchema;
 import org.labkey.pipeline.api.PipelineServiceImpl;
-import org.labkey.pipeline.api.PipelineStatusManager;Do
+import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
