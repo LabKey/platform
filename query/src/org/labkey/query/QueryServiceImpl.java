@@ -3528,6 +3528,32 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Test
+        public void testInClauseInnerJoin()
+        {
+            QueryService qs = QueryService.get();
+            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            assertNotNull(users);
+            List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
+
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                ids.add(i);
+            FieldKey pk = FieldKey.fromParts("userid");
+
+            SimpleFilter joinFilter = new SimpleFilter();
+            joinFilter.addClause(new SimpleFilter.InClauseInnerJoin(pk, ids));
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(joinFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
+            assertFalse("InClauseInnerJoin should not emit a PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+
+            SimpleFilter inFilter = new SimpleFilter();
+            inFilter.addClause(new SimpleFilter.InClause(pk, ids));
+            String inSql = qs.getSelectBuilder(users).columns(cols).filter(inFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Plain InClause should not produce a driving join:\n" + inSql, inSql.contains("_drive_"));
+            assertTrue("Plain InClause should produce an IN (SELECT ...) semi-join:\n" + inSql, inSql.contains("IN (SELECT Id FROM"));
+        }
+
+        @Test
         public void testParameters() throws SQLException
         {
 /*            PARAMETERS(X INTEGER DEFAULT 5)
