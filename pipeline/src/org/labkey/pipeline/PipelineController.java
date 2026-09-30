@@ -132,6 +132,7 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1452,6 +1453,13 @@ public class PipelineController extends SpringActionController
                     throw new NotFoundException("Pipeline trigger with id " + rowId + " could not be found");
                 }
             }
+            else
+            {
+                // GH Issue 1524: don't let a crafted link plant a function in the collapsed Advanced Settings. The
+                // reset regenerates a bound raw "configuration" from the fields, now without the function.
+                form.setParameterFunction(null);
+                form.resetConfiguration();
+            }
 
             if (form.getReturnUrl() == null)
                 form.setReturnUrl(getContainer().getStartURL(getUser()).toString());
@@ -2030,6 +2038,33 @@ public class PipelineController extends SpringActionController
 
             assertNoErrors(insert(developer, c, row));
             assertTrue(triggerExists(c, (String) row.get("Name")));
+        }
+
+        /**
+         * On create the wizard is pre-filled from URL parameters, so a crafted link could plant a function that a
+         * trusted user saves without seeing it.
+         * */
+        @Test
+        public void testCreateTriggerIgnoresParameterFunctionFromUrl() throws Exception
+        {
+            Container c = createContainer("CreateFromUrl");
+            String location = "prefilledLocation" + GUID.makeHash();
+            String function = "plantedFunction" + GUID.makeHash();
+
+            ActionURL viaFields = new ActionURL(CreatePipelineTriggerAction.class, c)
+                    .addParameter("location", location)
+                    .addParameter(PARAMETER_FUNCTION, function);
+            ActionURL viaConfiguration = new ActionURL(CreatePipelineTriggerAction.class, c)
+                    .addParameter("configuration", new JSONObject().put("location", location).put(PARAMETER_FUNCTION, function).toString());
+
+            for (ActionURL url : List.of(viaFields, viaConfiguration))
+            {
+                MockHttpServletResponse response = get(url, getAdmin());
+                assertStatus(HttpServletResponse.SC_OK, response);
+                String content = response.getContentAsString();
+                assertTrue("Other URL values must still pre-fill the wizard", content.contains(location));
+                assertFalse("A function from the URL must not pre-fill the wizard", content.contains(function));
+            }
         }
 
         private static TableInfo triggerTable()
