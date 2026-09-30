@@ -207,7 +207,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 return Map.of(
                     "settings", Map.of(
                         "secure", MultiSetUtils.getOccurrenceMap(secure),
-                        "moderator", MultiSetUtils.getOccurrenceMap(moderator)
+                        "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)
                     )
                 );
             });
