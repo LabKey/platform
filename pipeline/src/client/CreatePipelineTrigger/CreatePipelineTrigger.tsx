@@ -7,7 +7,6 @@ import React, { ChangeEvent, Dispatch, FC, Reducer, useCallback, useEffect, useR
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { Alert, AutoForm, cancelEvent, FormSchema, naturalSort, redirect } from '@labkey/components';
 
-// eslint-disable-next-line import/no-unassigned-import
 import './CreatePipelineTrigger.scss';
 
 const HELP_TEXT = 'Fields marked with an asterisk * are required. ';
@@ -36,7 +35,7 @@ interface TriggerConfiguration {
     rowId: number;
 }
 
-type CustomConfiguration = Record<string, string | boolean>;
+type CustomConfiguration = Record<string, boolean | string>;
 
 interface CustomParameterModel {
     id: number; // used internally as a key for react
@@ -74,13 +73,13 @@ interface FormState {
 // The omitted fields are computed by initializeFormState
 type InitialState = Omit<
     FormState,
-    | 'customParameters'
     | 'customConfigValid'
+    | 'customParameters'
     | 'detailsValid'
     | 'isDirty'
     | 'saveError'
-    | 'saving'
     | 'saveSuccessful'
+    | 'saving'
     | 'triggerConfigValid'
 >;
 
@@ -98,7 +97,7 @@ enum ActionType {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FieldAction<T = any> {
     field: string;
-    type: ActionType.UPDATE_DETAILS | ActionType.UPDATE_TRIGGER_CONFIG | ActionType.UPDATE_CUSTOM_CONFIG;
+    type: ActionType.UPDATE_CUSTOM_CONFIG | ActionType.UPDATE_DETAILS | ActionType.UPDATE_TRIGGER_CONFIG;
     value: T;
 }
 
@@ -131,12 +130,12 @@ interface SetSavingAction {
 }
 
 type FormStateAction =
-    | FieldAction
-    | ViewAction
     | AddCustomParamAction
+    | FieldAction
     | RemoveCustomParamAction
+    | SetSavingAction
     | UpdateCustomParamAction
-    | SetSavingAction;
+    | ViewAction;
 
 const validateValues = (formSchema: FormSchema, values: Record<string, any>): boolean => {
     // Not every trigger type has a custom form schema, so this can be null/undefined.
@@ -162,6 +161,29 @@ const validateValues = (formSchema: FormSchema, values: Record<string, any>): bo
 
 const formStateReducer = (state: FormState, action: FormStateAction): FormState => {
     switch (action.type) {
+        case ActionType.ADD_CUSTOM_PARAM: {
+            const { customParameters } = state;
+            const integerIds = Object.keys(customParameters).map(k => parseInt(k, 10));
+            const id = integerIds.length > 0 ? Math.max(...integerIds) + 1 : 0;
+            return {
+                ...state,
+                customParameters: {
+                    ...customParameters,
+                    [id]: { key: '', value: '', id },
+                },
+                isDirty: true,
+            };
+        }
+        case ActionType.REMOVE_CUSTOM_PARAM: {
+            const { id } = action;
+            const customParameters = { ...state.customParameters };
+            delete customParameters[id];
+            return { ...state, customParameters, isDirty: true };
+        }
+        case ActionType.SET_SAVING: {
+            const { saving, saveError, saveSuccessful } = action;
+            return { ...state, saving, saveError, saveSuccessful };
+        }
         case ActionType.SET_VIEW: {
             // Don't navigate to the Configuration form if the user hasn't filled out the required fields in Details.
             if (!state.detailsValid) {
@@ -169,6 +191,36 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
             }
 
             return { ...state, view: action.view };
+        }
+        case ActionType.UPDATE_CUSTOM_CONFIG: {
+            const customConfig = { ...state.customConfig, [action.field]: action.value };
+            const formSchema = state.customFieldFormSchemas[state.details.pipelineId];
+            return {
+                ...state,
+                isDirty: true,
+                customConfig,
+                customConfigValid: validateValues(formSchema, customConfig),
+            };
+        }
+        case ActionType.UPDATE_CUSTOM_PARAM: {
+            const { customParameters } = state;
+            const { id, key, value } = action;
+            const keyIsSame = customParameters[id].key === key;
+            const valueIsSame = customParameters[id].value === value;
+
+            if (keyIsSame && valueIsSame) {
+                // If nothing changed, no-op.
+                return state;
+            }
+
+            return {
+                ...state,
+                customParameters: {
+                    ...customParameters,
+                    [id]: { key, value, id },
+                },
+                isDirty: true,
+            };
         }
         case ActionType.UPDATE_DETAILS: {
             const { customConfig, customFieldFormSchemas, details, taskFormSchemas, triggerConfig } = state;
@@ -223,59 +275,6 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
                 triggerConfig,
                 triggerConfigValid: validateValues(formSchema, triggerConfig),
             };
-        }
-        case ActionType.UPDATE_CUSTOM_CONFIG: {
-            const customConfig = { ...state.customConfig, [action.field]: action.value };
-            const formSchema = state.customFieldFormSchemas[state.details.pipelineId];
-            return {
-                ...state,
-                isDirty: true,
-                customConfig,
-                customConfigValid: validateValues(formSchema, customConfig),
-            };
-        }
-        case ActionType.ADD_CUSTOM_PARAM: {
-            const { customParameters } = state;
-            const integerIds = Object.keys(customParameters).map(k => parseInt(k, 10));
-            const id = integerIds.length > 0 ? Math.max(...integerIds) + 1 : 0;
-            return {
-                ...state,
-                customParameters: {
-                    ...customParameters,
-                    [id]: { key: '', value: '', id },
-                },
-                isDirty: true,
-            };
-        }
-        case ActionType.REMOVE_CUSTOM_PARAM: {
-            const { id } = action;
-            const customParameters = { ...state.customParameters };
-            delete customParameters[id];
-            return { ...state, customParameters, isDirty: true };
-        }
-        case ActionType.UPDATE_CUSTOM_PARAM: {
-            const { customParameters } = state;
-            const { id, key, value } = action;
-            const keyIsSame = customParameters[id].key === key;
-            const valueIsSame = customParameters[id].value === value;
-
-            if (keyIsSame && valueIsSame) {
-                // If nothing changed, no-op.
-                return state;
-            }
-
-            return {
-                ...state,
-                customParameters: {
-                    ...customParameters,
-                    [id]: { key, value, id },
-                },
-                isDirty: true,
-            };
-        }
-        case ActionType.SET_SAVING: {
-            const { saving, saveError, saveSuccessful } = action;
-            return { ...state, saving, saveError, saveSuccessful };
         }
         default: {
             // Throw error for unhandled actions.
@@ -428,10 +427,10 @@ const DetailsForm: FC<DetailsFormProps> = ({ dispatch, formState, onNext, return
             <AutoForm formSchema={detailsFormSchema} onChange={onChange} values={details} />
 
             <div className="pipeline-trigger-buttons">
-                <button type="button" className="btn btn-primary" disabled={!formState.detailsValid} onClick={onNext}>
+                <button className="btn btn-primary" disabled={!formState.detailsValid} onClick={onNext} type="button">
                     next
                 </button>
-                <a href={returnUrl} className="btn btn-default">
+                <a className="btn btn-default" href={returnUrl}>
                     cancel
                 </a>
             </div>
@@ -479,7 +478,7 @@ const CustomParameter: FC<CustomParameterProps> = ({ customParameter, remove, up
             </div>
 
             <div className="col-sm-1">
-                <button type="button" onClick={onRemoveClicked}>
+                <button onClick={onRemoveClicked} type="button">
                     <span className="fa fa-trash" />
                 </button>
             </div>
@@ -510,7 +509,7 @@ const CustomParameters: FC<CustomParametersProps> = ({ customParameters, dispatc
             {Object.keys(customParameters)
                 .sort(naturalSort)
                 .map(id => (
-                    <CustomParameter key={id} update={update} remove={remove} customParameter={customParameters[id]} />
+                    <CustomParameter customParameter={customParameters[id]} key={id} remove={remove} update={update} />
                 ))}
         </div>
     );
@@ -595,13 +594,13 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
             </div>
 
             <div className="pipeline-trigger-buttons">
-                <button disabled={saveDisabled} type="button" className="btn btn-primary" onClick={onSubmit}>
+                <button className="btn btn-primary" disabled={saveDisabled} onClick={onSubmit} type="button">
                     save
                 </button>
-                <a href={returnUrl} className="btn btn-default">
+                <a className="btn btn-default" href={returnUrl}>
                     cancel
                 </a>
-                <button type="button" className="btn btn-default" onClick={onBack}>
+                <button className="btn btn-default" onClick={onBack} type="button">
                     back
                 </button>
             </div>
@@ -756,23 +755,23 @@ export const CreatePipelineTrigger: FC<Props> = props => {
                 <div className="list-group">
                     <a
                         className={`list-group-item ${view === View.DETAILS ? 'active' : ''}`}
-                        onClick={showDetails}
                         href="#"
+                        onClick={showDetails}
                     >
                         Details
                     </a>
 
                     <a
                         className={`list-group-item ${view === View.CONFIGURATION ? 'active' : ''}`}
-                        onClick={showConfig}
                         href="#"
+                        onClick={showConfig}
                     >
                         Configuration
                     </a>
                 </div>
 
                 <ul className="list-group">
-                    <a className="list-group-item" href={docsHref} target="_blank" rel="noopener noreferrer">
+                    <a className="list-group-item" href={docsHref} rel="noopener noreferrer" target="_blank">
                         Documentation &nbsp;
                         <span className="fa fa-external-link" />
                     </a>
