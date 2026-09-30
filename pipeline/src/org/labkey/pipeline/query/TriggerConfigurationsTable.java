@@ -372,7 +372,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             }
 
             if (!Objects.equals(getParameterFunction(oldConfiguration), getParameterFunction(configuration)))
-                throw new ValidationException("You must be either a PlatformDeveloper or TrustedAnalyst to set a Parameter Function.");
+                throw new ValidationException("You must be either a PlatformDeveloper or TrustedAnalyst to add, change, or remove a Parameter Function.");
         }
 
         /** Empty is allowed because FileWatcherPipelineTriggerConfig reads it as {}; anything else must parse there too */
