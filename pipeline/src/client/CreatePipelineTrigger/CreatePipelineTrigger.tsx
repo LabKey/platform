@@ -180,7 +180,6 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
             if (field === 'pipelineId') {
                 // Set default values on the customConfig based on the appropriate FormSchema.
                 resetCustomConfig = {};
-                // eslint-disable-next-line no-unused-expressions
                 customFieldFormSchemas[value]?.fields.forEach(f => {
                     if (f.defaultValue !== null) {
                         resetCustomConfig[f.name] = f.defaultValue;
@@ -193,6 +192,10 @@ const formStateReducer = (state: FormState, action: FormStateAction): FormState 
 
                 if (taskFormSchema) {
                     Object.keys(resetTriggerConfig).forEach(key => {
+                        // parameterFunction isn't task-specific, and users without permission must save it back
+                        // unchanged
+                        if (key === 'parameterFunction') return;
+
                         if (taskFormSchema.fields.find(f => f.name === key) === undefined) {
                             delete resetTriggerConfig[key];
                         }
@@ -514,6 +517,7 @@ const CustomParameters: FC<CustomParametersProps> = ({ customParameters, dispatc
 };
 
 interface ConfigurationFormProps {
+    canEditParameterFunction: boolean;
     dispatch: Dispatch<FormStateAction>;
     formState: FormState;
     onBack: () => void;
@@ -522,7 +526,7 @@ interface ConfigurationFormProps {
 }
 
 const ConfigurationForm: FC<ConfigurationFormProps> = props => {
-    const { formState, dispatch, onBack, onSubmit, returnUrl } = props;
+    const { canEditParameterFunction, formState, dispatch, onBack, onSubmit, returnUrl } = props;
     const {
         customConfig,
         customConfigValid,
@@ -569,19 +573,21 @@ const ConfigurationForm: FC<ConfigurationFormProps> = props => {
 
                 {showAdvanced && (
                     <div className="advanced-settings">
-                        <div className="form-group">
-                            <label className="col-sm-3 control-label" htmlFor="parameter-function">
-                                Parameter Function
-                            </label>
-                            <div className="col-sm-9">
-                                <textarea
-                                    id="parameter-function"
-                                    className="form-control"
-                                    onChange={onParamFunctionChange}
-                                    value={parameterFunction === null ? '' : parameterFunction}
-                                />
+                        {canEditParameterFunction && (
+                            <div className="form-group">
+                                <label className="col-sm-3 control-label" htmlFor="parameter-function">
+                                    Parameter Function
+                                </label>
+                                <div className="col-sm-9">
+                                    <textarea
+                                        className="form-control"
+                                        id="parameter-function"
+                                        onChange={onParamFunctionChange}
+                                        value={parameterFunction === null ? '' : parameterFunction}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <CustomParameters customParameters={customParameters} dispatch={dispatch} />
                     </div>
@@ -654,6 +660,7 @@ function savePipelineTrigger(formState: FormState): Promise<boolean> {
 }
 
 export interface Props {
+    canEditParameterFunction: boolean;
     customConfig: CustomConfiguration;
     customFieldFormSchemas: Record<string, FormSchema>;
     details: Details;
@@ -668,6 +675,7 @@ export interface Props {
 
 export const CreatePipelineTrigger: FC<Props> = props => {
     const {
+        canEditParameterFunction,
         customConfig,
         customFieldFormSchemas,
         details,
@@ -782,6 +790,7 @@ export const CreatePipelineTrigger: FC<Props> = props => {
 
                 {view === View.CONFIGURATION && (
                     <ConfigurationForm
+                        canEditParameterFunction={canEditParameterFunction}
                         dispatch={dispatch}
                         formState={formState}
                         onBack={showDetails}
