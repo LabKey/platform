@@ -218,7 +218,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
     /*
      * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's a String or null.
-     * Otherwise, throws IllegalArgumentException. See GH Issue 1631.
+     * Otherwise, throws NotFoundException. See GH Issue 1631.
      */
     public @Nullable String getString(String key)
     {
@@ -227,7 +227,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
             return null;
         if (value instanceof String stringValue)
             return stringValue;
-        throw new IllegalArgumentException(String.format("Expected a string value for key: %s", key));
+        throw new NotFoundException(String.format("Expected a single string value for key: %s", key)); // No logging, no mothership
     }
 
     public Object put(String key, Object value)
