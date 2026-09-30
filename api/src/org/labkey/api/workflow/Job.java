@@ -334,12 +334,14 @@ public abstract class Job extends CreatedModified implements Identifiable
     @JsonIgnore
     public abstract @NotNull List<? extends ExpMaterial> getSamples();
 
+    // Backed by an open ResultSet; callers must close it
     @JsonIgnore
     public abstract @NotNull Stream<String> getSampleNames();
 
     @JsonIgnore
     public abstract @NotNull List<? extends ExpData> getSources();
 
+    // Backed by an open ResultSet; callers must close it
     @JsonIgnore
     public abstract @NotNull Stream<String> getSourceNames();
 
