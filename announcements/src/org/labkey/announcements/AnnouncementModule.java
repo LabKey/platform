@@ -45,6 +45,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
@@ -77,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 /**
@@ -193,6 +195,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                 MultiSet<String> moderator = new HashMultiSet<>();
                 CommSchema comm = CommSchema.getInstance();
                 SqlSelector selector = new SqlSelector(comm.getSchema(), new SQLFragment("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
+                AtomicInteger boards = new AtomicInteger();
                 try (Stream<String> ids = selector.uncachedStream(String.class))
                 {
                     ids
@@ -202,9 +205,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
                         .forEach(settings -> {
                             secure.add(settings.getSecure());
                             moderator.add(settings.getModeratorReview());
+                            boards.getAndIncrement();
                         });
                 }
                 return Map.of(
+                    "messageBoards", boards.get(),
+                    "messages", new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(),
                     "settings", Map.of(
                         "secure", MultiSetUtils.getOccurrenceMap(secure),
                         "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)
