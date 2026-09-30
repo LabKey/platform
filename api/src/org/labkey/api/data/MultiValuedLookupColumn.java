@@ -110,7 +110,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
     /** @param correlatedBaseAlias when non-null, restrict the junction rows to the parent row with this alias */
-    private SQLFragment getLookupSql(TableInfo lookupTable, String alias, @Nullable String correlatedBaseAlias)
+    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias, @Nullable String correlatedBaseAlias)
     {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
@@ -215,9 +215,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         if (correlatedBaseAlias != null)
         {
             strJoin.append("\n\t\tWHERE ");
-            strJoin.append(_lookupKey.getValueSql(fromAlias));
-            strJoin.append(" = ");
-            strJoin.append(_foreignKey.getValueSql(correlatedBaseAlias));
+            strJoin.append(getJoinCondition(correlatedBaseAlias, _foreignKey, fromAlias, _lookupKey, false));
         }
 
         // TODO: Add ORDER BY?

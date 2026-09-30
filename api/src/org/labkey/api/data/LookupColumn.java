@@ -184,19 +184,24 @@ public class LookupColumn extends BaseColumnInfo
 
     protected SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
     {
+        return getJoinCondition(tableAliasName, fk, getTableAlias(tableAliasName), pk, equalOrIsNull);
+    }
+
+    protected SQLFragment getJoinCondition(String fkTableAlias, ColumnInfo fk, String pkTableAlias, ColumnInfo pk, boolean equalOrIsNull)
+    {
         SQLFragment condition = new SQLFragment();
         if (equalOrIsNull)
             condition.append("(");
 
         boolean addCast = fk.getJdbcType() != pk.getJdbcType() && getSqlDialect().isPostgreSQL();
-        SQLFragment fkSql = fk.getValueSql(tableAliasName);
+        SQLFragment fkSql = fk.getValueSql(fkTableAlias);
         if (addCast)
             condition.append("CAST((").append(fkSql).append(") AS VARCHAR)");
         else
             condition.append(fkSql);
         condition.append(" = ");
 
-        SQLFragment pkSql = pk.getValueSql(getTableAlias(tableAliasName));
+        SQLFragment pkSql = pk.getValueSql(pkTableAlias);
         if (addCast)
             condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
         else
