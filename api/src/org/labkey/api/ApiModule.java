@@ -186,6 +186,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SvgUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.VersionNumber;
@@ -466,6 +467,7 @@ public class ApiModule extends CodeOnlyModule
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             ModuleHtmlViewDefinition.TestCase.class,
+            ModuleLoader.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
@@ -498,6 +500,7 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
