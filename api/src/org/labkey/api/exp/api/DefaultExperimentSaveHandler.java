@@ -90,25 +90,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                     List.of(material), SampleTypeService.SampleOperations.EditLineage));
     }
 
-    // Resolve posted output materials to the row ids of those that already exist (by id/lsid), creating none.
-    // Used only to tell which current outputs are being kept vs detached.
-    private Set<Long> resolvePostedMaterialRowIds(JSONArray outputMaterialArray)
-    {
-        Set<Long> rowIds = new HashSet<>();
-        for (int i = 0; i < outputMaterialArray.length(); i++)
-        {
-            JSONObject o = outputMaterialArray.getJSONObject(i);
-            ExpMaterial m = null;
-            if (o.has(ExperimentJSONConverter.ID))
-                m = ExperimentService.get().getExpMaterial(o.getInt(ExperimentJSONConverter.ID));
-            else if (o.has(ExperimentJSONConverter.LSID))
-                m = ExperimentService.get().getExpMaterial(o.getString(ExperimentJSONConverter.LSID));
-            if (m != null)
-                rowIds.add(m.getRowId());
-        }
-        return rowIds;
-    }
-
     @Override
     public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)
     {
@@ -468,18 +449,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
-        Set<Long> existingOutputRowIds = new HashSet<>();
+        Map<Long, ExpMaterial> existingOutputs = new HashMap<>();
         ExpProtocolApplication existingOutputApp = run.getOutputProtocolApplication();
         if (existingOutputApp != null)
         {
-            Set<Long> postedOutputRowIds = resolvePostedMaterialRowIds(outputMaterialArray);
             for (ExpMaterialRunInput input : existingOutputApp.getMaterialInputs())
-            {
-                ExpMaterial existing = input.getMaterial();
-                existingOutputRowIds.add(existing.getRowId());
-                if (!postedOutputRowIds.contains(existing.getRowId()))
-                    assertCanEditLineage(context.getUser(), existing.getLSID(), existing);
-            }
+                existingOutputs.put(input.getMaterial().getRowId(), input.getMaterial());
         }
 
         run.deleteProtocolApplications(context.getUser());
@@ -495,6 +470,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<>();
+        Set<Long> keptOutputRowIds = new HashSet<>();
         for (int i=0; i < outputMaterialArray.length(); i++)
         {
             JSONObject materialObject = outputMaterialArray.getJSONObject(i);
@@ -502,10 +478,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             if (material != null)
             {
+                keptOutputRowIds.add(material.getRowId());
+
                 // Attaching an output rewrites the material's lineage, so require write access - but skip
                 // materials that were already outputs of this run, since a re-save isn't changing them.
                 // A sample created in this request only needs insert rights.
-                if (!existingOutputRowIds.contains(material.getRowId()))
+                if (!existingOutputs.containsKey(material.getRowId()))
                     assertCanEditLineage(context.getUser(), material.getLSID(), material, createdMaterialLsids.contains(material.getLSID()));
 
                 if (isAliquotProtocol)
@@ -516,6 +494,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterial.DEFAULT_CPAS_TYPE));
             }
+        }
+
+        // Detaching an output also rewrites its lineage: authorize any prior output the post didn't keep.
+        // This runs inside the save's transaction, so a denial rolls the detach above back.
+        for (Map.Entry<Long, ExpMaterial> entry : existingOutputs.entrySet())
+        {
+            if (!keptOutputRowIds.contains(entry.getKey()))
+                assertCanEditLineage(context.getUser(), entry.getValue().getLSID(), entry.getValue());
         }
 
         checkForCycles(inputData, outputData);
