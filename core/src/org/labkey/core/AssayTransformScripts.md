@@ -71,7 +71,7 @@ Tab-separated, **no header**, one property per line. Values containing tabs, quo
 All outputs are optional. A validation-only script writes only the error file.
 
 - **Transformed data** → the path in `runDataFile` column 3. Tab-separated with a header row; columns are matched to result fields by name or import alias, and unknown columns are ignored. If this file exists it **replaces** the uploaded data entirely, so include every row and column you want imported. If you don't write it, the original data is imported unchanged.
-- **Errors** → the `errorsFile` path. Tab-separated, no header, one line per message: `error<TAB><field><TAB><message>`. `<field>` may be empty or a run/batch field name (the form highlights that field). Any `error` line fails the import. `warn` lines are only written to the server log — they don't reach the user.
+- **Errors** → the `errorsFile` path. Tab-separated, no header, one line per message: `error<TAB><field><TAB><message>`. `<field>` may be empty or a run/batch field name (the form highlights that field). Any `error` line fails the import. `warn` lines never reach the user: background imports write them to the job log, API imports to the server log, and wizard imports drop them.
 - **Changed properties** → the `transformedRunPropertiesFile` path. Tab-separated `name<TAB>value` lines. Run fields match by name or import alias, batch fields by name.
 
 **Exit 0 after writing error lines.** A non-zero exit skips reading the error file, and the user sees the raw script output instead of your messages. Reserve non-zero exits for real script failures.
@@ -85,7 +85,7 @@ Only the interactive import wizard supports warnings. When `severityLevel` is `W
 
 The user sees the message and can cancel or proceed. **Proceeding re-runs the script with `severityLevel` set to `ERROR`**. On that pass the script must not warn again — if `errors.html` exists when warnings aren't allowed, it is treated as an error and the import fails. Always check `severityLevel` before warning.
 
-Background imports fail outright on a warning ("Background assay import does not support warnings"). API imports (`assay-importRun.api`, client `importRun`) **ignore warnings**: the import succeeds and `errors.html` is just attached as a run output. Report anything that must block an API import as an error. `maximumSeverity<TAB>ERROR` fails the import with a generic message; prefer the error file.
+Background imports fail outright on a warning ("Background assay import does not support warnings"). API imports (`assay-importRun.api`, client `importRun`) **ignore warnings**: the import succeeds and `errors.html` is just attached as a run output. Report anything that must block an API import as an error. `maximumSeverity<TAB>ERROR` fails the import, showing `errors.html` if the data came from a file and a generic message otherwise; prefer the error file.
 
 ## Python Skeleton
 
