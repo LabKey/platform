@@ -1428,6 +1428,11 @@ public class DomainUtil
             {
                 List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
                 ColumnInfo propCol = domainTable.getColumn(propName);
+                if (propCol == null)
+                {
+                    errors.addError(new PropertyValidationError("Property column not found", propName));
+                    return;
+                }
                 columns.add(propCol);
                 ColumnInfo containerCol = domainTable.getContainerFieldKey() != null ? domainTable.getColumn(domainTable.getContainerFieldKey()) : null;
                 if (containerCol != null)
@@ -1452,7 +1457,7 @@ public class DomainUtil
                         var valueRow = new CaseInsensitiveHashMap<>();
                         for (ColumnInfo col : columns)
                             valueRow.put(col.getName(), col.getValue(rsRow));
-                        valueRow.put(propName, valueUpdates.get((String) propCol.getValue(rsRow)));
+                        valueRow.put(propCol.getName(), valueUpdates.get((String) propCol.getValue(rsRow)));
                         batch.add(valueRow);
 
                         if (batch.size() == TEXT_CHOICE_UPDATE_BATCH_SIZE || !iter.hasNext())
