@@ -224,7 +224,6 @@ import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -10752,20 +10751,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterial sample = st.getSample(c, "sample");
             String lsid = sample.getLSID();
 
-            // Read-only and insert-only (Author) cannot rewrite lineage; denial is NotFoundException, not a leak
-            for (Class<? extends Role> role : List.<Class<? extends Role>>of(ReaderRole.class, AuthorRole.class))
+            try
             {
-                try
-                {
-                    DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, role), lsid, sample);
-                    fail("User with role " + role.getSimpleName() + " should not be able to edit lineage");
-                }
-                catch (NotFoundException expected)
-                {
-                }
+                DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, ReaderRole.class), lsid, sample);
+                fail("Read-only user should not be able to edit lineage");
+            }
+            catch (NotFoundException expected)
+            {
             }
 
-            // Update access (Editor) and full access (admin) are allowed
+            // Insert (Author), Update (Editor) and full (admin) access are all allowed for a sample with no source run
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample);
             DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
             DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
         }

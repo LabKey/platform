@@ -39,6 +39,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
@@ -60,12 +61,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultExperimentSaveHandler.class);
 
-    // Editing a sample's lineage requires its EditLineage permission (UpdatePermission) on its own folder
-    // and a status that allows it; a null mapping denies, never fails open. Unresolved and unauthorized
-    // both throw NotFoundException, never confirming the LSID.
+    // new sample needs insert access
+    // existing sample needs edit access
+    // reader & locked sample is blocked
     public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material)
     {
-        Class<? extends Permission> permission = SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
+        Class<? extends Permission> permission = (material != null && material.getSourceApplication() != null)
+                ? SampleTypeService.SampleOperations.EditLineage.getPermissionClass()
+                : InsertPermission.class;
         if (material == null || permission == null || !material.getContainer().hasPermission(user, permission))
         {
             if (material != null)
@@ -457,8 +460,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             if (material != null)
             {
-                // an output rewrites the material's lineage, so require write access to its own folder
-                assertCanEditLineage(context.getUser(), material.getLSID(), material);
+                // Attaching an output rewrites the material's lineage, so require write access - but skip
+                // materials that are already outputs of this run (a re-save that isn't changing them).
+                boolean alreadyOutputOfThisRun = material.getRun() != null && run.getRowId() == material.getRun().getRowId();
+                if (!alreadyOutputOfThisRun)
+                    assertCanEditLineage(context.getUser(), material.getLSID(), material);
 
                 if (isAliquotProtocol)
                 {
@@ -592,6 +598,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (!materialProperties.isEmpty())
             {
+                // require edit rights and an allowing status
+                Class<? extends Permission> editPerm = SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+                    throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+                    throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                            List.of(material), SampleTypeService.SampleOperations.EditMetadata));
+
                 List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
                 handleProperties(context, material, dps, materialProperties);
             }
