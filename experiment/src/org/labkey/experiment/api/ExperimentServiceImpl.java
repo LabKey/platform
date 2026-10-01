@@ -10752,19 +10752,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterial sample = st.getSample(c, "sample");
             String lsid = sample.getLSID();
 
-            try
+            for (User u : List.of(new LimitedUser(admin, ReaderRole.class), new LimitedUser(admin, AuthorRole.class)))
             {
-                DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, ReaderRole.class), lsid, sample);
-                fail("Read-only user should not be able to edit lineage");
-            }
-            catch (NotFoundException expected)
-            {
+                try
+                {
+                    DefaultExperimentSaveHandler.assertCanEditLineage(u, lsid, sample);
+                    fail("User without edit rights should not be able to edit lineage of a pre-existing sample");
+                }
+                catch (NotFoundException expected)
+                {
+                }
             }
 
-            // Insert (Author), Update (Editor) and full (admin) access are all allowed for a sample with no source run
-            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample);
+            // Update (Editor) and full (admin) access can edit an existing sample's lineage
             DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
             DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
+
+            // A sample created in this same request only needs insert rights
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample, true);
         }
 
         @Test

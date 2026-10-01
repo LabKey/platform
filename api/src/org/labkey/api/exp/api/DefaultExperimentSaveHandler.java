@@ -63,14 +63,21 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultExperimentSaveHandler.class);
 
+    private final Set<String> createdMaterialLsids = new HashSet<>();
+
+    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material)
+    {
+        assertCanEditLineage(user, lsid, material, false);
+    }
+
     // new sample needs insert access
     // existing sample needs edit access
     // reader & locked sample is blocked
-    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material)
+    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material, boolean createdHere)
     {
-        Class<? extends Permission> permission = (material != null && material.getSourceApplication() != null)
-                ? SampleTypeService.SampleOperations.EditLineage.getPermissionClass()
-                : InsertPermission.class;
+        Class<? extends Permission> permission = createdHere
+                ? InsertPermission.class
+                : SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
         if (material == null || permission == null || !material.getContainer().hasPermission(user, permission))
         {
             if (material != null)
@@ -81,6 +88,25 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
             throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
                     List.of(material), SampleTypeService.SampleOperations.EditLineage));
+    }
+
+    // Resolve posted output materials to the row ids of those that already exist (by id/lsid), creating none.
+    // Used only to tell which current outputs are being kept vs detached.
+    private Set<Long> resolvePostedMaterialRowIds(JSONArray outputMaterialArray)
+    {
+        Set<Long> rowIds = new HashSet<>();
+        for (int i = 0; i < outputMaterialArray.length(); i++)
+        {
+            JSONObject o = outputMaterialArray.getJSONObject(i);
+            ExpMaterial m = null;
+            if (o.has(ExperimentJSONConverter.ID))
+                m = ExperimentService.get().getExpMaterial(o.getInt(ExperimentJSONConverter.ID));
+            else if (o.has(ExperimentJSONConverter.LSID))
+                m = ExperimentService.get().getExpMaterial(o.getString(ExperimentJSONConverter.LSID));
+            if (m != null)
+                rowIds.add(m.getRowId());
+        }
+        return rowIds;
     }
 
     @Override
@@ -442,13 +468,18 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
-        // Snapshot the current outputs before deleteProtocolApplications() nulls their RunId and drops the input edges
         Set<Long> existingOutputRowIds = new HashSet<>();
         ExpProtocolApplication existingOutputApp = run.getOutputProtocolApplication();
         if (existingOutputApp != null)
         {
+            Set<Long> postedOutputRowIds = resolvePostedMaterialRowIds(outputMaterialArray);
             for (ExpMaterialRunInput input : existingOutputApp.getMaterialInputs())
-                existingOutputRowIds.add(input.getMaterial().getRowId());
+            {
+                ExpMaterial existing = input.getMaterial();
+                existingOutputRowIds.add(existing.getRowId());
+                if (!postedOutputRowIds.contains(existing.getRowId()))
+                    assertCanEditLineage(context.getUser(), existing.getLSID(), existing);
+            }
         }
 
         run.deleteProtocolApplications(context.getUser());
@@ -473,8 +504,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 // Attaching an output rewrites the material's lineage, so require write access - but skip
                 // materials that were already outputs of this run, since a re-save isn't changing them.
+                // A sample created in this request only needs insert rights.
                 if (!existingOutputRowIds.contains(material.getRowId()))
-                    assertCanEditLineage(context.getUser(), material.getLSID(), material);
+                    assertCanEditLineage(context.getUser(), material.getLSID(), material, createdMaterialLsids.contains(material.getLSID()));
 
                 if (isAliquotProtocol)
                 {
@@ -595,6 +627,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 {
                     material = createMaterial(context, sampleType, materialName);
                     createdHere = true;
+                    createdMaterialLsids.add(material.getLSID());
                 }
             }
         }
