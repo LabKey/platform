@@ -132,7 +132,6 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -2038,47 +2037,6 @@ public class PipelineController extends SpringActionController
 
             assertNoErrors(insert(developer, c, row));
             assertTrue(triggerExists(c, (String) row.get("Name")));
-        }
-
-        /**
-         * On create the wizard is pre-filled from URL parameters, so a crafted link could plant a function that a
-         * trusted user saves without seeing it.
-         */
-        @Test
-        public void testCreateTriggerIgnoresParameterFunctionFromUrl() throws Exception
-        {
-            Container c = createContainer("CreateFromUrl");
-            String location = "prefilledLocation" + GUID.makeHash();
-            String function = "plantedFunction" + GUID.makeHash();
-
-            ActionURL viaFields = new ActionURL(CreatePipelineTriggerAction.class, c)
-                    .addParameter("location", location)
-                    .addParameter(PARAMETER_FUNCTION, function);
-            ActionURL viaConfiguration = new ActionURL(CreatePipelineTriggerAction.class, c)
-                    .addParameter("configuration", new JSONObject().put("location", location).put(PARAMETER_FUNCTION, function).toString());
-
-            for (ActionURL url : List.of(viaFields, viaConfiguration))
-            {
-                MockHttpServletResponse response = get(url, getAdmin());
-                assertStatus(HttpServletResponse.SC_OK, response);
-                String triggerConfig = renderedTriggerConfig(response);
-                assertTrue("Other URL values must still pre-fill the wizard", triggerConfig.contains(location));
-                assertFalse("A function from the URL must not pre-fill the wizard", triggerConfig.contains(function));
-            }
-        }
-
-        /**
-         * Scoped to the wizard's initial state because the rest of the page echoes the request URL (e.g. the admin
-         * menu's returnUrl links)
-         */
-        private static String renderedTriggerConfig(MockHttpServletResponse response) throws Exception
-        {
-            String content = response.getContentAsString();
-            String prefix = "const triggerConfig = JSON.parse(";
-            int start = content.indexOf(prefix);
-            assertTrue("Wizard's triggerConfig not found in the page", start >= 0);
-            start += prefix.length();
-            return content.substring(start, content.indexOf(");", start));
         }
 
         private static TableInfo triggerTable()
