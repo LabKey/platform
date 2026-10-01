@@ -501,6 +501,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         ExpSampleType sampleType = null;
         ExpMaterial material = null;
+        boolean createdHere = false;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
@@ -581,7 +582,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 }
 
                 if (material == null)
+                {
                     material = createMaterial(context, sampleType, materialName);
+                    createdHere = true;
+                }
             }
         }
 
@@ -598,8 +602,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (!materialProperties.isEmpty())
             {
-                // require edit rights and an allowing status
-                Class<? extends Permission> editPerm = SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                // A sample created by this request needs only insert rights; an existing one needs edit rights.
+                // The status check below applies either way.
+                Class<? extends Permission> editPerm = createdHere
+                        ? InsertPermission.class
+                        : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
                 if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
                     throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
                 if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))

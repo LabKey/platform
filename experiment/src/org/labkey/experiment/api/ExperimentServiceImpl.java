@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -10764,6 +10765,55 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample);
             DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
             DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
+        }
+
+        @Test
+        public void testMaterialPropertyPermissions() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("color", "string"));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            DomainProperty color = st.getDomain().getPropertyByName("color");
+
+            // Author has Insert but not Update
+            ViewContext context = new ViewContext();
+            context.setContainer(c);
+            context.setUser(new LimitedUser(admin, AuthorRole.class));
+            DefaultExperimentSaveHandler handler = new DefaultExperimentSaveHandler();
+
+            JSONObject sampleTypeJson = new JSONObject();
+            sampleTypeJson.put(ExperimentJSONConverter.NAME, st.getName());
+
+            // Creating a sample and setting its properties in one request needs only insert rights
+            JSONObject createJson = new JSONObject();
+            createJson.put(ExperimentJSONConverter.NAME, "newSample");
+            createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
+            createJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "red"));
+
+            ExpMaterial created = handler.handleMaterial(context, createJson);
+            assertNotNull("Author should be able to create a sample with properties", created);
+            assertEquals("red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
+
+            // Setting properties on a sample that already existed needs update rights, which Author lacks
+            JSONObject updateJson = new JSONObject();
+            updateJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            updateJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "blue"));
+            try
+            {
+                handler.handleMaterial(context, updateJson);
+                fail("Author should not be able to edit properties of an existing sample");
+            }
+            catch (UnauthorizedException expected)
+            {
+            }
+
+            assertEquals("Property must be unchanged after an unauthorized edit",
+                    "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
         }
 
         private int countMaterialInputObjects(Container c)
