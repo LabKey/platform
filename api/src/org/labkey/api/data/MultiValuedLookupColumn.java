@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 
@@ -36,6 +37,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     private final ColumnInfo _display;
     private final ForeignKey _rightFk;
     private final ColumnInfo _junctionKey;
+    private boolean _lateralJoin = false;
 
     public MultiValuedLookupColumn(ColumnInfo parentPkColumn, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk, ColumnInfo display)
     {
@@ -79,6 +81,27 @@ public class MultiValuedLookupColumn extends LookupColumn
         return new SQLFragment(getTableAlias(tableAliasName)).append(".").appendIdentifier(_display.getAlias());
     }
 
+    /**
+     * Aggregate only the junction rows for each parent row via a LATERAL join instead of aggregating the whole junction
+     * table and joining the result, which Postgres can't restrict to the parent rows. Pays off when the junction key is indexed.
+     */
+    public void setLateralJoin(boolean lateralJoin)
+    {
+        _lateralJoin = lateralJoin;
+    }
+
+    @Override
+    protected boolean isLateralJoin()
+    {
+        return _lateralJoin && getSqlDialect().supportsLateralJoin() && getSqlDialect().supportsGroupConcat();
+    }
+
+    @Override
+    protected SQLFragment getLateralLookupSql(TableInfo lookupTable, String alias, String baseAlias)
+    {
+        return getLookupSql(lookupTable, alias, baseAlias);
+    }
+
     @Override
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
@@ -86,6 +109,12 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
     protected SQLFragment getLookupSql(TableInfo lookupTable, String alias)
+    {
+        return getLookupSql(lookupTable, alias, null);
+    }
+
+    /** @param correlatedBaseAlias when non-null, restrict the junction rows to the parent row with this alias */
+    protected SQLFragment getLookupSql(TableInfo lookupTable, String alias, @Nullable String correlatedBaseAlias)
     {
         SqlDialect dialect = lookupTable.getSqlDialect();
         boolean groupConcat = dialect.supportsGroupConcat();
@@ -185,6 +214,12 @@ public class MultiValuedLookupColumn extends LookupColumn
 //                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
                 strJoin.append(fragment);
             }
+        }
+
+        if (correlatedBaseAlias != null)
+        {
+            strJoin.append("\n\t\tWHERE ");
+            strJoin.append(getJoinCondition(correlatedBaseAlias, _foreignKey, fromAlias, _lookupKey, false));
         }
 
         // TODO: Add ORDER BY?
