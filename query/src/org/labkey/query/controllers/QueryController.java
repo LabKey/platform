@@ -283,6 +283,7 @@ import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
 import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomQueryDefinition;
+import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.QueryServiceImpl.CalculatedColumnParseResult;
@@ -6849,6 +6850,7 @@ public class QueryController extends SpringActionController
     {
         private String _schemaName;
         private boolean _includeUserQueries = true;
+        private boolean _includeUserQueriesForLookups = false;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
         private boolean _includeViewDataUrl = true;
@@ -6873,6 +6875,16 @@ public class QueryController extends SpringActionController
         public void setIncludeUserQueries(boolean includeUserQueries)
         {
             _includeUserQueries = includeUserQueries;
+        }
+
+        public boolean isIncludeUserQueriesForLookups()
+        {
+            return _includeUserQueriesForLookups;
+        }
+
+        public void setIncludeUserQueriesForLookups(boolean includeUserQueriesForLookups)
+        {
+            _includeUserQueriesForLookups = includeUserQueriesForLookups;
         }
 
         public boolean isIncludeSystemQueries()
@@ -6948,14 +6960,25 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> qinfos = new ArrayList<>();
 
             //user-defined queries
-            if (form.isIncludeUserQueries())
+            if (form.isIncludeUserQueries() || form.isIncludeUserQueriesForLookups())
             {
+                // GH Issue 1512: includeUserQueries returns them all; includeUserQueriesForLookups (only when the former is off)
+                // restricts to queries that expose a primary key
+                boolean requirePk = form.isIncludeUserQueriesForLookups() && !form.isIncludeUserQueries();
                 for (QueryDefinition qdef : uschema.getQueryDefs().values())
                 {
                     if (!qdef.isTemporary())
                     {
+                        if (requirePk)
+                        {
+                            QueryDefinitionImpl impl = qdef instanceof QueryDefinitionImpl q ? q : null;
+                            if (impl != null && Boolean.FALSE.equals(impl.getCachedHasPkColumn()))
+                                continue;
+                        }
                         ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
+                        Map<String, Object> props = getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), requirePk);
+                        if (props != null)
+                            qinfos.add(props);
                     }
                 }
             }
@@ -6971,7 +6994,7 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), false));
                     }
                 }
             }
@@ -6980,8 +7003,10 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle)
+        private Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle, boolean requirePk)
         {
+            QueryDefinitionImpl impl = qdef instanceof QueryDefinitionImpl q ? q : null;
+
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("hidden", qdef.isHidden());
             qinfo.put("snapshot", qdef.isSnapshot());
@@ -7010,13 +7035,19 @@ public class QueryController extends SpringActionController
             String name = qdef.getName();
             try
             {
-                // get the TableInfo if the user requested column info or title, otherwise skip (it can be expensive)
-                if (includeColumns || includeTitle)
+                // get the TableInfo if the user requested column info or title or a PK filter, otherwise skip (it can be expensive)
+                if (includeColumns || includeTitle || requirePk)
                 {
                     TableInfo table = qdef.getTable(schema, null, true);
 
                     if (null != table)
                     {
+                        boolean hasPk = table.getPkColumns().stream().anyMatch(col -> !col.isAdditionalQueryColumn());
+                        if (isUserDefined && impl != null)
+                            impl.cacheHasPkColumn(hasPk);
+                        if (requirePk && !hasPk)
+                            return null;
+
                         if (includeColumns)
                         {
                             Collection<Map<String, Object>> columns;
