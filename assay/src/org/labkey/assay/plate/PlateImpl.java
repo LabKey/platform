@@ -97,7 +97,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private Map<Integer, Well> _wellMap;
     private Integer _metadataDomainId;
     private transient Long _sourcePlateRowId;
-    private transient @Nullable Container _runContainer;
+    // Container's id rather than the Container itself, since CacheManager rejects cached values with Container fields
+    private transient @Nullable String _runContainerId;
     private transient Map<String, List<DilutionDataRow>> _replicateDilutionData;
     private transient Map<String, List<DilutionDataRow>> _wellGroupDilutionData;
 
@@ -126,7 +127,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, @Nullable ExpRun run, int plateNumber)
     {
         this(plate, wellValues, excluded, run == null ? PlateService.NO_RUNID : run.getRowId(), plateNumber);
-        _runContainer = run == null ? null : run.getContainer();
+        _runContainerId = run == null ? null : run.getContainer().getId();
     }
 
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, long runId, int plateNumber)
@@ -718,7 +719,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     {
         if (_wellGroupDilutionData == null)
         {
-            Container runContainer = _runContainer != null ? _runContainer : ExperimentService.get().getExpRun(_runId).getContainer();
+            Container runContainer = _runContainerId != null ? ContainerManager.getForId(_runContainerId) : null;
+            if (runContainer == null)
+                runContainer = ExperimentService.get().getExpRun(_runId).getContainer();
             Map<String, List<DilutionDataRow>> replicateRows = new HashMap<>();
             Map<String, List<DilutionDataRow>> wellGroupRows = new HashMap<>();
             for (DilutionDataRow row : DilutionManager.getDilutionDataRows(_runId, _plateNumber, runContainer))
