@@ -23,7 +23,6 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 | `col::integer` | No `::` cast | `CAST(col AS INTEGER)` |
 | `SUM(DISTINCT x)`, `AVG(DISTINCT x)` | `DISTINCT` only inside `COUNT()` and `GROUP_CONCAT()` | Aggregate over a `SELECT DISTINCT` subquery |
 | `x ILIKE 'a%'`, `x ~ 'regex'`, `x SIMILAR TO p` | Operators not supported | `LOWER(x) LIKE 'a%'`; PostgreSQL only: `similar_to(x, pattern[, escape])` |
-| `a IS DISTINCT FROM b` | Operator form not supported | `is_distinct_from(a, b)` / `is_not_distinct_from(a, b)` (both databases); `isequal(a, b)` = null-safe equals |
 | `ORDER BY x NULLS LAST` | Not supported | `ORDER BY x IS NULL, x` |
 | `d + INTERVAL '1 day'` | No INTERVAL literals | `TIMESTAMPADD('SQL_TSI_DAY', 1, d)` |
 | `CONCAT(a, b, c)` | `CONCAT` takes exactly 2 arguments | `a \|\| b \|\| c` (note: `\|\|` yields NULL if any operand is NULL — wrap with `COALESCE`) |
@@ -36,6 +35,7 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 | `{d'2001-02-03'}` (no space) | Parse error — the space after `{d`/`{ts` is part of the token | `{d '2001-02-03'}`, `{ts '2001-02-03 04:05:06'}` |
 | `WITH cte (col1, col2) AS (...)` | No CTE column lists | Alias inside: `WITH cte AS (SELECT x AS col1 ...)` |
 | `a < b < c` | Comparisons don't chain | `a < b AND b < c` |
+| `CASE WHEN c THEN a = b END` | A bare comparison (`=`, `<`, `IS [NOT] NULL`, `IS [NOT] DISTINCT FROM`, …) is not allowed as a THEN/ELSE result — "Syntax error near '=', expected 'END'" | Parenthesize it: `THEN (a = b)` |
 | `PARAMETERS (D DATE)` | DATE/TIME/BOOLEAN not parameter types | Use `TIMESTAMP` (or `BIT` for boolean) |
 | `GROUPING SETS / ROLLUP / CUBE / LATERAL / TABLESAMPLE` | Not supported | Restructure (UNION of grouped queries, etc.) |
 
@@ -59,7 +59,7 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 
 * **SELECT list**: `expr [AS] alias`. Alias every expression column — unaliased expressions get auto-names (`Expression1`, …) plus a warning. Duplicate output names are an error (`Duplicate column 'x'`). `*` and `table.*` cannot be aliased. A scalar subquery must return exactly one column. `SELECT 1 AS x` with no FROM is allowed.
 * **FROM/JOIN**: `INNER | LEFT | RIGHT | FULL [OUTER] JOIN ... ON cond` and `CROSS JOIN` (no ON). Comma joins and nested parenthesized joins are supported. Subqueries in FROM should be aliased (warning otherwise). An unqualified column name found in two FROM tables is an error (`Ambiguous field`).
-* **WHERE**: standard comparisons `= <> != < <= > >=`, `[NOT] IN (list | subquery)`, `[NOT] BETWEEN a AND b`, `[NOT] LIKE p [ESCAPE e]`, `IS [NOT] NULL`, `EXISTS (subquery)`, `ANY/SOME/ALL (subquery)`.
+* **WHERE**: standard comparisons `= <> != < <= > >=`, `[NOT] IN (list | subquery)`, `[NOT] BETWEEN a AND b`, `[NOT] LIKE p [ESCAPE e]`, `IS [NOT] NULL`, `IS [NOT] DISTINCT FROM` (null-safe comparison), `EXISTS (subquery)`, `ANY/SOME/ALL (subquery)`.
 * **GROUP BY**: expressions only — no ordinals, no constants. **HAVING requires GROUP BY or an aggregate in the SELECT list** (an aggregate appearing only in HAVING is rejected).
 * **ORDER BY**: column names, aliases, expressions, or ordinals (`ORDER BY 1`); `ASC`/`DESC`. **When a query is used as a subquery or saved and wrapped by the server (common), its ORDER BY is IGNORED unless LIMIT is also present.** Prefer sorting via the client API / grid view; if SQL sorting is needed, add `LIMIT`. To sort by an expression, put it in the SELECT list (optionally `@hidden`) and sort by its alias.
 * **LIMIT**: `LIMIT <integer literal>` only, placed after ORDER BY. Applies to the whole UNION when used at the end of one.
@@ -130,7 +130,7 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 * `age(d1, d2)` (years), `age(d1, d2, interval)` with `'SQL_TSI_DAY' | 'SQL_TSI_MONTH' | 'SQL_TSI_YEAR'`, `age_in_years(d1, d2)`, `age_in_months(d1, d2)`, `age_in_days(d1, d2)`
 
 #### Conditional and Utility
-`coalesce(v1, ..., vN)`, `nullif(a, b)` (NULL if a=b, else a — use for divide-by-zero guards), `ifnull(test, default)`, `isequal(a, b)` (true when equal or both NULL), `is_distinct_from(a, b)`, `is_not_distinct_from(a, b)`, `greatest(a, b, ...)`, `least(a, b, ...)`, `isnumeric(expr)`, `ifdefined(col)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`
+`coalesce(v1, ..., vN)`, `nullif(a, b)` (NULL if a=b, else a — use for divide-by-zero guards), `ifnull(test, default)`, `isequal(a, b)` (true when equal or both NULL, but NULL — not false — when only one side is NULL; prefer `a IS NOT DISTINCT FROM b`, which always returns true/false), `greatest(a, b, ...)`, `least(a, b, ...)`, `isnumeric(expr)`, `ifdefined(col)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`
 
 #### LabKey Extensions
 `userid()`, `username()`, `ismemberof(groupid)`, `contextPath()`, `folderName()`, `folderPath()`, `moduleProperty('module','property')`, `javaConstant('class.FIELD')`, `version()`, `overlaps(start1, end1, start2, end2)` (PostgreSQL only)
@@ -350,7 +350,7 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | --- | --- |
 | `Syntax error near 'OFFSET'` / near `'('` after OVER | Unsupported OFFSET / window function — see §1 |
 | `Expression in Group By clause must not be a constant` | `GROUP BY 1` — repeat the expression instead |
-| `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` or `IS DISTINCT FROM` — see §1 |
+| `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` — DISTINCT only works inside COUNT() and GROUP_CONCAT(); see §1 |
 | `CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses` | Drop the parens: bare `CURRENT_DATE`, not `CURRENT_DATE()` |
 | `Unknown method X` | Function doesn't exist in LabKey SQL (check §6-§7) or is dialect-specific |
 | `CONCAT function expects 2 arguments` | Use `\|\|` for 3+ values |

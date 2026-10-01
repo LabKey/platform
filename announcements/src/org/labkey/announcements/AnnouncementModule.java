@@ -15,6 +15,8 @@
  */
 package org.labkey.announcements;
 
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
@@ -34,12 +36,16 @@ import org.labkey.api.attachments.AttachmentParentType;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.MessageAuditProvider;
+import org.labkey.api.collections.MultiSetUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationConfiguration;
@@ -55,6 +61,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -68,7 +75,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * NOTE: Wiki handles some of the shared Communications module stuff.
@@ -174,6 +185,38 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         if (null != fsr)
         {
             fsr.addFactories(new NotificationSettingsWriterFactory(), new NotificationSettingsImporterFactory());
+        }
+
+        UsageMetricsService svc = UsageMetricsService.get();
+        if (svc != null)
+        {
+            svc.registerUsageMetrics(NAME, () -> {
+                MultiSet<String> secure = new HashMultiSet<>();
+                MultiSet<String> moderator = new HashMultiSet<>();
+                CommSchema comm = CommSchema.getInstance();
+                SqlSelector selector = new SqlSelector(comm.getSchema(), new SQLFragment("SELECT DISTINCT Container FROM ").append(comm.getTableInfoAnnouncements()));
+                AtomicInteger boards = new AtomicInteger();
+                try (Stream<String> ids = selector.uncachedStream(String.class))
+                {
+                    ids
+                        .map(ContainerManager::getForId)
+                        .filter(Objects::nonNull)
+                        .map(AnnouncementManager::getMessageBoardSettings)
+                        .forEach(settings -> {
+                            secure.add(settings.getSecure());
+                            moderator.add(settings.getModeratorReview());
+                            boards.getAndIncrement();
+                        });
+                }
+                return Map.of(
+                    "messageBoards", boards.get(),
+                    "messages", new TableSelector(comm.getTableInfoAnnouncements()).getRowCount(),
+                    "settings", Map.of(
+                        "secure", MultiSetUtils.getOccurrenceMap(secure),
+                        "moderatorReview", MultiSetUtils.getOccurrenceMap(moderator)
+                    )
+                );
+            });
         }
     }
 
