@@ -216,9 +216,15 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _map.get(key);
     }
 
+    @Deprecated // Left behind so not every module needs to be recompiled immediately. TODO: Remove
+    public Object get(Object key)
+    {
+        return _map.get(key);
+    }
+
     /*
-     * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's a String or null.
-     * Otherwise, throws NotFoundException. See GH Issue 1631.
+     * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's null or a String.
+     * Otherwise, throws BadRequestException. See GH Issue 1631.
      */
     public @Nullable String getString(String key)
     {
@@ -227,7 +233,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
             return null;
         if (value instanceof String stringValue)
             return stringValue;
-        throw new NotFoundException(String.format("Expected a single string value for key: %s", key)); // No logging, no mothership
+        throw new BadRequestException(String.format("Expected a single string value for key: %s", key)); // No logging, no mothership
     }
 
     public Object put(String key, Object value)
