@@ -371,7 +371,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 // An empty session id is allowed; we just
                 // don't do any session sharing in this case
                 //
-                String reportSessionId = (String) context.get(renderParam.reportSessionId.name());
+                String reportSessionId = context.getString(renderParam.reportSessionId.name());
 
                 if (!StringUtils.isEmpty(reportSessionId))
                 {
