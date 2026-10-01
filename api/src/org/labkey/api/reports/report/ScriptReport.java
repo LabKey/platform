@@ -147,7 +147,7 @@ public abstract class ScriptReport extends AbstractReport
 
             if (!StringUtils.isEmpty(filterParam))
             {
-                final String filterValue = (String)context.get(filterParam);
+                final String filterValue = context.getString(filterParam);
 
                 if (filterValue != null)
                 {
@@ -365,12 +365,12 @@ public abstract class ScriptReport extends AbstractReport
     @Override
     public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
-        String tabId = (String) context.get("tabId");
+        String tabId = context.getString("tabId");
 
         if (null == tabId)
             tabId = context.getActionURL().getParameter("tabId");
 
-        String webpartString = (String) context.get(Report.renderParam.reportWebPart.name());
+        String webpartString = context.getString(Report.renderParam.reportWebPart.name());
         boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
 
         // Module-based reports are always read-only, but we still allow viewing the report source in the source tab.

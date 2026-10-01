@@ -1953,7 +1953,7 @@ public class AnnouncementsController extends SpringActionController
         {
             // This is set to the outer page URL in the case of rendering a dynamic webpart; use it instead of
             // the getWebPart URL.
-            String returnUrl = (String)ctx.get(ActionURL.Param.returnUrl.name());
+            String returnUrl = ctx.getString(ActionURL.Param.returnUrl.name());
 
             if (null != returnUrl)
             {
