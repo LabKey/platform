@@ -82,10 +82,6 @@ import java.util.Collections;
 import java.util.List;
 
 /*
-* User: adam
-* Date: Dec 21, 2010
-* Time: 7:57:11 PM
-*
 * This is a simple base class that represents reports that are defined by a text file (editable or static module file).
 * The subclass ScriptEngineReport is the base class for reports that use a ScriptEngine to interpret/execute this file.
 */
@@ -520,5 +516,4 @@ public abstract class ScriptReport extends AbstractReport
             }
         }
     }
-
 }
