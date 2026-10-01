@@ -52,8 +52,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 
@@ -440,6 +442,15 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
+        // Snapshot the current outputs before deleteProtocolApplications() nulls their RunId and drops the input edges
+        Set<Long> existingOutputRowIds = new HashSet<>();
+        ExpProtocolApplication existingOutputApp = run.getOutputProtocolApplication();
+        if (existingOutputApp != null)
+        {
+            for (ExpMaterialRunInput input : existingOutputApp.getMaterialInputs())
+                existingOutputRowIds.add(input.getMaterial().getRowId());
+        }
+
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
@@ -461,9 +472,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (material != null)
             {
                 // Attaching an output rewrites the material's lineage, so require write access - but skip
-                // materials that are already outputs of this run (a re-save that isn't changing them).
-                boolean alreadyOutputOfThisRun = material.getRun() != null && run.getRowId() == material.getRun().getRowId();
-                if (!alreadyOutputOfThisRun)
+                // materials that were already outputs of this run, since a re-save isn't changing them.
+                if (!existingOutputRowIds.contains(material.getRowId()))
                     assertCanEditLineage(context.getUser(), material.getLSID(), material);
 
                 if (isAliquotProtocol)
