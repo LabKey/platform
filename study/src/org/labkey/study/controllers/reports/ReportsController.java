@@ -539,13 +539,6 @@ public class ReportsController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-/*
-            ViewContext context = getViewContext();
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt(context.getString(DatasetDefinition.DATASETKEY));
-            int visitRowId = null == context.get("visitRowId") ? 0 : Integer.parseInt(context.getString("visitRowId"));
-
-            return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
-*/
             setHelpTopic("crosstabReports");
             root.addChild("Crosstab Report Builder");
         }

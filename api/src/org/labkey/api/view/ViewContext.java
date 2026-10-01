@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -42,6 +44,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -541,5 +544,23 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     {
         var r = getRequest();
         return null != r && PageFlowUtil.isRobotUserAgent(r.getHeader("User-Agent"));
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetString()
+        {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.addParameter("single", "value");
+            request.addParameter("repeated", "one", "two");
+            ViewContext context = new ViewContext(request, null, null);
+            context.put("number", 42);
+
+            assertEquals("value", context.getString("single"));
+            assertNull(context.getString("missing"));
+            assertThrows(BadRequestException.class, () -> context.getString("repeated"));
+            assertThrows(BadRequestException.class, () -> context.getString("number"));
+        }
     }
 }
