@@ -184,7 +184,7 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
 
     private static <K> K handleParameters(ScriptProcessReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
     {
-        String sections = (String)HttpView.currentContext().get(renderParam.showSection.name());
+        String sections = HttpView.currentContext().getString(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
 
         if (sections != null)

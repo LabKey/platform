@@ -158,7 +158,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            String sessionKey = (String) getViewContext().get(ImageUtil.FILE_SESSION_PARAM);
+            String sessionKey = getViewContext().getString(ImageUtil.FILE_SESSION_PARAM);
             if (null == sessionKey)
             {
                 //TODO: Return a GIF that says not found??
@@ -541,8 +541,8 @@ public class ReportsController extends BaseStudyController
         {
 /*
             ViewContext context = getViewContext();
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
-            int visitRowId = null == context.get("visitRowId") ? 0 : Integer.parseInt((String) context.get("visitRowId"));
+            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt(context.getString(DatasetDefinition.DATASETKEY));
+            int visitRowId = null == context.get("visitRowId") ? 0 : Integer.parseInt(context.getString("visitRowId"));
 
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
 */
