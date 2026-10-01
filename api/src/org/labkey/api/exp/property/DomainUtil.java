@@ -1053,6 +1053,8 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey(), valueUpdate, validationException);
+                    if (!validationException.getErrors().isEmpty())
+                        return validationException;
                 }
 
                 // update indices - add missing and drop those that aren't included in domain info
