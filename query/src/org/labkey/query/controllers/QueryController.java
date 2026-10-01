@@ -7033,6 +7033,7 @@ public class QueryController extends SpringActionController
 
             String title = qdef.getName();
             String name = qdef.getName();
+            boolean hasPk = false;
             try
             {
                 // get the TableInfo if the user requested column info or title or a PK filter, otherwise skip (it can be expensive)
@@ -7042,7 +7043,7 @@ public class QueryController extends SpringActionController
 
                     if (null != table)
                     {
-                        boolean hasPk = table.getPkColumns().stream().anyMatch(col -> !col.isAdditionalQueryColumn());
+                        hasPk = table.getPkColumns().stream().anyMatch(col -> !col.isAdditionalQueryColumn());
                         if (isUserDefined && impl != null)
                             impl.cacheHasPkColumn(hasPk);
                         if (requirePk && !hasPk)
@@ -7092,6 +7093,10 @@ public class QueryController extends SpringActionController
             {
                 //may happen due to query failing parse
             }
+
+            // GH Issue 1512: a query that didn't resolve (null table or parse failure) can't be confirmed as a lookup target
+            if (requirePk && !hasPk)
+                return null;
 
             qinfo.put("title", title);
             qinfo.put("name", name);
