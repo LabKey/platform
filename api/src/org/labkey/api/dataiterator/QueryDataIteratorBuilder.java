@@ -32,6 +32,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.sql.LabKeySql;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -118,7 +119,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         String sql;
         if (null != _queryName)
-            sql = "SELECT * FROM " + s.getDbSchema().getSqlDialect().quoteIdentifier(_queryName);
+            sql = "SELECT * FROM " + LabKeySql.quoteIdentifier(_queryName);
         else
             sql = _sql;
 
@@ -137,6 +138,17 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         // Issue 42242: Don't include suggested columns in QueryDataIterator
         TableInfo t = qd.getTable((UserSchema)_schema, qerrors, true, true);
 
+        if (!qerrors.isEmpty())
+        {
+            context.getErrors().addRowError(new ValidationException(qerrors.getFirst().getMessage()));
+            return null;
+        }
+        if (null == t)
+        {
+            context.getErrors().addRowError(new ValidationException("Query not found: " + sql));
+            return null;
+        }
+
         Collection<ColumnInfo> selectCols = t.getColumns();
         if (null != _columns && !_columns.isEmpty())
         {
@@ -144,12 +156,6 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
             _columns.forEach(x -> keys.add(FieldKey.fromString(x)));
 
             selectCols = qs.getColumns(t, keys).values();
-        }
-
-        if (!qerrors.isEmpty())
-        {
-            context.getErrors().addRowError(new ValidationException(qerrors.getFirst().getMessage()));
-            return null;
         }
 
         /*
