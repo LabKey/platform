@@ -27,6 +27,8 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -77,6 +79,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +108,11 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
     private final Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
+
+    // GH Issue 1512: PK presence is structural and user-independent, so (unlike a resolved TableInfo) it's safe to share
+    // across requests, letting lookup-target enumeration skip re-resolving known no-PK queries. Keyed on Modified so an
+    // edit busts the entry; the DAY TTL bounds the one stale case, a source table's PK changing with no query edit.
+    private static final Cache<String, Boolean> HAS_PK_COLUMN_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Query has-PK-column flags");
 
     private Map<String, TableType> _metadataTableMap = null;
 
@@ -812,6 +820,31 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     public boolean isIncludedForLookups()
     {
         return _includedForLookups;
+    }
+
+    // GH Issue 1512: null key (new/unsaved def with no Modified stamp) means "don't cache"
+    @Nullable
+    private String getHasPkColumnCacheKey()
+    {
+        Date modified = _queryDef.getModified();
+        if (null == modified || null == _queryDef.getContainerId() || null == getName())
+            return null;
+        return _queryDef.getContainerId() + "/" + getSchemaPath() + "/" + getName() + "/" + modified.getTime();
+    }
+
+    /** @return cached PK-presence for this query, or null if not cached */
+    @Nullable
+    public Boolean getCachedHasPkColumn()
+    {
+        String key = getHasPkColumnCacheKey();
+        return null == key ? null : HAS_PK_COLUMN_CACHE.get(key);
+    }
+
+    public void cacheHasPkColumn(boolean hasPkColumn)
+    {
+        String key = getHasPkColumnCacheKey();
+        if (null != key)
+            HAS_PK_COLUMN_CACHE.put(key, hasPkColumn);
     }
 
     @Override
