@@ -16,44 +16,17 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.FolderExportContext;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
-import org.labkey.api.reader.Readers;
 import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.r.ParamReplacement;
-import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.RReportJob;
-import org.labkey.api.security.SessionApiKeyManager;
-import org.labkey.api.security.User;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.vfs.FileLike;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 
 /**
- *
- * User: Matthew Bellew
- * Date: May 2022
- *
  * A Report implementation that uses an external process or script interpreter to execute the associated script.
  *
  *  See Also ScriptEngineReport.
@@ -63,32 +36,12 @@ import static org.labkey.api.reports.report.ScriptEngineReport.INPUT_FILE_TSV;
 */
 public abstract class ScriptProcessReport extends ScriptReport implements Report.ResultSetGenerator
 {
-    final String reportType;
     final String defaultDescriptorType;
     private FileLike workingDirectory;
 
 
-    /* this is where we gather the context that will be passed to the script runner as a json file */
-    public static class ReportContext
+    ScriptProcessReport(String defaultDescriptorType)
     {
-        User user;
-        Container container;
-        String apiKey;
-
-        public static ReportContext from(ViewContext vc, Report r)
-        {
-            ReportContext rc = new ReportContext();
-            rc.user = vc.getUser();
-            rc.container = vc.getContainer();
-            rc.apiKey = SessionApiKeyManager.get().getApiKey(vc.getRequest(), r.getClass().getName());
-            return rc;
-        }
-    }
-
-
-    ScriptProcessReport(String reportType, String defaultDescriptorType)
-    {
-        this.reportType = reportType;
         this.defaultDescriptorType = defaultDescriptorType;
     }
 
@@ -155,174 +108,4 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
         }
         return workingDirectory;
     }
-
-
-    public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
-    {
-        return handleParameters(this, parameters, new ParameterHandler<>()
-        {
-            private Thumbnail _thumbnail = null;
-
-            @Override
-            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
-            {
-                _thumbnail = param.renderThumbnail(context);
-
-                // Return true (keep iterating) if we can't render this output as a thumbnail
-                return null == _thumbnail;
-            }
-
-            @Override
-            public Thumbnail cleanup(ScriptProcessReport report, ContainerUser context)
-            {
-                // TODO: Delete file?
-                return _thumbnail;
-            }
-        });
-    }
-
-
-    private static <K> K handleParameters(ScriptProcessReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
-    {
-        String sections = HttpView.currentContext().getString(renderParam.showSection.name());
-        List<String> sectionNames = Collections.emptyList();
-
-        if (sections != null)
-            sectionNames = Arrays.asList(sections.split("&"));
-
-        ViewContext context = HttpView.currentContext();
-
-        for (ParamReplacement param : parameters)
-        {
-            if (isViewable(param, sectionNames))
-            {
-                boolean keepGoing = handler.handleParameter(context, report, param, sectionNames);
-
-                if (!keepGoing)
-                    break;
-            }
-        }
-
-        return handler.cleanup(report, context);
-    }
-
-
-    private interface ParameterHandler<K>
-    {
-        boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException;
-        K cleanup(ScriptProcessReport report, ContainerUser context);
-    }
-
-
-    protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
-    {
-        for (FileLike data : param.getFiles())
-        {
-            if (data.exists())
-            {
-                if (!sectionNames.isEmpty())
-                    return sectionNames.contains(param.getName());
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv, Map<String, Object> inputParameters) throws ScriptException;
-
-    /**
-     * Takes a script source, adds a prolog, processes any input and output replacement parameters
-     */
-    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst, Map<String, Object> inputParameters, boolean includeProlog, boolean isRStudio) throws Exception
-    {
-         if (!StringUtils.isEmpty(script) && isRStudio)
-            script = ParamReplacementSvc.get().transformInlineReplacements(script); // transform old inline syntax to comment syntax
-        if (includeProlog && (!StringUtils.isEmpty(script) || isRStudio))
-            script = concatScriptProlog(engine, context, script == null ? "" : script, inputFile, inputParameters);
-        if (!StringUtils.isEmpty(script))
-        {
-            if (inputFile != null || isRStudio)
-                script = processInputReplacement(script, inputFile, isRStudio);
-            script = processOutputReplacements(script, outputSubst, context, isRStudio);
-        }
-        return script;
-    }
-
-    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile, Map<String, Object> inputParameters)
-    {
-        return null;
-    }
-
-    protected String concatScriptProlog(ScriptEngine engine, ViewContext context, String script, File inputFile, Map<String, Object> inputParameters)
-    {
-        return StringUtils.defaultString(getScriptProlog(engine, context, inputFile, inputParameters)) + script;
-    }
-
-    protected String processInputReplacement(String script, @Nullable File inputFile, boolean isRStudio)
-    {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.getAbsolutePath().replaceAll("\\\\", "/"), isRStudio, null);
-    }
-
-    protected String processOutputReplacements(String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
-    {
-        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements, isRStudio);
-    }
-
-
-    @Override
-    public ScriptReportDescriptor getDescriptor()
-    {
-        return super.getDescriptor();
-    }
-
-
-    @Override
-    protected String getSerializedScriptFileName()
-    {
-        return getSerializedScriptFileName(null);
-    }
-
-
-    @Override
-    protected String getSerializedScriptFileName(FolderExportContext context)
-    {
-        String extension = "script";
-        String reportName;
-
-        ReportNameContext rnc = context.getContext(ReportNameContext.class);
-        reportName = rnc.getSerializedName();
-
-        return FileUtil.makeLegalName(String.format("%s.%s", reportName, extension));
-    }
-
-    @Override
-    public void afterDeserializeFromFile(File reportFile) throws IOException
-    {
-        if (reportFile.exists())
-        {
-            // check to see if there is a separate script file on the disk, a separate
-            // script file takes precedence over any meta-data based script.
-
-            File scriptFile = new File(reportFile.getParent(), getSerializedScriptFileName());
-
-            if (scriptFile.exists())
-            {
-                StringBuilder sb = new StringBuilder();
-
-                try (BufferedReader br = Readers.getReader(scriptFile))
-                {
-                    String l;
-
-                    while ((l = br.readLine()) != null)
-                    {
-                        sb.append(l);
-                        sb.append('\n');
-                    }
-
-                    getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, sb.toString());
-                }
-            }
-        }
-    }
-
 }

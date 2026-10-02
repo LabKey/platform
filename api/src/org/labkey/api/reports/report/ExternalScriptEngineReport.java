@@ -188,6 +188,30 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         }
     }
 
+    private Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
+    {
+        return handleParameters(this, parameters, new ParameterHandler<>()
+        {
+            private Thumbnail _thumbnail = null;
+
+            @Override
+            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
+            {
+                _thumbnail = param.renderThumbnail(context);
+
+                // Return true (keep iterating) if we can't render this output as a thumbnail
+                return null == _thumbnail;
+            }
+
+            @Override
+            public Thumbnail cleanup(ContainerUser context)
+            {
+                // TODO: Delete file?
+                return _thumbnail;
+            }
+        });
+    }
+
 
     interface Renderer<K>
     {
