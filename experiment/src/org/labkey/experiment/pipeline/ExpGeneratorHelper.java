@@ -36,6 +36,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.pipeline.PipelineJob;
@@ -50,7 +51,9 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -278,6 +281,14 @@ public class ExpGeneratorHelper
         return run;
     }
 
+    private static ExpMaterial resolveReadableMaterial(User user, String lsid)
+    {
+        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        if (material == null || !material.getContainer().hasPermission(user, ReadPermission.class))
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+        return material;
+    }
+
     static private ExpRunImpl _insertRun(Container container,
                                          User user,
                                          String runName,
@@ -373,18 +384,23 @@ public class ExpGeneratorHelper
                 stepApp.setProperty(user, pd, prop.getValue());
             }
 
-            // material inputs
+            // material inputs - persists an edge visible in the sample owner's lineage; read suffices.
+            // Permission checks apply only to provenance recording; the pipeline path is unchanged.
             for (String lsid : action.getMaterialInputs())
             {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                ExpMaterial material = fromProvenanceRecording
+                        ? resolveReadableMaterial(user, lsid)
+                        : ExperimentService.get().getExpMaterial(lsid);
                 material.setRun(run);
                 stepApp.addMaterialInput(user, material, null, null);
             }
 
-            // material outputs
+            // material outputs - rewrite the material's lineage; guard the provenance (client-LSID) path
             for (String lsid : action.getMaterialOutputs())
             {
                 ExpMaterialImpl material = (ExpMaterialImpl) ExperimentService.get().getExpMaterial(lsid);
+                if (fromProvenanceRecording)
+                    DefaultExperimentSaveHandler.assertCanEditLineage(user, lsid, material);
                 material.setSourceApplication(stepApp);
                 // set up the output to the run
                 if (action.isEnd())
@@ -440,11 +456,11 @@ public class ExpGeneratorHelper
             if (protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
             {
                 if (!action.getProvenanceMap().isEmpty())
-                    pvs.addProvenance(container, stepApp, action.getProvenanceMap());
+                    pvs.addProvenance(user, container, stepApp, action.getProvenanceMap());
 
                 // determine the right protocol app for object inputs and object outputs
-                pvs.addProvenanceInputs(container, stepApp, action.getObjectInputs());
-                pvs.addProvenanceOutputs(container, stepApp, action.getObjectOutputs());
+                pvs.addProvenanceInputs(user, container, stepApp, action.getObjectInputs());
+                pvs.addProvenanceOutputs(user, container, stepApp, action.getObjectOutputs());
             }
         }
 
@@ -537,9 +553,10 @@ public class ExpGeneratorHelper
         }
     }
 
+    // Promotes a step input to a run input
     static private void addMaterialInput(ExpRun run, ExpProtocolApplication app, String lsid, User user)
     {
-        ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+        ExpMaterial material = resolveReadableMaterial(user, lsid);
         material.setRun(run);
         app.addMaterialInput(user, material, null, null);
     }
