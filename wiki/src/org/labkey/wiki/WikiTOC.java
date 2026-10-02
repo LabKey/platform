@@ -16,15 +16,26 @@
 
 package org.labkey.wiki;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.SubmitterRole;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
@@ -37,8 +48,10 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.HtmlWriter;
 import org.labkey.wiki.model.Wiki;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,6 +69,7 @@ public class WikiTOC extends NavTreeMenu
 {
     private String _selectedLink;
     private final Container _cToc;
+    private final boolean _canRead;
 
     public WikiTOC(ViewContext context)
     {
@@ -91,10 +105,17 @@ public class WikiTOC extends NavTreeMenu
         if (null == _cToc)
             throw new NotFoundException("Could not find container for id: \"" + id + "\"");
 
-        setId(getNavTreeId(_cToc));
-        setElements(context, getNavTree());
-        setCollapsible(false);
-        setNavMenu(createNavMenu());
+        // Check permissions here just to skip work below. Throwing UnauthorizedException here would be fine, but the
+        // message formatting would be inconsistent with wiki webpart, etc., so render the message in renderView().
+        _canRead = _cToc.hasPermission(context.getUser(), ReadPermission.class);
+
+        if (_canRead)
+        {
+            setId(getNavTreeId(_cToc));
+            setElements(context, getNavTree());
+            setCollapsible(false);
+            setNavMenu(createNavMenu());
+        }
     }
 
     private NavTree createNavMenu()
@@ -188,8 +209,8 @@ public class WikiTOC extends NavTreeMenu
         ViewContext context = getViewContext();
         User user = context.getUser();
 
-        // Ensure read permission in target container before rendering anything, GH Issue 1445
-        if (!_cToc.hasPermission(user, ReadPermission.class))
+        // Check read permission in target container before rendering anything, GH Issue 1445
+        if (!_canRead)
         {
             out.write(WikiManager.get().getNoPermissionsMessage(user));
             return;
@@ -324,5 +345,66 @@ public class WikiTOC extends NavTreeMenu
     {
         //is page being rendered in web part or in module?
         return context.getActionURL().getController().equalsIgnoreCase("Project");
+    }
+
+    public static class TestCase extends AbstractContainerScopingTest
+    {
+        private static final String PAGE_TITLE = "WikiTocTargetPage";
+        private static final String NEW_MENU_ITEM = ">New</a>";
+
+        private Container _host;
+        private Container _target;
+
+        @Before
+        public void createFolders()
+        {
+            _host = createContainer("Host");
+            _target = createContainer("Target");
+            WikiManager.get().insertWiki(getAdmin(), _target, "tocPage", "body", WikiRendererType.HTML, PAGE_TITLE);
+        }
+
+        @Test
+        public void testTocRequiresReadInTargetFolder() throws Exception
+        {
+            User user = createUserInRole(_host, ReaderRole.class);
+            String html = renderToc(user);
+            assertTrue("Expected no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
+            assertFalse("Target folder's page leaked into the TOC", html.contains(PAGE_TITLE));
+
+            grantRole(user, _target, ReaderRole.class);
+            html = renderToc(user);
+            assertTrue("Reader in the target folder should see its pages, html was: " + html, html.contains(PAGE_TITLE));
+
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(_host.getPolicy());
+            policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(policy, getAdmin());
+            html = renderToc(User.guest);
+            assertTrue("Expected guest login prompt, html was: " + html, html.contains("Please log in to see this data."));
+            assertFalse("Target folder's page leaked into the guest TOC", html.contains(PAGE_TITLE));
+        }
+
+        @Test
+        public void testTocHidesMenuWithoutReadInTargetFolder() throws Exception
+        {
+            // Submitter has Insert but not Read, so it would otherwise get the "New" menu item
+            User user = createUserInRole(_host, ReaderRole.class);
+            grantRole(user, _target, SubmitterRole.class);
+            String html = renderToc(user);
+            assertFalse("Menu should be suppressed without read, html was: " + html, html.contains(NEW_MENU_ITEM));
+
+            grantRole(user, _target, ReaderRole.class);
+            html = renderToc(user);
+            assertTrue("Insert + read in the target folder should show the \"New\" menu item, html was: " + html, html.contains(NEW_MENU_ITEM));
+        }
+
+        private String renderToc(User user) throws Exception
+        {
+            ActionURL url = new ActionURL("project", "getWebPart", _host)
+                .addParameter("webpart.name", "Wiki Table of Contents")
+                .addParameter("webPartContainer", _target.getId());
+            MockHttpServletResponse response = get(url, user);
+            assertStatus(HttpServletResponse.SC_OK, response);
+            return new JSONObject(response.getContentAsString()).getString("html");
+        }
     }
 }
