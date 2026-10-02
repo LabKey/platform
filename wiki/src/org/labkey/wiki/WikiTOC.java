@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
@@ -185,6 +186,14 @@ public class WikiTOC extends NavTreeMenu
     protected void renderView(Object model, HtmlWriter out)
     {
         ViewContext context = getViewContext();
+        User user = context.getUser();
+
+        // Ensure read permission in target container before rendering anything, GH Issue 1445
+        if (!_cToc.hasPermission(user, ReadPermission.class))
+        {
+            out.write(WikiManager.get().getNoPermissionsMessage(user));
+            return;
+        }
 
         boolean isInWebPart = isInWebPart(context);
 

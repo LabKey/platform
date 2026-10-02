@@ -1157,6 +1157,11 @@ public class WikiManager implements WikiService
         return WikiType.get();
     }
 
+    public HtmlString getNoPermissionsMessage(User user)
+    {
+        return HtmlString.of(user.isGuest() ? "Please log in to see this data." : "You do not have permission to see this data.");
+    }
+
     public static class TestCase extends Assert
     {
         WikiManager _m = null;
