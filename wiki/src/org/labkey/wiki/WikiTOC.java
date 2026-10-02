@@ -105,8 +105,7 @@ public class WikiTOC extends NavTreeMenu
         if (null == _cToc)
             throw new NotFoundException("Could not find container for id: \"" + id + "\"");
 
-        // Check permissions here just to skip work below. Throwing UnauthorizedException here would be fine, but the
-        // message formatting would be inconsistent with wiki webpart, etc., so render the message in renderView().
+        // Render the no-permission message in renderView() rather than throwing, to match wiki webpart
         _canRead = _cToc.hasPermission(context.getUser(), ReadPermission.class);
 
         if (_canRead)
