@@ -45,6 +45,7 @@ A LabKey MCP server is configured (see `.mcp.json`). Use these tools to explore 
 1. Call `listContainers` to find available containers
 2. Call `setContainer` with the desired container path
 3. Use `listSchemas` -> `listTables` -> `listColumns` to explore the data model
+   - Client APIs take the encoded schema name, not the SQL-quoted one: pass `apiName` from `listSchemas` (e.g. `assay.General.My$PAssay`, where `$P` encodes a `.` in a part).
 4. Use `validateSQL` to check queries before running them
 5. To actually retrieve data, write a Python script using the `labkey` Python API (see below)
 
