@@ -27,13 +27,13 @@
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VersionBean> me = HttpView.currentView();
     VersionBean bean = me.getModelBean();
     User user = getUser();
-    Container c = getContainer();
 %>
 <!--wiki-->
 <table width="100%">
@@ -41,17 +41,11 @@
 <%
 if (!bean.hasReadPermission)
 {
-    if (user.isGuest())
-    {
-        %>Please log in to see this data.<%
-    }
-    else
-    {
-        %>You do not have permission to see this data.<%
-    }%>
+%>
+    <%=WikiManager.get().getNoPermissionsMessage(user)%>
     </td></tr></table>
-
-<%}
+<%
+}
 else
 {
     HtmlString formattedHtml = bean.html;

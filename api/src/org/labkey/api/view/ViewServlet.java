@@ -525,6 +525,12 @@ public class ViewServlet extends HttpServlet
         {
             return _actionURL.getParameterNames();
         }
+
+        @Override
+        public @Nullable String getQueryString()
+        {
+            return null == _actionURL || _actionURL.getParameters().isEmpty() ? null : _actionURL.getQueryString();
+        }
     }
 
 
