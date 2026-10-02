@@ -20,9 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Test;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -60,6 +60,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
 import org.labkey.api.pipeline.PipelineActionConfig;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
@@ -68,6 +69,7 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.Group;
@@ -87,6 +89,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
@@ -124,7 +128,6 @@ import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.vfs.FileLike;
 import org.springframework.beans.MutablePropertyValues;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1801,6 +1804,69 @@ public class PipelineController extends SpringActionController
             ActionURL ownUrl = new ActionURL(SavePipelineTriggerAction.class, folderB);
             JSONObject ownEdit = new JSONObject().put("rowId", rowId);
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, postJson(ownUrl, admin, ownEdit));
+        }
+
+        // GH Issue 1466
+        @Test
+        public void testTriggerRunAsUser() throws Exception
+        {
+            User siteAdmin = getAdmin();
+            Container folder = createContainer("RunAs");
+            Container project = folder.getProject();
+            User reader = createUserInRole(project, ReaderRole.class);
+            User folderAdmin = createUserInRole(folder, FolderAdminRole.class);
+            User projectAdmin = createUserInRole(project, ProjectAdminRole.class);
+            // Project admin doesn't inherit into subfolders, and trigger configs require folder admin
+            grantRole(projectAdmin, folder, FolderAdminRole.class);
+
+            // A folder admin can't impersonate, so may run only as themselves
+            assertNotNull(saveTrigger(folder, folderAdmin, null, folderAdmin, null));
+            assertRunAsRejected(folder, folderAdmin, null, siteAdmin, null);
+            assertRunAsRejected(folder, folderAdmin, null, reader, null);
+            assertRunAsRejected(folder, folderAdmin, null, folderAdmin, siteAdmin);
+
+            // A project admin can run as project users, but not as a privileged user
+            assertNotNull(saveTrigger(folder, projectAdmin, null, reader, null));
+            assertRunAsRejected(folder, projectAdmin, null, siteAdmin, null);
+
+            // Updates are checked too, and the error is reported rather than dropped
+            Integer rowId = saveTrigger(folder, siteAdmin, null, siteAdmin, null);
+            assertNotNull(rowId);
+            assertRunAsRejected(folder, folderAdmin, rowId, siteAdmin, null);
+        }
+
+        private void assertRunAsRejected(Container c, User user, @Nullable Integer rowId, User runAs, @Nullable User customRunAs) throws Exception
+        {
+            try
+            {
+                saveTrigger(c, user, rowId, runAs, customRunAs);
+                fail(user.getEmail() + " should not be able to save a trigger that runs as " + runAs.getEmail());
+            }
+            catch (BatchValidationException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().contains("You do not have permission to run this trigger as user"));
+            }
+        }
+
+        private Integer saveTrigger(Container c, User user, @Nullable Integer rowId, User runAs, @Nullable User customRunAs) throws Exception
+        {
+            TriggerConfiguration config = new TriggerConfiguration();
+            if (rowId != null)
+                config.setRowId(rowId);
+            config.setName("run-as-test-trigger-" + GUID.makeGUID());
+            config.setType(FileAnalysisTaskPipeline.class.getName());
+            config.setPipelineId("run-as-test-pipeline");
+            config.setUsername(runAs.getDisplayName(getAdmin()));
+            // custom parameter that might set the user to run the trigger as
+            if (customRunAs != null)
+            {
+                config.setCustomParamKey(List.of(PipelineJob.PIPELINE_USERNAME_PARAM));
+                config.setCustomParamValue(List.of(customRunAs.getDisplayName(getAdmin())));
+            }
+            PipelineManager.insertOrUpdateTriggerConfiguration(user, c, config);
+            TriggerConfiguration saved = PipelineManager.getTriggerConfiguration(c, config.getName());
+
+            return saved == null ? null : saved.getRowId();
         }
     }
 }

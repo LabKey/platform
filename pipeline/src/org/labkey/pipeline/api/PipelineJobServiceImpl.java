@@ -63,6 +63,7 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.pipeline.file.PathMapperImpl;
+import org.labkey.api.pipeline.trigger.PipelineTriggerConfig;
 import org.labkey.api.pipeline.trigger.PipelineTriggerRegistry;
 import org.labkey.api.pipeline.trigger.PipelineTriggerType;
 import org.labkey.api.reports.report.r.RReport;
@@ -734,6 +735,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             taskOptions.add(new Option<>(task.getId().toString(), task.getDescription()));
 
         List<Option<String>> userOptions = new ArrayList<>(SecurityManager.getUsersWithPermissions(container, Set.of(InsertPermission.class)).stream()
+                .filter(u -> PipelineTriggerConfig.canRunAs(container, user, u))
                 .map(u -> new Option<>(u.getDisplayName(user), u.getDisplayName(user)))
                 .toList());
 
