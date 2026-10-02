@@ -200,6 +200,7 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectorServlet;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -507,6 +508,7 @@ public class ApiModule extends CodeOnlyModule
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
+            ViewContext.TestCase.class,
             XmlBeansUtil.TestCase.class
         );
     }

@@ -817,7 +817,7 @@ public class StudyController extends BaseStudyController
         {
             if (_report == null)
             {
-                String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
+                String reportId = getViewContext().getString(DATASET_REPORT_ID_PARAMETER_NAME);
 
                 ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
@@ -838,7 +838,7 @@ public class StudyController extends BaseStudyController
                 return HttpView.redirect(createRedirectURLfrom(DatasetAction.class, context));
             }
 
-            int datasetId = NumberUtils.toInt((String)context.get(Dataset.DATASET_KEY), -1);
+            int datasetId = NumberUtils.toInt(context.getString(Dataset.DATASET_KEY), -1);
             Dataset def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
 
             if (def != null)
@@ -896,7 +896,7 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String entityId = (String)getViewContext().get("entityId");
+                    String entityId = getViewContext().getString("entityId");
                     if (null != entityId)
                         _def = StudyManager.getInstance().getDatasetDefinitionByEntityId(getStudyRedirectIfNull(), entityId);
                 }
@@ -1151,7 +1151,7 @@ public class StudyController extends BaseStudyController
             if (!errorMsg.isEmpty())
                 return HtmlView.err(errorMsg.toString());
 
-            String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
+            String viewName = getViewContext().getString(DATASET_VIEW_NAME_PARAMETER_NAME);
 
             CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
             // display the next and previous buttons only if we have a cached participant index
@@ -2090,7 +2090,7 @@ public class StudyController extends BaseStudyController
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            int id = NumberUtils.toInt((String)getViewContext().get("id"));
+            int id = NumberUtils.toInt(getViewContext().getString("id"));
             _v = StudyManager.getInstance().getVisitForRowId(study, id);
             if (_v == null)
             {
@@ -2113,7 +2113,7 @@ public class StudyController extends BaseStudyController
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             // UNDONE: how do I get struts to handle this checkbox?
-            postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
+            postedVisit.setShowByDefault(null != StringUtils.trimToNull(getViewContext().getString("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
             Collection<VisitImpl> visits = StudyManager.getInstance().getVisitManager(study).getVisits();
@@ -3116,7 +3116,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
         {
-            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
+            String originalSourceLsid = getViewContext().getString("sourceLsid");
 
             Dataset.PublishSource publishSource = _def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
