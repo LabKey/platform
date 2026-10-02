@@ -33,6 +33,7 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateDataStateManager;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateStorageService;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.audit.AuditLogService;
@@ -95,6 +96,7 @@ import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.PlateMetricsProvider;
 import org.labkey.assay.plate.PlateReplicateStatsDomainKind;
 import org.labkey.assay.plate.PlateSetDocumentProvider;
+import org.labkey.assay.plate.PlateStorageServiceImpl;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.audit.PlateAuditProvider;
 import org.labkey.assay.plate.audit.PlateSetAuditProvider;
@@ -162,6 +164,7 @@ public class AssayModule extends SpringModule
         AssayService.setInstance(new AssayManager());
         PlateService.setInstance(new PlateManager());
         AssayPlateMetadataService.setInstance(new AssayPlateMetadataServiceImpl());
+        PlateStorageService.setInstance(new PlateStorageServiceImpl());
         DataStateManager.getInstance().registerDataStateHandler(PlateDataStateManager.get());
 
         addController("assay", AssayController.class);
