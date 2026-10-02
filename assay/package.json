@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.67.1"
+    "@labkey/components": "7.68.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.3",
