@@ -82,7 +82,7 @@ public interface PlateStorageService
     /**
      * Resolves plates by rowId, omitting any that don't exist or that the user cannot read. A missing entry is
      * therefore the read check itself, which is what lets a caller skip re-checking downstream — see the inventory
-     * trigger's SKIP_PLATE_VALIDATION. Folder scope is not applied; callers that need it must check containerId.
+     * PlateItem table's SkipPlateValidation. Folder scope is not applied; callers that need it must check containerId.
      */
     @NotNull Map<Long, StoragePlate> getStoragePlates(@NotNull Container container, @NotNull User user, @NotNull Collection<Long> plateRowIds);
 
