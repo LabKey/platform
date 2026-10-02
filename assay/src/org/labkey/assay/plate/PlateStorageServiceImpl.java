@@ -81,8 +81,8 @@ public class PlateStorageServiceImpl implements PlateStorageService
 
         new SqlSelector(schema.getSchema(), sql).forEach(rs -> {
             long rowId = rs.getLong(PlateTable.Column.RowId.name());
-            long plateSetValue = rs.getLong("PlateSetId");
-            Long plateSetId = rs.wasNull() ? null : plateSetValue;
+            Number plateSetValue = (Number) rs.getObject("PlateSetId");
+            Long plateSetId = plateSetValue == null ? null : plateSetValue.longValue();
 
             plates.put(rowId, new StoragePlate(
                     rowId,
