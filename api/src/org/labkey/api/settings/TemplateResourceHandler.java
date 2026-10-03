@@ -33,9 +33,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import static org.labkey.api.settings.Theme.Overcast;
-import static org.labkey.api.settings.Theme.Seattle;
-
 public enum TemplateResourceHandler
 {
     LOGO
@@ -49,7 +46,7 @@ public enum TemplateResourceHandler
         @Override
         protected String getDefaultLink(Container c)
         {
-            return "/_images/lk-noTAG-" + resolveLogoThemeName(c) + ".svg";
+            return "/_images/LK-noTAG-" + resolveLogoThemeName(c) + ".svg";
         }
 
         @Override
@@ -166,9 +163,12 @@ public enum TemplateResourceHandler
 
     private static String resolveLogoThemeName(Container c)
     {
-        Theme theme = PageFlowUtil.resolveTheme(c);
-
-        return (Seattle == theme ? theme : Overcast).name().toLowerCase();
+        return switch (PageFlowUtil.resolveTheme(c))
+        {
+            case Seattle -> "seattle";
+            case Harvest, Leaf -> "black";
+            default -> "overcast";
+        };
     }
 
     private Calendar getExpiration()

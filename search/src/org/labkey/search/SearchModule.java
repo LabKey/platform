@@ -269,7 +269,8 @@ public class SearchModule extends DefaultModule
         return Set.of
         (
             LuceneSearchServiceImpl.TestCase.class,
-            LuceneSearchServiceImpl.TikaTestCase.class
+            LuceneSearchServiceImpl.TikaTestCase.class,
+            LuceneSearchServiceImpl.IndexWriterTestCase.class
         );
     }
 

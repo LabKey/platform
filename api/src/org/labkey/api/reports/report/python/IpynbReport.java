@@ -106,12 +106,7 @@ public class IpynbReport extends DockerScriptReport
 
     public IpynbReport()
     {
-        this(TYPE, IpynbReportDescriptor.DESCRIPTOR_TYPE);
-    }
-
-    IpynbReport(String reportType, String defaultDescriptorType)
-    {
-        super(reportType, defaultDescriptorType);
+        super(IpynbReportDescriptor.DESCRIPTOR_TYPE);
     }
 
     @Override
@@ -269,13 +264,6 @@ public class IpynbReport extends DockerScriptReport
         Collection<File> files = FileUtils.listFiles(dir, null, true);
         LOG.trace("{}: {}\n\t{}", label, dir.getPath(), StringUtils.join(files.stream().map(f ->
                 f.getPath().replace(dir.getPath(), "") + " : " + f.length()).toArray(), "\n\t"));
-    }
-
-
-    @Override
-    protected JSONObject createReportConfig(ViewContext context, FileLike scriptFile)
-    {
-        return super.createReportConfig(context, scriptFile);
     }
 
 
