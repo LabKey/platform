@@ -158,6 +158,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -450,7 +451,7 @@ public class CoreController extends SpringActionController
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
                 if (!col.getPropertyURI().equals(pd.getPropertyURI()))
-                    throw new IllegalArgumentException("Column " + pd.getName() + " is not a file link type");
+                    throw new BadRequestException("Column " + pd.getName() + " is not a file link type");
 
                 try
                 {
