@@ -449,6 +449,8 @@ public class CoreController extends SpringActionController
                 ColumnInfo col = table.getColumn(pd.getName());
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
+                if (!col.getPropertyURI().equals(pd.getPropertyURI()))
+                    throw new IllegalArgumentException("Column " + pd.getName() + " is not a file link type");
 
                 try
                 {
@@ -491,23 +493,8 @@ public class CoreController extends SpringActionController
                             .map(type -> svc.getConfiguredFileRootPath(getContainer(), type))
                             .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), file.toURI()));
 
-            //if (!managed)
-            //    throw new NotFoundException("Cannot download file that isn't under a file root for container " + getContainer().getPath());
-/*
-            // For security reasons, make sure the user hasn't tried to download a file that's not under
-            // the pipeline root.  Otherwise, they could get access to any file on the server.
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root == null)
-                throw new NotFoundException("No pipeline root for container " + getContainer().getPath());
-
-            if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
-                throw new UnauthorizedException();
-
-            java.nio.file.Path assayFilesRoot = FileContentService.get().getFileRootPath(getContainer(), FileContentService.ContentType.assayfiles);
-
-            if (!root.isUnderRoot(file) && (assayFilesRoot != null && !URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI())))
-                throw new NotFoundException("Cannot download file that isn't under the pipeline root for container " + getContainer().getPath());
-*/
+            if (!managed)
+                throw new NotFoundException("Cannot download file that isn't under a file root for container " + getContainer().getPath());
 
             if (!file.exists())
             {
