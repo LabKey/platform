@@ -15,20 +15,38 @@
  */
 package org.labkey.api.search;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
+import org.labkey.api.data.WorkbookContainerType;
+import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.SafeToRenderEnum;
+import org.labkey.api.util.TestContext;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Options for how widely or narrowly to search on the server, based on the number of containers to include.
- * User: adam
- * Date: 2/18/12
  */
 public enum SearchScope implements SafeToRenderEnum
 {
@@ -86,15 +104,9 @@ public enum SearchScope implements SafeToRenderEnum
         }
 
         @Override
-        protected HashMap<String, Container> _getSearchableContainers(User user, Container currentContainer)
+        protected Stream<Container> getCandidateContainers(User user, Container searchRoot, Container currentContainer)
         {
-            HashMap<String, Container> containers = Folder._getSearchableContainers(user, currentContainer);
-
-            Container project = Project.getRoot(currentContainer);
-            if (project.hasPermission(user, ReadPermission.class))
-                containers.put(project.getId(), project);
-
-            return containers;
+            return Stream.of(searchRoot, Project.getRoot(searchRoot));
         }
     },
     FolderAndProjectAndShared(false, true) {
@@ -105,9 +117,9 @@ public enum SearchScope implements SafeToRenderEnum
         }
 
         @Override
-        protected HashMap<String, Container> _getSearchableContainers(User user, Container currentContainer)
+        protected Stream<Container> getCandidateContainers(User user, Container searchRoot, Container currentContainer)
         {
-            return FolderAndProject._getSearchableContainers(user, currentContainer);
+            return FolderAndProject.getCandidateContainers(user, searchRoot, currentContainer);
         }
     };
 
@@ -132,49 +144,174 @@ public enum SearchScope implements SafeToRenderEnum
         return _includeShared;
     }
 
-    public HashMap<String, Container> getSearchableContainers(User user, Container currentContainer)
+    /**
+     * @param readable Containers in scope where the user has read permission, keyed by container ID
+     * @param containerIdsByPermission For each requested additional permission, the IDs of readable containers where the user also holds it
+     */
+    public record SearchableContainers(Map<String, Container> readable, Map<Class<? extends Permission>, Set<String>> containerIdsByPermission) {}
+
+    public SearchableContainers getSearchableContainers(User user, Container currentContainer, Set<Class<? extends Permission>> additionalPermissions)
     {
-        Container searchRoot = this.getRoot(currentContainer);
-        HashMap<String, Container> containers = this.isRecursive() ?
-                getRecursiveContainers(user, searchRoot, currentContainer):
-                _getSearchableContainers(user, searchRoot);
+        Stream<Container> candidates = getCandidateContainers(user, getRoot(currentContainer), currentContainer);
 
-        Container shared = ContainerManager.getSharedContainer();
-        if (this.includeShared() && shared.hasPermission(user, ReadPermission.class))
-        {
-            containers.put(shared.getId(), shared);
-        }
+        if (includeShared())
+            candidates = Stream.concat(candidates, Stream.of(ContainerManager.getSharedContainer()));
 
-        return containers;
+        return resolvePermissions(user, candidates, additionalPermissions);
     }
 
-    protected HashMap<String, Container> _getSearchableContainers(User user, Container searchRoot)
+    /** Containers to consider for this scope, prior to any permission check */
+    protected Stream<Container> getCandidateContainers(User user, Container searchRoot, Container currentContainer)
     {
-        HashMap<String, Container> containers = new HashMap<>();
+        if (!isRecursive())
+            return Stream.of(searchRoot);
 
-        if (searchRoot.hasPermission(user, ReadPermission.class))
-            containers.put(searchRoot.getId(), searchRoot);
-
-        return containers;
+        // Root plus all children, including workbooks & tabs
+        return ContainerManager.getAllChildren(searchRoot).stream()
+            .filter(c -> (c.isSearchable() || c.equals(currentContainer)) && (c.isContainerFor(ContainerType.DataType.search) || c.shouldDisplay(user)));
     }
 
-    protected HashMap<String, Container> getRecursiveContainers(User user, Container searchRoot, Container currentContainer)
+    /**
+     * Resolves the user's permissions once per distinct policy instead of once per container, since containers that
+     * inherit their policy (e.g., workbooks) resolve identically to the ancestor that holds it.
+     */
+    static SearchableContainers resolvePermissions(User user, Stream<Container> candidates, Set<Class<? extends Permission>> additionalPermissions)
     {
-        // Returns root plus all children (including workbooks & tabs) where user has read permissions
-        List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-        HashMap<String, Container> containerIds = new HashMap<>(containers.size() * 2);
+        Map<Class<? extends Permission>, Long> bitByPermission = new HashMap<>();
+        bitByPermission.put(ReadPermission.class, READ_BIT);
+        additionalPermissions.forEach(permission -> bitByPermission.putIfAbsent(permission, 1L << bitByPermission.size()));
 
-        for (Container c : containers)
-        {
-            //Read permission is already checked in the 'getAllChildren' method
-            boolean searchable = (c.isSearchable() || c.equals(currentContainer)) && (c.isContainerFor(ContainerType.DataType.search) || c.shouldDisplay(user));
+        if (bitByPermission.size() > Long.SIZE)
+            throw new IllegalStateException("Too many additional permissions to track: " + bitByPermission.size());
 
-            if (searchable)
+        long allBits = bitByPermission.values().stream().reduce(0L, (a, b) -> a | b);
+
+        Map<String, Long> grantedByPolicy = new HashMap<>();
+        Map<String, Container> readable = new HashMap<>();
+        Map<Class<? extends Permission>, Set<String>> containerIdsByPermission = additionalPermissions.stream()
+            .collect(Collectors.toMap(permission -> permission, _ -> new HashSet<>()));
+
+        candidates.forEach(c -> {
+            long granted = grantedByPolicy.computeIfAbsent(getPolicyKey(c), _ -> getGrantedBits(c, user, bitByPermission, allBits));
+
+            if ((granted & READ_BIT) != 0)
             {
-                containerIds.put(c.getId(), c);
+                readable.put(c.getId(), c);
+
+                containerIdsByPermission.forEach((permission, containerIds) -> {
+                    if ((granted & bitByPermission.get(permission)) != 0)
+                        containerIds.add(c.getId());
+                });
             }
+        });
+
+        return new SearchableContainers(readable, containerIdsByPermission);
+    }
+
+    private static final long READ_BIT = 1L;
+
+    // Stops consuming the stream once every tracked permission is found, since some users are granted 100+ permissions
+    private static long getGrantedBits(Container c, User user, Map<Class<? extends Permission>, Long> bitByPermission, long allBits)
+    {
+        long granted = 0;
+        Iterator<Class<? extends Permission>> permissions = SecurityManager.getPermissions(c, user, Set.of()).iterator();
+
+        while (granted != allBits && permissions.hasNext())
+        {
+            Long bit = bitByPermission.get(permissions.next());
+            if (null != bit)
+                granted |= bit;
         }
 
-        return containerIds;
+        return granted;
+    }
+
+    // Permissions also depend on root-ness and project (locked/impersonation checks), and a project without a policy inherits root's
+    private static String getPolicyKey(Container c)
+    {
+        Container project = c.getProject();
+        return c.getPolicy().getResourceId() + "|" + (null == project ? "" : project.getId());
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "SearchScopeTestProject";
+        private static final String EMAIL = "search_scope_test@test.com";
+
+        private User _user;
+        private Container _project;
+        private Container _inherited;
+        private Container _workbook;
+        private Container _editable;
+        private Container _restricted;
+
+        @Before
+        public void setUp() throws Exception
+        {
+            cleanup();
+            User admin = TestContext.get().getUser();
+            _user = SecurityManager.addUser(new ValidEmail(EMAIL), null).getUser();
+
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, admin);
+            MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(_project.getPolicy());
+            projectPolicy.addRoleAssignment(_user, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(projectPolicy, admin);
+
+            // Subfolders created by an admin get an admin-only policy, so explicitly inherit
+            _inherited = ContainerManager.createContainer(_project, "Inherited", admin);
+            SecurityManager.setInheritPermissions(_inherited);
+            _workbook = ContainerManager.createContainer(_inherited, null, "Workbook", null, WorkbookContainerType.NAME, admin);
+            assertEquals(_project.getPolicy().getResourceId(), _workbook.getPolicy().getResourceId());
+
+            _editable = ContainerManager.createContainer(_project, "Editable", admin);
+            MutableSecurityPolicy editablePolicy = new MutableSecurityPolicy(_editable);
+            editablePolicy.addRoleAssignment(_user, EditorRole.class);
+            SecurityPolicyManager.savePolicyForTests(editablePolicy, admin);
+
+            _restricted = ContainerManager.createContainer(_project, "Restricted", admin);
+            SecurityPolicyManager.savePolicyForTests(new MutableSecurityPolicy(_restricted), admin);
+        }
+
+        @After
+        public void cleanup() throws Exception
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+
+            User user = UserManager.getUser(new ValidEmail(EMAIL));
+            if (null != user)
+                UserManager.deleteUser(user.getUserId());
+        }
+
+        @Test
+        public void testResolvedPermissionsMatchPerContainerChecks()
+        {
+            Set<Container> candidates = ContainerManager.getAllChildren(_project);
+            SearchableContainers result = resolvePermissions(_user, candidates.stream(), Set.of(InsertPermission.class));
+            Set<String> insertable = result.containerIdsByPermission().get(InsertPermission.class);
+
+            for (Container c : candidates)
+            {
+                boolean canRead = c.hasPermission(_user, ReadPermission.class);
+                assertEquals(c.getPath(), canRead, result.readable().containsKey(c.getId()));
+                assertEquals(c.getPath(), canRead && c.hasPermission(_user, InsertPermission.class), insertable.contains(c.getId()));
+            }
+
+            assertEquals(Set.of(_project.getId(), _inherited.getId(), _workbook.getId(), _editable.getId()), result.readable().keySet());
+            assertEquals(Set.of(_editable.getId()), insertable);
+        }
+
+        @Test
+        public void testScopes()
+        {
+            assertEquals(Set.of(_inherited.getId()), Folder.getSearchableContainers(_user, _inherited, Set.of()).readable().keySet());
+            assertEquals(Set.of(), Folder.getSearchableContainers(_user, _restricted, Set.of()).readable().keySet());
+            assertEquals(Set.of(_editable.getId(), _project.getId()), FolderAndProject.getSearchableContainers(_user, _editable, Set.of()).readable().keySet());
+
+            Set<String> recursive = FolderAndSubfolders.getSearchableContainers(_user, _project, Set.of()).readable().keySet();
+            assertTrue(recursive.containsAll(Set.of(_project.getId(), _inherited.getId(), _editable.getId())));
+            assertFalse(recursive.contains(_restricted.getId()));
+        }
     }
 }
