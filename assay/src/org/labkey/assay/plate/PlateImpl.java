@@ -123,13 +123,13 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         this(container, name, barcode, null, plateType);
     }
 
-    // Note that barcode values will be auto-generated
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, @Nullable ExpRun run, int plateNumber)
     {
         this(plate, wellValues, excluded, run == null ? PlateService.NO_RUNID : run.getRowId(), plateNumber);
         _runContainerId = run == null ? null : run.getContainer().getId();
     }
 
+    // Note that barcode values will be auto-generated
     public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, long runId, int plateNumber)
     {
         this(plate.getContainer(), plate.getName(), null, plate.getAssayType(), plate.getPlateType());

@@ -9047,16 +9047,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerIdOrPath)
     {
-        String excludedContainerId = excludedContainerIdOrPath;
-        if (!GUID.isGUID(excludedContainerIdOrPath))
-        {
-            Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
-            if (container == null)
-                return Collections.emptyMap();
-            excludedContainerId = container.getId();
-        }
+        // Resolve to a real container so arbitrary client-supplied ids can't add cache entries
+        Container container = GUID.isGUID(excludedContainerIdOrPath)
+                ? ContainerManager.getForId(excludedContainerIdOrPath)
+                : ContainerManager.getForPath(excludedContainerIdOrPath);
+        if (container == null)
+            return Collections.emptyMap();
 
-        return DATA_TYPE_EXCLUSION_CACHE.get(excludedContainerId);
+        return DATA_TYPE_EXCLUSION_CACHE.get(container.getId());
     }
 
     private @NotNull Map<DataTypeForExclusion, Set<Long>> loadContainerDataTypeExclusions(@NotNull String excludedContainerId)
