@@ -91,6 +91,7 @@ import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
@@ -437,6 +438,7 @@ public class ApiModule extends CodeOnlyModule
             DateUtil.TestCase.class,
             DbScope.DialectTestCase.class,
             DeltaTrackingMap.TestCase.class,
+            DetailedAuditLogDataIterator.TestCase.class,
             DetailsURL.TestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
