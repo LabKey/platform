@@ -813,7 +813,8 @@ public class AnnouncementsController extends SpringActionController
             if (null != insert.getParent())
             {
                 AnnouncementModel parent = AnnouncementManager.getAnnouncement(c, insert.getParent());
-                if (null == parent)
+                // A response's own member list is a stale snapshot, so allowResponse() must see the thread itself
+                if (null == parent || null != parent.getParent())
                     throw createThreadNotFoundException(c);
                 if (!getPermissions().allowResponse(parent))
                     throw new UnauthorizedException();
@@ -936,7 +937,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != form.getParentId())
                 parent = AnnouncementManager.getAnnouncement(c, form.getParentId());
 
-            if (null == parent)
+            if (null == parent || null != parent.getParent())
             {
                 throw createThreadNotFoundException(c);
             }
@@ -3055,6 +3056,41 @@ public class AnnouncementsController extends SpringActionController
             // Positive control: a member can reply through the API, and the reply keeps them on the member list
             assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
             assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
+        }
+
+        @Test
+        public void testRemovedMemberCannotReplyViaOldResponse() throws Exception
+        {
+            Container secure = createBoard("SecureRemoved", Settings.SECURE_WITHOUT_EMAIL);
+            User formerMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, formerMember);
+
+            // The first response still records formerMember on its member list; the second removes them from the thread
+            AnnouncementModel oldResponse = insertResponse(secure, thread, String.valueOf(formerMember.getUserId()));
+            insertResponse(secure, thread, null);
+            assertEquals(List.of(), currentMemberList(secure, thread));
+
+            ActionURL viaOldResponse = new ActionURL(RespondAction.class, secure)
+                .addParameter("parentId", oldResponse.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+            ActionURL viaThread = new ActionURL(RespondAction.class, secure)
+                .addParameter("parentId", thread.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaOldResponse, formerMember));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(viaThread, formerMember));
+        }
+
+        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput) throws Exception
+        {
+            AnnouncementModel response = new AnnouncementModel();
+            response.setParent(thread.getEntityId());
+            response.setTitle("Response");
+            response.setBody("response body");
+            response.setMemberListInput(memberListInput);
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), response, null, false);
         }
 
         @Test
