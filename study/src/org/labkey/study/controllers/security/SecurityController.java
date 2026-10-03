@@ -143,7 +143,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(Object o)
         {
-            String redirect = (String)getViewContext().get("redirect");
+            String redirect = getViewContext().getString("redirect");
             if (redirect != null)
                 return new ActionURL(redirect);
 
@@ -441,7 +441,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(Object o)
         {
-            String redirect = (String) getViewContext().get("redirect");
+            String redirect = getViewContext().getString("redirect");
             if (redirect != null)
                 return new ActionURL(redirect);
 
@@ -608,7 +608,7 @@ public class SecurityController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(StudySecurityForm studySecurityForm)
         {
-            String redirect = (String) getViewContext().get("redirect");
+            String redirect = getViewContext().getString("redirect");
             if (redirect != null)
                 return new ActionURL(redirect);
 

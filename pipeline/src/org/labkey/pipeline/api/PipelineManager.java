@@ -61,6 +61,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.trigger.TriggerConfiguration;
@@ -790,6 +791,41 @@ public class PipelineManager
             for (Pair<String, String> msg : configErrors)
                 errors.rejectValue(msg.first, null, msg.second);
         }
+    }
+
+    /** Returns an error message if the configuration names a run-as user that the saving user may not run as. */
+    public static @Nullable String validateTriggerRunAsUser(Container container, User user, @Nullable String configuration, @Nullable String customConfiguration)
+    {
+        List<String> names = new ArrayList<>();
+        try
+        {
+            if (StringUtils.isNotBlank(configuration))
+            {
+                JSONObject params = new JSONObject(configuration).optJSONObject("parameters");
+                if (params != null)
+                    names.add(params.optString(PipelineJob.PIPELINE_USERNAME_PARAM, null));
+            }
+            // Custom params are copied into the job's parameters, where a parameter function run promotes this key to the run-as user
+            if (StringUtils.isNotBlank(customConfiguration))
+                names.add(new JSONObject(customConfiguration).optString(PipelineJob.PIPELINE_USERNAME_PARAM, null));
+        }
+        catch (JSONException e)
+        {
+            return "Invalid JSON object for the configuration field: " + e.getMessage();
+        }
+
+        for (String name : names)
+        {
+            if (StringUtils.isBlank(name))
+                continue;
+
+            User runAsUser = UserManager.getUserByDisplayName(name);
+            if (runAsUser == null)
+                return "Unknown run-as user: " + name;
+            if (!PipelineTriggerConfig.canRunAs(container, user, runAsUser))
+                return "You do not have permission to run this trigger as user: " + name;
+        }
+        return null;
     }
 
     public static Path validateFolderImportFileNioPath(String archiveFilePath, PipeRoot pipeRoot, Errors errors)
