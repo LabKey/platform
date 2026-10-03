@@ -92,6 +92,13 @@ public interface FileContentService
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type);
 
+    /**
+     * Like {@link #getFileRootPath(Container, ContentType)} but resolves the configured root even when the file root
+     * is disabled, and never creates directories.
+     */
+    @Nullable
+    java.nio.file.Path getConfiguredFileRootPath(@NotNull Container c, @NotNull ContentType type);
+
     @Nullable
     URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath);
 

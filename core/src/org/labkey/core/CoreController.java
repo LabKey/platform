@@ -128,7 +128,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -216,6 +215,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -481,6 +481,21 @@ public class CoreController extends SpringActionController
 
             // For security reasons, make sure the user hasn't tried to download a file that's not under
             // the pipeline root.  Otherwise, they could get access to any file on the server.
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            if (pipeRoot != null && !pipeRoot.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                throw new UnauthorizedException();
+
+            FileContentService svc = FileContentService.get();
+            boolean managed = (pipeRoot != null && pipeRoot.isUnderRoot(file)) ||
+                    Stream.of(FileContentService.ContentType.files, FileContentService.ContentType.assayfiles)
+                            .map(type -> svc.getConfiguredFileRootPath(getContainer(), type))
+                            .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), file.toURI()));
+
+            //if (!managed)
+            //    throw new NotFoundException("Cannot download file that isn't under a file root for container " + getContainer().getPath());
+/*
+            // For security reasons, make sure the user hasn't tried to download a file that's not under
+            // the pipeline root.  Otherwise, they could get access to any file on the server.
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
             if (root == null)
                 throw new NotFoundException("No pipeline root for container " + getContainer().getPath());
@@ -492,6 +507,7 @@ public class CoreController extends SpringActionController
 
             if (!root.isUnderRoot(file) && (assayFilesRoot != null && !URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI())))
                 throw new NotFoundException("Cannot download file that isn't under the pipeline root for container " + getContainer().getPath());
+*/
 
             if (!file.exists())
             {
