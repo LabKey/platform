@@ -227,8 +227,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getAcquirePoolTime();
         /** Portion of acquire time in per-connection setup */
         long getAcquireSetupTime();
-        /** Thread CPU time consumed while acquiring */
-        long getAcquireCpuTime();
         long getUnreturned();
         boolean hasExceptions();
         List<Exception> getExceptions();
@@ -584,11 +582,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         finally
         {
-            afterAction(throwable);
-            clearActionForThread(controller);
+            try
+            {
+                afterAction(throwable);
+                clearActionForThread(controller);
+            }
+            finally
+            {
+                // Measure even when no action resolved, else the unclosed mark stays on this pooled thread forever
+                ConnectionUsage.Snapshot connectionUsage = ConnectionUsage.measure(connectionMark);
 
-            if (null != controller)
-                _actionResolver.addTime(controller, System.currentTimeMillis() - startTime, ConnectionUsage.measure(connectionMark));
+                if (null != controller)
+                    _actionResolver.addTime(controller, System.currentTimeMillis() - startTime, connectionUsage);
+            }
         }
 
         return null;
@@ -818,7 +824,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _acquireNanos = 0;
         private long _acquirePoolNanos = 0;
         private long _acquireSetupNanos = 0;
-        private long _acquireCpuNanos = 0;
         private long _unreturned = 0;
         private List<Exception> _exceptions = null;
 
@@ -838,7 +843,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _acquireNanos += connectionUsage.acquireNanos();
             _acquirePoolNanos += connectionUsage.poolNanos();
             _acquireSetupNanos += connectionUsage.setupNanos();
-            _acquireCpuNanos += connectionUsage.acquireCpuNanos();
             _unreturned += connectionUsage.unreturned();
         }
 
@@ -854,7 +858,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         synchronized public ActionStats getStats()
         {
-            return new BaseActionStats(_count, _elapsedTime, _maxTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _acquirePoolNanos, _acquireSetupNanos, _acquireCpuNanos, _unreturned, _exceptions);
+            return new BaseActionStats(_count, _elapsedTime, _maxTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _acquirePoolNanos, _acquireSetupNanos, _unreturned, _exceptions);
         }
 
         // Immutable stats holder to eliminate external synchronization needs
@@ -870,11 +874,10 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private final long _acquireNanos;
             private final long _acquirePoolNanos;
             private final long _acquireSetupNanos;
-            private final long _acquireCpuNanos;
             private final long _unreturned;
             private final List<Exception> _exceptions;
 
-            private BaseActionStats(long count, long elapsedTime, long maxTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long acquirePoolNanos, long acquireSetupNanos, long acquireCpuNanos, long unreturned, List<Exception> ex)
+            private BaseActionStats(long count, long elapsedTime, long maxTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long acquirePoolNanos, long acquireSetupNanos, long unreturned, List<Exception> ex)
             {
                 _count = count;
                 _elapsedTime = elapsedTime;
@@ -886,7 +889,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _acquireNanos = acquireNanos;
                 _acquirePoolNanos = acquirePoolNanos;
                 _acquireSetupNanos = acquireSetupNanos;
-                _acquireCpuNanos = acquireCpuNanos;
                 _unreturned = unreturned;
                 _exceptions = ex;
             }
@@ -949,12 +951,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             public long getAcquireSetupTime()
             {
                 return TimeUnit.NANOSECONDS.toMillis(_acquireSetupNanos);
-            }
-
-            @Override
-            public long getAcquireCpuTime()
-            {
-                return TimeUnit.NANOSECONDS.toMillis(_acquireCpuNanos);
             }
 
             @Override

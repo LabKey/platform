@@ -36,7 +36,7 @@ public class ConnectionUsageTsvWriter extends TSVWriter
     {
         writeLine(Arrays.asList("module", "controller", "action", "invocations", "cumulative", "borrows", "borrowsPerInvocation",
             "holdMs", "holdPercent", "connectionMs", "maxConcurrent", "acquireMs", "unreturned",
-            "acquirePoolMs", "acquireSetupMs", "acquireWrapperMs", "acquireCpuMs"));
+            "acquirePoolMs", "acquireSetupMs", "acquireWrapperMs"));
     }
 
     @Override
@@ -80,8 +80,7 @@ public class ConnectionUsageTsvWriter extends TSVWriter
                 String.valueOf(stats.getUnreturned()),
                 String.valueOf(stats.getAcquirePoolTime()),
                 String.valueOf(stats.getAcquireSetupTime()),
-                String.valueOf(Math.max(0, stats.getAcquireTime() - stats.getAcquirePoolTime() - stats.getAcquireSetupTime())),
-                String.valueOf(stats.getAcquireCpuTime())
+                String.valueOf(Math.max(0, stats.getAcquireTime() - stats.getAcquirePoolTime() - stats.getAcquireSetupTime()))
             ));
         }
 

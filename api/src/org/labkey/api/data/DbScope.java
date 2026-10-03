@@ -1472,8 +1472,8 @@ public class DbScope
         }
 
         Connection conn;
-        long acquireCpuStart = ConnectionUsage.currentThreadCpuNanos();
-        long acquireStart = System.nanoTime();
+        boolean trackUsage = ConnectionUsage.isEnabled();
+        long acquireStart = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1484,7 +1484,7 @@ public class DbScope
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
 
-        long poolDone = System.nanoTime();
+        long poolDone = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1510,9 +1510,10 @@ public class DbScope
                 _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            long setupDone = System.nanoTime();
+            long setupDone = trackUsage ? System.nanoTime() : 0;
             ConnectionWrapper wrapper = new ConnectionWrapper(conn, this, spid, type, log);
-            wrapper.trackUsage(acquireStart, poolDone, setupDone, acquireCpuStart);
+            if (trackUsage)
+                wrapper.trackUsage(acquireStart, poolDone, setupDone);
             return wrapper;
         }
         catch (Throwable t)

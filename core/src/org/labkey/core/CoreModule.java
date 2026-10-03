@@ -48,6 +48,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -1051,7 +1052,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 }
 
                 logTsv(new ActionsTsvWriter());
-                logTsv(new ConnectionUsageTsvWriter());
+                if (ConnectionUsage.isEnabled())
+                    logTsv(new ConnectionUsageTsvWriter());
                 LOG.info("Completed logging statistics for actions prior to web application shut down");
             }
 

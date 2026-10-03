@@ -231,12 +231,11 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     /** Called only for real pool borrows, so wrappers created without one never record a return */
-    void trackUsage(long acquireStart, long poolDone, long setupDone, long acquireCpuStart)
+    void trackUsage(long acquireStart, long poolDone, long setupDone)
     {
-        long cpuNow = ConnectionUsage.currentThreadCpuNanos();
         long now = System.nanoTime();
         _borrowedAt = now;
-        _usage = ConnectionUsage.recordBorrow(now - acquireStart, poolDone - acquireStart, setupDone - poolDone, cpuNow - acquireCpuStart, now);
+        _usage = ConnectionUsage.recordBorrow(now - acquireStart, poolDone - acquireStart, setupDone - poolDone, now);
     }
 
     /** this is a best guess logger, pass one in to be predictable */

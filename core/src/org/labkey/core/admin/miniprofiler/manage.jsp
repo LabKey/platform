@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.ConnectionUsage" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler.RenderPosition" %>
 <%@ page import="org.labkey.api.miniprofiler.MiniProfiler.Settings" %>
@@ -53,6 +54,14 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
                             "they can add 10% or more overhead, so this setting will automatically reset when the server is restarted.")%></label></td>
             <td>
                 <labkey:checkbox name="collectTroubleshootingStackTraces" id="collectTroubleshootingStackTraces" value="true" checked="<%=MiniProfiler.isCollectTroubleshootingStackTraces()%>"/>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label"><label for="trackConnectionUsage">Track connection usage until server shutdown<%=helpPopup("Track connection usage",
+                    "Records database connection borrows, hold time, and acquire time for each action, shown on the action statistics page. " +
+                            "It adds a small cost to every connection borrow, so this setting resets to its default when the server is restarted.")%></label></td>
+            <td>
+                <labkey:checkbox name="trackConnectionUsage" id="trackConnectionUsage" value="true" checked="<%=ConnectionUsage.isEnabled()%>"/>
             </td>
         </tr>
 

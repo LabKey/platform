@@ -17,11 +17,11 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,51 +33,68 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Counts connection pool borrows and hold time within a window opened by {@link #mark()}. Usage is keyed on
  * {@link DbScope#getEffectiveThread()}, so async threads sharing a request's connections are charged to that request.
+ * Off by default unless assertions are enabled; admins can toggle it from the profiler settings until restart.
  */
 public class ConnectionUsage
 {
     private static final Map<Thread, Usage> USAGE = Collections.synchronizedMap(new WeakHashMap<>());
-    private static final ThreadMXBean THREADS = ManagementFactory.getThreadMXBean();
-    private static final boolean CPU_TIME = THREADS.isCurrentThreadCpuTimeSupported() && THREADS.isThreadCpuTimeEnabled();
+    private static final Mark DISABLED = new Mark();
+
+    private static volatile boolean _enabled = assertionsEnabled();
 
     /** acquireNanos is the whole borrow: poolNanos in getConnection(), setupNanos for per-connection setup, and the remainder building the wrapper */
-    public record Snapshot(long borrows, long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned)
+    public record Snapshot(long borrows, long acquireNanos, long poolNanos, long setupNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned)
     {
-        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0, 0);
+        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0);
     }
 
-    /** Current thread's CPU time, or 0 when the JVM can't measure it */
-    static long currentThreadCpuNanos()
+    @SuppressWarnings({"AssertWithSideEffects", "ConstantValue"})
+    private static boolean assertionsEnabled()
     {
-        return CPU_TIME ? THREADS.getCurrentThreadCpuTime() : 0;
+        boolean enabled = false;
+        assert enabled = true;
+        return enabled;
+    }
+
+    public static boolean isEnabled()
+    {
+        return _enabled;
+    }
+
+    public static void setEnabled(boolean enabled)
+    {
+        _enabled = enabled;
     }
 
     /** Opaque token returned by {@link #mark()} */
     public static final class Mark
     {
-        private final Usage _usage;
+        private final @Nullable Usage _usage;
         private final long _borrows;
         private final long _acquireNanos;
         private final long _poolNanos;
         private final long _setupNanos;
-        private final long _acquireCpuNanos;
         private final long _heldNanos;
         private final long _wallNanos;
         private final int _active;
         private int _maxActive;
 
-        private Mark(Usage usage, long now)
+        private Mark()
+        {
+            this(null, 0);
+        }
+
+        private Mark(@Nullable Usage usage, long now)
         {
             _usage = usage;
-            _borrows = usage._borrows;
-            _acquireNanos = usage._acquireNanos;
-            _poolNanos = usage._poolNanos;
-            _setupNanos = usage._setupNanos;
-            _acquireCpuNanos = usage._acquireCpuNanos;
-            _heldNanos = usage.held(now);
-            _wallNanos = usage.wall(now);
-            _active = usage._active;
-            _maxActive = usage._active;
+            _borrows = null == usage ? 0 : usage._borrows;
+            _acquireNanos = null == usage ? 0 : usage._acquireNanos;
+            _poolNanos = null == usage ? 0 : usage._poolNanos;
+            _setupNanos = null == usage ? 0 : usage._setupNanos;
+            _heldNanos = null == usage ? 0 : usage.held(now);
+            _wallNanos = null == usage ? 0 : usage.wall(now);
+            _active = null == usage ? 0 : usage._active;
+            _maxActive = _active;
         }
     }
 
@@ -88,7 +105,6 @@ public class ConnectionUsage
         private long _acquireNanos;
         private long _poolNanos;
         private long _setupNanos;
-        private long _acquireCpuNanos;
         private long _heldClosedNanos;
         private long _openStartSum;
         private long _wallClosedNanos;
@@ -106,13 +122,12 @@ public class ConnectionUsage
             return _wallClosedNanos + (_active > 0 ? now - _wallStart : 0);
         }
 
-        private synchronized void borrow(long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long now)
+        private synchronized void borrow(long acquireNanos, long poolNanos, long setupNanos, long now)
         {
             _borrows++;
             _acquireNanos += acquireNanos;
             _poolNanos += poolNanos;
             _setupNanos += setupNanos;
-            _acquireCpuNanos += acquireCpuNanos;
             if (_active++ == 0)
                 _wallStart = now;
             _openStartSum += now;
@@ -145,7 +160,6 @@ public class ConnectionUsage
                 _acquireNanos - mark._acquireNanos,
                 _poolNanos - mark._poolNanos,
                 _setupNanos - mark._setupNanos,
-                _acquireCpuNanos - mark._acquireCpuNanos,
                 held(now) - mark._heldNanos,
                 wall(now) - mark._wallNanos,
                 mark._maxActive,
@@ -154,24 +168,30 @@ public class ConnectionUsage
         }
     }
 
-    /** Opens a measurement window for the current effective thread. Windows may nest. */
+    /**
+     * Opens a measurement window for the current effective thread. Windows may nest. Every mark must be passed to
+     * {@link #measure(Mark)}, typically in a finally block, or it stays on the thread for the thread's lifetime.
+     */
     public static @NotNull Mark mark()
     {
+        if (!_enabled)
+            return DISABLED;
+
         return USAGE.computeIfAbsent(DbScope.getEffectiveThread(), _ -> new Usage()).mark();
     }
 
     /** Closes the window; unreturned counts connections borrowed since the mark and still held. */
     public static @NotNull Snapshot measure(@NotNull Mark mark)
     {
-        return mark._usage.measure(mark);
+        return null == mark._usage ? Snapshot.EMPTY : mark._usage.measure(mark);
     }
 
     /** @return the Usage to credit when this connection is returned, or null if the thread has never been marked */
-    static @Nullable Usage recordBorrow(long acquireNanos, long poolNanos, long setupNanos, long acquireCpuNanos, long borrowedAt)
+    static @Nullable Usage recordBorrow(long acquireNanos, long poolNanos, long setupNanos, long borrowedAt)
     {
         Usage usage = USAGE.get(DbScope.getEffectiveThread());
         if (null != usage)
-            usage.borrow(acquireNanos, poolNanos, setupNanos, acquireCpuNanos, borrowedAt);
+            usage.borrow(acquireNanos, poolNanos, setupNanos, borrowedAt);
         return usage;
     }
 
@@ -183,6 +203,21 @@ public class ConnectionUsage
 
     public static class TestCase extends Assert
     {
+        private boolean _wasEnabled;
+
+        @Before
+        public void enable()
+        {
+            _wasEnabled = isEnabled();
+            setEnabled(true);
+        }
+
+        @After
+        public void restore()
+        {
+            setEnabled(_wasEnabled);
+        }
+
         private static Snapshot measureOnNewThread(ThrowingRunnable block) throws Exception
         {
             AtomicReference<Snapshot> result = new AtomicReference<>();
@@ -302,6 +337,19 @@ public class ConnectionUsage
             assertEquals(1, inner.get().borrows());
             assertEquals(2, inner.get().maxConcurrent());
             assertTrue(outer.wallNanos() >= inner.get().wallNanos());
+        }
+
+        @Test
+        public void testDisabled() throws Exception
+        {
+            setEnabled(false);
+            DbScope scope = DbScope.getLabKeyScope();
+            Snapshot snapshot = measureOnNewThread(() -> {
+                try (Connection ignored = scope.getPooledConnection())
+                {
+                }
+            });
+            assertEquals(Snapshot.EMPTY, snapshot);
         }
     }
 }
