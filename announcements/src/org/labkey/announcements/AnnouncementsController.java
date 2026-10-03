@@ -3017,12 +3017,12 @@ public class AnnouncementsController extends SpringActionController
             return c;
         }
 
-        private AnnouncementModel insertThread(Container c, User member) throws Exception
+        private AnnouncementModel insertThread(Container c, User... members) throws Exception
         {
             AnnouncementModel insert = new AnnouncementModel();
             insert.setTitle("Member list test thread");
             insert.setBody("body");
-            insert.setMemberListInput(String.valueOf(member.getUserId()));
+            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
             return AnnouncementManager.insertAnnouncement(c, getAdmin(), insert, null, false);
         }
 
@@ -3106,6 +3106,32 @@ public class AnnouncementsController extends SpringActionController
 
             assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testApiWritesDropMembersWhoCannotRead() throws Exception
+        {
+            Container board = createBoard("NormalInactive", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            User inactive = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel updated = insertThread(board, member, inactive);
+            AnnouncementModel repliedTo = insertThread(board, member, inactive);
+            UserManager.setUserActive(getAdmin(), inactive, false);
+
+            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
+                .addParameter("thread.rowId", updated.getRowId())
+                .addParameter("thread.body", "updated body");
+            ActionURL apiReply = new ActionURL(CreateThreadAction.class, board)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", repliedTo.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+
+            // Without the filter, validation rejects these writes because a listed member can't read the thread
+            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, updated));
+            assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, repliedTo));
         }
     }
 }
