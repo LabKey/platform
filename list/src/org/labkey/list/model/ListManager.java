@@ -113,10 +113,15 @@ public class ListManager implements SearchService.DocumentProvider
         @Override
         public List<ListDef> load(@NotNull String entityId, @Nullable Object argument)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), entityId);
-            ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
-            return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
+            return loadOwnLists(entityId);
         }
+    }
+
+    private List<ListDef> loadOwnLists(String containerId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
+        ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
+        return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
     }
 
     public static ListManager get()
@@ -538,14 +543,17 @@ public class ListManager implements SearchService.DocumentProvider
     public void enumerateDocuments(SearchService.TaskIndexingQueue queue, @Nullable Date since)
     {
         Consumer<SearchService.TaskIndexingQueue> r = (q) -> {
-            Map<String, ListDefinition> lists = ListService.get().getLists(q.getContainer(), null, false);
+            // Only this container's own lists: getLists() adds a workbook's parent lists, which each workbook crawl would
+            // then re-index. Uncached, so the crawl doesn't leave a cache entry for every container.
+            List<ListDef> lists = loadOwnLists(q.getContainer().getId());
 
             try
             {
                 QueryService.get().setEnvironment(QueryService.Environment.USER, User.getSearchUser());
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, q.getContainer());
-                for (ListDefinition list : lists.values())
+                for (ListDef def : lists)
                 {
+                    ListDefinition list = new ListDefinitionImpl(def);
                     try
                     {
                         boolean reindex = since == null;

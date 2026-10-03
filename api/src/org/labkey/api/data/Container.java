@@ -154,32 +154,28 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
             requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
-            for (Container child: c.getChildren())
-            {
-                if (child.isWorkbook())
-                {
-                    requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
-                }
-            }
+            for (FolderType workbookFolderType : ContainerManager.getWorkbookChildFolderTypes(c))
+                requiredModules.addAll(c.getRequiredModulesForFolderType(workbookFolderType));
 
             return Collections.unmodifiableSet(requiredModules);
         });
 
     static
     {
-        // Clear the required modules cache on any change to the container tree or container properties
+        // An entry depends on its container's folder type, its workbook children's, and (via module path patterns) its
+        // path. Uncache just the container and its parent, except renames and moves, which change descendants' paths.
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             @Override
             public void containerCreated(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
             public void containerDeleted(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
@@ -191,9 +187,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                if (evt instanceof ContainerManager.ContainerPropertyChangeEvent cpce && null != cpce.container
+                    && cpce.property != ContainerManager.Property.Name && cpce.property != ContainerManager.Property.Parent)
+                    uncacheRequiredModules(cpce.container, cpce.container.getParent());
+                else
+                    REQUIRED_MODULES_CACHE.clear();
             }
         });
+    }
+
+    private static void uncacheRequiredModules(Container... containers)
+    {
+        for (Container c : containers)
+        {
+            if (null != c)
+                REQUIRED_MODULES_CACHE.remove(c.getEntityId());
+        }
     }
 
     // Might add others in the future (e.g., ReadOnly)

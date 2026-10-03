@@ -135,7 +135,7 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
+    private static final Cache<Pair<GUID, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
@@ -245,11 +245,11 @@ public class OntologyManager
                 .toList();
         }
     });
-    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
+    private static final Cache<GUID, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (id, argument) -> {
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
 
         Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, id.toString()).getArrayList(DomainDescriptor.class))
         {
             dds.putIfAbsent(dd.getDomainURI(), dd);
         }
@@ -851,9 +851,9 @@ public class OntologyManager
     }
 
     @NotNull
-    private static Pair<Container, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    private static Pair<GUID, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
     {
-        return Pair.of(container, objectLSID);
+        return Pair.of(null == container ? null : container.getEntityId(), objectLSID);
     }
 
     /**
@@ -864,22 +864,22 @@ public class OntologyManager
      */
     public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Pair<Container, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        Pair<GUID, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
         return PROPERTY_MAP_CACHE.get(cacheKey);
     }
 
-    public static class PropertyMapCacheLoader implements CacheLoader<Pair<Container, String>, Map<String, ObjectProperty>>
+    public static class PropertyMapCacheLoader implements CacheLoader<Pair<GUID, String>, Map<String, ObjectProperty>>
     {
         @Override
-        public Map<String, ObjectProperty> load(@NotNull Pair<Container, String> key, @Nullable Object argument)
+        public Map<String, ObjectProperty> load(@NotNull Pair<GUID, String> key, @Nullable Object argument)
         {
-            Container container = key.first;
+            GUID containerId = key.first;
             String objectLSID = key.second;
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
-            if (container != null)
+            if (containerId != null)
             {
-                filter.addCondition(FieldKey.fromParts("Container"), container);
+                filter.addCondition(FieldKey.fromParts("Container"), containerId.toString());
             }
 
             if (_log.isDebugEnabled())
@@ -1534,7 +1534,7 @@ public class OntologyManager
         DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
         DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
         DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
-        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer());
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer().getEntityId());
     }
 
 
@@ -2578,7 +2578,7 @@ public class OntologyManager
         if (user != null && !c.hasPermission(user, ReadPermission.class))
             return Collections.emptyMap();
 
-        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
+        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c.getEntityId());
     }
 
     public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
@@ -2916,8 +2916,19 @@ public class OntologyManager
 
     public static void invalidateDomain(Domain d)
     {
-        // TODO can we please implement a surgical version of this
-        clearCaches();
+        String domainURI = d.getTypeURI();
+        Set<String> propertyURIs = d.getProperties().stream().map(DomainProperty::getPropertyURI).collect(Collectors.toSet());
+
+        // Keys are per lookup project and nulls are cached, so drop this domain's entries under every project
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
+        DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> propertyURIs.contains(key.first));
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer().getEntityId());
+
+        // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
+        PROPERTY_MAP_CACHE.clear();
+        ExperimentService.get().clearCaches();
     }
 
 
@@ -2939,6 +2950,12 @@ public class OntologyManager
         PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
+
+    /** Owned objects share their owner's container, so this also covers deleted children whose URIs aren't known */
+    private static void clearPropertyCache(Container c)
+    {
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> key.first == null || key.first.equals(c.getEntityId()));
+    }
 
     public static void clearPropertyCache()
     {

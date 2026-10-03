@@ -23,6 +23,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
@@ -35,7 +36,7 @@ import java.util.Set;
  */
 public class MvUtil
 {
-    private static final Cache<Container, Map<String, String>> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.YEAR, "Missing value indicators", (c, argument) -> getFromDb(c));
+    private static final Cache<GUID, Map<String, String>> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.YEAR, "Missing value indicators", (id, argument) -> getFromDb(id));
 
     private MvUtil() {}
 
@@ -92,7 +93,7 @@ public class MvUtil
      */
     public static @NotNull Pair<Container, Map<String, String>> getIndicatorsAndLabelsWithContainer(@NotNull Container c)
     {
-        Map<String, String> result = CACHE.get(c);
+        Map<String, String> result = CACHE.get(c.getEntityId());
 
         if (null == result)
         {
@@ -145,11 +146,11 @@ public class MvUtil
     }
 
     // Returns an unmodifiable, case-insensitive map of MV indicators -> labels in this folder OR null if they're inherited
-    private static @Nullable Map<String, String> getFromDb(@NotNull Container c)
+    private static @Nullable Map<String, String> getFromDb(@NotNull GUID containerId)
     {
         TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
         Set<String> selectColumns = new CsvSet("mvindicator, label");
-        Filter filter = new SimpleFilter(FieldKey.fromParts("container"), c.getId());
+        Filter filter = new SimpleFilter(FieldKey.fromParts("container"), containerId.toString());
         Map<String, String> indicatorsAndLabels = new TableSelector(mvTable, selectColumns, filter, null).getValueMap(String.class);
 
         return indicatorsAndLabels.isEmpty() ? null : Collections.unmodifiableMap(new CaseInsensitiveTreeMap<>(indicatorsAndLabels));
@@ -162,7 +163,7 @@ public class MvUtil
 
     public static void clearCache(@NotNull Container c)
     {
-        CACHE.remove(c);
+        CACHE.remove(c.getEntityId());
     }
 
     /**

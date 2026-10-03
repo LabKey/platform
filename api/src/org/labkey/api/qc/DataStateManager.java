@@ -28,7 +28,9 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
@@ -42,8 +44,8 @@ public class DataStateManager
     private static final Logger LOG = LogHelper.getLogger(DataStateManager.class, "Data state persistence issues");
     private static final DataStateManager _instance = new DataStateManager();
     private static final Map<String, DataStateHandler<AbstractManageDataStatesForm>> _DataStateHandlers = new HashMap<>();
-    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
-            (c, argument) -> new DataStateCollections(c)
+    private static final Cache<GUID, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
+            (id, argument) -> new DataStateCollections(id)
     );
 
     private static class DataStateCollections
@@ -52,13 +54,13 @@ public class DataStateManager
         private final Map<Long, DataState> _dataStateIdMap;
         private final Map<String, DataState> _dataStateLabelMap;
 
-        private DataStateCollections(Container c)
+        private DataStateCollections(GUID containerId)
         {
             List<DataState> dataStates = new ArrayList<>();
             Map<Long, DataState> dataStateIdMap = new LongHashMap<>();
             Map<String, DataState>  dataStateLabelMap = new StringHashMap<>();
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(DataState.class, dataState -> {
+            new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), new Sort("Label")).forEach(DataState.class, dataState -> {
 
                 dataStates.add(dataState);
                 dataStateIdMap.put(dataState.getRowId(), dataState);
@@ -97,7 +99,7 @@ public class DataStateManager
     @NotNull
     public List<DataState> getStates(Container container)
     {
-        return DATA_STATE_DB_CACHE.get(container).getDataStates();
+        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getDataStates();
     }
 
     public void registerDataStateHandler(DataStateHandler handler)
@@ -122,14 +124,14 @@ public class DataStateManager
     public DataState insertState(User user, DataState state)
     {
         DataState newState = Table.insert(user, CoreSchema.getInstance().getTableInfoDataStates(), state);
-        DATA_STATE_DB_CACHE.remove(state.getContainer());
+        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
 
         return newState;
     }
 
     public DataState updateState(User user, DataState state)
     {
-        DATA_STATE_DB_CACHE.remove(state.getContainer());
+        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
         SimpleFilter filter = SimpleFilter.createContainerFilter(state.getContainer());
         return Table.update(user, CoreSchema.getInstance().getTableInfoDataStates(), state, state.getRowId(), filter, Level.WARN);
     }
@@ -137,7 +139,7 @@ public class DataStateManager
     public boolean deleteState(DataState state)
     {
         List<DataState> preDeleteStates = getStates(state.getContainer());
-        DATA_STATE_DB_CACHE.remove(state.getContainer());
+        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
         Table.delete(CoreSchema.getInstance().getTableInfoDataStates(), state.getRowId());
 
         // return whether this is the last data state as it may matter for some clients
@@ -149,7 +151,7 @@ public class DataStateManager
         if (rowId == null)
             return null;
 
-        return DATA_STATE_DB_CACHE.get(container).getState(rowId);
+        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(rowId);
     }
 
     public DataState getStateForLabel(Container container, String label)
@@ -157,11 +159,11 @@ public class DataStateManager
         if (label == null)
             return null;
 
-        return DATA_STATE_DB_CACHE.get(container).getState(label);
+        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(label);
     }
 
     public void clearCache(Container c)
     {
-        DATA_STATE_DB_CACHE.remove(c);
+        DATA_STATE_DB_CACHE.remove(c.getEntityId());
     }
 }

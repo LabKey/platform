@@ -246,9 +246,9 @@ public class StudyManager
     private final VisitHelper _visitHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
-    private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
-    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+    private final BlockingCache<GUID, Set<PropertyDescriptor>> _sharedProperties;
+    private final BlockingCache<GUID, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (id, argument) -> {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), id.toString());
         return Collections.unmodifiableMap(
             new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
                 .stream(Participant.class)
@@ -271,12 +271,16 @@ public class StudyManager
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
         _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
-            (key, argument) ->
+            (id, argument) ->
             {
                 Container sharedContainer = ContainerManager.getSharedContainer();
-                assert key != sharedContainer;
+                assert !id.equals(sharedContainer.getEntityId());
 
-                Collection<DatasetDefinition> defs = _datasetHelper.getCollection(key);
+                Container c = ContainerManager.getForId(id);
+                if (null == c)
+                    return Collections.emptySet();
+
+                Collection<DatasetDefinition> defs = _datasetHelper.getCollection(c);
 
                 Set<PropertyDescriptor> set = new LinkedHashSet<>();
                 for (DatasetDefinition def : defs)
@@ -320,9 +324,9 @@ public class StudyManager
         }
 
         @Override
-        protected TableSelector getTableSelector(Container c)
+        protected TableSelector getTableSelector(GUID containerId)
         {
-            assert c.equals(ROOT);
+            assert containerId.equals(ROOT.getEntityId());
             return new TableSelector(getTableInfo(), null, new Sort(_defaultSortString));
         }
 
@@ -398,7 +402,7 @@ public class StudyManager
         public void clearCache(Container c)
         {
             super.clearCache(c);
-            _sharedProperties.remove(c);
+            _sharedProperties.remove(c.getEntityId());
         }
 
         private @Nullable DatasetDefinition getByName(Study study, String name)
@@ -1723,7 +1727,7 @@ public class StudyManager
     {
         Container c = participant.getContainer();
         Table.update(user, SCHEMA.getTableInfoParticipant(), participant, new Object[]{c.getId(), participant.getParticipantId()});
-        _participantCache.remove(c);
+        _participantCache.remove(c.getEntityId());
     }
 
     public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired)
@@ -1775,7 +1779,7 @@ public class StudyManager
         if (!study.equals(visitStudy))
             _visitHelper.clearCache(visitStudy.getContainer());
 
-        _participantCache.remove(study.getContainer());
+        _participantCache.remove(study.getContainer().getEntityId());
     }
 
     public VisitImpl getVisitForRowId(Study study, int rowId)
@@ -2248,7 +2252,7 @@ public class StudyManager
 
     public Set<PropertyDescriptor> getSharedProperties(Study study)
     {
-        return _sharedProperties.get(study.getContainer());
+        return _sharedProperties.get(study.getContainer().getEntityId());
     }
 
     @Nullable
@@ -2639,7 +2643,7 @@ public class StudyManager
         // folder tree to another parent, the datasets in subfolders will be left with invalid paths. See FolderTest.
         _datasetHelper.clearCache();
         _cohortHelper.clearCache(c);
-        _participantCache.remove(c);
+        _participantCache.remove(c.getEntityId());
     }
 
     public void deleteAllStudyData(Container c, User user)
@@ -2722,7 +2726,7 @@ public class StudyManager
             Table.delete(StudySchema.getInstance().getTableInfoVisitAliases(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitAliases());
             Table.delete(SCHEMA.getTableInfoParticipant(), containerFilter);
-            _participantCache.remove(c);
+            _participantCache.remove(c.getEntityId());
             assert deletedTables.add(SCHEMA.getTableInfoParticipant());
             Table.delete(_cohortHelper.getTableInfo(), containerFilter);
             _cohortHelper.clearCache(c);
@@ -3986,12 +3990,12 @@ public class StudyManager
     /** non-permission checking, non-recursive */
     private Map<String, Participant> getParticipantMap(Study study)
     {
-        return _participantCache.get(study.getContainer());
+        return _participantCache.get(study.getContainer().getEntityId());
     }
 
     public void clearParticipantCache(Container container)
     {
-        _participantCache.remove(container);
+        _participantCache.remove(container.getEntityId());
     }
 
     public Collection<Participant> getParticipants(Study study)

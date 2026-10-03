@@ -18,6 +18,7 @@ package org.labkey.api.cache;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.mbean.CacheMXBean;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.HeartBeat;
@@ -54,9 +55,17 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         _stackTrace = stackTrace;
     }
 
+    // Ehcache keeps the first key object stored for an entry, so a Container key pins a stale copy
+    private void validateKey(K key)
+    {
+        if (key instanceof Container)
+            throw new IllegalArgumentException("Container used as a key in cache \"" + _debugName + "\"; use its GUID (getEntityId()) instead to avoid pinning a potentially stale Container instance");
+    }
+
     @Override
     public void put(@NotNull K key, V value)
     {
+        validateKey(key);
         try
         {
             if (null == value)
@@ -76,6 +85,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
+        validateKey(key);
         try
         {
             if (null == value)

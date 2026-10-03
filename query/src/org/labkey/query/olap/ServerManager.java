@@ -51,6 +51,7 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
@@ -118,7 +119,7 @@ public class ServerManager
 
     private static final String DIR_NAME = "olap";
     private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Olap cube definitions (module)", new OlapSchemaCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
-    private static final BlockingCache<Container, Map<String, OlapSchemaDescriptor>> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Olap cube definitions (db)", new OlapCacheLoader());
+    private static final BlockingCache<GUID, Map<String, OlapSchemaDescriptor>> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Olap cube definitions (db)", new OlapCacheLoader());
 
     private static final BlockingCache<String, Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "Olap cubes", null);
 
@@ -168,13 +169,13 @@ public class ServerManager
         return MondrianServer.class.getName() + "/" + c.getId();
     }
 
-    private static class OlapCacheLoader implements CacheLoader<Container, Map<String, OlapSchemaDescriptor>>
+    private static class OlapCacheLoader implements CacheLoader<GUID, Map<String, OlapSchemaDescriptor>>
     {
         @Override
-        public Map<String, OlapSchemaDescriptor> load(@NotNull Container c, @Nullable Object argument)
+        public Map<String, OlapSchemaDescriptor> load(@NotNull GUID containerId, @Nullable Object argument)
         {
             Map<String, OlapSchemaDescriptor> map = new HashMap<>();
-            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString());
 
             new TableSelector(QueryManager.get().getTableInfoOlapDef(), filter, null)
                 .forEach(OlapDef.class, def -> map.put(def.getName(), new CustomOlapSchemaDescriptor(def)));
@@ -192,7 +193,7 @@ public class ServerManager
         if (null != id && null != id.getModule())
         {
             // look for descriptor in database cache by container and name
-            OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(c).get(id.getName());
+            OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(c.getEntityId()).get(id.getName());
             if (null != d && d.getModule() == id.getModule() && c.getActiveModules().contains(d.getModule()))
                 return d;
 
@@ -216,7 +217,7 @@ public class ServerManager
             .filter(osd -> osd.isExposed(c))
             .toList());
 
-        ret.addAll(DB_DESCRIPTOR_CACHE.get(c).values());
+        ret.addAll(DB_DESCRIPTOR_CACHE.get(c.getEntityId()).values());
 
         return ret;
     }
@@ -601,7 +602,7 @@ public class ServerManager
             if (d != null && d.getContainer() != null)
             {
                 invalidateCaches(d.getContainer());
-                DB_DESCRIPTOR_CACHE.remove(d.getContainer());
+                DB_DESCRIPTOR_CACHE.remove(d.getContainer().getEntityId());
             }
             else
             {
@@ -620,7 +621,7 @@ public class ServerManager
             if (null != ref)
                 ref.decrement();
             invalidateCaches(c);
-            DB_DESCRIPTOR_CACHE.remove(c);
+            DB_DESCRIPTOR_CACHE.remove(c.getEntityId());
             BitSetQueryImpl.invalidateCache(c);
         }
     }

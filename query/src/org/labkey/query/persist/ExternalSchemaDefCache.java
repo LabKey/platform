@@ -23,6 +23,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.GUID;
 import org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType;
 
 import java.util.Collection;
@@ -37,7 +39,7 @@ import java.util.Map;
  */
 public class ExternalSchemaDefCache
 {
-    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/linked schema definitions", (c, argument) -> getCollectionsToCache(c));
+    private static final Cache<GUID, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/linked schema definitions", (id, argument) -> getCollectionsToCache(id));
 
     @Nullable
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)
@@ -62,24 +64,24 @@ public class ExternalSchemaDefCache
 
     private static ExternalSchemaCollections getCollections(@Nullable Container c)
     {
-        return EXTERNAL_SCHEMA_DEF_CACHE.get(c);
+        return EXTERNAL_SCHEMA_DEF_CACHE.get(null == c ? null : c.getEntityId());
     }
 
     public static void uncache(Container c)
     {
-        EXTERNAL_SCHEMA_DEF_CACHE.remove(c);
+        EXTERNAL_SCHEMA_DEF_CACHE.remove(c.getEntityId());
         EXTERNAL_SCHEMA_DEF_CACHE.remove(null);  // Clear out the full list
     }
 
     private static final ExternalSchemaCollections EMPTY_COLLECTION = new ExternalSchemaCollections(Collections.emptyMap(), Collections.emptyMap());
 
-    /** @param c the container to use, or null for data for ALL containers */
-    private static ExternalSchemaCollections getCollectionsToCache(@Nullable Container c)
+    /** @param containerId the container to use, or null for data for ALL containers */
+    private static ExternalSchemaCollections getCollectionsToCache(@Nullable GUID containerId)
     {
         Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName = new HashMap<>();
         Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId = new HashMap<>();
 
-        SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
+        SimpleFilter filter = null != containerId ? new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()) : new SimpleFilter();
 
         new TableSelector(QueryManager.get().getTableInfoExternalSchema(), filter, null).forEach(rs -> {
             String schemaTypeName = rs.getString("SchemaType");
@@ -89,7 +91,7 @@ public class ExternalSchemaDefCache
             byRowId.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new HashMap<>()).put(def.getExternalSchemaId(), def);
 
             // Don't bother in the null case (site-wide list)... we only need one map and by-name is likely not unique
-            if (null != c)
+            if (null != containerId)
             {
                 byName.computeIfAbsent(type.getSchemaDefClass(), x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);
                 byName.computeIfAbsent(AbstractExternalSchemaDef.class, x -> new CaseInsensitiveHashMap<>()).put(def.getUserSchemaName(), def);

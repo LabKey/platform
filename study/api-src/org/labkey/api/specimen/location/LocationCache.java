@@ -20,11 +20,13 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.specimen.SpecimenSchema;
+import org.labkey.api.util.GUID;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,13 +36,25 @@ import java.util.Map;
 
 public class LocationCache
 {
-    private static final Cache<Container, LocationCollections> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Study locations", (c, argument) -> new LocationCollections(c));
+    private static final LocationCollections EMPTY_COLLECTIONS = new LocationCollections();
+
+    private static final Cache<GUID, LocationCollections> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Study locations", (id, argument) -> {
+        Container c = ContainerManager.getForId(id);
+        return null == c ? EMPTY_COLLECTIONS : new LocationCollections(c);
+    });
 
     private static class LocationCollections
     {
         private final List<LocationImpl> _list;
         private final Map<Integer, LocationImpl> _byRowId;
         private final Map<String, LocationImpl> _byLabel;
+
+        private LocationCollections()
+        {
+            _list = Collections.emptyList();
+            _byRowId = Collections.emptyMap();
+            _byLabel = Collections.emptyMap();
+        }
 
         public LocationCollections(Container c)
         {
@@ -79,21 +93,21 @@ public class LocationCache
 
     public static List<LocationImpl> getLocations(Container c)
     {
-        return CACHE.get(c).getLocations();
+        return CACHE.get(c.getEntityId()).getLocations();
     }
 
     public static LocationImpl getForRowId(Container c, int rowId)
     {
-        return CACHE.get(c).getForRowId(rowId);
+        return CACHE.get(c.getEntityId()).getForRowId(rowId);
     }
 
     public static LocationImpl getForLabel(Container c, String label)
     {
-        return CACHE.get(c).getForLabel(label);
+        return CACHE.get(c.getEntityId()).getForLabel(label);
     }
 
     public static void clear(Container c)
     {
-        CACHE.remove(c);
+        CACHE.remove(c.getEntityId());
     }
 }

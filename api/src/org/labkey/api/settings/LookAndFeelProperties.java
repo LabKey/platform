@@ -24,6 +24,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.logging.LogHelper;
@@ -51,7 +52,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.themeName
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
+    private static final Cache<GUID, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
     private static final Logger LOG = LogHelper.getLogger(LookAndFeelProperties.class, "Manages site-wide and project-scoped look and feel settings");
 
     public static void clearCaches()
@@ -209,7 +210,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getShortName()
     {
-        return SHORT_NAME_CACHE.get(_settingsContainer, null,
+        return SHORT_NAME_CACHE.get(_settingsContainer.getEntityId(), null,
             (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.KeepSubstitution).eval(AdminBean.getPropertyMap()));
     }
 

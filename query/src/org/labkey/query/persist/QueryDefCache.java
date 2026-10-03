@@ -25,6 +25,8 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +40,7 @@ import java.util.Map;
  */
 public class QueryDefCache
 {
-    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
+    private static final Cache<GUID, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (id, argument) -> new QueryDefCollections(id));
 
     private static class QueryDefCollections
     {
@@ -47,13 +49,13 @@ public class QueryDefCache
         private final Map<String, Map<String, QueryDef>> _customQueryDefs;
         private final Map<Integer, QueryDef> _queryDefIdMap;
 
-        private QueryDefCollections(Container c)
+        private QueryDefCollections(GUID containerId)
         {
             Map<String, Map<String, QueryDef>> queryDefs = new CaseInsensitiveHashMap<>();
             Map<String, Map<String, QueryDef>> customQueryDefs = new CaseInsensitiveHashMap<>();
             Map<Integer, QueryDef> queryDefIdMap = new IntHashMap<>();
 
-            new TableSelector(QueryManager.get().getTableInfoQueryDef(), SimpleFilter.createContainerFilter(c), null).forEach(QueryDef.class, queryDef -> {
+            new TableSelector(QueryManager.get().getTableInfoQueryDef(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), null).forEach(QueryDef.class, queryDef -> {
 
                 if (queryDef.getSql() != null)
                 {
@@ -124,7 +126,7 @@ public class QueryDefCache
     {
         List<QueryDef> queries = new ArrayList<>();
 
-        for (QueryDef queryDef : QUERY_DEF_DB_CACHE.get(container).getQueryDefs(schema, customQuery))
+        for (QueryDef queryDef : QUERY_DEF_DB_CACHE.get(container.getEntityId()).getQueryDefs(schema, customQuery))
         {
             int mask = 0;
             int value = 0;
@@ -155,18 +157,18 @@ public class QueryDefCache
     {
         assert schemaName != null : "schemaName must be specified";
 
-        QueryDef def = QUERY_DEF_DB_CACHE.get(container).getQueryMap(schemaName, customQuery).get(name);
+        QueryDef def = QUERY_DEF_DB_CACHE.get(container.getEntityId()).getQueryMap(schemaName, customQuery).get(name);
         return def != null ? def.clone() : null;
     }
 
     public static @Nullable
     QueryDef getQueryDefById(Container container, int queryDefId)
     {
-        return QUERY_DEF_DB_CACHE.get(container)._queryDefIdMap.get(queryDefId);
+        return QUERY_DEF_DB_CACHE.get(container.getEntityId())._queryDefIdMap.get(queryDefId);
     }
 
     public static void uncache(Container c)
     {
-        QUERY_DEF_DB_CACHE.remove(c);
+        QUERY_DEF_DB_CACHE.remove(c.getEntityId());
     }
 }

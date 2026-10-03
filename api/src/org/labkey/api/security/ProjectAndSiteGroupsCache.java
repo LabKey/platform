@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,25 +36,26 @@ import java.util.List;
 public class ProjectAndSiteGroupsCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
+    private static final BlockingCache<GUID, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
 
-    private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = (c, argument) -> {
-        String containerClause = c.isRoot() ? "IS NULL" : "= ?";
+    private static final CacheLoader<GUID, Collection<Integer>> GROUP_LIST_LOADER = (id, argument) -> {
+        boolean isRoot = id.equals(ContainerManager.getRoot().getEntityId());
+        String containerClause = isRoot ? "IS NULL" : "= ?";
 
         SQLFragment sql = new SQLFragment(
             "SELECT UserId FROM " + CORE.getTableInfoPrincipals() + "\n" +
                 "WHERE Type = '" + PrincipalType.GROUP.getTypeChar() + "' AND Container " + containerClause + "\n" +
                 "ORDER BY LOWER(Name)");  // Force case-insensitive order for consistency
 
-        if (!c.isRoot())
-            sql.add(c);
+        if (!isRoot)
+            sql.add(id.toString());
 
         return Collections.unmodifiableCollection(new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class));
     };
 
     static @NotNull List<Group> getProjectGroups(Container project, boolean includeSiteGroups)
     {
-        Collection<Integer> projectGroups = CACHE.get(project, includeSiteGroups, GROUP_LIST_LOADER);
+        Collection<Integer> projectGroups = CACHE.get(project.getEntityId(), includeSiteGroups, GROUP_LIST_LOADER);
         ArrayList<Group> groups;
 
         if (includeSiteGroups)
@@ -94,14 +96,14 @@ public class ProjectAndSiteGroupsCache
 
     private static @NotNull Collection<Integer> getSiteGroupIds()
     {
-        return CACHE.get(ContainerManager.getRoot(), null, GROUP_LIST_LOADER);
+        return CACHE.get(ContainerManager.getRoot().getEntityId(), null, GROUP_LIST_LOADER);
     }
 
     static void uncache(Container c)
     {
         if (null != c)
-            CACHE.remove(c);
+            CACHE.remove(c.getEntityId());
         else
-            CACHE.remove(ContainerManager.getRoot());
+            CACHE.remove(ContainerManager.getRoot().getEntityId());
     }
 }
