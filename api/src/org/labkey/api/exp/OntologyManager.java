@@ -2949,14 +2949,6 @@ public class OntologyManager
     {
         PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
-
-
-    /** Owned objects share their owner's container, so this also covers deleted children whose URIs aren't known */
-    private static void clearPropertyCache(Container c)
-    {
-        PROPERTY_MAP_CACHE.removeUsingFilter(key -> key.first == null || key.first.equals(c.getEntityId()));
-    }
-
     public static void clearPropertyCache()
     {
         PROPERTY_MAP_CACHE.clear();
