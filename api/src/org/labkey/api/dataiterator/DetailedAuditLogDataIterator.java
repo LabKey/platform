@@ -105,7 +105,6 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             if (!_updatedRows.isEmpty())
                 _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _providedValues, _useTransactionAuditCache);
             _updatedRows.clear();
-            _providedValues.clear();
             if (null != _existingRows)
                 _existingRows.clear();
         }
