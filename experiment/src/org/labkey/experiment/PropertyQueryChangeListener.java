@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.query.QueryChangeListener;
@@ -40,39 +41,41 @@ public class PropertyQueryChangeListener implements QueryChangeListener
 
     private void updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
     {
-        String fieldName = "lookupquery";
-        TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
-        SQLFragment updateSql = new SQLFragment("UPDATE ").append(pdTable)
-                .append(" SET ")
-                .append(fieldName)
-                .append(" = ? WHERE lookupschema = ? AND lookupquery = ? AND ")
+        SQLFragment where = new SQLFragment("lookupschema = ? AND lookupquery = ? AND ")
                 .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
-                .add(newValue)
                 .add(schema.toString())
                 .add(oldQuery)
                 .add(container)
                 .add(container);
 
-        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
-
+        updateLookups("lookupquery", newValue, where);
     }
 
     private void updateLookupSchema(String newValue, String oldSchema, Container container)
     {
-        String fieldName = "lookupschema";
-        TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
-        SQLFragment updateSql = new SQLFragment("UPDATE ").append(pdTable)
-                .append(" SET ")
-                .append(fieldName)
-                .append(" = ? WHERE lookupschema = ? AND ")
+        SQLFragment where = new SQLFragment("lookupschema = ? AND ")
                 .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
-                .add(newValue)
                 .add(oldSchema)
                 .add(container)
                 .add(container);
 
-        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
+        updateLookups("lookupschema", newValue, where);
+    }
 
+    private void updateLookups(String fieldName, String newValue, SQLFragment where)
+    {
+        TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
+        List<String> propertyURIs = new SqlSelector(pdTable.getSchema(), new SQLFragment("SELECT PropertyURI FROM ").append(pdTable).append(" WHERE ").append(where)).getArrayList(String.class);
+        if (propertyURIs.isEmpty())
+            return;
+
+        SQLFragment updateSql = new SQLFragment("UPDATE ").append(pdTable)
+                .append(" SET ").append(fieldName).append(" = ? WHERE ")
+                .add(newValue)
+                .append(where);
+
+        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
+        OntologyManager.uncachePropertyDescriptors(propertyURIs);
     }
 
     @Override

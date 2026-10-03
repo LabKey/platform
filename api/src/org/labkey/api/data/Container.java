@@ -141,11 +141,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private Long _fileRootSize = null;
     private LocalDateTime _fileRootLastCrawled = null;
 
-    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
-        CacheManager.getCache(
-            Constants.getMaxContainers(),
-            CacheManager.DAY,
-            "Required modules per container"),
+    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = DatabaseCache.get(
+        CoreSchema.getInstance().getScope(),
+        Constants.getMaxContainers(),
+        CacheManager.DAY,
+        "Required modules per container",
         (key, argument) -> {
             if (!(argument instanceof Container c))
             {

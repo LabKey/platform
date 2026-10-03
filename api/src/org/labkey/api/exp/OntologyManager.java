@@ -2923,12 +2923,19 @@ public class OntologyManager
         DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
         DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
         DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
-        PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> propertyURIs.contains(key.first));
+        uncachePropertyDescriptors(propertyURIs);
         DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer().getEntityId());
 
         // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
         PROPERTY_MAP_CACHE.clear();
         ExperimentService.get().clearCaches();
+    }
+
+    /** For callers that update exp.PropertyDescriptor rows directly; invalidateDomain() only covers the saved domain's own properties */
+    public static void uncachePropertyDescriptors(Collection<String> propertyURIs)
+    {
+        if (!propertyURIs.isEmpty())
+            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> propertyURIs.contains(key.first));
     }
 
 
