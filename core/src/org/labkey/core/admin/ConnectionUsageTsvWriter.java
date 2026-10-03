@@ -26,7 +26,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/** Invoked actions only, heaviest connection borrowers first */
+/** Actions invoked since connection tracking was last turned on, heaviest connection borrowers first */
 public class ConnectionUsageTsvWriter extends TSVWriter
 {
     private record Row(String module, String controller, String action, ActionStats stats) {}
@@ -35,7 +35,7 @@ public class ConnectionUsageTsvWriter extends TSVWriter
     protected void writeColumnHeaders()
     {
         writeLine(Arrays.asList("module", "controller", "action", "invocations", "cumulative", "borrows", "borrowsPerInvocation",
-            "holdMs", "holdPercent", "connectionMs", "maxConcurrent", "acquireMs", "unreturned",
+            "connectionWallMs", "connectionWallPercent", "connectionHeldMs", "maxConcurrent", "acquireMs", "unreturned",
             "acquirePoolMs", "acquireSetupMs", "acquireWrapperMs"));
     }
 
@@ -50,9 +50,9 @@ public class ConnectionUsageTsvWriter extends TSVWriter
                 .flatMap(module -> module.getValue().entrySet().stream()
                     .flatMap(controller -> controller.getValue().entrySet().stream()
                         .map(action -> new Row(module.getKey(), controller.getKey(), action.getKey(), action.getValue()))))
-                .filter(row -> row.stats().getCount() > 0)
+                .filter(row -> row.stats().getTrackedCount() > 0)
                 .sorted(Comparator.comparingLong((Row row) -> row.stats().getBorrows())
-                    .thenComparingLong(row -> row.stats().getCount())
+                    .thenComparingLong(row -> row.stats().getTrackedCount())
                     .reversed())
                 .toList();
         }
@@ -68,13 +68,13 @@ public class ConnectionUsageTsvWriter extends TSVWriter
                 row.module(),
                 row.controller(),
                 row.action(),
-                String.valueOf(stats.getCount()),
-                String.valueOf(stats.getElapsedTime()),
+                String.valueOf(stats.getTrackedCount()),
+                String.valueOf(stats.getTrackedElapsedTime()),
                 String.valueOf(stats.getBorrows()),
                 String.format(Locale.ROOT, "%.2f", stats.getBorrowsPerInvocation()),
                 String.valueOf(stats.getConnectionWallTime()),
-                String.format(Locale.ROOT, "%.1f", stats.getConnectionHoldFraction() * 100),
-                String.valueOf(stats.getConnectionHoldTime()),
+                String.format(Locale.ROOT, "%.1f", stats.getConnectionWallFraction() * 100),
+                String.valueOf(stats.getConnectionHeldTime()),
                 String.valueOf(stats.getMaxConcurrent()),
                 String.valueOf(stats.getAcquireTime()),
                 String.valueOf(stats.getUnreturned()),

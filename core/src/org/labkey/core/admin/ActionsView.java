@@ -76,8 +76,8 @@ class ActionsView extends HttpView
             {
                 out.print("<td class=\"labkey-column-header\">Borrows</td>");
                 out.print("<td class=\"labkey-column-header\">Borrows/Invocation</td>");
-                out.print("<td class=\"labkey-column-header\">Hold Time</td>");
-                out.print("<td class=\"labkey-column-header\">Hold %</td>");
+                out.print("<td class=\"labkey-column-header\">Connection Wall Time</td>");
+                out.print("<td class=\"labkey-column-header\">Connection Wall %</td>");
                 out.print("<td class=\"labkey-column-header\">Max Concurrent</td>");
                 out.print("<td class=\"labkey-column-header\">Acquire Time</td>");
                 out.print("<td class=\"labkey-column-header\">Unreturned</td>");
@@ -141,7 +141,7 @@ class ActionsView extends HttpView
                         renderTd(out, stats.getBorrows());
                         renderTd(out, stats.getBorrowsPerInvocation(), Formats.f2);
                         renderTd(out, stats.getConnectionWallTime());
-                        renderTd(out, stats.getConnectionHoldFraction(), Formats.percent1);
+                        renderTd(out, stats.getConnectionWallFraction(), Formats.percent1);
                         renderTd(out, stats.getMaxConcurrent());
                         renderTd(out, stats.getAcquireTime());
                         renderTd(out, stats.getUnreturned());

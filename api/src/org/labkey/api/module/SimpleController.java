@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
@@ -58,7 +59,7 @@ public class SimpleController extends SpringActionController implements SpringAc
     }
 
     @Override
-    public void addTime(Controller action, long elapsedTime, ConnectionUsage.Snapshot connectionUsage)
+    public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
     {
     }
 

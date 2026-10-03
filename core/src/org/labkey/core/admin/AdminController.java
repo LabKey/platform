@@ -108,6 +108,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
@@ -3064,9 +3065,11 @@ public class AdminController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             // Initialized scopes only, so an unreachable external data source isn't probed
-            return Map.of("dataSources", DbScope.getInitializedDbScopes().stream()
-                .map(GetConnectionPoolStatsAction::getPoolStats)
-                .toList());
+            return Map.of(
+                "connectionUsageTracked", ConnectionUsage.isEnabled(),
+                "dataSources", DbScope.getInitializedDbScopes().stream()
+                    .map(GetConnectionPoolStatsAction::getPoolStats)
+                    .toList());
         }
 
         private static Map<String, Object> getPoolStats(DbScope scope)

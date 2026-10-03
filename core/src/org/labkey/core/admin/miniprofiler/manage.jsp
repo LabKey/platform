@@ -59,7 +59,8 @@ Some of them incur overhead to track or take space in the UI, and are thus confi
         <tr>
             <td class="labkey-form-label"><label for="trackConnectionUsage">Track connection usage until server shutdown<%=helpPopup("Track connection usage",
                     "Records database connection borrows, hold time, and acquire time for each action, shown on the action statistics page. " +
-                            "It adds a small cost to every connection borrow, so this setting resets to its default when the server is restarted.")%></label></td>
+                            "It adds a small cost to every connection borrow, so this setting resets to its default when the server is restarted. " +
+                            "Turning it off discards the connection statistics collected so far.")%></label></td>
             <td>
                 <labkey:checkbox name="trackConnectionUsage" id="trackConnectionUsage" value="true" checked="<%=ConnectionUsage.isEnabled()%>"/>
             </td>

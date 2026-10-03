@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Counts connection pool borrows and hold time within a window opened by {@link #mark()}. Usage is keyed on
  * {@link DbScope#getEffectiveThread()}, so async threads sharing a request's connections are charged to that request.
  * Off by default unless assertions are enabled; admins can toggle it from the profiler settings until restart.
+ * Turning it off starts a new generation, which discards the per-action totals gathered so far.
  */
 public class ConnectionUsage
 {
@@ -41,11 +42,16 @@ public class ConnectionUsage
     private static final Mark DISABLED = new Mark();
 
     private static volatile boolean _enabled = assertionsEnabled();
+    private static volatile int _generation = 0;
 
     /** acquireNanos is the whole borrow: poolNanos in getConnection(), setupNanos for per-connection setup, and the remainder building the wrapper */
-    public record Snapshot(long borrows, long acquireNanos, long poolNanos, long setupNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned)
+    public record Snapshot(long borrows, long acquireNanos, long poolNanos, long setupNanos, long heldNanos, long wallNanos, int maxConcurrent, long unreturned, int generation)
     {
-        public static final Snapshot EMPTY = new Snapshot(0, 0, 0, 0, 0, 0, 0, 0);
+        /** False once tracking has been turned off since the window opened */
+        public boolean isCurrent()
+        {
+            return generation == _generation;
+        }
     }
 
     @SuppressWarnings({"AssertWithSideEffects", "ConstantValue"})
@@ -61,42 +67,73 @@ public class ConnectionUsage
         return _enabled;
     }
 
-    public static void setEnabled(boolean enabled)
+    public static synchronized void setEnabled(boolean enabled)
     {
+        if (_enabled && !enabled)
+            _generation++;
         _enabled = enabled;
+    }
+
+    public static int getGeneration()
+    {
+        return _generation;
     }
 
     /** Opaque token returned by {@link #mark()} */
     public static final class Mark
     {
         private final @Nullable Usage _usage;
+        private final int _generation;
+        // Counters at the mark; a borrow belongs to this window when its sequence number exceeds _borrows
         private final long _borrows;
         private final long _acquireNanos;
         private final long _poolNanos;
         private final long _setupNanos;
-        private final long _heldNanos;
-        private final long _wallNanos;
-        private final int _active;
+        // Only connections borrowed within the window, so one leaked earlier on this thread isn't charged here
+        private int _active;
         private int _maxActive;
+        private long _openStartSum;
+        private long _heldClosedNanos;
+        private long _wallStart;
+        private long _wallClosedNanos;
 
         private Mark()
         {
-            this(null, 0);
+            _usage = null;
+            _generation = 0;
+            _borrows = _acquireNanos = _poolNanos = _setupNanos = 0;
         }
 
-        private Mark(@Nullable Usage usage, long now)
+        private Mark(@NotNull Usage usage)
         {
             _usage = usage;
-            _borrows = null == usage ? 0 : usage._borrows;
-            _acquireNanos = null == usage ? 0 : usage._acquireNanos;
-            _poolNanos = null == usage ? 0 : usage._poolNanos;
-            _setupNanos = null == usage ? 0 : usage._setupNanos;
-            _heldNanos = null == usage ? 0 : usage.held(now);
-            _wallNanos = null == usage ? 0 : usage.wall(now);
-            _active = null == usage ? 0 : usage._active;
-            _maxActive = _active;
+            _generation = ConnectionUsage._generation;
+            _borrows = usage._borrows;
+            _acquireNanos = usage._acquireNanos;
+            _poolNanos = usage._poolNanos;
+            _setupNanos = usage._setupNanos;
+        }
+
+        private void borrow(long now)
+        {
+            if (_active++ == 0)
+                _wallStart = now;
+            _maxActive = Math.max(_maxActive, _active);
+            _openStartSum += now;
+        }
+
+        private void release(long borrowedAt, long now)
+        {
+            _active--;
+            _heldClosedNanos += now - borrowedAt;
+            _openStartSum -= borrowedAt;
+            if (_active == 0)
+                _wallClosedNanos += now - _wallStart;
         }
     }
+
+    /** Identifies one borrow so its return is credited only to the windows that saw it */
+    record Borrow(@NotNull Usage usage, long sequence, long borrowedAt) {}
 
     // Sums of nanoTime() values may overflow; that's harmless because only differences are reported
     static final class Usage
@@ -105,48 +142,29 @@ public class ConnectionUsage
         private long _acquireNanos;
         private long _poolNanos;
         private long _setupNanos;
-        private long _heldClosedNanos;
-        private long _openStartSum;
-        private long _wallClosedNanos;
-        private long _wallStart;
-        private int _active;
         private final List<Mark> _marks = new ArrayList<>(2);
 
-        private long held(long now)
-        {
-            return _heldClosedNanos + _active * now - _openStartSum;
-        }
-
-        private long wall(long now)
-        {
-            return _wallClosedNanos + (_active > 0 ? now - _wallStart : 0);
-        }
-
-        private synchronized void borrow(long acquireNanos, long poolNanos, long setupNanos, long now)
+        private synchronized Borrow borrow(long acquireNanos, long poolNanos, long setupNanos, long now)
         {
             _borrows++;
             _acquireNanos += acquireNanos;
             _poolNanos += poolNanos;
             _setupNanos += setupNanos;
-            if (_active++ == 0)
-                _wallStart = now;
-            _openStartSum += now;
             for (Mark mark : _marks)
-                mark._maxActive = Math.max(mark._maxActive, _active);
+                mark.borrow(now);
+            return new Borrow(this, _borrows, now);
         }
 
-        private synchronized void release(long borrowedAt, long now)
+        private synchronized void release(Borrow borrow, long now)
         {
-            _active--;
-            _heldClosedNanos += now - borrowedAt;
-            _openStartSum -= borrowedAt;
-            if (_active == 0)
-                _wallClosedNanos += now - _wallStart;
+            for (Mark mark : _marks)
+                if (borrow.sequence() > mark._borrows)
+                    mark.release(borrow.borrowedAt(), now);
         }
 
         private synchronized Mark mark()
         {
-            Mark mark = new Mark(this, System.nanoTime());
+            Mark mark = new Mark(this);
             _marks.add(mark);
             return mark;
         }
@@ -160,17 +178,19 @@ public class ConnectionUsage
                 _acquireNanos - mark._acquireNanos,
                 _poolNanos - mark._poolNanos,
                 _setupNanos - mark._setupNanos,
-                held(now) - mark._heldNanos,
-                wall(now) - mark._wallNanos,
+                mark._heldClosedNanos + mark._active * now - mark._openStartSum,
+                mark._wallClosedNanos + (mark._active > 0 ? now - mark._wallStart : 0),
                 mark._maxActive,
-                Math.max(0, _active - mark._active)
+                mark._active,
+                mark._generation
             );
         }
     }
 
     /**
-     * Opens a measurement window for the current effective thread. Windows may nest. Every mark must be passed to
-     * {@link #measure(Mark)}, typically in a finally block, or it stays on the thread for the thread's lifetime.
+     * Opens a measurement window for the current effective thread. Windows may nest; each one counts only the
+     * connections borrowed within it. Every mark must be passed to {@link #measure(Mark)}, typically in a finally
+     * block, or it stays on the thread for the thread's lifetime.
      */
     public static @NotNull Mark mark()
     {
@@ -180,42 +200,44 @@ public class ConnectionUsage
         return USAGE.computeIfAbsent(DbScope.getEffectiveThread(), _ -> new Usage()).mark();
     }
 
-    /** Closes the window; unreturned counts connections borrowed since the mark and still held. */
-    public static @NotNull Snapshot measure(@NotNull Mark mark)
+    /**
+     * Closes the window; unreturned counts connections borrowed within it and still held.
+     * @return null if tracking was off when the window opened
+     */
+    public static @Nullable Snapshot measure(@NotNull Mark mark)
     {
-        return null == mark._usage ? Snapshot.EMPTY : mark._usage.measure(mark);
+        return null == mark._usage ? null : mark._usage.measure(mark);
     }
 
-    /** @return the Usage to credit when this connection is returned, or null if the thread has never been marked */
-    static @Nullable Usage recordBorrow(long acquireNanos, long poolNanos, long setupNanos, long borrowedAt)
+    /** @return the Borrow to credit when this connection is returned, or null if the thread has never been marked */
+    static @Nullable Borrow recordBorrow(long acquireNanos, long poolNanos, long setupNanos, long borrowedAt)
     {
         Usage usage = USAGE.get(DbScope.getEffectiveThread());
-        if (null != usage)
-            usage.borrow(acquireNanos, poolNanos, setupNanos, borrowedAt);
-        return usage;
+        return null == usage ? null : usage.borrow(acquireNanos, poolNanos, setupNanos, borrowedAt);
     }
 
-    static void recordReturn(@Nullable Usage usage, long borrowedAt)
+    static void recordReturn(@Nullable Borrow borrow)
     {
-        if (null != usage)
-            usage.release(borrowedAt, System.nanoTime());
+        if (null != borrow)
+            borrow.usage().release(borrow, System.nanoTime());
     }
 
     public static class TestCase extends Assert
     {
         private boolean _wasEnabled;
 
+        // Bypasses setEnabled() so running these tests doesn't discard the server's per-action totals
         @Before
         public void enable()
         {
             _wasEnabled = isEnabled();
-            setEnabled(true);
+            _enabled = true;
         }
 
         @After
         public void restore()
         {
-            setEnabled(_wasEnabled);
+            _enabled = _wasEnabled;
         }
 
         private static Snapshot measureOnNewThread(ThrowingRunnable block) throws Exception
@@ -258,6 +280,7 @@ public class ConnectionUsage
                     Thread.sleep(5);
                 }
             });
+            assertTrue(snapshot.isCurrent());
             assertEquals(3, snapshot.borrows());
             assertEquals(3, snapshot.maxConcurrent());
             assertTrue("Acquire phases can't exceed the whole", snapshot.poolNanos() + snapshot.setupNanos() <= snapshot.acquireNanos());
@@ -335,21 +358,48 @@ public class ConnectionUsage
             assertEquals(2, outer.borrows());
             assertEquals(2, outer.maxConcurrent());
             assertEquals(1, inner.get().borrows());
-            assertEquals(2, inner.get().maxConcurrent());
+            assertEquals("Inner window shouldn't count the outer connection", 1, inner.get().maxConcurrent());
             assertTrue(outer.wallNanos() >= inner.get().wallNanos());
+        }
+
+        @Test
+        public void testEarlierLeakNotCharged() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            AtomicReference<Snapshot> leaking = new AtomicReference<>();
+            AtomicReference<Snapshot> later = new AtomicReference<>();
+            measureOnNewThread(() -> {
+                Mark first = mark();
+                Connection leaked = scope.getPooledConnection();
+                leaking.set(measure(first));
+
+                Mark second = mark();
+                Thread.sleep(5);
+                try (Connection ignored = scope.getPooledConnection())
+                {
+                    leaked.close();
+                    later.set(measure(second));
+                }
+            });
+            Snapshot snapshot = later.get();
+            assertEquals(1, leaking.get().unreturned());
+            assertEquals(1, snapshot.borrows());
+            assertEquals(1, snapshot.maxConcurrent());
+            assertEquals("Returning the earlier leak shouldn't mask this window's", 1, snapshot.unreturned());
+            assertTrue("Window shouldn't be charged for the earlier leak's hold time", snapshot.wallNanos() < 5_000_000);
         }
 
         @Test
         public void testDisabled() throws Exception
         {
-            setEnabled(false);
+            _enabled = false;
             DbScope scope = DbScope.getLabKeyScope();
             Snapshot snapshot = measureOnNewThread(() -> {
                 try (Connection ignored = scope.getPooledConnection())
                 {
                 }
             });
-            assertEquals(Snapshot.EMPTY, snapshot);
+            assertNull(snapshot);
         }
     }
 }
