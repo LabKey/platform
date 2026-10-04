@@ -21,8 +21,6 @@ import org.labkey.api.security.permissions.Permission;
 /**
  * Interface for objects that know how to check if a user has permission to perform
  * a certain kind of action
- * User: matthewb
- * Date: 2011-11-29
  */
 public interface HasPermission
 {

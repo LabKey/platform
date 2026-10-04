@@ -71,9 +71,6 @@ configurations.configureEach {
 }
 
 configurations {
-    // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
-    all*.exclude group: "org.apache.geronimo.bundles", module: "json"
-
     // this configuration and its artifact are declared because the default outgoing variant for the api
     // module (runtimeElements) does not include all the class files since the classes compiled from
     // the XSDs are produced in a separate classes directory.  The name is chosen to be the same as
@@ -373,10 +370,10 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.sf.ehcache:ehcache-core:${ehcacheCoreVersion}",
+            "net.sf.ehcache:ehcache:${ehcacheVersion}",
             "Ehcache",
             "Terracotta",
-            "http://ehcache.org/documentation/overview.html",
+            "https://www.ehcache.org/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Caching library",
@@ -564,7 +561,7 @@ dependencies {
             "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}",
             "Jackson support for org.json",
             "Jackson",
-            "https://github.com/FasterXML/jackson-datatype-json-org",
+            "https://github.com/FasterXML/jackson-modules-java8",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Add-on module to support JSR-310 (Java 8 Date & Time API) data types",

@@ -55,7 +55,6 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.assay.AssayUrls;
@@ -111,11 +110,8 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageDataStatesForm;
@@ -184,7 +180,6 @@ import org.labkey.api.study.CompletionType;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.DatasetTable;
-import org.labkey.api.study.MasterPatientIndexService;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -220,7 +215,6 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
@@ -230,7 +224,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishConfirmAction;
@@ -269,7 +262,6 @@ import org.labkey.study.model.VisitDatasetType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
-import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.DatasetQuerySettings;
@@ -825,7 +817,7 @@ public class StudyController extends BaseStudyController
         {
             if (_report == null)
             {
-                String reportId = (String)getViewContext().get(DATASET_REPORT_ID_PARAMETER_NAME);
+                String reportId = getViewContext().getString(DATASET_REPORT_ID_PARAMETER_NAME);
 
                 ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId, getViewContext().getUser(), getViewContext().getContainer());
                 if (identifier != null)
@@ -846,7 +838,7 @@ public class StudyController extends BaseStudyController
                 return HttpView.redirect(createRedirectURLfrom(DatasetAction.class, context));
             }
 
-            int datasetId = NumberUtils.toInt((String)context.get(Dataset.DATASET_KEY), -1);
+            int datasetId = NumberUtils.toInt(context.getString(Dataset.DATASET_KEY), -1);
             Dataset def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
 
             if (def != null)
@@ -904,7 +896,7 @@ public class StudyController extends BaseStudyController
                 }
                 else
                 {
-                    String entityId = (String)getViewContext().get("entityId");
+                    String entityId = getViewContext().getString("entityId");
                     if (null != entityId)
                         _def = StudyManager.getInstance().getDatasetDefinitionByEntityId(getStudyRedirectIfNull(), entityId);
                 }
@@ -1159,7 +1151,7 @@ public class StudyController extends BaseStudyController
             if (!errorMsg.isEmpty())
                 return HtmlView.err(errorMsg.toString());
 
-            String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
+            String viewName = getViewContext().getString(DATASET_VIEW_NAME_PARAMETER_NAME);
 
             CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL(), DatasetQueryView.DATAREGION);
             // display the next and previous buttons only if we have a cached participant index
@@ -1325,9 +1317,15 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(ImportVisitMapForm form, BindException errors) throws Exception
         {
+            // GH Issue 1450: For shared studies, don't allow visit maps to be imported from a subfolder
+            StudyImpl study = getStudyThrowIfNull();
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+                throw new UnauthorizedException("Visit map import is only allowed from the shared study root.");
+
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<>();
-            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
+            if (!importer.process(getUser(), study, form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -2092,7 +2090,7 @@ public class StudyController extends BaseStudyController
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            int id = NumberUtils.toInt((String)getViewContext().get("id"));
+            int id = NumberUtils.toInt(getViewContext().getString("id"));
             _v = StudyManager.getInstance().getVisitForRowId(study, id);
             if (_v == null)
             {
@@ -2115,7 +2113,7 @@ public class StudyController extends BaseStudyController
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             // UNDONE: how do I get struts to handle this checkbox?
-            postedVisit.setShowByDefault(null != StringUtils.trimToNull((String)getViewContext().get("showByDefault")));
+            postedVisit.setShowByDefault(null != StringUtils.trimToNull(getViewContext().getString("showByDefault")));
 
             // UNDONE: reshow is broken for this form, but we have to validate
             Collection<VisitImpl> visits = StudyManager.getInstance().getVisitManager(study).getVisits();
@@ -2536,6 +2534,13 @@ public class StudyController extends BaseStudyController
             }
 
             Study study = getStudy(getContainer());
+            Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+            if (sharedStudy != null && sharedStudy.getShareVisitDefinitions() == Boolean.TRUE)
+            {
+                errors.reject(ERROR_MSG, "Can't create visits in a study with shared visits");
+                return;
+            }
+
             boolean isDateBased = study.getTimepointType() == TimepointType.DATE;
 
             form.validate(errors, study);
@@ -3049,7 +3054,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(DeletePermission.class)
+    //
+
+    /**
+     * Users who can link data to a study should be allowed to recall them.
+     * @see StudyPublishManager._publishData
+     */
+    @RequiresPermission(InsertPermission.class)
     public class DeletePublishedRowsAction extends FormHandlerAction<DeleteDatasetRowsForm>
     {
         private DatasetDefinition _def;
@@ -3060,9 +3071,11 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(DeleteDatasetRowsForm target, Errors errors)
         {
-            _def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), target.getDatasetId());
+            StudyImpl study = getStudyThrowIfNull();
+            _def = StudyManager.getInstance().getDatasetDefinition(study, target.getDatasetId());
             if (_def == null)
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + target.getDatasetId());
+
             if (!target.isDeleteAllData())
             {
                 _allLsids = DataRegionSelection.getSelected(getViewContext(), true);
@@ -3103,7 +3116,7 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors)
         {
-            String originalSourceLsid = (String)getViewContext().get("sourceLsid");
+            String originalSourceLsid = getViewContext().getString("sourceLsid");
 
             Dataset.PublishSource publishSource = _def.getPublishSource();
             if (form.getPublishSourceId() != null && publishSource != null)
@@ -7562,247 +7575,6 @@ public class StudyController extends BaseStudyController
         public void setRefresh(boolean refresh)
         {
             _refresh = refresh;
-        }
-    }
-
-    /**
-     * Set up the site wide settings for a master patient provider
-     */
-    @RequiresPermission(AdminPermission.class)
-    public static class MasterPatientProviderAction extends FormViewAction<MasterPatientProviderSettings>
-    {
-        @Override
-        public void validateCommand(MasterPatientProviderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public ModelAndView getView(MasterPatientProviderSettings form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/masterPatientProvider.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(MasterPatientProviderSettings form, BindException errors) throws Exception
-        {
-            if (form.getType() != null)
-            {
-                try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
-                {
-                    MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
-                    if (svc != null)
-                    {
-                        WritablePropertyMap map = PropertyManager.getNormalStore().getWritableProperties(MasterPatientProviderSettings.CATEGORY, true);
-
-                        map.put(MasterPatientProviderSettings.TYPE, form.getType());
-                        map.save();
-
-                        svc.setServerSettings(form);
-                        transaction.commit();
-                    }
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(MasterPatientProviderSettings form)
-        {
-            return urlProvider(AdminUrls.class).getAdminConsoleURL();
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            urlProvider(AdminUrls.class).addAdminNavTrail(root, "Configure Master Patient Index", getClass(), getContainer());
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class TestMasterPatientProviderAction extends MutatingApiAction<MasterPatientProviderSettings>
-    {
-        @Override
-        public void validateForm(MasterPatientProviderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public Object execute(MasterPatientProviderSettings form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            if (form.getType() != null)
-            {
-                MasterPatientIndexService svc = MasterPatientIndexService.getProvider(form.getType());
-                if (svc != null)
-                {
-                    if (svc.checkServerSettings(form))
-                    {
-                        response.put("success", true);
-                        response.put("message", "The specified settings are valid.");
-                    }
-                    else
-                    {
-                        response.put("success", false);
-                        response.put("message", "The specified settings are not valid.");
-                    }
-                }
-            }
-            return response;
-        }
-    }
-
-    public static class MasterPatientProviderSettings extends MasterPatientIndexService.ServerSettings
-    {
-        public static final String CATEGORY = "MASTER_PATIENT_PROVIDER";
-        public static final String TYPE = "TYPE";
-
-        private String _type;
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void setType(String type)
-        {
-            _type = type;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ConfigureMasterPatientSettingsAction extends FormViewAction<MasterPatientIndexService.FolderSettings>
-    {
-        private MasterPatientIndexService _svc;
-
-        @Override
-        public void validateCommand(MasterPatientIndexService.FolderSettings form, Errors errors)
-        {
-            if (!form.isValid())
-                errors.reject(ERROR_MSG, "All required fields are not specified");
-        }
-
-        @Override
-        public ModelAndView getView(MasterPatientIndexService.FolderSettings form, boolean reshow, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/study/view/manageMasterPatientConfig.jsp", getService(), errors);
-        }
-
-        @Override
-        public boolean handlePost(MasterPatientIndexService.FolderSettings form, BindException errors) throws Exception
-        {
-            MasterPatientIndexService svc = getService();
-            if (svc != null)
-            {
-                form.setReloadUser(getUser().getUserId());
-                svc.setFolderSettings(getContainer(), form);
-            }
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(MasterPatientIndexService.FolderSettings form)
-        {
-            return new ActionURL(ManageStudyAction.class, getContainer());
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            MasterPatientIndexService svc = getService();
-            if (svc != null)
-                root.addChild("Manage " + svc.getName() + " Configuration");
-            else
-                root.addChild("Manage Master Patient Index Configuration");
-        }
-
-        private MasterPatientIndexService getService()
-        {
-            if (_svc == null)
-            {
-                _svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-            }
-            return _svc;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class RefreshMasterPatientIndexAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            try
-            {
-                ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL());
-                MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-
-                MasterPatientIndexService.FolderSettings settings = svc.getFolderSettings(getContainer());
-                if (settings.isEnabled())
-                {
-                    PipelineJob job = new MasterPatientIndexUpdateTask(info, PipelineService.get().findPipelineRoot(getContainer()), svc);
-
-                    PipelineService.get().queueJob(job);
-
-                    response.put("success", true);
-                    response.put(ActionURL.Param.returnUrl.name(), urlProvider(PipelineUrls.class).urlBegin(getContainer()));
-                }
-                else
-                {
-                    response.put("success", false);
-                    response.put("message", "The specified configuration is not enabled.");
-                }
-            }
-            catch (PipelineValidationException e)
-            {
-                throw new IOException(e);
-            }
-            return response;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class DeleteMasterPatientRecordsAction extends MutatingApiAction<DeleteMPIForm>
-    {
-        @Override
-        public ApiResponse execute(DeleteMPIForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            List<Pair<String, String>> params = form.getParams();
-            MasterPatientIndexService svc = MasterPatientIndexMaintenanceTask.getConfiguredService();
-            if (svc != null && !params.isEmpty())
-            {
-                int count = svc.deleteMatchingRecords(params);
-
-                response.put("success", true);
-                response.put("count", count);
-            }
-            return response;
-        }
-    }
-
-    public static class DeleteMPIForm implements ApiJsonForm
-    {
-        private final List<Pair<String, String>> _params = new ArrayList<>();
-
-        public List<Pair<String, String>> getParams()
-        {
-            return _params;
-        }
-
-        @Override
-        public void bindJson(JSONObject json)
-        {
-            for (String key : json.keySet())
-            {
-                _params.add(new Pair<>(key, String.valueOf(json.get(key))));
-            }
         }
     }
 

@@ -91,10 +91,6 @@ public class DavCrawler implements ShutdownListener
     // 1 Mbyte/sec, this seems to be enough to use a LOT of tika cpu time
     final RateLimiter _fileIORateLimiter = new RateLimiter("file io", 1000000, TimeUnit.SECONDS);
 
-    // CONSIDER: file count limiter
-    final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, TimeUnit.SECONDS);
-
-
     public static class ResourceInfo
     {
         ResourceInfo(Date indexed, Date modified)
@@ -616,10 +612,10 @@ public class DavCrawler implements ShutdownListener
         if (null != f)
         {
             // labkey convention
-            if (new File(f,".nocrawl").exists())
+            if (FileUtil.appendName(f,".nocrawl").exists())
                 return true;
             // postgres
-            if (new File(f,"PG_VERSION").exists())
+            if (FileUtil.appendName(f,"PG_VERSION").exists())
                 return true;
         }
 

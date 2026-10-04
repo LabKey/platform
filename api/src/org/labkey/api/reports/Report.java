@@ -53,7 +53,7 @@ public interface Report extends AttachmentParent, ThumbnailProvider
     /**
      * Render this report in the specified context
      */
-    HttpView renderReport(ViewContext context) throws Exception;
+    HttpView<?> renderReport(ViewContext context) throws Exception;
 
     /**
      * Return the data view (if any) for this report. Many reports are created from a source

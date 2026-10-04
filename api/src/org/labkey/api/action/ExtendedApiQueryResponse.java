@@ -27,6 +27,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.Pair;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +67,12 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     // Used for jackson serialization/deserialization
     public static class ColMap extends HashMap<ColMapEntry, Object>
     {
+    }
+
+    /** Receives a column's entries, so they can be collected into a {@link ColMap} or streamed directly */
+    private interface ColMapSink<X extends Exception>
+    {
+        void put(ColMapEntry entry, @Nullable Object value) throws X;
     }
 
     public ExtendedApiQueryResponse(QueryView view, boolean schemaEditable,
@@ -116,6 +123,31 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
         }
     }
 
+    @Override
+    protected void writeValue(ApiJsonWriter writer, DisplayColumn dc) throws IOException
+    {
+        String columnName = getColumnName(dc);
+        if (columnName == null)
+            return;
+
+        // Nested and multi-value columns are uncommon, so they keep the ColMap path
+        if (dc instanceof NestedPropertyDisplayColumn || (_arrayMultiValueColumns && dc instanceof IMultiValuedDisplayColumn))
+        {
+            writer.writeProperty(columnName, createColMap(dc));
+            return;
+        }
+
+        writer.startObject(columnName);
+        try
+        {
+            putColEntries(getRenderContext(), dc, _includeFormattedValue, _doItWithStyle, (entry, value) -> writer.writeProperty(entry.name(), value));
+        }
+        finally
+        {
+            writer.endObject();
+        }
+    }
+
     protected Object createColMap(DisplayColumn dc)
     {
         return createColMap(getRenderContext(), dc, _arrayMultiValueColumns, _includeFormattedValue, _doItWithStyle);
@@ -153,6 +185,13 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
     @NotNull
     private static ColMap getColMap(RenderContext ctx, DisplayColumn dc, boolean includeFormattedValue, boolean doItWithStyle)
     {
+        ColMap colMap = new ColMap();
+        putColEntries(ctx, dc, includeFormattedValue, doItWithStyle, colMap::put);
+        return colMap;
+    }
+
+    private static <X extends Exception> void putColEntries(RenderContext ctx, DisplayColumn dc, boolean includeFormattedValue, boolean doItWithStyle, ColMapSink<X> sink) throws X
+    {
         //column value
         Object value = dc.getJsonValue(ctx);
         Object displayValue = dc.getDisplayValue(ctx);
@@ -169,23 +208,21 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
 
         //in the extended response format, each column will have a map of its own
         //that will contain entries for value, mvValue, mvIndicator, etc.
-        ColMap colMap = makeColMap(value, displayValue, formattedValue, url, includeFormattedValue, urlTarget);
+        putValueEntries(value, displayValue, formattedValue, url, includeFormattedValue, urlTarget, sink);
 
         //missing values
         if (dc instanceof MVDisplayColumn mvColumn)
         {
-            colMap.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
-            colMap.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
+            sink.put(ColMapEntry.mvValue, mvColumn.getMvIndicator(ctx));
+            sink.put(ColMapEntry.mvRawValue, mvColumn.getRawValue(ctx));
         }
 
         if (doItWithStyle)
         {
             String style = dc.getCssStyle(ctx);
             if (!StringUtils.isEmpty(style))
-                colMap.put(ColMapEntry.style, style);
+                sink.put(ColMapEntry.style, style);
         }
-
-        return colMap;
     }
 
     @Nullable
@@ -244,25 +281,30 @@ public class ExtendedApiQueryResponse extends ApiQueryResponse
             boolean includeFormattedValue, @Nullable String urlTarget)
     {
         ColMap colMap = new ColMap();
+        putValueEntries(value, displayValue, formattedValue, url, includeFormattedValue, urlTarget, colMap::put);
+        return colMap;
+    }
 
+    private static <X extends Exception> void putValueEntries(
+            @Nullable Object value, @Nullable Object displayValue, @Nullable String formattedValue, @Nullable String url,
+            boolean includeFormattedValue, @Nullable String urlTarget, ColMapSink<X> sink) throws X
+    {
         value = ensureJSONDate(value);
-        colMap.put(ColMapEntry.value, value);
+        sink.put(ColMapEntry.value, value);
 
         displayValue = ensureJSONDate(displayValue);
         if (null != displayValue && !displayValue.equals(value))
-            colMap.put(ColMapEntry.displayValue, displayValue);
+            sink.put(ColMapEntry.displayValue, displayValue);
 
         if (includeFormattedValue && formattedValue != null && !formattedValue.equals(displayValue))
-            colMap.put(ColMapEntry.formattedValue, formattedValue);
+            sink.put(ColMapEntry.formattedValue, formattedValue);
 
         if (value != null && url != null)
         {
-            colMap.put(ColMapEntry.url, url);
+            sink.put(ColMapEntry.url, url);
             if (!StringUtils.isEmpty(urlTarget))
-                colMap.put(ColMapEntry.urlTarget, urlTarget);
+                sink.put(ColMapEntry.urlTarget, urlTarget);
         }
-
-        return colMap;
     }
 
     @Override

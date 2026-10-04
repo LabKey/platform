@@ -22,6 +22,7 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.catalina.filters.CorsFilter;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.action.ConcurrencyLimiter;
 import org.labkey.api.action.SpringActionController;
@@ -118,12 +119,14 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.reports.report.r.RReport;
@@ -164,6 +167,7 @@ import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
@@ -184,6 +188,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SvgUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenanceStartupListener;
+import org.labkey.api.util.TracedOperation;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.VersionNumber;
@@ -195,6 +200,7 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.RedirectorServlet;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -440,11 +446,13 @@ public class ApiModule extends CodeOnlyModule
             ExcelWriter.TestCase.class,
             ExistingRecordDataIterator.TestCase.class,
             ExperimentJSONConverter.TestCase.class,
+            ExternalScriptEngine.TestCase.class,
             ExtUtil.TestCase.class,
             FieldKey.TestCase.class,
             FileType.TestCase.class,
             FileUtil.TestCase.class,
             GenerateUniqueDataIterator.TestCase.class,
+            GUID.TestCase.class,
             HelpTopic.TestCase.class,
             ImpersonationTestCase.class,
             InlineInClauseGenerator.TestCase.class,
@@ -463,6 +471,7 @@ public class ApiModule extends CodeOnlyModule
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             ModuleHtmlViewDefinition.TestCase.class,
+            ModuleLoader.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
@@ -495,9 +504,11 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
+            ViewContext.TestCase.class,
             XmlBeansUtil.TestCase.class
         );
     }
@@ -523,6 +534,7 @@ public class ApiModule extends CodeOnlyModule
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
+            ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,
@@ -538,6 +550,7 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
             DbScope.SchemaNameTestCase.class,
+            DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
                 DisplayColumn.TestCase.class,
@@ -568,6 +581,7 @@ public class ApiModule extends CodeOnlyModule
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
             SecurityManager.TestCase.class,
+            SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,

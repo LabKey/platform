@@ -67,7 +67,7 @@ public class JavaScriptReport extends ScriptReport
     {
         try
         {
-            return (new JspTemplate("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
+            return (new JspTemplate<>("/org/labkey/api/reports/report/view/javaScriptReportExample.jsp")).render();
         }
         catch (Exception e)
         {

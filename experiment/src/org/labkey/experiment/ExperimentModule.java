@@ -26,7 +26,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -89,9 +88,7 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
@@ -212,7 +209,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.008;
+        return 26.009;
     }
 
     @Nullable
@@ -277,8 +274,6 @@ public class ExperimentModule extends SpringModule
                 false,
                 false,
                 OptionalFeatureService.FeatureType.Deprecated));
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
-            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SAMPLE_FILES_TABLE, "Manage Unreferenced Sample Files",
                 "Enable 'Unreferenced Sample Files' table to view and delete sample files that are no longer referenced by samples", false);
 
@@ -768,27 +763,6 @@ public class ExperimentModule extends SpringModule
                 results.put("sampleSetWithOnlyNumberNamesCount", numSampleCounts.stream().filter(
                         map -> (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
                 ).count());
-
-                UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
-                FilteredTable<?> table = (FilteredTable<?>) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
-
-                SQLFragment sql = new SQLFragment("SELECT COUNT(*)\n" +
-                        "                        FROM (\n" +
-                        "                                 -- updates that are marked as lineage updates\n" +
-                        "                                 (SELECT DISTINCT transactionId\n" +
-                        "                                  FROM " + table.getRealTable().getFromSQL("").getSQL() +"\n" +
-                        "                                  WHERE islineageupdate = " + schema.getSqlDialect().getBooleanTRUE() + "\n" +
-                        "                                    AND comment = 'Sample was updated.'\n" +
-                        "                                 ) a1\n" +
-                        "                                     JOIN\n" +
-                        "                                     -- but have associated entries that are not lineage updates\n" +
-                        "                                     (SELECT DISTINCT transactionid\n" +
-                        "                                      FROM " + table.getRealTable().getFromSQL("").getSQL() + "\n" +
-                        "                                      WHERE islineageupdate = " + schema.getSqlDialect().getBooleanFALSE() + ") a2\n" +
-                        "                                 ON a1.transactionid = a2.transactionid\n" +
-                        "                                 )");
-
-                results.put("sampleLineageAuditDiscrepancyCount", new SqlSelector(schema, sql.getSQL()).getObject(Long.class));
 
                 results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));

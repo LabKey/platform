@@ -71,7 +71,7 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
         // Show only folders where current user has admin permissions
-        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class);
     }
 
     @Override

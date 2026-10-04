@@ -389,25 +389,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class);
     }
 
-    @Override
-    public @Nullable ExpRunImpl getExpRun(long rowId)
+    private @Nullable ExpRunImpl getExpRun(SimpleFilter filter)
     {
-        return getExpRun(rowId, null);
+        ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        return run == null ? null : new ExpRunImpl(run);
     }
 
     @Override
-    public @Nullable ExpRunImpl getExpRun(long rowId, @Nullable Container container)
+    public @Nullable ExpRunImpl getExpRun(long rowId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
-        ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        if (run == null)
-            return null;
+        return getExpRun(new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId));
+    }
 
-        // GitHub Issue #1892: if container provided, ensure the run belongs to the container
-        if (container != null && !run.getContainer().equals(container))
-            return null;
-
-        return new ExpRunImpl(run);
+    @Override
+    public @Nullable ExpRunImpl getExpRun(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
+        return getExpRun(filter);
     }
 
     private List<ExpRunImpl> getExpRuns(SimpleFilter filter)
@@ -717,6 +717,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @Nullable ExpDataImpl getExpData(long rowId)
     {
         return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+    }
+
+    @Override
+    public @Nullable ExpDataImpl getExpData(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        return getExpData(filter);
     }
 
     @Override
@@ -1406,6 +1415,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpProtocolImpl getExpProtocol(long rowId)
     {
         return PROTOCOL_ROW_ID_CACHE.get(rowId);
+    }
+
+    @Override
+    public @Nullable ExpProtocolImpl getExpProtocol(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        return getExpProtocol(filter);
     }
 
     @Override

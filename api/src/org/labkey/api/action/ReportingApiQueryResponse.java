@@ -125,6 +125,13 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
     }
 
     @Override
+    protected void writeRow(ApiResponseWriter writer) throws IOException
+    {
+        // Rows are split into "data" and "links" objects, which the streaming path doesn't produce
+        writer.writeListEntry(getRow());
+    }
+
+    @Override
     protected void putValue(Map<String, Object> row, DisplayColumn dc)
     {
         // Splitting the individual row result into two objects- "data" and "links". "links" has the detail & update links.
