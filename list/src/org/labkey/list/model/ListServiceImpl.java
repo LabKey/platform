@@ -153,6 +153,7 @@ public class ListServiceImpl implements ListService
     @Override
     public ListDefinition getList(Domain domain)
     {
+        // Check the container's cached list definitions first to avoid a DB query
         Container c = domain.getContainer();
         if (c != null)
         {

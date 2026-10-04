@@ -38,7 +38,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.HtmlWriter;
@@ -226,8 +225,10 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         private final String _containerColumnName;
         @NotNull
         private final String _defaultNameColumnName;
-        // Keyed by container id + domain URI; empty when the domain no longer exists
-        private final Map<Pair<String, String>, Optional<DomainLink>> _domainLinks = new HashMap<>();
+        // Empty when the domain no longer exists
+        private final Map<DomainKey, Optional<DomainLink>> _domainLinks = new HashMap<>();
+
+        private record DomainKey(String containerId, String domainURI) {}
 
         private record DomainLink(String name, @Nullable ActionURL url, boolean hasKind) {}
 
@@ -264,7 +265,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
             if (uri != null && cId != null)
             {
-                Optional<DomainLink> link = _domainLinks.computeIfAbsent(Pair.of(cId, uri), _ -> getDomainLink(ctx, cId, uri));
+                Optional<DomainLink> link = _domainLinks.computeIfAbsent(new DomainKey(cId, uri), _ -> getDomainLink(ctx, cId, uri));
                 if (link.isPresent())
                 {
                     if (link.get().hasKind())

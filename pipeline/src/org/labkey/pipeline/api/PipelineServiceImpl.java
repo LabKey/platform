@@ -1050,12 +1050,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
-    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf)
+    public List<ActiveJob> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerNames, CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
 
-        return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Set.of("Provider", "Description"), filter, null).getMapCollection();
+        return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Set.of("Provider", "Description"), filter, null).getArrayList(ActiveJob.class);
     }
 
     public static class TestCase extends Assert

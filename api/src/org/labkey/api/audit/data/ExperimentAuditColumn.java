@@ -24,7 +24,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
@@ -37,10 +36,14 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
 {
     protected ColumnInfo _containerId;
     protected ColumnInfo _defaultName;
-    // Keyed by bound value + container id, since the same object typically repeats across rows
-    private final Map<Pair<Object, String>, Optional<Pair<ObjectType, ActionURL>>> _expValues = new HashMap<>();
+    // The same object typically repeats across rows
+    private final Map<CacheKey, Optional<ExpLink<ObjectType>>> _expValues = new HashMap<>();
 
     public static final String KEY_SEPARATOR = "~~KEYSEP~~";
+
+    protected record ExpLink<T extends ExpObject>(T object, @Nullable ActionURL url) {}
+
+    private record CacheKey(Object boundValue, @Nullable String containerId) {}
 
     public ExperimentAuditColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
     {
@@ -66,23 +69,23 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     }
 
     @Nullable
-    protected abstract Pair<ObjectType, ActionURL> getExpValue(RenderContext ctx);
+    protected abstract ExpLink<ObjectType> getExpValue(RenderContext ctx);
 
     @Nullable
-    private Pair<ObjectType, ActionURL> getCachedExpValue(RenderContext ctx)
+    private ExpLink<ObjectType> getCachedExpValue(RenderContext ctx)
     {
         Container c = getContainer(ctx);
-        Pair<Object, String> key = Pair.of(getBoundColumn().getValue(ctx), c == null ? null : c.getId());
+        CacheKey key = new CacheKey(getBoundColumn().getValue(ctx), c == null ? null : c.getId());
         return _expValues.computeIfAbsent(key, _ -> Optional.ofNullable(getExpValue(ctx))).orElse(null);
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        Pair<ObjectType, ActionURL> value = getCachedExpValue(ctx);
+        ExpLink<ObjectType> value = getCachedExpValue(ctx);
         if (value != null)
         {
-            return value.first.getName();
+            return value.object().getName();
         }
 
         if (_defaultName != null)
@@ -114,10 +117,10 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     @Override
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        Pair<ObjectType, ActionURL> value = getCachedExpValue(ctx);
-        if (value != null && value.second != null)
+        ExpLink<ObjectType> value = getCachedExpValue(ctx);
+        if (value != null && value.url() != null)
         {
-            out.write(LinkBuilder.simpleLink(value.first.getName(), value.second));
+            out.write(LinkBuilder.simpleLink(value.object().getName(), value.url()));
             return;
         }
 
