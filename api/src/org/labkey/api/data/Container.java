@@ -154,8 +154,11 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
             requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
-            for (FolderType workbookFolderType : ContainerManager.getWorkbookChildFolderTypes(c))
-                requiredModules.addAll(c.getRequiredModulesForFolderType(workbookFolderType));
+            if (c.canHaveChildren())
+            {
+                for (FolderType workbookFolderType : ContainerManager.getWorkbookChildFolderTypes(c))
+                    requiredModules.addAll(c.getRequiredModulesForFolderType(workbookFolderType));
+            }
 
             return Collections.unmodifiableSet(requiredModules);
         });

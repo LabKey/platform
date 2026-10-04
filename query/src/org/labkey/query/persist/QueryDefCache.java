@@ -167,8 +167,10 @@ public class QueryDefCache
         return QUERY_DEF_DB_CACHE.get(container.getEntityId())._queryDefIdMap.get(queryDefId);
     }
 
-    public static void uncache(Container c)
+    // Callers resolve the container by id, which is null once it's deleted
+    public static void uncache(@Nullable Container c)
     {
-        QUERY_DEF_DB_CACHE.remove(c.getEntityId());
+        if (null != c)
+            QUERY_DEF_DB_CACHE.remove(c.getEntityId());
     }
 }

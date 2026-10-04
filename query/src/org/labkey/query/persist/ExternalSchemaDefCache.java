@@ -67,9 +67,10 @@ public class ExternalSchemaDefCache
         return EXTERNAL_SCHEMA_DEF_CACHE.get(null == c ? null : c.getEntityId());
     }
 
-    public static void uncache(Container c)
+    public static void uncache(@Nullable Container c)
     {
-        EXTERNAL_SCHEMA_DEF_CACHE.remove(c.getEntityId());
+        if (null != c)
+            EXTERNAL_SCHEMA_DEF_CACHE.remove(c.getEntityId());
         EXTERNAL_SCHEMA_DEF_CACHE.remove(null);  // Clear out the full list
     }
 

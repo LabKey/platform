@@ -2935,7 +2935,10 @@ public class OntologyManager
     public static void uncachePropertyDescriptors(Collection<String> propertyURIs)
     {
         if (!propertyURIs.isEmpty())
-            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> propertyURIs.contains(key.first));
+        {
+            Set<String> uris = propertyURIs instanceof Set<String> set ? set : new HashSet<>(propertyURIs);
+            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> uris.contains(key.first));
+        }
     }
 
 

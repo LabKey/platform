@@ -54,9 +54,10 @@ public class QuerySnapshotCache
         return QUERY_SNAPSHOT_DEF_CACHE.get(c.getEntityId()).getForSchemaAndName(schemaName, snapshotName);
     }
 
-    static void uncache(Container c)
+    static void uncache(@Nullable Container c)
     {
-        QUERY_SNAPSHOT_DEF_CACHE.remove(c.getEntityId());
+        if (null != c)
+            QUERY_SNAPSHOT_DEF_CACHE.remove(c.getEntityId());
         QUERY_SNAPSHOT_DEF_CACHE.remove(null);  // Clear out the full list (used for dependency tracking)
     }
 
