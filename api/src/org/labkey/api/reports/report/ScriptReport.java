@@ -82,10 +82,6 @@ import java.util.Collections;
 import java.util.List;
 
 /*
-* User: adam
-* Date: Dec 21, 2010
-* Time: 7:57:11 PM
-*
 * This is a simple base class that represents reports that are defined by a text file (editable or static module file).
 * The subclass ScriptEngineReport is the base class for reports that use a ScriptEngine to interpret/execute this file.
 */
@@ -147,7 +143,7 @@ public abstract class ScriptReport extends AbstractReport
 
             if (!StringUtils.isEmpty(filterParam))
             {
-                final String filterValue = (String)context.get(filterParam);
+                final String filterValue = context.getString(filterParam);
 
                 if (filterValue != null)
                 {
@@ -365,12 +361,12 @@ public abstract class ScriptReport extends AbstractReport
     @Override
     public HttpView<?> getRunReportView(ViewContext context) throws Exception
     {
-        String tabId = (String) context.get("tabId");
+        String tabId = context.getString("tabId");
 
         if (null == tabId)
             tabId = context.getActionURL().getParameter("tabId");
 
-        String webpartString = (String) context.get(Report.renderParam.reportWebPart.name());
+        String webpartString = context.getString(Report.renderParam.reportWebPart.name());
         boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
 
         // Module-based reports are always read-only, but we still allow viewing the report source in the source tab.
@@ -520,5 +516,4 @@ public abstract class ScriptReport extends AbstractReport
             }
         }
     }
-
 }

@@ -566,7 +566,7 @@ public class DataRegionSelection
         RenderContext ctx,
         DataRegion rgn,
         ResultSet rs,
-        @Nullable Collection<String> selectedValues
+        @Nullable Set<String> selectedValues
     ) throws SQLException
     {
         Set<String> selected = new LinkedHashSet<>();
@@ -590,6 +590,14 @@ public class DataRegionSelection
                     }
                 }
             }
+        }
+
+        // GitHub Issue 1594: the query dropped its ORDER BY, so selected is in arbitrary result-set order; restore the
+        // caller's order by filtering the already-copied selectedValues in place, avoiding a second set allocation.
+        if (selectedValues != null)
+        {
+            selectedValues.retainAll(selected);
+            return selectedValues;
         }
 
         return selected;
