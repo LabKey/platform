@@ -336,6 +336,8 @@ public class SqlController extends SpringActionController
             ViewContext viewContext = new ViewContext();
             viewContext.setUser(ctx.getUser());
             viewContext.setContainer(ctx.getContainer());
+            // nested DataRegions (e.g. PropertiesDisplayColumn) read sort/filter from the context URL
+            viewContext.setActionURL(new ActionURL(ExecuteAction.class, ctx.getContainer()));
             renderCtx = new RenderContext(viewContext);
             renderCtx.setResults(rs);
             rowMapFactory = ResultSetRowMapFactory.create(rs);

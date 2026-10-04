@@ -299,6 +299,24 @@ public class CoreMcp implements McpService.McpImpl
     }
 
     @McpResource(
+            uri = "resource://org/labkey/core/AssayTransformScripts.md",
+            mimeType = "application/markdown",
+            name = "Assay Transform Script Development Guide",
+            description = "Required reading before writing an assay transform or validation script in Python or R. Covers the runProperties.tsv contract, substitution tokens, transformed data and properties, error and warning reporting, and local testing.")
+    public ReadResourceResult getAssayTransformScriptsGuide() throws IOException
+    {
+        incrementResourceRequestCount("Assay Transform Scripts");
+        String markdown = IOUtils.resourceToString("org/labkey/core/AssayTransformScripts.md", null, CoreModule.class.getClassLoader());
+        return new ReadResourceResult(List.of(
+                new McpSchema.TextResourceContents(
+                        "resource://org/labkey/core/AssayTransformScripts.md",
+                        "application/markdown",
+                        markdown
+                )
+        ));
+    }
+
+    @McpResource(
             uri = "resource://org/labkey/core/Reports.md",
             mimeType = "application/markdown",
             name = "LabKey Reports: Converting a Script Guide",
