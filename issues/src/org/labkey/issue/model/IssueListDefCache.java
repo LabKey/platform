@@ -91,13 +91,18 @@ public class IssueListDefCache
         }
     }
 
-    static @Nullable IssueListDef getIssueListDef(Container c, int rowId)
+    // An issue built from API input has no container yet when its def name is resolved
+    static @Nullable IssueListDef getIssueListDef(@Nullable Container c, int rowId)
     {
+        if (c == null)
+            return null;
         return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getForRowId(rowId);
     }
 
-    static @Nullable IssueListDef getIssueListDef(Container c, String name)
+    static @Nullable IssueListDef getIssueListDef(@Nullable Container c, String name)
     {
+        if (c == null)
+            return null;
         return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getForName(name);
     }
 

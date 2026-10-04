@@ -18,6 +18,7 @@ package org.labkey.api.qc;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongHashMap;
@@ -97,8 +98,12 @@ public class DataStateManager
     }
 
     @NotNull
-    public List<DataState> getStates(Container container)
+    public List<DataState> getStates(@Nullable Container container)
     {
+        // The root has no project, which SampleStateManager.getAllProjectStates() passes through
+        if (container == null)
+            return Collections.emptyList();
+
         return DATA_STATE_DB_CACHE.get(container.getEntityId()).getDataStates();
     }
 
@@ -146,17 +151,17 @@ public class DataStateManager
         return (preDeleteStates.size() == 1);
     }
 
-    public DataState getStateForRowId(Container container, Long rowId)
+    public DataState getStateForRowId(@Nullable Container container, Long rowId)
     {
-        if (rowId == null)
+        if (container == null || rowId == null)
             return null;
 
         return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(rowId);
     }
 
-    public DataState getStateForLabel(Container container, String label)
+    public DataState getStateForLabel(@Nullable Container container, String label)
     {
-        if (label == null)
+        if (container == null || label == null)
             return null;
 
         return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(label);
