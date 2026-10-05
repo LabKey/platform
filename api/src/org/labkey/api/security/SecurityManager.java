@@ -44,6 +44,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -111,6 +113,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -176,6 +179,8 @@ public class SecurityManager
     public static final String TRANSFORM_SESSION_ID = "LabKeyTransformSessionId";  // issue 19748
     /** GH Issue 1489: gates acceptance of the deprecated TRANSFORM_SESSION_ID cookie; default off */
     public static final String FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID = "AllowTransformSessionIdAuth";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER = "AllowApiKeyParameter";
+    public static final String FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION = "Allow authentication via 'apikey' URL parameter";
     public static final String API_KEY = "apikey";
 
     public static final String USER_ID_KEY = User.class.getName() + "$userId";
@@ -419,7 +424,13 @@ public class SecurityManager
         }
     }
 
-    private record Credentials(String username, String password) {}
+    private record Credentials(String username, String password, boolean shouldSetSessionCookie)
+    {
+        Credentials(String username, String password)
+        {
+            this(username, password, true);
+        }
+    }
 
     private static @Nullable Credentials getBasicCredentials(HttpServletRequest request)
     {
@@ -568,12 +579,16 @@ public class SecurityManager
                     String sessionId = PageFlowUtil.getCookieValue(request.getCookies(), JSESSIONID, null);
                     if (!session.getId().equals(sessionId))
                     {
-                        Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
-                        sessionCookie.setPath("/");
-                        sessionCookie.setHttpOnly(true);
-                        if (AppProps.getInstance().isSSLRequired() || request.isSecure())
-                            sessionCookie.setSecure(true);
-                        response.addCookie(sessionCookie);
+                        // A URL can be planted in a victim's browser, so a URL parameter key must not set the session cookie
+                        if (basicCredentials.shouldSetSessionCookie())
+                        {
+                            Cookie sessionCookie = new Cookie(JSESSIONID, session.getId());
+                            sessionCookie.setPath("/");
+                            sessionCookie.setHttpOnly(true);
+                            if (AppProps.getInstance().isSSLRequired() || request.isSecure())
+                                sessionCookie.setSecure(true);
+                            response.addCookie(sessionCookie);
+                        }
                         request = new SessionReplacingRequest(request, session);
                     }
                 }
@@ -670,8 +685,8 @@ public class SecurityManager
     /**
      * Determine if an API key is present, checking the "apikey" header first, then the deprecated
      * "LabKeyTransformSessionId" cookie (gated behind {@link #FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID}), and finally
-     * the "LabKeyTransformSessionId" GET parameter (supported permanently, since SSRS can't be made to use the header
-     * or a cookie). Return the credentials if an API key is present via any of these; otherwise return null.
+     * the "apikey" GET parameter (supported since SSRS can't be made to use a header, but only if the optional feature
+     * flag is enabled). Return the credentials if an API key is present via any of these; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
@@ -680,6 +695,7 @@ public class SecurityManager
         // Passing via the "apikey" HTTP header is our preferred approach and used by most LabKey client API
         // implementations
         String apiKey = request.getHeader(API_KEY);
+        boolean shouldSetSessionCookie = true;
 
         if (null == apiKey)
         {
@@ -710,23 +726,53 @@ public class SecurityManager
             }
             else
             {
-                // Continue to support "LabKeyTransformSessionId" as a GET parameter, to support authentication through
-                // SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers. Do not use
-                // request.getParameter() since that will consume the POST body, #32711.
+                // Continue to support "apikey" as a GET parameter only if the optional feature flag is enabled. This
+                // supports authentication through SSRS, which can't be made to use BasicAuth, pass cookies, or use HTTP
+                // headers.
+                Map<String, String> params;
                 try
                 {
-                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                    apiKey = params.get(TRANSFORM_SESSION_ID);
+                    // Do not use request.getParameter() since that will consume the POST body, #32711.
+                    params = PageFlowUtil.mapFromQueryString(request.getQueryString());
                 }
                 catch (IllegalArgumentException e)
                 {
+                    // URLDecoder throws on malformed escapes; AuthFilter maps this to a 400
                     throw new UnsupportedEncodingException(e.getMessage());
+                }
+
+                String apiKeyParameter = params.get(API_KEY);
+
+                if (apiKeyParameter != null)
+                {
+                    if (AppProps.getInstance().isOptionalFeatureEnabled(FEATURE_FLAG_ALLOW_APIKEY_PARAMETER))
+                    {
+                        apiKey = apiKeyParameter;
+                        shouldSetSessionCookie = false;
+                    }
+                    else
+                    {
+                        API_KEY_PARAMETER_WARNING_THROTTLE.execute("Rejected \"" + API_KEY + "\" parameter; " +
+                            "enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional feature " +
+                            "flag or authenticate via a different approach.");
+                    }
+                }
+                else if (params.get(TRANSFORM_SESSION_ID) != null)
+                {
+                    String message = "Rejected \"" + TRANSFORM_SESSION_ID + "\" parameter because it's no longer " +
+                        "supported. Enable the \"" + FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION + "\" optional " +
+                        "feature flag and use the \"" + API_KEY + "\" parameter instead.";
+                    API_KEY_PARAMETER_WARNING_THROTTLE.execute(message);
+                    throw new BadRequestException(message);
                 }
             }
         }
 
-        return null != apiKey ? new Credentials(API_KEY, apiKey) : null;
+        return null != apiKey ? new Credentials(API_KEY, apiKey, shouldSetSessionCookie) : null;
     }
+
+    // Unauthenticated callers can trigger these warnings on every request
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>("apikey parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
