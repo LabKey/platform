@@ -1119,16 +1119,7 @@ public class ExperimentController extends SpringActionController
         {
             ExpSchema schema = new ExpSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "Materials", ExpSchema.TableType.Materials.toString());
-            QueryView view = new QueryView(schema, settings, errors)
-            {
-                @Override
-                protected void populateButtonBar(DataView view, ButtonBar bar)
-                {
-                    super.populateButtonBar(view, bar);
-                    if (OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
-                        bar.add(SampleTypeContentsView.getDeriveSamplesButton(getContainer(),null));
-                }
-            };
+            QueryView view = new QueryView(schema, settings, errors);
             view.setShowDetailsColumn(false);
             return view;
         }
@@ -1264,16 +1255,6 @@ public class ExperimentController extends SpringActionController
                     String url = expr.eval(Collections.singletonMap(new FieldKey(null, "RowId"), _material.getRowId()));
                     updateLinks.append(LinkBuilder.labkeyLink("edit", url)).append(" ");
                 }
-            }
-
-            if (getContainer().hasPermission(getUser(), InsertPermission.class) && OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
-            {
-                ActionURL deriveURL = new ActionURL(DeriveSamplesChooseTargetAction.class, getContainer());
-                deriveURL.addParameter("rowIds", _material.getRowId());
-                if (st != null)
-                    deriveURL.addParameter("targetSampleTypeId", st.getRowId());
-
-                updateLinks.append(LinkBuilder.labkeyLink("derive samples from this sample", deriveURL)).append(" ");
             }
 
             vbox.addView(new HtmlView(updateLinks));
