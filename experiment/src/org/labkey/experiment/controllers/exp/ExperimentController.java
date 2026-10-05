@@ -5451,14 +5451,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private List<ExpSampleType> getUploadableSampleTypes()
-    {
-        // Make a copy so we can modify it
-        List<ExpSampleType> sampleTypes = new ArrayList<>(SampleTypeService.get().getSampleTypes(getContainer(), true));
-        sampleTypes.removeIf(sampleType -> !sampleType.canImportMoreSamples());
-        return sampleTypes;
-    }
-
     public static class ExpInput
     {
         public String role;
