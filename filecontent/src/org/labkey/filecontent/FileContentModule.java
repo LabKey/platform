@@ -197,7 +197,7 @@ public class FileContentModule extends DefaultModule
             results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
 
             // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
-            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), Set.of("Container"), new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
+            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
                 .getArrayList(String.class).stream()
                 .map(ContainerManager::getForId)
                 .filter(c -> c != null && !c.isRoot())
