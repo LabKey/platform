@@ -822,15 +822,24 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _includedForLookups;
     }
 
+    // GH Issue 1512: cache-busting token for the has-PK cache. DB queries use Modified; subclasses override (e.g. a
+    // file-based module query uses its .sql mtime). Null means "don't cache" (unsaved/transient def).
+    @Nullable
+    protected String getHasPkCacheVersion()
+    {
+        Date modified = _queryDef.getModified();
+        return null == modified ? null : String.valueOf(modified.getTime());
+    }
+
     // GH Issue 1512: key on the resolving container, not the defining one: an inheritable/shared query compiles to a
-    // different table, and PK, per folder. Null key (unsaved def, no Modified) means "don't cache".
+    // different table, and PK, per folder.
     @Nullable
     private String getHasPkColumnCacheKey()
     {
-        Date modified = _queryDef.getModified();
-        if (null == modified || null == getContainer() || null == getName())
+        String version = getHasPkCacheVersion();
+        if (null == version || null == getContainer() || null == getName())
             return null;
-        return getContainer().getId() + "/" + getSchemaPath() + "/" + getName() + "/" + modified.getTime();
+        return getContainer().getId() + "/" + getSchemaPath() + "/" + getName() + "/" + version;
     }
 
     public static void clearHasPkColumnCache()

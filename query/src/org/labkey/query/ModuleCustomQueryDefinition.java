@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
@@ -86,6 +87,14 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     public File getSqlFile()
     {
         return _resourceSqlFile;
+    }
+
+    // GH Issue 1512: file-based module queries carry no QueryDef.Modified, so bust the has-PK cache on the .sql mtime
+    @Nullable
+    @Override
+    protected String getHasPkCacheVersion()
+    {
+        return null != _resourceSqlFile ? "module:" + _resourceSqlFile.lastModified() : null;
     }
 
     public File getModuleXmlFile()
