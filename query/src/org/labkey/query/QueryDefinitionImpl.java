@@ -109,9 +109,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
     private final Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
-    // GH Issue 1512: PK presence is structural and user-independent, so (unlike a resolved TableInfo) it's safe to share
-    // across requests, letting lookup-target enumeration skip re-resolving known no-PK queries. Keyed on Modified so an
-    // edit busts the entry; the DAY TTL bounds the one stale case, a source table's PK changing with no query edit.
+    // GH Issue 1512: does this query expose a PK? Lets lookup-target enumeration skip re-resolving known no-PK queries.
+    // Keyed by resolving container + schema path + name + Modified; cleared on any QueryDef/schema change (a query's PK
+    // can shift without its own row changing, via chained queries, source metadata, or schema reloads).
     private static final Cache<String, Boolean> HAS_PK_COLUMN_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Query has-PK-column flags");
 
     private Map<String, TableType> _metadataTableMap = null;
@@ -822,14 +822,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return _includedForLookups;
     }
 
-    // GH Issue 1512: null key (new/unsaved def with no Modified stamp) means "don't cache"
+    // GH Issue 1512: key on the resolving container, not the defining one: an inheritable/shared query compiles to a
+    // different table, and PK, per folder. Null key (unsaved def, no Modified) means "don't cache".
     @Nullable
     private String getHasPkColumnCacheKey()
     {
         Date modified = _queryDef.getModified();
-        if (null == modified || null == _queryDef.getContainerId() || null == getName())
+        if (null == modified || null == getContainer() || null == getName())
             return null;
-        return _queryDef.getContainerId() + "/" + getSchemaPath() + "/" + getName() + "/" + modified.getTime();
+        return getContainer().getId() + "/" + getSchemaPath() + "/" + getName() + "/" + modified.getTime();
+    }
+
+    public static void clearHasPkColumnCache()
+    {
+        HAS_PK_COLUMN_CACHE.clear();
     }
 
     /** @return cached PK-presence for this query, or null if not cached */
