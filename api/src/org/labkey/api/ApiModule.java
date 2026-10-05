@@ -130,6 +130,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationConfiguration;
@@ -580,6 +581,7 @@ public class ApiModule extends CodeOnlyModule
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
+            SearchScope.TestCase.class,
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
