@@ -763,7 +763,7 @@ public class AnnouncementManager
 
     public static long getMessageCount(Container c)
     {
-        return new TableSelector( _comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
+        return new TableSelector(_comm.getTableInfoAnnouncements(), SimpleFilter.createContainerFilter(c), null).getRowCount();
     }
 
     public static Collection<? extends NotificationOption> getEmailOptions()
