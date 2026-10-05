@@ -923,6 +923,12 @@ public class AdminController extends SpringActionController
         {
             return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Deprecated.name());
         }
+
+        @Override
+        public ActionURL getOptionalFeaturesURL()
+        {
+            return new ActionURL(OptionalFeaturesAction.class, ContainerManager.getRoot()).addParameter("type", FeatureType.Optional.name());
+        }
     }
 
     public static class MaintenanceBean
@@ -12370,7 +12376,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
         }
 
         @Override

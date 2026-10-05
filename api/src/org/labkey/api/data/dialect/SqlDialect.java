@@ -42,6 +42,7 @@ import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -760,6 +761,18 @@ public abstract class SqlDialect
     public boolean supportsGroupConcatSubSelect()
     {
         return true;
+    }
+
+    /** Whether the dialect supports {@link #appendLateralJoin} */
+    public boolean supportsLateralJoin()
+    {
+        return false;
+    }
+
+    /** Append a join to an aliased subquery that references earlier FROM items; the correlation lives in the subquery, so there's no join condition */
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        throw new UnsupportedOperationException("Lateral joins are not supported by " + getProductName());
     }
 
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
@@ -1749,6 +1762,62 @@ public abstract class SqlDialect
                 LOG.error("Could not extract connection pool max wait (ms) from data source \"{}\"", _dsName);
                 return null;
             }
+        }
+
+        /**
+         * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle.
+         */
+        public record PoolStatistics(
+            // Total connections opened
+            long createdCount,
+            // Tocal connections closed, for any reason
+            long destroyedCount,
+            // Total connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation
+            long destroyedByEvictorCount,
+            // Total connections closed because they failed validation when a caller tried to borrow them
+            long destroyedByBorrowValidationCount,
+            // Total connections handed out
+            long borrowedCount,
+            // Threads currently blocked waiting for a connection
+            long numWaiters,
+            // Mean wait time to borrow a connection, over the most recent 100 borrows
+            long meanBorrowWaitMillis,
+            // Longest a caller has ever waited to borrow a connection
+            long maxBorrowWaitMillis
+        ) {}
+
+        public @Nullable PoolStatistics getPoolStatistics()
+        {
+            try
+            {
+                Object pool = _ds.getClass().getMethod("getConnectionPool").invoke(_ds);
+
+                // BasicDataSource creates the pool lazily, on the first connection request
+                if (null == pool)
+                    return null;
+
+                return new PoolStatistics(
+                    getPoolStatistic(pool, "getCreatedCount"),
+                    getPoolStatistic(pool, "getDestroyedCount"),
+                    getPoolStatistic(pool, "getDestroyedByEvictorCount"),
+                    getPoolStatistic(pool, "getDestroyedByBorrowValidationCount"),
+                    getPoolStatistic(pool, "getBorrowedCount"),
+                    getPoolStatistic(pool, "getNumWaiters"),
+                    getPoolStatistic(pool, "getMeanBorrowWaitTimeMillis"),
+                    getPoolStatistic(pool, "getMaxBorrowWaitTimeMillis")
+                );
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Could not extract connection pool statistics from data source \"{}\"", _dsName, e);
+                return null;
+            }
+        }
+
+        private static long getPoolStatistic(Object pool, String methodName) throws ReflectiveOperationException
+        {
+            return ((Number)pool.getClass().getMethod(methodName).invoke(pool)).longValue();
         }
 
         public @Nullable Properties getConnectionProperties()

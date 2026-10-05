@@ -70,6 +70,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = false;
+    private boolean _ignoreSort = false;
     protected Set<FieldKey> _ignoredColumnFilters = new LinkedHashSet<>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
@@ -448,6 +449,9 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public Sort buildSort(TableInfo tinfo, ActionURL url, String name)
     {
+        if (_ignoreSort)
+            return new Sort();
+
         // Create a copy of the sort so that QueryService.ensureRequiredColumns() can
         // safely remove any unresolved columns from the sort without affecting others.
         Sort sort = new Sort();
@@ -545,7 +549,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             .setNamedParameters(parameters)
             .setMaxRows(maxRows)
             .setOffset(offset)
-            .setForceSortForDisplay(true);
+            .setForceSortForDisplay(!_ignoreSort);
 
         if (async)
         {
@@ -576,6 +580,12 @@ public class RenderContext implements Map<String, Object>, Serializable
     public void setCache(boolean cache)
     {
         _cache = cache;
+    }
+
+    /** When true, drop ORDER BY entirely — for result sets consumed unordered (e.g. building a selection Set). */
+    public void setIgnoreSort(boolean ignoreSort)
+    {
+        _ignoreSort = ignoreSort;
     }
 
     public Map<String, Object> getRow()

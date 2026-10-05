@@ -198,6 +198,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.DesignSampleTypePermission;
@@ -749,7 +750,7 @@ public class ExperimentController extends SpringActionController
                 for (int i = 0; i < runIds.length(); i++)
                 {
                     // Kanban #1924: Make sure the run belongs to the current container.
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(runIds.getInt(i), getContainer());
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(getContainer(), runIds.getInt(i));
                     if (run != null)
                     {
                         runs.add(run);
@@ -762,7 +763,7 @@ public class ExperimentController extends SpringActionController
                 Set<Long> ids = DataRegionSelection.getSelectedIntegers(getViewContext(), selectionKey, false);
                 for (Long id : ids)
                 {
-                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(id);
+                    ExpRunImpl run = ExperimentServiceImpl.get().getExpRun(getContainer(), id);
                     if (run != null)
                     {
                         runs.add(run);
@@ -3937,8 +3938,14 @@ public class ExperimentController extends SpringActionController
 
             List<ExpData> datas = getDatas(deleteForm, false);
             List<ExpRun> runs = getRuns(datas);
+            ConfirmDeleteView view = new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
 
-            return new ConfirmDeleteView("Data", ShowDataAction.class, datas, deleteForm, runs);
+            // GitHub Issue #1446: show ConfirmDeleteView with a message indicating if not all of the ids resolve within the container context
+            int unresolved = deleteForm.getIds(false).size() - datas.size();
+            if (unresolved == 0)
+                return view;
+
+            return new VBox(new HtmlView(DIV(unresolved + " of the selected items could not be found in this folder.")), view);
         }
 
         private List<ExpRun> getRuns(List<ExpData> datas)
@@ -3953,7 +3960,8 @@ public class ExperimentController extends SpringActionController
             for (long dataId : deleteForm.getIds(clear))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
-                if (data != null)
+                // GitHub Issue #1446: deleteObjects() only deletes within getContainer(), so don't resolve data from other folders
+                if (data != null && data.getContainer().equals(getContainer()))
                 {
                     datas.add(data);
                 }
@@ -4906,8 +4914,8 @@ public class ExperimentController extends SpringActionController
 
             if (_protocolId != null)
             {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(_protocolId.intValue());
-                if (protocol == null || !protocol.getContainer().equals(context.getContainer()))
+                ExpProtocol protocol = ExperimentService.get().getExpProtocol(context.getContainer(), _protocolId.intValue());
+                if (protocol == null)
                 {
                     throw new NotFoundException();
                 }
@@ -4919,8 +4927,8 @@ public class ExperimentController extends SpringActionController
             {
                 try
                 {
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
-                    if (protocol == null || !protocol.getContainer().equals(context.getContainer()))
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(context.getContainer(), protocolId);
+                    if (protocol == null)
                     {
                         throw new NotFoundException();
                     }
@@ -5234,19 +5242,18 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private void addSelectedRunsToExperiment(ExpExperiment exp, String dataRegionSelectionKey)
+    private List<ExpRun> resolveSelectedRunsForInsert(String dataRegionSelectionKey)
     {
         Collection<Long> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), dataRegionSelectionKey, true);
         List<ExpRun> runs = new ArrayList<>();
         for (long runId : runIds)
         {
             ExpRun run = ExperimentServiceImpl.get().getExpRun(runId);
-            if (run != null)
-            {
-                runs.add(run);
-            }
+            if (run == null || !run.getContainer().hasPermission(getUser(), InsertPermission.class)) // GH Issue 1465
+                throw new NotFoundException("Could not find run with RowId " + runId);
+            runs.add(run);
         }
-        exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
+        return runs;
     }
 
 
@@ -6436,12 +6443,17 @@ public class ExperimentController extends SpringActionController
 
                 if (errors.getErrorCount() == 0)
                 {
+                    // Resolve and permission-check the selection before creating the group
+                    List<ExpRun> selectedRuns = form.isAddSelectedRuns()
+                            ? resolveSelectedRunsForInsert(form.getDataRegionSelectionKey())
+                            : Collections.emptyList();
+
                     ExpExperimentImpl wrapper = new ExpExperimentImpl(exp);
                     wrapper.save(getUser());
 
-                    if (form.isAddSelectedRuns())
+                    if (!selectedRuns.isEmpty())
                     {
-                        addSelectedRunsToExperiment(wrapper, form.getDataRegionSelectionKey());
+                        wrapper.addRuns(getUser(), selectedRuns.toArray(new ExpRun[0]));
                     }
 
                     if (form.getReturnUrl() != null)
@@ -6574,8 +6586,8 @@ public class ExperimentController extends SpringActionController
             List<ExpRun> runs = new ArrayList<>();
             for (Long runId : runIds)
             {
-                ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (run == null || !run.getContainer().equals(getContainer()))
+                ExpRun run = ExperimentService.get().getExpRun(getContainer(), runId);
+                if (run == null)
                 {
                     throw new NotFoundException("Could not find run with RowId " + runId + " in this folder");
                 }
@@ -7315,7 +7327,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public static class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
@@ -7377,7 +7389,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ApplicationAdminPermission.class)
     public static class RebuildAncestorsAction extends MutatingApiAction<Object>
     {
         @Override
@@ -8496,6 +8508,49 @@ public class ExperimentController extends SpringActionController
             ActionURL ownUrl = new ActionURL(AddRunsToExperimentAction.class, folderB)
                     .addParameter("expRowId", String.valueOf(expRowId));
             assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+        }
+
+        @Test
+        public void testCreateRunGroupAddSelectedRunsContainerScoping() throws Exception
+        {
+            User admin = getAdmin();
+            Container folderA = createContainer("A");
+            Container folderB = createContainer("B");
+
+            // A run that lives in folder B
+            ExpRun run = createRun(folderB, "scoping-test-create-run-group-run");
+            long runId = run.getRowId();
+
+            // A caller who can Insert in folder A but has no rights in folder B
+            User editorA = createUserInRole(folderA, EditorRole.class);
+
+            // Creating a run group in folder A while selecting B's run must 404: runs are resolved by global RowId
+            // (skipping the container check) and ExpExperimentImpl.addRuns inserts with no authorization, so without
+            // the per-run guard a folder-A user would attach a run they cannot read.
+            ActionURL foreignUrl = new ActionURL(CreateRunGroupAction.class, folderA)
+                    .addParameter("name", "cross-container-group")
+                    .addParameter("addSelectedRuns", "true")
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(foreignUrl, editorA));
+
+            // B's run must not have been attached to any run group
+            assertTrue("Run must not have been added to a run group cross-container",
+                    ExperimentService.get().getExpRun(runId).getExperiments().isEmpty());
+
+            // The selection is resolved before the group is saved, so a rejected request creates no empty run group
+            assertTrue("Rejected request must not create an empty run group",
+                    ExperimentService.get().getExperiments(folderA, admin, false, false).stream()
+                            .noneMatch(e -> "cross-container-group".equals(e.getName())));
+
+            // Positive control: an admin (who can read folder B) creating the group in folder B with B's run selected
+            // succeeds (302) and adds it -- proving the guard rejects only the cross-container case.
+            ActionURL ownUrl = new ActionURL(CreateRunGroupAction.class, folderB)
+                    .addParameter("name", "same-container-group")
+                    .addParameter("addSelectedRuns", "true")
+                    .addParameter(DataRegion.SELECT_CHECKBOX_NAME, String.valueOf(runId));
+            assertStatus(HttpServletResponse.SC_FOUND, post(ownUrl, admin));
+            assertFalse("Run should be added to the run group by a same-container request",
+                    ExperimentService.get().getExpRun(runId).getExperiments().isEmpty());
         }
 
         @Test

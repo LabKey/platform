@@ -68,6 +68,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -3551,6 +3552,38 @@ public class QueryServiceImpl implements QueryService
             String inSql = qs.getSelectBuilder(users).columns(cols).filter(inFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
             assertFalse("Plain InClause should not produce a driving join:\n" + inSql, inSql.contains("_drive_"));
             assertTrue("Plain InClause should produce an IN (SELECT ...) semi-join:\n" + inSql, inSql.contains("IN (SELECT Id FROM"));
+        }
+
+        @Test
+        public void testSortTrimmedAfterPk()
+        {
+            TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
+            assertEquals(List.of("userid"), principals.getPkColumnNames().stream().map(String::toLowerCase).toList());
+
+            assertEquals("order by userid asc", orderBy(principals, "UserId,Name,-Type"));
+            assertEquals("order by name asc, userid desc", orderBy(principals, "Name,-UserId,Type"));
+            assertEquals("order by name asc, type asc, userid asc", orderBy(principals, "Name,Type"));
+
+            Sort sort = new Sort("UserId,Name");
+            orderBy(principals, sort);
+            assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
+        }
+
+        private String orderBy(TableInfo table, String sort)
+        {
+            return orderBy(table, new Sort(sort));
+        }
+
+        private String orderBy(TableInfo table, Sort sort)
+        {
+            String sql = QueryService.get().getSelectBuilder(table).sort(sort).maxRows(10).buildSqlFragment().getRawSQL();
+            String orderBy = sql.substring(sql.indexOf("ORDER BY"), sql.indexOf("LIMIT")).trim();
+            return orderBy.replaceAll("\\s+", " ").replace("\"", "").toLowerCase();
         }
 
         @Test

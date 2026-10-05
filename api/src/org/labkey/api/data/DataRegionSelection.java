@@ -537,6 +537,12 @@ public class DataRegionSelection
         var rgn = dataRegionContext.first;
         var ctx = dataRegionContext.second;
 
+        // GitHub Issue 1594: The rowid IN (selectedValues) base filter bounds this to <= MAX_QUERY_SELECTION_SIZE, so the result never
+        // truncates and we consume it as an unordered Set: drop the ORDER BY, which with the large IN (SELECT Id FROM
+        // temp.InClause) semi-join otherwise forces a full backward index scan over the whole table. Only safe here, not
+        // in setSelectionForAll, where the sort determines which rows survive the truncation cap.
+        ctx.setIgnoreSort(true);
+
         // Issue 48657: no need to query for all region results if we are only interested in a subset, filter for just those we want to verify
         // Note: this only currently applies for tables with a single PK col. Consider altering this for multi-pk tables.
         List<ColumnInfo> pkCols = rgn.getTable().getPkColumns();
@@ -560,7 +566,7 @@ public class DataRegionSelection
         RenderContext ctx,
         DataRegion rgn,
         ResultSet rs,
-        @Nullable Collection<String> selectedValues
+        @Nullable Set<String> selectedValues
     ) throws SQLException
     {
         Set<String> selected = new LinkedHashSet<>();
@@ -584,6 +590,14 @@ public class DataRegionSelection
                     }
                 }
             }
+        }
+
+        // GitHub Issue 1594: the query dropped its ORDER BY, so selected is in arbitrary result-set order; restore the
+        // caller's order by filtering the already-copied selectedValues in place, avoiding a second set allocation.
+        if (selectedValues != null)
+        {
+            selectedValues.retainAll(selected);
+            return selectedValues;
         }
 
         return selected;
