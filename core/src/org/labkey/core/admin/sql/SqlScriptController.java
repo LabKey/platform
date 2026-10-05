@@ -1475,7 +1475,7 @@ public class SqlScriptController extends SpringActionController
                     if (ss.exists())
                     {
                         Collection<String> pgScripts = pg.exists() ? listIncrementalScriptNames(pg) : List.of();
-                        Collection<String> diff = CollectionUtils.subtract(listIncrementalScriptNames(ss), pgScripts);
+                        List<String> diff = CollectionUtils.subtract(listIncrementalScriptNames(ss), pgScripts).stream().sorted().toList();
                         if (!diff.isEmpty())
                         {
                             html.append(diff.toString()).append(HtmlString.unsafe("<br>\n"));
