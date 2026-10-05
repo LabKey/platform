@@ -65,7 +65,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ButtonBuilder;
@@ -1317,7 +1316,7 @@ public class SqlScriptController extends SpringActionController
         other details such as a column name. Here are some examples:
         - `EXEC core.fn_dropifexists @objname = 'MyTable', @objschema = 'MySchema', @objtype = 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
         - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
-        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn` is the same as `ALTER TABLE TableName DROP COLUMN IF EXISTS ColumnName`
+        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn'` is the same as `ALTER TABLE MySchema.MyTable DROP COLUMN IF EXISTS MyColumn`
         
         Please do the following:
         - Consolidate all iterative changes (column additions & renames, PK changes, and FK changes) into the initial CREATE TABLE statements.
@@ -1374,7 +1373,7 @@ public class SqlScriptController extends SpringActionController
         other details such as a column name. Here are some examples:
         - `EXEC core.fn_dropifexists @objname = 'MyTable', @objschema = 'MySchema', @objtype = 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
         - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'TABLE'` is the same as `DROP TABLE IF EXISTS MySchema.MyTable`
-        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn` is the same as `ALTER TABLE TableName DROP COLUMN IF EXISTS ColumnName`
+        - `EXEC core.fn_dropifexists 'MyTable', 'MySchema', 'COLUMN', 'MyColumn'` is the same as `ALTER TABLE MySchema.MyTable DROP COLUMN IF EXISTS MyColumn`
         Convert all core.fn_dropifexists calls to the corresponding native SQL statement, like the three examples above.
 
         Include a summary of the changes you made at the end.
@@ -1458,7 +1457,7 @@ public class SqlScriptController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(AdminOperationsPermission.class)
     public class MissingPostgreSqlScriptsAction extends SimpleViewAction<Object>
     {
         @Override
@@ -1468,14 +1467,15 @@ public class SqlScriptController extends SpringActionController
             ModuleLoader.getInstance().getModules().stream()
                 .filter(m -> m.getSupportedDatabasesSet().contains(SupportedDatabase.mssql))
                 .filter(m -> !StringUtils.isBlank(m.getSourcePath()))
-                .filter(m -> Strings.CI.contains(m.getName(), "ehr"))
+                .filter(m -> Strings.CI.contains(getRepositoryName(m), "ehr"))
                 .forEach(m -> {
                     File ss = new File(m.getSourcePath(), "resources/schemas/dbscripts/sqlserver");
                     File pg = new File(m.getSourcePath(), "resources/schemas/dbscripts/postgresql");
 
-                    if (ss.exists() && pg.exists())
+                    if (ss.exists())
                     {
-                        Collection<String> diff = CollectionUtils.subtract(listIncrementalScriptNames(ss), listIncrementalScriptNames(pg));
+                        Collection<String> pgScripts = pg.exists() ? listIncrementalScriptNames(pg) : List.of();
+                        Collection<String> diff = CollectionUtils.subtract(listIncrementalScriptNames(ss), pgScripts);
                         if (!diff.isEmpty())
                         {
                             html.append(diff.toString()).append(HtmlString.unsafe("<br>\n"));
@@ -1486,13 +1486,26 @@ public class SqlScriptController extends SpringActionController
             return new HtmlView(html.isEmpty() ? HtmlString.of("None") : html);
         }
 
-        private static final Pattern SCRIPT_PATTERN = Pattern.compile("(\\w+\\.)?\\w+-[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}(-\\w+)?.(sql|jsp)");
+        // Lookahead rejects bootstrap scripts (from-version 0.00 or 0.000)
+        private static final Pattern INCREMENTAL_SCRIPT_PATTERN = Pattern.compile("(\\w+\\.)?\\w+-(?!0\\.0{2,3}-)[0-9]{1,2}\\.[0-9]{2,3}-[0-9]{1,2}\\.[0-9]{2,3}(-\\w+)?\\.(sql|jsp)");
 
         private static final Set<String> SCRIPTS_TO_IGNORE = Set.of(
             "ehr-26.001-26.002.sql", // This fixed a SQL Server-specific issue, switching ehr.Project.Created and ehr.Project.Modified to NOT NULL
             "onprc_ehr-25.000-25.001.sql", "onprc_ehr-25.001-25.002.sql", // These scripts created early versions of the audit.ArchiveAuditTables proc that were subsequently replaced
             "onprc_ehr-26.004-26.005.sql" // onprc_ehr-26.005-26.006.sql is the PG equivalent of this script
         );
+
+        // VCS URL is "Unknown" in local builds, so find the enclosing git checkout instead
+        private static @Nullable String getRepositoryName(Module module)
+        {
+            for (File dir = new File(module.getSourcePath()); dir != null; dir = dir.getParentFile())
+            {
+                if (new File(dir, ".git").exists())
+                    return dir.getName();
+            }
+
+            return null;
+        }
 
         private Collection<String> listIncrementalScriptNames(File dir)
         {
@@ -1501,9 +1514,8 @@ public class SqlScriptController extends SpringActionController
                 @Override
                 public boolean accept(File file)
                 {
-                    // We care only about incremental scripts
                     String name = file.getName();
-                    return !name.contains("0.000") && SCRIPT_PATTERN.matcher(name).matches() && !SCRIPTS_TO_IGNORE.contains(name);
+                    return INCREMENTAL_SCRIPT_PATTERN.matcher(name).matches() && !SCRIPTS_TO_IGNORE.contains(name);
                 }
 
                 @Override
@@ -1726,8 +1738,9 @@ public class SqlScriptController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new ConsolidateSchemaAction(),
                 controller.new ConsolidateScriptsAction(),
+                controller.new MissingPostgreSqlScriptsAction(),
                 controller.new OrphanedScriptsAction(),
-                    new ReorderAllScriptsAction(),
+                new ReorderAllScriptsAction(),
                 controller.new ReorderScriptAction(),
                 controller.new SaveReorderedScriptAction(),
                 controller.new ScriptAction(),
