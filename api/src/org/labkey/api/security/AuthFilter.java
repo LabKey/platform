@@ -40,6 +40,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HttpsUtil;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 
@@ -187,6 +188,11 @@ public class AuthFilter implements Filter
         catch (UnsupportedEncodingException uee)
         {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, uee.getMessage());
+            return;
+        }
+        catch (BadRequestException bre)
+        {
+            resp.sendError(bre.getStatus(), bre.getMessage());
             return;
         }
         catch (UnauthorizedException ue)
