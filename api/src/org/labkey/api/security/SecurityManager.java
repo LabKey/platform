@@ -3035,15 +3035,9 @@ public class SecurityManager
         return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
-    @Deprecated // Left behind temporarily so we don't immediately break existing ehrModules FBs. TODO: Remove
-    public static Set<Class<? extends Permission>> streamPermissions(SecurableResource resource, UserPrincipal principal, Set<Role> contextualRoles)
-    {
-        return getPermissions(resource, principal, contextualRoles).collect(Collectors.toSet());
-    }
-
     /**
      * This method exists to allow isForbiddenProject() to check permissions on the project without reentrancy loops.
-     * Do not call this method unless you're isForbiddenProject().
+     * isForbiddenProject() and getPermissions() are the only methods that should be calling this.
      */
     public static Stream<Class<? extends Permission>> getPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, @NotNull Set<Role> contextualRoles)
     {
@@ -3059,12 +3053,6 @@ public class SecurityManager
             permissions = user.getPermissionsContext().filterPermissions(permissions);
 
         return permissions;
-    }
-
-    @Deprecated // Left behind temporarily so we don't immediately break existing premiumModules FBs. TODO: Remove
-    public static Stream<Class<? extends Permission>> streamPermissionsWithoutCheckingForbiddenProjects(@NotNull SecurableResource resource, @NotNull UserPrincipal principal, Set<Role> contextualRoles)
-    {
-        return getPermissionsWithoutCheckingForbiddenProjects(resource, principal, contextualRoles);
     }
 
     @NotNull

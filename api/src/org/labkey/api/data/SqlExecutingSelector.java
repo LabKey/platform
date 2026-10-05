@@ -61,8 +61,8 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     // At most one warning per day per call site (not per query or row count), so a legitimately large but expected load doesn't flood the log; see getStackKey()
     private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
-            w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
-                    w.rowCount, w.elementClass, w.selectorClass, w.sql, w.stackTrace));
+        w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
+            String.format("%,d", w.rowCount), w.elementClass, w.selectorClass, w.sql, w.stackTrace));
 
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
@@ -191,7 +191,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             // Log the parameterized SQL only so bound parameter values stay out of the log
             SQLFragment sql = getSqlFactory(false).getSql();
             LARGE_RESULT_WARNING_THROTTLE.execute(new LargeResultWarning(getStackKey(stackTrace), result.size(),
-                    clazz.getSimpleName(), getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
+                clazz.getSimpleName(), getClass().getSimpleName(), sql == null ? null : sql.getSQL(), stackTrace));
         }
 
         return result;
