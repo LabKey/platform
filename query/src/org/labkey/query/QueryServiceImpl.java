@@ -207,6 +207,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -3540,18 +3541,27 @@ public class QueryServiceImpl implements QueryService
             for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
                 ids.add(i);
             FieldKey pk = FieldKey.fromParts("userid");
+            Supplier<SimpleFilter> pkInFilter = () -> new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids));
 
-            SimpleFilter joinFilter = new SimpleFilter();
-            joinFilter.addClause(new SimpleFilter.InClauseInnerJoin(pk, ids));
-            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(joinFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            // sorted + paged on a temp-table-backed PK IN: drive from the value set
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
             assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
-            assertFalse("InClauseInnerJoin should not emit a PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+            assertFalse("Driving join should replace the PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
 
-            SimpleFilter inFilter = new SimpleFilter();
-            inFilter.addClause(new SimpleFilter.InClause(pk, ids));
-            String inSql = qs.getSelectBuilder(users).columns(cols).filter(inFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
-            assertFalse("Plain InClause should not produce a driving join:\n" + inSql, inSql.contains("_drive_"));
-            assertTrue("Plain InClause should produce an IN (SELECT ...) semi-join:\n" + inSql, inSql.contains("IN (SELECT Id FROM"));
+            // unpaged: nothing for the planner to short-circuit, so leave the semi-join alone
+            String unpagedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).buildSqlFragment().getSQL();
+            assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
+            assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
+
+            // unsorted
+            String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Unsorted query should not produce a driving join:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+            assertTrue("Unsorted query should keep the IN (SELECT ...) semi-join:\n" + unsortedSql, unsortedSql.contains("IN (SELECT Id FROM"));
+
+            // non-PK column
+            SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
+            String nonPkSql = qs.getSelectBuilder(users).columns(cols).filter(nonPkFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Non-PK IN should not produce a driving join:\n" + nonPkSql, nonPkSql.contains("_drive_"));
         }
 
         @Test

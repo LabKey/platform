@@ -953,20 +953,6 @@ public class SimpleFilter implements Filter
         }
     }
 
-    /**
-     * An IN clause that opts in to being rendered by the query builder (QuerySelectView) as a driving INNER JOIN to the
-     * value set's temp table, instead of a "col IN (...)" semi-join. This makes the planner drive from the (small) value
-     * set rather than backward-scanning the base table to satisfy ORDER BY + LIMIT. Only clauses of this type are
-     * transformed, so callers opt in explicitly (e.g. the workflow job-samples filter). GH Issue 1595.
-     */
-    public static class InClauseInnerJoin extends InClause
-    {
-        public InClauseInnerJoin(FieldKey fieldKey, Collection<?> params)
-        {
-            super(fieldKey, params);
-        }
-    }
-
     public static class ContainsOneOfClause extends MultiValuedFilterClause
     {
         public ContainsOneOfClause(FieldKey fieldKey, Collection<?> params, boolean urlClause)
@@ -1824,10 +1810,6 @@ public class SimpleFilter implements Filter
             in._needsTypeConversion = true;
             test("1 = 1", "Foo IS NOT ANY OF (S-3)", in, mockDialect, columnInfoMap);
             test("NOT (1 = 1)", "NOT (Foo IS NOT ANY OF (S-3))", new NotClause(in), mockDialect, columnInfoMap);
-
-            // GH Issue 1595: InClauseInnerJoin renders identically to InClause on its own (the driving-join rewrite happens
-            // in QuerySelectView); standalone it is a normal IN so it remains a correct fallback in any other context.
-            test("(Foo IN (1, 2, 3))", "Foo IS ONE OF (1, 2, 3)", new InClauseInnerJoin(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
         }
 
         @Test

@@ -28,10 +28,10 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -348,13 +348,13 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
-        // GH Issue 1595: an InClauseInnerJoin opts in to being driven from its value set's temp table (INNER JOIN at the
-        // base-table level) instead of a "PK IN (...)" semi-join, which the planner otherwise
-        // satisfies with a full backward index scan of the base table on ORDER BY + LIMIT.
+        // GH Issue 1595: with ORDER BY + LIMIT, the planner satisfies a "PK IN (...)" semi-join by scanning the base table's
+        // index rather than driving from the bounded value set. Join its temp table in at the base-table level instead; on
+        // the outer wrapper the planner still backward-scans.
         TempTableInfo drivingTempTable = null;
         ColumnInfo drivingPkColumn = null;
         Filter effectiveFilter = filter;
-        if (filter instanceof SimpleFilter driveFilter)
+        if (filter instanceof SimpleFilter driveFilter && null != sort && Table.ALL_ROWS != maxRows)
         {
             List<ColumnInfo> pkCols = table.getPkColumns();
             ColumnInfo pkColumn = pkCols.size() == 1 ? columnMap.get(pkCols.get(0).getFieldKey()) : null;
@@ -362,7 +362,7 @@ public class QuerySelectView extends AbstractQueryRelation
             {
                 for (SimpleFilter.FilterClause c : driveFilter.getClauses())
                 {
-                    if (c instanceof SimpleFilter.InClauseInnerJoin inClause && pkColumn.getFieldKey().equals(inClause.getFieldKey()))
+                    if (c instanceof SimpleFilter.InClause inClause && pkColumn.getFieldKey().equals(inClause.getFieldKey()))
                     {
                         TempTableInfo tt = inClause.getDrivingTempTable(dialect, pkColumn);
                         if (null != tt)
@@ -428,7 +428,7 @@ public class QuerySelectView extends AbstractQueryRelation
             orderBy = sort.getOrderByClause(dialect, columnMap);
         }
 
-        if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct && null == drivingTempTable)
+        if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
         {
             selectFrag.append("\n").append(fromFrag);
             return selectFrag;
