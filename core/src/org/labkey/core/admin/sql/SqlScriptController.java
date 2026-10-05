@@ -1324,6 +1324,7 @@ public class SqlScriptController extends SpringActionController
         - Remove unnecessary DROP TABLE statements and core.fn_dropifexists calls, for example, those that come before a table has been created.
         - Remove all intermediate DROP and ALTER statements that are superseded by later logic.
         - Remove CREATE TABLE and ALTER TABLE statements followed by DROP TABLE or a core.fn_dropifexists 'TABLE' call on that same table.
+        - Convert any remaining calls to core.fn_dropifexists into standard DROP IF EXISTS SQL syntax.
         
         Include a summary of the changes you made at the end.
         """;
