@@ -44,6 +44,7 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 ### **2. Identifiers, Literals, and Reserved Words**
 
 * **Identifiers**: double-quote names containing spaces/special characters or matching reserved words: `"Physical Exam"`. Escape an embedded `"` by doubling it.
+* **Schema names** can have several parts, each quoted separately as needed: `FROM assay.General."My.Assay".Data`. `listSchemas` returns this form as `quotedName`.
 * **String literals**: single quotes; escape `'` by doubling: `'Jim''s Item'`. No backslash escapes.
 * **Date/time literals**: `{d '2001-02-03'}` and `{ts '2001-02-03 04:05:06'}` — JDBC escape syntax, **space after `{d`/`{ts` required**.
 * **Booleans**: `TRUE`, `FALSE`. Special doubles: `CAST('Infinity' AS DOUBLE)`, `CAST('-Infinity' AS DOUBLE)`, `CAST('NaN' AS DOUBLE)`.

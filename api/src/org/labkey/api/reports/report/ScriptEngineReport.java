@@ -58,7 +58,6 @@ import org.labkey.api.reports.report.r.view.ROutputView;
 import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
@@ -444,7 +443,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public List<ScriptOutput> cleanup(ScriptEngineReport report, ContainerUser context)
+            public List<ScriptOutput> cleanup(ContainerUser context)
             {
                 if (report.shouldCleanup())
                     FileUtil.deleteDir(report.getReportDirFileLike(context.getContainer().getId()).toNioPathForWrite(), null);
@@ -472,7 +471,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
 
             @Override
-            public HttpView<?> cleanup(ScriptEngineReport report, ContainerUser context)
+            public HttpView<?> cleanup(ContainerUser context)
             {
                 if (report.shouldCleanup())
                     view.addView(new TempFileCleanup(report.getReportDirFileLike(context.getContainer().getId())));
@@ -487,41 +486,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return !BooleanUtils.toBoolean(getDescriptor().getProperty(ScriptReportDescriptor.Prop.runInBackground));
     }
 
-
-    public Thumbnail getThumbnail(List<ParamReplacement> parameters) throws IOException
+    protected static <K> K handleParameters(ScriptEngineReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
     {
-        return handleParameters(this, parameters, new ParameterHandler<>()
-        {
-            private Thumbnail _thumbnail = null;
-
-            @Override
-            public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
-            {
-                _thumbnail = param.renderThumbnail(context);
-
-                // Return true (keep iterating) if we can't render this output as a thumbnail
-                return null == _thumbnail;
-            }
-
-            @Override
-            public Thumbnail cleanup(ScriptEngineReport report, ContainerUser context)
-            {
-                // TODO: Delete file?
-                return _thumbnail;
-            }
-        });
-    }
-
-
-    private static <K> K handleParameters(ScriptEngineReport report, Collection<ParamReplacement> parameters, ParameterHandler<K> handler) throws IOException
-    {
-        String sections = HttpView.currentContext().getString(renderParam.showSection.name());
+        ViewContext context = HttpView.currentContext();
+        String sections = context.getString(renderParam.showSection.name());
         List<String> sectionNames = Collections.emptyList();
 
         if (sections != null)
             sectionNames = Arrays.asList(sections.split("&"));
-
-        ViewContext context = HttpView.currentContext();
 
         for (ParamReplacement param : parameters)
         {
@@ -534,17 +506,15 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             }
         }
 
-        return handler.cleanup(report, context);
+        return handler.cleanup(context);
     }
 
-
-    private interface ParameterHandler<K>
+    protected interface ParameterHandler<K>
     {
         boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException;
 
-        K cleanup(ScriptEngineReport report, ContainerUser context);
+        K cleanup(ContainerUser context);
     }
-
 
     protected static boolean isViewable(ParamReplacement param, List<String> sectionNames)
     {
@@ -567,7 +537,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     /**
      * Create the script to be executed by the scripting engine
-     *
      */
     protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, FileLike inputDataTsv, Map<String, Object> inputParameters, boolean isRStudio) throws Exception
     {
@@ -615,14 +584,6 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         FileLike reportDir = getReportDirFileLike(context.getContainer().getId());
         return ParamReplacementSvc.get().processParamReplacement(script, reportDir, null, replacements, isRStudio);
     }
-
-
-    @Override
-    public ScriptReportDescriptor getDescriptor()
-    {
-        return super.getDescriptor();
-    }
-
 
     @Override
     protected String getDefaultExtension(FolderExportContext context)

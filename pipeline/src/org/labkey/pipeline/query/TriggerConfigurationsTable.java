@@ -17,6 +17,7 @@ package org.labkey.pipeline.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AbstractTableInfo;
@@ -55,6 +56,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.pipeline.PipelineController;
+import org.labkey.pipeline.api.PipelineManager;
 import org.labkey.pipeline.api.PipelineQuerySchema;
 import org.labkey.pipeline.api.PipelineSchema;
 
@@ -262,6 +264,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
                 }
                 catch (ValidationException e)
                 {
+                    errors.addRowError(e);
                     ret.remove(row);
                 }
             }
@@ -271,6 +274,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
+            validateRunAsUser(user, container, row);
             Map<String, Object> newRow = super.insertRow(user, container, row);
             String name = getStringFromRow(newRow, "Name");
             startIfEnabled(container, name, newRow);
@@ -283,6 +287,7 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
             String name = getStringFromRow(oldRow, "Name");
             PipelineTriggerConfig config = PipelineTriggerRegistry.get().getConfigByName(container, name);
 
+            validateRunAsUser(user, container, row);
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
 
             // call the stop() method for this config if it was successfully updated
@@ -345,6 +350,14 @@ public class TriggerConfigurationsTable extends SimpleUserSchema.SimpleTable<Pip
                 else
                     config.stop();
             }
+        }
+
+        private void validateRunAsUser(User user, Container container, Map<String, Object> row) throws ValidationException
+        {
+            Map<String, Object> ciRow = new CaseInsensitiveHashMap<>(row);
+            String error = PipelineManager.validateTriggerRunAsUser(container, user, getStringFromRow(ciRow, "Configuration"), getStringFromRow(ciRow, "CustomConfiguration"));
+            if (error != null)
+                throw new ValidationException(error);
         }
 
         private String getStringFromRow(Map<String, Object> row, String key)

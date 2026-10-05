@@ -19,6 +19,7 @@ import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import io.modelcontextprotocol.spec.McpSchema.TextResourceContents;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -44,6 +45,7 @@ import org.labkey.api.query.SimpleSchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.QueryServiceImpl;
@@ -65,6 +67,9 @@ import static org.labkey.api.util.StringUtilsLabKey.pluralize;
 
 public class QueryMcp implements McpService.McpImpl
 {
+    private static final Logger LOG = LogHelper.getLogger(QueryMcp.class, "MCP query tools");
+    private static final String SCHEMA_NAME_DESCRIPTION = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\". Copy quotedName from listSchemas.";
+
     @McpResource(
         uri = "resource://org/labkey/query/controllers/prompts/LabKeySql.md",
         mimeType = "application/markdown",
@@ -95,6 +100,7 @@ public class QueryMcp implements McpService.McpImpl
             array.put(new JSONObject(Map.of(
                 "name", entry.getKey().getName(),
                 "quotedName", entry.getKey().toSQLString(),
+                "apiName", entry.getKey().toString(),
                 "description", StringUtils.trimToEmpty(entry.getValue().getDescription())
             )));
         }
@@ -103,7 +109,7 @@ public class QueryMcp implements McpService.McpImpl
 
     @Tool(description = "Provide list of tables within the provided schema.")
     @RequiresPermission(ReadPermission.class)
-    String listTables(ToolContext toolContext, @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName)
+    String listTables(ToolContext toolContext, @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName)
     {
         var json = _listTables(getContext(toolContext), schemaName);
         return json.toString();
@@ -113,7 +119,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String listColumns(
         ToolContext toolContext,
-        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study.Datasets\"") String schemaName,
+        @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
         @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
@@ -125,7 +131,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String getSourceForSavedQuery(
         ToolContext toolContext,
-        @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+        @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
         @ToolParam(description = "Table or query name as it would appear in SQL e.g. MyTable, MyQuery, or \"MyTable\"") String queryName
     )
     {
@@ -140,7 +146,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String validateSQL(
             ToolContext toolContext,
-            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+            @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
             @ToolParam(description = "SQL source") String sql
     )
     {
@@ -226,7 +232,7 @@ public class QueryMcp implements McpService.McpImpl
     @RequiresPermission(ReadPermission.class)
     String executeSQL(
             ToolContext toolContext,
-            @ToolParam(description = "Fully qualified schema name as it would appear in SQL e.g. Study or \"Study\".\"Datasets\"") String schemaName,
+            @ToolParam(description = SCHEMA_NAME_DESCRIPTION) String schemaName,
             @ToolParam(description = "LabKey SQL to execute") String sql,
             @ToolParam(description = "Rows to skip before returning results.", required=false) Integer offset,
             @ToolParam(description = "Number of rows to return (limit <= 1000, default=100)", required=false) Integer limit
@@ -256,6 +262,8 @@ public class QueryMcp implements McpService.McpImpl
         }
         catch (Exception x)
         {
+            if (!(x instanceof QueryException))
+                LOG.error("executeSQL failed", x);
             return x.getMessage() != null ? x.getMessage() : x.getClass().getSimpleName();
         }
     }
