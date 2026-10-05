@@ -40,7 +40,6 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -56,7 +55,6 @@ import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -100,7 +98,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
-import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunForm;
@@ -120,7 +117,6 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -215,7 +211,6 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.sql.LabKeySql;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
@@ -262,7 +257,6 @@ import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
@@ -271,7 +265,6 @@ import org.labkey.experiment.ChooseExperimentTypeBean;
 import org.labkey.experiment.ConfirmDeleteView;
 import org.labkey.experiment.CustomPropertiesView;
 import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExpDataFileListener;
 import org.labkey.experiment.ExperimentRunDisplayColumn;
@@ -319,7 +312,6 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -341,7 +333,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -5460,132 +5451,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(InsertPermission.class)
-    public class DeriveSamplesChooseTargetAction extends SimpleViewAction<DeriveMaterialForm>
-    {
-        private List<ExpMaterial> _materials;
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            addRootNavTrail(root);
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.getFirst().getSampleType() : null;
-            if (sampleType != null)
-            {
-                root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
-            }
-            root.addChild("Derive Samples");
-        }
-
-        @Override
-        public void validate(DeriveMaterialForm form, BindException errors)
-        {
-            _materials = form.lookupMaterials();
-            if (_materials.isEmpty())
-            {
-                throw new NotFoundException("Could not find any matching materials");
-            }
-        }
-
-        @Override
-        public ModelAndView getView(DeriveMaterialForm form, BindException errors)
-        {
-            Container c = getContainer();
-            PipeRoot root = PipelineService.get().findPipelineRoot(c);
-
-            if (root == null || !root.isValid())
-            {
-                ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
-                return new HtmlView(DIV("You must ",
-                    DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
-                    " before deriving samples."));
-            }
-            else
-            {
-                Set<String> materialInputRoles = new TreeSet<>(ExperimentService.get().getMaterialInputRoles(getContainer(), getUser()));
-                Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<>();
-                for (ExpMaterial material : _materials)
-                {
-                    materialsWithRoles.put(material, null);
-                }
-
-                List<ExpSampleType> sampleTypes = getUploadableSampleTypes();
-
-                DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), sampleTypes, materialsWithRoles, form.getOutputCount(), materialInputRoles, null);
-                return new JspView<>("/org/labkey/experiment/deriveSamplesChooseTarget.jsp", bean);
-            }
-        }
-    }
-
-    public static class DeriveSamplesChooseTargetBean implements DataRegionSelection.DataSelectionKeyForm
-    {
-        private String _dataRegionSelectionKey;
-
-        private final Integer _targetSampleTypeId;
-        private final List<ExpSampleType> _sampleTypes;
-        private final Map<ExpMaterial, String> _sourceMaterials;
-        private final int _sampleCount;
-        private final Collection<String> _inputRoles;
-        private final DerivedSamplePropertyHelper _propertyHelper;
-
-        public static final String CUSTOM_ROLE = "--CUSTOM--";
-
-        public DeriveSamplesChooseTargetBean(String dataRegionSelectionKey, Integer targetSampleTypeId, List<ExpSampleType> sampleTypes, Map<ExpMaterial, String> sourceMaterials, int sampleCount, Collection<String> inputRoles, DerivedSamplePropertyHelper helper)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-            _targetSampleTypeId = targetSampleTypeId;
-            _sampleTypes = sampleTypes;
-            _sourceMaterials = sourceMaterials;
-            _sampleCount = sampleCount;
-            _inputRoles = inputRoles;
-            _propertyHelper = helper;
-        }
-
-        public Integer getTargetSampleTypeId()
-        {
-            return _targetSampleTypeId;
-        }
-
-        public DerivedSamplePropertyHelper getPropertyHelper()
-        {
-            return _propertyHelper;
-        }
-
-        public int getSampleCount()
-        {
-            return _sampleCount;
-        }
-
-        public Map<ExpMaterial, String> getSourceMaterials()
-        {
-            return _sourceMaterials;
-        }
-
-        public List<ExpSampleType> getSampleTypes()
-        {
-            return _sampleTypes;
-        }
-
-        public Collection<String> getInputRoles()
-        {
-            return _inputRoles;
-        }
-
-        @Override
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        @Override
-        public void setDataRegionSelectionKey(String key)
-        {
-            _dataRegionSelectionKey = key;
-        }
-    }
-
     private List<ExpSampleType> getUploadableSampleTypes()
     {
         // Make a copy so we can modify it
@@ -5593,333 +5458,6 @@ public class ExperimentController extends SpringActionController
         sampleTypes.removeIf(sampleType -> !sampleType.canImportMoreSamples());
         return sampleTypes;
     }
-
-    @RequiresPermission(InsertPermission.class)
-    public class DeriveSamplesAction extends FormViewAction<DeriveMaterialForm>
-    {
-        private List<ExpMaterial> _materials;
-        private ActionURL _successUrl;
-        private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
-
-        @Override
-        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors)
-        {
-            _materials = form.lookupMaterials();
-            if (_materials.isEmpty())
-            {
-                throw new NotFoundException("Could not find any matching materials");
-            }
-
-            Container c = getContainer();
-
-            if (form.getOutputCount() <= 0)
-            {
-                form.setOutputCount(1);
-            }
-
-            if (form.getTargetSampleTypeId() == 0)
-                throw new NotFoundException("Target sample type required for the derived samples");
-
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), form.getTargetSampleTypeId(), true);
-            if (sampleType == null)
-                throw new NotFoundException("Could not find sample type with rowId " + form.getTargetSampleTypeId());
-
-            InsertView insertView = new InsertView(new DataRegion(), errors);
-
-            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), c, getUser());
-            helper.addSampleColumns(insertView, getUser());
-
-            int[] rowIds = form.getRowIds();
-            for (int i = 0; i < rowIds.length; i++)
-            {
-                insertView.getDataRegion().addHiddenFormField("rowIds", Integer.toString(rowIds[i]));
-                insertView.getDataRegion().addHiddenFormField("inputRole" + i, form.getInputRole(i) == null ? "" : form.getInputRole(i));
-                insertView.getDataRegion().addHiddenFormField("customRole" + i, form.getCustomRole(i) == null ? "" : form.getCustomRole(i));
-            }
-
-            insertView.getDataRegion().addHiddenFormField("targetSampleTypeId", Integer.toString(form.getTargetSampleTypeId()));
-            insertView.getDataRegion().addHiddenFormField("outputCount", Integer.toString(form.getOutputCount()));
-            if (form.getDataRegionSelectionKey() != null)
-                insertView.getDataRegion().addHiddenFormField(DataRegionSelection.DATA_REGION_SELECTION_KEY, form.getDataRegionSelectionKey());
-            insertView.setInitialValues(ViewServlet.adaptParameterMap(getViewContext().getRequest().getParameterMap()));
-            ButtonBar bar = new ButtonBar();
-            bar.setStyle(ButtonBar.Style.separateButtons);
-            ActionButton submitButton = new ActionButton(DeriveSamplesAction.class, "Submit");
-            submitButton.setActionType(ActionButton.Action.POST);
-            bar.add(submitButton);
-            insertView.getDataRegion().setButtonBar(bar);
-            insertView.setTitle("Output Samples");
-
-            Map<ExpMaterial, String> materialsWithRoles = new LinkedHashMap<>();
-            List<ExpMaterial> materials = form.lookupMaterials();
-            for (int i = 0; i < materials.size(); i++)
-            {
-                materialsWithRoles.put(materials.get(i), form.determineLabel(i));
-            }
-
-            DeriveSamplesChooseTargetBean bean = new DeriveSamplesChooseTargetBean(form.getDataRegionSelectionKey(), form.getTargetSampleTypeId(), getUploadableSampleTypes(), materialsWithRoles, form.getOutputCount(), Collections.emptyList(), helper);
-            JspView<DeriveSamplesChooseTargetBean> view = new JspView<>("/org/labkey/experiment/summarizeMaterialInputs.jsp", bean);
-            view.setTitle("Input Samples");
-
-            return new VBox(view, insertView);
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-            setHelpTopic("sampleSets");
-            addRootNavTrail(root);
-            root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.getFirst().getSampleType() : null;
-            if (sampleType != null)
-            {
-                root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
-            }
-            root.addChild("Derive Samples");
-        }
-
-        @Override
-        public void validateCommand(DeriveMaterialForm form, Errors errors)
-        {
-            List<ExpMaterial> materials = form.lookupMaterials();
-
-            List<ExpMaterial> lockedSamples = new ArrayList<>();
-            for (int i = 0; i < materials.size(); i++)
-            {
-                ExpMaterial m = materials.get(i);
-                if (!m.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
-                {
-                    lockedSamples.add(m);
-                }
-                String inputRole = form.determineLabel(i);
-                if (inputRole == null || inputRole.isEmpty())
-                {
-                    ExpSampleType st = m.getSampleType();
-                    inputRole = st != null ? st.getName() : ExpMaterialRunInput.DEFAULT_ROLE;
-                }
-                _inputMaterials.put(materials.get(i), inputRole);
-            }
-
-            if (!lockedSamples.isEmpty())
-            {
-                errors.reject(ERROR_MSG, SampleTypeService.get().getOperationNotPermittedMessage(lockedSamples, SampleTypeService.SampleOperations.EditLineage));
-            }
-        }
-
-        @Override
-        public boolean handlePost(DeriveMaterialForm form, BindException errors)
-        {
-            ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), form.getTargetSampleTypeId(), true);
-
-            DerivedSamplePropertyHelper helper = new DerivedSamplePropertyHelper(sampleType, form.getOutputCount(), getContainer(), getUser());
-
-            Map<Pair<Lsid, String>, Map<DomainProperty, String>> allProperties;
-            try
-            {
-                boolean valid = true;
-                for (Map.Entry<String, Map<DomainProperty, String>> entry : helper.getPostedPropertyValues(getViewContext().getRequest()).entrySet())
-                    valid = UploadWizardAction.validatePostedProperties(getViewContext(), entry.getValue(), errors) && valid;
-                if (!valid)
-                    return false;
-
-                allProperties = helper.getSampleProperties(getViewContext().getRequest(), _inputMaterials.keySet());
-            }
-            catch (DuplicateMaterialException e)
-            {
-                errors.addError(new ObjectError(e.getColName(), null, null, e.getMessage()));
-                return false;
-            }
-            catch (ExperimentException e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
-            {
-                Map<ExpMaterial, String> outputMaterials = new HashMap<>();
-                int i = 0;
-                for (Map.Entry<Pair<Lsid, String>, Map<DomainProperty, String>> entry : allProperties.entrySet())
-                {
-                    Lsid lsid = entry.getKey().first;
-                    String name = entry.getKey().second;
-                    assert name != null;
-
-                    ExpMaterialImpl outputMaterial = ExperimentServiceImpl.get().createExpMaterial(getContainer(), lsid.toString(), name);
-                    if (sampleType != null)
-                    {
-                        outputMaterial.setCpasType(sampleType.getLSID());
-                    }
-                    outputMaterial.save(getUser());
-
-                    if (sampleType != null)
-                    {
-                        Map<String, Object> pvs = new HashMap<>();
-                        for (Map.Entry<DomainProperty, String> propertyEntry : entry.getValue().entrySet())
-                            pvs.put(propertyEntry.getKey().getName(), propertyEntry.getValue());
-                        outputMaterial.setProperties(getUser(), pvs, false);
-                    }
-
-                    outputMaterials.put(outputMaterial, helper.getSampleNames().get(i++));
-                }
-
-                ExperimentService.get().deriveSamples(_inputMaterials, outputMaterials, getViewBackgroundInfo(), _log);
-
-                tx.commit();
-
-                // automatically link samples to study, if configured
-                StudyPublishService.get().autoLinkDerivedSamples(sampleType, outputMaterials.keySet().stream().map(ExpObject::getRowId).collect(toList()), getContainer(), getUser());
-
-                _successUrl = ExperimentUrlsImpl.get().getShowSampleURL(getContainer(), outputMaterials.keySet().iterator().next());
-
-                if (form.getDataRegionSelectionKey() != null)
-                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
-            }
-            catch (Exception e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(DeriveMaterialForm deriveMaterialForm)
-        {
-            return _successUrl;
-        }
-    }
-
-    public static class DeriveMaterialForm implements HasViewContext, DataRegionSelection.DataSelectionKeyForm
-    {
-        private String _dataRegionSelectionKey;
-        private int _outputCount = 1;
-        private int _targetSampleTypeId;
-        private int[] _rowIds;
-        private String _name;
-
-        private ViewContext _context;
-
-        @Override
-        public void setViewContext(ViewContext context)
-        {
-            _context = context;
-        }
-
-        @Override
-        public ViewContext getViewContext()
-        {
-            return _context;
-        }
-
-        public List<ExpMaterial> lookupMaterials()
-        {
-            List<ExpMaterial> result = new ArrayList<>();
-            for (int rowId : getRowIds())
-            {
-                ExpMaterial material = ExperimentService.get().getExpMaterial(rowId);
-                if (material != null)
-                {
-                    if (material.getContainer().hasPermission(_context.getUser(), ReadPermission.class))
-                    {
-                        result.add(material);
-                    }
-                    else
-                    {
-                        throw new UnauthorizedException();
-                    }
-                }
-                else
-                {
-                    throw new NotFoundException("No material with RowId " + rowId);
-                }
-            }
-            result.sort(Comparator.comparing(Identifiable::getName));
-            return result;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        @Override
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        @Override
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public int[] getRowIds()
-        {
-            if (_rowIds == null)
-            {
-                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), getDataRegionSelectionKey(), false));
-            }
-            return _rowIds;
-        }
-
-        public void setRowIds(int[] rowIds)
-        {
-            _rowIds = rowIds;
-        }
-
-        public int getOutputCount()
-        {
-            return _outputCount;
-        }
-
-        public void setOutputCount(int outputCount)
-        {
-            _outputCount = outputCount;
-        }
-
-        public int getTargetSampleTypeId()
-        {
-            return _targetSampleTypeId;
-        }
-
-        public void setTargetSampleTypeId(int targetSampleTypeId)
-        {
-            _targetSampleTypeId = targetSampleTypeId;
-        }
-
-        public String getInputRole(int i)
-        {
-            return _context.getRequest().getParameter("inputRole" + i);
-        }
-
-        public String getCustomRole(int i)
-        {
-            return _context.getRequest().getParameter("customRole" + i);
-        }
-
-        public String determineLabel(int index)
-        {
-            String result = getInputRole(index);
-            if (DeriveSamplesChooseTargetBean.CUSTOM_ROLE.equals(result))
-            {
-                result = getCustomRole(index);
-            }
-            if (result != null)
-            {
-                result = result.trim();
-            }
-            return result;
-        }
-    }
-
 
     public static class ExpInput
     {
