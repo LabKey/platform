@@ -20,7 +20,7 @@ plugins {
     id 'org.labkey.build.module'
 }
 
-ext.mime4jVersion="0.8.14"
+ext.mime4jVersion="0.8.15"
 
 dependencies {
     BuildUtils.addExternalDependency(
