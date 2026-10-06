@@ -350,12 +350,15 @@ public class QuerySelectView extends AbstractQueryRelation
 
         // GH Issue 1595: with ORDER BY + LIMIT, the planner satisfies a "PK IN (...)" semi-join by scanning the base table's
         // index rather than driving from the bounded value set. Join its temp table in at the base-table level instead; on
-        // the outer wrapper the planner still backward-scans.
+        // the outer wrapper the planner still backward-scans. Moving the predicate inward assumes the inner select is a
+        // plain projection; it would change the value of any window function computed there.
         TempTableInfo drivingTempTable = null;
         ColumnInfo drivingPkColumn = null;
         Filter effectiveFilter = filter;
-        if (filter instanceof SimpleFilter driveFilter && null != sort && Table.ALL_ROWS != maxRows)
+        // Rebuilding the filter below drops any subclass behavior, so apply this only to a plain SimpleFilter
+        if (null != filter && filter.getClass() == SimpleFilter.class && null != sort && maxRows > 0)
         {
+            SimpleFilter driveFilter = (SimpleFilter) filter;
             List<ColumnInfo> pkCols = table.getPkColumns();
             ColumnInfo pkColumn = pkCols.size() == 1 ? columnMap.get(pkCols.get(0).getFieldKey()) : null;
             if (null != pkColumn)
@@ -397,7 +400,11 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (null != drivingTempTable)
         {
-            fromFrag.append("\nINNER JOIN ").append(drivingTempTable).append(" _drive_ ON ").append(drivingPkColumn.getValueSql(tableAlias)).append(" = _drive_.Id");
+            AliasManager driveAliasManager = new AliasManager(table, allColumns);
+            driveAliasManager.claimAlias(tableAlias, tableAlias);
+            String driveAlias = driveAliasManager.decideAlias("_drive_");
+            fromFrag.append("\nINNER JOIN ").append(drivingTempTable).append(" ").append(driveAlias)
+                .append(" ON ").append(drivingPkColumn.getValueSql(tableAlias)).append(" = ").append(driveAlias).append(".Id");
             fromFrag.addTempToken(drivingTempTable);
         }
 

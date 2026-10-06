@@ -88,6 +88,8 @@ public class TempTableInClauseGenerator implements InClauseGenerator
 
     private static @Nullable JdbcType jdbcTypeFor(@NotNull Collection<?> params)
     {
+        if (params.isEmpty())
+            return null;
         Object first = params.iterator().next();
         if (first instanceof Long)
             return JdbcType.BIGINT;
