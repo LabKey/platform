@@ -219,12 +219,6 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _map.get(key);
     }
 
-    @Deprecated // Left behind so not every module needs to be recompiled immediately. TODO: Remove
-    public Object get(Object key)
-    {
-        return _map.get(key);
-    }
-
     /*
      * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's null or a String.
      * Otherwise, throws BadRequestException. See GH Issue 1631.

@@ -12376,7 +12376,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
         }
 
         @Override
