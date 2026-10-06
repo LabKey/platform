@@ -119,6 +119,7 @@ import java.util.function.Supplier;
 
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.transform.DataTransformService.LEGACY_SESSION_ID_REPLACEMENT;
+import static org.labkey.api.assay.transform.DataTransformService.R_SESSIONID_REPLACEMENT;
 
 public class AssayModule extends SpringModule
 {
@@ -184,6 +185,8 @@ public class AssayModule extends SpringModule
 
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_COOKIE_NAME_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
         ParamReplacementSvc.get().registerDeprecated(LEGACY_SESSION_ID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(R_SESSIONID_REPLACEMENT, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
+        ParamReplacementSvc.get().registerDeprecated(SecurityManager.TRANSFORM_SESSION_ID, ValidationException.SEVERITY.WARN, "Use '" + SecurityManager.API_KEY + "' instead");
 
         RoleManager.registerRole(new AssayDesignerRole());
 
