@@ -46,7 +46,6 @@ public interface AppProps
     String SCOPE_OPTIONAL_FEATURE = "ExperimentalFeature"; // Startup property prefix for all optional features; "Experimental" for historical reasons.
     String OPTIONAL_NO_GUESTS = "disableGuestAccount";
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
-    String DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP = "deriveSamplesNotInApp";
     String ADMIN_PROVIDED_ALLOWED_EXTERNAL_RESOURCES = "allowedExternalResources";
     String QUANTITY_COLUMN_SUFFIX_TESTING = "quantityColumnSuffixTesting";
     String REJECT_CONTROLLER_FIRST_URLS = "rejectControllerFirstUrls";
