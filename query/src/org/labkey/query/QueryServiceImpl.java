@@ -3553,10 +3553,19 @@ public class QueryServiceImpl implements QueryService
             assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
             assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
 
-            // unsorted
+            // paged with no sort of its own: getSelectSQL() supplies a default sort, so the planner still sees ORDER BY + LIMIT
             String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
-            assertFalse("Unsorted query should not produce a driving join:\n" + unsortedSql, unsortedSql.contains("_drive_"));
-            assertTrue("Unsorted query should keep the IN (SELECT ...) semi-join:\n" + unsortedSql, unsortedSql.contains("IN (SELECT Id FROM"));
+            assertTrue("A paged query picks up a default sort, so it should drive from the value set:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+
+            // below the temp-table threshold there is no temp table to drive from
+            SimpleFilter smallFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids.subList(0, 10)));
+            String smallSql = qs.getSelectBuilder(users).columns(cols).filter(smallFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("A value set below the temp table threshold should not produce a driving join:\n" + smallSql, smallSql.contains("_drive_"));
+
+            // NOT IN cannot become a join
+            SimpleFilter negatedFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids, false, true));
+            String negatedSql = qs.getSelectBuilder(users).columns(cols).filter(negatedFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Negated IN should not produce a driving join:\n" + negatedSql, negatedSql.contains("_drive_"));
 
             // non-PK column
             SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
