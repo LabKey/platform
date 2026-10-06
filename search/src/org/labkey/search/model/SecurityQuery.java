@@ -19,49 +19,74 @@ package org.labkey.search.model;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.document.BinaryDocValuesField;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.search.ConstantScoreScorer;
 import org.apache.lucene.search.ConstantScoreWeight;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.ScorerSupplier;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.Weight;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BitSetIterator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.search.SearchScope;
+import org.labkey.api.search.SearchScope.SearchableContainers;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.SearchCategory;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer;
+import org.labkey.api.util.TestContext;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import static org.apache.lucene.search.DocIdSetIterator.NO_MORE_DOCS;
 
@@ -72,11 +97,16 @@ public class SecurityQuery extends Query
     private final boolean _recursive;
 
     private final HashMap<String, Set<String>> _categoryContainers = new HashMap<>();
-    private final HashMap<String, Container> _containerIds;
+    private final Map<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
     private final InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
     SecurityQuery(User user, SearchScope searchScope, Container currentContainer, InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
+    {
+        this(user, searchScope, currentContainer, iTimer, SearchService.get().getSearchCategories());
+    }
+
+    SecurityQuery(User user, SearchScope searchScope, Container currentContainer, InvocationTimer<SearchService.SEARCH_PHASE> iTimer, Collection<SearchCategory> searchCategories)
     {
         // These three are used for hashCode() & equals(). We have disabled query caching for now (see #26416), but this gets us close to being able to use it. We
         // need to add some indication that permissions haven't changed since the query was cached, for example, include in the hash a counter that SecurityManager
@@ -86,45 +116,20 @@ public class SecurityQuery extends Query
         _recursive = searchScope.isRecursive();
         _iTimer = iTimer;
 
-        _containerIds = searchScope.getSearchableContainers(user, currentContainer);
+        // Categories that require only base container Read are resolved directly; the rest are grouped by required
+        // permission so categories that share one (e.g., the three assay categories all require AssayReadPermission)
+        // share a single container set.
+        CategoryPermissions categoryPermissions = groupCategoriesByRequiredPermission(searchCategories);
+        Map<Class<? extends Permission>, Collection<SearchCategory>> categoriesByPermission = categoryPermissions.categoriesByPermission();
 
-        // Categories that require only base container Read (already guaranteed for every container above) are
-        // resolved directly; the rest are grouped by required permission so multiple categories that require the
-        // same permission (e.g., the three assay categories all require AssayReadPermission) share a single
-        // O(containers) assembly pass below instead of each redoing it.
-        CategoryPermissions categoryPermissions = groupCategoriesByRequiredPermission(SearchService.get().getSearchCategories());
+        SearchableContainers searchable = searchScope.getSearchableContainers(user, currentContainer, categoriesByPermission.keySet());
+        _containerIds = searchable.readable();
 
         for (String categoryName : categoryPermissions.baseReadCategoryNames())
             _categoryContainers.put(categoryName, _containerIds.keySet());
 
-        // Containers that inherit their policy (e.g., workbooks, which typically don't have their own explicit
-        // policy) share the exact same SecurityPolicy object as their nearest ancestor with one. Role resolution
-        // (SecurityManager.getPermissions()) is therefore identical for every container backed by the same policy,
-        // so compute it once per distinct policy instead of once per container per category. A user's full granted
-        // permission set can be large (100+ for a site admin), but categories only ever ask about a handful of
-        // permission classes, so retain just those instead of holding the full set for every distinct policy.
-        Map<Class<? extends Permission>, Collection<SearchCategory>> categoriesByPermission = categoryPermissions.categoriesByPermission();
-        Set<Class<? extends Permission>> requiredPermissions = categoriesByPermission.keySet();
-        HashMap<String, Set<Class<? extends Permission>>> permissionsByPolicy = new HashMap<>();
-
-        if (!requiredPermissions.isEmpty())
-        {
-            for (Container c : _containerIds.values())
-            {
-                permissionsByPolicy.computeIfAbsent(c.getPolicy().getResourceId(), _ -> SecurityManager.getPermissions(c, user, Set.of())
-                    .filter(requiredPermissions::contains)
-                    .collect(Collectors.toSet()));
-            }
-        }
-
         categoriesByPermission.forEach((requiredPermission, categories) -> {
-            Set<String> permittedContainerIds = new HashSet<>();
-
-            for (var entry : _containerIds.entrySet())
-            {
-                if (permissionsByPolicy.get(entry.getValue().getPolicy().getResourceId()).contains(requiredPermission))
-                    permittedContainerIds.add(entry.getKey());
-            }
+            Set<String> permittedContainerIds = searchable.containerIdsByPermission().get(requiredPermission);
 
             for (SearchCategory category : categories)
                 _categoryContainers.put(category.getName(), permittedContainerIds);
@@ -451,6 +456,193 @@ public class SecurityQuery extends Query
 
             assertEquals(Set.of("wiki"), result.baseReadCategoryNames());
             assertEquals(List.of(data), result.categoriesByPermission().get(InsertPermission.class));
+        }
+    }
+
+    public static class FilterTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "SecurityQueryTestProject";
+        private static final String EMAIL = "security_query_test@test.com";
+        private static final SearchCategory BASE_CATEGORY = new SearchCategory("securityQueryTestBase", "Base");
+        private static final SearchCategory INSERT_CATEGORY = TestCase.categoryRequiring("securityQueryTestInsert", InsertPermission.class);
+        private static final String ID_FIELD = "id";
+
+        /** One document of each kind is indexed in every test folder */
+        private enum DocKind
+        {
+            BASE(c -> c.getId() + "|" + BASE_CATEGORY.getName()),
+            INSERT(c -> c.getId() + "|" + INSERT_CATEGORY.getName()),
+            UNKNOWN_CATEGORY(c -> c.getId() + "|notARegisteredCategory"),
+            NO_CATEGORY(Container::getId);
+
+            private final Function<Container, String> _securityContext;
+
+            DocKind(Function<Container, String> securityContext)
+            {
+                _securityContext = securityContext;
+            }
+
+            String getId(Container c)
+            {
+                return c.getName() + ":" + name();
+            }
+        }
+
+        private static final Set<DocKind> ALL_KINDS = EnumSet.allOf(DocKind.class);
+        private static final Set<DocKind> READ_ONLY_KINDS = EnumSet.complementOf(EnumSet.of(DocKind.INSERT));
+
+        /** Documents in the project whose securable resource ID must also pass a read check */
+        private enum ResourceDoc
+        {
+            READABLE_FOLDER_RESOURCE,
+            RESTRICTED_FOLDER_RESOURCE,
+            NON_CONTAINER_RESOURCE
+        }
+
+        private static User _admin;
+        private static User _user;
+        private static Container _project;
+        private static Container _inherited;
+        private static Container _editable;
+        private static Container _restricted;
+        private static Directory _directory;
+        private static DirectoryReader _reader;
+
+        @BeforeClass
+        public static void setUp() throws Exception
+        {
+            cleanup();
+            _admin = TestContext.get().getUser();
+            _user = SecurityManager.addUser(new ValidEmail(EMAIL), null).getUser();
+
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, _admin);
+            MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(_project.getPolicy());
+            projectPolicy.addRoleAssignment(_user, ReaderRole.class);
+            SecurityPolicyManager.savePolicyForTests(projectPolicy, _admin);
+
+            _inherited = ContainerManager.createContainer(_project, "Inherited", _admin);
+            SecurityManager.setInheritPermissions(_inherited);
+
+            _editable = ContainerManager.createContainer(_project, "Editable", _admin);
+            MutableSecurityPolicy editablePolicy = new MutableSecurityPolicy(_editable);
+            editablePolicy.addRoleAssignment(_user, EditorRole.class);
+            SecurityPolicyManager.savePolicyForTests(editablePolicy, _admin);
+
+            _restricted = ContainerManager.createContainer(_project, "Restricted", _admin);
+            SecurityPolicyManager.savePolicyForTests(new MutableSecurityPolicy(_restricted), _admin);
+
+            _directory = new ByteBuffersDirectory();
+
+            try (IndexWriter writer = new IndexWriter(_directory, new IndexWriterConfig()))
+            {
+                for (Container c : getAllFolders())
+                    for (DocKind kind : DocKind.values())
+                        addDocument(writer, kind.getId(c), kind._securityContext.apply(c));
+
+                for (ResourceDoc doc : ResourceDoc.values())
+                {
+                    String resourceId = switch (doc)
+                    {
+                        case READABLE_FOLDER_RESOURCE -> _editable.getId();
+                        case RESTRICTED_FOLDER_RESOURCE -> _restricted.getId();
+                        case NON_CONTAINER_RESOURCE -> GUID.makeGUID();
+                    };
+                    addDocument(writer, doc.name(), DocKind.BASE._securityContext.apply(_project) + "|" + resourceId);
+                }
+            }
+
+            _reader = DirectoryReader.open(_directory);
+        }
+
+        private static List<Container> getAllFolders()
+        {
+            return List.of(_project, _inherited, _editable, _restricted);
+        }
+
+        private static void addDocument(IndexWriter writer, String id, String securityContext) throws IOException
+        {
+            Document doc = new Document();
+            doc.add(new StringField(ID_FIELD, id, Field.Store.YES));
+            doc.add(new BinaryDocValuesField(FIELD_NAME.securityContext.name(), new BytesRef(securityContext)));
+            writer.addDocument(doc);
+        }
+
+        @AfterClass
+        public static void cleanup() throws Exception
+        {
+            if (null != _reader)
+                _reader.close();
+            if (null != _directory)
+                _directory.close();
+            _reader = null;
+            _directory = null;
+
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+
+            User user = UserManager.getUser(new ValidEmail(EMAIL));
+            if (null != user)
+                UserManager.deleteUser(user.getUserId());
+        }
+
+        @Test
+        public void testReaderAcrossSubfolders() throws IOException
+        {
+            Set<String> expected = getIds(List.of(_project, _inherited), READ_ONLY_KINDS);
+            expected.addAll(getIds(List.of(_editable), ALL_KINDS));
+            expected.add(ResourceDoc.READABLE_FOLDER_RESOURCE.name());
+
+            assertEquals(expected, search(_user, SearchScope.FolderAndSubfolders, _project));
+        }
+
+        @Test
+        public void testFolderScope() throws IOException
+        {
+            assertEquals(getIds(List.of(_editable), ALL_KINDS), search(_user, SearchScope.Folder, _editable));
+            assertEquals(Set.of(), search(_user, SearchScope.Folder, _restricted));
+        }
+
+        @Test
+        public void testGuest() throws IOException
+        {
+            assertEquals(Set.of(), search(User.guest, SearchScope.FolderAndSubfolders, _project));
+        }
+
+        @Test
+        public void testSiteAdmin() throws IOException
+        {
+            assertTrue(_admin.hasSiteAdminPermission());
+            Set<String> hits = search(_admin, SearchScope.FolderAndSubfolders, _project);
+
+            assertTrue(hits.containsAll(getIds(getAllFolders(), ALL_KINDS)));
+            assertTrue(hits.contains(ResourceDoc.RESTRICTED_FOLDER_RESOURCE.name()));
+        }
+
+        private static Set<String> getIds(Collection<Container> folders, Set<DocKind> kinds)
+        {
+            Set<String> ids = new HashSet<>();
+
+            for (Container c : folders)
+                for (DocKind kind : kinds)
+                    ids.add(kind.getId(c));
+
+            return ids;
+        }
+
+        private Set<String> search(User user, SearchScope scope, Container current) throws IOException
+        {
+            IndexSearcher searcher = new IndexSearcher(_reader);
+            InvocationTimer<SearchService.SEARCH_PHASE> timer = new MultiPhaseCPUTimer<>(SearchService.SEARCH_PHASE.class, SearchService.SEARCH_PHASE.values()).getInvocationTimer();
+            Query query = new SecurityQuery(user, scope, current, timer, List.of(BASE_CATEGORY, INSERT_CATEGORY));
+            TopDocs topDocs = searcher.search(query, _reader.maxDoc());
+            StoredFields storedFields = searcher.storedFields();
+            Set<String> ids = new HashSet<>();
+
+            for (ScoreDoc scoreDoc : topDocs.scoreDocs)
+                ids.add(storedFields.document(scoreDoc.doc).get(ID_FIELD));
+
+            return ids;
         }
     }
 }
