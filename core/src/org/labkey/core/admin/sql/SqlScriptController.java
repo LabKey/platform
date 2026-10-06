@@ -1491,8 +1491,12 @@ public class SqlScriptController extends SpringActionController
 
         private static final Set<String> SCRIPTS_TO_IGNORE = Set.of(
             "ehr-26.001-26.002.sql", // This fixed a SQL Server-specific issue, switching ehr.Project.Created and ehr.Project.Modified to NOT NULL
+            "extscheduler-26.000-26.001.sql", // extscheduler-26.001-26.002.sql is the PG equivalent of this script
             "onprc_ehr-25.000-25.001.sql", "onprc_ehr-25.001-25.002.sql", // These scripts created early versions of the audit.ArchiveAuditTables proc that were subsequently replaced
-            "onprc_ehr-26.004-26.005.sql" // onprc_ehr-26.005-26.006.sql is the PG equivalent of this script
+            "onprc_ehr-26.004-26.005.sql", // onprc_ehr-26.005-26.006.sql is the PG equivalent of this script
+            "snprc_ehr-26.000-26.001.sql", // Not needed on PostgreSQL
+            "tnprc_ehr-26.001-26.002.sql", // Not needed on PostgreSQL
+            "tnprc_ehr-26.002-26.003.sql" // Not needed on PostgreSQL
         );
 
         // VCS URL is "Unknown" in local builds, so find the enclosing git checkout instead
@@ -1500,7 +1504,7 @@ public class SqlScriptController extends SpringActionController
         {
             for (File dir = new File(module.getSourcePath()); dir != null; dir = dir.getParentFile())
             {
-                if (new File(dir, ".git").exists())
+                if (FileUtil.appendName(dir, ".git").exists())
                     return dir.getName();
             }
 
