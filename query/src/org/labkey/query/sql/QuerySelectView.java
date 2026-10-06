@@ -31,7 +31,6 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -349,39 +348,22 @@ public class QuerySelectView extends AbstractQueryRelation
         }
 
         // GH Issue 1595: with ORDER BY + LIMIT, the planner satisfies a "PK IN (...)" semi-join by scanning the base table's
-        // index rather than driving from the bounded value set. Join its temp table in at the base-table level instead; on
-        // the outer wrapper the planner still backward-scans. Moving the predicate inward assumes the inner select is a
-        // plain projection; it would change the value of any window function computed there.
-        TempTableInfo drivingTempTable = null;
-        ColumnInfo drivingPkColumn = null;
+        // index rather than driving from the bounded value set, so let a clause trade itself for a driving join; on the
+        // outer wrapper the planner still backward-scans. Moving a predicate inward assumes the inner select is a plain
+        // projection; it would change the value of any window function computed there.
+        Map<String, SQLFragment> drivingJoins = new LinkedHashMap<>();
         Filter effectiveFilter = filter;
         // Rebuilding the filter below drops any subclass behavior, so apply this only to a plain SimpleFilter
         if (null != filter && filter.getClass() == SimpleFilter.class && null != sort && maxRows > 0)
         {
-            SimpleFilter driveFilter = (SimpleFilter) filter;
-            List<ColumnInfo> pkCols = table.getPkColumns();
-            ColumnInfo pkColumn = pkCols.size() == 1 ? columnMap.get(pkCols.get(0).getFieldKey()) : null;
-            if (null != pkColumn)
+            SimpleFilter reduced = new SimpleFilter();
+            for (SimpleFilter.FilterClause c : ((SimpleFilter) filter).getClauses())
             {
-                for (SimpleFilter.FilterClause c : driveFilter.getClauses())
-                {
-                    if (c instanceof SimpleFilter.InClause inClause && pkColumn.getFieldKey().equals(inClause.getFieldKey()))
-                    {
-                        TempTableInfo tt = inClause.getDrivingTempTable(dialect, pkColumn);
-                        if (null != tt)
-                        {
-                            drivingTempTable = tt;
-                            drivingPkColumn = pkColumn;
-                            SimpleFilter reduced = new SimpleFilter();
-                            for (SimpleFilter.FilterClause other : driveFilter.getClauses())
-                                if (other != c)
-                                    reduced.addClause(other);
-                            effectiveFilter = reduced;
-                            break;
-                        }
-                    }
-                }
+                if (!c.replaceWithJoin(table, tableAlias, columnMap, drivingJoins))
+                    reduced.addClause(c);
             }
+            if (!drivingJoins.isEmpty())
+                effectiveFilter = reduced;
         }
 
         SQLFragment fromFrag = new SQLFragment("FROM ");
@@ -398,15 +380,8 @@ public class QuerySelectView extends AbstractQueryRelation
         fromFrag.append(getFromSql);
         fromFrag.append(" ");
 
-        if (null != drivingTempTable)
-        {
-            AliasManager driveAliasManager = new AliasManager(table, allColumns);
-            driveAliasManager.claimAlias(tableAlias, tableAlias);
-            String driveAlias = driveAliasManager.decideAlias("_drive_");
-            fromFrag.append("\nINNER JOIN ").append(drivingTempTable).append(" ").append(driveAlias)
-                .append(" ON ").append(drivingPkColumn.getValueSql(tableAlias)).append(" = ").append(driveAlias).append(".Id");
-            fromFrag.addTempToken(drivingTempTable);
-        }
+        for (SQLFragment drivingJoin : drivingJoins.values())
+            fromFrag.append("\n").append(drivingJoin);
 
         for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
         {
