@@ -15,7 +15,7 @@
     "lint-fix": "eslint --fix"
   },
   "dependencies": {
-    "@labkey/components": "7.68.0"
+    "@labkey/components": "7.68.1-fb-lineage-cross-edge-1678.0"
   },
   "devDependencies": {
     "@labkey/build": "10.1.3",
