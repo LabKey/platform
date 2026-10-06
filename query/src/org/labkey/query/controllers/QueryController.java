@@ -6963,23 +6963,25 @@ public class QueryController extends SpringActionController
             if (form.isIncludeUserQueries() || form.isIncludeUserQueriesForLookups())
             {
                 // GH Issue 1512: includeUserQueries returns them all; includeUserQueriesForLookups (only when the former is off)
-                // restricts to queries that expose a primary key
+                // restricts to lookup-eligible queries that expose a primary key
                 boolean requirePk = form.isIncludeUserQueriesForLookups() && !form.isIncludeUserQueries();
                 for (QueryDefinition qdef : uschema.getQueryDefs().values())
                 {
-                    if (!qdef.isTemporary())
+                    if (qdef.isTemporary())
+                        continue;
+
+                    if (requirePk)
                     {
-                        if (requirePk)
-                        {
-                            QueryDefinitionImpl impl = qdef instanceof QueryDefinitionImpl q ? q : null;
-                            if (impl != null && Boolean.FALSE.equals(impl.getCachedHasPkColumn()))
-                                continue;
-                        }
-                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        Map<String, Object> props = getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), requirePk);
-                        if (props != null)
-                            qinfos.add(props);
+                        if (!qdef.isIncludedForLookups())
+                            continue;
+                        if (qdef instanceof QueryDefinitionImpl q && Boolean.FALSE.equals(q.getCachedHasPkColumn()))
+                            continue;
                     }
+
+                    ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                    Map<String, Object> props = getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), requirePk);
+                    if (props != null)
+                        qinfos.add(props);
                 }
             }
 
@@ -6994,7 +6996,9 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), false));
+                        Map<String, Object> props = getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), false);
+                        if (props != null)
+                            qinfos.add(props);
                     }
                 }
             }
@@ -7003,10 +7007,8 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        private Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle, boolean requirePk)
+        private @Nullable Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle, boolean requirePk)
         {
-            QueryDefinitionImpl impl = qdef instanceof QueryDefinitionImpl q ? q : null;
-
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("hidden", qdef.isHidden());
             qinfo.put("snapshot", qdef.isSnapshot());
@@ -7044,8 +7046,8 @@ public class QueryController extends SpringActionController
                     if (null != table)
                     {
                         hasPk = table.getPkColumns().stream().anyMatch(col -> !col.isAdditionalQueryColumn());
-                        if (isUserDefined && impl != null)
-                            impl.cacheHasPkColumn(hasPk);
+                        if (isUserDefined && qdef instanceof QueryDefinitionImpl q)
+                            q.cacheHasPkColumn(hasPk);
                         if (requirePk && !hasPk)
                             return null;
 
@@ -7089,7 +7091,7 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //may happen due to query failing parse
             }
