@@ -57,6 +57,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     private boolean _onlyReturnObjectId = false;
     private String _runProtocolLsid;
     private String _sourceKey;
+    private boolean _includeCrossEdges = false;
 
     public ExpLineageOptions()
     {
@@ -186,6 +187,17 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public void setSourceKey(String sourceKey)
     {
         _sourceKey = sourceKey;
+    }
+
+    /** Also return edges between found nodes that lie on neither the parent nor the child walk. */
+    public boolean isIncludeCrossEdges()
+    {
+        return _includeCrossEdges;
+    }
+
+    public void setIncludeCrossEdges(boolean includeCrossEdges)
+    {
+        _includeCrossEdges = includeCrossEdges;
     }
 
     public int getConfiguredDepth()

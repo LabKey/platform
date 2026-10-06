@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -58,6 +59,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toSet;
@@ -283,6 +285,8 @@ public class ExpLineageServiceImpl implements ExpLineageService
     public void streamLineage(Container container, User user, HttpServletResponse response, Set<Identifiable> seeds, ExpLineageOptions options) throws IOException
     {
         var lineage = getLineageResult(container, user, seeds, options);
+        if (options.isIncludeCrossEdges())
+            addCrossEdges(lineage.edges(), options);
 
         var context = new StreamContext(
             user,
@@ -298,6 +302,33 @@ public class ExpLineageServiceImpl implements ExpLineageService
         writeSeed(lineage, context, options);
 
         context.writer.endResponse();
+    }
+
+    // Ancestor-to-descendant edges lie on neither recursive walk, so add every edge between nodes the walks found.
+    private static void addCrossEdges(Set<ExpLineage.Edge> edges, ExpLineageOptions options)
+    {
+        // A type-filtered walk omits edges on purpose; don't add them back.
+        String expType = options.getExpTypeValue();
+        if ((expType != null && !ExpLineageOptions.LineageExpType.ALL.name().equals(expType)) || options.getCpasType() != null)
+            return;
+
+        Set<String> lsids = edges.stream().flatMap(e -> Stream.of(e.parent(), e.child())).collect(toSet());
+        if (lsids.size() < 3)
+            return;
+
+        var schema = ExperimentServiceImpl.getExpSchema();
+        var dialect = schema.getSqlDialect();
+        SQLFragment sql = new SQLFragment("SELECT f.ObjectURI AS parent_lsid, t.ObjectURI AS child_lsid FROM exp.Edge e")
+            .append(" INNER JOIN exp.Object f ON e.FromObjectId = f.ObjectId")
+            .append(" INNER JOIN exp.Object t ON e.ToObjectId = t.ObjectId")
+            .append(" WHERE f.ObjectURI ");
+        dialect.appendInClauseSql(sql, lsids);
+        sql.append(" AND t.ObjectURI ");
+        dialect.appendInClauseSql(sql, lsids);
+        if (options.getSourceKey() != null)
+            sql.append(" AND e.SourceKey = ?").add(options.getSourceKey());
+
+        new SqlSelector(schema, sql).forEachMap(m -> edges.add(new ExpLineage.Edge((String) m.get("parent_lsid"), (String) m.get("child_lsid"))));
     }
 
     private static void writeNodes(LineageResult lineage, StreamContext context) throws IOException
