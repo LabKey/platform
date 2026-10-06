@@ -24,8 +24,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileSystemAttachmentType;
@@ -34,6 +36,8 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -191,6 +195,15 @@ public class FileContentModule extends DefaultModule
             long crawled = ((Number)map.get("FileRootsCrawled")).longValue();
             results.put("fileRootsCrawled", crawled);
             results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
+
+            // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
+            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
+                .getArrayList(String.class).stream()
+                .map(ContainerManager::getForId)
+                .filter(c -> c != null && !c.isRoot())
+                .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
+            results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
+            results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
 
             return results;
         });

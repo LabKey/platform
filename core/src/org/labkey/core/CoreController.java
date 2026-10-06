@@ -128,7 +128,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
-import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -159,6 +158,7 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -216,6 +216,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
@@ -449,6 +450,8 @@ public class CoreController extends SpringActionController
                 ColumnInfo col = table.getColumn(pd.getName());
                 if (col == null)
                     throw new NotFoundException("PropertyColumn not found on table");
+                if (!col.getPropertyURI().equals(pd.getPropertyURI()))
+                    throw new BadRequestException("Column " + pd.getName() + " is not a file link type");
 
                 try
                 {
@@ -481,17 +484,18 @@ public class CoreController extends SpringActionController
 
             // For security reasons, make sure the user hasn't tried to download a file that's not under
             // the pipeline root.  Otherwise, they could get access to any file on the server.
-            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root == null)
-                throw new NotFoundException("No pipeline root for container " + getContainer().getPath());
-
-            if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
+            if (pipeRoot != null && !pipeRoot.hasPermission(getContainer(), getUser(), ReadPermission.class))
                 throw new UnauthorizedException();
 
-            java.nio.file.Path assayFilesRoot = FileContentService.get().getFileRootPath(getContainer(), FileContentService.ContentType.assayfiles);
+            FileContentService svc = FileContentService.get();
+            boolean managed = (pipeRoot != null && pipeRoot.isUnderRoot(file)) ||
+                    Stream.of(FileContentService.ContentType.files, FileContentService.ContentType.assayfiles)
+                            .map(type -> svc.getConfiguredFileRootPath(getContainer(), type))
+                            .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), file.toURI()));
 
-            if (!root.isUnderRoot(file) && (assayFilesRoot != null && !URIUtil.isDescendant(assayFilesRoot.toUri(), file.toURI())))
-                throw new NotFoundException("Cannot download file that isn't under the pipeline root for container " + getContainer().getPath());
+            if (!managed)
+                throw new NotFoundException("Cannot download file that isn't under a file root for container " + getContainer().getPath());
 
             if (!file.exists())
             {
