@@ -42,7 +42,7 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public static final Set<String> EXCLUDED_DETAIL_FIELDS = Set.of(
             AvailableAliquotVolume.name(), AvailableAliquotCount.name(), AliquotCount.name(), AliquotVolume.name(), AliquotUnit.name(),
             PROVIDED_DATA_PREFIX + StoredAmount.name(), PROVIDED_DATA_PREFIX + Units.name(),
-            DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name() + DELTA_PROVIDED_DATA_PREFIX + Units.name());
+            DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name(), DELTA_PROVIDED_DATA_PREFIX + Units.name());
 
     public enum SampleTimelineEventType
     {
