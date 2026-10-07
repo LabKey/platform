@@ -61,18 +61,24 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.mat.MatParser;
+import org.apache.tika.parser.microsoft.JackcessParser;
+import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
+import org.apache.tika.parser.microsoft.pst.PSTMailItemParser;
+import org.apache.tika.parser.pkg.RarParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -240,7 +246,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         ServiceLoader loader = new ServiceLoader(Thread.currentThread().getContextClassLoader());
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
         MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-        DefaultParser parser = new DefaultParser(registry, loader);
+        // We don't ship these parsers' libraries. Excluding them here prevents logging about their missing libraries.
+        // Other missing classes will be logged in the future, requiring additional exclusions OR adjustments to the
+        // jars we include.
+        List<Class<? extends Parser>> excluded = List.of(MatParser.class, JackcessParser.class, OutlookPSTParser.class, PSTMailItemParser.class, RarParser.class);
+        DefaultParser parser = new DefaultParser(registry, loader, excluded);
         _autoDetectParser = new AutoDetectParser(registry, parser, new DefaultDetector(mimeTypes, loader), AutoDetectParserConfig.DEFAULT);
     }
 
