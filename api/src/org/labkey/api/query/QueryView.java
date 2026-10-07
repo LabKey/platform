@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.compliance.ComplianceService;
@@ -84,6 +86,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -91,6 +94,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -2139,11 +2143,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 }
 
                 if (!keys.isEmpty())
-                {
-                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for (ColumnInfo col : selectedCols.values())
-                        rgn.addColumn(col);
-                }
+                    getFieldKeyDisplayColumns(table, keys).forEach(rgn::addDisplayColumn);
             }
         }
         else if (null != getSettings().getExtraFieldKeys())
@@ -2153,17 +2153,27 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             {
                 List<FieldKey> keys = getSettings().getExtraFieldKeys();
                 if (!keys.isEmpty())
-                {
-                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                    for (ColumnInfo col : selectedCols.values())
-                        rgn.addColumn(col);
-                }
+                    getFieldKeyDisplayColumns(table, keys).forEach(rgn::addDisplayColumn);
             }
         }
 
         GridView ret = new GridView(rgn, _errors);
         setupDataView(ret);
         return ret;
+    }
+
+    /** Display columns for explicitly requested field keys, carrying over the custom view's column properties (e.g., title). */
+    private List<DisplayColumn> getFieldKeyDisplayColumns(TableInfo table, List<FieldKey> keys)
+    {
+        Map<FieldKey, Map<CustomView.ColumnProperty, String>> viewProps = new HashMap<>();
+        if (_customView != null)
+            _customView.getColumnProperties().forEach(e -> viewProps.put(e.getKey(), e.getValue()));
+
+        Map<FieldKey, Map<CustomView.ColumnProperty, String>> fields = new LinkedHashMap<>();
+        for (FieldKey key : keys)
+            fields.putIfAbsent(key, viewProps.getOrDefault(key, Collections.emptyMap()));
+
+        return QueryService.get().getDisplayColumns(table, fields.entrySet());
     }
 
     protected void setupDataView(DataView ret)
@@ -3389,5 +3399,76 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     public void setMessageSupplier(DataRegion.MessageSupplier messageSupplier)
     {
         _messageSupplier = messageSupplier;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static final FieldKey NAME = FieldKey.fromParts("Name");
+        private static final FieldKey TITLE = FieldKey.fromParts("Title");
+        private static final String CUSTOM_CAPTION = "Custom Name Caption";
+
+        @Test
+        public void testFieldKeysKeepCustomViewCaption() throws IOException
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext());
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(NAME, TITLE)));
+
+                assertEquals(List.of(CUSTOM_CAPTION, "Title"), getCaptions(view));
+                assertEquals(CUSTOM_CAPTION + "\tTitle", getTsvHeader(view));
+            }
+        }
+
+        @Test
+        public void testExtraFieldKeysKeepCustomViewCaption()
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext());
+                view.getSettings().setExtraFieldKeys(List.of(NAME));
+
+                assertEquals(List.of(CUSTOM_CAPTION, CUSTOM_CAPTION), getCaptions(view));
+            }
+        }
+
+        private ViewContext.StackResetter pushContext()
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+            return ViewContext.pushMockViewContext(user, c, c.getStartURL(user));
+        }
+
+        /** core.Containers with an unsaved custom view that retitles only the Name column */
+        private QueryView createContainersView(ViewContext context)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "core");
+            QuerySettings settings = schema.getSettings(context, DATAREGIONNAME_DEFAULT, "Containers");
+            QueryView view = schema.createView(context, settings, null);
+            view.setShowDetailsColumn(false);
+            view.setShowUpdateColumn(false);
+
+            CustomView customView = view.getQueryDef().createCustomView(context.getUser(), "captionTest");
+            customView.setColumnProperties(List.of(Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION))));
+            view.setCustomView(customView);
+            return view;
+        }
+
+        private List<String> getCaptions(QueryView view)
+        {
+            return view.createDataView().getDataRegion().getDisplayColumns().stream()
+                .map(ColumnHeaderType.Caption::getText)
+                .toList();
+        }
+
+        private String getTsvHeader(QueryView view) throws IOException
+        {
+            StringBuilder sb = new StringBuilder();
+            try (TSVGridWriter tsv = view.getTsvWriter(ColumnHeaderType.Caption))
+            {
+                tsv.write(sb);
+            }
+            return sb.toString().lines().findFirst().orElseThrow();
+        }
     }
 }
