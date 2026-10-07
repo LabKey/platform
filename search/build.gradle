@@ -272,9 +272,73 @@ dependencies {
         }
     )
 
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-datauri-commons:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Data URI support for HTML and text parsers"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-encoding-detector-html:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Character encoding detection from HTML meta tags"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-encoding-detector-mojibuster:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Statistical character encoding detection for text files"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-ml-core:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Model support for Tika's statistical encoding detector"
+        ),
+        {
+            transitive = false
+        }
+    )
+
     // Additional parsing libraries (beyond POI, PDFBox, etc., which are already included in API) that we
     // care about. Adjust these dependencies and versions whenever we upgrade Tika. Or if we want to add or remove a parser.
-    // See also tikaConfig.xml to exclude specific parsers or detectors.
+    // See also the LuceneSearchServiceImpl constructor to exclude specific parsers or detectors.
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -298,19 +362,6 @@ dependencies {
             "BSD Zero Clause",
             "https://tukaani.org/xz/java.html#:~:text=Licensing",
             "Transitive dependency of commons-compress to support additional compression types for search"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.pdfbox:jempbox:1.8.17",
-            "jempbox",
-            "Apache",
-            "https://pdfbox.apache.org/2.0/dependencies.html",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "PDFBox dependency"
         )
     )
 
