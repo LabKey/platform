@@ -79,7 +79,6 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgreSqlService;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;

@@ -350,7 +350,10 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);
 
-        if (!ignoredAggregateFilters.equals(_ignoredColumnFilters))
+        // Count-only requests skip the main query, so there's nothing to match; adopt the aggregate's set for filter messages
+        if (_results == null)
+            _ignoredColumnFilters.addAll(ignoredAggregateFilters);
+        else if (!ignoredAggregateFilters.equals(_ignoredColumnFilters))
         {
             // This should never happen, but if it did, the totals wouldn't match, so we won't calculate them.
             _log.error("Aggregate filter columns do not match main.  Aggregate:{} Main:{}", ignoredAggregateFilters, _ignoredColumnFilters);

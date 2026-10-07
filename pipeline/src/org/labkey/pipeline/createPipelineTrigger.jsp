@@ -112,6 +112,7 @@
         const returnUrl = <%=q(bean.getReturnActionURL().toString())%>;
 
         LABKEY.App.loadApp('createPipelineTrigger', <%=q(appId)%>, {
+            canEditParameterFunction: <%=getUser().isTrustedAnalyst()%>,
             customConfig,
             customFieldFormSchemas,
             details,
