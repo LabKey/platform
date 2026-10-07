@@ -156,7 +156,7 @@ public class ExpDataFileConverter
         {
             String absolutePath = dataObject.getString(ExperimentJSONConverter.ABSOLUTE_PATH);
             File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(absolutePath));
-            if (pipelineRoot != null && !pipelineRoot.isUnderRoot(f))
+            if (pipelineRoot == null || !pipelineRoot.isUnderRoot(f))
             {
                 throw new IllegalArgumentException("File with path " + absolutePath + " is not under the pipeline root for this folder");
             }

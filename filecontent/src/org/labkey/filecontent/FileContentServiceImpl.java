@@ -319,27 +319,33 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     @Override
     public @Nullable java.nio.file.Path getFileRootPath(@NotNull Container c)
     {
-        if (c == null)
-            return null;
-
         if (c.isRoot())
-        {
             return getSiteDefaultRootPath();
-        }
 
         if (!isFileRootDisabled(c))
-        {
-            FileRoot root = FileRootManager.get().getFileRoot(c);
+            return resolveFileRootPath(c, true);
 
-            // check if there is a site wide file root
-            if (root.getPath() == null || isUseDefaultRoot(c))
-            {
-                return getDefaultRootPath(c, true);
-            }
-            else
-                return getNioPath(c, root.getPath());
-        }
         return null;
+    }
+
+    @Override
+    public @Nullable java.nio.file.Path getConfiguredFileRootPath(@NotNull Container c, @NotNull ContentType type)
+    {
+        java.nio.file.Path fileRootPath = c.isRoot() ? getSiteDefaultRootPath() : resolveFileRootPath(c, false);
+        if (null != fileRootPath && !FileUtil.hasCloudScheme(fileRootPath))
+            fileRootPath = fileRootPath.resolve(getFolderName(type));
+        return fileRootPath;
+    }
+
+    private @Nullable java.nio.file.Path resolveFileRootPath(@NotNull Container c, boolean createDir)
+    {
+        FileRoot root = FileRootManager.get().getFileRoot(c);
+
+        // check if there is a site wide file root
+        if (root.getPath() == null || isUseDefaultRoot(c))
+            return getDefaultRootPath(c, createDir);
+        else
+            return getNioPath(c, root.getPath());
     }
 
     @Override
