@@ -39,7 +39,7 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     {
     }
 
-    private void updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
+    private int updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
     {
         SQLFragment where = new SQLFragment("lookupschema = ? AND lookupquery = ? AND ")
                 .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
@@ -48,10 +48,10 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 .add(container)
                 .add(container);
 
-        updateLookups("lookupquery", newValue, where);
+        return updateLookups("lookupquery", newValue, where);
     }
 
-    private void updateLookupSchema(String newValue, String oldSchema, Container container)
+    private int updateLookupSchema(String newValue, String oldSchema, Container container)
     {
         SQLFragment where = new SQLFragment("lookupschema = ? AND ")
                 .append("(lookupcontainer = ? OR (lookupcontainer IS NULL AND container = ?))")
@@ -59,23 +59,24 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 .add(container)
                 .add(container);
 
-        updateLookups("lookupschema", newValue, where);
+        return updateLookups("lookupschema", newValue, where);
     }
 
-    private void updateLookups(String fieldName, String newValue, SQLFragment where)
+    private int updateLookups(String fieldName, String newValue, SQLFragment where)
     {
         TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
         List<String> propertyURIs = new SqlSelector(pdTable.getSchema(), new SQLFragment("SELECT PropertyURI FROM ").append(pdTable).append(" WHERE ").append(where)).getArrayList(String.class);
         if (propertyURIs.isEmpty())
-            return;
+            return 0;
 
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(pdTable)
                 .append(" SET ").append(fieldName).append(" = ? WHERE ")
                 .add(newValue)
                 .append(where);
 
-        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
+        int updated = new SqlExecutor(pdTable.getSchema()).execute(updateSql);
         OntologyManager.uncachePropertyDescriptors(propertyURIs);
+        return updated;
     }
 
     @Override
@@ -96,14 +97,19 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 queryNameChangeMap.put(oldVal, newVal);
         }
 
+        int updated = 0;
         for (String oldValue : queryNameChangeMap.keySet())
         {
             String newValue = queryNameChangeMap.get(oldValue);
             if (isSchemaChange)
-                updateLookupSchema(newValue, oldValue, container);
+                updated += updateLookupSchema(newValue, oldValue, container);
             else
-                updateLookupQuery(newValue, schema, oldValue, container);
+                updated += updateLookupQuery(newValue, schema, oldValue, container);
         }
+
+        // GH Issue 1512: the direct SQL updates bypass OntologyManager, so its cached property descriptors still hold the old lookup target
+        if (updated > 0)
+            OntologyManager.clearCaches();
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
+import org.labkey.query.QueryDefinitionImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,5 +173,6 @@ public class QueryDefCache
     {
         if (null != c)
             QUERY_DEF_DB_CACHE.remove(c.getEntityId());
+        QueryDefinitionImpl.clearHasPkColumnCache();
     }
 }
