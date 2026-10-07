@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -74,6 +75,12 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     {
         return PromptResource.ExpressionAssistant.resource() +
             "\n\nBefore starting, load the LabKey SQL documentation using the \"readResource\" tool with the URI \"" + PromptResource.LabKeySql.uri() + "\"\n\n";
+    }
+
+    @Override
+    protected Set<String> getToolNames()
+    {
+        return Set.of("readResource", "validateCalculatedColumnExpression");
     }
 
     @Override

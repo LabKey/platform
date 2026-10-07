@@ -53,12 +53,18 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     protected abstract String getServicePrompt();
 
+    /** The registered tools this agent's chat may offer the model; null offers all of them. */
+    protected @Nullable Set<String> getToolNames()
+    {
+        return null;
+    }
+
     protected ChatClient getChat(boolean create)
     {
         String conversationName = getAgentName() + ":" + getConversationId();
 
         HttpSession session = getViewContext().getSession();
-        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create);
+        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create, getToolNames());
 
         return chatSession;
     }
