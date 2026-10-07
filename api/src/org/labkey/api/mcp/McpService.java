@@ -223,6 +223,12 @@ public interface McpService extends ToolCallbackProvider
     }
 
     /**
+     * Collapses the latest {@code count + 1} exchanges in the chat's memory into one: the first exchange's user
+     * message followed by the last exchange's reply.
+     */
+    void squashExchanges(ChatClient chat, int count);
+
+    /**
      * return an in-memory Vector store for prototyping RAG features
      * CONSIDER: Is it possible to implement VectorStoreRetriever wrapper for SearchService???
      */

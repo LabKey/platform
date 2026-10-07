@@ -120,6 +120,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
             ChatClient chatSession = getChat(true);
             JSONArray segments;
+            int repairs = 0;
 
             try
             {
@@ -135,9 +136,10 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
                 Function<String, Validation> validator = sql -> validate(sql, form.getColumnMap(), form.getPhiColumns());
                 List<String> problems = checkSegments(segments, validator, validationCalls.get() > 0);
-                for (int attempt = 1; !problems.isEmpty() && attempt <= MAX_REPAIR_ATTEMPTS; attempt++)
+                while (!problems.isEmpty() && repairs < MAX_REPAIR_ATTEMPTS)
                 {
-                    LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", attempt, problems);
+                    repairs++;
+                    LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", repairs, problems);
                     segments = buildSegments(McpService.get().sendMessageEx(chatSession, composeRepairPrompt(problems)));
                     problems = checkSegments(segments, validator, validationCalls.get() > 0);
                 }
@@ -148,6 +150,11 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                         "error", x.getMessage(),
                         "text", "ERROR: " + x.getMessage(),
                         "success", Boolean.FALSE));
+            }
+            finally
+            {
+                // The user never saw the repair prompts or the replies they replaced
+                McpService.get().squashExchanges(chatSession, repairs);
             }
 
             return new JSONObject(Map.of(
