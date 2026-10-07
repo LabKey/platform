@@ -291,6 +291,38 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
+            "org.apache.tika:tika-parser-mail-commons:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Email utilities used by the Outlook .msg and mail parsers"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.apache.tika:tika-parser-mail-module:${tikaVersion}",
+            "Tika",
+            "Apache",
+            "http://lucene.apache.org/tika/",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser adapters for .eml and mbox email formats"
+        ),
+        {
+            transitive = false
+        }
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
             "org.apache.tika:tika-encoding-detector-html:${tikaVersion}",
             "Tika",
             "Apache",
@@ -375,6 +407,19 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Parsers that read metadata from image files"
+        )
+    )
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "com.epam:parso:2.0.14",
+            "Parso",
+            "EPAM",
+            "https://github.com/epam/parso",
+            ExternalDependency.APACHE_2_LICENSE_NAME,
+            ExternalDependency.APACHE_2_LICENSE_URL,
+            "Parser for SAS .sas7bdat datasets"
         )
     )
 

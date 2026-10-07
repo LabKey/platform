@@ -2244,6 +2244,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "docx_sample.docx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dot_sample.dot", 3589, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "eml_sample.eml", 182, "plate reader results for batch 42 are uploaded", "Assay Team", "Data Manager");
             add(map, "exe_sample.exe", 0);
             add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
             add(map, "hdf_sample.hdf", 0);  //We are blocking loading of the hdf parser instead of taking an additional dependency Issue 38386
@@ -2253,13 +2254,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array");
             add(map, "mov_sample.mov", 0);
-            add(map, "msg_outlook_sample.msg", 1884,"Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
+            add(map, "msg_outlook_sample.msg", 1884, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "pptx_sample.pptx", 118, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
+            add(map, "sas7bdat_sample.sas7bdat", 521, "recnum", "This is row            7 of           10");
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace
