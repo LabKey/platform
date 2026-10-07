@@ -18,6 +18,7 @@ package org.labkey.api.mcp;
 import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ToolContext;
@@ -25,6 +26,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.vectorstore.VectorStore;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 class NoopMcpService implements McpService
@@ -92,7 +94,7 @@ class NoopMcpService implements McpService
     }
 
     @Override
-    public ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
+    public ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, @Nullable Set<String> toolNames)
     {
         return null;
     }

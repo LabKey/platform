@@ -19,6 +19,7 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -39,6 +40,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 ///
@@ -197,7 +199,13 @@ public interface McpService extends ToolCallbackProvider
 
     void incrementResourceRequestCount(String resource);
 
-    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
+    {
+        return getChat(session, conversationName, systemPromptSupplier, createIfNotExists, null);
+    }
+
+    /** @param toolNames the registered tools this chat may offer the model, or null for all of them */
+    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, @Nullable Set<String> toolNames);
 
     void close(HttpSession session, ChatClient chat);
 
