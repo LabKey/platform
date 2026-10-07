@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -930,9 +931,10 @@ public class PageFlowUtil
         return getMediaTypeFor(file.toPath());
     }
 
+    private static final Detector DETECTOR = new DefaultDetector();
+
     public static MediaType getMediaTypeFor(Path file)
     {
-        DefaultDetector detector = new DefaultDetector();
         Metadata metaData = new Metadata();
         String filename = file.getFileName().toString();
 
@@ -942,7 +944,7 @@ public class PageFlowUtil
 
         try (TikaInputStream tis = TikaInputStream.get(file))
         {
-            return detector.detect(tis, metaData, new ParseContext());
+            return DETECTOR.detect(tis, metaData, new ParseContext());
         }
         catch (IOException e)
         {
