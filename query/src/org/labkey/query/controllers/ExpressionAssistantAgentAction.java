@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
@@ -181,9 +182,10 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 described.add(key);
                 JSONObject column = describeField(f);
                 JdbcType type = columnMap.get(key);
+                JdbcType describedType = type == null || type == JdbcType.OTHER ? propertyJdbcType(f) : type;
                 String expression = text(f, "valueExpression");
-                if (type != null)
-                    column.put("type", type.name());
+                if (describedType != null && describedType != JdbcType.OTHER)
+                    column.put("type", describedType.name());
                 if (expression != null)
                     column.put("expression", expression);
                 if (phiColumns.contains(key))
@@ -197,9 +199,24 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         // The client adds system columns (Created, ModifiedBy, ...) to the column map without describing them
         columnMap.forEach((key, type) -> {
             if (!described.contains(key))
-                columns.put(new JSONObject(Map.of("name", key.getName(), "type", type.name())));
+            {
+                JSONObject column = new JSONObject().put("name", key.getName());
+                if (type != JdbcType.OTHER)
+                    column.put("type", type.name());
+                columns.put(column);
+            }
         });
         return columns;
+    }
+
+    // The client's columnMap carries LabKey type names (STRING, DATETIME, ...), which bind as OTHER
+    private static @Nullable JdbcType propertyJdbcType(JSONObject f)
+    {
+        String rangeURI = text(f, "rangeURI");
+        if (rangeURI == null)
+            return null;
+        PropertyType pt = PropertyType.getFromURI(text(f, "conceptURI"), rangeURI, null);
+        return pt == null ? null : pt.getJdbcType();
     }
 
     static JSONObject describeField(JSONObject f)
@@ -1139,6 +1156,29 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         @Test
+        public void describeColumnsTakesTypeFromRangeUriWhenColumnMapHasOther()
+        {
+            // The client sends STRING/DATETIME/TEXTCHOICE in columnMap, which ParseForm binds as OTHER
+            JSONArray domainFields = fields("""
+                [{"name":"Status","rangeURI":"http://www.w3.org/2001/XMLSchema#string"},
+                 {"name":"CollectionDate","rangeURI":"http://www.w3.org/2001/XMLSchema#dateTime"},
+                 {"name":"Color","rangeURI":"http://www.w3.org/2001/XMLSchema#string","conceptURI":"http://www.labkey.org/types#textChoice"},
+                 {"name":"Mystery"}]
+                """);
+            JSONArray columns = describeColumns(domainFields, Map.of(
+                    FieldKey.fromParts("Status"), JdbcType.OTHER,
+                    FieldKey.fromParts("CollectionDate"), JdbcType.OTHER,
+                    FieldKey.fromParts("Color"), JdbcType.OTHER,
+                    FieldKey.fromParts("Mystery"), JdbcType.OTHER), List.of());
+
+            assertEquals("VARCHAR", column(columns, "Status").getString("type"));
+            assertEquals("TIMESTAMP", column(columns, "CollectionDate").getString("type"));
+            assertEquals("VARCHAR", column(columns, "Color").getString("type"));
+            assertFalse(column(columns, "Mystery").has("type"));
+            assertFalse(column(columns, "Mystery").has("unusable"));
+        }
+
+        @Test
         public void describeColumnsMarksColumnsTheValidatorRejects()
         {
             JSONArray domainFields = fields("""
@@ -1157,9 +1197,10 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         @Test
         public void describeColumnsAddsUndescribedColumnMapEntries()
         {
-            JSONArray columns = describeColumns(null, Map.of(FieldKey.fromParts("Created"), JdbcType.TIMESTAMP), List.of());
-            assertEquals(1, columns.length());
+            JSONArray columns = describeColumns(null, Map.of(FieldKey.fromParts("Created"), JdbcType.TIMESTAMP, FieldKey.fromParts("Modified"), JdbcType.OTHER), List.of());
+            assertEquals(2, columns.length());
             assertEquals("TIMESTAMP", column(columns, "Created").getString("type"));
+            assertFalse("OTHER tells the model nothing", column(columns, "Modified").has("type"));
         }
 
         @Test
