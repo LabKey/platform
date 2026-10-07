@@ -3597,6 +3597,13 @@ public class QueryController extends SpringActionController
             _includeTotalCount = includeTotalCount;
         }
 
+        /** True when the request sent includeTotalCount rather than leaving it at its default. */
+        public boolean isIncludeTotalCountSet()
+        {
+            return null != getViewContext().getRequest().getParameter("includeTotalCount") ||
+                    (null != _initParameters && null != _initParameters.getPropertyValue("includeTotalCount"));
+        }
+
         public boolean isIncludeStyle()
         {
             return _includeStyle;
@@ -3719,7 +3726,10 @@ public class QueryController extends SpringActionController
             }
 
             boolean isEditable = isQueryEditable(view.getTable());
-            boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
+            boolean noRows = form.getQuerySettings().getMaxRows() == 0;
+            // GH Issue 1607: maxRows=0 with an explicit includeTotalCount=true returns just the row count
+            boolean countOnly = noRows && form.isIncludeTotalCount() && form.isIncludeTotalCountSet();
+            boolean metaDataOnly = noRows && !countOnly;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
             boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
@@ -3749,6 +3759,7 @@ public class QueryController extends SpringActionController
                         form.isIncludeDisplayValues(), form.isIncludeMetadata());
             }
             response.includeStyle(form.isIncludeStyle());
+            response.countOnly(countOnly);
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
             // requested minimal columns, as we now do for ExtJS stores
