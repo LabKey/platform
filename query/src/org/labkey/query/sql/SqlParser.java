@@ -2346,7 +2346,9 @@ public class SqlParser
         new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
         new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses"),
         new Pair<>("SELECT CURRENT_TIME() FROM R", "take no parentheses"),
-        new Pair<>("SELECT CURRENT_TIMESTAMP() FROM R", "take no parentheses")
+        new Pair<>("SELECT CURRENT_TIMESTAMP() FROM R", "take no parentheses"),
+        new Pair<>("SELECT CONCAT(a, b, c) FROM R", "use a || b || c instead of CONCAT"),
+        new Pair<>("SELECT CONCAT(a || b || c) FROM R", "use a || b || c instead of CONCAT")
     );
 
     // unrecognized method names that should fail with a suggested replacement (see forUnknownMethod() above)

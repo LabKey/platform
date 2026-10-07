@@ -594,10 +594,14 @@ public abstract class Method
         int count = args.size();
         if (count < _minArgs || count > _maxArgs)
         {
+            String message;
             if (_minArgs == _maxArgs)
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s"), null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s");
             else
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments";
+            if ("concat".equals(_name))
+                message += ". To join more than two values, use a || b || c instead of CONCAT.";
+            parseErrors.add(new QueryParseException(message, null, fn.getLine(), fn.getCharPositionInLine()));
         }
     }
 
