@@ -61,8 +61,8 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     Function<Map<String, Object>, Map<String, Object>> _extractProvidedValues;
 
     // for batching
-    final List<RowData> _rows = new ArrayList<>();
-    final boolean _hasExistingRows;
+    final List<RowData> _rowData = new ArrayList<>();
+    final boolean _supportsExistingRows;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c, @Nullable Function<Map<String, Object>, Map<String, Object>> extractProvidedValues)
     {
@@ -82,7 +82,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad);
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit);
 
-        _hasExistingRows = _data.supportsGetExistingRecord();
+        _supportsExistingRows = _data.supportsGetExistingRecord();
     }
 
     @Override
@@ -102,24 +102,24 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         boolean hasNext = _data.next();
 
-        if (!hasNext || _rows.size() > 1000)
+        if (!hasNext || _rowData.size() > 1000)
         {
-            if (!_rows.isEmpty())
+            if (!_rowData.isEmpty())
             {
-                List<Map<String, Object>> updatedRows = _rows.stream().map(RowData::updatedRow).toList();
-                List<Map<String, Object>> providedValues = _rows.stream().map(RowData::providedValues).toList();
-                List<Map<String, Object>> existingRows = _hasExistingRows ? _rows.stream().map(RowData::existingRow).toList() : null;
+                List<Map<String, Object>> updatedRows = _rowData.stream().map(RowData::updatedRow).toList();
+                List<Map<String, Object>> providedValues = _rowData.stream().map(RowData::providedValues).toList();
+                List<Map<String, Object>> existingRows = _supportsExistingRows ? _rowData.stream().map(RowData::existingRow).toList() : null;
                 _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, updatedRows, existingRows, providedValues, _useTransactionAuditCache);
             }
-            _rows.clear();
+            _rowData.clear();
         }
         if (hasNext)
         {
             Map<String, Object> map = _data.getMap();
-            _rows.add(new RowData(
+            _rowData.add(new RowData(
                 map,
                 _extractProvidedValues != null ? _extractProvidedValues.apply(map) : null,
-                _hasExistingRows ? _data.getExistingRecord() : null));
+                _supportsExistingRows ? _data.getExistingRecord() : null));
         }
         return hasNext;
     }
