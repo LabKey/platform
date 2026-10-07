@@ -68,18 +68,6 @@ public class SampleTypeContentsView extends QueryView
         );
     }
 
-    public static ActionButton getDeriveSamplesButton(@NotNull Container container, @Nullable Long targetSampleTypeId)
-    {
-        ActionURL urlDeriveSamples = new ActionURL(ExperimentController.DeriveSamplesChooseTargetAction.class, container);
-        if (targetSampleTypeId != null)
-            urlDeriveSamples.addParameter("targetSampleTypeId", targetSampleTypeId);
-        ActionButton deriveButton = new ActionButton(urlDeriveSamples, "Derive Samples");
-        deriveButton.setActionType(ActionButton.Action.POST);
-        deriveButton.setDisplayPermission(InsertPermission.class);
-        deriveButton.setRequiresSelection(true);
-        return deriveButton;
-    }
-
     @Override
     public DataView createDataView()
     {
@@ -216,9 +204,6 @@ public class SampleTypeContentsView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
-
-        if (OptionalFeatureService.get().isFeatureEnabled(AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP))
-            bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
 
         ActionButton linkToStudyButton = getLinkToStudyButton(view);
         if (linkToStudyButton != null)

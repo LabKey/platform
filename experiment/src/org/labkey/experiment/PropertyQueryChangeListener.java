@@ -38,7 +38,7 @@ public class PropertyQueryChangeListener implements QueryChangeListener
     {
     }
 
-    private void updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
+    private int updateLookupQuery(String newValue, SchemaKey schema, String oldQuery, Container container)
     {
         String fieldName = "lookupquery";
         TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
@@ -53,11 +53,10 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 .add(container)
                 .add(container);
 
-        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
-
+        return new SqlExecutor(pdTable.getSchema()).execute(updateSql);
     }
 
-    private void updateLookupSchema(String newValue, String oldSchema, Container container)
+    private int updateLookupSchema(String newValue, String oldSchema, Container container)
     {
         String fieldName = "lookupschema";
         TableInfo pdTable = OntologyManager.getTinfoPropertyDescriptor();
@@ -71,8 +70,7 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 .add(container)
                 .add(container);
 
-        new SqlExecutor(pdTable.getSchema()).execute(updateSql);
-
+        return new SqlExecutor(pdTable.getSchema()).execute(updateSql);
     }
 
     @Override
@@ -93,17 +91,18 @@ public class PropertyQueryChangeListener implements QueryChangeListener
                 queryNameChangeMap.put(oldVal, newVal);
         }
 
+        int updated = 0;
         for (String oldValue : queryNameChangeMap.keySet())
         {
             String newValue = queryNameChangeMap.get(oldValue);
             if (isSchemaChange)
-                updateLookupSchema(newValue, oldValue, container);
+                updated += updateLookupSchema(newValue, oldValue, container);
             else
-                updateLookupQuery(newValue, schema, oldValue, container);
+                updated += updateLookupQuery(newValue, schema, oldValue, container);
         }
 
-        // Updated lookups can belong to any domain, so a targeted invalidateDomain() won't reach them
-        if (!queryNameChangeMap.isEmpty())
+        // GH Issue 1512: the direct SQL updates bypass OntologyManager, so its cached property descriptors still hold the old lookup target
+        if (updated > 0)
             OntologyManager.clearCaches();
     }
 

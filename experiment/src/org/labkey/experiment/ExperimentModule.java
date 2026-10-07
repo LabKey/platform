@@ -267,13 +267,6 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-                AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
-                "Derive Samples in LabKey Server UI",
-                "Enables the UI for deriving samples in LabKey Server UI from either the samples grids or a sample lineage page. This option will be removed in LabKey Server 26.11",
-                false,
-                false,
-                OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(SAMPLE_FILES_TABLE, "Manage Unreferenced Sample Files",
                 "Enable 'Unreferenced Sample Files' table to view and delete sample files that are no longer referenced by samples", false);
 
