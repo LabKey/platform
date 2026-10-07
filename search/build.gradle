@@ -20,7 +20,13 @@ plugins {
     id 'org.labkey.build.module'
 }
 
+// Sync with versions in Tika's parent POM when upgrading tikaVersion
+ext.commonsCsvVersion="1.14.1"
+ext.ddPlistVersion="1.30"
+ext.jhighlightVersion="2.0.0"
+ext.metadataExtractorVersion="2.21.0"
 ext.mime4jVersion="0.8.15"
+ext.parsoVersion="2.0.14"
 
 dependencies {
     BuildUtils.addExternalDependency(
@@ -400,7 +406,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.drewnoakes:metadata-extractor:2.21.0",
+            "com.drewnoakes:metadata-extractor:${metadataExtractorVersion}",
             "Metadata Extractor",
             "drewnoakes",
             "https://github.com/drewnoakes/metadata-extractor",
@@ -413,7 +419,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.epam:parso:2.0.14",
+            "com.epam:parso:${parsoVersion}",
             "Parso",
             "EPAM",
             "https://github.com/epam/parso",
@@ -439,7 +445,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.codelibs:jhighlight:2.0.0",
+            "org.codelibs:jhighlight:${jhighlightVersion}",
             "JHighlight",
             "codelibs",
             "https://github.com/codelibs/jhighlight",
@@ -452,7 +458,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.apache.commons:commons-csv:1.14.1",
+            "org.apache.commons:commons-csv:${commonsCsvVersion}",
             "Commons CSV ™",
             "Apache",
             "http://commons.apache.org/proper/commons-csv/",
@@ -517,7 +523,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.googlecode.plist:dd-plist:1.30",
+            "com.googlecode.plist:dd-plist:${ddPlistVersion}",
             "DD Plist",
             "com.dd.plist",
             "https://github.com/3breadt/dd-plist",
