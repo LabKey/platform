@@ -247,8 +247,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
         MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
         // We don't ship these parsers' libraries. Excluding them here prevents logging about their missing libraries.
-        // Other missing classes will be logged in the future, requiring additional exclusions OR adjustments to the
-        // jars we include.
+        // Any other missing classes would be logged in the future, requiring adjustments here or in jars we pull in.
         List<Class<? extends Parser>> excluded = List.of(MatParser.class, JackcessParser.class, OutlookPSTParser.class, PSTMailItemParser.class, RarParser.class);
         DefaultParser parser = new DefaultParser(registry, loader, excluded);
         _autoDetectParser = new AutoDetectParser(registry, parser, new DefaultDetector(mimeTypes, loader), AutoDetectParserConfig.DEFAULT);
@@ -2257,7 +2256,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "eml_sample.eml", 182, "plate reader results for batch 42 are uploaded", "Assay Team", "Data Manager");
             add(map, "exe_sample.exe", 0);
             add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
-            add(map, "hdf_sample.hdf", 0);  //We are blocking loading of the hdf parser instead of taking an additional dependency Issue 38386
+            add(map, "hdf_sample.hdf", 0);  // HDF parser lives in Tika's scientific module, which we don't ship (Issue 38386)
             add(map, "ico_sample.ico", 0);
             add(map, "jar_sample.jar", 712120, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator", "public synchronized class ApiVersionException extends CommandException", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
