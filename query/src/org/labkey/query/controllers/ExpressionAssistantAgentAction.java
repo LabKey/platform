@@ -18,21 +18,26 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.controllers.QueryController.ParseForm;
 import org.labkey.query.controllers.QueryController.PromptResource;
 import org.springframework.ai.chat.client.ChatClient;
@@ -42,6 +47,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -52,6 +59,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseForm>
 {
     private static final Logger LOG = LogManager.getLogger(ExpressionAssistantAgentAction.class);
+    private static final int MAX_REPAIR_ATTEMPTS = 2;
+    // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
+    static final String VALIDATION_CALLS_ATTR = "validationCalls";
 
     @Override
     protected String getAgentName()
@@ -86,17 +96,28 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             }
 
             ChatClient chatSession = getChat(true);
-            List<McpService.MessageResponse> responses;
+            JSONArray segments;
 
             try
             {
+                AtomicInteger validationCalls = new AtomicInteger();
                 // Context for the QueryMcp.validateCalculatedColumnExpression() tool
                 McpContext.get()
                         .put("columnMap", form.getColumnMap())
-                        .put("phiColumns", form.getPhiColumns());
+                        .put("phiColumns", form.getPhiColumns())
+                        .put(VALIDATION_CALLS_ATTR, validationCalls);
 
                 LOG.info("Expression assistant prompt: {}", prompt);
-                responses = McpService.get().sendMessageEx(chatSession, composedPrompt);
+                segments = buildSegments(McpService.get().sendMessageEx(chatSession, composedPrompt));
+
+                Function<String, Validation> validator = sql -> validate(sql, form.getColumnMap(), form.getPhiColumns());
+                List<String> problems = checkSegments(segments, validator, validationCalls.get() > 0);
+                for (int attempt = 1; !problems.isEmpty() && attempt <= MAX_REPAIR_ATTEMPTS; attempt++)
+                {
+                    LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", attempt, problems);
+                    segments = buildSegments(McpService.get().sendMessageEx(chatSession, composeRepairPrompt(problems)));
+                    problems = checkSegments(segments, validator, validationCalls.get() > 0);
+                }
             }
             catch (ChatException x)
             {
@@ -106,7 +127,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                         "success", Boolean.FALSE));
             }
 
-            JSONArray segments = buildSegments(responses);
             return new JSONObject(Map.of(
                     "success", Boolean.TRUE,
                     "conversationId", getConversationId(),
@@ -179,6 +199,95 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     static String fence(String body, String tag)
     {
         return "```" + tag + "\n" + body + "\n```\n";
+    }
+
+    /** Server-side outcome of validating one expression; {@code jdbcType} is set only when valid. */
+    record Validation(boolean valid, @Nullable JdbcType jdbcType, @Nullable String error)
+    {
+        static Validation success(@Nullable JdbcType jdbcType)
+        {
+            return new Validation(true, jdbcType, null);
+        }
+
+        static Validation failure(String error)
+        {
+            return new Validation(false, null, error);
+        }
+    }
+
+    private Validation validate(String expression, Map<FieldKey, JdbcType> columnMap, List<FieldKey> phiColumns)
+    {
+        if (isBlank(expression))
+            return Validation.failure("The expression is empty.");
+
+        try
+        {
+            return Validation.success(QueryServiceImpl.get().parseCalculatedColumn(getContainer(), getUser(), expression, columnMap, phiColumns).jdbcType());
+        }
+        catch (QueryException x)
+        {
+            return Validation.failure(StringUtils.defaultIfBlank(x.getMessage(), x.getClass().getSimpleName()));
+        }
+    }
+
+    /**
+     * Re-validates the SQL segments of a reply and returns what the model must fix before the user sees it; empty
+     * means the reply is ready. Segments are left safe to send even when problems remain: `expression` segments carry
+     * the server's jdbcType, and any that fail validation are demoted to `sql` so they get no Apply action.
+     */
+    static List<String> checkSegments(JSONArray segments, Function<String, Validation> validator, boolean validatorCalled)
+    {
+        List<String> problems = new ArrayList<>();
+        List<String> sqlBlocks = new ArrayList<>();
+        boolean hasExpression = false;
+
+        for (int i = 0; i < segments.length(); i++)
+        {
+            JSONObject segment = segments.getJSONObject(i);
+            String sql = segment.optString("sql", "");
+            switch (segment.optString("type"))
+            {
+                case "expression" ->
+                {
+                    hasExpression = true;
+                    Validation v = validator.apply(sql);
+                    segment.remove("jdbcType");
+                    if (v.valid())
+                    {
+                        if (v.jdbcType() != null)
+                            segment.put("jdbcType", v.jdbcType().name());
+                    }
+                    else
+                    {
+                        segment.put("type", "sql");
+                        problems.add("This `expression` block failed validation with the error \"" + v.error() + "\". Fix it and validate the fix. If no valid expression can do what the user asked, explain why without an `expression` block.\n" + fence(sql));
+                    }
+                }
+                case "sql" -> sqlBlocks.add(sql);
+                default -> {}
+            }
+        }
+
+        // SQL with nothing to apply means the model either skipped validation or put a valid expression in the wrong block
+        if (!hasExpression)
+        {
+            for (String sql : sqlBlocks)
+            {
+                if (validator.apply(sql).valid())
+                    problems.add("This SQL passes validation, but it is in a `sql` block so the user cannot apply it. Present it in an `expression` block.\n" + fence(sql));
+                else if (!validatorCalled)
+                    problems.add("This SQL was never checked with validateCalculatedColumnExpression. Validate it and fix any errors before presenting it.\n" + fence(sql));
+            }
+        }
+
+        return problems;
+    }
+
+    /** The follow-up that sends a reply which failed {@link #checkSegments} back to the model; the user never sees it. */
+    static String composeRepairPrompt(List<String> problems)
+    {
+        return "Your previous reply was not shown to the user because of the problems below. Fix them, then write your complete reply to the user again, keeping every `expression` block not listed here unchanged. Do not mention these problems or this message.\n\n" +
+                String.join("\n", problems);
     }
 
     /**
@@ -710,6 +819,122 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("expression", segment(segments, 1).getString("type"));
             assertEquals("SELECT 1", segment(segments, 1).getString("sql"));
             assertEquals("INTEGER", segment(segments, 1).getString("jdbcType"));
+        }
+
+        /** Stands in for parseCalculatedColumn: anything containing SELECT or a '.' is rejected. */
+        private static Validation fakeValidate(String sql)
+        {
+            if (sql.contains("SELECT"))
+                return Validation.failure("SELECT and UNION are not allowed in calculated columns.");
+            if (sql.contains("."))
+                return Validation.failure("Syntax error near '.'");
+            return Validation.success(JdbcType.INTEGER);
+        }
+
+        private static List<String> check(String md, boolean validatorCalled)
+        {
+            return check(buildSegments(List.of(markdownResponse(md))), validatorCalled);
+        }
+
+        private static List<String> check(JSONArray segments, boolean validatorCalled)
+        {
+            return checkSegments(segments, TestCase::fakeValidate, validatorCalled);
+        }
+
+        @Test
+        public void validExpressionTakesServerJdbcType()
+        {
+            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + expressionPayload("Int1 + Int2", "VARCHAR") + "\n```")));
+            assertEquals(List.of(), check(segments, true));
+            assertExpressionSegment(segments, 0, "Int1 + Int2", "INTEGER");
+        }
+
+        @Test
+        public void rawSqlExpressionBodyIsValidatedAndTyped()
+        {
+            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\nInt1 + Int2\n```")));
+            assertEquals(List.of(), check(segments, false));
+            assertExpressionSegment(segments, 0, "Int1 + Int2", "INTEGER");
+        }
+
+        @Test
+        public void invalidExpressionIsDemotedAndReported()
+        {
+            // The model wrote the payload itself, so the jdbcType it claims must not survive.
+            String sql = "(SELECT AvgInt1 FROM Average_Int1)";
+            JSONArray segments = buildSegments(List.of(markdownResponse("```expression\n" + expressionPayload(sql, "BIGINT") + "\n```")));
+            List<String> problems = check(segments, true);
+            assertEquals(1, problems.size());
+            assertTrue(problems.getFirst(), problems.getFirst().contains("SELECT and UNION are not allowed"));
+            assertTrue(problems.getFirst(), problems.getFirst().contains(sql));
+            assertEquals("sql", segment(segments, 0).getString("type"));
+            assertFalse(segment(segments, 0).has("jdbcType"));
+        }
+
+        @Test
+        public void validSqlBlockWithoutExpressionIsReported()
+        {
+            List<String> problems = check("Would you like me to validate this?\n```sql\nInt1 + Int2\n```", false);
+            assertEquals(1, problems.size());
+            assertTrue(problems.getFirst(), problems.getFirst().contains("passes validation"));
+        }
+
+        @Test
+        public void invalidSqlBlockIsReportedOnlyWhenValidatorWasNotCalled()
+        {
+            String md = "```sql\nCOALESCE(Int2. Int1)\n```";
+            List<String> problems = check(md, false);
+            assertEquals(1, problems.size());
+            assertTrue(problems.getFirst(), problems.getFirst().contains("never checked"));
+            assertEquals("a failure explained after validating is a legitimate reply", List.of(), check(md, true));
+        }
+
+        @Test
+        public void sqlBlockBesideExpressionIsIllustrative()
+        {
+            String md = "```sql\n(SELECT 1)\n```\n```expression\n" + expressionPayload("Int1 + Int2", "INTEGER") + "\n```";
+            assertEquals(List.of(), check(md, false));
+        }
+
+        @Test
+        public void proseOnlyReplyHasNoProblems()
+        {
+            assertEquals(List.of(), check("Which date field should be used: CollectionDate or ReceivedDate?", false));
+        }
+
+        @Test
+        public void mixedExpressionsDemoteAndReportOnlyTheInvalidOne()
+        {
+            String md = String.join("\n",
+                "```expression",
+                expressionPayload("Int1 + Int2", "VARCHAR"),
+                "```",
+                "```expression",
+                expressionPayload("(SELECT AvgInt1 FROM Average_Int1)", "BIGINT"),
+                "```",
+                "```expression",
+                "Int3 * 2",
+                "```"
+            );
+            JSONArray segments = buildSegments(List.of(markdownResponse(md)));
+            List<String> problems = check(segments, true);
+            assertEquals(1, problems.size());
+            assertTrue(problems.getFirst(), problems.getFirst().contains("(SELECT AvgInt1 FROM Average_Int1)"));
+            assertFalse(problems.getFirst(), problems.getFirst().contains("Int1 + Int2"));
+            assertExpressionSegment(segments, 0, "Int1 + Int2", "INTEGER");
+            assertEquals("sql", segment(segments, 1).getString("type"));
+            assertFalse(segment(segments, 1).has("jdbcType"));
+            assertExpressionSegment(segments, 2, "Int3 * 2", "INTEGER");
+        }
+
+        @Test
+        public void repairPromptCarriesEveryProblem()
+        {
+            List<String> problems = check("```expression\n(SELECT 1)\n```\n```expression\nInt1. Int2\n```", true);
+            assertEquals(2, problems.size());
+            String prompt = composeRepairPrompt(problems);
+            assertTrue(prompt, prompt.contains("(SELECT 1)"));
+            assertTrue(prompt, prompt.contains("Int1. Int2"));
         }
 
         @Test
