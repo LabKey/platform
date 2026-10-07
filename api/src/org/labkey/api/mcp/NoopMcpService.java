@@ -111,6 +111,11 @@ class NoopMcpService implements McpService
     }
 
     @Override
+    public void squashExchanges(ChatClient chat, int count)
+    {
+    }
+
+    @Override
     public VectorStore getVectorStore()
     {
         return null;
