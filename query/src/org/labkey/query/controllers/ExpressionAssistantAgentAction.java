@@ -44,12 +44,15 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -63,6 +66,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     private static final int MAX_REPAIR_ATTEMPTS = 2;
     // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
     static final String VALIDATION_CALLS_ATTR = "validationCalls";
+    // Identifiers and literals, scalar functions, and CAST; the rest of the reference covers whole queries
+    private static final Pattern EXPRESSION_SQL_SECTIONS = Pattern.compile("### \\*\\*(2|6|7|15)\\. ");
 
     @Override
     protected String getAgentName()
@@ -74,13 +79,21 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     protected String getServicePrompt()
     {
         return PromptResource.ExpressionAssistant.resource() +
-            "\n\nBefore starting, load the LabKey SQL documentation using the \"readResource\" tool with the URI \"" + PromptResource.LabKeySql.uri() + "\"\n\n";
+            "\n\n# LabKey SQL Reference\n\n" + expressionSqlReference(PromptResource.LabKeySql.resource());
     }
 
     @Override
     protected Set<String> getToolNames()
     {
-        return Set.of("readResource", "validateCalculatedColumnExpression");
+        return Set.of("validateCalculatedColumnExpression");
+    }
+
+    /** The sections of the LabKey SQL reference that apply to a single expression. */
+    static String expressionSqlReference(String labKeySql)
+    {
+        return Arrays.stream(labKeySql.split("(?m)^(?=### )"))
+                .filter(section -> EXPRESSION_SQL_SECTIONS.matcher(section).lookingAt())
+                .collect(Collectors.joining());
     }
 
     @Override
@@ -92,7 +105,9 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
             boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
-            String composedPrompt = composePrompt(firstTurn, prompt, form.getField(), form.getDomainFields(), form.getFieldExpression(), form.getFieldError());
+            JSONArray columns = describeColumns(form.getDomainFields(), form.getColumnMap(), form.getPhiColumns());
+            JSONObject field = form.getField() == null ? null : describeField(form.getField());
+            String composedPrompt = composePrompt(firstTurn, prompt, field, columns, form.getFieldExpression(), form.getFieldError());
 
             if (isBlank(composedPrompt))
             {
@@ -146,12 +161,73 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     }
 
     /**
+     * Reduces the client's field JSON to what the model needs. A column the validator rejects (calculated, PHI, or of
+     * a type missing from the column map) is marked "unusable" with the reason, so the model doesn't reference it.
+     */
+    static JSONArray describeColumns(@Nullable JSONArray domainFields, Map<FieldKey, JdbcType> columnMap, List<FieldKey> phiColumns)
+    {
+        JSONArray columns = new JSONArray();
+        Set<FieldKey> described = new HashSet<>();
+        if (domainFields != null)
+        {
+            for (int i = 0; i < domainFields.length(); i++)
+            {
+                JSONObject f = domainFields.optJSONObject(i);
+                String name = f == null ? null : text(f, "name", "Name");
+                if (name == null)
+                    continue;
+
+                FieldKey key = FieldKey.fromParts(name);
+                described.add(key);
+                JSONObject column = describeField(f);
+                JdbcType type = columnMap.get(key);
+                String expression = text(f, "valueExpression");
+                if (type != null)
+                    column.put("type", type.name());
+                if (expression != null)
+                    column.put("expression", expression);
+                if (phiColumns.contains(key))
+                    column.put("unusable", "contains PHI");
+                else if (type == null)
+                    column.put("unusable", expression != null ? "calculated column" : "type not supported in expressions");
+                columns.put(column);
+            }
+        }
+
+        // The client adds system columns (Created, ModifiedBy, ...) to the column map without describing them
+        columnMap.forEach((key, type) -> {
+            if (!described.contains(key))
+                columns.put(new JSONObject(Map.of("name", key.getName(), "type", type.name())));
+        });
+        return columns;
+    }
+
+    static JSONObject describeField(JSONObject f)
+    {
+        return new JSONObject()
+                .putOpt("name", text(f, "name", "Name"))
+                .putOpt("label", text(f, "label", "Label"))
+                .putOpt("description", text(f, "description", "Description"));
+    }
+
+    private static @Nullable String text(JSONObject json, String... keys)
+    {
+        for (String key : keys)
+        {
+            String value = json.optString(key, null);
+            if (isNotBlank(value))
+                return value;
+        }
+        return null;
+    }
+
+    /**
      * Combines the user's prompt with any first-turn context supplied by the client (the catalog
-     * of available fields, the current expression, and an error message when auto-evaluating an
+     * of available columns, the current expression, and an error message when auto-evaluating an
      * invalid expression). When {@code firstTurn} is false the context fields are ignored, and the
      * user's prompt is returned verbatim.
      */
-    static String composePrompt(boolean firstTurn, String userPrompt, JSONObject field, JSONArray domainFields, String fieldExpression, String fieldError)
+    static String composePrompt(boolean firstTurn, String userPrompt, JSONObject field, JSONArray columns, String fieldExpression, String fieldError)
     {
         if (!firstTurn)
             return StringUtils.defaultString(userPrompt);
@@ -161,25 +237,28 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             return "";
 
         StringBuilder sb = new StringBuilder();
-        if (domainFields != null && !domainFields.isEmpty())
+        if (columns != null && !columns.isEmpty())
         {
-            sb.append("The following enumerates the available columns and their types:\n");
-            sb.append(fence(domainFields.toString(), "json"));
+            sb.append("These are the available columns, one per line:\n");
+            List<String> lines = new ArrayList<>();
+            columns.forEach(column -> lines.add(column.toString()));
+            sb.append(fence("[\n" + String.join(",\n", lines) + "\n]", "json"));
         }
 
-        if (field != null)
+        if (field != null && !field.isEmpty())
         {
-            sb.append("The current column that is having its expression evaluated and the one you are assisting with is:\n");
+            sb.append("The calculated column you are writing the expression for:\n");
             sb.append(fence(field.toString(), "json"));
+        }
+
+        if (isNotBlank(fieldExpression))
+        {
+            sb.append("Its current expression is:\n");
+            sb.append(fence(fieldExpression, "sql"));
         }
 
         if (autoEvaluate)
         {
-            if (isNotBlank(fieldExpression))
-            {
-                sb.append("The user already has the following calculated column expression:\n");
-                sb.append(fence(fieldExpression));
-            }
             sb.append("This expression contains an error:\n");
             sb.append(fence(fieldError));
             sb.append("Evaluate this expression and see if you can determine how to fix this error. If you can, point them out and propose corrections.");
@@ -983,9 +1062,9 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             JSONObject field = new JSONObject(Map.of("name", "MyCalc"));
             String composed = composePrompt(true, "sum A and B", field, fields("[{\"name\":\"A\"}]"), null, null);
             assertTrue(composed.contains("available columns"));
-            assertTrue(composed.contains("```json\n[{\"name\":\"A\"}]\n```"));
+            assertTrue(composed, composed.contains("```json\n[\n{\"name\":\"A\"}\n]\n```"));
             assertTrue("current-column preamble missing: " + composed,
-                    composed.contains("current column that is having its expression evaluated"));
+                    composed.contains("calculated column you are writing the expression for"));
             assertTrue("current-column JSON missing: " + composed,
                     composed.contains("```json\n" + field + "\n```"));
             assertTrue(composed.contains("Generate a calculated column expression"));
@@ -997,7 +1076,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             String composed = composePrompt(true, "", null, fields("[{\"name\":\"A\"}]"), "SELECT bad", "syntax error");
             assertTrue(composed.contains("available columns"));
-            assertTrue(composed.contains("```\nSELECT bad\n```"));
+            assertTrue(composed, composed.contains("```sql\nSELECT bad\n```"));
             assertTrue(composed.contains("```\nsyntax error\n```"));
             assertTrue(composed.contains("Evaluate this expression"));
             assertFalse("auto-evaluate must not include the change/new instruction line",
@@ -1009,7 +1088,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             String composed = composePrompt(true, "", null, null, null, "boom");
             assertTrue(composed.contains("```\nboom\n```"));
-            assertFalse(composed.contains("user already has the following"));
+            assertFalse(composed.contains("current expression"));
         }
 
         @Test
@@ -1025,6 +1104,73 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         {
             // No catalog to inject — don't bother prepending the "Generate a calculated column" preamble.
             assertEquals("just do it", composePrompt(true, "just do it", null, null, null, null));
+        }
+
+        @Test
+        public void composePromptIncludesCurrentExpressionWhenChangingIt()
+        {
+            String composed = composePrompt(true, "round it", null, fields("[{\"name\":\"A\"}]"), "A / 3.0", null);
+            assertTrue(composed, composed.contains("```sql\nA / 3.0\n```"));
+            assertTrue(composed.endsWith("round it"));
+        }
+
+        private static JSONObject column(JSONArray columns, String name)
+        {
+            for (int i = 0; i < columns.length(); i++)
+                if (name.equals(columns.getJSONObject(i).getString("name")))
+                    return columns.getJSONObject(i);
+            throw new AssertionError("no column " + name + " in " + columns);
+        }
+
+        @Test
+        public void describeColumnsKeepsOnlyWhatTheModelNeeds()
+        {
+            JSONArray domainFields = fields("""
+                [{"name":"Int1","label":"Int 1","description":"First","propertyURI":"urn:lsid:labkey.com:SampleSet.Folder-408:Int1","lookupSchema":"exp"},
+                 {"Name":"Status","Label":"Status","DataType":"Varchar"}]
+                """);
+            JSONArray columns = describeColumns(domainFields, Map.of(FieldKey.fromParts("Int1"), JdbcType.INTEGER, FieldKey.fromParts("Status"), JdbcType.VARCHAR), List.of());
+
+            assertEquals(2, columns.length());
+            JSONObject int1 = column(columns, "Int1");
+            assertEquals(Set.of("name", "label", "description", "type"), int1.keySet());
+            assertEquals("INTEGER", int1.getString("type"));
+            assertEquals("VARCHAR", column(columns, "Status").getString("type"));
+        }
+
+        @Test
+        public void describeColumnsMarksColumnsTheValidatorRejects()
+        {
+            JSONArray domainFields = fields("""
+                [{"name":"calc_run_0","valueExpression":"Int1 + 1"},
+                 {"name":"Choices"},
+                 {"name":"Secret"}]
+                """);
+            JSONArray columns = describeColumns(domainFields, Map.of(FieldKey.fromParts("Secret"), JdbcType.VARCHAR), List.of(FieldKey.fromParts("Secret")));
+
+            assertEquals("calculated column", column(columns, "calc_run_0").getString("unusable"));
+            assertEquals("Int1 + 1", column(columns, "calc_run_0").getString("expression"));
+            assertEquals("type not supported in expressions", column(columns, "Choices").getString("unusable"));
+            assertEquals("contains PHI", column(columns, "Secret").getString("unusable"));
+        }
+
+        @Test
+        public void describeColumnsAddsUndescribedColumnMapEntries()
+        {
+            JSONArray columns = describeColumns(null, Map.of(FieldKey.fromParts("Created"), JdbcType.TIMESTAMP), List.of());
+            assertEquals(1, columns.length());
+            assertEquals("TIMESTAMP", column(columns, "Created").getString("type"));
+        }
+
+        @Test
+        public void expressionSqlReferenceKeepsOnlyExpressionSections()
+        {
+            // Guards the section numbers in EXPRESSION_SQL_SECTIONS against renumbering of LabKeySql.md
+            String reference = expressionSqlReference(PromptResource.LabKeySql.resource());
+            for (String heading : List.of("Identifiers, Literals", "Scalar Functions (Both Databases)", "PostgreSQL-Only Scalar Functions", "CAST"))
+                assertTrue("missing section: " + heading, reference.contains(heading));
+            for (String heading : List.of("NOT SUPPORTED", "Lookups", "Aggregate Functions", "WITH (Common Table Expressions)"))
+                assertFalse("unexpected section: " + heading, reference.contains(heading));
         }
     }
 }
