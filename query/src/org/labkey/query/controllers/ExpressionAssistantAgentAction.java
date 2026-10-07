@@ -67,7 +67,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     private static final int MAX_REPAIR_ATTEMPTS = 2;
     // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
     static final String VALIDATION_CALLS_ATTR = "validationCalls";
-    // Identifiers and literals, scalar functions, and CAST; the rest of the reference covers whole queries
+    // Identifiers and literals, scalar functions, and CAST; ExpressionAssistant.md carries the expression rows of §1 and §19
     private static final Pattern EXPRESSION_SQL_SECTIONS = Pattern.compile("### \\*\\*(2|6|7|15)\\. ");
 
     @Override

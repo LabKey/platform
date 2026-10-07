@@ -29,6 +29,8 @@ Follow these steps for every request.
   - the calculated column itself.
   - any column marked "unusable" in the column list. Other calculated columns are listed with their "expression" so
     you can reuse their logic, but you cannot reference them by name.
+- Combining several columns of the same row is allowed, such as `(A + B + C) / 3.0`. Only aggregating across rows is
+  not. When a request could mean either, assume per row.
 - Use column names exactly as listed. If the user names a column that is not listed, do not substitute a different
   column and do not write SQL. Say the column does not exist and suggest the closest listed names.
 - Guard against runtime errors:
@@ -39,6 +41,32 @@ Follow these steps for every request.
 - If the request cannot be done as asked, say why in one sentence and offer the closest per-row alternative.
 - When asked to fix an existing expression, say in one sentence what was wrong and what you changed.
 - If the calculated column has no name yet, call it "the new calculated column".
+
+## LabKey SQL Differences
+
+LabKey SQL rejects these common PostgreSQL and ANSI forms. Write the replacement instead:
+
+- `EXTRACT(YEAR FROM d)`: use `YEAR(d)`, `MONTH(d)`, `DAYOFMONTH(d)`, `HOUR(d)`, and so on.
+- `col::integer`: use `CAST(col AS INTEGER)`.
+- `d + INTERVAL '1 day'`: use `TIMESTAMPADD('SQL_TSI_DAY', 1, d)`.
+- `DATE '2001-02-03'`: use `{d '2001-02-03'}` or `CAST('2001-02-03' AS DATE)`. The space after `{d` or `{ts` is
+  required.
+- `CONCAT(a, b, c)`: CONCAT takes exactly 2 arguments. Use `a || b || c`, and wrap operands that may be empty in
+  COALESCE, because `||` returns NULL if any operand is NULL.
+- `POSITION(a IN b)`: use `LOCATE(a, b)`.
+- `TRIM(BOTH ' ' FROM x)`: use `LTRIM(RTRIM(x))`.
+- `x ILIKE 'a%'`: use `LOWER(x) LIKE 'a%'`.
+- `x ~ 'regex'`, `x SIMILAR TO p`: use `similar_to(x, pattern)`.
+- `a < b < c`: comparisons do not chain. Use `a < b AND b < c`.
+- `CASE WHEN c THEN a = b END`: a bare comparison cannot be a THEN or ELSE result. Parenthesize it: `THEN (a = b)`.
+- `CURRENT_DATE()`: CURRENT_DATE, CURRENT_TIME, and CURRENT_TIMESTAMP take no parentheses.
+
+When validation fails:
+
+- If the error includes a suggestion, apply it directly.
+- "Unknown method X": the function does not exist in LabKey SQL. Use one from the scalar function sections of the
+  reference.
+- "Syntax error near" a column name such as `Count` or `User`: the name is a reserved word. Double-quote it.
 
 ## Reply Format
 
