@@ -130,6 +130,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -800,11 +801,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             List<Long> ids = new LinkedList<>();
 
-            for (Map<String, Object> k : keys)
+            // Issue 40621
+            // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
+            for (Map<String, Object> map : getMaterialMaps(keys))
             {
-                // Issue 40621
-                // adding input fields is expensive, skip input fields for delete since deleted samples are not surfaced on Timeline UI
-                Map<String, Object> map = getMaterialMap(k);
                 if (map == null)
                     throw new QueryUpdateServiceException("No Sample Type Material found for RowID or LSID");
 
@@ -909,6 +909,68 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get sample.");
 
         return new TableSelector(getQueryTable(), filter, null).getMap();
+    }
+
+    /** Batched {@link #getMaterialMap(Map)}: one result per key, in key order, null where no sample matched. */
+    private List<Map<String, Object>> getMaterialMaps(List<Map<String, Object>> keys) throws QueryUpdateServiceException
+    {
+        Set<Long> rowIds = new LongHashSet();
+        Set<String> lsids = new HashSet<>();
+        Map<Long, Set<String>> namesBySource = new HashMap<>();
+        for (Map<String, Object> k : keys)
+        {
+            Long rowId = getMaterialRowId(k);
+            String lsid = getMaterialLsid(k);
+            String name = getMaterialName(k);
+            Long materialSourceId = getMaterialSourceId(k);
+            if (rowId != null)
+                rowIds.add(rowId);
+            else if (lsid != null)
+                lsids.add(lsid);
+            else if (name != null && materialSourceId != null)
+                namesBySource.computeIfAbsent(materialSourceId, (_) -> new HashSet<>()).add(name);
+            else
+                throw new QueryUpdateServiceException("Either RowId, LSID, or Name and MaterialSourceId is required to get sample.");
+        }
+
+        Map<Long, Map<String, Object>> byRowId = new HashMap<>();
+        Map<String, Map<String, Object>> byLsid = new HashMap<>();
+        Map<Pair<Long, String>, Map<String, Object>> byName = new HashMap<>();
+        if (!rowIds.isEmpty())
+            selectMaterialMaps(new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN), row -> byRowId.put(getMaterialRowId(row), row));
+        if (!lsids.isEmpty())
+            selectMaterialMaps(new SimpleFilter(LSID.fieldKey(), lsids, CompareType.IN), row -> byLsid.put(getMaterialLsid(row), row));
+        for (Map.Entry<Long, Set<String>> e : namesBySource.entrySet())
+        {
+            SimpleFilter filter = new SimpleFilter(Name.fieldKey(), e.getValue(), CompareType.IN);
+            filter.addCondition(MaterialSourceId.fieldKey(), e.getKey());
+            selectMaterialMaps(filter, row -> byName.put(nameKey(getMaterialSourceId(row), getMaterialName(row)), row));
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
+        for (Map<String, Object> k : keys)
+        {
+            Long rowId = getMaterialRowId(k);
+            String lsid = getMaterialLsid(k);
+            if (rowId != null)
+                result.add(byRowId.get(rowId));
+            else if (lsid != null)
+                result.add(byLsid.get(lsid));
+            else
+                result.add(byName.get(nameKey(getMaterialSourceId(k), getMaterialName(k))));
+        }
+        return result;
+    }
+
+    private static Pair<Long, String> nameKey(Long materialSourceId, String name)
+    {
+        return Pair.of(materialSourceId, StringUtils.lowerCase(name));
+    }
+
+    private void selectMaterialMaps(SimpleFilter filter, Consumer<Map<String, Object>> consumer)
+    {
+        for (Map<String, Object> row : new TableSelector(getQueryTable(), filter, null).getMapArray())
+            consumer.accept(row);
     }
 
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}

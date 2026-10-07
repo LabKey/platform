@@ -62,6 +62,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -4936,6 +4937,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
+            // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
+            Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Set<String> untrackedDeletes = new HashSet<>();
+
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
             // will be successful
             final List<String> docids = new ArrayList<>();
@@ -4963,6 +4968,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
 
                     docids.add(material.getDocumentId());
+
+                    if (!untrackedDeletes.contains(material.getCpasType()))
+                    {
+                        Set<Long> ids = deletedRowIds.computeIfAbsent(material.getCpasType(), (_) -> new LongHashSet());
+                        ids.add(material.getRowId());
+                        if (ids.size() > ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                        {
+                            deletedRowIds.remove(material.getCpasType());
+                            untrackedDeletes.add(material.getCpasType());
+                        }
+                    }
 
                     if (null == stDeleteFrom)
                     {
@@ -5153,7 +5169,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
             transaction.addCommitTask(
@@ -5203,7 +5219,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 runsUsingItems.removeAll(runsToKeep);
             }
             // add runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(materialItems), getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         if (!dataIds.isEmpty())
@@ -5232,7 +5248,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             runsUsingItems.addAll(dataInputRuns);
             // get runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(dataItems), getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<ExpRunImpl> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -5265,6 +5281,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /* Finds the runs where all outputs are also being deleted */
+    /** Only items output by a run can leave that run without outputs. */
+    private static Set<Long> rowIdsWithRun(Collection<? extends RunItem> items)
+    {
+        return items.stream().filter(item -> item.getRunId() != null).map(RunItem::getRowId).collect(Collectors.toSet());
+    }
+
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Long> rowIds, TableInfo primaryTableInfo, Collection<Long> siblingRowIds, TableInfo siblingTableInfo)
     {
         if (rowIds == null || rowIds.isEmpty())
@@ -5274,12 +5296,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SELECT DISTINCT m.runId
 	    FROM exp.material m
         WHERE m.rowId in (3592, 3593, 3594)
+            AND m.runId IS NOT NULL
             AND NOT EXIST (
                 -- Check for siblings
-                SELECT DISTINCT m2.runId
+                SELECT 1
                 FROM exp.material m2
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = m2.runId
+                WHERE m2.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5290,10 +5312,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             )
             AND NOT EXIST (
              -- Check for siblings that are not being deleted
-                SELECT DISTINCT d.runId
+                SELECT 1
                 FROM exp.data d
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = d.runId
+                WHERE d.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5314,21 +5335,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append("SELECT DISTINCT m.runId\n")
                 .append("FROM ").append(primaryTableInfo, "m").append("\n")
                 .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId IS NOT NULL\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT m2.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(primaryTableInfo, "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = m2.runId\n")
+                .append("WHERE m2.runId = m.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
                 .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
                 .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
                 .append("))\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT s.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(siblingTableInfo, "s").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = s.runId\n");
+                .append("WHERE s.runId = m.runId\n");
         if (!siblingRowIds.isEmpty())
         {
             sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds

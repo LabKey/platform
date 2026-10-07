@@ -2469,6 +2469,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
     }
 
+    /** @param deletedRowIds the deleted samples' rowIds; null forces a full pass over the materialized view */
+    public void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds)
+    {
+        ExpMaterialTableImpl.refreshMaterializedViewAfterDelete(st.getLSID(), deletedRowIds);
+    }
+
     public static class TestCase extends Assert
     {
         @Test
