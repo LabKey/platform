@@ -1052,6 +1052,9 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public List<ActiveJob> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf)
     {
+        if (providerNames.isEmpty())
+            return List.of();
+
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerNames, CompareType.IN);
         filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
 

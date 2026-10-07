@@ -2753,6 +2753,12 @@ public class OntologyManager
         return pd;
     }
 
+    // For callers that write a PropertyDescriptor with a raw Table.update and so bypass the cache eviction here
+    public static void clearPropertyDescriptorCache(PropertyDescriptor pd)
+    {
+        PROP_DESCRIPTOR_CACHE.remove(getCacheKey(pd));
+    }
+
     //todo:  we automatically update a pd to the last  one in?
     public static PropertyDescriptor updatePropertyDescriptor(PropertyDescriptor pd)
     {

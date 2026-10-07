@@ -27,21 +27,32 @@ import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.HtmlWriter;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extends DataColumn
 {
+    // The same object typically repeats across rows, usually on adjacent ones; cache only its name and URL, and cap the memo, so a large export can't pin one ExpObject per distinct row
+    private static final int MAX_CACHED_VALUES = 1000;
+
     protected ColumnInfo _containerId;
     protected ColumnInfo _defaultName;
-    // The same object typically repeats across rows
-    private final Map<CacheKey, Optional<ExpLink<ObjectType>>> _expValues = new HashMap<>();
+    private final Map<CacheKey, Optional<ExpLinkDisplay>> _expValues = new LinkedHashMap<>(16, 0.75f, true)
+    {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<CacheKey, Optional<ExpLinkDisplay>> eldest)
+        {
+            return size() > MAX_CACHED_VALUES;
+        }
+    };
 
     public static final String KEY_SEPARATOR = "~~KEYSEP~~";
 
     protected record ExpLink<T extends ExpObject>(T object, @Nullable ActionURL url) {}
+
+    private record ExpLinkDisplay(String name, @Nullable ActionURL url) {}
 
     private record CacheKey(Object boundValue, @Nullable String containerId) {}
 
@@ -72,20 +83,23 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     protected abstract ExpLink<ObjectType> getExpValue(RenderContext ctx);
 
     @Nullable
-    private ExpLink<ObjectType> getCachedExpValue(RenderContext ctx)
+    private ExpLinkDisplay getCachedExpValue(RenderContext ctx)
     {
         Container c = getContainer(ctx);
         CacheKey key = new CacheKey(getBoundColumn().getValue(ctx), c == null ? null : c.getId());
-        return _expValues.computeIfAbsent(key, _ -> Optional.ofNullable(getExpValue(ctx))).orElse(null);
+        return _expValues.computeIfAbsent(key, _ -> {
+            ExpLink<ObjectType> link = getExpValue(ctx);
+            return Optional.ofNullable(link == null ? null : new ExpLinkDisplay(link.object().getName(), link.url()));
+        }).orElse(null);
     }
 
     @Override
     public Object getDisplayValue(RenderContext ctx)
     {
-        ExpLink<ObjectType> value = getCachedExpValue(ctx);
+        ExpLinkDisplay value = getCachedExpValue(ctx);
         if (value != null)
         {
-            return value.object().getName();
+            return value.name();
         }
 
         if (_defaultName != null)
@@ -117,10 +131,10 @@ public abstract class ExperimentAuditColumn<ObjectType extends ExpObject> extend
     @Override
     public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
     {
-        ExpLink<ObjectType> value = getCachedExpValue(ctx);
+        ExpLinkDisplay value = getCachedExpValue(ctx);
         if (value != null && value.url() != null)
         {
-            out.write(LinkBuilder.simpleLink(value.object().getName(), value.url()));
+            out.write(LinkBuilder.simpleLink(value.name(), value.url()));
             return;
         }
 

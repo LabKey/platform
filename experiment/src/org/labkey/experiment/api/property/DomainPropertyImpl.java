@@ -870,6 +870,9 @@ public class DomainPropertyImpl implements DomainProperty
 
             OntologyManager.validatePropertyDescriptor(_pd);
             Table.update(user, OntologyManager.getTinfoPropertyDescriptor(), _pd, _pdOld.getPropertyId());
+            // The raw update above bypasses the cache; a changed URI leaves a stale entry under the old key that invalidateDomain() can't find
+            if (!_pdOld.getPropertyURI().equals(_pd.getPropertyURI()))
+                OntologyManager.clearPropertyDescriptorCache(_pdOld);
             OntologyManager.ensurePropertyDomain(_pd, dd, sortOrder);
 
             boolean hasProvisioner = null != getDomain().getDomainKind() && null != getDomain().getDomainKind().getStorageSchemaName() && dd.getStorageTableName() != null;
