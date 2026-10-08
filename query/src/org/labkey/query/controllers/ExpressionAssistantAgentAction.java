@@ -129,7 +129,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
             Map<FieldKey, JdbcType> columnMap = columnTypes(form.getColumnTypeNames());
-            JSONArray columns = describeColumns(form.getDomainFields(), columnMap, form.getPhiColumns());
+            JSONArray columns = describeColumns(form.getDomainFields(), form.getField(), columnMap, form.getPhiColumns());
             JSONObject field = form.getField() == null ? null : describeField(form.getField());
             String composedPrompt = composePrompt(firstTurn, prompt, field, columns, form.getFieldExpression(), form.getFieldError());
 
@@ -214,11 +214,19 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     }
 
     /**
-     * Reduces the client's field JSON to what the model needs. A column the validator rejects (calculated, PHI, or of
-     * a type missing from the column map) is marked "unusable" with the reason, so the model doesn't reference it.
+     * Reduces the client's field JSON to what the model needs. A column the validator rejects (PHI, calculated,
+     * multi-choice, or missing from the column map) is marked "unusable" with the reason, so the model doesn't reference
+     * it. The column being written and calculated columns without an expression are left out.
      */
-    static JSONArray describeColumns(@Nullable JSONArray domainFields, Map<FieldKey, JdbcType> columnMap, List<FieldKey> phiColumns)
+    static JSONArray describeColumns(@Nullable JSONArray domainFields, @Nullable JSONObject field, Map<FieldKey, JdbcType> columnMap, List<FieldKey> phiColumns)
     {
+        FieldKey fieldKey = null;
+        String fieldName = null;
+        if (field != null)
+            fieldName = text(field, "name", "Name");
+        if (fieldName != null)
+            fieldKey = FieldKey.fromParts(fieldName);
+
         JSONArray columns = new JSONArray();
         Set<FieldKey> described = new HashSet<>();
         if (domainFields != null)
@@ -232,18 +240,26 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
                 FieldKey key = FieldKey.fromParts(name);
                 described.add(key);
+                String expression = text(f, "valueExpression");
+                boolean calculated = expression != null || PropertyType.CALCULATED_CONCEPT_URI.equals(text(f, "conceptURI"));
+                if (key.equals(fieldKey) || (calculated && expression == null))
+                    continue;
+
                 JSONObject column = describeField(f);
                 JdbcType type = columnMap.get(key);
                 JdbcType describedType = type == null || type == JdbcType.OTHER ? propertyJdbcType(f) : type;
-                String expression = text(f, "valueExpression");
                 if (describedType != null && describedType != JdbcType.OTHER)
                     column.put("type", describedType.name());
                 if (expression != null)
                     column.put("expression", expression);
                 if (phiColumns.contains(key))
                     column.put("unusable", "contains PHI");
+                else if (calculated)
+                    column.put("unusable", "calculated column");
+                else if (PropertyType.MULTI_CHOICE.getTypeUri().equals(text(f, "rangeURI")))
+                    column.put("unusable", "multi-choice field");
                 else if (type == null)
-                    column.put("unusable", expression != null ? "calculated column" : "type not supported in expressions");
+                    column.put("unusable", "not available in expressions");
                 columns.put(column);
             }
         }
@@ -1220,7 +1236,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 [{"name":"Int1","label":"Int 1","description":"First","propertyURI":"urn:lsid:labkey.com:SampleSet.Folder-408:Int1","lookupSchema":"exp"},
                  {"Name":"Status","Label":"Status","DataType":"Varchar"}]
                 """);
-            JSONArray columns = describeColumns(domainFields, Map.of(FieldKey.fromParts("Int1"), JdbcType.INTEGER, FieldKey.fromParts("Status"), JdbcType.VARCHAR), List.of());
+            JSONArray columns = describeColumns(domainFields, null, Map.of(FieldKey.fromParts("Int1"), JdbcType.INTEGER, FieldKey.fromParts("Status"), JdbcType.VARCHAR), List.of());
 
             assertEquals(2, columns.length());
             JSONObject int1 = column(columns, "Int1");
@@ -1238,7 +1254,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                  {"name":"Color","rangeURI":"http://www.w3.org/2001/XMLSchema#string","conceptURI":"http://www.labkey.org/types#textChoice"},
                  {"name":"Mystery"}]
                 """);
-            JSONArray columns = describeColumns(domainFields, Map.of(
+            JSONArray columns = describeColumns(domainFields, null, Map.of(
                     FieldKey.fromParts("Status"), JdbcType.OTHER,
                     FieldKey.fromParts("CollectionDate"), JdbcType.OTHER,
                     FieldKey.fromParts("Color"), JdbcType.OTHER,
@@ -1255,22 +1271,41 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         public void describeColumnsMarksColumnsTheValidatorRejects()
         {
             JSONArray domainFields = fields("""
-                [{"name":"calc_run_0","valueExpression":"Int1 + 1"},
-                 {"name":"Choices"},
-                 {"name":"Secret"}]
+                [{"name":"calc_run_0","conceptURI":"http://www.labkey.org/exp/xml#calculated","valueExpression":"Int1 + 1"},
+                 {"name":"Choices","rangeURI":"http://cpas.fhcrc.org/exp/xml#multiChoice"},
+                 {"name":"Secret"},
+                 {"name":"Unmapped"}]
                 """);
-            JSONArray columns = describeColumns(domainFields, Map.of(FieldKey.fromParts("Secret"), JdbcType.VARCHAR), List.of(FieldKey.fromParts("Secret")));
+            JSONArray columns = describeColumns(domainFields, null, Map.of(FieldKey.fromParts("Secret"), JdbcType.VARCHAR), List.of(FieldKey.fromParts("Secret")));
 
             assertEquals("calculated column", column(columns, "calc_run_0").getString("unusable"));
             assertEquals("Int1 + 1", column(columns, "calc_run_0").getString("expression"));
-            assertEquals("type not supported in expressions", column(columns, "Choices").getString("unusable"));
+            assertEquals("multi-choice field", column(columns, "Choices").getString("unusable"));
             assertEquals("contains PHI", column(columns, "Secret").getString("unusable"));
+            assertEquals("not available in expressions", column(columns, "Unmapped").getString("unusable"));
+        }
+
+        @Test
+        public void describeColumnsOmitsTargetAndEmptyCalculatedColumns()
+        {
+            // The model reads an unusable entry's reason, such as "type not supported", as being about a column named type
+            JSONArray domainFields = fields("""
+                [{"name":"type","rangeURI":"http://www.w3.org/2001/XMLSchema#string","conceptURI":"http://www.labkey.org/types#textChoice"},
+                 {"name":"Target","conceptURI":"http://www.labkey.org/exp/xml#calculated","valueExpression":"type || type"},
+                 {"name":"dsad","conceptURI":"http://www.labkey.org/exp/xml#calculated"}]
+                """);
+            JSONObject field = new JSONObject().put("name", "Target");
+            JSONArray columns = describeColumns(domainFields, field, Map.of(FieldKey.fromParts("type"), JdbcType.VARCHAR), List.of());
+
+            assertEquals(1, columns.length());
+            assertEquals("type", columns.getJSONObject(0).getString("name"));
+            assertFalse(columns.getJSONObject(0).has("unusable"));
         }
 
         @Test
         public void describeColumnsAddsUndescribedColumnMapEntries()
         {
-            JSONArray columns = describeColumns(null, Map.of(FieldKey.fromParts("Created"), JdbcType.TIMESTAMP, FieldKey.fromParts("Modified"), JdbcType.OTHER), List.of());
+            JSONArray columns = describeColumns(null, null, Map.of(FieldKey.fromParts("Created"), JdbcType.TIMESTAMP, FieldKey.fromParts("Modified"), JdbcType.OTHER), List.of());
             assertEquals(2, columns.length());
             assertEquals("TIMESTAMP", column(columns, "Created").getString("type"));
             assertFalse("OTHER tells the model nothing", column(columns, "Modified").has("type"));
