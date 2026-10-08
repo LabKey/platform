@@ -31,8 +31,8 @@ import java.util.stream.Stream;
 // A cache that accepts keys of one type but actually caches using keys of a different type. Functions are passed in to
 // map the keys in both directions. The purpose is to allow cache calling code to work with cache keys that are
 // convenient to use, but holding those keys for long periods of time is expensive or otherwise undesirable.
-// Note that getKeys() and removeUsingFilter() apply fromKey to every entry, which could be costly (e.g., a DB lookup
-// per key), but these methods are not use widely, especially not on non-String keys.
+// getKeys() and removeUsingFilter() apply fromKey to every entry, which could be costly (e.g., a DB lookup per key),
+// but these methods are not used widely, especially not on non-String keys.
 public class SimpleKeyMappingCache<K1, K2, V> implements SimpleCache<K1, V>
 {
     private final SimpleCache<K2, V> _delegate;
