@@ -4969,6 +4969,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     docids.add(material.getDocumentId());
 
+                    // No cached view means no reader for the ids, so skip collecting them
+                    if (!untrackedDeletes.contains(material.getCpasType()) && !deletedRowIds.containsKey(material.getCpasType()) && !ExpMaterialTableImpl.isMaterialized(material.getCpasType()))
+                        untrackedDeletes.add(material.getCpasType());
+
                     if (!untrackedDeletes.contains(material.getCpasType()))
                     {
                         Set<Long> ids = deletedRowIds.computeIfAbsent(material.getCpasType(), (_) -> new LongHashSet());
@@ -5280,13 +5284,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    /* Finds the runs where all outputs are also being deleted */
     /** Only items output by a run can leave that run without outputs. */
     private static Set<Long> rowIdsWithRun(Collection<? extends RunItem> items)
     {
         return items.stream().filter(item -> item.getRunId() != null).map(RunItem::getRowId).collect(Collectors.toSet());
     }
 
+    /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Long> rowIds, TableInfo primaryTableInfo, Collection<Long> siblingRowIds, TableInfo siblingTableInfo)
     {
         if (rowIds == null || rowIds.isEmpty())
