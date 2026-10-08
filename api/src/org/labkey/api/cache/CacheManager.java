@@ -86,14 +86,6 @@ public class CacheManager
         return (SimpleCache<K, V>) (null == mapping ? cache : mapping.apply(cache));
     }
 
-    private static <K, V> TrackingCache<K, V> createCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName)
-    {
-        CacheWrapper<K, V> cache = new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, false), debugName, null, Thread.currentThread().getStackTrace());
-        addToKnownCaches(cache);  // Permanent cache -- hold onto it
-        LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
-        return cache;
-    }
-
     public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
     {
         return getCache(null, limit, defaultTimeToLive, debugName);
@@ -102,7 +94,10 @@ public class CacheManager
     /** Returns a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
     public static <K, V> TrackingCache<K, V> getCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName)
     {
-        return createCache(keyClass, limit, defaultTimeToLive, debugName);
+        CacheWrapper<K, V> cache = new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, false), debugName, null, Thread.currentThread().getStackTrace());
+        addToKnownCaches(cache);  // Permanent cache -- hold onto it
+        LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
+        return cache;
     }
 
     public static <V> Cache<String, V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
@@ -126,12 +121,13 @@ public class CacheManager
         return getBlockingCache(String.class, limit, defaultTimeToLive, debugName, loader);
     }
 
-    // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
+    @Deprecated // TODO: Migrate the one remaining caller
     public static <K, V> Cache<K, V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
         return getTemporaryCache(null, limit, defaultTimeToLive, debugName, stats);
     }
 
+    // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
     public static <K, V> Cache<K, V> getTemporaryCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
         return new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, true), debugName, stats, null);

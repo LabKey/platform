@@ -336,7 +336,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static class TestCase extends Assert
     {
-        public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
+        public static class TempDatabaseCache<V> extends DatabaseCache<String, V>
         {
             public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
             {
@@ -345,9 +345,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
             @Override
-            protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+            protected Cache<String, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
             {
-                return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+                return CacheManager.getTemporaryCache(String.class, maxSize, defaultTimeToLive, debugName, null);
             }
         }
 
