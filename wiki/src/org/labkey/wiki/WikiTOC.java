@@ -367,7 +367,7 @@ public class WikiTOC extends NavTreeMenu
         {
             User user = createUserInRole(_host, ReaderRole.class);
             String html = renderToc(user);
-            assertTrue("Expected no-permission message, html was: " + html, html.contains(WikiManager.get().getNoPermissionsMessage(user).toString()));
+            assertTrue("Expected no-permission message, html was: " + html, html.contains("You do not have permission to see this data."));
             assertFalse("Target folder's page leaked into the TOC", html.contains(PAGE_TITLE));
 
             grantRole(user, _target, ReaderRole.class);

@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.MenuButton"%>
+<%@ page import="org.labkey.api.data.MenuButton" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
@@ -25,9 +24,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
+<%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
-<%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
