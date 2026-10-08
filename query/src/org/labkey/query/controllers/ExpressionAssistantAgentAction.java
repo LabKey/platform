@@ -457,8 +457,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 LOG.warn("Expression assistant repair attempt {} failed: {}", attempt, x.getMessage());
                 break;
             }
-            // sendMessageEx reports an empty or failed model call as a text/plain notice instead of throwing
-            if (responses.isEmpty() || responses.stream().anyMatch(r -> "text/plain".equals(r.contentType())))
+            // sendMessageEx reports a failed model call as a text/plain notice instead of throwing, and a blank reply as blank markdown
+            if (responses.stream().allMatch(r -> isBlank(r.text())) || responses.stream().anyMatch(r -> "text/plain".equals(r.contentType())))
             {
                 LOG.warn("Expression assistant repair attempt {} got no reply", attempt);
                 break;
@@ -1136,7 +1136,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             List<Function<String, List<McpService.MessageResponse>>> failures = List.of(
                     prompt -> { throw new ChatException("throttled", null); },
                     prompt -> List.of(new McpService.MessageResponse("text/plain", "The model returned an empty response.", HtmlString.of("The model returned an empty response."))),
-                    prompt -> List.of());
+                    prompt -> List.of(),
+                    prompt -> List.of(markdownResponse("")));
 
             for (Function<String, List<McpService.MessageResponse>> send : failures)
             {
