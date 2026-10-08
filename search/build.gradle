@@ -294,6 +294,7 @@ dependencies {
         }
     )
 
+    // TODO Tika 4.2.0: no Tika module uses mail-commons anymore (https://issues.apache.org/jira/browse/TIKA-4917), so remove this dependency if that holds in the release
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
@@ -303,7 +304,7 @@ dependencies {
             "http://lucene.apache.org/tika/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Email utilities used by the Outlook .msg and mail parsers"
+            "Email utilities used by the .eml and .mbox parsers"
         ),
         {
             transitive = false
@@ -319,7 +320,7 @@ dependencies {
             "http://lucene.apache.org/tika/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
-            "Parser adapters for .eml and mbox email formats"
+            "Parser adapters for .eml and .mbox email formats"
         ),
         {
             transitive = false
