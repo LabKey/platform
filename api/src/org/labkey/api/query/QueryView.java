@@ -3405,7 +3405,9 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
     {
         private static final FieldKey NAME = FieldKey.fromParts("Name");
         private static final FieldKey TITLE = FieldKey.fromParts("Title");
+        private static final FieldKey PARENT_NAME = FieldKey.fromParts("Parent", "Name");
         private static final String CUSTOM_CAPTION = "Custom Name Caption";
+        private static final String CUSTOM_LOOKUP_CAPTION = "Custom Parent Caption";
 
         @Test
         public void testFieldKeysKeepCustomViewCaption() throws IOException
@@ -3416,7 +3418,23 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 view.getSettings().setFieldKeys(new ArrayList<>(List.of(NAME, TITLE)));
 
                 assertEquals(List.of(CUSTOM_CAPTION, "Title"), getCaptions(view));
-                assertEquals(CUSTOM_CAPTION + "\tTitle", getTsvHeader(view));
+                assertEquals(CUSTOM_CAPTION + "\tTitle", getTsvHeader(view, ColumnHeaderType.Caption));
+            }
+        }
+
+        @Test
+        public void testFieldKeysImportFieldIgnoresCustomViewCaption() throws IOException
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext(), List.of(
+                    Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION)),
+                    Map.entry(PARENT_NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_LOOKUP_CAPTION))
+                ));
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(NAME, PARENT_NAME)));
+
+                assertEquals(CUSTOM_CAPTION + "\t" + CUSTOM_LOOKUP_CAPTION, getTsvHeader(view, ColumnHeaderType.Caption));
+                assertEquals("Name\tParent/Name", getTsvHeader(view, ColumnHeaderType.ImportField));
             }
         }
 
@@ -3442,6 +3460,11 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
         /** core.Containers with an unsaved custom view that retitles only the Name column */
         private QueryView createContainersView(ViewContext context)
         {
+            return createContainersView(context, List.of(Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION))));
+        }
+
+        private QueryView createContainersView(ViewContext context, List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> columnProperties)
+        {
             UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), "core");
             QuerySettings settings = schema.getSettings(context, DATAREGIONNAME_DEFAULT, "Containers");
             QueryView view = schema.createView(context, settings, null);
@@ -3449,7 +3472,7 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
             view.setShowUpdateColumn(false);
 
             CustomView customView = view.getQueryDef().createCustomView(context.getUser(), "captionTest");
-            customView.setColumnProperties(List.of(Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION))));
+            customView.setColumnProperties(columnProperties);
             view.setCustomView(customView);
             return view;
         }
@@ -3461,10 +3484,10 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 .toList();
         }
 
-        private String getTsvHeader(QueryView view) throws IOException
+        private String getTsvHeader(QueryView view, ColumnHeaderType headerType) throws IOException
         {
             StringBuilder sb = new StringBuilder();
-            try (TSVGridWriter tsv = view.getTsvWriter(ColumnHeaderType.Caption))
+            try (TSVGridWriter tsv = view.getTsvWriter(headerType))
             {
                 tsv.write(sb);
             }
