@@ -89,9 +89,6 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1377,39 +1374,18 @@ public class XarExporter
                     case MULTI_LINE:
                     case XML_TEXT:
                         simpleValue.setValueType(SimpleTypeNames.STRING);
-                        if (ExternalDocsURLCustomPropertyRenderer.URI.equals(value.getPropertyURI()))
+                        simpleValue.setStringValue(relativizeLSIDPropertyValue(value.getStringValue(), SimpleTypeNames.STRING));
+                        Domain domain = PropertyService.get().getDomain(parentContainer, value.getStringValue());
+                        if (domain != null)
                         {
-                            String link = value.getStringValue();
-                            try
-                            {
-                                URI uri = new URI(link);
-                                if (FileUtil.FILE_SCHEME.equals(uri.getScheme()) || FileUtil.hasCloudScheme(uri))
-                                {
-                                    Path path = FileUtil.getPath(parentContainer, uri);
-                                    if (Files.exists(path))
-                                    {
-                                        link = _urlRewriter.rewriteURL(path, null, null, null, _user, _fileRootPath);
-                                    }
-                                }
-                            }
-                            catch (URISyntaxException ignored) {}
-                            simpleValue.setStringValue(link);
+                            queueDomain(domain);
                         }
-                        else
-                        {
-                            simpleValue.setStringValue(relativizeLSIDPropertyValue(value.getStringValue(), SimpleTypeNames.STRING));
-                            Domain domain = PropertyService.get().getDomain(parentContainer, value.getStringValue());
-                            if (domain != null)
-                            {
-                                queueDomain(domain);
-                            }
 
-                            if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
-                            {
-                                Container autoLinkContainer = ContainerManager.getForId(value.getStringValue());
-                                if (autoLinkContainer != null)
-                                    simpleValue.setStringValue(autoLinkContainer.getPath());
-                            }
+                        if (StudyPublishService.AUTO_LINK_TARGET_PROPERTY_URI.equals(value.getPropertyURI()))
+                        {
+                            Container autoLinkContainer = ContainerManager.getForId(value.getStringValue());
+                            if (autoLinkContainer != null)
+                                simpleValue.setStringValue(autoLinkContainer.getPath());
                         }
                         break;
                     default:
