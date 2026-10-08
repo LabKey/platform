@@ -252,7 +252,9 @@ public abstract class BaseWikiView extends JspView<Object>
         }
 
         setTitle(title);
-        setNavMenu(initNavMenu());
+        // No nav menu if you can't read. This suppresses "New" and "Print" menu options.
+        if (perms.allowRead(wiki))
+            setNavMenu(initNavMenu());
     }
 
 

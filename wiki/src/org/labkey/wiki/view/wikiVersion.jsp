@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.data.MenuButton"%>
+<%@ page import="org.labkey.api.data.MenuButton" %>
 <%@ page import="org.labkey.api.data.RenderContext" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
@@ -25,6 +24,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
+<%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -33,7 +33,6 @@
     JspView<VersionBean> me = HttpView.currentView();
     VersionBean bean = me.getModelBean();
     User user = getUser();
-    Container c = getContainer();
 %>
 <!--wiki-->
 <table width="100%">
@@ -41,17 +40,11 @@
 <%
 if (!bean.hasReadPermission)
 {
-    if (user.isGuest())
-    {
-        %>Please log in to see this data.<%
-    }
-    else
-    {
-        %>You do not have permission to see this data.<%
-    }%>
+%>
+    <%=WikiManager.get().getNoPermissionsMessage(user)%>
     </td></tr></table>
-
-<%}
+<%
+}
 else
 {
     HtmlString formattedHtml = bean.html;

@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.model.BaseWikiView" %>
 <%@ page import="org.labkey.wiki.model.Wiki" %>
+<%@ page import="org.labkey.wiki.WikiManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--wiki-->
 <%
@@ -44,15 +45,9 @@
 
     if (!c.hasPermission(user, ReadPermission.class))
     {
-        %><table width="100%"><tr><td align=left><%
-        if (user.isGuest())
-        {
-            %>Please log in to see this data.<%
-        }
-        else
-        {
-            %>You do not have permission to see this data.<%
-        }%></td></tr></table><%
+        %><table width="100%">
+            <tr><td align=left><%=WikiManager.get().getNoPermissionsMessage(user)%></td></tr>
+        </table><%
         return;
     }
 
