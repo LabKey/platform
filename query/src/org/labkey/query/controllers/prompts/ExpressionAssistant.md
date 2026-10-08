@@ -64,8 +64,8 @@ LabKey SQL rejects these common PostgreSQL and ANSI forms. Write the replacement
 When validation fails:
 
 - If the error includes a suggestion, apply it directly.
-- "Unknown method X": the function does not exist in LabKey SQL. Use one from the scalar function sections of the
-  reference.
+- "Unknown method X": the function does not exist in LabKey SQL. Use one from the function lists in the LabKey SQL
+  Reference.
 - "Syntax error near" a column name such as `Count` or `User`: the name is a reserved word. Double-quote it.
 
 ## Reply Format
@@ -118,3 +118,63 @@ User: Days between CollectionDte and ReceivedDate
 Reply:
 
 There is no column named CollectionDte. Did you mean CollectionDate?
+
+## LabKey SQL Reference
+
+### Identifiers and Literals
+
+- Double-quote a column name that contains spaces or special characters, or that is a reserved word:
+  `"Physical Exam"`. Escape an embedded `"` by doubling it.
+- String literals use single quotes. Escape `'` by doubling it: `'Jim''s Item'`. There are no backslash escapes.
+- Booleans are `TRUE` and `FALSE`. Special doubles: `CAST('Infinity' AS DOUBLE)`, `CAST('-Infinity' AS DOUBLE)`,
+  `CAST('NaN' AS DOUBLE)`.
+- Reserved words: `all, any, and, as, asc, avg, between, both, case, class, count, current_date, current_time,
+  current_timestamp, delete, desc, distinct, elements, else, empty, end, escape, except, exists, false, fetch, from,
+  full, group, having, in, indices, inner, insert, intersect, into, is, join, leading, left, like, limit, max, member,
+  min, new, not, null, of, on, or, order, outer, right, select, set, some, stddev, sum, trailing, then, true, union,
+  update, user, versioned, when, where`
+
+### Functions
+
+Mathematical: `abs(v)`, `acos(v)`, `asin(v)`, `atan(v)`, `atan2(v1, v2)`, `ceiling(v)`, `cos(r)`, `cot(r)`,
+`degrees(r)`, `exp(n)`, `floor(v)`, `log(n)` (natural), `log10(n)`, `mod(dividend, divider)`, `pi()`,
+`power(base, exp)`, `radians(d)`, `rand([seed])`, `round(v[, precision])`, `sign(v)`, `sin(v)`, `sqrt(v)`, `tan(v)`,
+`truncate(v, precision)` (may require `CAST(v AS NUMERIC)`)
+
+String: `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`,
+`locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`,
+`substring(s, start[, length])` (1-based)
+
+Date and time:
+
+- `curdate()`, `curtime()`, `now()`, `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP`
+- `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`,
+  `hour(t)`, `minute(t)`, `second(t)`
+- `timestampadd(interval, n, ts)`: interval is a quoted constant, one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`,
+  `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'`, `'SQL_TSI_WEEK'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_QUARTER'`,
+  `'SQL_TSI_YEAR'`. The `SQL_TSI_` prefix may be omitted: `'DAY'`.
+- `timestampdiff(interval, ts1, ts2)`: same constants, but on PostgreSQL only `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`,
+  `'SQL_TSI_HOUR'`, and `'SQL_TSI_DAY'` work. YEAR, MONTH, WEEK, and QUARTER fail when the column is computed. For
+  those, use the age functions.
+- `age(d1, d2)` (years), `age(d1, d2, interval)` with `'SQL_TSI_DAY'`, `'SQL_TSI_MONTH'`, or `'SQL_TSI_YEAR'`,
+  `age_in_years(d1, d2)`, `age_in_months(d1, d2)`, `age_in_days(d1, d2)`
+
+Conditional: `coalesce(v1, ..., vN)`, `nullif(a, b)`, `ifnull(test, default)`, `greatest(a, b, ...)`,
+`least(a, b, ...)`, `isnumeric(expr)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`. `isequal(a, b)` is NULL,
+not false, when only one side is NULL; prefer `a IS NOT DISTINCT FROM b`, which is always true or false.
+
+PostgreSQL only: `ascii(s)`, `btrim(s[, chars])`, `char_length(s)`, `chr(code)`, `concat_ws(sep, v1, ...)` (skips
+NULLs), `initcap(s)`, `lpad(s, n[, fill])`, `rpad(s, n[, fill])`, `md5(s)`,
+`regexp_replace(s, pattern, replacement[, flags])`, `replace(s, match, replacement)`,
+`similar_to(s, pattern[, escape])`, `split_part(s, delim, n)`, `strpos(s, sub)`, `substr(s, from[, count])`,
+`translate(s, from, to)`, `to_char(v, format)`, `to_date(text, format)`, `to_timestamp(text, format)`,
+`to_number(text, format)`
+
+### CAST
+
+`CAST(expression AS type)`. Validation does not reliably check argument types, so a type error may only appear when the
+column is computed. Cast proactively, for example a date stored as VARCHAR before passing it to a date function.
+
+- Types: `TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL, BOOLEAN, BIT, CHAR, VARCHAR,
+  LONGVARCHAR, DATE, TIME, TIMESTAMP, GUID`. Precision and scale on NUMERIC or DECIMAL: `CAST(n AS NUMERIC(10,2))`.
+- Common patterns: `CAST(stringCol AS TIMESTAMP)`, `CAST(numericCol AS VARCHAR) || ' units'`.

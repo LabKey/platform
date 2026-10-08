@@ -45,7 +45,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,7 +52,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -67,8 +65,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     private static final int MAX_REPAIR_ATTEMPTS = 2;
     // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
     static final String VALIDATION_CALLS_ATTR = "validationCalls";
-    // Identifiers and literals, scalar functions, and CAST; ExpressionAssistant.md carries the expression rows of §1 and §19
-    private static final Pattern EXPRESSION_SQL_SECTIONS = Pattern.compile("### \\*\\*(2|6|7|15)\\. ");
     // Field designer type names (PropDescType and system field DataType, upper-cased) that aren't JdbcType names
     private static final Map<String, JdbcType> DESIGNER_TYPES = Map.ofEntries(
             Map.entry("ATTACHMENT", JdbcType.VARCHAR),
@@ -101,22 +97,13 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     @Override
     protected String getServicePrompt()
     {
-        return PromptResource.ExpressionAssistant.resource() +
-            "\n\n# LabKey SQL Reference\n\n" + expressionSqlReference(PromptResource.LabKeySql.resource());
+        return PromptResource.ExpressionAssistant.resource();
     }
 
     @Override
     protected Set<String> getToolNames()
     {
         return Set.of("validateCalculatedColumnExpression");
-    }
-
-    /** The sections of the LabKey SQL reference that apply to a single expression. */
-    static String expressionSqlReference(String labKeySql)
-    {
-        return Arrays.stream(labKeySql.split("(?m)^(?=### )"))
-                .filter(section -> EXPRESSION_SQL_SECTIONS.matcher(section).lookingAt())
-                .collect(Collectors.joining());
     }
 
     @Override
@@ -1309,17 +1296,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals(2, columns.length());
             assertEquals("TIMESTAMP", column(columns, "Created").getString("type"));
             assertFalse("OTHER tells the model nothing", column(columns, "Modified").has("type"));
-        }
-
-        @Test
-        public void expressionSqlReferenceKeepsOnlyExpressionSections()
-        {
-            // Guards the section numbers in EXPRESSION_SQL_SECTIONS against renumbering of LabKeySql.md
-            String reference = expressionSqlReference(PromptResource.LabKeySql.resource());
-            for (String heading : List.of("Identifiers, Literals", "Scalar Functions (Both Databases)", "PostgreSQL-Only Scalar Functions", "CAST"))
-                assertTrue("missing section: " + heading, reference.contains(heading));
-            for (String heading : List.of("NOT SUPPORTED", "Lookups", "Aggregate Functions", "WITH (Common Table Expressions)"))
-                assertFalse("unexpected section: " + heading, reference.contains(heading));
         }
     }
 }
