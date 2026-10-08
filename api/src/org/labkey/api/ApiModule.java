@@ -89,12 +89,14 @@ import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
+import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
+import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -131,6 +133,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationConfiguration;
@@ -576,12 +579,15 @@ public class ApiModule extends CodeOnlyModule
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
+            PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
+            QueryDataIteratorBuilder.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
+            SearchScope.TestCase.class,
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,

@@ -95,6 +95,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.security.WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME;
@@ -374,8 +375,18 @@ public class WikiManager implements WikiService
 
     public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
     {
+        deleteWiki(user, c, wiki, isDeletingSubtree, null);
+    }
+
+    /**
+     * @param descendantCheck when deleting a subtree, invoked on each descendant immediately before it's deleted; it
+     *                        should throw to prevent the deletion. Pages deleted before the throw stay deleted, but a
+     *                        page is never deleted before its descendants, so the remaining tree is never orphaned.
+     */
+    public void deleteWiki(User user, Container c, Wiki wiki, boolean isDeletingSubtree, @Nullable Consumer<Wiki> descendantCheck) throws SQLException
+    {
         //shift children to new parent, or delete recursively if deleting the whole subtree
-        handleChildren(user, c, wiki, isDeletingSubtree);
+        handleChildren(user, c, wiki, isDeletingSubtree, descendantCheck);
 
         DbScope scope = comm.getSchema().getScope();
 
@@ -405,7 +416,7 @@ public class WikiManager implements WikiService
     }
 
 
-    private void handleChildren(User user, Container c, Wiki wiki, boolean isDeletingSubtree) throws SQLException
+    private void handleChildren(User user, Container c, Wiki wiki, boolean isDeletingSubtree, @Nullable Consumer<Wiki> descendantCheck) throws SQLException
     {
         //shift any children upward so they are not orphaned
 
@@ -417,7 +428,11 @@ public class WikiManager implements WikiService
             if(isDeletingSubtree)
             {
                 for(Wiki childWiki : children)
-                    deleteWiki(user, c, childWiki, true);
+                {
+                    if (null != descendantCheck)
+                        descendantCheck.accept(childWiki);
+                    deleteWiki(user, c, childWiki, true, descendantCheck);
+                }
             }
             else
             {
@@ -1155,6 +1170,11 @@ public class WikiManager implements WikiService
     public AttachmentParentType getAttachmentType()
     {
         return WikiType.get();
+    }
+
+    public HtmlString getNoPermissionsMessage(User user)
+    {
+        return HtmlString.of(user.isGuest() ? "Please log in to see this data." : "You do not have permission to see this data.");
     }
 
     public static class TestCase extends Assert
