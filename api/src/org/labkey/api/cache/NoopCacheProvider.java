@@ -17,15 +17,11 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.labkey.api.cache.CacheType.DeterministicLRU;
 
-/**
- * Created by adam on 4/19/2016.
- */
 public class NoopCacheProvider implements CacheProvider
 {
     @Override
@@ -70,9 +66,9 @@ public class NoopCacheProvider implements CacheProvider
         }
 
         @Override
-        public Set<K> getKeys()
+        public Stream<K> getKeys()
         {
-            return Collections.emptySet();
+            return Stream.empty();
         }
 
         @Override

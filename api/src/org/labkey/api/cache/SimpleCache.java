@@ -15,10 +15,11 @@
  */
 package org.labkey.api.cache;
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 // Cache providers return caches that implement this interface, which presents a minimal set of cache operations,
 // without support for standard LabKey features such as null markers, cache loaders, statistics, blocking, etc.
@@ -39,7 +40,24 @@ public interface SimpleCache<K, V>
      */
     int removeUsingFilter(Predicate<K> filter);
 
-    Set<K> getKeys();
+    /**
+     * Convenience method that removes every key in the provided stream from this cache. Returns the number of elements
+     * that were removed. removeUsingFilter() implementations call this, allowing more sharing between SimpleCache
+     * implementations, specifically EhSimpleCache and SimpleKeyMappingCache.
+     */
+    default int removeAll(Stream<K> keys)
+    {
+        MutableInt removes = new MutableInt();
+
+        keys.forEach(key -> {
+            remove(key);
+            removes.increment();
+        });
+
+        return removes.intValue();
+    }
+
+    Stream<K> getKeys();
 
     void clear();
 

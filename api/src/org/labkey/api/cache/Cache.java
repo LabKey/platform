@@ -51,6 +51,7 @@ public interface Cache<K, V>
             }
         }
 
+    // TODO: Consider switching this to Stream<K>, as in SimpleCache. There are very few callers, and most are tests.
     Set<K> getKeys();
 
     void clear();

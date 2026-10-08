@@ -25,10 +25,9 @@ import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.IntegerUtils;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 class EhSimpleCache<K, V> implements SimpleCache<K, V>
 {
@@ -72,26 +71,14 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public int removeUsingFilter(Predicate<K> filter)
     {
-        int removes = 0;
-        List<K> keys = _cache.getKeys();
-
-        for (K key : keys)
-        {
-            if (filter.test(key))
-            {
-                remove(key);
-                removes++;
-            }
-        }
-
-        return removes;
+        return removeAll(getKeys().filter(filter));
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
-        // EhCache provides keys as a "set-like" list; make it a real Set
-        return new HashSet<K>(_cache.getKeys());
+        // Stream EhCache's "set-like" list of keys
+        return (Stream<K>)_cache.getKeys().stream();
     }
 
     @Override

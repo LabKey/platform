@@ -43,25 +43,43 @@ import java.util.function.Predicate;
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
+    private final @Nullable Class<K> _keyClass;
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
     // Use the factory methods that return a BlockingDatabaseCache instead
     private DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
+        this(null, scope, maxSize, defaultTimeToLive, debugName);
+    }
+
+    private DatabaseCache(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    {
+        _keyClass = keyClass;
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
-        return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+        return get(null, scope, maxSize, defaultTimeToLive, debugName, cacheLoader);
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
         return get(scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
+    }
+
+    /** Uses a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
+    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    {
+        return new BlockingDatabaseCache<>(new DatabaseCache<>(keyClass, scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+    }
+
+    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    {
+        return get(keyClass, scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
     }
 
     /**
@@ -209,7 +227,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return CacheManager.getCache(maxSize, defaultTimeToLive, debugName);
+        return CacheManager.getCache(_keyClass, maxSize, defaultTimeToLive, debugName);
     }
 
     @Override
@@ -220,7 +238,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     private Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
-        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
+        return CacheManager.getTemporaryCache(_keyClass, trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
     protected @Nullable TransactionImpl getCurrentTransaction()

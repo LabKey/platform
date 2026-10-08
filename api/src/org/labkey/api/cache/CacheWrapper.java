@@ -26,6 +26,7 @@ import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
@@ -37,6 +38,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final Stats _stats;
     private final Stats _transactionStats;
     private final @Nullable StackTraceElement[] _stackTrace;
+    @SuppressWarnings("unchecked")
     private final V _nullMarker = (V)NULL_MARKER;
 
     // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or
@@ -153,7 +155,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     @Override
     public Set<K> getKeys()
     {
-        return _cache.getKeys();
+        return _cache.getKeys().collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
