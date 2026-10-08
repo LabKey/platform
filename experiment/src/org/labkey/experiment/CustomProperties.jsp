@@ -46,7 +46,7 @@
                 fout.print(unsafe("&nbsp;&nbsp;&nbsp;&nbsp;"));
             }
 
-            // Note: StandardPropertyRenderer HTML encodes description and value
+            // Note: CustomPropertyRenderer HTML encodes description and value
             fout.println(unsafe(description + ":"));
             fout.println(unsafe("    </td>"));
             fout.println(unsafe("    <td>" + value + "</td>"));
