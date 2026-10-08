@@ -7979,6 +7979,7 @@ public class QueryController extends SpringActionController
     {
         String expression = "";
         Map<FieldKey, JdbcType> columnMap = new HashMap<>();
+        Map<FieldKey, String> columnTypeNames = new HashMap<>();
         List<FieldKey> phiColumns = new ArrayList<>();
         JSONArray domainFields;
         JSONObject field;
@@ -7988,6 +7989,11 @@ public class QueryController extends SpringActionController
         Map<FieldKey, JdbcType> getColumnMap()
         {
             return columnMap;
+        }
+
+        Map<FieldKey, String> getColumnTypeNames()
+        {
+            return columnTypeNames;
         }
 
         public String getExpression()
@@ -8062,9 +8068,11 @@ public class QueryController extends SpringActionController
                 JSONObject columnMap = json.getJSONObject("columnMap");
                 for (String key : columnMap.keySet())
                 {
+                    String typeName = String.valueOf(columnMap.get(key));
+                    getColumnTypeNames().put(FieldKey.fromParts(key), typeName);
                     try
                     {
-                        getColumnMap().put(FieldKey.fromParts(key), JdbcType.valueOf(String.valueOf(columnMap.get(key))));
+                        getColumnMap().put(FieldKey.fromParts(key), JdbcType.valueOf(typeName));
                     }
                     catch (IllegalArgumentException iae)
                     {
