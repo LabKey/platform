@@ -224,7 +224,7 @@ public interface McpService extends ToolCallbackProvider
 
     /**
      * Collapses the latest {@code count + 1} exchanges in the chat's memory into one: the first exchange's user
-     * message followed by the last exchange's reply.
+     * message followed by the latest reply. A last exchange that got no reply is dropped.
      */
     void squashExchanges(ChatClient chat, int count);
 

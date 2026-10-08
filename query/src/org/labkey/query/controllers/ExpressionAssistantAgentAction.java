@@ -130,7 +130,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
             ChatClient chatSession = getChat(true);
             JSONArray segments;
-            int repairs = 0;
+            AtomicInteger repairs = new AtomicInteger();
 
             try
             {
@@ -145,14 +145,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 segments = buildSegments(McpService.get().sendMessageEx(chatSession, composedPrompt));
 
                 Function<String, Validation> validator = sql -> validate(sql, columnMap, form.getPhiColumns());
-                List<String> problems = checkSegments(segments, validator, validationCalls.get() > 0);
-                while (!problems.isEmpty() && repairs < MAX_REPAIR_ATTEMPTS)
-                {
-                    repairs++;
-                    LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", repairs, problems);
-                    segments = buildSegments(McpService.get().sendMessageEx(chatSession, composeRepairPrompt(problems)));
-                    problems = checkSegments(segments, validator, validationCalls.get() > 0);
-                }
+                Function<JSONArray, List<String>> check = reply -> checkSegments(reply, validator, validationCalls.get() > 0);
+                segments = repair(segments, check, message -> McpService.get().sendMessageEx(chatSession, message), repairs);
             }
             catch (ChatException x)
             {
@@ -164,7 +158,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             finally
             {
                 // The user never saw the repair prompts or the replies they replaced
-                McpService.get().squashExchanges(chatSession, repairs);
+                McpService.get().squashExchanges(chatSession, repairs.get());
             }
 
             return new JSONObject(Map.of(
@@ -439,6 +433,40 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         return problems;
+    }
+
+    /**
+     * Sends a reply that fails {@code check} back to the model until it passes or the attempts run out. An attempt that
+     * fails or gets no reply ends the loop with the previous segments, which {@link #checkSegments} already made safe.
+     * @param attempts incremented before each send, so the caller can squash an attempt that got no reply
+     */
+    static JSONArray repair(JSONArray segments, Function<JSONArray, List<String>> check, Function<String, List<McpService.MessageResponse>> send, AtomicInteger attempts)
+    {
+        List<String> problems = check.apply(segments);
+        while (!problems.isEmpty() && attempts.get() < MAX_REPAIR_ATTEMPTS)
+        {
+            int attempt = attempts.incrementAndGet();
+            LOG.info("Expression assistant reply failed server-side checks, repair attempt {}: {}", attempt, problems);
+            List<McpService.MessageResponse> responses;
+            try
+            {
+                responses = send.apply(composeRepairPrompt(problems));
+            }
+            catch (ChatException x)
+            {
+                LOG.warn("Expression assistant repair attempt {} failed: {}", attempt, x.getMessage());
+                break;
+            }
+            // sendMessageEx reports an empty or failed model call as a text/plain notice instead of throwing
+            if (responses.isEmpty() || responses.stream().anyMatch(r -> "text/plain".equals(r.contentType())))
+            {
+                LOG.warn("Expression assistant repair attempt {} got no reply", attempt);
+                break;
+            }
+            segments = buildSegments(responses);
+            problems = check.apply(segments);
+        }
+        return segments;
     }
 
     /** The follow-up that sends a reply which failed {@link #checkSegments} back to the model; the user never sees it. */
@@ -1083,6 +1111,53 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals("sql", segment(segments, 1).getString("type"));
             assertFalse(segment(segments, 1).has("jdbcType"));
             assertExpressionSegment(segments, 2, "Int3 * 2", "INTEGER");
+        }
+
+        private static List<String> check(JSONArray segments)
+        {
+            return check(segments, true);
+        }
+
+        @Test
+        public void repairReplacesSegmentsUntilTheyPass()
+        {
+            AtomicInteger attempts = new AtomicInteger();
+            JSONArray segments = repair(buildSegments(List.of(markdownResponse("```expression\nInt1. Int2\n```"))), TestCase::check,
+                    prompt -> List.of(markdownResponse("```expression\nInt1 + Int2\n```")), attempts);
+
+            assertEquals(1, attempts.get());
+            assertExpressionSegment(segments, 0, "Int1 + Int2", "INTEGER");
+        }
+
+        @Test
+        public void failedRepairKeepsPreviousSegments()
+        {
+            JSONArray first = buildSegments(List.of(markdownResponse("Sum of the two.\n```expression\nInt1. Int2\n```")));
+            List<Function<String, List<McpService.MessageResponse>>> failures = List.of(
+                    prompt -> { throw new ChatException("throttled", null); },
+                    prompt -> List.of(new McpService.MessageResponse("text/plain", "The model returned an empty response.", HtmlString.of("The model returned an empty response."))),
+                    prompt -> List.of());
+
+            for (Function<String, List<McpService.MessageResponse>> send : failures)
+            {
+                AtomicInteger attempts = new AtomicInteger();
+                JSONArray segments = repair(new JSONArray(first.toString()), TestCase::check, send, attempts);
+
+                assertEquals("a failed attempt ends the loop", 1, attempts.get());
+                assertEquals(2, segments.length());
+                assertEquals("html", segment(segments, 0).getString("type"));
+                assertEquals("the failing expression stays demoted", "sql", segment(segments, 1).getString("type"));
+            }
+        }
+
+        @Test
+        public void repairStopsAfterMaxAttempts()
+        {
+            AtomicInteger attempts = new AtomicInteger();
+            repair(buildSegments(List.of(markdownResponse("```expression\nInt1. Int2\n```"))), TestCase::check,
+                    prompt -> List.of(markdownResponse("```expression\nInt1. Int3\n```")), attempts);
+
+            assertEquals(MAX_REPAIR_ATTEMPTS, attempts.get());
         }
 
         @Test
