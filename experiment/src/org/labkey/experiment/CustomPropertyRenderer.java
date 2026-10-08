@@ -18,18 +18,68 @@ package org.labkey.experiment;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Formats;
+import org.labkey.api.util.PageFlowUtil;
 
-import java.util.List;
+import java.io.File;
+import java.util.Date;
+
+import static org.labkey.api.data.AbstractFileDisplayColumn.UNAVAILABLE_FILE_SUFFIX;
 
 /**
+ * Responsible for showing custom field values (like assay run properties or sample type columns) in experiment module detail pages.
  * User: jeckels
  * Date: Jan 23, 2006
  */
-public interface CustomPropertyRenderer
+public class CustomPropertyRenderer
 {
-    boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties);
+    public String getValue(ObjectProperty prop, Container c)
+    {
+        Object o = prop.value();
+        if (o == null)
+        {
+            return "";
+        }
+        if (prop.getPropertyType() == PropertyType.FILE_LINK)
+        {
+            File f = FileUtil.getAbsoluteCaseSensitiveFile(new File(o.toString()));
+            o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.files));
+            if (o == null)
+            {
+                o = FileLinkDisplayColumn.relativize(f, FileContentService.get().getFileRoot(c, FileContentService.ContentType.pipeline));
+            }
+            if (o == null)
+            {
+                o = f.getName() + UNAVAILABLE_FILE_SUFFIX;
+            }
+        }
 
-    String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties);
+        String value;
 
-    String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c);
+        // TODO: Should have a standard method that does this
+        if (o instanceof Date d)
+            value = DateUtil.formatDateInfer(c, d);
+        else if (o instanceof Number n)
+            value = Formats.formatNumber(c, n);
+        else
+            value = o.toString();
+
+        return PageFlowUtil.filter(value);
+    }
+
+    public String getDescription(ObjectProperty prop)
+    {
+        PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(prop.getPropertyURI(), prop.getContainer());
+        String name = prop.getName();
+        if (pd != null)
+            name = pd.getLabel() != null ? pd.getLabel() : pd.getName();
+        return PageFlowUtil.filter(name);
+    }
 }
