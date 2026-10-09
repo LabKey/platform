@@ -157,8 +157,9 @@ Date and time:
   `age_in_years(d1, d2)`, `age_in_months(d1, d2)`, `age_in_days(d1, d2)`
 
 Conditional: `coalesce(v1, ..., vN)`, `nullif(a, b)`, `ifnull(test, default)`, `greatest(a, b, ...)`,
-`least(a, b, ...)`, `isnumeric(expr)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`. `isequal(a, b)` is NULL,
-not false, when only one side is NULL; prefer `a IS NOT DISTINCT FROM b`, which is always true or false.
+`least(a, b, ...)`, `isnumeric(expr)`, `CASE [operand] WHEN ... THEN ... [ELSE ...] END`. `a = b` and
+`isequal(a, b)` are NULL when only one side is NULL, so `COALESCE(a = b, TRUE)` lets a NULL match anything;
+`a IS NOT DISTINCT FROM b` is never NULL and matches NULL only to NULL, so wrapping it in COALESCE has no effect.
 
 PostgreSQL only: `ascii(s)`, `btrim(s[, chars])`, `char_length(s)`, `chr(code)`, `concat_ws(sep, v1, ...)` (skips
 NULLs), `initcap(s)`, `lpad(s, n[, fill])`, `rpad(s, n[, fill])`, `md5(s)`,
