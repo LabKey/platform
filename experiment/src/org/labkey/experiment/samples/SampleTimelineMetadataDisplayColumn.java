@@ -39,7 +39,7 @@ public class SampleTimelineMetadataDisplayColumn extends DataColumn
     private static final String LEGACY_PROVIDED_AMOUNT_KEY = PROVIDED_DATA_PREFIX + StoredAmount.label();
     private static final String WARNING_STYLE = "background-color:#fcf8e3";
     private static final String WARNING_TITLE = "Provided Amount May Be Inaccurate";
-    private static final String WARNING_MESSAGE = "This provided amount was recorded before a fix for operations of more than 1,000 rows and may be inaccurate. The stored sample amount is not affected.";
+    private static final String WARNING_MESSAGE = "This provided amount was recorded before a fix for insert or update operations of more than 1,000 rows and may be inaccurate. The stored sample amount is not affected.";
 
     public SampleTimelineMetadataDisplayColumn(ColumnInfo col)
     {
