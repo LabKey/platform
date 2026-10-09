@@ -16,7 +16,6 @@
 package org.labkey.query.controllers;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -38,6 +37,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.controllers.QueryController.ParseForm;
 import org.labkey.query.controllers.QueryController.PromptResource;
@@ -61,7 +61,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @RequiresLogin
 public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseForm>
 {
-    private static final Logger LOG = LogManager.getLogger(ExpressionAssistantAgentAction.class);
+    private static final Logger LOG = LogHelper.getLogger(ExpressionAssistantAgentAction.class, "Calculated Column Expressions Assistant");
     private static final int MAX_REPAIR_ATTEMPTS = 2;
     // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
     static final String VALIDATION_CALLS_ATTR = "validationCalls";
