@@ -1533,10 +1533,10 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
         synchronized (_fileDataUpToDateCache)
         {
-            if (_fileDataUpToDateCache.get(container.getEntityId()) != null) // already synced in the past 5 minutes, skip
+            if (_fileDataUpToDateCache.get(container) != null) // already synced in the past 5 minutes, skip
                 return;
 
-            _fileDataUpToDateCache.put(container.getEntityId(), true);
+            _fileDataUpToDateCache.put(container, true);
         }
 
         ensureFileDataUnsynchronized(table);
@@ -1765,7 +1765,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably
-    private static final Cache<GUID, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
+    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(Container.class, CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError

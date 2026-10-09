@@ -26,8 +26,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.GUID;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -39,11 +37,11 @@ import java.util.Map;
  */
 public class QuerySnapshotCache
 {
-    private static final Cache<GUID, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Query snapshots", (id, argument) -> new QuerySnapshotCollections(id));
+    private static final Cache<Container, QuerySnapshotCollections> QUERY_SNAPSHOT_DEF_CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxContainers(), CacheManager.DAY, "Query snapshots", (c, argument) -> new QuerySnapshotCollections(c));
 
     static @NotNull Collection<QuerySnapshotDef> getQuerySnapshotDefs(@Nullable Container c, @Nullable String schemaName)
     {
-        QuerySnapshotCollections collections = QUERY_SNAPSHOT_DEF_CACHE.get(null == c ? null : c.getEntityId());
+        QuerySnapshotCollections collections = QUERY_SNAPSHOT_DEF_CACHE.get(c);
 
         return null != schemaName ? collections.getForSchema(schemaName) : collections.getAllDefs();
     }
@@ -51,13 +49,12 @@ public class QuerySnapshotCache
     static @Nullable QuerySnapshotDef getQuerySnapshotDef(@NotNull Container c, @NotNull String schemaName, @NotNull String snapshotName)
     {
         assert null != c && null != schemaName && null != snapshotName;
-        return QUERY_SNAPSHOT_DEF_CACHE.get(c.getEntityId()).getForSchemaAndName(schemaName, snapshotName);
+        return QUERY_SNAPSHOT_DEF_CACHE.get(c).getForSchemaAndName(schemaName, snapshotName);
     }
 
-    static void uncache(@Nullable Container c)
+    static void uncache(Container c)
     {
-        if (null != c)
-            QUERY_SNAPSHOT_DEF_CACHE.remove(c.getEntityId());
+        QUERY_SNAPSHOT_DEF_CACHE.remove(c);
         QUERY_SNAPSHOT_DEF_CACHE.remove(null);  // Clear out the full list (used for dependency tracking)
     }
 
@@ -76,9 +73,9 @@ public class QuerySnapshotCache
         private final MultiValuedMap<String, QuerySnapshotDef> _bySchema;
         private final Map<String, Map<String, QuerySnapshotDef>> _bySchemaAndName;
 
-        private QuerySnapshotCollections(@Nullable GUID containerId)
+        private QuerySnapshotCollections(@Nullable Container c)
         {
-            SimpleFilter filter = null != containerId ? new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()) : new SimpleFilter();
+            SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
 
             _allDefs = Collections.unmodifiableCollection(
                 new TableSelector(QueryManager.get().getTableInfoQuerySnapshotDef(), filter, null)

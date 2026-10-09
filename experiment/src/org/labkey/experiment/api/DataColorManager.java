@@ -16,8 +16,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.DataColor;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,8 +29,8 @@ public class DataColorManager
     public static final int MAX_DATA_COLORS = 200;
 
     private static final DataColorManager _instance = new DataColorManager();
-    private static final Cache<GUID, DataColorCollections> CACHE = CacheManager.getBlockingCache(
-            CacheManager.UNLIMITED, CacheManager.DAY, "Data colors", (id, argument) -> new DataColorCollections(id));
+    private static final Cache<Container, DataColorCollections> CACHE = CacheManager.getBlockingCache(
+            Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data colors", (c, argument) -> new DataColorCollections(c));
     private static final Map<String, DataColorHandler> _handlers = new HashMap<>();
 
     private static class DataColorCollections
@@ -40,12 +38,12 @@ public class DataColorManager
         private final List<DataColor> _colors;
         private final Map<Long, DataColor> _byRowId;
 
-        private DataColorCollections(GUID containerId)
+        private DataColorCollections(Container c)
         {
             List<DataColor> colors = new ArrayList<>();
             Map<Long, DataColor> byRowId = new LongHashMap<>();
 
-            new TableSelector(ExperimentServiceImpl.get().getTinfoDataColors(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()),new Sort("Label"))
+            new TableSelector(ExperimentServiceImpl.get().getTinfoDataColors(), SimpleFilter.createContainerFilter(c), new Sort("Label"))
                     .forEach(DataColor.class, color -> {
                         colors.add(color);
                         byRowId.put((long) color.getRowId(), color);
@@ -91,7 +89,7 @@ public class DataColorManager
     @NotNull
     public List<DataColor> getColors(Container container)
     {
-        return CACHE.get(container.getEntityId())._colors;
+        return CACHE.get(container)._colors;
     }
 
     @NotNull
@@ -114,11 +112,11 @@ public class DataColorManager
     @Nullable
     public DataColor getColorForRowId(Container container, Long rowId)
     {
-        return rowId == null ? null : CACHE.get(container.getEntityId())._byRowId.get(rowId);
+        return rowId == null ? null : CACHE.get(container)._byRowId.get(rowId);
     }
 
     public void clearCache(Container c)
     {
-        CACHE.remove(c.getEntityId());
+        CACHE.remove(c);
     }
 }

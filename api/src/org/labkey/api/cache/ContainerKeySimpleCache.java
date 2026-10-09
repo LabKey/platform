@@ -16,7 +16,8 @@ public class ContainerKeySimpleCache<V> extends SimpleKeyMappingCache<Container,
 {
     public ContainerKeySimpleCache(@NotNull SimpleCache<GUID, V> delegate)
     {
-        super(delegate, Container::getEntityId, ContainerManager::getForId);
+        // Some caches use a null key for cross-container data (e.g., ExternalSchemaDefCache)
+        super(delegate, c -> null == c ? null : c.getEntityId(), ContainerManager::getForId);
     }
 
     public static class TestCase extends Assert

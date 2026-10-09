@@ -27,11 +27,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.util.GUID;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,7 +43,7 @@ import java.util.Map;
  */
 public class DatabaseReportCache
 {
-    private static final Cache<GUID, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database reports", (id, argument) -> ReportCollections.load(id));
+    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database reports", (c, argument) -> ReportCollections.load(c));
 
     private record ReportCollections(Map<Integer, Report> _rowIdMap, Map<String, Report> _entityIdMap,
                                      MultiValuedMap<String, Report> _reportKeyMap,
@@ -54,7 +52,7 @@ public class DatabaseReportCache
             // Issue 53472: most containers have no reports, so share one instance across them
             private static final ReportCollections EMPTY = new ReportCollections(Collections.emptyMap(), Collections.emptyMap(), MultiMapUtils.emptyMultiValuedMap(), Collections.emptyList());
 
-            private static ReportCollections load(GUID containerId)
+            private static ReportCollections load(Container c)
             {
                 ReportServiceImpl svc = ReportServiceImpl.getInstance();
                 Map<Integer, Report> rowIdMap = new IntHashMap<>();
@@ -62,7 +60,7 @@ public class DatabaseReportCache
                 MultiValuedMap<String, Report> reportKeyMap = new CaseInsensitiveArrayListValuedMap<>(); // Issue 36199: change map to by case insensitive
                 List<Report> inheritableReports = new LinkedList<>();
 
-                new TableSelector(CoreSchema.getInstance().getTableInfoReport(), new SimpleFilter(FieldKey.fromParts("ContainerId"), containerId.toString()), null).forEach(ReportDB.class, reportDB -> {
+                new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(ReportDB.class, reportDB -> {
                     Report report = svc._getInstance(reportDB);
 
                     // Reports can be null if type is unknown (e.g., defining module disappears)
@@ -116,31 +114,31 @@ public class DatabaseReportCache
 
     static @Nullable Report getReport(Container c, int rowId)
     {
-        return REPORT_DB_CACHE.get(c.getEntityId()).getForRowId(rowId);
+        return REPORT_DB_CACHE.get(c).getForRowId(rowId);
     }
 
     static @Nullable Report getReportByEntityId(Container c, String entityId)
     {
-        return REPORT_DB_CACHE.get(c.getEntityId()).getForEntityId(entityId);
+        return REPORT_DB_CACHE.get(c).getForEntityId(entityId);
     }
 
     static @NotNull Collection<Report> getReports(Container c)
     {
-        return Collections.unmodifiableCollection(REPORT_DB_CACHE.get(c.getEntityId()).getReports());
+        return Collections.unmodifiableCollection(REPORT_DB_CACHE.get(c).getReports());
     }
 
     static @NotNull Collection<Report> getReportsByReportKey(Container c, String reportKey)
     {
-        return REPORT_DB_CACHE.get(c.getEntityId()).getForReportKey(reportKey);
+        return REPORT_DB_CACHE.get(c).getForReportKey(reportKey);
     }
 
     static @NotNull Collection<Report> getInheritableReports(Container c)
     {
-        return Collections.unmodifiableCollection(REPORT_DB_CACHE.get(c.getEntityId()).getInheritableReports());
+        return Collections.unmodifiableCollection(REPORT_DB_CACHE.get(c).getInheritableReports());
     }
 
     static void uncache(Container c)
     {
-        REPORT_DB_CACHE.remove(c.getEntityId());
+        REPORT_DB_CACHE.remove(c);
     }
 }

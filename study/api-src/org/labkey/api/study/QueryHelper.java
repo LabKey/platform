@@ -28,10 +28,8 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableInfoGetter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.QueryHelper.StudyCacheCollections;
-import org.labkey.api.util.GUID;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,7 +38,7 @@ import java.util.stream.Stream;
 
 public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCacheCollections<K, T>>
 {
-    private final BlockingCache<GUID, SC> _cache;
+    private final BlockingCache<Container, SC> _cache;
     private final Class<T> _objectClass;
     private final TableInfoGetter _tableInfoGetter;
     protected final String _defaultSortString;
@@ -56,7 +54,7 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
         TableInfo tableInfo = _tableInfoGetter.getTableInfo();
-        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
+        _cache = DatabaseCache.get(Container.class, tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
         {
             final Map<K, T> map;
             try (Stream<T> stream = getTableSelector(key).uncachedStream(_objectClass))
@@ -83,14 +81,14 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         return getCollections(c).get(pk);
     }
 
-    protected TableSelector getTableSelector(GUID containerId)
+    protected TableSelector getTableSelector(Container c)
     {
-        return new TableSelector(getTableInfo(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), new Sort(_defaultSortString));
+        return new TableSelector(getTableInfo(), SimpleFilter.createContainerFilter(c), new Sort(_defaultSortString));
     }
 
     protected SC getCollections(Container c)
     {
-        return _cache.get(c.getEntityId(), null);
+        return _cache.get(c, null);
     }
 
     // map is an unmodifiable, linked map of pk -> locked object
@@ -131,7 +129,7 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
 
     public void clearCache(Container c)
     {
-        _cache.remove(c.getEntityId());
+        _cache.remove(c);
     }
 
     public void clearCache()

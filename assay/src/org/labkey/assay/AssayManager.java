@@ -142,12 +142,8 @@ public class AssayManager implements AssayService
     };
 
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<GUID, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (id, _) ->
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(Container.class, ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
-        Container c = ContainerManager.getForId(id);
-        if (null == c)
-            return Collections.emptyList();
-
         List<ExpProtocol> result = new ArrayList<>();
 
         // Filter to just the ones that have an AssayProvider associated with them
@@ -394,7 +390,7 @@ public class AssayManager implements AssayService
         Collection<Container> containerScopes = currentOnly ? List.of(container) : container.getContainersFor(ContainerType.DataType.protocol);
         for (Container containerInScope : containerScopes)
         {
-            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope.getEntityId());
+            List<ExpProtocol> ids = PROTOCOL_CACHE.get(containerInScope);
             allProtocols.addAll(ids);
         }
 

@@ -24,8 +24,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +37,7 @@ import java.util.Map;
  */
 public class IssueListDefCache
 {
-    private static final Cache<GUID, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (id, argument) -> new IssueDefCollections(id));
+    private static final Cache<Container, IssueDefCollections> ISSUE_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Issue list definitions", (c, argument) -> new IssueDefCollections(c));
 
     private static class IssueDefCollections
     {
@@ -47,13 +45,13 @@ public class IssueListDefCache
         private final Map<String, IssueListDef> _nameMap;
         private final Map<String, List<IssueListDef>> _domainKindMap;
 
-        private IssueDefCollections(GUID containerId)
+        private IssueDefCollections(Container c)
         {
             Map<Integer, IssueListDef> rowIdMap = new IntHashMap<>();
             Map<String, IssueListDef> nameMap = new HashMap<>();
             Map<String, List<IssueListDef>> domainKindMap = new HashMap<>();
 
-            new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), null).forEach(IssueListDef.class, issueDef -> {
+            new TableSelector(IssuesSchema.getInstance().getTableInfoIssueListDef(), SimpleFilter.createContainerFilter(c), null).forEach(IssueListDef.class, issueDef -> {
 
                 rowIdMap.put(issueDef.getRowId(), issueDef);
                 nameMap.put(issueDef.getName(), issueDef);
@@ -91,34 +89,29 @@ public class IssueListDefCache
         }
     }
 
-    // An issue built from API input has no container yet when its def name is resolved
-    static @Nullable IssueListDef getIssueListDef(@Nullable Container c, int rowId)
+    static @Nullable IssueListDef getIssueListDef(Container c, int rowId)
     {
-        if (c == null)
-            return null;
-        return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getForRowId(rowId);
+        return ISSUE_DEF_DB_CACHE.get(c).getForRowId(rowId);
     }
 
-    static @Nullable IssueListDef getIssueListDef(@Nullable Container c, String name)
+    static @Nullable IssueListDef getIssueListDef(Container c, String name)
     {
-        if (c == null)
-            return null;
-        return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getForName(name);
+        return ISSUE_DEF_DB_CACHE.get(c).getForName(name);
     }
 
     static @NotNull Collection<IssueListDef> getIssueListDefs(Container c)
     {
-        return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getListDefs();
+        return ISSUE_DEF_DB_CACHE.get(c).getListDefs();
     }
 
     static @NotNull Collection<IssueListDef> getForDomainKind(Container c, String kindName)
     {
-        return ISSUE_DEF_DB_CACHE.get(c.getEntityId()).getForDomainKind(kindName);
+        return ISSUE_DEF_DB_CACHE.get(c).getForDomainKind(kindName);
     }
 
     public static void uncache(Container c)
     {
-        ISSUE_DEF_DB_CACHE.remove(c.getEntityId());
+        ISSUE_DEF_DB_CACHE.remove(c);
     }
 
     public static void clearCache()

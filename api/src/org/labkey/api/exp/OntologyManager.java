@@ -247,11 +247,11 @@ public class OntologyManager
                 .toList();
         }
     });
-    private static final Cache<GUID, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (id, argument) -> {
+    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
         String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
 
         Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, id.toString()).getArrayList(DomainDescriptor.class))
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
         {
             dds.putIfAbsent(dd.getDomainURI(), dd);
         }
@@ -1551,7 +1551,7 @@ public class OntologyManager
         DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
         DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
         DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
-        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer().getEntityId());
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer());
     }
 
 
@@ -2595,7 +2595,7 @@ public class OntologyManager
         if (user != null && !c.hasPermission(user, ReadPermission.class))
             return Collections.emptyMap();
 
-        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c.getEntityId());
+        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
     }
 
     public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
@@ -2947,7 +2947,7 @@ public class OntologyManager
         DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
         DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
         uncachePropertyDescriptors(propertyURIs);
-        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer().getEntityId());
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
 
         // Cached property values embed property metadata (name, type) from any domain, so these can't be narrowed
         PROPERTY_MAP_CACHE.clear();

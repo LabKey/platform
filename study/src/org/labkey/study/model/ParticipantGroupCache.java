@@ -28,7 +28,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.model.ParticipantGroup;
-import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
@@ -41,11 +40,12 @@ import java.util.Set;
 
 public class ParticipantGroupCache
 {
-    private static final Cache<GUID, ParticipantGroupCollections> PARTICIPANT_GROUP_CACHE = CacheManager.getBlockingCache(
+    private static final Cache<Container, ParticipantGroupCollections> PARTICIPANT_GROUP_CACHE = CacheManager.getBlockingCache(
+            Container.class,
             Constants.getMaxContainers(),
             CacheManager.DAY,
             "Participant groups",
-            (id, argument) -> new ParticipantGroupCollections(id));
+            (c, _) -> new ParticipantGroupCollections(c));
 
     private static class ParticipantGroupCollections
     {
@@ -55,9 +55,8 @@ public class ParticipantGroupCache
         private final Map<Integer, ParticipantGroup> _groupRowIdMap;
         private final Map<String, ParticipantGroup> _groupLabelMap;
 
-        private ParticipantGroupCollections(GUID containerId)
+        private ParticipantGroupCollections(Container c)
         {
-            SimpleFilter containerFilter = new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString());
             Map<Integer, ParticipantGroup> groupRowIdMap = new IntHashMap<>();
             Map<String, ParticipantGroup> groupLabelMap = new HashMap<>();
             Map<Integer, Collection<ParticipantGroup>> categoryMap = new IntHashMap<>();
@@ -66,7 +65,7 @@ public class ParticipantGroupCache
             Map<String, Collection<ParticipantCategoryImpl>> typeMap = new HashMap<>();
 
             // collect the participant groups in this container
-            new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), containerFilter, null).forEach(ParticipantGroup.class, group -> {
+            new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), SimpleFilter.createContainerFilter(c), null).forEach(ParticipantGroup.class, group -> {
                 // get the participants assigned to this group
                 Filter filter = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
                 Set<String> participants = new HashSet<>((new TableSelector(ParticipantGroupManager.getTableInfoParticipantGroupMap(), Collections.singleton("participantId"), filter, new Sort("participantId")).getArrayList(String.class)));
@@ -82,7 +81,7 @@ public class ParticipantGroupCache
             });
 
             // collect the participant categories in this container
-            new TableSelector(ParticipantGroupManager.getTableInfoParticipantCategory(), containerFilter, null).forEach(ParticipantCategoryImpl.class, pc -> {
+            new TableSelector(ParticipantGroupManager.getTableInfoParticipantCategory(), SimpleFilter.createContainerFilter(c), null).forEach(ParticipantCategoryImpl.class, pc -> {
 
                 // attach groups to this category
                 if (categoryMap.containsKey(pc.getRowId()))
@@ -140,42 +139,42 @@ public class ParticipantGroupCache
 
     static @Nullable ParticipantGroup getParticipantGroup(Container c, int rowId)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getGroupForRowId(rowId);
+        return PARTICIPANT_GROUP_CACHE.get(c).getGroupForRowId(rowId);
     }
 
     static @Nullable ParticipantGroup getParticipantGroup(Container c, String label)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getGroupForLabel(label);
+        return PARTICIPANT_GROUP_CACHE.get(c).getGroupForLabel(label);
     }
 
     static @NotNull Collection<ParticipantGroup> getParticipantGroups(Container c)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getParticipantGroups();
+        return PARTICIPANT_GROUP_CACHE.get(c).getParticipantGroups();
     }
 
     static @Nullable ParticipantCategoryImpl getParticipantCategory(Container c, int rowId)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getCategoryForRowId(rowId);
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForRowId(rowId);
     }
 
     static @Nullable ParticipantCategoryImpl getParticipantCategoryForLabel(Container c, String label)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getCategoryForLabel(label);
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForLabel(label);
     }
 
     static @Nullable Collection<ParticipantCategoryImpl> getParticipantCategoryForType(Container c, String type)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getCategoryForType(type);
+        return PARTICIPANT_GROUP_CACHE.get(c).getCategoryForType(type);
     }
 
     static @NotNull Collection<ParticipantCategoryImpl> getParticipantCategories(Container c)
     {
-        return PARTICIPANT_GROUP_CACHE.get(c.getEntityId()).getParticipantCategories();
+        return PARTICIPANT_GROUP_CACHE.get(c).getParticipantCategories();
     }
 
     public static void uncache(Container c)
     {
-        PARTICIPANT_GROUP_CACHE.remove(c.getEntityId());
+        PARTICIPANT_GROUP_CACHE.remove(c);
     }
 
     public static void clearCache()

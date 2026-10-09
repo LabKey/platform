@@ -18,7 +18,6 @@ package org.labkey.api.qc;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.LongHashMap;
@@ -29,9 +28,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
@@ -45,8 +42,8 @@ public class DataStateManager
     private static final Logger LOG = LogHelper.getLogger(DataStateManager.class, "Data state persistence issues");
     private static final DataStateManager _instance = new DataStateManager();
     private static final Map<String, DataStateHandler<AbstractManageDataStatesForm>> _DataStateHandlers = new HashMap<>();
-    private static final Cache<GUID, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
-            (id, argument) -> new DataStateCollections(id)
+    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
+            (c, argument) -> new DataStateCollections(c)
     );
 
     private static class DataStateCollections
@@ -55,13 +52,13 @@ public class DataStateManager
         private final Map<Long, DataState> _dataStateIdMap;
         private final Map<String, DataState> _dataStateLabelMap;
 
-        private DataStateCollections(GUID containerId)
+        private DataStateCollections(Container c)
         {
             List<DataState> dataStates = new ArrayList<>();
             Map<Long, DataState> dataStateIdMap = new LongHashMap<>();
             Map<String, DataState>  dataStateLabelMap = new StringHashMap<>();
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), new Sort("Label")).forEach(DataState.class, dataState -> {
+            new TableSelector(CoreSchema.getInstance().getTableInfoDataStates(), SimpleFilter.createContainerFilter(c), new Sort("Label")).forEach(DataState.class, dataState -> {
 
                 dataStates.add(dataState);
                 dataStateIdMap.put(dataState.getRowId(), dataState);
@@ -98,13 +95,9 @@ public class DataStateManager
     }
 
     @NotNull
-    public List<DataState> getStates(@Nullable Container container)
+    public List<DataState> getStates(Container container)
     {
-        // The root has no project, which SampleStateManager.getAllProjectStates() passes through
-        if (container == null)
-            return Collections.emptyList();
-
-        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getDataStates();
+        return DATA_STATE_DB_CACHE.get(container).getDataStates();
     }
 
     public void registerDataStateHandler(DataStateHandler handler)
@@ -129,14 +122,14 @@ public class DataStateManager
     public DataState insertState(User user, DataState state)
     {
         DataState newState = Table.insert(user, CoreSchema.getInstance().getTableInfoDataStates(), state);
-        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
+        DATA_STATE_DB_CACHE.remove(state.getContainer());
 
         return newState;
     }
 
     public DataState updateState(User user, DataState state)
     {
-        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
+        DATA_STATE_DB_CACHE.remove(state.getContainer());
         SimpleFilter filter = SimpleFilter.createContainerFilter(state.getContainer());
         return Table.update(user, CoreSchema.getInstance().getTableInfoDataStates(), state, state.getRowId(), filter, Level.WARN);
     }
@@ -144,31 +137,31 @@ public class DataStateManager
     public boolean deleteState(DataState state)
     {
         List<DataState> preDeleteStates = getStates(state.getContainer());
-        DATA_STATE_DB_CACHE.remove(state.getContainer().getEntityId());
+        DATA_STATE_DB_CACHE.remove(state.getContainer());
         Table.delete(CoreSchema.getInstance().getTableInfoDataStates(), state.getRowId());
 
         // return whether this is the last data state as it may matter for some clients
         return (preDeleteStates.size() == 1);
     }
 
-    public DataState getStateForRowId(@Nullable Container container, Long rowId)
+    public DataState getStateForRowId(Container container, Long rowId)
     {
-        if (container == null || rowId == null)
+        if (rowId == null)
             return null;
 
-        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(rowId);
+        return DATA_STATE_DB_CACHE.get(container).getState(rowId);
     }
 
-    public DataState getStateForLabel(@Nullable Container container, String label)
+    public DataState getStateForLabel(Container container, String label)
     {
-        if (container == null || label == null)
+        if (label == null)
             return null;
 
-        return DATA_STATE_DB_CACHE.get(container.getEntityId()).getState(label);
+        return DATA_STATE_DB_CACHE.get(container).getState(label);
     }
 
     public void clearCache(Container c)
     {
-        DATA_STATE_DB_CACHE.remove(c.getEntityId());
+        DATA_STATE_DB_CACHE.remove(c);
     }
 }

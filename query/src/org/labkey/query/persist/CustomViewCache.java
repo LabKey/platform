@@ -27,9 +27,7 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,9 +42,9 @@ import java.util.stream.Collectors;
  */
 public class CustomViewCache
 {
-    private static final Cache<GUID, CustomViewCollections> CUSTOM_VIEW_DB_CACHE = CacheManager.getBlockingCache(
-            CacheManager.UNLIMITED, CacheManager.DAY, "Database custom views",
-            (id, argument) -> new CustomViewCollections(id)
+    private static final Cache<Container, CustomViewCollections> CUSTOM_VIEW_DB_CACHE = CacheManager.getBlockingCache(
+            Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database custom views",
+            (c, argument) -> new CustomViewCollections(c)
     );
 
     private static class CustomViewCollections
@@ -57,14 +55,14 @@ public class CustomViewCache
         private final Map<Integer, CstmView> _rowIdMap;
         private final Map<String, CstmView> _entityIdMap;
 
-        private CustomViewCollections(GUID containerId)
+        private CustomViewCollections(Container c)
         {
             Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> customViews = new CaseInsensitiveHashMap<>();
             Map<String, CaseInsensitiveArrayListValuedMap<CstmView>> inheritableCustomViews = new CaseInsensitiveHashMap<>();
             Map<Integer, CstmView> rowIdMap = new IntHashMap<>();
             Map<String, CstmView> entityIdMap = new HashMap<>();
 
-            new TableSelector(QueryManager.get().getTableInfoCustomView(), new SimpleFilter(FieldKey.fromParts("Container"), containerId.toString()), null).forEach(CstmView.class, cstmView -> {
+            new TableSelector(QueryManager.get().getTableInfoCustomView(), SimpleFilter.createContainerFilter(c), null).forEach(CstmView.class, cstmView -> {
 
                 MultiValuedMap<String, CstmView> viewMap = ensureViewMultiMap(customViews, cstmView.getSchema());
 
@@ -168,7 +166,7 @@ public class CustomViewCache
     {
         List<CstmView> views = new ArrayList<>();
 
-        for (CstmView view : CUSTOM_VIEW_DB_CACHE.get(c.getEntityId()).getCstmViews(schemaName, queryName, viewName, inheritableOnly))
+        for (CstmView view : CUSTOM_VIEW_DB_CACHE.get(c).getCstmViews(schemaName, queryName, viewName, inheritableOnly))
         {
             if (sharedOnly)
             {
@@ -196,16 +194,16 @@ public class CustomViewCache
 
     static @Nullable CstmView getCstmView(Container c, int rowId)
     {
-        return CUSTOM_VIEW_DB_CACHE.get(c.getEntityId()).getForRowId(rowId);
+        return CUSTOM_VIEW_DB_CACHE.get(c).getForRowId(rowId);
     }
 
     static @Nullable CstmView getCstmViewByEntityId(Container c, String entityId)
     {
-        return CUSTOM_VIEW_DB_CACHE.get(c.getEntityId()).getForEntityId(entityId);
+        return CUSTOM_VIEW_DB_CACHE.get(c).getForEntityId(entityId);
     }
 
     public static void uncache(Container c)
     {
-        CUSTOM_VIEW_DB_CACHE.remove(c.getEntityId());
+        CUSTOM_VIEW_DB_CACHE.remove(c);
     }
 }
