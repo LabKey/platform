@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -110,7 +111,7 @@ public class UnloggedTableGeneration
     {
         DbScope scope = DbScope.getLabKeyScope();
         // Own connection, so a caller's rollback can't undo the marker insert
-        try (Connection conn = scope.getPooledConnection())
+        try (var ignored = SpringActionController.ignoreSqlUpdates(); Connection conn = scope.getPooledConnection())
         {
             String markerName = _markerName;
             if (null == markerName)
