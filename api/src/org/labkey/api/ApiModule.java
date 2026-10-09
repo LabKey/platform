@@ -37,6 +37,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.ContainerKeySimpleCache;
+import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -495,6 +497,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
+            SimpleKeyMappingCache.TestCase.class,
             SqlExecutingSelector.TestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
@@ -547,6 +550,7 @@ public class ApiModule extends CodeOnlyModule
             ConnectionUsage.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
+            ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
             DbSchema.DDLMethodsTestCase.class,
@@ -558,7 +562,7 @@ public class ApiModule extends CodeOnlyModule
             DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
-                DisplayColumn.TestCase.class,
+            DisplayColumn.TestCase.class,
             DomTestCase.class,
             DomainTemplateGroup.TestCase.class,
             Encryption.TestCase.class,

@@ -27,7 +27,7 @@ import org.labkey.api.security.User;
 // properties on a per-container basis and clear the entire cache on every change of look and feel settings.
 public class FolderSettingsCache
 {
-    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, argument) -> new FolderSettings(c));
+    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, _) -> new FolderSettings(c));
 
     public static String getDefaultDateFormat(Container c)
     {
