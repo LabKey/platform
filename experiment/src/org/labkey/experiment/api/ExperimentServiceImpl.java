@@ -268,6 +268,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -4973,21 +4974,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                     docids.add(material.getDocumentId());
 
-                    // No cached view means no reader for the ids, so skip collecting them
-                    if (!untrackedDeletes.contains(material.getCpasType()) && !deletedRowIds.containsKey(material.getCpasType()) && !ExpMaterialTableImpl.isMaterialized(material.getCpasType()))
-                        untrackedDeletes.add(material.getCpasType());
-
-                    if (!untrackedDeletes.contains(material.getCpasType()))
-                    {
-                        Set<Long> ids = deletedRowIds.computeIfAbsent(material.getCpasType(), (_) -> new LongHashSet());
-                        ids.add(material.getRowId());
-                        if (ids.size() > ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
-                        {
-                            deletedRowIds.remove(material.getCpasType());
-                            untrackedDeletes.add(material.getCpasType());
-                        }
-                    }
-
                     if (null == stDeleteFrom)
                     {
                         if (deleteFromAllSampleTypes)
@@ -5013,13 +4999,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // verify the material doesn't belong to a SampleType
                         if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                             throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                    }
-
-                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                    {
-                        ExpSampleType sampleType = material.getSampleType();
-                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (_) -> new HashSet<>())
-                                .add(material.getRootMaterialRowId());
                     }
                 }
 
@@ -5130,11 +5109,49 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            int deletedCount;
             try (Timing ignored = MiniProfiler.step("exp.Material"))
             {
-                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE ");
-                materialSQL.append(materialFilterSQL);
-                executor.execute(materialSQL);
+                // Take ids from the delete itself so they match exactly what was removed
+                SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+                    .append(materialFilterSQL)
+                    .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                    .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+                if (truncateContainer)
+                    materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+                else
+                    materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                        .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                        .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+                materialSQL.append("\nFROM deleted GROUP BY CpasType");
+
+                deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
+                    int total = 0;
+                    while (rs.next())
+                    {
+                        String cpasType = rs.getString("CpasType");
+                        total += rs.getInt("DeletedCount");
+
+                        // No cached view means no reader for the ids, so skip collecting them
+                        Array rowIds = rs.getArray("RowIds");
+                        if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
+                            untrackedDeletes.add(cpasType);
+                        else
+                            deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
+
+                        Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
+                        if (roots != null)
+                        {
+                            ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
+                                    sampleTypes.get(cpasType) :
+                                    SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
+                            if (sampleType != null)
+                                sampleTypeAliquotRoots.computeIfAbsent(sampleType,
+                                        (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
+                        }
+                    }
+                    return total;
+                });
             }
 
             // clean up provenance
@@ -5192,7 +5209,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             transaction.commit();
             if (timing != null)
                 LOG.info("SampleType delete timings\n{}", timing.dump());
-            return count;
+            return deletedCount;
         }
     }
 
