@@ -91,14 +91,20 @@ public class UnloggedTableGeneration
         }
     }
 
-    /** Empties the marker as a reset would and checks it immediately. Callers must empty their own UNLOGGED tables. */
+    /**
+     * Empties the marker as a reset would and checks it immediately. Callers must empty their own UNLOGGED tables.
+     * Invalidates every UNLOGGED materialized table on the server, not just the caller's.
+     */
     public static void simulateResetForTest()
     {
         current();
         _checkLock.lock();
         try
         {
-            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("TRUNCATE ").append(markerTable(_markerName)));
+            String markerName = _markerName;
+            if (null == markerName)
+                throw new IllegalStateException("No UNLOGGED marker table; the initial check failed");
+            new SqlExecutor(DbScope.getLabKeyScope()).execute(new SQLFragment("TRUNCATE ").append(markerTable(markerName)));
             check();
         }
         finally
