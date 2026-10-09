@@ -26,7 +26,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
@@ -44,7 +43,7 @@ public class ProtocolColumn extends ExperimentAuditColumn<ExpProtocol>
 
     @Nullable
     @Override
-    protected Pair<ExpProtocol, ActionURL> getExpValue(RenderContext ctx)
+    protected ExpLink<ExpProtocol> getExpValue(RenderContext ctx)
     {
         Object protocolId = getBoundColumn().getValue(ctx);
 
@@ -69,7 +68,7 @@ public class ProtocolColumn extends ExperimentAuditColumn<ExpProtocol>
                     url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
                 else if (protocol != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
-                return protocol == null ? null : new Pair<>(protocol, url);
+                return protocol == null ? null : new ExpLink<>(protocol, url);
             }
         }
         return null;

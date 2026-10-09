@@ -148,21 +148,24 @@ public class DilutionSummary implements Serializable
         return (String) _firstGroup.getProperty(SampleProperty.SampleDescription.name());
     }
 
-    private Map<WellData, WellGroup> _dataToSample;
+    private volatile Map<WellData, WellGroup> _dataToSample;
     private Map<WellData, WellGroup> getDataToSampleMap()
     {
-        if (_dataToSample == null)
+        Map<WellData, WellGroup> dataToSample = _dataToSample;
+        if (dataToSample == null)
         {
-            _dataToSample = new HashMap<>();
+            // Populate before publishing, since cached runs are shared by concurrent graph requests
+            dataToSample = new HashMap<>();
             for (WellGroup sampleGroup : _sampleGroups)
             {
                 for (WellData data : sampleGroup.getWellData(true))
                 {
-                    _dataToSample.put(data, sampleGroup);
+                    dataToSample.put(data, sampleGroup);
                 }
             }
+            _dataToSample = dataToSample;
         }
-        return _dataToSample;
+        return dataToSample;
     }
 
     public double getPercent(WellData data) throws FitFailedException
