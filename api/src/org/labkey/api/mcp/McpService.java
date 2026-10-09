@@ -213,10 +213,16 @@ public interface McpService extends ToolCallbackProvider
 
     record VectorDocument(String id, String text, Map<String, Object> metadata) {}
 
-    /** get a consolidated response (good for many text-oriented agents/use-cases) */
+    /**
+     * get a consolidated response (good for many text-oriented agents/use-cases)
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     MessageResponse sendMessage(ChatClient chat, String message);
 
-    /** get individual response parts, useful for agents that generate SQL or programmatic responses */
+    /**
+     * get individual response parts, useful for agents that generate SQL or programmatic responses
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     default List<MessageResponse> sendMessageEx(ChatClient chat, String message)
     {
         return List.of(sendMessage(chat, message));

@@ -27,6 +27,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
+import org.labkey.api.mcp.GuardrailException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.query.FieldKey;
@@ -125,6 +126,16 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 Function<String, Validation> validator = sql -> validate(sql, columnMap, form.getPhiColumns());
                 Function<JSONArray, List<String>> check = reply -> checkSegments(reply, validator, validationCalls.get() > 0);
                 segments = repair(segments, check, message -> McpService.get().sendMessageEx(chatSession, message), repairs);
+            }
+            catch (GuardrailException x)
+            {
+                JSONObject ret = new JSONObject(Map.of(
+                        "error", x.getMessage(),
+                        "success", Boolean.FALSE));
+                // A blocked first turn took the column context with it, so the client must start a new conversation
+                if (!firstTurn)
+                    ret.put("conversationId", getConversationId());
+                return ret;
             }
             catch (ChatException x)
             {
@@ -383,7 +394,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     /**
      * Sends a reply that fails {@code check} back to the model until it passes or the attempts run out. An attempt that
      * fails or gets no reply ends the loop with the previous segments, which {@link #checkSegments} already made safe.
-     * @param attempts incremented before each send, so the caller can squash an attempt that got no reply
+     * @param attempts the attempts still in the chat's memory, incremented before each send, so the caller can squash
+     *                 an attempt that got no reply
      */
     static JSONArray repair(JSONArray segments, Function<JSONArray, List<String>> check, Function<String, List<McpService.MessageResponse>> send, AtomicInteger attempts)
     {
@@ -396,6 +408,13 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             try
             {
                 responses = send.apply(composeRepairPrompt(problems));
+            }
+            catch (GuardrailException x)
+            {
+                LOG.warn("Expression assistant repair attempt {} was blocked by a guardrail", attempt);
+                // The service already dropped the blocked exchange
+                attempts.decrementAndGet();
+                break;
             }
             catch (ChatException x)
             {
@@ -1094,6 +1113,25 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
                 assertEquals("html", segment(segments, 0).getString("type"));
                 assertEquals("the failing expression stays demoted", "sql", segment(segments, 1).getString("type"));
             }
+        }
+
+        @Test
+        public void blockedRepairIsNotCounted()
+        {
+            JSONArray first = buildSegments(List.of(markdownResponse("Sum of the two.\n```expression\nInt1. Int2\n```")));
+            List<String> sent = new ArrayList<>();
+            AtomicInteger attempts = new AtomicInteger();
+            JSONArray segments = repair(first, TestCase::check, prompt -> {
+                sent.add(prompt);
+                if (sent.size() == 1)
+                    return List.of(markdownResponse("```expression\nInt1. Int3\n```"));
+                throw new GuardrailException("blocked");
+            }, attempts);
+
+            assertEquals(2, sent.size());
+            assertEquals("the blocked attempt is no longer in memory to squash", 1, attempts.get());
+            assertEquals("Int1. Int3", segment(segments, 0).getString("sql"));
+            assertEquals("sql", segment(segments, 0).getString("type"));
         }
 
         @Test
