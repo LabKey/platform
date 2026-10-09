@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -275,6 +276,16 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(String tableAlias, Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return toSQLFragment(columnMap, dialect);
+        }
+
+        /**
+         * Replace this clause with an equivalent join, added to joins keyed by its alias, and return true to drop it from the WHERE.
+         * Only return true when the join is exactly equivalent to this clause's predicate; in particular its right side must be unique, or rows multiply.
+         * The caller decides whether the query shape makes a join worthwhile, so implementations may assume the query is sorted and paged.
+         */
+        public boolean replaceWithJoin(@NotNull TableInfo table, @NotNull String tableAlias, @NotNull Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull Map<String, SQLFragment> joins)
+        {
+            return false;
         }
 
         @Override
@@ -889,6 +900,67 @@ public class SimpleFilter implements Filter
             }
 
             return in;
+        }
+
+        @Override
+        public boolean replaceWithJoin(@NotNull TableInfo table, @NotNull String tableAlias, @NotNull Map<FieldKey, ? extends ColumnInfo> columnMap, @NotNull Map<String, SQLFragment> joins)
+        {
+            List<ColumnInfo> pkColumns = table.getPkColumns();
+            if (pkColumns.size() != 1)
+                return false;
+            ColumnInfo pkColumn = columnMap.get(pkColumns.get(0).getFieldKey());
+            if (null == pkColumn || !pkColumn.getFieldKey().equals(getFieldKey()))
+                return false;
+
+            // The temp table's Id values are unique, so the join selects exactly the rows the IN would have
+            TempTableInfo tempTable = getDrivingTempTable(table.getSqlDialect(), pkColumn);
+            if (null == tempTable)
+                return false;
+
+            AliasManager aliasManager = new AliasManager(table, null);
+            aliasManager.claimAlias(tableAlias, tableAlias);
+            joins.keySet().forEach(a -> aliasManager.claimAlias(a, a));
+            String alias = aliasManager.decideAlias("_drive_");
+
+            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).append(" ").append(alias)
+                .append(" ON ").append(pkColumn.getValueSql(tableAlias)).append(" = ").append(alias).append(".Id");
+            join.addTempToken(tempTable);
+            joins.put(alias, join);
+            return true;
+        }
+
+        private @Nullable TempTableInfo getDrivingTempTable(SqlDialect dialect, @Nullable ColumnInfo colInfo)
+        {
+            if (isNegated() || isIncludeNull())
+                return null;
+            Object[] params = getParamVals();
+
+            List<Object> convertedParams;
+            if (null == colInfo || !needsTypeConversion())
+            {
+                convertedParams = Arrays.asList(params);
+            }
+            else
+            {
+                convertedParams = new ArrayList<>();
+                for (Object param : params)
+                {
+                    try
+                    {
+                        convertedParams.add(CompareType.convertParamValue(colInfo, param));
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        if (!(e.getSQLException() instanceof SQLGenerationException))
+                            throw e;
+                    }
+                }
+            }
+
+            if (convertedParams.size() < SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE)
+                return null;
+            InClauseGenerator generator = null != _tempTableGenerator ? _tempTableGenerator : dialect.getTempTableInClauseGenerator();
+            return null == generator ? null : generator.getTempTableInfo(convertedParams);
         }
 
         public void addInValue(Object... values)
