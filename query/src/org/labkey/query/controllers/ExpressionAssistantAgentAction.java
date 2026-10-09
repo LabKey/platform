@@ -65,28 +65,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
     private static final int MAX_REPAIR_ATTEMPTS = 2;
     // McpContext attribute holding an AtomicInteger that validateCalculatedColumnExpression increments per call
     static final String VALIDATION_CALLS_ATTR = "validationCalls";
-    // Field designer type names (PropDescType and system field DataType, upper-cased) that aren't JdbcType names
-    private static final Map<String, JdbcType> DESIGNER_TYPES = Map.ofEntries(
-            Map.entry("ATTACHMENT", JdbcType.VARCHAR),
-            Map.entry("DATETIME", JdbcType.TIMESTAMP),
-            Map.entry("DECIMAL (FLOATING POINT)", JdbcType.DOUBLE),
-            Map.entry("FILELINK", JdbcType.VARCHAR),
-            Map.entry("FLOAT", JdbcType.REAL),
-            Map.entry("INT", JdbcType.INTEGER),
-            Map.entry("LONG", JdbcType.BIGINT),
-            Map.entry("MULTILINE", JdbcType.VARCHAR),
-            Map.entry("ONTOLOGYLOOKUP", JdbcType.VARCHAR),
-            Map.entry("PARTICIPANTID", JdbcType.VARCHAR),
-            Map.entry("SAMPLE", JdbcType.INTEGER),
-            Map.entry("SMILES", JdbcType.VARCHAR),
-            Map.entry("STRING", JdbcType.VARCHAR),
-            Map.entry("TEXT", JdbcType.VARCHAR),
-            Map.entry("TEXTCHOICE", JdbcType.VARCHAR),
-            Map.entry("UNIQUEID", JdbcType.VARCHAR),
-            Map.entry("USERS", JdbcType.INTEGER),
-            Map.entry("VISITDATE", JdbcType.TIMESTAMP),
-            Map.entry("VISITID", JdbcType.DOUBLE),
-            Map.entry("VISITLABEL", JdbcType.VARCHAR));
 
     @Override
     protected String getAgentName()
@@ -115,7 +93,7 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
             boolean firstTurn = isBlank(form.getConversationId());
             String prompt = form.getPrompt();
-            Map<FieldKey, JdbcType> columnMap = columnTypes(form.getColumnTypeNames());
+            Map<FieldKey, JdbcType> columnMap = form.getColumnMap();
             JSONArray columns = describeColumns(form.getDomainFields(), form.getField(), columnMap, form.getPhiColumns());
             JSONObject field = form.getField() == null ? null : describeField(form.getField());
             String composedPrompt = composePrompt(firstTurn, prompt, field, columns, form.getFieldExpression(), form.getFieldError());
@@ -172,28 +150,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
     }
 
-    /** Translates the column types sent by the field designer to JdbcTypes, or OTHER when unknown. */
-    static Map<FieldKey, JdbcType> columnTypes(Map<FieldKey, String> typeNames)
-    {
-        return typeNames.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> jdbcType(e.getValue())));
-    }
-
-    private static JdbcType jdbcType(String typeName)
-    {
-        String name = typeName.toUpperCase();
-        JdbcType type = DESIGNER_TYPES.get(name);
-        if (type != null)
-            return type;
-        try
-        {
-            return JdbcType.valueOf(name);
-        }
-        catch (IllegalArgumentException e)
-        {
-            return JdbcType.OTHER;
-        }
-    }
-
     /**
      * Reduces the client's field JSON to what the model needs. A column the validator rejects (PHI, calculated,
      * multi-choice, or missing from the column map) is marked "unusable" with the reason, so the model doesn't reference
@@ -228,9 +184,8 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
 
                 JSONObject column = describeField(f);
                 JdbcType type = columnMap.get(key);
-                JdbcType describedType = type == null || type == JdbcType.OTHER ? propertyJdbcType(f) : type;
-                if (describedType != null && describedType != JdbcType.OTHER)
-                    column.put("type", describedType.name());
+                if (type != null && type != JdbcType.OTHER)
+                    column.put("type", type.name());
                 if (expression != null)
                     column.put("expression", expression);
                 if (phiColumns.contains(key))
@@ -256,16 +211,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             }
         });
         return columns;
-    }
-
-    // For columnMap types columnTypes() doesn't know, such as LOOKUP
-    private static @Nullable JdbcType propertyJdbcType(JSONObject f)
-    {
-        String rangeURI = text(f, "rangeURI");
-        if (rangeURI == null)
-            return null;
-        PropertyType pt = PropertyType.getFromURI(text(f, "conceptURI"), rangeURI, null);
-        return pt == null ? null : pt.getJdbcType();
     }
 
     static JSONObject describeField(JSONObject f)
@@ -1271,28 +1216,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
         }
 
         @Test
-        public void columnTypesTranslatesDesignerTypeNames()
-        {
-            // Values as getColumnTypeMap() in the field designer sends them
-            Map<FieldKey, JdbcType> types = columnTypes(Map.of(
-                    FieldKey.fromParts("Name"), "TEXT",
-                    FieldKey.fromParts("Color"), "TEXTCHOICE",
-                    FieldKey.fromParts("Created"), "DATETIME",
-                    FieldKey.fromParts("StoredAmount"), "DECIMAL (FLOATING POINT)",
-                    FieldKey.fromParts("Int1"), "INTEGER",
-                    FieldKey.fromParts("Flag"), "boolean",
-                    FieldKey.fromParts("Parent"), "LOOKUP"));
-
-            assertEquals(JdbcType.VARCHAR, types.get(FieldKey.fromParts("Name")));
-            assertEquals(JdbcType.VARCHAR, types.get(FieldKey.fromParts("Color")));
-            assertEquals(JdbcType.TIMESTAMP, types.get(FieldKey.fromParts("Created")));
-            assertEquals(JdbcType.DOUBLE, types.get(FieldKey.fromParts("StoredAmount")));
-            assertEquals(JdbcType.INTEGER, types.get(FieldKey.fromParts("Int1")));
-            assertEquals(JdbcType.BOOLEAN, types.get(FieldKey.fromParts("Flag")));
-            assertEquals(JdbcType.OTHER, types.get(FieldKey.fromParts("Parent")));
-        }
-
-        @Test
         public void describeColumnsKeepsOnlyWhatTheModelNeeds()
         {
             JSONArray domainFields = fields("""
@@ -1306,28 +1229,6 @@ public class ExpressionAssistantAgentAction extends AbstractAgentAction<ParseFor
             assertEquals(Set.of("name", "label", "description", "type"), int1.keySet());
             assertEquals("INTEGER", int1.getString("type"));
             assertEquals("VARCHAR", column(columns, "Status").getString("type"));
-        }
-
-        @Test
-        public void describeColumnsTakesTypeFromRangeUriWhenColumnMapHasOther()
-        {
-            JSONArray domainFields = fields("""
-                [{"name":"Status","rangeURI":"http://www.w3.org/2001/XMLSchema#string"},
-                 {"name":"CollectionDate","rangeURI":"http://www.w3.org/2001/XMLSchema#dateTime"},
-                 {"name":"Color","rangeURI":"http://www.w3.org/2001/XMLSchema#string","conceptURI":"http://www.labkey.org/types#textChoice"},
-                 {"name":"Mystery"}]
-                """);
-            JSONArray columns = describeColumns(domainFields, null, Map.of(
-                    FieldKey.fromParts("Status"), JdbcType.OTHER,
-                    FieldKey.fromParts("CollectionDate"), JdbcType.OTHER,
-                    FieldKey.fromParts("Color"), JdbcType.OTHER,
-                    FieldKey.fromParts("Mystery"), JdbcType.OTHER), List.of());
-
-            assertEquals("VARCHAR", column(columns, "Status").getString("type"));
-            assertEquals("TIMESTAMP", column(columns, "CollectionDate").getString("type"));
-            assertEquals("VARCHAR", column(columns, "Color").getString("type"));
-            assertFalse(column(columns, "Mystery").has("type"));
-            assertFalse(column(columns, "Mystery").has("unusable"));
         }
 
         @Test
