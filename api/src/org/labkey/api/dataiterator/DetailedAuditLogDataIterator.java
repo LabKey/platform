@@ -17,7 +17,10 @@ package org.labkey.api.dataiterator;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -28,8 +31,11 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
@@ -105,6 +111,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             if (!_updatedRows.isEmpty())
                 _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _providedValues, _useTransactionAuditCache);
             _updatedRows.clear();
+            _providedValues.clear();
             if (null != _existingRows)
                 _existingRows.clear();
         }
@@ -171,5 +178,55 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     public boolean supportsGetExistingRecord()
     {
         return _data.supportsGetExistingRecord();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testProvidedValuesAlignAcrossBatches() throws Exception
+        {
+            int rowCount = 2500;
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (int i = 0; i < rowCount; i++)
+                rows.add(CaseInsensitiveHashMap.of("name", "S-" + i));
+
+            List<Integer> batchSizes = new ArrayList<>();
+            List<String> auditedNames = new ArrayList<>();
+            AuditHandler recorder = (AuditHandler) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{AuditHandler.class}, (_, method, args) -> {
+                if (method.getName().equals("addAuditEvent") && args.length == 10)
+                {
+                    @SuppressWarnings("unchecked") List<Map<String, Object>> batchRows = (List<Map<String, Object>>) args[6];
+                    @SuppressWarnings("unchecked") List<Map<String, Object>> provided = (List<Map<String, Object>>) args[8];
+                    assertEquals("provided values must pair one-to-one with the batch's rows", batchRows.size(), provided.size());
+                    batchSizes.add(batchRows.size());
+                    for (int i = 0; i < batchRows.size(); i++)
+                    {
+                        assertEquals(batchRows.get(i).get("name"), provided.get(i).get("providedName"));
+                        auditedNames.add((String) batchRows.get(i).get("name"));
+                    }
+                }
+                return null;
+            });
+            TableInfo table = (TableInfo) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{TableInfo.class}, (_, method, _) -> switch (method.getName())
+            {
+                case "supportsAuditTracking" -> true;
+                case "getEffectiveAuditBehavior" -> DETAILED;
+                case "getAuditHandler" -> recorder;
+                default -> null;
+            });
+
+            DataIteratorBuilder source = _ -> new ListofMapsDataIterator(Set.of("name"), rows);
+            DataIteratorBuilder audited = getDataIteratorBuilder(table, source, QueryUpdateService.InsertOption.INSERT, null, null, row -> Map.of("providedName", row.get("name")));
+            try (DataIterator it = audited.getDataIterator(new DataIteratorContext()))
+            {
+                assertTrue(it instanceof DetailedAuditLogDataIterator);
+                while (it.next())
+                {
+                }
+            }
+
+            assertTrue("expected more than one audit batch", batchSizes.size() > 1);
+            assertEquals(rows.stream().map(row -> row.get("name")).toList(), auditedNames);
+        }
     }
 }
