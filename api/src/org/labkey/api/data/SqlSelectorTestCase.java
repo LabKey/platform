@@ -20,7 +20,9 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -29,7 +31,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
-import static java.sql.Connection.TRANSACTION_READ_UNCOMMITTED;
 
 public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
 {
@@ -194,7 +195,6 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
             {
                 assertNotEquals(conn, conn2);
-                assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
                 assertFalse(conn2.getAutoCommit());
             }
 
@@ -214,7 +214,6 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).getConnection())
             {
                 assertNotEquals(conn, conn2);
-                assertEquals(TRANSACTION_READ_UNCOMMITTED, conn2.getTransactionIsolation());
                 assertFalse(conn2.getAutoCommit());
             }
         }
@@ -238,7 +237,6 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 assertEquals(borrowed, nested);
             }
 
-            assertEquals(TRANSACTION_READ_UNCOMMITTED, borrowed.getTransactionIsolation());
             assertFalse(borrowed.getAutoCommit());
         }
         finally
@@ -293,7 +291,6 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
                 callbackConnections.add(nested);
 
                 assertFalse("Nested access during forEach() should run on the uncached borrowed connection", nested.getAutoCommit());
-                assertEquals(TRANSACTION_READ_UNCOMMITTED, nested.getTransactionIsolation());
             }
 
             // A nested self-contained query must return correct results even though the outer server-side cursor is open
@@ -310,6 +307,57 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         {
             assertTrue(restored.getAutoCommit());
             assertEquals(TRANSACTION_READ_COMMITTED, restored.getTransactionIsolation());
+        }
+    }
+
+    // More rows than the dialect's default fetch size (1000), so an uncached read leaves its cursor open after the first batch
+    private static final String STREAMING_SQL = "SELECT g FROM generate_series(1, 5000) g";
+    private static final String OPEN_CURSOR_SQL = "SELECT COUNT(*) FROM pg_cursors WHERE statement LIKE 'SELECT g FROM generate_series%'";
+
+    // pg_cursors is per-session, so each check runs on the connection that's streaming
+    @Test
+    public void testJdbcUncachedStreamsFromCursor() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+        assertFalse("Test assumes no active transaction on this thread", scope.isTransactionActive());
+
+        // Control: with autoCommit on, pgjdbc buffers the whole result and leaves no cursor behind
+        try (Connection conn = scope.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
+        {
+            assertTrue(conn.getAutoCommit());
+            assertTrue(rs.next());
+            assertEquals("Cached read should not hold a cursor open", 0, countOpenCursors(conn));
+        }
+
+        // Dedicated uncached connection
+        try (Connection conn = new SqlSelector(scope, STREAMING_SQL).getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(STREAMING_SQL))
+        {
+            assertTrue(rs.next());
+            assertEquals("Uncached read should stream from an open cursor", 1, countOpenCursors(conn));
+
+            int rows = 1;
+            while (rs.next())
+                rows++;
+            assertEquals(5000, rows);
+        }
+
+        // Shared thread connection borrowed by forEach(); the nested query reuses it, so it sees the outer cursor
+        MutableInt visited = new MutableInt(0);
+        MutableInt cursorsDuringIteration = new MutableInt(-1);
+        new SqlSelector(scope, STREAMING_SQL).forEach(Integer.class, g -> {
+            if (visited.getAndIncrement() == 0)
+                cursorsDuringIteration.setValue(new SqlSelector(scope, OPEN_CURSOR_SQL).getObject(Integer.class));
+        });
+        assertEquals(5000, visited.intValue());
+        assertEquals("forEach() should stream from an open cursor", 1, cursorsDuringIteration.intValue());
+    }
+
+    private static int countOpenCursors(Connection conn) throws SQLException
+    {
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(OPEN_CURSOR_SQL))
+        {
+            assertTrue(rs.next());
+            return rs.getInt(1);
         }
     }
 

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -127,8 +128,9 @@ public class MiniProfiler
         {
             settings = SETTINGS_CACHE.get(user);
 
-            // Stacktrace setting isn't really cached, it just piggybacks on the MiniProfiler settings bean/form
+            // Stacktrace and connection usage settings aren't really cached, they just piggyback on the MiniProfiler settings bean/form
             settings.setCollectTroubleshootingStackTraces(_collectTroubleshootingStackTraces);
+            settings.setTrackConnectionUsage(ConnectionUsage.isEnabled());
         }
         return settings;
     }
@@ -136,8 +138,9 @@ public class MiniProfiler
     /** Save per-user settings. */
     public static void saveSettings(@NotNull Settings settings, @NotNull User user)
     {
-        // Troubleshooting stacktraces are site-wide only
+        // Troubleshooting stacktraces and connection usage are site-wide only
         setCollectTroubleshootingStackTraces(settings._collectTroubleshootingStackTraces);
+        ConnectionUsage.setEnabled(settings._trackConnectionUsage);
 
         WritablePropertyMap map = PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), CATEGORY, true);
         SETTINGS_FACTORY.toStringMap(settings, map);
@@ -328,6 +331,7 @@ public class MiniProfiler
         private boolean _showControls = true;
         private RenderPosition _renderPosition = RenderPosition.BottomRight;
         private boolean _collectTroubleshootingStackTraces;
+        private boolean _trackConnectionUsage;
         private String _toggleShortcut = "alt+p";
 
         public boolean isEnabled()
@@ -418,6 +422,16 @@ public class MiniProfiler
         public void setCollectTroubleshootingStackTraces(boolean collect)
         {
             _collectTroubleshootingStackTraces = collect;
+        }
+
+        public boolean isTrackConnectionUsage()
+        {
+            return _trackConnectionUsage;
+        }
+
+        public void setTrackConnectionUsage(boolean track)
+        {
+            _trackConnectionUsage = track;
         }
 
         public String getToggleShortcut()

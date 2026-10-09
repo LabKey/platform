@@ -27,13 +27,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -928,19 +931,20 @@ public class PageFlowUtil
         return getMediaTypeFor(file.toPath());
     }
 
+    private static final Detector DETECTOR = new DefaultDetector();
+
     public static MediaType getMediaTypeFor(Path file)
     {
-        try
+        Metadata metaData = new Metadata();
+        String filename = file.getFileName().toString();
+
+        // use the metadata to hint at the type for a faster lookup
+        metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+        metaData.add(HttpHeaders.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
+
+        try (TikaInputStream tis = TikaInputStream.get(file))
         {
-            DefaultDetector detector = new DefaultDetector();
-            Metadata metaData = new Metadata();
-            String filename = file.getFileName().toString();
-
-            // use the metadata to hint at the type for a faster lookup
-            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
-
-            return detector.detect(TikaInputStream.get(file), metaData);
+            return DETECTOR.detect(tis, metaData, new ParseContext());
         }
         catch (IOException e)
         {

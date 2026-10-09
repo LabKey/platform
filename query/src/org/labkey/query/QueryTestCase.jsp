@@ -971,6 +971,11 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
 
+                // GH Issue 1227: epoch form returns timestamptz, so the instant is independent of the session time zone
+                new MethodSqlTest("SELECT to_timestamp(1284352323)", JdbcType.TIMESTAMP, new Timestamp(1284352323000L)),
+                new MethodSqlTest("SELECT to_timestamp(1284352323.5)", JdbcType.TIMESTAMP, new Timestamp(1284352323500L)),
+                new MethodSqlTest("SELECT to_timestamp('2010-09-13 04:32:03', 'YYYY-MM-DD HH24:MI:SS')", JdbcType.TIMESTAMP, Timestamp.valueOf("2010-09-13 04:32:03")),
+
                 // parse_json, parse_jsonb, and json_op
                 new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),
                 new SqlTest("SELECT json_op(parse_jsonb('{\"a\":1, \"b\":null}'), '->', 'a')", 1, 1),
