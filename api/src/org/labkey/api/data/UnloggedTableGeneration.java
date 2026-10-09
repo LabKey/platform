@@ -36,7 +36,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * GH Issue 1698: Detects PostgreSQL emptying UNLOGGED tables, which it does on standby promotion (failover, switchover)
- * and crash recovery. A one-row UNLOGGED marker table is reset along with them, so a missing row bumps the generation.
+ * and crash recovery. A one-row UNLOGGED marker temp table specific to this Tomcat startup is reset along with them,
+ * so a missing row bumps the generation.
  */
 public class UnloggedTableGeneration
 {
@@ -151,17 +152,18 @@ public class UnloggedTableGeneration
             if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).getObject(Boolean.class)))
                 return;
 
+            // Bump only after the repair succeeds, so a failing repair does not bump again on every retry
+            new SqlExecutor(scope, conn).execute(new SQLFragment("INSERT INTO ").append(markerTable(markerName)).append(" (x) VALUES (1)"));
             _generation.incrementAndGet();
             LOG.info("UNLOGGED tables were reset by the database, likely a failover or crash recovery. Materialized views will rebuild.");
-            new SqlExecutor(scope, conn).execute(new SQLFragment("INSERT INTO ").append(markerTable(markerName)).append(" (x) VALUES (1)"));
         }
         catch (RuntimeException x)
         {
             if (!SqlDialect.isObjectNotFoundException(x))
                 throw x;
+            createMarker(scope, conn);
             _generation.incrementAndGet();
             LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
-            createMarker(scope, conn);
         }
     }
 
@@ -169,9 +171,8 @@ public class UnloggedTableGeneration
     {
         // A fresh name never collides with tables TempTableTracker purges asynchronously at startup
         String name = "unlogged_marker_" + GUID.makeHash();
+        new SqlExecutor(scope, conn).execute(new SQLFragment("CREATE UNLOGGED TABLE ").append(markerTable(name)).append(" AS SELECT 1 AS x"));
         TempTableTracker.track(name, MARKER_REF);
-        new SqlExecutor(scope, conn).execute(new SQLFragment("CREATE UNLOGGED TABLE ").append(markerTable(name)).append(" (x INT)"));
-        new SqlExecutor(scope, conn).execute(new SQLFragment("INSERT INTO ").append(markerTable(name)).append(" (x) VALUES (1)"));
         _markerName = name;
     }
 

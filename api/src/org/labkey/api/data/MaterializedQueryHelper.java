@@ -1050,7 +1050,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         }
 
         @Test
-        public void testUnloggedResetRebuilds()
+        public void testUnloggedReset()
         {
             DbSchema temp = DbSchema.getTemp();
             DbScope s = temp.getScope();
@@ -1061,7 +1061,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             try (MaterializedQueryHelper mqh = new Builder("test", s, select).unlogged(true).build())
             {
                 SQLFragment before = mqh.getFromSql(null);
-                assertEquals(before, mqh.tryGetFromSqlIfLoaded(null));
+                UnloggedTableGeneration.checkForTest();
+                assertEquals("An intact marker must keep the table", before, mqh.tryGetFromSqlIfLoaded(null));
 
                 // Empty the table and the marker as a failover or crash recovery would
                 new SqlExecutor(temp).execute(new SQLFragment("TRUNCATE ").append(before));
@@ -1071,22 +1072,6 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 SQLFragment after = mqh.getFromSql(null);
                 assertNotEquals("A reset table must be rebuilt into a new table", before, after);
                 assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
-            }
-        }
-
-        @Test
-        public void testUnloggedNoResetKeepsTable()
-        {
-            DbSchema temp = DbSchema.getTemp();
-            DbScope s = temp.getScope();
-            Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", s.getSqlDialect().isPostgreSQL());
-            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
-
-            try (MaterializedQueryHelper mqh = new Builder("test", s, select).unlogged(true).build())
-            {
-                SQLFragment before = mqh.getFromSql(null);
-                UnloggedTableGeneration.checkForTest();
-                assertEquals("An intact marker must keep the table", before, mqh.tryGetFromSqlIfLoaded(null));
             }
         }
     }
