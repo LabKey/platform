@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
@@ -779,6 +780,8 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         materialized.addMaxTimeToCache(_maxTimeToCache);
         materialized.addUpToDateQuery(_uptodateQuery);
         materialized.addInvalidator(_supplier);
+        if (_unlogged && _scope.getSqlDialect().isPostgreSQL())
+            materialized.addInvalidator(UnloggedTableGeneration::current);
         materialized.reset();
     }
 
@@ -1043,6 +1046,32 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 Materialized m2 = mqh._map.get(mqh.makeKey(null));
                 assertNotNull(m2);
                 assertFalse("no synchronous work needed after rebuild", m2.needsSynchronousWork());
+            }
+        }
+
+        @Test
+        public void testUnloggedReset()
+        {
+            DbSchema temp = DbSchema.getTemp();
+            DbScope s = temp.getScope();
+            Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", s.getSqlDialect().isPostgreSQL());
+            new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
+            SQLFragment select = new SQLFragment("SELECT * FROM temp.MQH_TESTCASE");
+
+            try (MaterializedQueryHelper mqh = new Builder("test", s, select).unlogged(true).build())
+            {
+                SQLFragment before = mqh.getFromSql(null);
+                UnloggedTableGeneration.checkForTest();
+                assertEquals("An intact marker must keep the table", before, mqh.tryGetFromSqlIfLoaded(null));
+
+                // Empty the table and the marker as a failover or crash recovery would
+                new SqlExecutor(temp).execute(new SQLFragment("TRUNCATE ").append(before));
+                UnloggedTableGeneration.simulateResetForTest();
+
+                assertNull("A reset table must not be served", mqh.tryGetFromSqlIfLoaded(null));
+                SQLFragment after = mqh.getFromSql(null);
+                assertNotEquals("A reset table must be rebuilt into a new table", before, after);
+                assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
             }
         }
     }

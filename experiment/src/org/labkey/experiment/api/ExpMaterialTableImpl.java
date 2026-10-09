@@ -57,9 +57,11 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -2285,6 +2287,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // before reading. The next read must rebuild the whole view from scratch.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.getFirst(), "rootProp", "fullResynced")));
             _materializedQueries.remove(st.getLSID());
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testUnloggedReset() throws Exception
+        {
+            Assume.assumeTrue("Materialized views are only UNLOGGED on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
+            ExpSampleType st = createSampleType("IncrUpdUnlogged");
+            insertRoots(st, "R1", "R2", "R3");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Empty the view and the marker as a failover or crash recovery would. The next read must rebuild.
+            DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+            new SqlExecutor(scope).execute(new SQLFragment("TRUNCATE ").append(table.getOrCreateMQH().getFromSql(null)));
+            UnloggedTableGeneration.simulateResetForTest();
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 
