@@ -527,7 +527,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
 
                 // Attach run's final protocol application with output LSIDs for Assay Result rows
-                rowCallback = rowCallback.chain(pvs.getAssayRowCallback(run, container));
+                rowCallback = rowCallback.chain(pvs.getAssayRowCallback(user, run, container));
             }
 
             try

@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -154,6 +155,7 @@ import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleChangeNotify;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -219,7 +221,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -241,6 +246,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -7040,7 +7046,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != runInputLsids)
             {
-                protApp1.addProvenanceInput(runInputLsids);
+                protApp1.addProvenanceInput(user, runInputLsids);
             }
 
             addDataInputs(inputDatas, protApp1._object, user);
@@ -7144,7 +7150,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != finalOutputLsids && !finalOutputLsids.isEmpty())
             {
-                protApp3.addProvenanceMapping(finalOutputLsids);
+                protApp3.addProvenanceMapping(user, finalOutputLsids);
             }
 
             addDataInputs(allOutputDatas, protApp3._object, user);
@@ -10742,6 +10748,97 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // assert we deleted all MaterialInput exp.object
             assertEquals(0L, countMaterialInputObjects(c));
+        }
+
+        @Test
+        public void testEditLineagePermission() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "LineageGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+            UserSchema schema = QueryService.get().getUserSchema(admin, c, SchemaKey.fromParts("Samples"));
+            QueryUpdateService svc = schema.getTable("LineageGuardSamples").getUpdateService();
+            BatchValidationException errors = new BatchValidationException();
+            svc.insertRows(admin, c, List.of(CaseInsensitiveHashMap.of("name", "sample")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial sample = st.getSample(c, "sample");
+            String lsid = sample.getLSID();
+
+            for (User u : List.of(new LimitedUser(admin, ReaderRole.class), new LimitedUser(admin, AuthorRole.class)))
+            {
+                try
+                {
+                    DefaultExperimentSaveHandler.assertCanEditLineage(u, lsid, sample);
+                    fail("User without edit rights should not be able to edit lineage of a pre-existing sample");
+                }
+                catch (NotFoundException expected)
+                {
+                }
+            }
+
+            // Update (Editor) and full (admin) access can edit an existing sample's lineage
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
+            DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
+
+            // A sample created in this same request only needs insert rights
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample, true);
+        }
+
+        @Test
+        public void testMaterialPropertyPermissions() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("color", "string"));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            DomainProperty color = st.getDomain().getPropertyByName("color");
+
+            // Author has Insert but not Update
+            ViewContext context = new ViewContext();
+            context.setContainer(c);
+            context.setUser(new LimitedUser(admin, AuthorRole.class));
+            DefaultExperimentSaveHandler handler = new DefaultExperimentSaveHandler();
+
+            JSONObject sampleTypeJson = new JSONObject();
+            sampleTypeJson.put(ExperimentJSONConverter.NAME, st.getName());
+
+            // Creating a sample and setting its properties in one request needs only insert rights
+            JSONObject createJson = new JSONObject();
+            createJson.put(ExperimentJSONConverter.NAME, "newSample");
+            createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
+            createJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "red"));
+
+            ExpMaterial created = handler.handleMaterial(context, createJson);
+            assertNotNull("Author should be able to create a sample with properties", created);
+            assertEquals("red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
+
+            // Setting properties on a sample that already existed needs update rights, which Author lacks
+            JSONObject updateJson = new JSONObject();
+            updateJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            updateJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "blue"));
+            try
+            {
+                handler.handleMaterial(context, updateJson);
+                fail("Author should not be able to edit properties of an existing sample");
+            }
+            catch (UnauthorizedException expected)
+            {
+            }
+
+            assertEquals("Property must be unchanged after an unauthorized edit",
+                    "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
         }
 
         private int countMaterialInputObjects(Container c)
