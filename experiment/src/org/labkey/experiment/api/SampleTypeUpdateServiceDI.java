@@ -935,7 +935,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         Map<Long, Map<String, Object>> byRowId = new HashMap<>();
         Map<String, Map<String, Object>> byLsid = new HashMap<>();
-        Map<Pair<Long, String>, Map<String, Object>> byName = new HashMap<>();
+        Map<SampleNameKey, Map<String, Object>> byName = new HashMap<>();
+        // Names are unique only per container, so a name can match a row in each container in scope
+        Set<SampleNameKey> ambiguousNames = new HashSet<>();
         if (!rowIds.isEmpty())
             selectMaterialMaps(new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN), row -> byRowId.put(getMaterialRowId(row), row));
         if (!lsids.isEmpty())
@@ -944,7 +946,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             SimpleFilter filter = new SimpleFilter(Name.fieldKey(), e.getValue(), CompareType.IN);
             filter.addCondition(MaterialSourceId.fieldKey(), e.getKey());
-            selectMaterialMaps(filter, row -> byName.put(nameKey(getMaterialSourceId(row), getMaterialName(row)), row));
+            selectMaterialMaps(filter, row -> {
+                SampleNameKey key = new SampleNameKey(getMaterialSourceId(row), getMaterialName(row));
+                if (null != byName.put(key, row))
+                    ambiguousNames.add(key);
+            });
         }
 
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
@@ -957,14 +963,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             else if (lsid != null)
                 result.add(byLsid.get(lsid));
             else
-                result.add(byName.get(nameKey(getMaterialSourceId(k), getMaterialName(k))));
+            {
+                SampleNameKey key = new SampleNameKey(getMaterialSourceId(k), getMaterialName(k));
+                if (ambiguousNames.contains(key))
+                    throw new QueryUpdateServiceException("Multiple samples named '" + key.name() + "' were found; use RowId or LSID to identify the sample.");
+                result.add(byName.get(key));
+            }
         }
         return result;
-    }
-
-    private static Pair<Long, String> nameKey(Long materialSourceId, String name)
-    {
-        return Pair.of(materialSourceId, StringUtils.lowerCase(name));
     }
 
     private void selectMaterialMaps(SimpleFilter filter, Consumer<Map<String, Object>> consumer)
@@ -972,6 +978,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         for (Map<String, Object> row : new TableSelector(getQueryTable(), filter, null).getMapArray())
             consumer.accept(row);
     }
+
+    private record SampleNameKey(Long materialSourceId, String name) {}
 
     private record ExistingRowSelect(Set<String> columns, boolean includeParent) {}
 
