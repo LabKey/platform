@@ -133,7 +133,7 @@ public class CacheManager
         return new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, true), debugName, stats, null);
     }
 
-    private static final Cache<String, Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "Shared");
+    private static final Cache<String, Object> SHARED_CACHE = getCache(String.class, 10000, DEFAULT_TIMEOUT, "Shared");
 
     public static <V> Cache<String, V> getSharedCache()
     {

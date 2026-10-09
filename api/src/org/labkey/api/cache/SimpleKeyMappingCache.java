@@ -24,7 +24,6 @@ import org.labkey.api.cache.ehcache.EhCacheProvider;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,15 +64,9 @@ public class SimpleKeyMappingCache<K1, K2, V> implements SimpleCache<K1, V>
     }
 
     @Override
-    public void remove(K1 key)
+    public boolean remove(K1 key)
     {
-        _delegate.remove(_toKey.apply(key));
-    }
-
-    @Override
-    public int removeUsingFilter(Predicate<K1> filter)
-    {
-        return removeAll(getKeys().filter(filter));
+        return _delegate.remove(_toKey.apply(key));
     }
 
     @Override
@@ -157,9 +150,7 @@ public class SimpleKeyMappingCache<K1, K2, V> implements SimpleCache<K1, V>
         @Test
         public void testKeyMapping()
         {
-            SimpleCache<String, String> delegate = EhCacheProvider.getInstance().getSimpleCache("SimpleKeyMappingCache test", 100, CacheManager.UNLIMITED, CacheManager.UNLIMITED, true);
-
-            try
+            try (SimpleCache<String, String> delegate = EhCacheProvider.getInstance().getSimpleCache("SimpleKeyMappingCache test", 100, CacheManager.UNLIMITED, CacheManager.UNLIMITED, true))
             {
                 SimpleCache<Integer, String> cache = new SimpleKeyMappingCache<>(delegate, String::valueOf, TestCase::fromKey);
                 cache.put(1, "one");
@@ -184,10 +175,6 @@ public class SimpleKeyMappingCache<K1, K2, V> implements SimpleCache<K1, V>
 
                 cache.clear();
                 assertTrue(cache.isEmpty());
-            }
-            finally
-            {
-                delegate.close();
             }
         }
     }

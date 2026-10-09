@@ -26,7 +26,6 @@ import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.util.IntegerUtils;
 
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 class EhSimpleCache<K, V> implements SimpleCache<K, V>
@@ -63,15 +62,9 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
-        _cache.remove(key);
-    }
-
-    @Override
-    public int removeUsingFilter(Predicate<K> filter)
-    {
-        return removeAll(getKeys().filter(filter));
+        return _cache.remove(key);
     }
 
     @Override

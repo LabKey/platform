@@ -41,8 +41,8 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     @SuppressWarnings("unchecked")
     private final V _nullMarker = (V)NULL_MARKER;
 
-    // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or
-    // miss a brief spike by only updating the max size stat every so often
+    // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or miss a brief
+    // spike by only updating the max size stat every so often
     private boolean _maxSizeDirty;
     private long _maxSizeNextUpdate;
 
@@ -74,7 +74,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
@@ -93,13 +92,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public V get(@NotNull K key)
     {
         return get(key, null, null);
     }
-
 
     @Override
     public V get(@NotNull K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
@@ -127,7 +124,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public void remove(@NotNull K key)
     {
@@ -144,13 +140,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public int removeUsingFilter(Predicate<K> kFilter)
     {
         return trackRemoves(_cache.removeUsingFilter(kFilter));
     }
-
 
     @Override
     public Set<K> getKeys()
@@ -165,13 +159,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         trackClear();
     }
 
-
     @Override
     public int getLimit()
     {
         return _cache.getLimit();
     }
-
 
     @Override
     public int size()
@@ -197,13 +189,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return _cache.getDefaultExpires();
     }
 
-
     @Override
     public void close()
     {
         _cache.close();
     }
-
 
     @Override
     public String getDebugName()
@@ -309,12 +299,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     {
         updateMaxSizeIfStale();
         _stats.clears.incrementAndGet();
-    }
-
-
-    public SimpleCache<K, V> getWrappedCache()
-    {
-        return _cache;
     }
 
     /* CacheMBean */

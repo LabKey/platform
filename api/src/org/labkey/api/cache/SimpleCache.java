@@ -15,7 +15,6 @@
  */
 package org.labkey.api.cache;
 
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
@@ -24,7 +23,7 @@ import java.util.stream.Stream;
 // Cache providers return caches that implement this interface, which presents a minimal set of cache operations,
 // without support for standard LabKey features such as null markers, cache loaders, statistics, blocking, etc.
 // Implementations must be thread-safe.
-public interface SimpleCache<K, V>
+public interface SimpleCache<K, V> extends AutoCloseable
 {
     void put(K key, V value);
 
@@ -32,29 +31,21 @@ public interface SimpleCache<K, V>
 
     @Nullable V get(K key);
 
-    void remove(K key);
+    /**
+     *  @return true if the element was removed, false if it was not found in the cache
+     */
+    boolean remove(K key);
 
     /**
      * Removes every element in the cache where filter.test(K key) evaluates to true.
-     * Returns the number of elements that were removed.
+     * @return the number of elements that were removed.
      */
-    int removeUsingFilter(Predicate<K> filter);
-
-    /**
-     * Convenience method that removes every key in the provided stream from this cache. Returns the number of elements
-     * that were removed. removeUsingFilter() implementations call this, allowing more sharing between SimpleCache
-     * implementations, specifically EhSimpleCache and SimpleKeyMappingCache.
-     */
-    default int removeAll(Stream<K> keys)
+    default int removeUsingFilter(Predicate<K> filter)
     {
-        MutableInt removes = new MutableInt();
-
-        keys.forEach(key -> {
-            remove(key);
-            removes.increment();
-        });
-
-        return removes.intValue();
+        return (int)getKeys()
+            .filter(filter)
+            .filter(this::remove)
+            .count();
     }
 
     Stream<K> getKeys();
@@ -85,9 +76,10 @@ public interface SimpleCache<K, V>
     long getDefaultExpires();
 
     /**
-     * Some CacheProviders (e.g., Ehcache) hold onto the caches they create.  close() lets us discard temporary
+     * Some CacheProviders (e.g., Ehcache) hold onto the caches they create. close() lets us discard temporary
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
+    @Override
     void close();
 
     CacheType getCacheType();

@@ -17,7 +17,6 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.labkey.api.cache.CacheType.DeterministicLRU;
@@ -55,14 +54,9 @@ public class NoopCacheProvider implements CacheProvider
         }
 
         @Override
-        public void remove(K key)
+        public boolean remove(K key)
         {
-        }
-
-        @Override
-        public int removeUsingFilter(Predicate<K> filter)
-        {
-            return 0;
+            return false;
         }
 
         @Override

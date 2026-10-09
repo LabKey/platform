@@ -27,9 +27,8 @@ public class ContainerKeySimpleCache<V> extends SimpleKeyMappingCache<Container,
             User user = TestContext.get().getUser();
             Container parent = JunitUtil.getTestContainer();
             Container child = ContainerManager.ensureContainer(parent, "ContainerKeySimpleCache", user);
-            Cache<Container, String> cache = CacheManager.getTemporaryCache(Container.class, 10, CacheManager.UNLIMITED, "ContainerKeySimpleCache test", null);
 
-            try
+            try (Cache<Container, String> cache = CacheManager.getTemporaryCache(Container.class, 10, CacheManager.UNLIMITED, "ContainerKeySimpleCache test", null))
             {
                 cache.put(parent, "parent");
                 cache.put(child, "child");
@@ -49,8 +48,6 @@ public class ContainerKeySimpleCache<V> extends SimpleKeyMappingCache<Container,
             }
             finally
             {
-                cache.close();
-
                 if (null != ContainerManager.getForId(child.getEntityId()))
                     ContainerManager.delete(child, user);
             }
