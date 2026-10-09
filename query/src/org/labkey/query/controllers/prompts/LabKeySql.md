@@ -123,7 +123,7 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 `concat(a, b)` (exactly 2 args; prefer `||`), `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`, `locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
 
 #### Date and Time
-* `curdate()`, `curtime()`, `now()` — and the SQL-standard niladic keyword forms `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP` (**no parentheses** — `CURRENT_DATE()` is a syntax error, unlike the function forms)
+* `curdate()`, `curtime()`, `now()` — and the SQL-standard forms `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP` (parentheses optional)
 * `year(d)`, `quarter(d)`, `month(d)`, `monthname(d)`, `week(d)`, `dayofyear(d)`, `dayofmonth(d)`, `dayofweek(d)`, `hour(t)`, `minute(t)`, `second(t)`
 * `timestampadd(interval, n, ts)` — interval is a quoted constant, one of `'SQL_TSI_FRAC_SECOND'`, `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'`, `'SQL_TSI_WEEK'`, `'SQL_TSI_MONTH'`, `'SQL_TSI_QUARTER'`, `'SQL_TSI_YEAR'` (the `SQL_TSI_` prefix may be omitted: `'DAY'`).
 * `timestampdiff(interval, ts1, ts2)` — same constants, **but on PostgreSQL only `'SQL_TSI_SECOND'`, `'SQL_TSI_MINUTE'`, `'SQL_TSI_HOUR'`, `'SQL_TSI_DAY'` work**; YEAR/MONTH/WEEK/QUARTER fail at execution time. For those use:
@@ -351,7 +351,6 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `Syntax error near 'OFFSET'` / near `'('` after OVER | Unsupported OFFSET / window function — see §1 |
 | `Expression in Group By clause must not be a constant` | `GROUP BY 1` — repeat the expression instead |
 | `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` — DISTINCT only works inside COUNT() and GROUP_CONCAT(); see §1 |
-| `CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses` | Drop the parens: bare `CURRENT_DATE`, not `CURRENT_DATE()` |
 | `Unknown method X` | Function doesn't exist in LabKey SQL (check §6-§7) or is dialect-specific |
 | `CONCAT function expects 2 arguments` | Use `\|\|` for 3+ values |
 | `Syntax error near 'Count'` (or other keyword) | Reserved word used as alias — double-quote it |

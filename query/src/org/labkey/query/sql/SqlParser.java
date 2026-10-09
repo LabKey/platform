@@ -854,9 +854,6 @@ public class SqlParser
                 // "JOIN S USING (x)" parses USING as the table alias, so the '(' gets the blame
                 if ("using".equals(prev1))
                     return "JOIN ... USING is not supported. Use JOIN ... ON a.col = b.col.";
-                // "CURRENT_DATE()" -- these are niladic keywords, not functions, so the trailing '(' is unexpected
-                if ("current_date".equals(prev1) || "current_time".equals(prev1) || "current_timestamp".equals(prev1))
-                    return "CURRENT_DATE/CURRENT_TIME/CURRENT_TIMESTAMP take no parentheses; use them as bare keywords.";
                 return null;
             case "distinct":
                 if ("(".equals(prev1))
@@ -2344,9 +2341,6 @@ public class SqlParser
         new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
         new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
         new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
-        new Pair<>("SELECT CURRENT_DATE() FROM R", "take no parentheses"),
-        new Pair<>("SELECT CURRENT_TIME() FROM R", "take no parentheses"),
-        new Pair<>("SELECT CURRENT_TIMESTAMP() FROM R", "take no parentheses"),
         new Pair<>("SELECT CONCAT(a, b, c) FROM R", "use a || b || c instead of CONCAT"),
         new Pair<>("SELECT CONCAT(a || b || c) FROM R", "use a || b || c instead of CONCAT")
     );
@@ -2426,6 +2420,9 @@ public class SqlParser
             new Pair<>("CURRENT_DATE","(METHOD_CALL CURDATE EXPR_LIST)"),
             new Pair<>("CURRENT_TIME","(METHOD_CALL CURTIME EXPR_LIST)"),
             new Pair<>("CURRENT_TIMESTAMP","(METHOD_CALL NOW EXPR_LIST)"),
+            new Pair<>("CURRENT_DATE()","(METHOD_CALL CURDATE EXPR_LIST)"),
+            new Pair<>("CURRENT_TIME()","(METHOD_CALL CURTIME EXPR_LIST)"),
+            new Pair<>("CURRENT_TIMESTAMP()","(METHOD_CALL NOW EXPR_LIST)"),
             new Pair<>("LCASE('a')","(METHOD_CALL LCASE (EXPR_LIST 'a'))"),
             new Pair<>("AGE(a,b)", "(METHOD_CALL AGE (EXPR_LIST a b))"),
             new Pair<>("SUM(a+b)","(SUM (+ a b))"),
@@ -2460,7 +2457,10 @@ public class SqlParser
             new Pair<>("NOW()", JdbcType.TIMESTAMP),
             new Pair<>("CURRENT_DATE", JdbcType.DATE),
             new Pair<>("CURRENT_TIME", JdbcType.TIME),
-            new Pair<>("CURRENT_TIMESTAMP", JdbcType.TIMESTAMP)
+            new Pair<>("CURRENT_TIMESTAMP", JdbcType.TIMESTAMP),
+            new Pair<>("CURRENT_DATE()", JdbcType.DATE),
+            new Pair<>("CURRENT_TIME()", JdbcType.TIME),
+            new Pair<>("CURRENT_TIMESTAMP()", JdbcType.TIMESTAMP)
         );
 
 

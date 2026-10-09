@@ -59,7 +59,6 @@ LabKey SQL rejects these common PostgreSQL and ANSI forms. Write the replacement
 - `x ~ 'regex'`, `x SIMILAR TO p`: use `similar_to(x, pattern)`.
 - `a < b < c`: comparisons do not chain. Use `a < b AND b < c`.
 - `CASE WHEN c THEN a = b END`: a bare comparison cannot be a THEN or ELSE result. Parenthesize it: `THEN (a = b)`.
-- `CURRENT_DATE()`: CURRENT_DATE, CURRENT_TIME, and CURRENT_TIMESTAMP take no parentheses.
 
 When validation fails:
 
