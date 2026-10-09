@@ -2340,9 +2340,7 @@ public class SqlParser
         new Pair<>("SELECT SUM(DISTINCT a) FROM R", "DISTINCT is only supported inside COUNT()"),
         new Pair<>("SELECT EXTRACT(YEAR FROM d) FROM R", "EXTRACT is not supported"),
         new Pair<>("SELECT d + INTERVAL '1 day' FROM R", "INTERVAL literals are not supported"),
-        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported"),
-        new Pair<>("SELECT CONCAT(a, b, c) FROM R", "use a || b || c instead of CONCAT"),
-        new Pair<>("SELECT CONCAT(a || b || c) FROM R", "use a || b || c instead of CONCAT")
+        new Pair<>("SELECT TOP 10 a FROM R", "TOP is not supported")
     );
 
     // unrecognized method names that should fail with a suggested replacement (see forUnknownMethod() above)
@@ -2446,6 +2444,7 @@ public class SqlParser
             new Pair<>("1 IS NOT DISTINCT FROM 2", JdbcType.BOOLEAN),
             new Pair<>("'this ' || 'that'", JdbcType.VARCHAR),
             new Pair<>("1 || ' plus ' || 2", JdbcType.VARCHAR),
+            new Pair<>("CONCAT('this ', 'and ', 'that')", JdbcType.VARCHAR),
             new Pair<>("1 + 2", JdbcType.INTEGER),
             new Pair<>("1.0 + 2.1", JdbcType.DECIMAL),
             new Pair<>("1 + 2.1", JdbcType.DECIMAL),

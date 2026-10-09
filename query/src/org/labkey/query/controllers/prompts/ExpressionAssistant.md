@@ -51,8 +51,6 @@ LabKey SQL rejects these common PostgreSQL and ANSI forms. Write the replacement
 - `d + INTERVAL '1 day'`: use `TIMESTAMPADD('SQL_TSI_DAY', 1, d)`.
 - `DATE '2001-02-03'`: use `{d '2001-02-03'}` or `CAST('2001-02-03' AS DATE)`. The space after `{d` or `{ts` is
   required.
-- `CONCAT(a, b, c)`: CONCAT takes exactly 2 arguments. Use `a || b || c`, and wrap operands that may be empty in
-  COALESCE, because `||` returns NULL if any operand is NULL.
 - `POSITION(a IN b)`: use `LOCATE(a, b)`.
 - `TRIM(BOTH ' ' FROM x)`: use `LTRIM(RTRIM(x))`.
 - `x ILIKE 'a%'`: use `LOWER(x) LIKE 'a%'`.

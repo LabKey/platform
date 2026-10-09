@@ -25,7 +25,6 @@ LabKey SQL rejects many constructs that are valid in PostgreSQL/ANSI SQL. **Chec
 | `x ILIKE 'a%'`, `x ~ 'regex'`, `x SIMILAR TO p` | Operators not supported | `LOWER(x) LIKE 'a%'`; PostgreSQL only: `similar_to(x, pattern[, escape])` |
 | `ORDER BY x NULLS LAST` | Not supported | `ORDER BY x IS NULL, x` |
 | `d + INTERVAL '1 day'` | No INTERVAL literals | `TIMESTAMPADD('SQL_TSI_DAY', 1, d)` |
-| `CONCAT(a, b, c)` | `CONCAT` takes exactly 2 arguments | `a \|\| b \|\| c` (note: `\|\|` yields NULL if any operand is NULL — wrap with `COALESCE`) |
 | `POSITION(a IN b)` | Unknown method | `LOCATE(a, b[, startIndex])` |
 | `TRIM(BOTH ' ' FROM x)` | Not supported | `LTRIM(RTRIM(x))`; PostgreSQL only: `btrim(x)` |
 | `COUNT(*) FILTER (WHERE c)` | No FILTER clause | `SUM(CASE WHEN c THEN 1 ELSE 0 END)` |
@@ -120,7 +119,7 @@ Rules: `DISTINCT` is allowed only in `COUNT` and `GROUP_CONCAT`. No `FILTER` cla
 `abs(v)`, `acos(v)`, `asin(v)`, `atan(v)`, `atan2(v1,v2)`, `ceiling(v)`, `cos(r)`, `cot(r)`, `degrees(r)`, `exp(n)`, `floor(v)`, `log(n)` (natural), `log10(n)`, `mod(dividend, divider)`, `pi()`, `power(base, exp)`, `radians(d)`, `rand([seed])`, `round(v[, precision])`, `sign(v)`, `sin(v)`, `sqrt(v)`, `tan(v)`, `truncate(v, precision)` (may require `CAST(v AS NUMERIC)`)
 
 #### String
-`concat(a, b)` (exactly 2 args; prefer `||`), `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`, `locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
+`concat(a, b, ...)` (same as `||`: NULL if any argument is NULL), `lcase(s)`/`lower(s)`, `ucase(s)`/`upper(s)`, `left(s, n)`, `right(s, n)`, `length(s)`, `locate(substr, s[, start])`, `ltrim(s)`, `rtrim(s)`, `repeat(s, count)`, `startswith(s, prefix)`, `substring(s, start[, length])` (1-based)
 
 #### Date and Time
 * `curdate()`, `curtime()`, `now()` — and the SQL-standard forms `CURRENT_DATE`, `CURRENT_TIME`, `CURRENT_TIMESTAMP` (parentheses optional)
@@ -352,7 +351,6 @@ Many parse errors now include an inline suggestion (e.g. `Syntax error near 'OFF
 | `Expression in Group By clause must not be a constant` | `GROUP BY 1` — repeat the expression instead |
 | `Syntax error near 'DISTINCT'` | `SUM(DISTINCT ...)` — DISTINCT only works inside COUNT() and GROUP_CONCAT(); see §1 |
 | `Unknown method X` | Function doesn't exist in LabKey SQL (check §6-§7) or is dialect-specific |
-| `CONCAT function expects 2 arguments` | Use `\|\|` for 3+ values |
 | `Syntax error near 'Count'` (or other keyword) | Reserved word used as alias — double-quote it |
 | `HAVING requires an aggregate in the SELECT list` | Add the aggregate to the SELECT list or add GROUP BY |
 | `Duplicate column 'x'` | Two select items produce the same name — alias one |

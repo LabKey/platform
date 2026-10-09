@@ -741,6 +741,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
+        new MethodSqlTest("SELECT concat('the', 'cat', 'in', 'the', 'hat') FROM R WHERE rowid=1", JdbcType.VARCHAR, "thecatinthehat"),
+        new MethodSqlTest("SELECT concat('hat', NULL) FROM R WHERE rowid=1", JdbcType.VARCHAR, null),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
         new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
