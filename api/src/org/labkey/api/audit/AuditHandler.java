@@ -53,6 +53,8 @@ public interface AuditHandler
 {
     String PROVIDED_DATA_PREFIX = ":::provided:::";
     String DELTA_PROVIDED_DATA_PREFIX = ":::delta_provided:::";
+    // GH Issue 1640: sample timeline metadata recorded under PROVIDED_DATA_PREFIX before 26.7 may be wrong, so user-entered amounts now use this prefix
+    String USER_PROVIDED_DATA_PREFIX = ":::user_provided:::";
 
     void addSummaryAuditEvent(User user, Container c, TableInfo table, QueryService.AuditAction action, Integer dataRowCount, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String userComment);
 
