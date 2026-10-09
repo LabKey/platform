@@ -33,13 +33,13 @@ import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 
-/** GH Issue 1640: flags metadata that has a provided amount recorded before 26.7, which may be wrong for large imports. */
+/** GH Issue 1640: flags metadata that has a provided amount recorded before the large-import fix, which may be wrong. */
 public class SampleTimelineMetadataDisplayColumn extends DataColumn
 {
     private static final String LEGACY_PROVIDED_AMOUNT_KEY = PROVIDED_DATA_PREFIX + StoredAmount.label();
     private static final String WARNING_STYLE = "background-color:#fcf8e3";
     private static final String WARNING_TITLE = "Provided Amount May Be Inaccurate";
-    private static final String WARNING_MESSAGE = "This provided amount was recorded before release 26.7 and may be inaccurate for operations of more than 1,000 rows. The stored sample amount is not affected.";
+    private static final String WARNING_MESSAGE = "This provided amount was recorded before a fix for operations of more than 1,000 rows and may be inaccurate. The stored sample amount is not affected.";
 
     public SampleTimelineMetadataDisplayColumn(ColumnInfo col)
     {
