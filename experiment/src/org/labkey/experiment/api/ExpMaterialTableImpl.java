@@ -2543,7 +2543,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
             long before = counters.delete.get();
-            deleteRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.get(0))));
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.get(0).longValue()), true, st, false, false);
             assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
         }
 
