@@ -288,6 +288,18 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     }
 
     @Override
+    public @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excluded, @NotNull ExpRun run, int plateNumber)
+    {
+        if (plate == null)
+            return null;
+
+        if (plate instanceof PlateImpl plateImpl)
+            return new PlateImpl(plateImpl, wellValues, excluded, run, plateNumber);
+
+        throw new IllegalArgumentException("Only plates retrieved from the plate service can be used to create plate instances.");
+    }
+
+    @Override
     public @NotNull PlateImpl createPlate(Container container, String assayType, @NotNull PlateType plateType)
     {
         return new PlateImpl(container, null, null, assayType, plateType);

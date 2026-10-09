@@ -1472,6 +1472,8 @@ public class DbScope
         }
 
         Connection conn;
+        boolean trackUsage = ConnectionUsage.isEnabled();
+        long acquireStart = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1481,6 +1483,8 @@ public class DbScope
         {
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
+
+        long poolDone = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1506,7 +1510,11 @@ public class DbScope
                 _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            return new ConnectionWrapper(conn, this, spid, type, log);
+            long setupDone = trackUsage ? System.nanoTime() : 0;
+            ConnectionWrapper wrapper = new ConnectionWrapper(conn, this, spid, type, log);
+            if (trackUsage)
+                wrapper.trackUsage(acquireStart, poolDone, setupDone);
+            return wrapper;
         }
         catch (Throwable t)
         {
@@ -3331,10 +3339,9 @@ public class DbScope
         public void testCommitAndKeepConnection()
         {
             DbScope scope = getLabKeyScope();
-            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
-            DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test");
 
-            try
+            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
+            try (DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test"))
             {
                 cache.put("key_1", "value_1");
                 cache.put("key_2", "value_2");
@@ -3373,10 +3380,6 @@ public class DbScope
 
                 assertFalse("commit() must invalidate the shared cache", cache.getKeys().contains("key_2"));
                 assertFalse(scope.isTransactionActive());
-            }
-            finally
-            {
-                cache.close();
             }
         }
 

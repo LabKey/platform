@@ -1008,9 +1008,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
 
         try
         {
-            // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
-            int previousTransactionIsolation = connection.getTransactionIsolation();
-            connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+            // pgjdbc streams through a server-side cursor only when autoCommit is off. See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
             connection.setAutoCommit(false);
 
             Closer previous = connection.getRunOnClose(); // We know this is a no-op closer, but do this just in case these get shared or wrapped in the future
@@ -1018,7 +1016,6 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
             return () -> {
                 previous.close();
                 connection.setAutoCommit(true);
-                connection.setTransactionIsolation(previousTransactionIsolation);
             };
         }
         catch (SQLException e)

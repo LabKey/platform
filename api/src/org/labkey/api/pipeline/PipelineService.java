@@ -266,6 +266,10 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName, @Nullable ContainerFilter cf);
 
+    record ActiveJob(String provider, String description) {}
+
+    List<ActiveJob> getActivePipelineJobs(User u, Container c, Collection<String> providerNames, @Nullable ContainerFilter cf);
+
     interface PipelineProviderSupplier
     {
         @NotNull Collection<PipelineProvider> getAll();
