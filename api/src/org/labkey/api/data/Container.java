@@ -141,16 +141,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private Long _fileRootSize = null;
     private LocalDateTime _fileRootLastCrawled = null;
 
-    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = DatabaseCache.get(
+    private final static BlockingCache<Container, Set<Module>> REQUIRED_MODULES_CACHE = DatabaseCache.get(
+        Container.class,
         CoreSchema.getInstance().getScope(),
         Constants.getMaxContainers(),
         CacheManager.DAY,
         "Required modules per container",
-        (key, argument) -> {
-            if (!(argument instanceof Container c))
-            {
-                throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
-            }
+        (c, _) -> {
             Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
             requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
@@ -204,7 +201,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         for (Container c : containers)
         {
             if (null != c)
-                REQUIRED_MODULES_CACHE.remove(c.getEntityId());
+                REQUIRED_MODULES_CACHE.remove(c);
         }
     }
 
@@ -1019,7 +1016,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        return REQUIRED_MODULES_CACHE.get(getEntityId(), this);
+        return REQUIRED_MODULES_CACHE.get(this);
     }
 
     public Set<Module> getRequiredModulesForFolderType(FolderType folderType)
