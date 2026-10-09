@@ -2,6 +2,7 @@ package org.labkey.api.util.logging;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.spi.ExtendedLogger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,5 +44,10 @@ public class LogHelper
     public static String getLabKeyLogDir()
     {
         return System.getProperty(LOG_HOME_PROPERTY_NAME);
+    }
+
+    public static Logger getThrottlingLogger(Class<?> c, String note)
+    {
+        return new ThrottlingLogger((ExtendedLogger)getLogger(c, note));
     }
 }
