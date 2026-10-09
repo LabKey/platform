@@ -317,8 +317,7 @@ public class CacheManager
         @Test
         public void testContainerKeyRejected()
         {
-            Cache<Object, String> cache = getTemporaryCache(10, MINUTE, "Container key test", null);
-            try
+            try (Cache<Object, String> cache = getTemporaryCache(10, MINUTE, "Container key test", null))
             {
                 Container c = new Container(null, "", GUID.makeGUID(), 1, 1, null, 0, false);
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value"));
@@ -328,10 +327,6 @@ public class CacheManager
 
                 cache.put(c.getEntityId(), "value");
                 assertEquals("value", cache.get(c.getEntityId()));
-            }
-            finally
-            {
-                cache.close();
             }
         }
     }
