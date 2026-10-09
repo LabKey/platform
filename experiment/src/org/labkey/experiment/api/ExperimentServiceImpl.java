@@ -2881,7 +2881,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    parents.append("\nSELECT * FROM " + tokens.first);
+                    parents.append("\nSELECT * FROM ").append(tokens.first);
                 }
 
                 parents.append("\nWHERE depth != 0");
@@ -2956,7 +2956,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    children.append("\nSELECT * FROM " + tokens.second);
+                    children.append("\nSELECT * FROM ").append(tokens.second);
                 }
 
                 children.append("\nWHERE depth != 0");
