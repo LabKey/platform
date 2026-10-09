@@ -847,6 +847,24 @@ public abstract class SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    /**
+     * ISO 8601 week number, 1 to 53: weeks start Monday and week 1 is the week holding the year's first Thursday.
+     * A week belongs to whichever year owns its Thursday, so Jan 1-3 can number as week 52 or 53 of the prior year (2027-01-01 is week 53) and Dec 29-31 as week 1 of the next.
+     */
+    public SQLFragment weekIsoExpr(SQLFragment expression)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    /**
+     * US week number, 1 to 54: weeks start Sunday and week 1 is whatever week holds Jan 1, so the first and last weeks of a year are both partial.
+     * Every date numbers within its own calendar year, so Jan 1 is always week 1. Matches SQL Server's DATEPART(week, x) under the default DATEFIRST 7.
+     */
+    public SQLFragment weekUsExpr(SQLFragment expression)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
     public void handleCreateDatabaseException(SQLException e) throws ServletException
     {
         throw(new ServletException("Can't create database", e));
