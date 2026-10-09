@@ -80,6 +80,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private boolean _external;
     private boolean _remote;
     private boolean _docker;
+    private boolean _remoteRunner;
     private boolean _pandocEnabled;
     private boolean _default;
     private boolean _sandboxed;
@@ -169,6 +170,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
         addIfNotNull(json, "external", isExternal());
         addIfNotNull(json, "remote", isRemote());
         addIfNotNull(json, "docker", isDocker());
+        addIfNotNull(json, "remoteRunner", isRemoteRunner());
         addIfNotNull(json, "pandocEnabled", isPandocEnabled());
         addIfNotNull(json, "fileExchange", getFileExchange());
         addIfNotNull(json, "pathMap", _pathMap);
@@ -234,6 +236,8 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             setRemote(json.getBoolean("remote"));
         if (json.has("docker"))
             setDocker(json.getBoolean("docker"));
+        if (json.has("remoteRunner"))
+            setRemoteRunner(json.getBoolean("remoteRunner"));
         if (json.has("pandocEnabled"))
             setPandocEnabled(json.getBoolean("pandocEnabled"));
         if (json.has("fileExchange"))
@@ -505,6 +509,18 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     public void setDocker(boolean docker)
     {
         _docker = docker;
+    }
+
+    @Override
+    public boolean isRemoteRunner()
+    {
+        return _remoteRunner;
+    }
+
+    @Override
+    public void setRemoteRunner(boolean remoteRunner)
+    {
+        _remoteRunner = remoteRunner;
     }
 
     @Override

@@ -83,6 +83,13 @@ public interface ExternalScriptEngineDefinition
     void setDocker(boolean docker);
     boolean isDocker();
 
+    /**
+     * True when a remote definition targets the HTTP script runner rather than Rserve. Both are "remote", so
+     * this is what separates them.
+     */
+    void setRemoteRunner(boolean remoteRunner);
+    boolean isRemoteRunner();
+
     void setDockerImageRowId(Integer rowId);
     Integer getDockerImageRowId();
     String getDockerImageConfig();
