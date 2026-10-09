@@ -19,6 +19,7 @@ package org.labkey.core.admin;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.PageFlowUtil;
@@ -26,6 +27,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 
 import java.io.PrintWriter;
+import java.text.NumberFormat;
 import java.util.Map;
 
 class ActionsView extends HttpView
@@ -40,8 +42,15 @@ class ActionsView extends HttpView
     @Override
     protected void renderInternal(Object model, PrintWriter out) throws Exception
     {
+        boolean connections = ConnectionUsage.isEnabled();
+        int connectionColumns = connections ? 7 : 0;
+
         if (!_summary)
+        {
             out.println(PageFlowUtil.button("Export").href(new ActionURL(AdminController.ExportActionsAction.class, ContainerManager.getRoot())));
+            if (connections)
+                out.println(PageFlowUtil.button("Export Connection Usage").href(new ActionURL(AdminController.ExportConnectionUsageAction.class, ContainerManager.getRoot())));
+        }
 
         Map<String, Map<String, Map<String, SpringActionController.ActionStats>>> modules = ActionsHelper.getActionStatistics();
 
@@ -62,7 +71,18 @@ class ActionsView extends HttpView
             out.print("<td class=\"labkey-column-header\">Invocations</td>");
             out.print("<td class=\"labkey-column-header\">Cumulative Time</td>");
             out.print("<td class=\"labkey-column-header\">Average Time</td>");
-            out.print("<td class=\"labkey-column-header\">Max Time</td></tr>");
+            out.print("<td class=\"labkey-column-header\">Max Time</td>");
+            if (connections)
+            {
+                out.print("<td class=\"labkey-column-header\">Borrows</td>");
+                out.print("<td class=\"labkey-column-header\">Borrows/Invocation</td>");
+                out.print("<td class=\"labkey-column-header\">Connection Wall Time</td>");
+                out.print("<td class=\"labkey-column-header\">Connection Wall %</td>");
+                out.print("<td class=\"labkey-column-header\">Max Concurrent</td>");
+                out.print("<td class=\"labkey-column-header\">Acquire Time</td>");
+                out.print("<td class=\"labkey-column-header\">Unreturned</td>");
+            }
+            out.print("</tr>");
         }
 
         int totalActions = 0;
@@ -116,6 +136,16 @@ class ActionsView extends HttpView
                     renderTd(out, stats.getElapsedTime());
                     renderTd(out, 0 == stats.getCount() ? 0 : stats.getElapsedTime() / stats.getCount());
                     renderTd(out, stats.getMaxTime());
+                    if (connections)
+                    {
+                        renderTd(out, stats.getBorrows());
+                        renderTd(out, stats.getBorrowsPerInvocation(), Formats.f2);
+                        renderTd(out, stats.getConnectionWallTime());
+                        renderTd(out, stats.getConnectionWallFraction(), Formats.percent1);
+                        renderTd(out, stats.getMaxConcurrent());
+                        renderTd(out, stats.getAcquireTime());
+                        renderTd(out, stats.getUnreturned());
+                    }
 
                     out.print("</tr>");
                     rowCount++;
@@ -129,7 +159,7 @@ class ActionsView extends HttpView
                 if (!_summary)
                 {
                     out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-                    out.print("<td>&nbsp;</td><td colspan=5>Action Coverage</td>");
+                    out.print("<td>&nbsp;</td><td colspan=" + (5 + connectionColumns) + ">Action Coverage</td>");
                 }
                 else
                 {
@@ -148,7 +178,7 @@ class ActionsView extends HttpView
                 if (!_summary)
                 {
                     out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-                    out.print("<td colspan=7>&nbsp;</td></tr>");
+                    out.print("<td colspan=" + (7 + connectionColumns) + ">&nbsp;</td></tr>");
                     rowCount++;
                 }
             }
@@ -168,7 +198,7 @@ class ActionsView extends HttpView
         else
         {
             out.print("<tr class=\"" + (rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row") + "\">");
-            out.print("<td colspan=6><b>Total Action Coverage</b></td>");
+            out.print("<td colspan=" + (6 + connectionColumns) + "><b>Total Action Coverage</b></td>");
         }
 
         out.print("<td align=\"right\">");
@@ -180,8 +210,13 @@ class ActionsView extends HttpView
 
     private void renderTd(PrintWriter out, Number d)
     {
+        renderTd(out, d, Formats.commaf0);
+    }
+
+    private void renderTd(PrintWriter out, Number d, NumberFormat format)
+    {
         out.print("<td align=\"right\">");
-        out.print(Formats.commaf0.format(d));
+        out.print(format.format(d));
         out.print("</td>");
     }
 }
