@@ -19,6 +19,7 @@ import io.modelcontextprotocol.server.McpServerFeatures;
 import jakarta.servlet.http.HttpSession;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -39,6 +40,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 ///
@@ -197,7 +199,13 @@ public interface McpService extends ToolCallbackProvider
 
     void incrementResourceRequestCount(String resource);
 
-    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists);
+    default ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists)
+    {
+        return getChat(session, conversationName, systemPromptSupplier, createIfNotExists, null);
+    }
+
+    /** @param toolNames the registered tools this chat may offer the model, or null for all of them */
+    ChatClient getChat(HttpSession session, String conversationName, Supplier<String> systemPromptSupplier, boolean createIfNotExists, @Nullable Set<String> toolNames);
 
     void close(HttpSession session, ChatClient chat);
 
@@ -205,14 +213,26 @@ public interface McpService extends ToolCallbackProvider
 
     record VectorDocument(String id, String text, Map<String, Object> metadata) {}
 
-    /** get a consolidated response (good for many text-oriented agents/use-cases) */
+    /**
+     * get a consolidated response (good for many text-oriented agents/use-cases)
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     MessageResponse sendMessage(ChatClient chat, String message);
 
-    /** get individual response parts, useful for agents that generate SQL or programmatic responses */
+    /**
+     * get individual response parts, useful for agents that generate SQL or programmatic responses
+     * @throws GuardrailException when a guardrail blocks the exchange, after dropping it so it can't block later turns
+     */
     default List<MessageResponse> sendMessageEx(ChatClient chat, String message)
     {
         return List.of(sendMessage(chat, message));
     }
+
+    /**
+     * Collapses the latest {@code count + 1} exchanges in the chat's memory into one: the first exchange's user
+     * message followed by the latest reply. A last exchange that got no reply or a blank one is dropped.
+     */
+    void squashExchanges(ChatClient chat, int count);
 
     /**
      * return an in-memory Vector store for prototyping RAG features

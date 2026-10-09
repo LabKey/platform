@@ -761,10 +761,10 @@ starAtom
 primaryExpression
 	:   ARRAY exprList ']' -> ^(METHOD_CALL IDENT["ARRAY_CONSTRUCT"] exprList)
 	|   TEXTARRAY exprList ']' -> ^(METHOD_CALL IDENT["TEXTARRAY_CONSTRUCT"] exprList)
-	// SQL-standard niladic datetime keywords -- no parens allowed; sugar for curdate()/curtime()/now()
-	|   CURRENT_DATE -> ^(METHOD_CALL IDENT["CURDATE"] ^(EXPR_LIST))
-	|   CURRENT_TIME -> ^(METHOD_CALL IDENT["CURTIME"] ^(EXPR_LIST))
-	|   CURRENT_TIMESTAMP -> ^(METHOD_CALL IDENT["NOW"] ^(EXPR_LIST))
+	// SQL-standard datetime keywords, with or without empty parens; sugar for curdate()/curtime()/now()
+	|   CURRENT_DATE (OPEN CLOSE)? -> ^(METHOD_CALL IDENT["CURDATE"] ^(EXPR_LIST))
+	|   CURRENT_TIME (OPEN CLOSE)? -> ^(METHOD_CALL IDENT["CURTIME"] ^(EXPR_LIST))
+	|   CURRENT_TIMESTAMP (OPEN CLOSE)? -> ^(METHOD_CALL IDENT["NOW"] ^(EXPR_LIST))
 	|   id=identPrimary
 	|   constant
 	|   OPEN! ( expression | subQuery) CLOSE!
