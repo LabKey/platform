@@ -42,7 +42,6 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
@@ -58,10 +57,10 @@ public class DomainPropertyManager
     private static final DomainPropertyManager _instance = new DomainPropertyManager();
     private static final Logger LOG = LogHelper.getLogger(DomainPropertyManager.class, "Problems with property validators");
 
-    private static class ConditionalFormatLoader implements CacheLoader<GUID, List<ConditionalFormatWithPropertyId>>
+    private static class ConditionalFormatLoader implements CacheLoader<Container, List<ConditionalFormatWithPropertyId>>
     {
         @Override
-        public List<ConditionalFormatWithPropertyId> load(@NotNull GUID containerId, Object ignored)
+        public List<ConditionalFormatWithPropertyId> load(@NotNull Container container, Object ignored)
         {
             SQLFragment sql = new SQLFragment("SELECT CF.* FROM ");
             sql.append(getExpSchema().getTable("ConditionalFormat"), "CF");
@@ -69,14 +68,14 @@ public class DomainPropertyManager
             sql.append("(SELECT PropertyId FROM ");
             sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
             sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
-            sql.add(containerId.toString());
+            sql.add(container);
 
             return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
         }
     }
 
     private static final ConditionalFormatLoader CONDITIONAL_FORMAT_LOADER = new ConditionalFormatLoader();
-    private static final BlockingCache<GUID, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
+    private static final BlockingCache<Container, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.DAY, "Conditional formats", CONDITIONAL_FORMAT_LOADER);
 
     private DomainPropertyManager(){}
 
@@ -154,11 +153,11 @@ public class DomainPropertyManager
 
     public List<ConditionalFormatWithPropertyId> getConditionalFormats(Container container)
     {
-        return CONDITIONAL_FORMAT_CACHE.get(container.getEntityId());
+        return CONDITIONAL_FORMAT_CACHE.get(container);
     }
 
     // Container -> PropertyId -> Collection<PropertyValidator>
-    private static final CacheLoader<GUID, MultiValuedMap<Integer, PropertyValidator>> PV_LOADER = (containerId, argument) -> {
+    private static final CacheLoader<Container, MultiValuedMap<Integer, PropertyValidator>> PV_LOADER = (container, argument) -> {
         /*
          * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
          * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
@@ -169,7 +168,7 @@ public class DomainPropertyManager
 
         final MultiValuedMap<Integer, PropertyValidator> validators = new ArrayListValuedHashMap<>();
 
-        new SqlSelector(getExpSchema(), sql, containerId.toString()).forEach(PropertyValidator.class, pv -> {
+        new SqlSelector(getExpSchema(), sql, container).forEach(PropertyValidator.class, pv -> {
             // Warn and skip property validators have unknown type URIs. Some instances in the field failed to run
             // upgrade code that cleared out obsolete 'urn:lsid:labkey.com:PropertyValidator:length' rows.
             if (PropertyService.get().getValidatorKind(pv.getTypeURI()) == null)
@@ -185,7 +184,7 @@ public class DomainPropertyManager
         return validators.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(validators);
     };
 
-    private static final Cache<GUID, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
+    private static final Cache<Container, MultiValuedMap<Integer, PropertyValidator>> VALIDATOR_CACHE = DatabaseCache.get(Container.class, getExpSchema().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Property validators", PV_LOADER);
     private static final Collection<PropertyValidator> EMPTY_COLLECTION = Collections.emptyList();
 
 
@@ -194,7 +193,7 @@ public class DomainPropertyManager
         if (propertyId == 0)
             return EMPTY_COLLECTION;
 
-        MultiValuedMap<Integer, PropertyValidator> validators = VALIDATOR_CACHE.get(c.getEntityId()); // No validators in c -> empty MultiValuedMap
+        MultiValuedMap<Integer, PropertyValidator> validators = VALIDATOR_CACHE.get(c); // No validators in c -> empty MultiValuedMap
         Collection<PropertyValidator> coll = validators.get(propertyId); // No validators for propertyId -> empty collection
         return Collections.unmodifiableCollection(coll);
     }
@@ -213,7 +212,7 @@ public class DomainPropertyManager
                     property.getContainer(), property.getPropertyId(), validator.getRowId());
             new SqlExecutor(getExpSchema()).execute(deleteValidator);
 
-            VALIDATOR_CACHE.remove(property.getContainer().getEntityId());
+            VALIDATOR_CACHE.remove(property.getContainer());
         }
     }
 
@@ -226,7 +225,7 @@ public class DomainPropertyManager
             {
                 validator.setPropertyId(property.getPropertyId());
                 validator.save(user, property.getContainer());
-                VALIDATOR_CACHE.remove(validator.getContainer().getEntityId());
+                VALIDATOR_CACHE.remove(validator.getContainer());
             }
             catch (ValidationException e)
             {
@@ -244,7 +243,7 @@ public class DomainPropertyManager
                 c, descriptorId);
         new SqlExecutor(getExpSchema()).execute(deleteValidators);
 
-        VALIDATOR_CACHE.remove(c.getEntityId());
+        VALIDATOR_CACHE.remove(c);
     }
 
 
@@ -259,8 +258,8 @@ public class DomainPropertyManager
                 "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)", c.getId());
         executor.execute(deleteConditionalFormatsSQL);
 
-        VALIDATOR_CACHE.remove(c.getEntityId());
-        CONDITIONAL_FORMAT_CACHE.remove(c.getEntityId());
+        VALIDATOR_CACHE.remove(c);
+        CONDITIONAL_FORMAT_CACHE.remove(c);
     }
 
 
@@ -302,7 +301,7 @@ public class DomainPropertyManager
 
                 Table.insert(user, getTinfoConditionalFormat(), row);
                 // Blow the cache for the container
-                CONDITIONAL_FORMAT_CACHE.remove(prop.getContainer().getEntityId());
+                CONDITIONAL_FORMAT_CACHE.remove(prop.getContainer());
             }
         }
     }
