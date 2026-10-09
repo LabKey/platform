@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Project;
 import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.lang.ref.Reference;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 
 public class CacheManager
 {
@@ -71,43 +73,67 @@ public class CacheManager
     /** Marker indicating unlimited entries or unlimited time-to-live (do not expire entries) */
     public static final int UNLIMITED = 0;
 
-    private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
+    // Key classes whose caches store a cheaper surrogate key. Matched on the exact declared key class.
+    private static final Map<Class<?>, Function<SimpleCache<?, ?>, SimpleCache<?, ?>>> KEY_MAPPINGS = Map.of(
+        Container.class, cache -> new ContainerKeySimpleCache<>((SimpleCache<GUID, ?>) cache)
+    );
+
+    @SuppressWarnings("unchecked")
+    private static <K, V> SimpleCache<K, V> getSimpleCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, boolean temporary)
     {
-        CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null, Thread.currentThread().getStackTrace());
+        SimpleCache<?, ?> cache = PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, temporary);
+        Function<SimpleCache<?, ?>, SimpleCache<?, ?>> mapping = null == keyClass ? null : KEY_MAPPINGS.get(keyClass);
+        return (SimpleCache<K, V>) (null == mapping ? cache : mapping.apply(cache));
+    }
+
+    public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
+    {
+        return getCache(null, limit, defaultTimeToLive, debugName);
+    }
+
+    /** Returns a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
+    public static <K, V> TrackingCache<K, V> getCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName)
+    {
+        CacheWrapper<K, V> cache = new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, false), debugName, null, Thread.currentThread().getStackTrace());
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
         return cache;
     }
 
-    public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
-    {
-        return createCache(limit, defaultTimeToLive, debugName);
-    }
-
     public static <V> Cache<String, V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        return createCache(limit, defaultTimeToLive, debugName);
+        return getCache(String.class, limit, defaultTimeToLive, debugName);
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
-        TrackingCache<K, Wrapper<V>> cache = getCache(limit, defaultTimeToLive, debugName);
+        return getBlockingCache(null, limit, defaultTimeToLive, debugName, loader);
+    }
+
+    public static <K, V> BlockingCache<K, V> getBlockingCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
+    {
+        TrackingCache<K, Wrapper<V>> cache = getCache(keyClass, limit, defaultTimeToLive, debugName);
         return new BlockingCache<>(cache, loader);
     }
 
     public static <V> BlockingCache<String, V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
     {
-        Cache<String, Wrapper<V>> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
-        return new BlockingCache<>(cache, loader);
+        return getBlockingCache(String.class, limit, defaultTimeToLive, debugName, loader);
+    }
+
+    @Deprecated // TODO: Migrate the one remaining caller
+    public static <K, V> Cache<K, V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
+    {
+        return getTemporaryCache(null, limit, defaultTimeToLive, debugName, stats);
     }
 
     // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
-    public static <K, V> Cache<K, V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
+    public static <K, V> Cache<K, V> getTemporaryCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        return new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats, null);
+        return new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, true), debugName, stats, null);
     }
 
-    private static final Cache<String, Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "Shared");
+    private static final Cache<String, Object> SHARED_CACHE = getCache(String.class, 10000, DEFAULT_TIMEOUT, "Shared");
 
     public static <V> Cache<String, V> getSharedCache()
     {
