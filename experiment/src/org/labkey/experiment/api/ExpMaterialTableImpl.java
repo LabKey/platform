@@ -1453,7 +1453,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
                  * MQH from the cache to force the SQL to be regenerated.
                  */
-                _materializedQueries.remove(lsid);
+                removeMaterializedView(lsid);
                 return;
             }
 
@@ -1469,7 +1469,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     if (changedSince == null)
                     {
                         counters.pendingUpdateSince.set(null);
-                        _materializedQueries.remove(lsid);
+                        removeMaterializedView(lsid);
                         return;
                     }
 
@@ -1482,6 +1482,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
         }
+    }
+
+    /** Drop the cached view along with the delete log that only it could consume. */
+    static void removeMaterializedView(String lsid)
+    {
+        _materializedQueries.remove(lsid);
+        InvalidationCounters counters = _invalidationCounters.get(lsid);
+        if (counters != null)
+            counters.forgetDeletesThrough(counters.delete.get());
     }
 
     /** @return true if a materialized view is cached, or being built, for this sample type */
@@ -1741,7 +1750,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // The only time I'd expect an error is due to a schema change race-condition, but that can happen in any code path.
 
                 // Ensure that next refresh starts clean
-                _materializedQueries.remove(_lsid);
+                removeMaterializedView(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
                 throw rex;
             }
@@ -2586,6 +2595,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             counters.forgetDeletesThrough(pruned);
             assertNull("A reader behind a pruned entry must reconcile fully", counters.getDeletedRowIds(beforePrune, counters.delete.get()));
             assertEquals(Set.of(5L), counters.getDeletedRowIds(pruned, counters.delete.get()));
+        }
+
+        @Test
+        public void testRemoveViewReleasesDeleteLog() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteRemove");
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            counters.recordDelete(List.of(1L, 2L));
+            removeMaterializedView(st.getLSID());
+            assertNull("Removing the view must release its unconsumed delete log", counters.getDeletedRowIds(before, counters.delete.get()));
+            assertEquals(Set.of(), counters.getDeletedRowIds(counters.delete.get(), counters.delete.get()));
         }
 
         @Test
