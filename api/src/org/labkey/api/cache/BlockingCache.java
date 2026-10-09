@@ -205,7 +205,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
         put(key, value);
     }
 
-
     @Override
     public void put(@NotNull K key, final V value)
     {
@@ -214,20 +213,17 @@ public class BlockingCache<K, V> implements Cache<K, V>
         get(key, null, (key1, argument) -> value);
     }
 
-
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
         throw new UnsupportedOperationException("use get(loader)");
     }
 
-
     @Override
     public V get(@NotNull K key)
     {
         return get(key, null);
     }
-
 
     @Override
     public void remove(@NotNull K key)

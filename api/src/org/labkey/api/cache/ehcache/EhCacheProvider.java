@@ -97,7 +97,7 @@ public class EhCacheProvider implements CacheProvider
         if (temporary)
             MemTracker.getInstance().put(ehCache);
 
-        return new EhSimpleCache<>(ehCache);
+        return new EhSimpleCache<>(ehCache, debugName);
     }
 
     void closeCache(Cache cache)

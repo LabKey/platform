@@ -21,43 +21,37 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
 
 // Folder settings inherit all the way up the folder tree. All the property sets involved should be cached, but the walk
 // up the tree is a potentially expensive operation just to format a date or number. So, we cache the set of resolved
 // properties on a per-container basis and clear the entire cache on every change of look and feel settings.
 public class FolderSettingsCache
 {
-    private static final BlockingCache<GUID, FolderSettings> CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (id, argument) -> new FolderSettings((Container) argument));
-
-    private static FolderSettings get(Container c)
-    {
-        return CACHE.get(c.getEntityId(), c);
-    }
+    private static final BlockingCache<Container, FolderSettings> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxContainers(), CacheManager.DAY, "Folder settings", (c, _) -> new FolderSettings(c));
 
     public static String getDefaultDateFormat(Container c)
     {
-        return get(c).getDefaultDateFormat();
+        return CACHE.get(c).getDefaultDateFormat();
     }
 
     public static String getDefaultDateTimeFormat(Container c)
     {
-        return get(c).getDefaultDateTimeFormat();
+        return CACHE.get(c).getDefaultDateTimeFormat();
     }
 
     public static String getDefaultTimeFormat(Container c)
     {
-        return get(c).getDefaultTimeFormat();
+        return CACHE.get(c).getDefaultTimeFormat();
     }
 
     public static String getDefaultNumberFormat(Container c)
     {
-        return get(c).getDefaultNumberFormat();
+        return CACHE.get(c).getDefaultNumberFormat();
     }
 
     public static boolean areRestrictedColumnsEnabled(Container c)
     {
-        return get(c).areRestrictedColumnsEnabled();
+        return CACHE.get(c).areRestrictedColumnsEnabled();
     }
 
     public static void clear()
@@ -67,7 +61,7 @@ public class FolderSettingsCache
 
     public static void remove(Container c)
     {
-        CACHE.remove(c.getEntityId());
+        CACHE.remove(c);
     }
 
     private static class FolderSettings
