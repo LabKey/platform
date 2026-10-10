@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Watches one commit task queue of a transaction and warns when a single task class is queued {@link #THRESHOLD} or
@@ -69,6 +70,8 @@ public class RepeatedCommitTaskMonitor
     // Registration stack captured when a class reaches the threshold, in the order classes reached it
     private final Map<Class<?>, Throwable> _repeated = new LinkedHashMap<>();
     private final Map<Class<?>, Long> _elapsedNanos = new HashMap<>();
+    // Not reset by clear(), so tests can read a transaction's warnings after it closes
+    private int _warningCount = 0;
 
     /** Call only for a task that was actually queued, not one dropped as equal to a queued task */
     void added(Runnable task)
@@ -103,6 +106,7 @@ public class RepeatedCommitTaskMonitor
                     _counts.get(taskClass), queueSize, TimeUnit.NANOSECONDS.toMillis(_elapsedNanos.getOrDefault(taskClass, 0L)), stackTrace);
             recordTally(warning);
             WARNING_THROTTLE.execute(warning);
+            _warningCount++;
         });
     }
 
@@ -311,23 +315,28 @@ public class RepeatedCommitTaskMonitor
             return CoreSchema.getInstance().getScope();
         }
 
-        // Counts throttled warnings too, since an earlier run in this JVM may already have warned for the same call site
-        private static long warnings()
+        // Counts this transaction's monitors rather than the shared throttle, which other threads' commits also hit
+        private static int warningsFor(boolean commit, int count, IntConsumer register)
         {
-            return WARNING_THROTTLE.getExecutionCount() + WARNING_THROTTLE.getThrottledCount();
-        }
-
-        private static long warningsFor(boolean commit, int count, IntConsumer register)
-        {
-            long before = warnings();
+            List<RepeatedCommitTaskMonitor> monitors;
             try (DbScope.Transaction tx = scope().ensureTransaction())
             {
+                DbScope.TransactionImpl impl = scope().getCurrentTransactionImpl();
+                monitors = Stream.of(CommitTaskOption.PRECOMMIT, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK)
+                        .map(option -> option.getQueue(impl).getMonitor())
+                        .toList();
                 for (int i = 0; i < count; i++)
                     register.accept(i);
                 if (commit)
                     tx.commit();
             }
-            return warnings() - before;
+            return monitors.stream().mapToInt(monitor -> monitor._warningCount).sum();
+        }
+
+        private static int tallyTransactions(RepeatedTaskWarning key)
+        {
+            Tally tally = TALLIES.get(key);
+            return tally != null ? tally.transactions() : 0;
         }
 
         @Test
@@ -380,15 +389,14 @@ public class RepeatedCommitTaskMonitor
                 for (int i = 0; i < THRESHOLD; i++)
                     monitor.added(TestCase.task(i));
 
-                long executions = WARNING_THROTTLE.getExecutionCount();
-                long throttled = WARNING_THROTTLE.getThrottledCount();
+                // A warning that logs drains its call site's tally; a throttled one adds to it
+                Throwable stackTrace = monitor._repeated.values().iterator().next();
+                RepeatedTaskWarning key = new RepeatedTaskWarning(getStackKey(stackTrace), CommitTaskOption.POSTCOMMIT, "Task", THRESHOLD, THRESHOLD, 0, stackTrace);
+                int before = tallyTransactions(key);
                 monitor.warnOfRepeats(CommitTaskOption.POSTCOMMIT, THRESHOLD);
 
                 if (round == 1)
-                {
-                    assertEquals(executions, WARNING_THROTTLE.getExecutionCount());
-                    assertEquals(throttled + 1, WARNING_THROTTLE.getThrottledCount());
-                }
+                    assertEquals(before + 1, tallyTransactions(key));
             }
         }
     }

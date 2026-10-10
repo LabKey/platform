@@ -2530,6 +2530,11 @@ public class DbScope
             return _tasks.size();
         }
 
+        RepeatedCommitTaskMonitor getMonitor()
+        {
+            return _monitor;
+        }
+
         void clear()
         {
             _tasks.clear();
