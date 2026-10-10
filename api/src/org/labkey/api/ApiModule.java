@@ -123,6 +123,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
@@ -586,6 +587,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryView.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
