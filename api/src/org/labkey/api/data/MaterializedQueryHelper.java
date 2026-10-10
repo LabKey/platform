@@ -381,6 +381,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             return peekValid();
         }
 
+        /** Supplier value as of the last {@link #stillValid} or {@link #markValidAs}; null before either. */
+        public @Nullable String snapshot()
+        {
+            return _result.get();
+        }
+
         /**
          * Current supplier value, with no change to the stored snapshot. Capture this before doing work,
          * then pass it to {@link #markValidAs} once the work has committed.

@@ -34,6 +34,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.ColumnHeaderType;
@@ -152,15 +153,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.NON_NEGATIVE_NUMBER_CONCEPT_URI;
@@ -1266,8 +1271,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class InvalidationCounters
     {
+        static final int MAX_LOGGED_DELETES = 250_000;
+
         public final AtomicLong update, insert, delete, rollup;
         public final AtomicReference<Timestamp> pendingUpdateSince = new AtomicReference<>();
+
+        // Deleted rowIds keyed by the delete counter value their commit produced. A reader whose delete snapshot is
+        // older than untrackedDeletesThrough may have missed unlogged rowIds, so it must reconcile the whole table.
+        private final NavigableMap<Long, long[]> deleteLog = new TreeMap<>();
+        private long deleteLogSize;
+        private long untrackedDeletesThrough;
 
         InvalidationCounters()
         {
@@ -1276,6 +1289,43 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             insert = new AtomicLong(l);
             delete = new AtomicLong(l);
             rollup = new AtomicLong(l);
+            untrackedDeletesThrough = l;
+        }
+
+        /** Bump the delete counter, logging the deleted rowIds; null means they're unknown. */
+        synchronized void recordDelete(@Nullable Collection<Long> rowIds)
+        {
+            long seq = delete.incrementAndGet();
+            if (rowIds == null)
+            {
+                forgetDeletesThrough(seq);
+                return;
+            }
+            deleteLog.put(seq, rowIds.stream().mapToLong(Long::longValue).toArray());
+            deleteLogSize += rowIds.size();
+            while (deleteLogSize > MAX_LOGGED_DELETES)
+                forgetDeletesThrough(deleteLog.firstKey());
+        }
+
+        /** Drop entries a reader has already applied; any reader still behind {@code seq} falls back to a full pass. */
+        synchronized void forgetDeletesThrough(long seq)
+        {
+            NavigableMap<Long, long[]> head = deleteLog.headMap(seq, true);
+            head.values().forEach(ids -> deleteLogSize -= ids.length);
+            head.clear();
+            untrackedDeletesThrough = Math.max(untrackedDeletesThrough, seq);
+        }
+
+        /** @return rowIds deleted after counter value {@code after} through {@code through}, or null if any weren't logged */
+        synchronized @Nullable Set<Long> getDeletedRowIds(long after, long through)
+        {
+            if (after < untrackedDeletesThrough)
+                return null;
+            Set<Long> ret = new LongHashSet();
+            for (long[] ids : deleteLog.subMap(after, false, through, true).values())
+                for (long id : ids)
+                    ret.add(id);
+            return ret;
         }
 
         void recordPendingUpdate(@NotNull Timestamp changedSince)
@@ -1305,9 +1355,81 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
      */
     public static void refreshMaterializedView(final String lsid, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
+        if (reason == SampleTypeServiceImpl.SampleChangeType.delete)
+            refreshMaterializedViewAfterDelete(lsid, null);
+        else
+            addRefreshCommitTask(new RefreshMaterializedViewRunnable(lsid, reason, changedSince));
+    }
+
+    /** @param deletedRowIds rowIds the delete removed, letting the next read delete just those; null forces a full pass */
+    public static void refreshMaterializedViewAfterDelete(final String lsid, @Nullable Collection<Long> deletedRowIds)
+    {
+        var task = new DeleteRefreshRunnable(lsid, deletedRowIds);
+        var queued = addRefreshCommitTask(task);
+        if (queued != task)
+            queued.merge(deletedRowIds);
+    }
+
+    private static <T extends Runnable> T addRefreshCommitTask(T runnable)
+    {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
-        var runnable = new RefreshMaterializedViewRunnable(lsid, reason, changedSince);
-        scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
+        return scope.addCommitTask(runnable, DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    /** POSTCOMMIT delete signal, equal per LSID so a transaction's deletes from one sample type merge into a single task. */
+    private static final class DeleteRefreshRunnable implements Runnable
+    {
+        private final String _lsid;
+        private @Nullable Collection<Long> _rowIds;
+        private boolean _ownsRowIds;
+
+        DeleteRefreshRunnable(String lsid, @Nullable Collection<Long> rowIds)
+        {
+            _lsid = lsid;
+            _rowIds = rowIds;
+        }
+
+        synchronized void merge(@Nullable Collection<Long> rowIds)
+        {
+            if (_rowIds == null)
+                return;
+            if (rowIds == null || _rowIds.size() + rowIds.size() > InvalidationCounters.MAX_LOGGED_DELETES)
+            {
+                _rowIds = null;
+                return;
+            }
+            if (!_ownsRowIds)
+            {
+                _rowIds = new LongHashSet(_rowIds);
+                _ownsRowIds = true;
+            }
+            _rowIds.addAll(rowIds);
+        }
+
+        @Override
+        public synchronized void run()
+        {
+            // Without a cached view there's no reader to consume the log, so don't retain the ids
+            getInvalidateCounters(_lsid).recordDelete(isMaterialized(_lsid) ? _rowIds : null);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            return o instanceof DeleteRefreshRunnable other && _lsid.equals(other._lsid);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _lsid.hashCode();
+        }
+
+        @Override
+        public @NotNull String toString()
+        {
+            return "DeleteRefreshRunnable{lsid=" + _lsid + ", rowIds=" + (_rowIds == null ? null : _rowIds.size()) + "}";
+        }
     }
 
     /**
@@ -1331,7 +1453,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                  * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
                  * MQH from the cache to force the SQL to be regenerated.
                  */
-                _materializedQueries.remove(lsid);
+                removeMaterializedView(lsid);
                 return;
             }
 
@@ -1340,7 +1462,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 case insert -> counters.insert.incrementAndGet();
                 case rollup -> counters.rollup.incrementAndGet();
-                case delete -> counters.delete.incrementAndGet();
                 case update, merge -> {
                     // An update or merge did not capture a watermark, so it cannot be targeted incrementally; drop the
                     // cached MQH so the next read rebuilds the whole view. Clear any pending watermark since the
@@ -1348,7 +1469,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     if (changedSince == null)
                     {
                         counters.pendingUpdateSince.set(null);
-                        _materializedQueries.remove(lsid);
+                        removeMaterializedView(lsid);
                         return;
                     }
 
@@ -1361,12 +1482,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 default -> throw new IllegalStateException("Unexpected value: " + reason);
             }
         }
+    }
 
-        @Override
-        public @NotNull String toString()
-        {
-            return "RefreshMaterializedViewRunnable{lsid=" + lsid + ", reason=" + reason + ", changedSince=" + changedSince + "}";
-        }
+    /** Drop the cached view along with the delete log that only it could consume. */
+    static void removeMaterializedView(String lsid)
+    {
+        _materializedQueries.remove(lsid);
+        InvalidationCounters counters = _invalidationCounters.get(lsid);
+        if (counters != null)
+            counters.forgetDeletesThrough(counters.delete.get());
+    }
+
+    /** @return true if a materialized view is cached, or being built, for this sample type */
+    static boolean isMaterialized(String lsid)
+    {
+        return _materializedQueries.getKeys().contains(lsid);
     }
 
     private static InvalidationCounters getInvalidateCounters(String lsid)
@@ -1607,10 +1737,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     return;
                 }
 
-                runIncremental("delete", materialized.incrementalDeleteCheck, this::executeIncrementalDelete);
-                runIncremental("update", materialized.incrementalUpdateCheck, this::executeIncrementalUpdate);
-                runIncremental("rollup", materialized.incrementalRollupCheck, this::executeIncrementalRollup);
-                runIncremental("insert", materialized.incrementalInsertCheck, this::executeIncrementalInsert);
+                String deletedAfter = materialized.incrementalDeleteCheck.snapshot();
+                runIncremental("delete", materialized.incrementalDeleteCheck, token -> executeIncrementalDelete(materialized.counters, deletedAfter, token));
+                runIncremental("update", materialized.incrementalUpdateCheck, _ -> executeIncrementalUpdate(materialized.counters));
+                runIncremental("rollup", materialized.incrementalRollupCheck, _ -> executeIncrementalRollup());
+                runIncremental("insert", materialized.incrementalInsertCheck, _ -> executeIncrementalInsert());
             }
             catch (RuntimeException|InterruptedException ex)
             {
@@ -1619,7 +1750,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // The only time I'd expect an error is due to a schema change race-condition, but that can happen in any code path.
 
                 // Ensure that next refresh starts clean
-                _materializedQueries.remove(_lsid);
+                removeMaterializedView(_lsid);
                 getInvalidateCounters(_lsid).update.incrementAndGet();
                 throw rex;
             }
@@ -1638,12 +1769,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
          * reflects the change, instead of briefly serving a stale materialized view. Must be called while holding the
          * materialized's loading lock so only one updater runs at a time.
          */
-        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Runnable work)
+        private void runIncremental(String kind, MaterializedQueryHelper.SupplierInvalidator check, Consumer<String> work)
         {
             if (check.peekValid())
                 return;
             String token = check.current();
-            traced("incremental." + kind, work);
+            traced("incremental." + kind, () -> work.accept(token));
             check.markValidAs(token);
         }
 
@@ -1668,15 +1799,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             upsertWithRetry(incremental);
         }
 
-        void executeIncrementalDelete()
+        /** Delete the rows removed between two delete-counter tokens, falling back to a full pass if they weren't all logged. */
+        void executeIncrementalDelete(InvalidationCounters counters, @Nullable String after, String through)
         {
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            long throughSeq = Long.parseLong(through);
+            Set<Long> deleted = null == after ? null : counters.getDeletedRowIds(Long.parseLong(after), throughSeq);
+            if (null != deleted)
+            {
+                if (!deleted.isEmpty())
+                {
+                    // The default generator binds an array (= ANY), which probes the rowid index; a temp-table IN can seq scan.
+                    SQLFragment targeted = new SQLFragment("DELETE FROM temp.${NAME} WHERE rowid");
+                    d.appendInClauseSqlWithCustomInClauseGenerator(targeted, deleted, null);
+                    upsertWithRetry(targeted);
+                }
+                counters.forgetDeletesThrough(throughSeq);
+                return;
+            }
+
             // POSTGRES bug??? the obvious query is _very_ slow O(n^2)
             // DELETE FROM temp.${NAME} WHERE rowid NOT IN (SELECT rowid FROM exp.material WHERE cpastype = <<_lsid>>)
             SQLFragment incremental = new SQLFragment()
                     .append("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).append(")\n")
                     .append("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
             upsertWithRetry(incremental);
+            counters.forgetDeletesThrough(throughSeq);
         }
 
         void executeIncrementalRollup()
@@ -1697,9 +1845,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             upsertWithRetry(incremental);
         }
 
-        void executeIncrementalUpdate()
+        void executeIncrementalUpdate(InvalidationCounters counters)
         {
-            InvalidationCounters counters = getInvalidateCounters(_lsid);
             Timestamp since = counters.drainPendingUpdate();
             if (since == null || isIncrementalUpdateDisabled())
                 return;
@@ -1748,6 +1895,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     static class _Materialized extends MaterializedQueryHelper.Materialized
     {
+        final InvalidationCounters counters;
         final MaterializedQueryHelper.SupplierInvalidator incrementalInsertCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalRollupCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalDeleteCheck;
@@ -1756,7 +1904,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
         {
             super(mqh, tableName, cacheKey, created, sql);
-            final InvalidationCounters counters = getInvalidateCounters(mqh._lsid);
+            counters = getInvalidateCounters(mqh._lsid);
             incrementalInsertCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.insert.get()));
             incrementalRollupCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.rollup.get()));
             incrementalDeleteCheck = new MaterializedQueryHelper.SupplierInvalidator(() -> String.valueOf(counters.delete.get()));
@@ -1894,12 +2042,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public SampleTypeAmountDisplayColumn(TableInfo parent, String amountFieldName, String unitFieldName, String label, Set<String> importAliases, Unit typeUnit)
         {
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
-                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(unitFieldName)
+                            .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(amountFieldName)
+                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(amountFieldName)
                             .append(" / ? AS ")
                             .append("DECIMAL")
-                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(amountFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.getValue()),
@@ -1915,8 +2063,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public SampleTypeUnitDisplayColumn(TableInfo parent, String unitFieldName, Unit typeUnit)
         {
             super(parent, FieldKey.fromParts(unitFieldName), new SQLFragment(
-                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
+                            "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(unitFieldName)
+                            .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS).append(".").append(unitFieldName)
                             .append(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.toString()),
@@ -2343,6 +2491,125 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Test
+        public void testTargetedDelete() throws Exception
+        {
+            // Deletes by RowId, LSID and Name must each be logged, so the next read drops just those rows.
+            ExpSampleType st = createSampleType("IncrUpdDelete");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3", "R4");
+            insertAliquots(st, "R1", 2);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            String lsid = ExperimentService.get().getExpMaterial(roots.get(2)).getLSID();
+            deleteRows(st, List.of(
+                    CaseInsensitiveHashMap.of(RowId.name(), roots.get(1)),
+                    CaseInsensitiveHashMap.of(LSID.name(), lsid),
+                    CaseInsensitiveHashMap.of("name", "R4", MaterialSourceId.name(), st.getRowId())));
+            long after = counters.delete.get();
+            assertEquals(Set.of(roots.get(1).longValue(), roots.get(2).longValue(), roots.get(3).longValue()),
+                    counters.getDeletedRowIds(before, after));
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+            assertNull("Applying the delete must release its log entries", counters.getDeletedRowIds(before, after));
+        }
+
+        @Test
+        public void testDeleteSignalsMergeInTransaction() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteMerge");
+            insertRoots(st, "R1");
+            assertCacheMatchesFreshDerivation(getSamplesTable(st), st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterDelete(st.getLSID(), Set.of(1L, 2L));
+                refreshMaterializedViewAfterDelete(st.getLSID(), List.of(3L));
+                tx.commit();
+            }
+            assertEquals("Deletes in one transaction must share one signal", before + 1, counters.delete.get());
+            assertEquals(Set.of(1L, 2L, 3L), counters.getDeletedRowIds(before, counters.delete.get()));
+
+            before = counters.delete.get();
+            try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+            {
+                refreshMaterializedViewAfterDelete(st.getLSID(), List.of(4L));
+                refreshMaterializedViewAfterDelete(st.getLSID(), null);
+                tx.commit();
+            }
+            assertNull("Merging an untracked delete must force a full pass", counters.getDeletedRowIds(before, counters.delete.get()));
+        }
+
+        @Test
+        public void testDeleteWithoutViewNotLogged() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteNoView");
+            List<Integer> roots = insertRoots(st, "R1", "R2");
+            _materializedQueries.remove(st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.get(0).longValue()), true, st, false, false);
+            assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
+        }
+
+        @Test
+        public void testUntrackedDeleteFullPass() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteFull");
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3");
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // An unlogged delete after the logged one forces the next read onto the full reconcile pass.
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.get(0).longValue()), true, st, false, false);
+            getInvalidateCounters(st.getLSID()).recordDelete(null);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testDeleteLog()
+        {
+            InvalidationCounters counters = new InvalidationCounters();
+            long start = counters.delete.get();
+            counters.recordDelete(List.of(1L, 2L));
+            assertEquals(Set.of(1L, 2L), counters.getDeletedRowIds(start, counters.delete.get()));
+
+            counters.recordDelete(null);
+            counters.recordDelete(List.of(3L));
+            long end = counters.delete.get();
+            assertNull("A snapshot older than an unlogged delete must reconcile fully", counters.getDeletedRowIds(start, end));
+            assertEquals(Set.of(3L), counters.getDeletedRowIds(end - 1, end));
+
+            counters.recordDelete(LongStream.rangeClosed(1, InvalidationCounters.MAX_LOGGED_DELETES + 1).boxed().toList());
+            assertNull("Overflowing the log must force a full pass", counters.getDeletedRowIds(end, counters.delete.get()));
+
+            long beforePrune = counters.delete.get();
+            counters.recordDelete(List.of(4L));
+            counters.recordDelete(List.of(5L));
+            long pruned = beforePrune + 1;
+            counters.forgetDeletesThrough(pruned);
+            assertNull("A reader behind a pruned entry must reconcile fully", counters.getDeletedRowIds(beforePrune, counters.delete.get()));
+            assertEquals(Set.of(5L), counters.getDeletedRowIds(pruned, counters.delete.get()));
+        }
+
+        @Test
+        public void testRemoveViewReleasesDeleteLog() throws Exception
+        {
+            ExpSampleType st = createSampleType("IncrUpdDeleteRemove");
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            long before = counters.delete.get();
+            counters.recordDelete(List.of(1L, 2L));
+            removeMaterializedView(st.getLSID());
+            assertNull("Removing the view must release its unconsumed delete log", counters.getDeletedRowIds(before, counters.delete.get()));
+            assertEquals(Set.of(), counters.getDeletedRowIds(counters.delete.get(), counters.delete.get()));
+        }
+
+        @Test
         public void testDomainIndexMirroredNonUnique() throws Exception
         {
             Assume.assumeTrue("Domain indices are only mirrored on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
@@ -2431,6 +2698,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             getUpdateService(st).updateRows(_user, _c, rows, null, errors, null, null);
             if (errors.hasErrors())
                 throw errors;
+        }
+
+        private void deleteRows(ExpSampleType st, List<Map<String, Object>> keys) throws Exception
+        {
+            getUpdateService(st).deleteRows(_user, _c, keys, null, null);
         }
 
         private void mergeRows(ExpSampleType st, List<Map<String, Object>> rows) throws Exception
