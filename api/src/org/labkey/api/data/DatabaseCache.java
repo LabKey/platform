@@ -510,7 +510,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 for (int i = 1; i <= 15; i++)
                 {
                     cache.get("key_" + i);
-                    taskCount = DbScope.CommitTaskOption.POSTCOMMIT.getRunnables(scope.getCurrentTransactionImpl()).size();
+                    taskCount = DbScope.CommitTaskOption.POSTCOMMIT.getQueue(scope.getCurrentTransactionImpl()).size();
 
                     // Try another cache miss for this key to ensure another post commit is not added
                     if (i == 5)

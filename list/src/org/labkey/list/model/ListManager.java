@@ -623,20 +623,37 @@ public class ListManager implements SearchService.DocumentProvider
     {
         // Transaction-aware is good practice. But it happens to be critical in the case of calling indexEntireList()
         // because it turns off JDBC caching, using a non-transacted connection (bad news if we call it mid-transaction).
-        getListMetadataSchema().getScope().addCommitTask(() ->
+        new DeleteItemIndexTask(list).register(getListMetadataSchema().getScope(), List.of(entityId), DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    private record ListKey(Container container, int listId) {}
+
+    /** Deindexes every item deleted from one list in a transaction, then reindexes the whole list once */
+    private class DeleteItemIndexTask extends AccumulatingCommitTask<ListKey, String>
+    {
+        private final ListDefinition _list;
+
+        DeleteItemIndexTask(ListDefinition list)
         {
-            SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(list.getContainer(), SearchService.PRIORITY.modified);
-            if (list.getEachItemIndex())
+            super(new ListKey(list.getContainer(), list.getListId()));
+            _list = list;
+        }
+
+        @Override
+        protected void process(@NotNull ListKey key, @NotNull Set<String> entityIds)
+        {
+            if (_list.getEachItemIndex())
             {
-                SearchService.get().deleteResource(getDocumentId(list, entityId));
+                SearchService.get().deleteResources(entityIds.stream().map(entityId -> getDocumentId(_list, entityId)).toList());
             }
 
             // Reindex the entire list document iff data is being indexed
-            if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+            if (_list.getEntireListIndex() && _list.getEntireListIndexSetting().indexItemData())
             {
-                indexEntireList(queue, list, true);
+                SearchService.TaskIndexingQueue queue = SearchService.get().defaultTask().getQueue(_list.getContainer(), SearchService.PRIORITY.modified);
+                indexEntireList(queue, _list, true);
             }
-        }, DbScope.CommitTaskOption.POSTCOMMIT);
+        }
     }
 
     private String getDocumentId(ListDefinition list)
