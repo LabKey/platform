@@ -358,6 +358,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
 
+    // Shared instance so commit tasks dedupe when one transaction saves or deletes several protocols
+    private static final Runnable CLEAR_PROTOCOL_CACHE_TASK = () -> {
+        AssayService assayService = AssayService.get();
+        if (assayService != null)
+            assayService.clearProtocolCache();
+    };
+
     private final List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private final Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
     private final List<ExpRunEditor> _runEditors = new ArrayList<>();
@@ -4728,10 +4735,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
+                // Be sure that we clear the cache after we commit the overall transaction, in case it
+                // gets repopulated by another thread before then
+                transaction.addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
                 transaction.addCommitTask(() -> {
-                    // Be sure that we clear the cache after we commit the overall transaction, in case it
-                    // gets repopulated by another thread before then
-                    assayService.clearProtocolCache();
                     for (Protocol protocol : protocols)
                     {
                         uncacheProtocol(protocol);
@@ -5167,7 +5174,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
             // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(() -> SampleChangeNotify.fireSampleDataChanged(container), POSTCOMMIT);
+            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)
@@ -6772,7 +6779,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
-                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT, POSTROLLBACK);
+                getExpSchema().getScope().addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, POSTROLLBACK);
             }
             else
             {

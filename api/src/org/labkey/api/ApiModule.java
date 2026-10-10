@@ -50,6 +50,7 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
@@ -75,6 +76,7 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
+import org.labkey.api.data.RepeatedCommitTaskMonitor;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -487,6 +489,7 @@ public class ApiModule extends CodeOnlyModule
             Path.TestCase.class,
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
+            RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
             SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
@@ -538,6 +541,7 @@ public class ApiModule extends CodeOnlyModule
             AbstractAuditDomainKind.TestCase.class,
             AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
+            AccumulatingCommitTask.TestCase.class,
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
@@ -587,6 +591,7 @@ public class ApiModule extends CodeOnlyModule
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
             RecordFactory.TestCase.class,
+            RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,

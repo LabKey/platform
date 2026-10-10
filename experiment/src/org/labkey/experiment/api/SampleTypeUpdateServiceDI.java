@@ -27,6 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -1157,7 +1158,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container, SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
-        var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        DbScope scope = getSchema().getDbSchema().getScope();
+        var tx = scope.getCurrentTransaction();
         Pair<Set<Long>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
@@ -1173,17 +1175,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!useBackgroundRecalc && parentKeys != null && !skipRecalc)
             handleRecalc(parentKeys.first, parentKeys.second, false, container);
 
+        // Sample data change notifications flag clients' cached "insights" counts as stale; deletes notify from ExperimentServiceImpl
         if (tx != null)
         {
             if (!tx.isAborted())
             {
                 boolean finalUseBackgroundRecalc = useBackgroundRecalc;
                 boolean finalSkipRecalc = skipRecalc;
-                tx.addCommitTask(() -> {
+                Runnable onCommit = () -> {
                     fireSamplesChanged(reason, changedSince);
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
                         handleRecalc(parentKeys.first, parentKeys.second, true, container);
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                };
+                new SamplesChangedTask(getContainer()).register(scope, List.of(onCommit), DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
                 LOG.info("Skipping onSamplesChanged callback; transaction aborted");
@@ -1191,6 +1195,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         else
         {
             fireSamplesChanged(reason, changedSince);
+            SampleChangeNotify.fireSampleDataChanged(getContainer());
         }
     }
 
@@ -1222,14 +1227,26 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
+    /** Runs every update's post-commit work in the transaction, then notifies clients once so they never see a pre-refresh count */
+    private static class SamplesChangedTask extends AccumulatingCommitTask<Container, Runnable>
+    {
+        SamplesChangedTask(Container container)
+        {
+            super(container);
+        }
+
+        @Override
+        protected void process(@NotNull Container container, @NotNull Set<Runnable> onCommits)
+        {
+            onCommits.forEach(Runnable::run);
+            SampleChangeNotify.fireSampleDataChanged(container);
+        }
+    }
+
     private void fireSamplesChanged(SampleTypeServiceImpl.SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         if (_sampleType != null)
             _sampleType.onSamplesChanged(getUser(), null, reason, changedSince);
-
-        // Notify connected clients so cached "insights" counts can be flagged stale (insert/update/merge).
-        // Deletes bypass this path -- see ExperimentServiceImpl.deleteMaterialByRowIds for that notification.
-        SampleChangeNotify.fireSampleDataChanged(getContainer());
     }
 
     static @Nullable Timestamp captureChangedSince()

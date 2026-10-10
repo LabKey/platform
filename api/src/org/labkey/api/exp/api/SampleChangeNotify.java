@@ -36,6 +36,16 @@ public enum SampleChangeNotify
 
     private static final Logger LOG = LogHelper.getLogger(SampleChangeNotify.class, "Sample data change WebSocket notifications");
 
+    /** Commit task that dedupes per container, so repeated registrations in one transaction notify once. */
+    public record FireSampleDataChangedTask(@Nullable Container container) implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            fireSampleDataChanged(container);
+        }
+    }
+
     public static void fireSampleDataChanged(@Nullable Container container)
     {
         if (container == null)
