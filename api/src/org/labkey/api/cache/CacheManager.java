@@ -77,7 +77,10 @@ public class CacheManager
 
     // Key classes whose caches store a cheaper surrogate key. Matched on the exact declared key class.
     private static final Map<Class<?>, Function<SimpleCache<?, ?>, SimpleCache<?, ?>>> KEY_MAPPINGS = Map.of(
-        Container.class, cache -> new ContainerKeySimpleCache<>((SimpleCache<GUID, ?>) cache)
+        Container.class, cache -> new ContainerKeySimpleCache<>((SimpleCache<GUID, ?>) cache),
+        // User cache keys are rare, but might as well make them efficient. UserKeySimpleCache keys on UserId alone,
+        // which means that limited, elevated, and normal users all share the same entries.
+        User.class, cache -> new UserKeySimpleCache<>((SimpleCache<Integer, ?>) cache)
     );
 
     @SuppressWarnings("unchecked")
@@ -301,6 +304,17 @@ public class CacheManager
 
                 cache.put(c.getEntityId(), "value");
                 assertEquals("value", cache.get(c.getEntityId()));
+            }
+        }
+
+        @Test
+        public void testUserKeyRejected()
+        {
+            try (Cache<Object, String> cache = getTemporaryCache(Object.class, 10, MINUTE, "User key test", null))
+            {
+                assertThrows(IllegalArgumentException.class, () -> cache.put(User.guest, "value"));
+                assertThrows(IllegalArgumentException.class, () -> cache.get(User.guest, null, (key, argument) -> "loaded"));
+                assertFalse(cache.getKeys().findAny().isPresent());
             }
         }
     }
