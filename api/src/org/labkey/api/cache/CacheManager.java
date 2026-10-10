@@ -323,7 +323,7 @@ public class CacheManager
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value"));
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value", MINUTE));
                 assertThrows(IllegalArgumentException.class, () -> cache.get(c, null, (key, argument) -> "loaded"));
-                assertTrue(cache.getKeys().isEmpty());
+                assertFalse(cache.getKeys().findAny().isPresent());
 
                 cache.put(c.getEntityId(), "value");
                 assertEquals("value", cache.get(c.getEntityId()));

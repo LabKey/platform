@@ -25,7 +25,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Path;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ public class ViewCategoryCache
 {
     private static final ViewCategoryCache INSTANCE = new ViewCategoryCache();
 
-    private final Cache<String, ViewCategoryCollections> VIEW_CATEGORY_CACHE = DatabaseCache.get(CoreSchema.getInstance().getSchema().getScope(), 300, "View categories", (key, argument) -> new ViewCategoryCollections(key));
+    private final Cache<Container, ViewCategoryCollections> VIEW_CATEGORY_CACHE = DatabaseCache.get(Container.class, CoreSchema.getInstance().getSchema().getScope(), 300, "View categories", (c, argument) -> new ViewCategoryCollections(c));
 
     private ViewCategoryCache()
     {
@@ -55,48 +54,48 @@ public class ViewCategoryCache
         return INSTANCE;
     }
 
-    ViewCategory getViewCategory(String cid, int id)
+    ViewCategory getViewCategory(Container c, int id)
     {
-        return getCollections(cid).getViewCategory(id);
+        return getCollections(c).getViewCategory(id);
     }
 
-    ViewCategory getViewCategory(String cid, String... parts)
+    ViewCategory getViewCategory(Container c, String... parts)
     {
         if (parts.length > 2)
             throw new IllegalArgumentException("Only two view category levels are supported at this time");
 
-        return getCollections(cid).getViewCategory(parts);
+        return getCollections(c).getViewCategory(parts);
     }
 
-    List<ViewCategory> getSubcategories(String cid, int parentId)
+    List<ViewCategory> getSubcategories(@Nullable Container c, int parentId)
     {
         // "Uncategorized" fakeo category doesn't have a Container
-        if (null == cid)
+        if (null == c)
             return Collections.emptyList();
 
-        return getCollections(cid).getSubcategories(parentId);
+        return getCollections(c).getSubcategories(parentId);
     }
 
-    List<ViewCategory> getAllCategories(String cid)
+    List<ViewCategory> getAllCategories(Container c)
     {
-        return getCollections(cid).getViewCategories();
+        return getCollections(c).getViewCategories();
     }
 
-    List<ViewCategory> getTopLevelCategories(String cid)
+    List<ViewCategory> getTopLevelCategories(Container c)
     {
-        return getCollections(cid).getSubcategories(null);
+        return getCollections(c).getSubcategories(null);
     }
 
     void clear(Container c)
     {
-        VIEW_CATEGORY_CACHE.remove(c.getId());
+        VIEW_CATEGORY_CACHE.remove(c);
     }
 
-    private ViewCategoryCollections getCollections(String cid)
+    private ViewCategoryCollections getCollections(Container c)
     {
-        assert null != cid;
+        assert null != c;
 
-        return VIEW_CATEGORY_CACHE.get(cid);
+        return VIEW_CATEGORY_CACHE.get(c);
     }
 
     private static class ViewCategoryCollections
@@ -105,9 +104,9 @@ public class ViewCategoryCache
         private final MultiValuedMap<Integer, ViewCategory> _childrenMap;
         private final Map<Path, ViewCategory> _pathMap;
 
-        private ViewCategoryCollections(String cid)
+        private ViewCategoryCollections(Container c)
         {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
+            SimpleFilter filter = SimpleFilter.createContainerFilter(c);
             ViewCategoryManager mgr = ViewCategoryManager.getInstance();
 
             Collection<ViewCategory> categories = new TableSelector(mgr.getTableInfoCategories(), filter, null).getCollection(ViewCategory.class);

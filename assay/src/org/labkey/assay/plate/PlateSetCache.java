@@ -142,7 +142,7 @@ public class PlateSetCache
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateSetCacheKey.getCacheKey(c, rowId);
-        if (PLATE_SET_CACHE.getKeys().contains(key))
+        if (PLATE_SET_CACHE.getKeys().anyMatch(key::equals))
         {
             PlateSet plateSet = getPlateSet(c, rowId);
             if (plateSet != null)

@@ -11,6 +11,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ContainerKeySimpleCache<V> extends SimpleKeyMappingCache<Container, GUID, V>
 {
@@ -33,12 +34,12 @@ public class ContainerKeySimpleCache<V> extends SimpleKeyMappingCache<Container,
             {
                 cache.put(parent, "parent");
                 cache.put(child, "child");
-                assertEquals(Set.of(parent, child), cache.getKeys());
+                assertEquals(Set.of(parent, child), cache.getKeys().collect(Collectors.toSet()));
 
                 assertTrue(ContainerManager.delete(child, user));
 
                 // A plain Container-keyed cache would still report the deleted child here
-                assertEquals(Set.of(parent), cache.getKeys());
+                assertEquals(Set.of(parent), cache.getKeys().collect(Collectors.toSet()));
                 assertEquals(1, cache.removeUsingFilter(_ -> true));
                 assertNull(cache.get(parent));
 

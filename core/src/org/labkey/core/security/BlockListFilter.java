@@ -229,15 +229,15 @@ public class BlockListFilter
     public static Collection<Suspicious> reportSuspicious()
     {
         ArrayList<Suspicious> ret = new ArrayList<>();
-        for (String key : suspiciousMap.getKeys())
-        {
+        suspiciousMap.getKeys().forEach(key -> {
             Suspicious s = suspiciousMap.get(key);
-            if (null == s)
-                continue;
-            Suspicious copy = s.clone();
-            if (copy.getCount() > 0)
-                ret.add(copy);
-        }
+            if (null != s)
+            {
+                Suspicious copy = s.clone();
+                if (copy.getCount() > 0)
+                    ret.add(copy);
+            }
+        });
         return ret;
     }
 

@@ -33,8 +33,8 @@ import org.labkey.api.util.logging.LogHelper;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
@@ -43,42 +43,27 @@ import java.util.function.Predicate;
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
-    private final @Nullable Class<K> _keyClass;
+    private final @NotNull Class<K> _keyClass;
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
     // Use the factory methods that return a BlockingDatabaseCache instead
-    private DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
-    {
-        this(null, scope, maxSize, defaultTimeToLive, debugName);
-    }
-
-    private DatabaseCache(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    private DatabaseCache(@NotNull Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
         _keyClass = keyClass;
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
-    {
-        return get(null, scope, maxSize, defaultTimeToLive, debugName, cacheLoader);
-    }
-
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
-    {
-        // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
-        return get(scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
-    }
-
-    /** Uses a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
-    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    /** Uses a cache implementation specialized for keyClass, if one is registered */
+    public static <K, V> BlockingCache<K, V> get(@NotNull Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         return new BlockingDatabaseCache<>(new DatabaseCache<>(keyClass, scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
     }
 
-    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    public static <K, V> BlockingCache<K, V> get(@NotNull Class<K> keyClass, DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
+        // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
         return get(keyClass, scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
     }
 
@@ -293,9 +278,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public void remove(@NotNull final K key)
+    public boolean remove(@NotNull final K key)
     {
-        getCache().remove(key);
+        return getCache().remove(key);
     }
 
     @Override
@@ -311,7 +296,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
         return _sharedCache.getKeys();
     }
@@ -340,7 +325,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         {
             public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
             {
-                super(scope, maxSize, CacheManager.UNLIMITED, debugName);
+                super(String.class, scope, maxSize, CacheManager.UNLIMITED, debugName);
             }
 
             // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
@@ -436,30 +421,30 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     TransactionCache<String, String> tCache = (TransactionCache<String, String>) cache.getCache();
                     Cache<String, String> privateCache = tCache._privateCache;
                     Cache<String, String> sharedCache = tCache._sharedCache;
-                    assertEquals(10, tCache.getKeys().size());
-                    assertEquals(10, sharedCache.getKeys().size());
-                    assertEquals(0, privateCache.getKeys().size());
+                    assertEquals(10, tCache.getKeys().count());
+                    assertEquals(10, sharedCache.getKeys().count());
+                    assertEquals(0, privateCache.getKeys().count());
 
                     // Test read-through transaction cache
                     assertSame(cache.get("key_11"), values[11]);
                     // Nothing should change after a read
-                    assertEquals(10, sharedCache.getKeys().size());
-                    assertEquals(10, tCache.getKeys().size());
-                    assertEquals(0, privateCache.getKeys().size());
+                    assertEquals(10, sharedCache.getKeys().count());
+                    assertEquals(10, tCache.getKeys().count());
+                    assertEquals(0, privateCache.getKeys().count());
 
                     cache.remove("key_11");
                     assertNull(cache.get("key_11"));
-                    assertEquals(10, sharedCache.getKeys().size());
-                    assertEquals(10, tCache.getKeys().size()); // Unique keys are still 10
-                    assertEquals(1, privateCache.getKeys().size()); // But private cache should now have a remove entry
+                    assertEquals(10, sharedCache.getKeys().count());
+                    assertEquals(10, tCache.getKeys().count()); // Unique keys are still 10
+                    assertEquals(1, privateCache.getKeys().count()); // But private cache should now have a remove entry
 
                     for (int i = 30; i < 35; i++)
                     {
                         cache.put("key_" + i, values[i]);
                     }
-                    assertEquals(10, sharedCache.getKeys().size());
-                    assertEquals(15, tCache.getKeys().size()); // 15 unique now
-                    assertEquals(6, privateCache.getKeys().size());
+                    assertEquals(10, sharedCache.getKeys().count());
+                    assertEquals(15, tCache.getKeys().count()); // 15 unique now
+                    assertEquals(6, privateCache.getKeys().count());
 
                     // Remove all the even keys
                     cache.removeUsingFilter(key -> Integer.valueOf(key.substring(4)) % 2 == 0);
@@ -484,7 +469,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     // Test that remove got applied to shared cache
                     assertNull(cache.get("key_11"));
                     // Test that even keys got removed from the shared cache
-                    cache.getKeys().stream()
+                    cache.getKeys()
                             .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
                             .findAny()
                             .ifPresent(key -> fail("Found an even key: " + key));

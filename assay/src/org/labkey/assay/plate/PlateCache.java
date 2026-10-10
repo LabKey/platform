@@ -205,7 +205,7 @@ public class PlateCache
     {
         // noop if the plate doesn't exist in the cache
         String key = PlateCacheKey.getCacheKey(c, rowId);
-        if (PLATE_CACHE.getKeys().contains(key))
+        if (PLATE_CACHE.getKeys().anyMatch(key::equals))
         {
             Plate plate = getPlate(c, rowId);
             if (plate != null)

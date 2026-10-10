@@ -24,9 +24,8 @@ import org.labkey.api.util.HeartBeat;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
@@ -125,19 +124,22 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
+        boolean ret = false;
         try
         {
-            _cache.remove(key);
+            ret = _cache.remove(key);
             trackRemove();
         }
         catch (IllegalStateException ise)
         {
-            if (ContextListener.isShuttingDown())
-                return; // ignore
-            throw ise;
+            // Ignore shutdown exception
+            if (!ContextListener.isShuttingDown())
+                throw ise;
         }
+
+        return ret;
     }
 
     @Override
@@ -147,9 +149,9 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
-        return _cache.getKeys().collect(Collectors.toUnmodifiableSet());
+        return _cache.getKeys();
     }
 
     @Override
