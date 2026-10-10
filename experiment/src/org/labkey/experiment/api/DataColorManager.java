@@ -30,7 +30,7 @@ public class DataColorManager
 
     private static final DataColorManager _instance = new DataColorManager();
     private static final Cache<Container, DataColorCollections> CACHE = CacheManager.getBlockingCache(
-            CacheManager.UNLIMITED, CacheManager.DAY, "Data colors", (c, argument) -> new DataColorCollections(c));
+            Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data colors", (c, argument) -> new DataColorCollections(c));
     private static final Map<String, DataColorHandler> _handlers = new HashMap<>();
 
     private static class DataColorCollections

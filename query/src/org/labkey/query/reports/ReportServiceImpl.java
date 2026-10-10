@@ -40,6 +40,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -111,10 +112,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
@@ -1092,23 +1095,33 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 MultiSet<GenericChartReport.RenderType> chartCountsByRenderType = new HashMultiSet<>();
                 AtomicInteger genericChartWithTrendlineTypeCount = new AtomicInteger();
                 AtomicInteger genericChartWithErrorBarsCount = new AtomicInteger();
-                Map<String, Long> countsByType = ContainerManager.getAllChildren(ContainerManager.getRoot()).stream()
-                    .flatMap(c -> ReportService.get().getReports(null, c).stream())
-                    .peek(report -> {
-                        if (report instanceof GenericChartReport chart)
-                        {
-                            chartCountsByRenderType.add(chart.getRenderType());
-                            if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
+                // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
+                TableInfo table = getTable();
+                SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
+                    .append(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(")");
+                ReportServiceImpl reportService = getInstance();
+                Map<String, Long> countsByType;
+                try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))
+                {
+                    countsByType = rows
+                        .map(reportService::_getInstance)
+                        .filter(Objects::nonNull)
+                        .peek(report -> {
+                            if (report instanceof GenericChartReport chart)
                             {
-                                String configJson = descriptor.getJSON();
-                                if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
-                                    genericChartWithTrendlineTypeCount.getAndIncrement();
-                                if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
-                                    genericChartWithErrorBarsCount.getAndIncrement();
+                                chartCountsByRenderType.add(chart.getRenderType());
+                                if (chart.getDescriptor() instanceof VisualizationReportDescriptor descriptor)
+                                {
+                                    String configJson = descriptor.getJSON();
+                                    if (configJson.contains("\"trendlineType\":") && !configJson.contains("\"trendlineType\":\"\""))
+                                        genericChartWithTrendlineTypeCount.getAndIncrement();
+                                    if (configJson.contains("\"errorBars\":\"SD\"") || configJson.contains("\"errorBars\":\"SEM\""))
+                                        genericChartWithErrorBarsCount.getAndIncrement();
+                                }
                             }
-                        }
-                    })
-                    .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+                        })
+                        .collect(Collectors.groupingBy(Report::getType, Collectors.counting()));
+                }
 
                 return Map.of(
                     "reportCountsByType", countsByType,

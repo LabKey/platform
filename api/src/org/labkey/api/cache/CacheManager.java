@@ -19,6 +19,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.data.Container;
@@ -308,5 +310,24 @@ public class CacheManager
     public interface Sealable
     {
         boolean isSealed();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testContainerKeyRejected()
+        {
+            try (Cache<Object, String> cache = getTemporaryCache(10, MINUTE, "Container key test", null))
+            {
+                Container c = new Container(null, "", GUID.makeGUID(), 1, 1, null, 0, false);
+                assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value"));
+                assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value", MINUTE));
+                assertThrows(IllegalArgumentException.class, () -> cache.get(c, null, (key, argument) -> "loaded"));
+                assertTrue(cache.getKeys().isEmpty());
+
+                cache.put(c.getEntityId(), "value");
+                assertEquals("value", cache.get(c.getEntityId()));
+            }
+        }
     }
 }

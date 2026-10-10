@@ -51,7 +51,7 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.themeName
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
-    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
+    private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
     private static final Logger LOG = LogHelper.getLogger(LookAndFeelProperties.class, "Manages site-wide and project-scoped look and feel settings");
 
     public static void clearCaches()

@@ -247,7 +247,7 @@ public class StudyManager
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<Integer, CohortImpl, StudyCacheCollections<Integer, CohortImpl>> _cohortHelper;
     private final BlockingCache<Container, Set<PropertyDescriptor>> _sharedProperties;
-    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
+    private final BlockingCache<Container, Map<String, Participant>> _participantCache = DatabaseCache.get(Container.class, StudySchema.getInstance().getScope(), Constants.getMaxContainers(), CacheManager.HOUR, "Participants", (c, argument) -> {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableMap(
             new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), filter, new Sort("ParticipantId"))
@@ -270,7 +270,7 @@ public class StudyManager
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
-        _sharedProperties = CacheManager.getBlockingCache(1000, CacheManager.UNLIMITED, "Study shared properties",
+        _sharedProperties = CacheManager.getBlockingCache(Container.class, 1000, CacheManager.UNLIMITED, "Study shared properties",
             (key, argument) ->
             {
                 Container sharedContainer = ContainerManager.getSharedContainer();

@@ -35,7 +35,7 @@ import java.util.List;
 public class ProjectAndSiteGroupsCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
+    private static final BlockingCache<Container, Collection<Integer>> CACHE = CacheManager.getBlockingCache(Container.class, Constants.getMaxProjects(), CacheManager.DAY, "Project Groups", null);
 
     private static final CacheLoader<Container, Collection<Integer>> GROUP_LIST_LOADER = (c, argument) -> {
         String containerClause = c.isRoot() ? "IS NULL" : "= ?";

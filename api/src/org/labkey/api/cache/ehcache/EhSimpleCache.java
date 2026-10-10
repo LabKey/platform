@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.IntegerUtils;
 
 import java.util.List;
@@ -33,15 +34,25 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     private static final Logger LOG = LogManager.getLogger(EhSimpleCache.class);
 
     private final Cache _cache;
+    private final String _debugName;
 
-    EhSimpleCache(Cache cache)
+    EhSimpleCache(Cache cache, String debugName)
     {
         _cache = cache;
+        _debugName = debugName;
+    }
+
+    private void validateKey(K key)
+    {
+        // Ehcache keeps the first key object stored for an entry, so a Container key pins a stale copy
+        if (key instanceof Container)
+            throw new IllegalArgumentException("Container used as a key in cache \"" + _debugName + "\". Pass Container.class (keyClass) to the Cache factory method to allow this.");
     }
 
     @Override
     public void put(@NotNull K key, V value)
     {
+        validateKey(key);
         Element element = new Element(key, value);
         _cache.put(element);
     }
@@ -49,6 +60,7 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
+        validateKey(key);
         Element element = new Element(key, value);
         element.setTimeToLive(IntegerUtils.asInteger(timeToLive / 1000)); // Convert from ms to sec
         _cache.put(element);
