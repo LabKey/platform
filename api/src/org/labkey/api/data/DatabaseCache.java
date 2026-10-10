@@ -470,9 +470,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     assertNull(cache.get("key_11"));
                     // Test that even keys got removed from the shared cache
                     cache.getKeys()
-                            .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
-                            .findAny()
-                            .ifPresent(key -> fail("Found an even key: " + key));
+                        .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
+                        .findAny()
+                        .ifPresent(key -> fail("Found an even key: " + key));
                     // No test for puts since DatabaseCache doesn't replay them (that's solely a BlockingDatabaseCache thing)
 
                     cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));

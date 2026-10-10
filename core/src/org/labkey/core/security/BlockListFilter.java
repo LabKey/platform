@@ -32,8 +32,8 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.BadRequestException;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -228,17 +228,12 @@ public class BlockListFilter
 
     public static Collection<Suspicious> reportSuspicious()
     {
-        ArrayList<Suspicious> ret = new ArrayList<>();
-        suspiciousMap.getKeys().forEach(key -> {
-            Suspicious s = suspiciousMap.get(key);
-            if (null != s)
-            {
-                Suspicious copy = s.clone();
-                if (copy.getCount() > 0)
-                    ret.add(copy);
-            }
-        });
-        return ret;
+        return suspiciousMap.getKeys()
+            .map(suspiciousMap::get)
+            .filter(Objects::nonNull)
+            .map(Suspicious::clone)
+            .filter(copy -> copy.getCount() > 0)
+            .toList();
     }
 
     public static class Suspicious
