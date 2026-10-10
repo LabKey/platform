@@ -342,7 +342,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         (containerId, _) -> loadContainerDataTypeExclusions(containerId));
 
     /** DataClass LSID -> Container */
-    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
 
     /** ContainerId -> DataClasses */
     private final Cache<Container, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (c, _) ->

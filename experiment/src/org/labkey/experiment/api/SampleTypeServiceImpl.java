@@ -219,7 +219,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     /** SampleType LSID -> Container cache */
-    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
+    private final Cache<String, String> sampleTypeCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
     private final Cache<Container, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(Container.class, ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (c, argument) ->
     {

@@ -112,7 +112,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     // GH Issue 1512: does this query expose a PK? Lets lookup-target enumeration skip re-resolving known no-PK queries.
     // Keyed by resolving container + schema path + name + Modified; cleared on any QueryDef/schema change (a query's PK
     // can shift without its own row changing, via chained queries, source metadata, or schema reloads).
-    private static final Cache<String, Boolean> HAS_PK_COLUMN_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.MONTH, "Query has-PK-column flags");
+    private static final Cache<String, Boolean> HAS_PK_COLUMN_CACHE = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.MONTH, "Query has-PK-column flags");
 
     private Map<String, TableType> _metadataTableMap = null;
 

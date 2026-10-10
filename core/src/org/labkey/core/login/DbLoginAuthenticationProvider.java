@@ -104,7 +104,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         return true;
     }
 
-    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>("API key LastUsed update throttle",
+    private static final Throttle<String> API_KEY_LAST_USED_THROTTLE = new Throttle<>(String.class, "API key LastUsed updates",
     1000, AUTH_LOGGING_THROTTLE_TTL, apiKey -> ApiKeyManager.get().updateLastUsed(apiKey));
 
     @Override

@@ -29,7 +29,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
@@ -40,7 +39,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeTypeEnum.Enum>, ClientDependency>
+public class ClientDependencyCacheLoader implements CacheLoader<ClientDependency.CacheKey, ClientDependency>
 {
     private static final Logger LOG = LogManager.getLogger(ClientDependencyCacheLoader.class);
     private static final Set<Path> EXISTING_LISTENERS = new ConcurrentHashSet<>();
@@ -50,10 +49,10 @@ public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeT
     }
 
     @Override
-    public @Nullable ClientDependency load(@NotNull Pair<Path, ModeTypeEnum.Enum> key, Object argument)
+    public @Nullable ClientDependency load(@NotNull ClientDependency.CacheKey key, Object argument)
     {
-        Path path = key.first;
-        ModeTypeEnum.Enum mode = key.second;
+        Path path = key.path();
+        ModeTypeEnum.Enum mode = key.mode();
 
         ClientDependency.TYPE primaryType = ClientDependency.TYPE.fromPath(path);
 
@@ -113,9 +112,9 @@ public class ClientDependencyCacheLoader implements CacheLoader<Pair<Path, ModeT
 
     // We're registering listeners only on lib.xml files to invalidate the cache when they change. There aren't many lib files (< 100),
     // so we don't have to be particularly clever... just construct and register one listener per lib file + mode combo.
-    private void ensureListener(@NotNull Pair<Path, ModeTypeEnum.Enum> key, @NotNull Resource r)
+    private void ensureListener(@NotNull ClientDependency.CacheKey key, @NotNull Resource r)
     {
-        if (!EXISTING_LISTENERS.add(key.first))
+        if (!EXISTING_LISTENERS.add(key.path()))
             return;
 
         String name = r.getName();

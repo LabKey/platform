@@ -15,6 +15,9 @@
  */
 package org.labkey.core.notification;
 
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMultipart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -49,13 +52,9 @@ import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 
-import jakarta.mail.Message;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMultipart;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,14 +83,16 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     /** Cache the number of unread notifications per user (key is User ID/Container RowId paid) to avoid a DB query on every page load */
-    private final Cache<Pair<Integer, Integer>, Long> _unreadCountCache = new BlockingCache<>(
-            CacheManager.getCache(CacheManager.UNLIMITED,
+    private record UnreadCountKey(int userId, @Nullable Integer containerRowId) {}
+
+    private final Cache<UnreadCountKey, Long> _unreadCountCache = new BlockingCache<>(
+            CacheManager.getCache(UnreadCountKey.class, CacheManager.UNLIMITED,
                     TimeUnit.HOURS.toMillis(1),
                     "Unread notification counts"),
             (k, a) -> {
                 // The container may be null
-                Container c = k.second == null ? null : ContainerManager.getForRowId(k.second);
-                return createSelectorByUserOrType(c, null, k.first, true, null).getRowCount();
+                Container c = k.containerRowId() == null ? null : ContainerManager.getForRowId(k.containerRowId());
+                return createSelectorByUserOrType(c, null, k.userId(), true, null).getRowCount();
             });
 
     /* for compatibility with code that uses/used MailHelper directly */
@@ -192,7 +193,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     {
         // Remove notifications for user in all containers
         getTable().getSchema().getScope().addCommitTask(
-                () -> _unreadCountCache.removeUsingFilter((p) -> p.first.intValue() == userId),
+                () -> _unreadCountCache.removeUsingFilter(key -> key.userId() == userId),
                 DbScope.CommitTaskOption.IMMEDIATE,
                 DbScope.CommitTaskOption.POSTCOMMIT);
     }
@@ -211,7 +212,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     @Override
     public long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId)
     {
-        return _unreadCountCache.get(new Pair<>(notifyUserId, container == null ? null : container.getRowId()));
+        return _unreadCountCache.get(new UnreadCountKey(notifyUserId, container == null ? null : container.getRowId()));
     }
 
     @Override

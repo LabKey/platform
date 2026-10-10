@@ -33,6 +33,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 
     private final SimpleCache<K, V> _cache;
+    private final Class<K> _keyClass;
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
@@ -45,9 +46,10 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private boolean _maxSizeDirty;
     private long _maxSizeNextUpdate;
 
-    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
+    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull Class<K> keyClass, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
+        _keyClass = keyClass;
         assert StringUtils.isNotBlank(debugName);
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
@@ -195,6 +197,12 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     public void close()
     {
         _cache.close();
+    }
+
+    @Override
+    public Class<K> getKeyClass()
+    {
+        return _keyClass;
     }
 
     @Override

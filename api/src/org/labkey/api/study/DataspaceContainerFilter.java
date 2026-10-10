@@ -181,7 +181,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
      CONSIDER: if there were a caching version of StudyService.get().getAllStudies(project)
      we could do away with this cache
     */
-    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", (key, argument) -> {
+    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", (key, argument) -> {
         Container project = ContainerManager.getForId(key);
         if (null == project || !project.isProject())
             return null;

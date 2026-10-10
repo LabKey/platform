@@ -44,7 +44,7 @@ import java.util.Set;
 public class PlateSetCache
 {
     private static final PlateSetCache.Loader _loader = new PlateSetCache.Loader();
-    private static final Cache<String, PlateSet> PLATE_SET_CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Set Cache", _loader);
+    private static final Cache<String, PlateSet> PLATE_SET_CACHE = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Plate Set Cache", _loader);
     private static final Logger LOG = LogHelper.getLogger(PlateSetCache.class, "Plate set cache.");
 
     private static class Loader implements CacheLoader<String, PlateSet>

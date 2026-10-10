@@ -38,7 +38,7 @@ public class GroupMembershipCache
     private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
     private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final Cache<String, PrincipalArray> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
+    private static final Cache<String, PrincipalArray> CACHE = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
 
     static
     {

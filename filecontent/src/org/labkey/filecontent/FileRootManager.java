@@ -39,7 +39,7 @@ public class FileRootManager
     private static final FileRootManager _instance = new FileRootManager();
     // The table is sparse, so cache every row in one entry (container id -> root) rather than a hit or miss per container
     private static final String CACHE_KEY = "AllRoots";
-    private static final BlockingCache<String, Map<String, FileRoot>> CACHE = CacheManager.getBlockingStringKeyCache(1, CacheManager.DAY, "FileRoots", (key, argument) -> {
+    private static final BlockingCache<String, Map<String, FileRoot>> CACHE = CacheManager.getBlockingCache(String.class, 1, CacheManager.DAY, "FileRoots", (key, argument) -> {
         Map<String, FileRoot> roots = new HashMap<>();
         new TableSelector(getTinfoFileRoots()).forEach(FileRoot.class, root -> roots.put(root.getContainer(), root));
         return Collections.unmodifiableMap(roots);

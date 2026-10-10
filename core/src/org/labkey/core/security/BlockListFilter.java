@@ -16,6 +16,7 @@
 package org.labkey.core.security;
 
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -31,7 +32,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.BadRequestException;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 public class BlockListFilter
 {
     static Logger _log = LogManager.getLogger(BlockListFilter.class);
-    static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "Suspicious requests");
+    static Cache<String,Suspicious> suspiciousMap = CacheManager.getCache(String.class, 1_000, CacheManager.HOUR, "Suspicious requests");
 
 
     private static String getBrowserKey(HttpServletRequest req)
