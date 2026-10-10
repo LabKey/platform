@@ -1180,14 +1180,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (!tx.isAborted())
             {
-                boolean finalUseBackgroundRecalc = useBackgroundRecalc;
-                boolean finalSkipRecalc = skipRecalc;
-                Runnable onCommit = () -> {
-                    fireSamplesChanged(reason, changedSince);
-                    if (finalUseBackgroundRecalc && !finalSkipRecalc)
-                        handleRecalc(parentKeys.first, parentKeys.second, true, container);
-                };
-                new SamplesChangedTask(getContainer()).register(scope, List.of(onCommit), DbScope.CommitTaskOption.POSTCOMMIT);
+                var backgroundRecalcKeys = useBackgroundRecalc && !skipRecalc ? parentKeys : null;
+                var change = new SampleChange(_sampleType, getUser(), container, reason, changedSince, backgroundRecalcKeys);
+                new SamplesChangedTask(getContainer()).register(scope, List.of(change), DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
                 LOG.info("Skipping onSamplesChanged callback; transaction aborted");
@@ -1201,14 +1196,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void handleRecalc(Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
+        handleRecalc(_sampleType, rootRowIds, parentNames, useBackgroundThread, container);
+    }
+
+    private static void handleRecalc(@Nullable ExpSampleTypeImpl sampleType, Set<Long> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
+    {
         Runnable runRecalc = () -> {
             try
             {
-                if (_sampleType != null)
+                if (sampleType != null)
                 {
-                    var count = SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
+                    var count = SampleTypeService.get().recomputeSampleTypeRollup(sampleType, rootRowIds, parentNames, container);
                     if (count > 0)
-                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, rollup);
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, rollup);
                 }
             }
             catch (SQLException e)
@@ -1227,8 +1227,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    /** Runs every update's post-commit work in the transaction, then notifies clients once so they never see a pre-refresh count */
-    private static class SamplesChangedTask extends AccumulatingCommitTask<Container, Runnable>
+    /** One update-service call's post-commit work; backgroundRecalcKeys holds the parent row ids and names to recalc off-thread, if any */
+    private record SampleChange(@Nullable ExpSampleTypeImpl sampleType, User user, Container container, SampleTypeServiceImpl.SampleChangeType reason,
+                                @Nullable Timestamp changedSince, @Nullable Pair<Set<Long>, Set<String>> backgroundRecalcKeys) {}
+
+    /**
+     * Refreshes each sample type once per change reason and runs one background recalc per sample type over every call's
+     * parents, then notifies clients once so they never see a pre-refresh count.
+     */
+    private static class SamplesChangedTask extends AccumulatingCommitTask<Container, SampleChange>
     {
         SamplesChangedTask(Container container)
         {
@@ -1236,10 +1243,41 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         @Override
-        protected void process(@NotNull Container container, @NotNull Set<Runnable> onCommits)
+        protected void process(@NotNull Container container, @NotNull Set<SampleChange> changes)
         {
-            onCommits.forEach(Runnable::run);
+            changes.stream()
+                .filter(change -> change.sampleType() != null)
+                .collect(Collectors.groupingBy(change -> change.sampleType().getLSID(), LinkedHashMap::new, Collectors.toList()))
+                .values()
+                .forEach(SamplesChangedTask::processSampleType);
             SampleChangeNotify.fireSampleDataChanged(container);
+        }
+
+        private static void processSampleType(List<SampleChange> changes)
+        {
+            SampleChange first = changes.getFirst();
+            changes.stream().map(SampleChange::reason).distinct().forEach(reason ->
+                first.sampleType().onSamplesChanged(first.user(), null, reason, earliestChangedSince(changes, reason)));
+
+            changes.stream()
+                .filter(change -> change.backgroundRecalcKeys() != null)
+                .collect(Collectors.groupingBy(SampleChange::container, LinkedHashMap::new, Collectors.toList()))
+                .forEach((recalcContainer, recalcs) -> {
+                    Set<Long> rootRowIds = new LongHashSet();
+                    Set<String> parentNames = new HashSet<>();
+                    recalcs.forEach(recalc -> {
+                        rootRowIds.addAll(recalc.backgroundRecalcKeys().first);
+                        parentNames.addAll(recalc.backgroundRecalcKeys().second);
+                    });
+                    handleRecalc(first.sampleType(), rootRowIds, parentNames, true, recalcContainer);
+                });
+        }
+
+        /** A null watermark forces a full re-sync, which covers every other change of that reason */
+        private static @Nullable Timestamp earliestChangedSince(List<SampleChange> changes, SampleTypeServiceImpl.SampleChangeType reason)
+        {
+            List<Timestamp> watermarks = changes.stream().filter(change -> change.reason() == reason).map(SampleChange::changedSince).toList();
+            return watermarks.stream().anyMatch(Objects::isNull) ? null : Collections.min(watermarks);
         }
     }
 

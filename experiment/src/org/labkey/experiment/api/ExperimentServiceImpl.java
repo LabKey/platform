@@ -10057,7 +10057,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // to index based on the modified date
                 for (ExpDataClass dataClass : dataClassesMap.keySet())
                     indexDataClass((ExpDataClassImpl) dataClass, SearchService.get().defaultTask().getQueue(dataClass.getContainer(), SearchService.PRIORITY.modified));
-            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            }, POSTCOMMIT);
             transaction.commit();
         }
 
