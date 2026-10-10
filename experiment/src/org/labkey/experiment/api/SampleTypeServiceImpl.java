@@ -219,20 +219,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     /** SampleType LSID -> Container cache */
-    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
+    private final Cache<String, String> sampleTypeCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    /** ContainerId -> MaterialSources */
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
+    private final Cache<Container, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(Container.class, ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (c, argument) ->
     {
-        Container c = ContainerManager.getForId(container);
-        if (c == null)
-            return Collections.emptySortedSet();
-
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
     });
 
-    Cache<String, SortedSet<MaterialSource>> getMaterialSourceCache()
+    Cache<Container, SortedSet<MaterialSource>> getMaterialSourceCache()
     {
         return materialSourceCache;
     }
@@ -284,7 +279,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (c == null)
             materialSourceCache.clear();
         else
-            materialSourceCache.remove(c.getId());
+            materialSourceCache.remove(c);
     }
 
 
@@ -484,13 +479,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, boolean includeOtherContainers)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
-
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         TreeSet<ExpSampleTypeImpl> result = new TreeSet<>();
-        for (String containerId : containerIds)
+        for (Container scopeContainer : ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers))
         {
-            for (MaterialSource source : getMaterialSourceCache().get(containerId))
+            for (MaterialSource source : getMaterialSourceCache().get(scopeContainer))
             {
                 result.add(new ExpSampleTypeImpl(source));
             }
@@ -525,10 +518,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers))
         {
-            Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(containerId);
+            Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(scopeContainer);
             for (MaterialSource materialSource : sampleTypes)
             {
                 if (predicate.test(materialSource))

@@ -31,7 +31,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.Filter;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.WritablePropertyMap;
@@ -117,7 +116,7 @@ public class PipelineManager
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
     // The table is sparse, so cache every row in one entry (container id -> type -> root) rather than a hit or miss per container
     private static final String CACHE_KEY = "AllRoots";
-    private static final BlockingCache<String, Map<String, Map<String, PipelineRoot>>> CACHE = CacheManager.getBlockingStringKeyCache(1, CacheManager.DAY, "Pipeline roots",
+    private static final BlockingCache<String, Map<String, Map<String, PipelineRoot>>> CACHE = CacheManager.getBlockingCache(String.class, 1, CacheManager.DAY, "Pipeline roots",
         (key, argument) -> {
             Map<String, Map<String, PipelineRoot>> roots = new HashMap<>();
             new TableSelector(pipeline.getTableInfoPipelineRoots()).forEach(PipelineRoot.class, root -> roots.computeIfAbsent(root.getContainerId(), id -> new HashMap<>()).put(root.getType(), root));

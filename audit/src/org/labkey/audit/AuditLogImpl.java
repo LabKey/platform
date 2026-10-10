@@ -97,7 +97,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     // that were created immediately after they were created, so the cache size does not need to be very large and the defaultTimeToLive can be small.
     // Use a pair as the cache object to avoid warnings about mutable cache objects (Issue 48779).
     // Since this is all about capturing data from the same transaction, there shouldn't be other threads in the mix.
-    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.HOUR,
+    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(Long.class, 50, CacheManager.HOUR,
             "Transaction Audit Event Cache",
             (key, argument) -> Pair.of(key, new ArrayList<>())
     );

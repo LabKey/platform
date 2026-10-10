@@ -50,7 +50,7 @@ public class SchemaTableInfoCache
     {
         DbSchema schema = options.getSchema();
         String key = getCacheKey(schema.getName(), options.getTableName(), schema.getType());
-        return _blockingCache.getKeys().contains(key);
+        return _blockingCache.getKeys().anyMatch(key::equals);
     }
 
     <OptionType extends SchemaTableOptions> SchemaTableInfo get(@NotNull OptionType options)
@@ -111,7 +111,7 @@ public class SchemaTableInfoCache
 
         // We modify provisioned tables inside of transactions, so use a DatabaseCache to help with proper invalidation. Issue 46951.
         return provisioned ?
-            DatabaseCache.get(scope, 10000, CacheManager.UNLIMITED, comment, new SchemaTableLoader()) :
-            new BlockingCache<>(CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, comment), new SchemaTableLoader());
+            DatabaseCache.get(String.class, scope, 10000, CacheManager.UNLIMITED, comment, new SchemaTableLoader()) :
+            new BlockingCache<>(CacheManager.getCache(String.class, 10000, CacheManager.UNLIMITED, comment), new SchemaTableLoader());
     }
 }

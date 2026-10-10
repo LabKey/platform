@@ -64,7 +64,7 @@ public class AttachmentCache
     };
 
     // Must be transaction aware: attachments are very often added and deleted inside a transaction
-    private static final Cache<String, Map<String, Attachment>> CACHE = DatabaseCache.get(CoreSchema.getInstance().getScope(), 200000, CacheManager.MONTH, "Attachments", LOADER);
+    private static final Cache<String, Map<String, Attachment>> CACHE = DatabaseCache.get(String.class, CoreSchema.getInstance().getScope(), 200000, CacheManager.MONTH, "Attachments", LOADER);
 
 
     static @NotNull Map<String, Attachment> getAttachments(AttachmentParent parent)

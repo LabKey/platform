@@ -20,4 +20,5 @@ package org.labkey.api.cache;
  */
 public interface TrackingCache<K, V> extends Cache<K, V>, Tracking
 {
+    Class<K> getKeyClass();
 }

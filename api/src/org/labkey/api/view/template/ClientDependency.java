@@ -29,7 +29,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -65,7 +64,9 @@ import java.util.stream.Collectors;
 public abstract class ClientDependency
 {
     private static final Logger LOG = LogManager.getLogger(ClientDependency.class);
-    static final Cache<Pair<Path, ModeTypeEnum.Enum>, ClientDependency> CACHE = CacheManager.getBlockingCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
+    record CacheKey(Path path, ModeTypeEnum.Enum mode) {}
+
+    static final Cache<CacheKey, ClientDependency> CACHE = CacheManager.getBlockingCache(CacheKey.class, 10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
 
     static
     {
@@ -302,8 +303,8 @@ public abstract class ClientDependency
         }
         else
         {
-            var pair = getPair(path, mode);
-            supplier = () -> fromCache(pair);
+            var key = getCacheKey(path, mode);
+            supplier = () -> fromCache(key);
         }
 
         return supplier;
@@ -321,7 +322,7 @@ public abstract class ClientDependency
         return cd;
     }
 
-    protected static @Nullable Pair<Path, ModeTypeEnum.Enum> getPair(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable CacheKey getCacheKey(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
         requestedPath = requestedPath.replaceAll("^/", "");
 
@@ -344,17 +345,17 @@ public abstract class ClientDependency
             return null;
         }
 
-        return Pair.of(path, mode);
+        return new CacheKey(path, mode);
     }
 
     protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
-        return fromCache(getPair(requestedPath, mode));
+        return fromCache(getCacheKey(requestedPath, mode));
     }
 
-    protected static @Nullable ClientDependency fromCache(@Nullable Pair<Path, ModeTypeEnum.Enum> pair)
+    protected static @Nullable ClientDependency fromCache(@Nullable CacheKey key)
     {
-        return null != pair ? CACHE.get(pair) : null;
+        return null != key ? CACHE.get(key) : null;
     }
 
     protected static String getUniqueKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)

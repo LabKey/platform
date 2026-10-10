@@ -58,7 +58,7 @@ public class SpecimenTablesProvider
     public static final String LOCATION_SPECIMEN_LIST_TABLE_NAME = "LocationSpecimenList";
     public static final String SPECIMEN_WRAP_TABLE_NAME = "SpecimenWrap";
 
-    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Specimen domain creation", null);
+    private static final Cache<String, Domain> DOMAIN_CREATION_CACHE = CacheManager.getBlockingCache(String.class, 1000, CacheManager.HOUR, "Specimen domain creation", null);
 
     private final Container _container;
     private final User _user;

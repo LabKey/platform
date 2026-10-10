@@ -16,6 +16,14 @@
 
 package org.labkey.api.security;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
@@ -31,14 +39,6 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SessionHelper;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.HttpSessionBindingEvent;
-import jakarta.servlet.http.HttpSessionBindingListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -468,7 +468,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
     }
 
     // helper to avoid filling the _log
-    private static final Cache<String, String> logMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(5), "Guest session messages");
+    private static final Cache<String, String> logMessages = CacheManager.getCache(String.class, 100, TimeUnit.MINUTES.toMillis(5), "Guest session messages");
 
     private static void _logGuestSession(String ip, String msg)
     {

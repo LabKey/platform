@@ -76,7 +76,7 @@ public class SecurityPolicyManager
 
     static
     {
-        CACHE = DatabaseCache.get(core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
+        CACHE = DatabaseCache.get(String.class, core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
             Container c = (Container) argument;
             SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
 

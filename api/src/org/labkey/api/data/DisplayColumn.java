@@ -118,7 +118,7 @@ public abstract class DisplayColumn extends RenderColumn
     private String _displayClass;
 
     // GH Issue 1332: Throttle to one warning per column + value type per hour, across all renders.
-    private static final Throttle<String> FORMAT_MISMATCH_THROTTLE = new Throttle<>("DisplayColumn format mismatch", 1000, CacheManager.HOUR, key ->
+    private static final Throttle<String> FORMAT_MISMATCH_THROTTLE = new Throttle<>(String.class, "DisplayColumn format mismatch warnings", 1000, CacheManager.HOUR, key ->
             LOG.warn("Unable to apply format to {}, likely a SQL type mismatch between XML metadata and actual ResultSet", key));
 
     private final List<ColumnAnalyticsProvider> _analyticsProviders = new ArrayList<>();

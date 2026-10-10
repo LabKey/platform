@@ -77,62 +77,39 @@ public class CacheManager
 
     // Key classes whose caches store a cheaper surrogate key. Matched on the exact declared key class.
     private static final Map<Class<?>, Function<SimpleCache<?, ?>, SimpleCache<?, ?>>> KEY_MAPPINGS = Map.of(
-        Container.class, cache -> new ContainerKeySimpleCache<>((SimpleCache<GUID, ?>) cache)
+        Container.class, cache -> new ContainerKeySimpleCache<>((SimpleCache<GUID, ?>) cache),
+        // User cache keys are rare, but might as well make them efficient. UserKeySimpleCache keys on UserId alone,
+        // which means that limited, elevated, and normal users all share the same entries.
+        User.class, cache -> new UserKeySimpleCache<>((SimpleCache<Integer, ?>) cache)
     );
 
     @SuppressWarnings("unchecked")
-    private static <K, V> SimpleCache<K, V> getSimpleCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, boolean temporary)
+    private static <K, V> SimpleCache<K, V> getSimpleCache(@NotNull Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, boolean temporary)
     {
         SimpleCache<?, ?> cache = PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, temporary);
-        Function<SimpleCache<?, ?>, SimpleCache<?, ?>> mapping = null == keyClass ? null : KEY_MAPPINGS.get(keyClass);
+        Function<SimpleCache<?, ?>, SimpleCache<?, ?>> mapping = KEY_MAPPINGS.get(keyClass);
         return (SimpleCache<K, V>) (null == mapping ? cache : mapping.apply(cache));
     }
 
-    public static <K, V> TrackingCache<K, V> getCache(int limit, long defaultTimeToLive, String debugName)
+    /** Returns a cache implementation specialized for keyClass, if one is registered */
+    public static <K, V> TrackingCache<K, V> getCache(@NotNull Class<K> keyClass, int limit, long defaultTimeToLive, String debugName)
     {
-        return getCache(null, limit, defaultTimeToLive, debugName);
-    }
-
-    /** Returns a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
-    public static <K, V> TrackingCache<K, V> getCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName)
-    {
-        CacheWrapper<K, V> cache = new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, false), debugName, null, Thread.currentThread().getStackTrace());
+        CacheWrapper<K, V> cache = new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, false), keyClass, debugName, null, Thread.currentThread().getStackTrace());
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
         LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
         return cache;
     }
 
-    public static <V> Cache<String, V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
-    {
-        return getCache(String.class, limit, defaultTimeToLive, debugName);
-    }
-
-    public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
-    {
-        return getBlockingCache(null, limit, defaultTimeToLive, debugName, loader);
-    }
-
-    public static <K, V> BlockingCache<K, V> getBlockingCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
+    public static <K, V> BlockingCache<K, V> getBlockingCache(@NotNull Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
     {
         TrackingCache<K, Wrapper<V>> cache = getCache(keyClass, limit, defaultTimeToLive, debugName);
         return new BlockingCache<>(cache, loader);
     }
 
-    public static <V> BlockingCache<String, V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
-    {
-        return getBlockingCache(String.class, limit, defaultTimeToLive, debugName, loader);
-    }
-
-    @Deprecated // TODO: Migrate the one remaining caller
-    public static <K, V> Cache<K, V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
-    {
-        return getTemporaryCache(null, limit, defaultTimeToLive, debugName, stats);
-    }
-
     // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
-    public static <K, V> Cache<K, V> getTemporaryCache(@Nullable Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
+    public static <K, V> Cache<K, V> getTemporaryCache(@NotNull Class<K> keyClass, int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        return new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, true), debugName, stats, null);
+        return new CacheWrapper<>(getSimpleCache(keyClass, limit, defaultTimeToLive, debugName, true), keyClass, debugName, stats, null);
     }
 
     private static final Cache<String, Object> SHARED_CACHE = getCache(String.class, 10000, DEFAULT_TIMEOUT, "Shared");
@@ -317,16 +294,27 @@ public class CacheManager
         @Test
         public void testContainerKeyRejected()
         {
-            try (Cache<Object, String> cache = getTemporaryCache(10, MINUTE, "Container key test", null))
+            try (Cache<Object, String> cache = getTemporaryCache(Object.class, 10, MINUTE, "Container key test", null))
             {
                 Container c = new Container(null, "", GUID.makeGUID(), 1, 1, null, 0, false);
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value"));
                 assertThrows(IllegalArgumentException.class, () -> cache.put(c, "value", MINUTE));
                 assertThrows(IllegalArgumentException.class, () -> cache.get(c, null, (key, argument) -> "loaded"));
-                assertTrue(cache.getKeys().isEmpty());
+                assertFalse(cache.getKeys().findAny().isPresent());
 
                 cache.put(c.getEntityId(), "value");
                 assertEquals("value", cache.get(c.getEntityId()));
+            }
+        }
+
+        @Test
+        public void testUserKeyRejected()
+        {
+            try (Cache<Object, String> cache = getTemporaryCache(Object.class, 10, MINUTE, "User key test", null))
+            {
+                assertThrows(IllegalArgumentException.class, () -> cache.put(User.guest, "value"));
+                assertThrows(IllegalArgumentException.class, () -> cache.get(User.guest, null, (key, argument) -> "loaded"));
+                assertFalse(cache.getKeys().findAny().isPresent());
             }
         }
     }

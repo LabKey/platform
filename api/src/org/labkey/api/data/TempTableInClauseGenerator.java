@@ -41,7 +41,7 @@ import java.util.function.Supplier;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final Cache<String, TempTableInfo> _tempTableCache =
-            CacheManager.getStringKeyCache(200, CacheManager.MINUTE * 5, "IN clause temp tables");
+            CacheManager.getCache(String.class, 200, CacheManager.MINUTE * 5, "IN clause temp tables");
 
     // Need to set a supplier instead of setting the default temp schema directly because this class is constructed at
     // dialect init time, before schemas can be referenced.

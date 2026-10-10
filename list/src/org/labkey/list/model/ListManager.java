@@ -106,20 +106,20 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
 
-    private final Cache<String, List<ListDef>> _listDefCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
+    private final Cache<Container, List<ListDef>> _listDefCache = DatabaseCache.get(Container.class, CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
 
-    private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
+    private class ListDefCacheLoader implements CacheLoader<Container, List<ListDef>>
     {
         @Override
-        public List<ListDef> load(@NotNull String entityId, @Nullable Object argument)
+        public List<ListDef> load(@NotNull Container c, @Nullable Object argument)
         {
-            return loadOwnLists(entityId);
+            return loadOwnLists(c);
         }
     }
 
-    private List<ListDef> loadOwnLists(String containerId)
+    private List<ListDef> loadOwnLists(Container c)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         ArrayList<ListDef> ownLists = new TableSelector(getListMetadataTable(), filter, null).getArrayList(ListDef.class);
         return ownLists.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(ownLists);
     }
@@ -183,18 +183,18 @@ public class ListManager implements SearchService.DocumentProvider
      */
     private Collection<ListDef> getAllScopedLists(@NotNull Container container, boolean includeProjectAndShared)
     {
-        List<ListDef> ownLists = _listDefCache.get(container.getId());
+        List<ListDef> ownLists = _listDefCache.get(container);
         Map<String, ListDef> listDefMap = new CaseInsensitiveHashMap<>();
 
         if (includeProjectAndShared)
         {
-            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer().getId()))
+            for (ListDef sharedList : _listDefCache.get(ContainerManager.getSharedContainer()))
                 listDefMap.put(sharedList.getName(), sharedList);
 
             Container project = container.getProject();
             if (project != null)
             {
-                for (ListDef projectList : _listDefCache.get(project.getId()))
+                for (ListDef projectList : _listDefCache.get(project))
                     listDefMap.put(projectList.getName(), projectList);
             }
         }
@@ -205,7 +205,7 @@ public class ListManager implements SearchService.DocumentProvider
             Container parent = container.getParent();
             if (parent != null)
             {
-                for (ListDef parentList : _listDefCache.get(parent.getId()))
+                for (ListDef parentList : _listDefCache.get(parent))
                     listDefMap.put(parentList.getName(), parentList);
             }
         }
@@ -293,7 +293,7 @@ public class ListManager implements SearchService.DocumentProvider
             builder.setListId((int)sequence.next());
 
         ListDef ret = Table.insert(user, tinfo, builder.build());
-        _listDefCache.remove(c.getId());
+        _listDefCache.remove(c);
         return ret;
     }
 
@@ -460,7 +460,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
     {
-        _listDefCache.remove(c.getId());
+        _listDefCache.remove(c);
         QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
@@ -488,7 +488,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 // ok
             }
-            _listDefCache.remove(container.getId());
+            _listDefCache.remove(container);
 
             list.getDomainOrThrow().delete(user, auditUserComment);
             addAuditEvent(list, user, String.format("The list %s was deleted", listName));
@@ -545,7 +545,7 @@ public class ListManager implements SearchService.DocumentProvider
         Consumer<SearchService.TaskIndexingQueue> r = (q) -> {
             // Only this container's own lists: getLists() adds a workbook's parent lists, which each workbook crawl would
             // then re-index. Uncached, so the crawl doesn't leave a cache entry for every container.
-            List<ListDef> lists = loadOwnLists(q.getContainer().getId());
+            List<ListDef> lists = loadOwnLists(q.getContainer());
 
             try
             {
@@ -1155,7 +1155,7 @@ public class ListManager implements SearchService.DocumentProvider
         SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
                 .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
-        _listDefCache.remove(list.getContainer().getId());
+        _listDefCache.remove(list.getContainer());
         list = ListDefinitionImpl.of(getList(list.getContainer(), list.getListId()));
         long modified = list.getModified().getTime();
         String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
