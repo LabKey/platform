@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -69,7 +70,7 @@ public class ModuleArchiveTestCase extends Assert
         long now = System.currentTimeMillis();
         ModuleArchive v1 = writeArchive(now - 60_000, Map.of("dep.jar", "1"));
         File exploded = v1.extractAll();
-        File dep = new File(exploded, "lib/dep.jar");
+        File dep = libJar(exploded, "dep.jar");
         assertEquals("1", readVersion(dep));
 
         ModuleArchive v2 = writeArchive(now, Map.of("dep.jar", "2"));
@@ -85,8 +86,8 @@ public class ModuleArchiveTestCase extends Assert
         long now = System.currentTimeMillis();
         ModuleArchive v1 = writeArchive(now - 60_000, Map.of("dep.jar", "1", "old-1.jar", "1"));
         File exploded = v1.extractAll();
-        File dep = new File(exploded, "lib/dep.jar");
-        File old = new File(exploded, "lib/old-1.jar");
+        File dep = libJar(exploded, "dep.jar");
+        File old = libJar(exploded, "old-1.jar");
 
         ModuleArchive v2 = writeArchive(now, Map.of("dep.jar", "2", "old-2.jar", "2"));
         try (JarFile heldDep = new JarFile(dep); JarFile heldOld = new JarFile(old))
@@ -97,6 +98,8 @@ public class ModuleArchiveTestCase extends Assert
             try
             {
                 v2.extractAll();
+                if (SystemUtils.IS_OS_WINDOWS)
+                    fail("Expected held jars to be reported as stale");
             }
             catch (ModuleArchive.StaleFilesException e)
             {
@@ -112,8 +115,13 @@ public class ModuleArchiveTestCase extends Assert
 
         assertEquals("2", readVersion(dep));
         assertFalse(old.exists());
-        assertEquals("2", readVersion(new File(exploded, "lib/old-2.jar")));
+        assertEquals("2", readVersion(libJar(exploded, "old-2.jar")));
         assertFalse(v2.isModified());
+    }
+
+    private static File libJar(File exploded, String name)
+    {
+        return FileUtil.appendPath(exploded, org.labkey.api.util.Path.parse("lib/" + name));
     }
 
     private ModuleArchive writeArchive(long lastModified, Map<String, String> jarVersions) throws IOException
