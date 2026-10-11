@@ -74,6 +74,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
@@ -540,6 +541,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // TODO Better/custom error report page/response
                     if (x.getCause() instanceof BadRequestException)
                         return handleBadRequestException(request, response, controller, (BadRequestException)x.getCause());
+                    if (x instanceof MultipartException)
+                    {
+                        _log.debug("Unable to parse multipart request", x);
+                        return handleBadRequestException(request, response, controller, new BadRequestException(x.getMessage(), x));
+                    }
                     throw x;
                 }
             }

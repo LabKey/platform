@@ -342,8 +342,21 @@ public class DavController extends SpringActionController
                 return null;
             }
 
+            String skipProfiling;
+            try
+            {
+                skipProfiling = request.getParameter("skip-profiling");
+            }
+            catch (IllegalStateException x)
+            {
+                if (!ExceptionUtil.isInvalidParameterException(x))
+                    throw x;
+                ExceptionUtil.handleException(request, response, x, null, false);
+                return null;
+            }
+
             Class<? extends Controller> actionClass = action.getClass();
-            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(skipProfiling))
             {
                 MemTracker.get().ignore();
             }
@@ -455,7 +468,10 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Exception x)
         {
-            ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            if (status.code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            else
+                _log.debug("{} response", status.code, x);
             if (x instanceof ConfigurationException)
             {
                 // These exceptions are skipped in the logExceptionToMothership() call. They're useful to log here

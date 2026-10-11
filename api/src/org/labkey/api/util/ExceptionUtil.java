@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -690,7 +691,30 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                isInvalidParameterException(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
+    }
+
+    /** Tomcat throws this for an unparseable query string or form body, and rethrows it from every later parameter read */
+    public static boolean isInvalidParameterException(Throwable ex)
+    {
+        return ex instanceof InvalidParameterException;
+    }
+
+    private static @Nullable InvalidParameterException getInvalidParameterException(Throwable ex, HttpServletRequest request)
+    {
+        if (ex instanceof InvalidParameterException ipe)
+            return ipe;
+
+        try
+        {
+            request.getParameterMap();
+            return null;
+        }
+        catch (InvalidParameterException ipe)
+        {
+            return ipe;
+        }
     }
 
     static class WebPartErrorView extends WebPartView<Object>
@@ -858,12 +882,27 @@ public class ExceptionUtil
         User user = (User) request.getUserPrincipal();
         boolean isGET = "GET".equals(request.getMethod());
         Map<String, String> headers = new TreeMap<>();
+        InvalidParameterException invalidParameter = getInvalidParameterException(ex, request);
 
         if (ContextListener.isShuttingDown())
         {
             try
             {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "The server is shutting down");
+            }
+            catch (IOException e)
+            {
+                // Do nothing
+            }
+            return null;
+        }
+        // Any error page reads request parameters, which would rethrow, so respond without one
+        else if (invalidParameter != null)
+        {
+            log.debug("Invalid request parameters", invalidParameter);
+            try
+            {
+                response.sendError(invalidParameter.getErrorCode(), "Invalid request parameters");
             }
             catch (IOException e)
             {
@@ -1358,6 +1397,11 @@ public class ExceptionUtil
     {
         ExceptionResponse handleIt(final User user, Exception ex)
         {
+            return handleIt(user, ex, null);
+        }
+
+        ExceptionResponse handleIt(final User user, Exception ex, @Nullable InvalidParameterException parameterFailure)
+        {
             final MockServletResponse res = new MockServletResponse();
             InvocationHandler h = (_, method, objects) -> {
                 // still calls in 'headers' for validation
@@ -1386,6 +1430,14 @@ public class ExceptionUtil
                 public String getMethod()
                 {
                     return "GET";
+                }
+
+                @Override
+                public Map<String, String[]> getParameterMap()
+                {
+                    if (parameterFailure != null)
+                        throw parameterFailure;
+                    return super.getParameterMap();
                 }
             };
             ExceptionUtil.decorateException(ex, ExceptionInfo.SkipMothershipLogging, "true", true);
@@ -1473,6 +1525,28 @@ public class ExceptionUtil
             assertEquals(HttpServletResponse.SC_NOT_FOUND, answer.response.status);
             assertTrue(answer.body.contains("Not here"));
             assertTrue(answer.response.headers.containsKey("SearchService.notFound"));
+        }
+
+        @Test
+        public void testInvalidParameters()
+        {
+            User guest = UserManager.getGuestUser();
+            InvalidParameterException ipe = new InvalidParameterException("Invalid chunk ignored");
+            ExceptionResponse answer;
+
+            answer = handleIt(guest, ipe, ipe);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            // Rendering the 404 page would read the unparseable parameters
+            answer = handleIt(guest, new NotFoundException("Not here"), ipe);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            answer = handleIt(guest, new NotFoundException("Not here"), new InvalidParameterException("Too big", HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE));
+            assertEquals(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, answer.response.status);
+
+            assertTrue(isIgnorable(new InvalidParameterException("Character decoding failed")));
         }
 
         @Test
