@@ -16,7 +16,6 @@
 package org.labkey.announcements.query;
 
 import org.labkey.announcements.AnnouncementModule;
-import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
@@ -75,9 +74,8 @@ public class AnnouncementSchema extends UserSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                // Schema is always available unless marked as secure.
-                // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
-                return !AnnouncementsController.getSettings(schema.getContainer()).isSecureOn();
+                // Always available; AnnouncementTable and ThreadsTable enforce secure message board permissions per row
+                return true;
             }
 
             @Override

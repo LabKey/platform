@@ -82,6 +82,7 @@ import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
@@ -3017,6 +3018,11 @@ public class AnnouncementsController extends SpringActionController
             assertEquals(Set.of(memberThread.getRowId()), queryRowIds(member, secure, AnnouncementSchema.THREADS_TABLE_NAME));
             assertEquals(Set.of(memberThread.getRowId(), otherThread.getRowId()), queryRowIds(editor, secure, AnnouncementSchema.THREADS_TABLE_NAME));
 
+            // Same rules apply when querying from the secure folder itself
+            assertEquals(Set.of(), queryCurrentFolderRowIds(nonMember, secure));
+            assertEquals(Set.of(memberThread.getRowId(), response.getRowId()), queryCurrentFolderRowIds(member, secure));
+            assertEquals(all, queryCurrentFolderRowIds(editor, secure));
+
             // Without a member list, non-editors can't read any secure message
             settings.setMemberList(false);
             AnnouncementManager.saveMessageBoardSettings(secure, settings);
@@ -3031,6 +3037,14 @@ public class AnnouncementsController extends SpringActionController
             TableInfo table = schema.getTable(tableName, ContainerFilter.Type.AllFolders.create(schema));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Folder"), folder.getId());
             return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
+        }
+
+        private Set<Integer> queryCurrentFolderRowIds(User user, Container folder)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, folder, AnnouncementSchema.SCHEMA_NAME);
+            assertNotNull("announcement schema should be available in a secure message board folder", schema);
+            TableInfo table = schema.getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
+            return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), null, null).getArrayList(Integer.class));
         }
     }
 }
