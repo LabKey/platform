@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import static org.labkey.announcements.query.AnnouncementSchema.THREADS_TABLE_NAME;
 
@@ -48,6 +49,6 @@ public class ThreadsTable extends FilteredTable<AnnouncementSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, "EntityId", _userSchema.getUser());
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, ReadPermission.class, "EntityId", _userSchema.getUser());
     }
 }

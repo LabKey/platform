@@ -106,6 +106,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -3030,10 +3031,54 @@ public class AnnouncementsController extends SpringActionController
             assertEquals(all, queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
         }
 
-        // Queries from folder A, where the schema is available, across all folders
+        @Test
+        public void testModerationTablesRequireAdmin() throws Exception
+        {
+            TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
+            AnnouncementModel pending = new AnnouncementModel();
+            pending.setTitle("Pending review");
+            pending.setBody("body");
+            pending = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), pending, null, false);
+            AnnouncementModel spam = new AnnouncementModel();
+            spam.setTitle("Spam");
+            spam.setBody("body");
+            spam = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), spam, null, false);
+            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId IN (?, ?)", pending.getRowId(), spam.getRowId());
+            AnnouncementManager.markAsSpam(_folderB, spam);
+
+            User reader = createUserInRole(_folderB, ReaderRole.class);
+            User adminOfB = createUserInRole(_folderB, FolderAdminRole.class);
+            User adminOfAOnly = createUserInRole(_folderA, FolderAdminRole.class);
+            grantRole(adminOfAOnly, _folderB, ReaderRole.class);
+
+            for (String tableName : List.of(AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME, AnnouncementSchema.SPAM_TABLE_NAME))
+            {
+                assertFalse(new AnnouncementSchema(reader, _folderB).getTableNames().contains(tableName));
+                assertTrue(new AnnouncementSchema(adminOfB, _folderB).getTableNames().contains(tableName));
+
+                TableInfo readerTable = new AnnouncementSchema(reader, _folderB).getTable(tableName);
+                assertEquals(tableName, readerTable.getName());
+                assertFalse(readerTable.hasPermission(reader, ReadPermission.class));
+                assertTrue(new AnnouncementSchema(adminOfB, _folderB).getTable(tableName).hasPermission(adminOfB, ReadPermission.class));
+            }
+
+            assertEquals(Set.of(pending.getRowId()), queryRowIds(adminOfB, _folderB, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME));
+            assertEquals(Set.of(spam.getRowId()), queryRowIds(adminOfB, _folderB, _folderB, AnnouncementSchema.SPAM_TABLE_NAME));
+
+            // Admin of A who only reads B can't reach B's moderation queue across folders
+            assertEquals(Set.of(), queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME));
+            assertEquals(Set.of(), queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.SPAM_TABLE_NAME));
+        }
+
+        // Queries from folder A across all folders
         private Set<Integer> queryRowIds(User user, Container folder, String tableName)
         {
-            AnnouncementSchema schema = new AnnouncementSchema(user, _folderA);
+            return queryRowIds(user, _folderA, folder, tableName);
+        }
+
+        private Set<Integer> queryRowIds(User user, Container from, Container folder, String tableName)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, from);
             TableInfo table = schema.getTable(tableName, ContainerFilter.Type.AllFolders.create(schema));
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Folder"), folder.getId());
             return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));

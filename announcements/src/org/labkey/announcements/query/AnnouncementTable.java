@@ -37,6 +37,7 @@ import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.wiki.WikiRendererDisplayColumn;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -117,13 +118,20 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, "COALESCE(Parent, EntityId)", _userSchema.getUser());
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, getRequiredPermission(), "COALESCE(Parent, EntityId)", _userSchema.getUser());
+    }
+
+    // A method rather than a field because the super constructor applies the container filter
+    protected Class<? extends Permission> getRequiredPermission()
+    {
+        return ReadPermission.class;
     }
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return _userSchema.getContainer().hasPermission(user, perm);
+        Container c = _userSchema.getContainer();
+        return c.hasPermission(user, getRequiredPermission()) && c.hasPermission(user, perm);
     }
 
     private boolean isSecure()

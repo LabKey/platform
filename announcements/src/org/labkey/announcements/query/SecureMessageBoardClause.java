@@ -31,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.ArrayList;
@@ -54,10 +55,11 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
 
     /**
      * @param threadEntityIdSql unqualified expression yielding the EntityId of each row's thread
+     * @param permission permission the user needs in a folder to see any of its rows
      */
-    SecureMessageBoardClause(DbSchema schema, ContainerFilter filter, FieldKey containerFieldKey, String threadEntityIdSql, User user)
+    SecureMessageBoardClause(DbSchema schema, ContainerFilter filter, FieldKey containerFieldKey, Class<? extends Permission> permission, String threadEntityIdSql, User user)
     {
-        _containerClause = filter.createFilterClause(schema, containerFieldKey);
+        _containerClause = filter.createFilterClause(schema, containerFieldKey, permission);
         _dialect = schema.getSqlDialect();
         _containerFieldKey = containerFieldKey;
         _threadEntityIdSql = threadEntityIdSql;
@@ -76,28 +78,47 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
         throw new UnsupportedOperationException();
     }
 
+    // IDs of secure folders whose rows this user can't see at all, and those where they see only member-list threads
+    private record RestrictedFolders(List<String> hidden, List<String> memberListOnly) {}
+
+    private RestrictedFolders _restricted = null;
+
+    // Computed once per clause, since a query can render the clause several times
+    private RestrictedFolders getRestrictedFolders()
+    {
+        if (null == _restricted)
+        {
+            List<String> hidden = new ArrayList<>();
+            List<String> memberListOnly = new ArrayList<>();
+
+            // There are very few secure message boards in the world, so query for those first instead of querying the
+            // settings for every candidate container
+            getSecureContainers()
+                .filter(c -> !c.hasPermission(_user, SecureMessageBoardReadPermission.class))
+                .forEach(c -> {
+                    Settings settings = AnnouncementManager.getMessageBoardSettings(c);
+                    if (!settings.isSecureOn())
+                        return;
+
+                    if (settings.hasMemberList() && c.hasPermission(_user, ReadPermission.class))
+                        memberListOnly.add(c.getId());
+                    else
+                        hidden.add(c.getId());
+                });
+
+            _restricted = new RestrictedFolders(hidden, memberListOnly);
+        }
+
+        return _restricted;
+    }
+
     @Override
     public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
     {
         SQLFragment sql = new SQLFragment("(").append(_containerClause.toSQLFragment(columnMap, dialect)).append(")");
 
-        List<String> hidden = new ArrayList<>();
-        List<String> memberListOnly = new ArrayList<>();
-
-        // There are very few secure message boards in the world, so query for those first instead of querying the
-        // settings for every candidate container
-        getSecureContainers()
-            .filter(c -> !c.hasPermission(_user, SecureMessageBoardReadPermission.class))
-            .forEach(c -> {
-                Settings settings = AnnouncementManager.getMessageBoardSettings(c);
-                if (!settings.isSecureOn())
-                    return;
-
-                if (settings.hasMemberList() && c.hasPermission(_user, ReadPermission.class))
-                    memberListOnly.add(c.getId());
-                else
-                    hidden.add(c.getId());
-            });
+        List<String> hidden = getRestrictedFolders().hidden();
+        List<String> memberListOnly = getRestrictedFolders().memberListOnly();
 
         String containerColumn = _containerFieldKey.toString();
 
@@ -114,9 +135,11 @@ class SecureMessageBoardClause extends SimpleFilter.FilterClause
             sql.append(comm.getTableInfoThreads(), "t");
             sql.append(" INNER JOIN ");
             sql.append(comm.getTableInfoMemberList(), "ul");
-            sql.append(" ON ul.MessageId = t.LatestId WHERE ul.UserId = ?)");
+            sql.append(" ON ul.MessageId = t.LatestId WHERE ul.UserId = ?");
             sql.add(_user.getUserId());
-            sql.append(")");
+            // Lets the planner restrict the Threads view's aggregation to these folders
+            sql.append(" AND t.Container").appendInClause(memberListOnly, _dialect);
+            sql.append("))");
         }
 
         return sql;
