@@ -66,6 +66,7 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -75,6 +76,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
@@ -148,6 +150,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -2968,6 +2971,66 @@ public class AnnouncementsController extends SpringActionController
 
             // Positive control: a reader who is on the member list can read the thread, so the subscription succeeds.
             assertStatus(HttpServletResponse.SC_FOUND, post(url, member));
+        }
+
+        // GH Issue 1637
+        @Test
+        public void testQueryEnforcesSecureBoardMemberList() throws Exception
+        {
+            Container secure = createContainer("SecureQuery");
+            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
+            settings.setSecure(Settings.SECURE_WITHOUT_EMAIL);
+            settings.setMemberList(true);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+            for (User user : List.of(member, nonMember, editor))
+                grantRole(user, _folderA, ReaderRole.class);
+
+            AnnouncementModel memberThread = new AnnouncementModel();
+            memberThread.setTitle("Member thread");
+            memberThread.setBody("body");
+            memberThread.setMemberListInput(String.valueOf(member.getUserId()));
+            memberThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), memberThread, null, false);
+
+            AnnouncementModel response = new AnnouncementModel();
+            response.setTitle("Member thread response");
+            response.setBody("body");
+            response.setParent(memberThread.getEntityId());
+            response.setMemberListInput(String.valueOf(member.getUserId()));
+            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
+
+            AnnouncementModel otherThread = new AnnouncementModel();
+            otherThread.setTitle("Other thread");
+            otherThread.setBody("body");
+            otherThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), otherThread, null, false);
+
+            Set<Integer> all = Set.of(memberThread.getRowId(), response.getRowId(), otherThread.getRowId());
+            assertEquals(Set.of(), queryRowIds(nonMember, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId(), response.getRowId()), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(all, queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(all, queryRowIds(getAdmin(), secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+
+            assertEquals(Set.of(), queryRowIds(nonMember, secure, AnnouncementSchema.THREADS_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId()), queryRowIds(member, secure, AnnouncementSchema.THREADS_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId(), otherThread.getRowId()), queryRowIds(editor, secure, AnnouncementSchema.THREADS_TABLE_NAME));
+
+            // Without a member list, non-editors can't read any secure message
+            settings.setMemberList(false);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+            assertEquals(Set.of(), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(all, queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+        }
+
+        // Queries from folder A, where the schema is available, across all folders
+        private Set<Integer> queryRowIds(User user, Container folder, String tableName)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, _folderA);
+            TableInfo table = schema.getTable(tableName, ContainerFilter.Type.AllFolders.create(schema));
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Folder"), folder.getId());
+            return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
         }
     }
 }

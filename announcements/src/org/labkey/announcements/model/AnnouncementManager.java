@@ -805,7 +805,7 @@ public class AnnouncementManager
             return EmailOption.MESSAGES_NONE.getValue();
     }
 
-    private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
+    public static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
     public static void saveMessageBoardSettings(Container c, Settings settings)
     {

@@ -115,6 +115,12 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     }
 
     @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, "COALESCE(Parent, EntityId)", _userSchema.getUser());
+    }
+
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return _userSchema.getContainer().hasPermission(user, perm);
