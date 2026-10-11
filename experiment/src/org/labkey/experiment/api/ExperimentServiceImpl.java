@@ -2287,7 +2287,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private Set<String> getInputRoles(Container ignoredContainer, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
     {
-        SQLFragment sql = new SQLFragment("SELECT role FROM ");
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT role FROM ");
         sql.append(table, "t");
         sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
         sql.append(getTinfoProtocolApplication(), "pa");
