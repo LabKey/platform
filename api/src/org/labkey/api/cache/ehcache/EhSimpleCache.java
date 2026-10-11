@@ -23,27 +23,36 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.IntegerUtils;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 class EhSimpleCache<K, V> implements SimpleCache<K, V>
 {
     private static final Logger LOG = LogManager.getLogger(EhSimpleCache.class);
 
     private final Cache _cache;
+    private final String _debugName;
 
-    EhSimpleCache(Cache cache)
+    EhSimpleCache(Cache cache, String debugName)
     {
         _cache = cache;
+        _debugName = debugName;
+    }
+
+    private void validateKey(K key)
+    {
+        // Ehcache keeps the first key object stored for an entry, so a Container key pins a stale copy
+        if (key instanceof Container)
+            throw new IllegalArgumentException("Container used as a key in cache \"" + _debugName + "\". Pass Container.class (keyClass) to the Cache factory method to allow this.");
     }
 
     @Override
     public void put(@NotNull K key, V value)
     {
+        validateKey(key);
         Element element = new Element(key, value);
         _cache.put(element);
     }
@@ -51,6 +60,7 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
+        validateKey(key);
         Element element = new Element(key, value);
         element.setTimeToLive(IntegerUtils.asInteger(timeToLive / 1000)); // Convert from ms to sec
         _cache.put(element);
@@ -64,34 +74,16 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     }
 
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
-        _cache.remove(key);
+        return _cache.remove(key);
     }
 
     @Override
-    public int removeUsingFilter(Predicate<K> filter)
+    public Stream<K> getKeys()
     {
-        int removes = 0;
-        List<K> keys = _cache.getKeys();
-
-        for (K key : keys)
-        {
-            if (filter.test(key))
-            {
-                remove(key);
-                removes++;
-            }
-        }
-
-        return removes;
-    }
-
-    @Override
-    public Set<K> getKeys()
-    {
-        // EhCache provides keys as a "set-like" list; make it a real Set
-        return new HashSet<K>(_cache.getKeys());
+        // Stream EhCache's "set-like" list of keys
+        return (Stream<K>)_cache.getKeys().stream();
     }
 
     @Override

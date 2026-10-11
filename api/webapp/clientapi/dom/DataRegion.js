@@ -3829,7 +3829,7 @@ if (!LABKEY.DataRegions) {
             containerPath: region.containerPath,
             filterArray: LABKEY.Filter.getFiltersFromParameters({ ...params, ...jsonData.filters }, params.dataRegionName),
             sort: undefined,
-            maxRows: 1,
+            maxRows: 0, // GH Issue 1607: with includeTotalCount, returns only the row count
             offset: 0,
             includeMetadata: false,
             includeDetailsColumn: false,

@@ -28,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
+import org.labkey.api.assay.dilution.DilutionDataRow;
+import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
@@ -40,6 +42,8 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Transient;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.SchemaKey;
@@ -93,6 +97,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private Map<Integer, Well> _wellMap;
     private Integer _metadataDomainId;
     private transient Long _sourcePlateRowId;
+    // Container's id rather than the Container itself, since CacheManager rejects cached values with Container fields
+    private transient @Nullable String _runContainerId;
+    private transient Map<String, List<DilutionDataRow>> _replicateDilutionData;
+    private transient Map<String, List<DilutionDataRow>> _wellGroupDilutionData;
 
     // no-param constructor for reflection
     public PlateImpl()
@@ -113,6 +121,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public PlateImpl(Container container, String name, @Nullable String barcode, @NotNull PlateType plateType)
     {
         this(container, name, barcode, null, plateType);
+    }
+
+    public PlateImpl(@NotNull PlateImpl plate, double[][] wellValues, boolean[][] excluded, @Nullable ExpRun run, int plateNumber)
+    {
+        this(plate, wellValues, excluded, run == null ? PlateService.NO_RUNID : run.getRowId(), plateNumber);
+        _runContainerId = run == null ? null : run.getContainer().getId();
     }
 
     // Note that barcode values will be auto-generated
@@ -698,6 +712,30 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public boolean mustCalculateStats()
     {
         return _runId == PlateService.NO_RUNID;
+    }
+
+    /** Stored DilutionData rows for one group; the first call loads the whole plate's rows */
+    synchronized List<DilutionDataRow> getDilutionDataRows(String groupName, boolean replicate)
+    {
+        if (_wellGroupDilutionData == null)
+        {
+            Container runContainer = _runContainerId != null ? ContainerManager.getForId(_runContainerId) : null;
+            if (runContainer == null)
+                runContainer = ExperimentService.get().getExpRun(_runId).getContainer();
+            Map<String, List<DilutionDataRow>> replicateRows = new HashMap<>();
+            Map<String, List<DilutionDataRow>> wellGroupRows = new HashMap<>();
+            for (DilutionDataRow row : DilutionManager.getDilutionDataRows(_runId, _plateNumber, runContainer))
+            {
+                if (row.getReplicateName() != null)
+                    replicateRows.computeIfAbsent(row.getReplicateName(), _ -> new ArrayList<>()).add(row);
+                if (row.getWellgroupName() != null)
+                    wellGroupRows.computeIfAbsent(row.getWellgroupName(), _ -> new ArrayList<>()).add(row);
+            }
+            _replicateDilutionData = replicateRows;
+            _wellGroupDilutionData = wellGroupRows;
+        }
+
+        return (replicate ? _replicateDilutionData : _wellGroupDilutionData).getOrDefault(groupName, List.of());
     }
 
     @JsonIgnore

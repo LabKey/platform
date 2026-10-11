@@ -43,25 +43,43 @@ import java.util.function.Predicate;
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
+    private final @Nullable Class<K> _keyClass;
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
     // Use the factory methods that return a BlockingDatabaseCache instead
     private DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
+        this(null, scope, maxSize, defaultTimeToLive, debugName);
+    }
+
+    private DatabaseCache(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
+    {
+        _keyClass = keyClass;
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
-        return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+        return get(null, scope, maxSize, defaultTimeToLive, debugName, cacheLoader);
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
         return get(scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
+    }
+
+    /** Uses a cache implementation specialized for keyClass, if one is registered; null keyClass means no specialization */
+    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    {
+        return new BlockingDatabaseCache<>(new DatabaseCache<>(keyClass, scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+    }
+
+    public static <K, V> BlockingCache<K, V> get(@Nullable Class<K> keyClass, DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
+    {
+        return get(keyClass, scope, maxSize, CacheManager.UNLIMITED, debugName, cacheLoader);
     }
 
     /**
@@ -209,7 +227,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return CacheManager.getCache(maxSize, defaultTimeToLive, debugName);
+        return CacheManager.getCache(_keyClass, maxSize, defaultTimeToLive, debugName);
     }
 
     @Override
@@ -220,7 +238,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     private Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
-        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
+        return CacheManager.getTemporaryCache(_keyClass, trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
     protected @Nullable TransactionImpl getCurrentTransaction()
@@ -318,7 +336,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static class TestCase extends Assert
     {
-        public static class TempDatabaseCache<K, V> extends DatabaseCache<K, V>
+        public static class TempDatabaseCache<V> extends DatabaseCache<String, V>
         {
             public TempDatabaseCache(DbScope scope, int maxSize, String debugName)
             {
@@ -327,9 +345,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
             @Override
-            protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+            protected Cache<String, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
             {
-                return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
+                return CacheManager.getTemporaryCache(String.class, maxSize, defaultTimeToLive, debugName, null);
             }
         }
 
@@ -339,8 +357,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         {
             MyScope scope = new MyScope();
 
-            DatabaseCache<String, String> cache = new TempDatabaseCache<>(scope, 10, "Test Cache");
-
             // basic cache testing
 
             // Hold values so we can test equality below
@@ -349,133 +365,134 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             for (int i = 0; i < values.length; i++)
                 values[i] = "value_" + i;
 
-            TrackingCache<String, String> trackingCache = cache.getCache().getTrackingCache();
-
-            for (int i = 1; i <= 20; i++)
+            try (DatabaseCache<String, String> cache = new TempDatabaseCache<>(scope, 10, "Test Cache"))
             {
-                cache.put("key_" + i, values[i]);
-                assertTrue(trackingCache.size() <= 10);
-            }
+                TrackingCache<String, String> trackingCache = cache.getCache().getTrackingCache();
 
-            int correctCount = 0;
-
-            // access in reverse order
-            for (int i = 10; i >= 1; i--)
-            {
-                if (null == cache.get("key_" + i))
-                    correctCount++;
-
-                if (cache.get("key_" + (i + 10)) == values[i + 10])
-                    correctCount++;
-            }
-
-            // A DeterministicLRU cache guarantees that the least recently used element is always kicked out when capacity
-            // is reached. A NonDeterministicLRU cache (e.g., an Ehcache implementation) attempts to kick out the least
-            // recently used element, but provides no guarantee since it uses sampling for performance reasons. This test
-            // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
-            switch (trackingCache.getCacheType())
-            {
-                case DeterministicLRU -> assertEquals("Count was " + correctCount, 20, correctCount);
-                case NonDeterministicLRU -> assertTrue("Count was " + correctCount, correctCount > 11);
-                default -> fail("Unknown cache type");
-            }
-
-            // add 5 more (if deterministic, should kick out 16-20 which are now LRU)
-            for (int i = 21; i <= 25; i++)
-                cache.put("key_" + i, values[i]);
-
-            assertEquals(10, trackingCache.size());
-            correctCount = 0;
-
-            for (int i = 11; i <= 15; i++)
-            {
-                if (cache.get("key_" + i) == values[i])
-                    correctCount++;
-
-                if (cache.get("key_" + (i + 10)) == values[i + 10])
-                    correctCount++;
-            }
-
-            // As above, this test isn't very useful for a NonDeterministicLRU cache.
-            switch (trackingCache.getCacheType())
-            {
-                case DeterministicLRU -> assertEquals("Count was " + correctCount, 10, correctCount);
-                case NonDeterministicLRU -> {
-                    assertTrue("Count was " + correctCount, correctCount > 4);
-
-                    // Make sure key_11 is in the cache
-                    cache.put("key_11", values[11]);
-                    assertSame(cache.get("key_11"), values[11]);
-                }
-                default -> fail("Unknown cache type");
-            }
-
-            // transaction testing
-            try (DbScope.Transaction transaction = scope.beginTransaction())
-            {
-                assertTrue(scope.isTransactionActive());
-                TransactionCache<String, String> tCache = (TransactionCache<String, String>) cache.getCache();
-                Cache<String, String> privateCache = tCache._privateCache;
-                Cache<String, String> sharedCache = tCache._sharedCache;
-                assertEquals(10, tCache.getKeys().size());
-                assertEquals(10, sharedCache.getKeys().size());
-                assertEquals(0, privateCache.getKeys().size());
-
-                // Test read-through transaction cache
-                assertSame(cache.get("key_11"), values[11]);
-                // Nothing should change after a read
-                assertEquals(10, sharedCache.getKeys().size());
-                assertEquals(10, tCache.getKeys().size());
-                assertEquals(0, privateCache.getKeys().size());
-
-                cache.remove("key_11");
-                assertNull(cache.get("key_11"));
-                assertEquals(10, sharedCache.getKeys().size());
-                assertEquals(10, tCache.getKeys().size()); // Unique keys are still 10
-                assertEquals(1, privateCache.getKeys().size()); // But private cache should now have a remove entry
-
-                for (int i = 30; i < 35; i++)
+                for (int i = 1; i <= 20; i++)
                 {
                     cache.put("key_" + i, values[i]);
+                    assertTrue(trackingCache.size() <= 10);
                 }
-                assertEquals(10, sharedCache.getKeys().size());
-                assertEquals(15, tCache.getKeys().size()); // 15 unique now
-                assertEquals(6, privateCache.getKeys().size());
 
-                // Remove all the even keys
-                cache.removeUsingFilter(key -> Integer.valueOf(key.substring(4)) % 2 == 0);
-                assertNull(cache.get("key_12"));
-                assertNull(cache.get("key_22"));
-                assertNull(cache.get("key_24"));
-                assertNull(cache.get("key_30"));
-                assertNotNull(privateCache.get("key_30"));
-                assertNull(cache.get("key_34"));
-                assertNotNull(privateCache.get("key_34"));
+                int correctCount = 0;
 
-                // imitate another thread: toggle transaction and test
-                scope.setOverrideTransactionActive(Boolean.FALSE);
-                assertSame(cache.get("key_11"), values[11]);
-                assertNull(cache.get("key_31"));
-                assertNull(cache.get("key_33"));
-                scope.setOverrideTransactionActive(null);
+                // access in reverse order
+                for (int i = 10; i >= 1; i--)
+                {
+                    if (null == cache.get("key_" + i))
+                        correctCount++;
 
-                // This should close the transaction caches
-                transaction.commit();
+                    if (cache.get("key_" + (i + 10)) == values[i + 10])
+                        correctCount++;
+                }
 
-                // Test that remove got applied to shared cache
-                assertNull(cache.get("key_11"));
-                // Test that even keys got removed from the shared cache
-                cache.getKeys().stream()
-                    .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
-                    .findAny()
-                    .ifPresent(key -> fail("Found an even key: " + key));
-                // No test for puts since DatabaseCache doesn't replay them (that's solely a BlockingDatabaseCache thing)
+                // A DeterministicLRU cache guarantees that the least recently used element is always kicked out when capacity
+                // is reached. A NonDeterministicLRU cache (e.g., an Ehcache implementation) attempts to kick out the least
+                // recently used element, but provides no guarantee since it uses sampling for performance reasons. This test
+                // is not very useful for a NonDeterministicLRU cache. Adjust the check below if the test fails.
+                switch (trackingCache.getCacheType())
+                {
+                    case DeterministicLRU -> assertEquals("Count was " + correctCount, 20, correctCount);
+                    case NonDeterministicLRU -> assertTrue("Count was " + correctCount, correctCount > 11);
+                    default -> fail("Unknown cache type");
+                }
 
-                cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));
-                assert trackingCache.size() == 0;
+                // add 5 more (if deterministic, should kick out 16-20 which are now LRU)
+                for (int i = 21; i <= 25; i++)
+                    cache.put("key_" + i, values[i]);
 
-                // This should close the (temporary) shared cache
-                cache.close();
+                assertEquals(10, trackingCache.size());
+                correctCount = 0;
+
+                for (int i = 11; i <= 15; i++)
+                {
+                    if (cache.get("key_" + i) == values[i])
+                        correctCount++;
+
+                    if (cache.get("key_" + (i + 10)) == values[i + 10])
+                        correctCount++;
+                }
+
+                // As above, this test isn't very useful for a NonDeterministicLRU cache.
+                switch (trackingCache.getCacheType())
+                {
+                    case DeterministicLRU -> assertEquals("Count was " + correctCount, 10, correctCount);
+                    case NonDeterministicLRU ->
+                    {
+                        assertTrue("Count was " + correctCount, correctCount > 4);
+
+                        // Make sure key_11 is in the cache
+                        cache.put("key_11", values[11]);
+                        assertSame(cache.get("key_11"), values[11]);
+                    }
+                    default -> fail("Unknown cache type");
+                }
+
+                // transaction testing
+                try (DbScope.Transaction transaction = scope.beginTransaction())
+                {
+                    assertTrue(scope.isTransactionActive());
+                    TransactionCache<String, String> tCache = (TransactionCache<String, String>) cache.getCache();
+                    Cache<String, String> privateCache = tCache._privateCache;
+                    Cache<String, String> sharedCache = tCache._sharedCache;
+                    assertEquals(10, tCache.getKeys().size());
+                    assertEquals(10, sharedCache.getKeys().size());
+                    assertEquals(0, privateCache.getKeys().size());
+
+                    // Test read-through transaction cache
+                    assertSame(cache.get("key_11"), values[11]);
+                    // Nothing should change after a read
+                    assertEquals(10, sharedCache.getKeys().size());
+                    assertEquals(10, tCache.getKeys().size());
+                    assertEquals(0, privateCache.getKeys().size());
+
+                    cache.remove("key_11");
+                    assertNull(cache.get("key_11"));
+                    assertEquals(10, sharedCache.getKeys().size());
+                    assertEquals(10, tCache.getKeys().size()); // Unique keys are still 10
+                    assertEquals(1, privateCache.getKeys().size()); // But private cache should now have a remove entry
+
+                    for (int i = 30; i < 35; i++)
+                    {
+                        cache.put("key_" + i, values[i]);
+                    }
+                    assertEquals(10, sharedCache.getKeys().size());
+                    assertEquals(15, tCache.getKeys().size()); // 15 unique now
+                    assertEquals(6, privateCache.getKeys().size());
+
+                    // Remove all the even keys
+                    cache.removeUsingFilter(key -> Integer.valueOf(key.substring(4)) % 2 == 0);
+                    assertNull(cache.get("key_12"));
+                    assertNull(cache.get("key_22"));
+                    assertNull(cache.get("key_24"));
+                    assertNull(cache.get("key_30"));
+                    assertNotNull(privateCache.get("key_30"));
+                    assertNull(cache.get("key_34"));
+                    assertNotNull(privateCache.get("key_34"));
+
+                    // imitate another thread: toggle transaction and test
+                    scope.setOverrideTransactionActive(Boolean.FALSE);
+                    assertSame(cache.get("key_11"), values[11]);
+                    assertNull(cache.get("key_31"));
+                    assertNull(cache.get("key_33"));
+                    scope.setOverrideTransactionActive(null);
+
+                    // This should close the transaction caches
+                    transaction.commit();
+
+                    // Test that remove got applied to shared cache
+                    assertNull(cache.get("key_11"));
+                    // Test that even keys got removed from the shared cache
+                    cache.getKeys().stream()
+                            .filter(key -> Integer.valueOf(key.substring(4)) % 2 == 0)
+                            .findAny()
+                            .ifPresent(key -> fail("Found an even key: " + key));
+                    // No test for puts since DatabaseCache doesn't replay them (that's solely a BlockingDatabaseCache thing)
+
+                    cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));
+                    assert trackingCache.size() == 0;
+                }
             }
         }
 
@@ -487,9 +504,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, maxSize, "Test Cache");
 
-            BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader());
-
-            try (DbScope.Transaction transaction = scope.beginTransaction())
+            try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader()); DbScope.Transaction transaction = scope.beginTransaction())
             {
                 int taskCount;
                 for (int i = 1; i <= 15; i++)
@@ -513,9 +528,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     }
                 }
                 transaction.commit();
-
-                // This should close the (temporary) shared cache
-                cache.close();
             }
         }
 

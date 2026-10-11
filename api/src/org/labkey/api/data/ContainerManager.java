@@ -648,20 +648,42 @@ public class ContainerManager
     }
 
 
-    @NotNull
-    public static Map<String, Integer> getFolderTypeNameContainerCounts(Container root)
+    /** Left-joins each container (alias "c") to its stored folder type name, exposed as pe.Value; null when none is stored */
+    private static SQLFragment getFolderTypeNameJoin()
     {
+        return new SQLFragment(" LEFT OUTER JOIN ").append(PropertySchema.getInstance().getTableInfoPropertyEntries(), "pe")
+            .append(" ON pe.ObjectId = c.EntityId AND pe.Category = ? AND pe.Name = ? AND pe.UserId = ?")
+            .add(FOLDER_TYPE_PROPERTY_SET_NAME).add(FOLDER_TYPE_PROPERTY_NAME).add(PropertyManager.SHARED_USER.getUserId());
+    }
+
+    /** Same resolution as getFolderType(), minus its bad-name logging */
+    private static @NotNull FolderType resolveFolderType(@Nullable String name)
+    {
+        FolderType folderType = null == name ? null : FolderTypeManager.get().getFolderType(name);
+        return null == folderType ? FolderType.NONE : folderType;
+    }
+
+    @NotNull
+    public static Map<String, Integer> getFolderTypeNameContainerCounts()
+    {
+        SQLFragment sql = new SQLFragment("SELECT pe.Value, COUNT(*) FROM ").append(CORE.getTableInfoContainers(), "c")
+            .append(getFolderTypeNameJoin())
+            .append(" GROUP BY pe.Value");
         Map<String, Integer> nameCounts = new TreeMap<>();
-        for (Container c : getAllChildren(root))
-        {
-            Integer count = nameCounts.get(c.getFolderType().getName());
-            if (null == count)
-            {
-                count = Integer.valueOf(0);
-            }
-            nameCounts.put(c.getFolderType().getName(), ++count);
-        }
+        new SqlSelector(CORE.getSchema(), sql).forEach(rs -> nameCounts.merge(resolveFolderType(rs.getString(1)).getName(), rs.getInt(2), Integer::sum));
         return nameCounts;
+    }
+
+    /** Distinct folder types of the parent's workbook children, without loading each workbook's property map */
+    @NotNull
+    public static Set<FolderType> getWorkbookChildFolderTypes(Container parent)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT pe.Value FROM ").append(CORE.getTableInfoContainers(), "c")
+            .append(getFolderTypeNameJoin())
+            .append(" WHERE c.Parent = ? AND c.Type = ?").add(parent.getEntityId()).add(WorkbookContainerType.NAME);
+        return new SqlSelector(CORE.getSchema(), sql).stream(String.class)
+            .map(ContainerManager::resolveFolderType)
+            .collect(Collectors.toSet());
     }
 
     @NotNull
@@ -994,7 +1016,7 @@ public class ContainerManager
 
     public static void uncache(Container c)
     {
-        _removeFromCache(c, true);
+        _removeFromCache(c, false);
     }
 
     public static final String SHARED_CONTAINER_PATH = "/Shared";
@@ -1122,9 +1144,11 @@ public class ContainerManager
                 new SqlSelector(CORE.getSchema(),
                         "SELECT * FROM " + CORE.getTableInfoContainers() + " WHERE Parent = ? ORDER BY SortOrder, LOWER(Name)",
                         parent.getId()).forEach(rs -> {
-                    Container c = factory.handle(rs);
-                    ids.add(c.getEntityId());
-                    _addToCache(c);
+                    GUID id = new GUID(rs.getString("EntityId"));
+                    // Reuse the cached instance; a fresh copy would replace it while Container-keyed caches keep pinning the old one
+                    Container c = CACHE_ENTITY_ID.get(id);
+                    _addToCache(null != c ? c : factory.handle(rs));
+                    ids.add(id);
                 });
 
                 childIds = Collections.unmodifiableList(ids);
@@ -2150,9 +2174,11 @@ public class ContainerManager
 
         if (hierarchyChange)
         {
-            // This is strictly keeping track of the parent/child relationships themselves so it only needs to be
-            // cleared when the tree changes
-            CACHE_CHILDREN.clear();
+            // Creating or deleting c only changes its own and its parent's child lists; moves and renames use clearCache()
+            CACHE_CHILDREN.remove(c.getEntityId());
+            Container parent = c.getParent();
+            if (null != parent)
+                CACHE_CHILDREN.remove(parent.getEntityId());
         }
 
         navTreeManageUncache(c);
@@ -3067,6 +3093,32 @@ public class ContainerManager
                 Container child = createContainer(parent, childName, TestContext.get().getUser());
                 createContainers(mm, childName, child);
             }
+        }
+
+        @Test
+        public void testFolderTypeQueries()
+        {
+            User user = TestContext.get().getUser();
+            Container parent = createContainer(_testRoot, "folderTypes", user);
+            Container untyped = createContainer(parent, null, null, null, WorkbookContainerType.NAME, user);
+            Container typed = createContainer(parent, null, null, null, WorkbookContainerType.NAME, user);
+            FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
+            assertNotNull(collaboration);
+
+            Set<Module> collaborationModules = parent.getRequiredModulesForFolderType(collaboration);
+            assertFalse(collaborationModules.isEmpty());
+            assertFalse(parent.getRequiredModules().containsAll(collaborationModules));
+
+            typed.setFolderType(collaboration, user);
+
+            // A workbook's folder type change must uncache its parent's entry
+            assertTrue(parent.getRequiredModules().containsAll(collaborationModules));
+            assertEquals(Set.of(FolderType.NONE, collaboration), getWorkbookChildFolderTypes(parent));
+            assertEquals(FolderType.NONE, untyped.getFolderType());
+
+            Map<String, Integer> expected = new TreeMap<>();
+            getAllChildren(getRoot()).forEach(c -> expected.merge(c.getFolderType().getName(), 1, Integer::sum));
+            assertEquals(expected, getFolderTypeNameContainerCounts());
         }
 
         private static void cleanUpChildren(MultiValuedMap<String, String> mm, String name, Container parent)

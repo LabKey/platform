@@ -134,8 +134,9 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
     }
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolverImpl is a singleton, so we
-    // end up with just one of these.
-    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders", null);
+    // end up with just one of these. Bounded because Ehcache drops an expired entry only when it's read again, so
+    // crawling every container would otherwise keep one folder per container.
+    private final Cache<Path, WebFolderResource> _folderCache = CacheManager.getBlockingCache(CacheManager.DEFAULT_CACHE_SIZE, 5 * CacheManager.MINUTE, "WebDAV folders", null);
 
     public class WebFolderResource extends AbstractWebFolderResource
     {

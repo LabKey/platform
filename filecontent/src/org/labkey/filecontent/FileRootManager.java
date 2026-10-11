@@ -26,18 +26,23 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.files.FileRoot;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class FileRootManager
 {
     public static final String FILE_CONTENT_SCHEMA_NAME = "filecontent";
 
     private static final FileRootManager _instance = new FileRootManager();
-    private static final BlockingCache<String, FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", (key, c) -> {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
-
-        return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
+    // The table is sparse, so cache every row in one entry (container id -> root) rather than a hit or miss per container
+    private static final String CACHE_KEY = "AllRoots";
+    private static final BlockingCache<String, Map<String, FileRoot>> CACHE = CacheManager.getBlockingStringKeyCache(1, CacheManager.DAY, "FileRoots", (key, argument) -> {
+        Map<String, FileRoot> roots = new HashMap<>();
+        new TableSelector(getTinfoFileRoots()).forEach(FileRoot.class, root -> roots.put(root.getContainer(), root));
+        return Collections.unmodifiableMap(roots);
     });
 
     private FileRootManager(){}
@@ -57,17 +62,12 @@ public class FileRootManager
         return getFileContentSchema().getTable("FileRoots");
     }
 
-    private String getCacheKey(Container c)
-    {
-        return c.getId();
-    }
-
     public FileRoot getFileRoot(Container c)
     {
         if (c == null)
             throw new IllegalArgumentException("getFileRoot: Container cannot be null");
-        
-        FileRoot root = CACHE.get(getCacheKey(c), c);
+
+        FileRoot root = CACHE.get(CACHE_KEY).get(c.getId());
 
         return null == root ? new FileRoot(c) : root;
     }
@@ -77,7 +77,7 @@ public class FileRootManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         Table.delete(getTinfoFileRoots(), filter);
 
-        CACHE.remove(getCacheKey(c));
+        clearCache();
     }
 
     public void saveFileRoot(User user, FileRoot root)
@@ -95,13 +95,12 @@ public class FileRootManager
         }
         finally
         {
-            // Must clear cache in both insert & update, otherwise NULL marker remains in the cache
-            CACHE.remove(root.getContainer());
+            clearCache();
         }
     }
 
     public void clearCache()
     {
-        CACHE.clear();
+        CACHE.remove(CACHE_KEY);
     }
 }

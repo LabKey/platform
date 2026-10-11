@@ -97,6 +97,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -114,20 +115,23 @@ public class PipelineManager
 {
     private static final Logger _log = LogManager.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingCache<String, PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
-        (key, argument) -> new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class));
+    // The table is sparse, so cache every row in one entry (container id -> type -> root) rather than a hit or miss per container
+    private static final String CACHE_KEY = "AllRoots";
+    private static final BlockingCache<String, Map<String, Map<String, PipelineRoot>>> CACHE = CacheManager.getBlockingStringKeyCache(1, CacheManager.DAY, "Pipeline roots",
+        (key, argument) -> {
+            Map<String, Map<String, PipelineRoot>> roots = new HashMap<>();
+            new TableSelector(pipeline.getTableInfoPipelineRoots()).forEach(PipelineRoot.class, root -> roots.computeIfAbsent(root.getContainerId(), id -> new HashMap<>()).put(root.getType(), root));
+            return Collections.unmodifiableMap(roots);
+        });
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Type"), type);
-
-        return CACHE.get(getCacheKey(container, type), filter);
+        return CACHE.get(CACHE_KEY).getOrDefault(container.getId(), Collections.emptyMap()).get(type);
     }
 
-    private static String getCacheKey(Container c, @Nullable String type)
+    private static void uncache()
     {
-        return c.getId() + "/" + StringUtils.trimToEmpty(type);
+        CACHE.remove(CACHE_KEY);
     }
 
     @Nullable
@@ -202,7 +206,7 @@ public class PipelineManager
         }
         finally
         {
-            CACHE.remove(getCacheKey(container, type));
+            uncache();
         }
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
@@ -234,7 +238,7 @@ public class PipelineManager
         }
         finally
         {
-            CACHE.remove(getCacheKey(container, null));
+            uncache();
         }
 
         // Delete trigger configurations through the UserSchema so that we stop any associated listeners. See issue 33986
