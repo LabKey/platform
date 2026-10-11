@@ -904,9 +904,9 @@ public class ExceptionUtil
             {
                 response.sendError(invalidParameter.getErrorCode(), "Invalid request parameters");
             }
-            catch (IOException e)
+            catch (IOException | IllegalStateException e)
             {
-                // Do nothing
+                // Do nothing; IllegalStateException means the response was already committed
             }
             return null;
         }
