@@ -37,9 +37,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
- * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then
- * start here.
- * First implement getServicePrompt() to tell your "agent its mission.  You can also listen in on the
+ * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then start here.
+ * First implement getServicePrompt() to tell your agent its mission. You can also listen in on the
  * conversation to help your user get the right results.
  */
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
