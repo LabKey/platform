@@ -47,7 +47,6 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -104,7 +103,6 @@ import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -1455,11 +1453,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
-                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
-                // reentrancy when querying this optional feature flag's value when it's not already cached.
-                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-                    return;
-
                 boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +
