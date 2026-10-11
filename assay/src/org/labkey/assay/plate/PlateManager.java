@@ -1322,9 +1322,9 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             transaction.addCommitTask(() -> {
                 clearCache(container, plate);
                 indexPlate(container, plateRowId, false);
-                if (plate.getPlateSet() != null)
-                    indexPlateSet(SearchService.get().defaultTask().getQueue(container, SearchService.PRIORITY.modified), plate.getPlateSet());
             }, DbScope.CommitTaskOption.POSTCOMMIT);
+            if (plate.getPlateSet() != null)
+                transaction.addCommitTask(new PlateSetIndexTask(container, plate.getPlateSet().getRowId()), DbScope.CommitTaskOption.POSTCOMMIT);
 
             if (!skipAudit && !updateExisting)
             {
@@ -2572,7 +2572,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         " VALUES (?, CAST(? AS INT), CAST(? AS VARCHAR), CAST(? AS VARCHAR))";
                 Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
 
-                transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(new PlateSetPlatesUncacheTask(container, plateSet.getRowId()), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
         }
@@ -2736,7 +2736,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
             }
 
-            transaction.addCommitTask(() -> PlateCache.uncache(container, plateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.addCommitTask(new PlateSetPlatesUncacheTask(container, plateSet.getRowId()), DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
         }
 
@@ -2922,7 +2922,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 AuditLogService.get().addEvent(user, auditEvent);
             }
 
-            tx.addCommitTask(() -> indexPlateSet(newPlateSet), DbScope.CommitTaskOption.POSTCOMMIT);
+            tx.addCommitTask(new PlateSetIndexTask(container, newPlateSet.getRowId()), DbScope.CommitTaskOption.POSTCOMMIT);
             tx.commit();
 
             return newPlateSet;
@@ -5136,6 +5136,25 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                 .appendInClause(materials.stream().map(ExpObject::getRowId).toList(), wellTable.getSqlDialect());
 
         new SqlExecutor(wellTable.getSchema()).execute(updateSql);
+    }
+
+    // Records so repeated registrations in one transaction dedupe on equals()
+    private record PlateSetPlatesUncacheTask(Container container, long plateSetRowId) implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            PlateCache.uncachePlateSetPlates(container, plateSetRowId);
+        }
+    }
+
+    private record PlateSetIndexTask(Container container, long plateSetRowId) implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            PlateManager.get().indexPlateSet(container, plateSetRowId);
+        }
     }
 
     private class BulkPlateIndexer extends Thread

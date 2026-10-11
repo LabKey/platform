@@ -2113,7 +2113,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     // based on the modified date
                     indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
-            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            }, POSTCOMMIT);
 
             // add up the size of the value arrays in the fileMovesBySampleId map
             int fileMoveCount = fileMovesBySampleId.values().stream().mapToInt(List::size).sum();
