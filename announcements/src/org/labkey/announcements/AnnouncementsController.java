@@ -149,6 +149,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -2704,13 +2705,13 @@ public class AnnouncementsController extends SpringActionController
 
     // An empty memberListInput clears the thread's member list, so API writes carry the current list forward. Members
     // who can no longer read are dropped, otherwise validation rejects the whole post.
-    private String getRetainedMemberListInput(AnnouncementModel thread)
+    private String getRetainedMemberListInput(List<Integer> memberListIds)
     {
         Settings settings = getSettings();
         AnnouncementModel probe = new AnnouncementModel();
-        probe.setMemberListIds(thread.getMemberListIds());
+        probe.setMemberListIds(memberListIds);
 
-        return thread.getMemberListIds().stream()
+        return memberListIds.stream()
             .map(UserManager::getUser)
             .filter(Objects::nonNull)
             .filter(member -> getPermissions(getContainer(), member, settings).allowRead(probe))
@@ -2760,7 +2761,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 var parentThread = getThread(getContainer(), null, newThread.getParent());
 
-                if (parentThread == null)
+                if (parentThread == null || parentThread.getParent() != null)
                 {
                     errors.reject(ERROR_MSG, "Failed to reply to thread. Unable to find parent thread \"" + newThread.getParent() + "\".");
                     return null;
@@ -2774,7 +2775,7 @@ public class AnnouncementsController extends SpringActionController
                 if (!getPermissions().allowResponse(parentThread))
                     throw new UnauthorizedException();
 
-                newThread.setMemberListInput(getRetainedMemberListInput(parentThread));
+                newThread.setMemberListInput(getRetainedMemberListInput(parentThread.getMemberListIds()));
             }
 
             try
@@ -2905,7 +2906,8 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
 
             var updatedThread = copyEditableProps(thread, rawThread, false);
-            updatedThread.setMemberListInput(getRetainedMemberListInput(thread));
+            // The member list is saved per post, so keep this post's own list rather than the thread's latest
+            updatedThread.setMemberListInput(getRetainedMemberListInput(AnnouncementManager.getPostMemberList(thread.getRowId())));
 
             try
             {
@@ -3083,6 +3085,24 @@ public class AnnouncementsController extends SpringActionController
             assertStatus(HttpServletResponse.SC_FORBIDDEN, post(viaThread, formerMember));
         }
 
+        @Test
+        public void testApiReplyToResponseRejected() throws Exception
+        {
+            Container secure = createBoard("SecureApiResponse", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, member);
+            AnnouncementModel response = insertResponse(secure, thread, String.valueOf(member.getUserId()));
+
+            ActionURL viaResponse = new ActionURL(CreateThreadAction.class, secure)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", response.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(viaResponse, member));
+            assertEquals(1, AnnouncementManager.getAnnouncement(secure, thread.getEntityId()).getResponses().size());
+        }
+
         private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput) throws Exception
         {
             AnnouncementModel response = new AnnouncementModel();
@@ -3105,6 +3125,25 @@ public class AnnouncementsController extends SpringActionController
                 .addParameter("thread.body", "updated body");
 
             assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testApiUpdateRetainsPostMemberList() throws Exception
+        {
+            Container board = createBoard("NormalResponded", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            User other = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member, other);
+            insertResponse(board, thread, String.valueOf(member.getUserId()));
+
+            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
+                .addParameter("thread.rowId", thread.getRowId())
+                .addParameter("thread.body", "updated body");
+
+            // Editing the original must keep its own list, not copy the latest response's list onto it
+            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(Set.of(member.getUserId(), other.getUserId()), new HashSet<>(AnnouncementManager.getPostMemberList(thread.getRowId())));
             assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
         }
 
