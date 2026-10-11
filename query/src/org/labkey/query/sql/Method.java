@@ -230,14 +230,6 @@ public abstract class Method
                 return new IsMemberInfo();
             }
         });
-        labkeyMethod.put("isnumeric", new Method("isnumeric", JdbcType.BOOLEAN, 1, 1)
-        {
-            @Override
-            public MethodInfo getMethodInfo()
-            {
-                return new IsNumericInfo();
-            }
-        });
         labkeyMethod.put("javaconstant", new Method("javaconstant", JdbcType.VARBINARY, 1, 1)
         {
             @Override
@@ -1095,14 +1087,13 @@ public abstract class Method
         }
     }
 
-    // A regex-based CASE on PostgreSQL; SQL Server resolves isnumeric to the mssqlMethods passthrough and never
-    // reaches here. Yields 1/0 to match that passthrough, not a boolean as JdbcType.BOOLEAN suggests, so
-    // isnumeric(x) = 1 works on either database -- don't "fix" the dialects to emit predicates instead.
+    // PostgreSQL only; SQL Server uses its native ISNUMERIC() via the mssqlMethods passthrough. Returns 1/0 like
+    // ISNUMERIC() because callers write isnumeric(x) = 1, which a true/false predicate would break.
     static class IsNumericInfo extends AbstractMethodInfo
     {
         IsNumericInfo()
         {
-            super(JdbcType.BOOLEAN);
+            super(JdbcType.INTEGER);
         }
 
         @Override
@@ -1726,6 +1717,14 @@ public abstract class Method
         postgresMethods.put("decode", new PassthroughMethod("decode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("encode", new PassthroughMethod("encode", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("initcap", new PassthroughMethod("initcap", JdbcType.VARCHAR, 1, 1));
+        postgresMethods.put("isnumeric", new PassthroughMethod("isnumeric", JdbcType.INTEGER, 1, 1)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new IsNumericInfo();
+            }
+        });
         postgresMethods.put("lpad", new PassthroughMethod("lpad", JdbcType.VARCHAR, 2, 3));
         postgresMethods.put("md5", new PassthroughMethod("md5", JdbcType.VARCHAR, 1, 1));
         postgresMethods.put("octet_length", new PassthroughMethod("octet_length", JdbcType.INTEGER, 1, 1));

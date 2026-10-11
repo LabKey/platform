@@ -3787,16 +3787,17 @@ public class QueryServiceImpl implements QueryService
         public void testRightAndIsnumeric() throws SQLException
         {
             // Portable LabKey-SQL functions: right() dispatches via the JDBC {fn right} escape; isnumeric() yields 1/0
-            // -- ISNUMERIC(x) on SQL Server, a regex-based CASE on PostgreSQL -- so it is compared with = 1 rather than
-            // selected bare, which QuerySelect wraps in CASE WHEN on SQL Server and the wrap then has no predicate.
+            // -- ISNUMERIC(x) on SQL Server, a regex-based CASE on PostgreSQL.
             String sql =
                 "SELECT " +
                 "  right('hello', 2) AS r1, " +
                 "  right('xy', 5) AS r2, " +
-                "  CASE WHEN isnumeric('5') = 1 THEN 1 ELSE 0 END AS n1, " +
-                "  CASE WHEN isnumeric('-3.14') = 1 THEN 1 ELSE 0 END AS n2, " +
-                "  CASE WHEN isnumeric('abc') = 1 THEN 1 ELSE 0 END AS n3, " +
-                "  CASE WHEN isnumeric(NULL) = 1 THEN 1 ELSE 0 END AS n4 " +
+                "  isnumeric('5') AS n1, " +
+                "  isnumeric('-3.14') AS n2, " +
+                "  isnumeric('abc') AS n3, " +
+                "  isnumeric(NULL) AS n4, " +
+                "  CASE WHEN isnumeric('5') = 1 THEN 1 ELSE 0 END AS n5, " +
+                "  CASE WHEN isnumeric('abc') = 1 THEN 1 ELSE 0 END AS n6 " +
                 "FROM core.Containers";
 
             QueryDef qd = new QueryDef();
@@ -3819,6 +3820,8 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("isnumeric('-3.14') on " + dialect, 1, results.getInt("n2"));
                 assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
                 assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
+                assertEquals("isnumeric('5') = 1 on " + dialect, 1, results.getInt("n5"));
+                assertEquals("isnumeric('abc') = 1 on " + dialect, 0, results.getInt("n6"));
             }
         }
 
