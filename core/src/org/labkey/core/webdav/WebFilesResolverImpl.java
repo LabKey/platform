@@ -190,7 +190,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
 
     // Cache with short-lived entries to make webfiles perform reasonably.  WebFilesResolverImpl is a singleton, so we
     // end up with just one of these.
-    private final Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
+    private final Cache<Path, WebdavResource> _webfilesCache = CacheManager.getCache(Path.class, CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebFiles");
 
     @Override
     public boolean isEnabled()

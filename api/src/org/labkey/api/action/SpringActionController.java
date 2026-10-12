@@ -28,6 +28,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponseWriter.Format;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -98,6 +99,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
@@ -191,7 +193,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     public interface ActionResolver
     {
         Controller resolveActionName(Controller actionController, String actionName);
-        void addTime(Controller action, long elapsedTime);
+        void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage);
         Collection<ActionDescriptor> getActionDescriptors();
     }
 
@@ -203,7 +205,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         Class<? extends Controller> getActionClass();
         Controller createController(Controller actionController);
 
-        void addTime(long time);
+        void addTime(long time, @Nullable ConnectionUsage.Snapshot connectionUsage);
         void addException(Exception x);
         ActionStats getStats();
     }
@@ -214,8 +216,34 @@ public abstract class SpringActionController implements Controller, HasViewConte
         long getCount();
         long getElapsedTime();
         long getMaxTime();
+        /** Invocations measured since connection tracking was last turned on; the connection stats cover only these */
+        long getTrackedCount();
+        long getTrackedElapsedTime();
+        long getBorrows();
+        /** Summed over connections, so exceeds wall time when a request holds several at once */
+        long getConnectionHeldTime();
+        /** Time holding at least one connection */
+        long getConnectionWallTime();
+        int getMaxConcurrent();
+        long getAcquireTime();
+        /** Portion of acquire time inside the pool's getConnection() */
+        long getAcquirePoolTime();
+        /** Portion of acquire time in per-connection setup */
+        long getAcquireSetupTime();
+        long getUnreturned();
         boolean hasExceptions();
         List<Exception> getExceptions();
+
+        default double getBorrowsPerInvocation()
+        {
+            return 0 == getTrackedCount() ? 0 : getBorrows() / (double) getTrackedCount();
+        }
+
+        /** Clamped because elapsed time has millisecond resolution and connection time has nanosecond resolution */
+        default double getConnectionWallFraction()
+        {
+            return 0 == getTrackedElapsedTime() ? 0 : Math.min(1.0, getConnectionWallTime() / (double) getTrackedElapsedTime());
+        }
     }
 
     ApplicationContext _applicationContext = null;
@@ -421,6 +449,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
+        ConnectionUsage.Mark connectionMark = ConnectionUsage.mark();
         Controller controller = null;
         PageConfig pageConfig = null;
 
@@ -556,11 +585,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         finally
         {
-            afterAction(throwable);
-            clearActionForThread(controller);
+            try
+            {
+                afterAction(throwable);
+                clearActionForThread(controller);
+            }
+            finally
+            {
+                // Measure even when no action resolved, else the unclosed mark stays on this pooled thread forever
+                ConnectionUsage.Snapshot connectionUsage = ConnectionUsage.measure(connectionMark);
 
-            if (null != controller)
-                _actionResolver.addTime(controller, System.currentTimeMillis() - startTime);
+                if (null != controller)
+                    _actionResolver.addTime(controller, System.currentTimeMillis() - startTime, connectionUsage);
+            }
         }
 
         return null;
@@ -783,16 +820,60 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _count = 0;
         private long _elapsedTime = 0;
         private long _maxTime = 0;
+        private long _borrows = 0;
+        private long _heldNanos = 0;
+        private long _wallNanos = 0;
+        private int _maxConcurrent = 0;
+        private long _acquireNanos = 0;
+        private long _acquirePoolNanos = 0;
+        private long _acquireSetupNanos = 0;
+        private long _unreturned = 0;
+        private long _trackedCount = 0;
+        private long _trackedElapsedTime = 0;
+        private int _connectionGeneration = 0;
         private List<Exception> _exceptions = null;
 
         @Override
-        synchronized public void addTime(long time)
+        synchronized public void addTime(long time, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             _count++;
             _elapsedTime += time;
 
             if (time > _maxTime)
                 _maxTime = time;
+
+            if (null == connectionUsage || !connectionUsage.isCurrent())
+                return;
+
+            syncConnectionGeneration(connectionUsage.generation());
+            _trackedCount++;
+            _trackedElapsedTime += time;
+            _borrows += connectionUsage.borrows();
+            _heldNanos += connectionUsage.heldNanos();
+            _wallNanos += connectionUsage.wallNanos();
+            _maxConcurrent = Math.max(_maxConcurrent, connectionUsage.maxConcurrent());
+            _acquireNanos += connectionUsage.acquireNanos();
+            _acquirePoolNanos += connectionUsage.poolNanos();
+            _acquireSetupNanos += connectionUsage.setupNanos();
+            _unreturned += connectionUsage.unreturned();
+        }
+
+        private void syncConnectionGeneration(int generation)
+        {
+            if (generation == _connectionGeneration)
+                return;
+
+            _connectionGeneration = generation;
+            _trackedCount = 0;
+            _trackedElapsedTime = 0;
+            _borrows = 0;
+            _heldNanos = 0;
+            _wallNanos = 0;
+            _maxConcurrent = 0;
+            _acquireNanos = 0;
+            _acquirePoolNanos = 0;
+            _acquireSetupNanos = 0;
+            _unreturned = 0;
         }
 
         @Override
@@ -807,7 +888,8 @@ public abstract class SpringActionController implements Controller, HasViewConte
         @Override
         synchronized public ActionStats getStats()
         {
-            return new BaseActionStats(_count, _elapsedTime, _maxTime, _exceptions);
+            syncConnectionGeneration(ConnectionUsage.getGeneration());
+            return new BaseActionStats(_count, _elapsedTime, _maxTime, _trackedCount, _trackedElapsedTime, _borrows, _heldNanos, _wallNanos, _maxConcurrent, _acquireNanos, _acquirePoolNanos, _acquireSetupNanos, _unreturned, _exceptions);
         }
 
         // Immutable stats holder to eliminate external synchronization needs
@@ -816,13 +898,33 @@ public abstract class SpringActionController implements Controller, HasViewConte
             private final long _count;
             private final long _elapsedTime;
             private final long _maxTime;
+            private final long _trackedCount;
+            private final long _trackedElapsedTime;
+            private final long _borrows;
+            private final long _heldNanos;
+            private final long _wallNanos;
+            private final int _maxConcurrent;
+            private final long _acquireNanos;
+            private final long _acquirePoolNanos;
+            private final long _acquireSetupNanos;
+            private final long _unreturned;
             private final List<Exception> _exceptions;
 
-            private BaseActionStats(long count, long elapsedTime, long maxTime, List<Exception> ex)
+            private BaseActionStats(long count, long elapsedTime, long maxTime, long trackedCount, long trackedElapsedTime, long borrows, long heldNanos, long wallNanos, int maxConcurrent, long acquireNanos, long acquirePoolNanos, long acquireSetupNanos, long unreturned, List<Exception> ex)
             {
                 _count = count;
                 _elapsedTime = elapsedTime;
                 _maxTime = maxTime;
+                _trackedCount = trackedCount;
+                _trackedElapsedTime = trackedElapsedTime;
+                _borrows = borrows;
+                _heldNanos = heldNanos;
+                _wallNanos = wallNanos;
+                _maxConcurrent = maxConcurrent;
+                _acquireNanos = acquireNanos;
+                _acquirePoolNanos = acquirePoolNanos;
+                _acquireSetupNanos = acquireSetupNanos;
+                _unreturned = unreturned;
                 _exceptions = ex;
             }
 
@@ -842,6 +944,66 @@ public abstract class SpringActionController implements Controller, HasViewConte
             public long getMaxTime()
             {
                 return _maxTime;
+            }
+
+            @Override
+            public long getTrackedCount()
+            {
+                return _trackedCount;
+            }
+
+            @Override
+            public long getTrackedElapsedTime()
+            {
+                return _trackedElapsedTime;
+            }
+
+            @Override
+            public long getBorrows()
+            {
+                return _borrows;
+            }
+
+            @Override
+            public long getConnectionHeldTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_heldNanos);
+            }
+
+            @Override
+            public long getConnectionWallTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_wallNanos);
+            }
+
+            @Override
+            public int getMaxConcurrent()
+            {
+                return _maxConcurrent;
+            }
+
+            @Override
+            public long getAcquireTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireNanos);
+            }
+
+            @Override
+            public long getAcquirePoolTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquirePoolNanos);
+            }
+
+            @Override
+            public long getAcquireSetupTime()
+            {
+                return TimeUnit.NANOSECONDS.toMillis(_acquireSetupNanos);
+            }
+
+            @Override
+            public long getUnreturned()
+            {
+                return _unreturned;
             }
 
             @Override
@@ -881,7 +1043,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         @Override
-        public void addTime(Controller action, long elapsedTime)
+        public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             /* Never called */
         }        
@@ -1059,11 +1221,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
 
         @Override
-        public void addTime(Controller action, long elapsedTime)
+        public void addTime(Controller action, long elapsedTime, @Nullable ConnectionUsage.Snapshot connectionUsage)
         {
             ActionDescriptor ad = getActionDescriptor(action.getClass());
             if (null != ad)
-                ad.addTime(elapsedTime);
+                ad.addTime(elapsedTime, connectionUsage);
         }
 
 

@@ -37,6 +37,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.ContainerKeySimpleCache;
+import org.labkey.api.cache.SimpleKeyMappingCache;
+import org.labkey.api.cache.UserKeySimpleCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -54,6 +58,7 @@ import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -177,6 +182,7 @@ import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
@@ -425,6 +431,7 @@ public class ApiModule extends CodeOnlyModule
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
+            CacheManager.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -468,6 +475,7 @@ public class ApiModule extends CodeOnlyModule
             JobRunner.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
@@ -495,6 +503,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
+            SimpleKeyMappingCache.TestCase.class,
             SqlExecutingSelector.TestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
@@ -544,8 +553,10 @@ public class ApiModule extends CodeOnlyModule
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
+            ConnectionUsage.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
+            ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
             DbSchema.DDLMethodsTestCase.class,
@@ -601,6 +612,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
+            UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,

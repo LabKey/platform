@@ -153,6 +153,14 @@ public class DilutionManager
         return new TableSelector(getSchema().getTable(DILUTION_DATA_TABLE_NAME), filter, null).getArrayList(DilutionDataRow.class);
     }
 
+    public static List<DilutionDataRow> getDilutionDataRows(long runId, long plateNumber, Container container)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromString("runId"), runId);
+        filter.addCondition(FieldKey.fromString("plateNumber"), plateNumber);
+        return new TableSelector(getSchema().getTable(DILUTION_DATA_TABLE_NAME), filter, null).getArrayList(DilutionDataRow.class);
+    }
+
     public static int insertWellDataRow(User user, Map<String, Object> fields)
     {
         TableInfo tableInfo = getSchema().getTable(WELL_DATA_TABLE_NAME);

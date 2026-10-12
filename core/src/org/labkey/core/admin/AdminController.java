@@ -108,6 +108,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
@@ -139,6 +140,7 @@ import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
 import org.labkey.api.data.dialect.PostgresSnapshot;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -3096,6 +3098,59 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class ExportConnectionUsageAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try (ConnectionUsageTsvWriter writer = new ConnectionUsageTsvWriter())
+            {
+                writer.write(response);
+            }
+        }
+    }
+
+    @AdminConsoleAction
+    public static class GetConnectionPoolStatsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            // Initialized scopes only, so an unreachable external data source isn't probed
+            return Map.of(
+                "connectionUsageTracked", ConnectionUsage.isEnabled(),
+                "dataSources", DbScope.getInitializedDbScopes().stream()
+                    .map(GetConnectionPoolStatsAction::getPoolStats)
+                    .toList());
+        }
+
+        private static Map<String, Object> getPoolStats(DbScope scope)
+        {
+            DataSourcePropertyReader props = scope.getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("name", scope.getDataSourceName());
+            result.put("isLabKeyScope", scope.isLabKeyScope());
+            result.put("maxTotal", props.getMaxTotal());
+            result.put("maxIdle", props.getMaxIdle());
+            result.put("numActive", props.getNumActive());
+            result.put("numIdle", props.getNumIdle());
+            if (null != pool)
+            {
+                result.put("createdCount", pool.createdCount());
+                result.put("destroyedCount", pool.destroyedCount());
+                result.put("destroyedByEvictorCount", pool.destroyedByEvictorCount());
+                result.put("destroyedByBorrowValidationCount", pool.destroyedByBorrowValidationCount());
+                result.put("borrowedCount", pool.borrowedCount());
+                result.put("numWaiters", pool.numWaiters());
+                result.put("meanBorrowWaitMillis", pool.meanBorrowWaitMillis());
+                result.put("maxBorrowWaitMillis", pool.maxBorrowWaitMillis());
+            }
+            return result;
+        }
+    }
+
     private static ActionURL getQueriesURL(@Nullable String statName)
     {
         ActionURL url = new ActionURL(QueriesAction.class, ContainerManager.getRoot());
@@ -3336,7 +3391,38 @@ public class AdminController extends SpringActionController
             html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
+            html.append(createHtmlFragment(BR(), BR()));
+            appendKeyClasses(html, caches);
+
             return new HtmlView(html);
+        }
+
+        private void appendKeyClasses(HtmlStringBuilder html, List<TrackingCache<?, ?>> caches)
+        {
+            List<Map.Entry<String, Long>> counts = caches.stream()
+                .collect(Collectors.groupingBy(cache -> cache.getKeyClass().getName(), Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .toList();
+
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B("Key Classes (" + counts.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Key Class"),
+                        TD(cl("labkey-column-header"), "Caches")
+                    ),
+                    counts.stream().map(entry -> TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                        TD(entry.getKey()),
+                        longCells(entry.getValue())
+                    )),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells((long) caches.size())
+                    )
+                )
+            ));
         }
 
         private void appendStats(HtmlStringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
@@ -12769,6 +12855,8 @@ public class AdminController extends SpringActionController
                 controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
+                new ExportConnectionUsageAction(),
+                new GetConnectionPoolStatsAction(),
                 new ExportQueriesAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()

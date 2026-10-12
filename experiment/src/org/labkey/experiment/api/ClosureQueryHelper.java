@@ -30,6 +30,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
@@ -53,6 +54,8 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
@@ -387,6 +390,19 @@ public class ClosureQueryHelper
     }
 
     public static void recomputeFromSeeds(SQLFragment selectSeedsSql, boolean isSampleType)
+    {
+        // Outside a transaction (e.g. as a post-commit task) each statement would otherwise borrow its own connection
+        try (Connection ignored = getScope().getConnection())
+        {
+            _recomputeFromSeeds(selectSeedsSql, isSampleType);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static void _recomputeFromSeeds(SQLFragment selectSeedsSql, boolean isSampleType)
     {
         TempTableTracker ttt = null;
         try

@@ -191,13 +191,13 @@ public class SecurityPolicy
     }
 
     // Throttle that limits warning logging to once per hour per permission class
-    private static final Throttle<Class<? extends Permission>> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>("unregistered permissions", 100, CacheManager.HOUR, permission -> LOG.warn("{} is not registered!", permission));
+    private static final Throttle<String> NOT_REGISTERED_PERMISSION_THROTTLE = new Throttle<>(String.class, "unregistered permissions warnings", 100, CacheManager.HOUR, permission -> LOG.warn("{} is not registered!", permission));
 
     static void testPermissionIsRegistered(Class<? extends Permission> permission)
     {
         if (!RoleManager.isPermissionRegistered(permission))
         {
-            NOT_REGISTERED_PERMISSION_THROTTLE.execute(permission);
+            NOT_REGISTERED_PERMISSION_THROTTLE.execute(permission.getName());
         }
     }
 
