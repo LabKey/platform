@@ -2136,8 +2136,10 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
                 //TableInfo and remove the * so that Query doesn't choke on it
                 if (keys.contains(starKey))
                 {
-                    rgn.addColumns(table.getColumns());
                     keys.remove(starKey);
+                    List<FieldKey> allKeys = new ArrayList<>(table.getColumns().stream().map(ColumnInfo::getFieldKey).toList());
+                    allKeys.addAll(keys);
+                    keys = allKeys;
                     // Since the client requested all columns, don't filter which ones get sent back
                     getSettings().setFieldKeys(null);
                 }
@@ -3435,6 +3437,26 @@ public class QueryView extends WebPartView<Object> implements ContainerUser
 
                 assertEquals(CUSTOM_CAPTION + "\t" + CUSTOM_LOOKUP_CAPTION, getTsvHeader(view, ColumnHeaderType.Caption));
                 assertEquals("Name\tParent/Name", getTsvHeader(view, ColumnHeaderType.ImportField));
+            }
+        }
+
+        @Test
+        public void testStarFieldKeyKeepsCustomViewCaption()
+        {
+            try (ViewContext.StackResetter resetter = pushContext())
+            {
+                QueryView view = createContainersView(resetter.getContext(), List.of(
+                    Map.entry(NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_CAPTION)),
+                    Map.entry(PARENT_NAME, Map.of(CustomView.ColumnProperty.columnTitle, CUSTOM_LOOKUP_CAPTION))
+                ));
+                view.getSettings().setFieldKeys(new ArrayList<>(List.of(FieldKey.fromParts("*"), PARENT_NAME, NAME)));
+
+                List<String> captions = getCaptions(view);
+                assertNull(view.getSettings().getFieldKeys());
+                assertEquals(view.getTable().getColumns().size() + 1, captions.size());
+                assertEquals(1, Collections.frequency(captions, CUSTOM_CAPTION));
+                assertEquals(CUSTOM_LOOKUP_CAPTION, captions.getLast());
+                assertTrue(captions.contains("Title"));
             }
         }
 
