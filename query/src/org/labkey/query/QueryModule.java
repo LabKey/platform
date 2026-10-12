@@ -246,7 +246,7 @@ public class QueryModule extends DefaultModule
             "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.",
             false,
             false,
-            OptionalFeatureService.FeatureType.Optional
+            OptionalFeatureService.FeatureType.Deprecated
         ));
     }
 
