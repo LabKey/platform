@@ -24,21 +24,27 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.writer.HtmlWriter;
 
 import java.util.Map;
 
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
-import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.util.DOM.Attribute.aria_hidden;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 /** GH Issue 1640: flags metadata that has a provided amount recorded before the large-import fix, which may be wrong. */
 public class SampleTimelineMetadataDisplayColumn extends DataColumn
 {
-    private static final String LEGACY_PROVIDED_AMOUNT_KEY = PROVIDED_DATA_PREFIX + StoredAmount.label();
+    private static final String LEGACY_PROVIDED_AMOUNT_KEY = ":::provided:::" + StoredAmount.label();
     private static final String WARNING_STYLE = "background-color:#fcf8e3";
     private static final String WARNING_TITLE = "Provided Amount May Be Inaccurate";
+    private static final String WARNING_SR_TEXT = "Warning: provided amount may be inaccurate. ";
     private static final String WARNING_MESSAGE = "This provided amount value may be inaccurate if recorded during an import or update of more than 1,000 samples. To confirm the provided amount, check the original import file or source data. The stored sample amount is not affected.";
 
     public SampleTimelineMetadataDisplayColumn(ColumnInfo col)
@@ -67,6 +73,17 @@ public class SampleTimelineMetadataDisplayColumn extends DataColumn
     }
 
     @Override
+    public void renderGridCellContents(RenderContext ctx, HtmlWriter out)
+    {
+        if (hasLegacyProvidedAmount(ctx))
+        {
+            SPAN(at(aria_hidden, "true").cl("fa fa-exclamation-triangle text-warning").at(style, "margin-right:4px")).appendTo(out);
+            SPAN(cl("sr-only"), WARNING_SR_TEXT).appendTo(out);
+        }
+        super.renderGridCellContents(ctx, out);
+    }
+
+    @Override
     protected String getHoverContent(RenderContext ctx)
     {
         return hasLegacyProvidedAmount(ctx) ? WARNING_MESSAGE : super.getHoverContent(ctx);
@@ -88,7 +105,7 @@ public class SampleTimelineMetadataDisplayColumn extends DataColumn
         @Test
         public void testLegacyProvidedAmountIsFlagged()
         {
-            assertTrue(containsLegacyProvidedAmount(metadata(PROVIDED_DATA_PREFIX + StoredAmount.label(), "2 L")));
+            assertTrue(containsLegacyProvidedAmount(metadata(LEGACY_PROVIDED_AMOUNT_KEY, "2 L")));
         }
 
         @Test
