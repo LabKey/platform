@@ -75,7 +75,6 @@ public interface QueryService
     String MAX_QUERY_SELECTION = "maxQuerySelection";
     String PRODUCT_FOLDERS_ENABLED = "isProductFoldersEnabled";
     String PRODUCT_FOLDERS_EXIST = "hasProductFolders";
-    String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
