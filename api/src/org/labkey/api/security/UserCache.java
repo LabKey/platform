@@ -48,7 +48,7 @@ class UserCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
 
-    private static final Cache<String, UserCollections> CACHE = DatabaseCache.get(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", new UserCollectionsLoader());
+    private static final Cache<String, UserCollections> CACHE = DatabaseCache.get(String.class, CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", new UserCollectionsLoader());
 
     private UserCache()
     {

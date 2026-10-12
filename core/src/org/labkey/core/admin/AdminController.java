@@ -3391,7 +3391,38 @@ public class AdminController extends SpringActionController
             html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
+            html.append(createHtmlFragment(BR(), BR()));
+            appendKeyClasses(html, caches);
+
             return new HtmlView(html);
+        }
+
+        private void appendKeyClasses(HtmlStringBuilder html, List<TrackingCache<?, ?>> caches)
+        {
+            List<Map.Entry<String, Long>> counts = caches.stream()
+                .collect(Collectors.groupingBy(cache -> cache.getKeyClass().getName(), Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .toList();
+
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B("Key Classes (" + counts.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Key Class"),
+                        TD(cl("labkey-column-header"), "Caches")
+                    ),
+                    counts.stream().map(entry -> TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                        TD(entry.getKey()),
+                        longCells(entry.getValue())
+                    )),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells((long) caches.size())
+                    )
+                )
+            ));
         }
 
         private void appendStats(HtmlStringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)

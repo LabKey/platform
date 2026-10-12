@@ -39,6 +39,7 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
+import org.labkey.api.cache.UserKeySimpleCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -609,6 +610,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
+            UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,

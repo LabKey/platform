@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheType;
 import org.labkey.api.cache.SimpleCache;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.User;
 import org.labkey.api.util.IntegerUtils;
 
 import java.util.List;
@@ -44,9 +45,10 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
 
     private void validateKey(K key)
     {
-        // Ehcache keeps the first key object stored for an entry, so a Container key pins a stale copy
-        if (key instanceof Container)
-            throw new IllegalArgumentException("Container used as a key in cache \"" + _debugName + "\". Pass Container.class (keyClass) to the Cache factory method to allow this.");
+        // Ehcache keeps the first key object stored for an entry, so a Container or User key pins a stale copy
+        String keyType = key instanceof Container ? "Container" : key instanceof User ? "User" : null;
+        if (null != keyType)
+            throw new IllegalArgumentException(keyType + " used as a key in cache \"" + _debugName + "\". Pass " + keyType + ".class (keyClass) to the Cache factory method to allow this.");
     }
 
     @Override
