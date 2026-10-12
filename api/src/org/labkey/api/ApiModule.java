@@ -39,6 +39,8 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
+import org.labkey.api.cache.UserKeySimpleCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -179,6 +181,7 @@ import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
@@ -427,6 +430,7 @@ public class ApiModule extends CodeOnlyModule
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
+            CacheManager.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -470,6 +474,7 @@ public class ApiModule extends CodeOnlyModule
             JobRunner.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
@@ -605,6 +610,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
+            UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,

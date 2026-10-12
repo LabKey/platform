@@ -147,8 +147,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
-
 public class QueryModule extends DefaultModule
 {
     public QueryModule()
@@ -237,8 +235,6 @@ public class QueryModule extends DefaultModule
         DataViewService.get().registerProvider(QueryDataViewProvider.TYPE, new QueryDataViewProvider());
         DataViewService.get().registerProvider(InheritedQueryDataViewProvider.TYPE, new InheritedQueryDataViewProvider());
 
-        OptionalFeatureService.get().addExperimentalFeatureFlag(USE_ROW_BY_ROW_UPDATE, "Use row-by-row update",
-            "For Query.updateRows api, do row-by-row update, instead of using a prepared statement that updates rows in batches.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, "Less restrictive product folder lookups",
             "Allow for lookup fields in product folders to query across all folders within the top-level folder.", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",

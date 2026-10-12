@@ -25,7 +25,7 @@ import org.labkey.api.data.SqlSelector;
 public class GroupCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(20000, CacheManager.DAY, "Groups", (groupId, argument) -> {
+    private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(Integer.class, 20000, CacheManager.DAY, "Groups", (groupId, argument) -> {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
         SqlSelector selector = new SqlSelector(CORE.getSchema(), sql);
 

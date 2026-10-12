@@ -38,6 +38,7 @@ import org.labkey.api.reader.StrictBoundedReader;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BadRequestException;
@@ -500,7 +501,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
         try (Reader reader = openRequestReader())
         {
-            JSONTokener tokener = new JSONTokener(reader);
+            JSONTokener tokener = new KeySharingJSONTokener(reader);
             return tokener.more() ? new JSONObject(tokener) : null;
         }
     }

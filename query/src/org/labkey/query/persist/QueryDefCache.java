@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class QueryDefCache
 {
-    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
+    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
 
     private static class QueryDefCollections
     {

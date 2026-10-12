@@ -25,7 +25,6 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.SupportsFileSystemWatcher;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -42,15 +41,17 @@ import java.util.Map;
  */
 public class DirectoryResource extends AbstractResourceCollection implements SupportsFileSystemWatcher
 {
-    private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "Directory resources", null);
+    private record ChildrenKey(Resolver resolver, Path path) {}
+
+    private static final Cache<ChildrenKey, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(ChildrenKey.class, 5000, CacheManager.DAY, "Directory resources", null);
 
     private final File _dir;
-    private final Pair<Resolver, Path> _cacheKey;
+    private final ChildrenKey _cacheKey;
 
-    private final CacheLoader<Pair<Resolver, Path>, Map<String, Resource>> _loader = new CacheLoader<>()
+    private final CacheLoader<ChildrenKey, Map<String, Resource>> _loader = new CacheLoader<>()
     {
         @Override
-        public Map<String, Resource> load(@NotNull Pair<Resolver, Path> key, @Nullable Object argument)
+        public Map<String, Resource> load(@NotNull ChildrenKey key, @Nullable Object argument)
         {
             Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
 
@@ -85,14 +86,14 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
     // Static method that operates on the shared cache; removes all children associated with this resolver.
     public static void clearResourceCache(final Resolver resolver)
     {
-        CHILDREN_CACHE.removeUsingFilter(key -> key.first == resolver);
+        CHILDREN_CACHE.removeUsingFilter(key -> key.resolver() == resolver);
     }
 
     public DirectoryResource(Resolver resolver, Path path, File dir)
     {
         super(path, resolver);
         _dir = dir;
-        _cacheKey = new Pair<>(_resolver, getPath());
+        _cacheKey = new ChildrenKey(_resolver, getPath());
     }
 
     public Path getRelativePath(java.nio.file.Path nioPath)
