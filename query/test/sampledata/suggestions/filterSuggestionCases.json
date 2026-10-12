@@ -39,8 +39,20 @@
       "term": "PL-5000000-1",
       "expected": [
         { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-5000000-1", "label": "Sample ID is PL-5000000-1", "source": "identity" },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-5000000-1", "label": "Sample ID contains PL-5000000-1", "source": "identityContains" },
         { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-5000000-1", "valueType": "string", "label": "Compose a filter on Sample ID…", "source": "compose" },
         { "kind": "search", "value": "PL-5000000-1", "label": "Search all columns for \"PL-5000000-1\"", "source": "fallback" }
+      ]
+    },
+    {
+      "name": "prefix of a generated name",
+      "columnSet": "plasma",
+      "term": "PL-500",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-500", "label": "Sample ID is PL-500", "source": "identity" },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-500", "label": "Sample ID contains PL-500", "source": "identityContains" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-500", "valueType": "string", "label": "Compose a filter on Sample ID…", "source": "compose" },
+        { "kind": "search", "value": "PL-500", "label": "Search all columns for \"PL-500\"", "source": "fallback" }
       ]
     },
     {
