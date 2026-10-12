@@ -24,8 +24,8 @@ import org.labkey.api.util.HeartBeat;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
@@ -33,20 +33,23 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 
     private final SimpleCache<K, V> _cache;
+    private final Class<K> _keyClass;
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
     private final @Nullable StackTraceElement[] _stackTrace;
+    @SuppressWarnings("unchecked")
     private final V _nullMarker = (V)NULL_MARKER;
 
-    // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or
-    // miss a brief spike by only updating the max size stat every so often
+    // Issue 51702. Calculating the size of large caches can be expensive. It's OK to be a little stale or miss a brief
+    // spike by only updating the max size stat every so often
     private boolean _maxSizeDirty;
     private long _maxSizeNextUpdate;
 
-    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
+    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull Class<K> keyClass, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
+        _keyClass = keyClass;
         assert StringUtils.isNotBlank(debugName);
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
@@ -72,7 +75,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
@@ -91,13 +93,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
     public V get(@NotNull K key)
     {
         return get(key, null, null);
     }
-
 
     @Override
     public V get(@NotNull K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
@@ -125,23 +125,24 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         }
     }
 
-
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
+        boolean ret = false;
         try
         {
-            _cache.remove(key);
+            ret = _cache.remove(key);
             trackRemove();
         }
         catch (IllegalStateException ise)
         {
-            if (ContextListener.isShuttingDown())
-                return; // ignore
-            throw ise;
+            // Ignore shutdown exception
+            if (!ContextListener.isShuttingDown())
+                throw ise;
         }
-    }
 
+        return ret;
+    }
 
     @Override
     public int removeUsingFilter(Predicate<K> kFilter)
@@ -149,9 +150,8 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return trackRemoves(_cache.removeUsingFilter(kFilter));
     }
 
-
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
         return _cache.getKeys();
     }
@@ -163,13 +163,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         trackClear();
     }
 
-
     @Override
     public int getLimit()
     {
         return _cache.getLimit();
     }
-
 
     @Override
     public int size()
@@ -195,13 +193,17 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
         return _cache.getDefaultExpires();
     }
 
-
     @Override
     public void close()
     {
         _cache.close();
     }
 
+    @Override
+    public Class<K> getKeyClass()
+    {
+        return _keyClass;
+    }
 
     @Override
     public String getDebugName()
@@ -307,12 +309,6 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     {
         updateMaxSizeIfStale();
         _stats.clears.incrementAndGet();
-    }
-
-
-    public SimpleCache<K, V> getWrappedCache()
-    {
-        return _cache;
     }
 
     /* CacheMBean */

@@ -27,10 +27,10 @@ import org.labkey.api.util.DebugInfoDumper;
 
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
@@ -205,7 +205,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
         put(key, value);
     }
 
-
     @Override
     public void put(@NotNull K key, final V value)
     {
@@ -214,13 +213,11 @@ public class BlockingCache<K, V> implements Cache<K, V>
         get(key, null, (key1, argument) -> value);
     }
 
-
     @Override
     public void put(@NotNull K key, V value, long timeToLive)
     {
         throw new UnsupportedOperationException("use get(loader)");
     }
-
 
     @Override
     public V get(@NotNull K key)
@@ -228,11 +225,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         return get(key, null);
     }
 
-
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
-        _cache.remove(key);
+        return _cache.remove(key);
     }
 
     @Override
@@ -242,7 +238,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
         return _cache.getKeys();
     }
@@ -295,9 +291,9 @@ public class BlockingCache<K, V> implements Cache<K, V>
                     return _map.get(key);
                 }
                 @Override public Wrapper<Integer> get(@NotNull Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
-                @Override public void remove(@NotNull Integer key) { throw new UnsupportedOperationException(); }
+                @Override public boolean remove(@NotNull Integer key) { throw new UnsupportedOperationException(); }
                 @Override public int removeUsingFilter(Predicate<Integer> filter) { throw new UnsupportedOperationException(); }
-                @Override public Set<Integer> getKeys() { throw new UnsupportedOperationException(); }
+                @Override public Stream<Integer> getKeys() { throw new UnsupportedOperationException(); }
                 @Override public void clear() { throw new UnsupportedOperationException(); }
                 @Override public void close() { throw new UnsupportedOperationException(); }
                 @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }

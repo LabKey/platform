@@ -54,7 +54,7 @@ public class QueryHelper<K, T extends StudyCachable<K, T>, SC extends StudyCache
         _objectClass = objectClass;
         _defaultSortString = defaultSortString;
         TableInfo tableInfo = _tableInfoGetter.getTableInfo();
-        _cache = DatabaseCache.get(tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
+        _cache = DatabaseCache.get(Container.class, tableInfo.getSchema().getScope(), tableInfo.getCacheSize(), "StudyCache: " + tableInfo.getName(), (key, _) ->
         {
             final Map<K, T> map;
             try (Stream<T> stream = getTableSelector(key).uncachedStream(_objectClass))

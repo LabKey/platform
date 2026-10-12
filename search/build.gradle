@@ -68,24 +68,8 @@ dependencies {
         )
     )
 
-    // tika-parsers-standard-package.jar is basically empty... as of 2.8.0 all the adapters and simple parsing libraries
-    // were split out from it into a bazillion jar files. The ones we want to support are declared below.
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.apache.tika:tika-parsers-standard-package:${tikaVersion}",
-            "Tika",
-            "Apache",
-            "http://lucene.apache.org/tika/",
-            ExternalDependency.APACHE_2_LICENSE_NAME,
-            ExternalDependency.APACHE_2_LICENSE_URL,
-            "Placeholder parser"
-        ),
-        {
-            transitive = false
-        }
-    )
-
+    // Tika parsers are split across per-format jars; declare only the ones we want to support. Don't add
+    // tika-parsers-standard-package: it's POM-only as of 4.x and would pull in every parser transitively.
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(

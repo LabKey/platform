@@ -29,7 +29,7 @@ public class PropertyCache
 
     PropertyCache(String name, CacheLoader<String, PropertyMap> propertyLoader)
     {
-        _blockingCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
+        _blockingCache = DatabaseCache.get(String.class, CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
     }
 
     @Nullable PropertyMap getProperties(User user, Container container, String category)

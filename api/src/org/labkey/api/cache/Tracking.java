@@ -17,11 +17,6 @@ package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
 
-/**
- * User: adam
- * Date: Jul 8, 2010
- * Time: 10:44:59 AM
- */
 public interface Tracking
 {
     String getDebugName();
