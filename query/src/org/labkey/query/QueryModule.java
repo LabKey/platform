@@ -241,9 +241,9 @@ public class QueryModule extends DefaultModule
         OptionalFeatureService.get().addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product folders display folder-specific data",
             "Only list folder-specific data within product folders.", false);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            QueryService.EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS,
+            QueryService.DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS,
             "Disable managed columns in query triggers",
-            "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings.",
+            "By default LabKey enforces managed columns for triggers and errors when the data does not align. Enabling this feature will result in them only logging warnings. This option will be removed in a future release of LabKey Server.",
             false,
             false,
             OptionalFeatureService.FeatureType.Deprecated
