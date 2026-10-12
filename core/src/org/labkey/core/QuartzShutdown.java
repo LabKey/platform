@@ -55,6 +55,7 @@ public class QuartzShutdown
     {
         scheduler.standby();
 
+        boolean finished = true;
         List<JobExecutionContext> running = scheduler.getCurrentlyExecutingJobs();
         if (!running.isEmpty())
         {
@@ -88,13 +89,13 @@ public class QuartzShutdown
                 LOG.warn("{} Quartz job(s) still running after waiting {} seconds; shutting down without them", running.size(), timeout.toSeconds());
                 logJobs(running);
                 logWorkerStacks(scheduler.getSchedulerName());
-                scheduler.shutdown(false);
-                return false;
+                finished = false;
             }
         }
 
-        scheduler.shutdown(true);
-        return true;
+        // Never shutdown(true): triggers acquired before standby() still fire, and that wait is unbounded
+        scheduler.shutdown(false);
+        return finished;
     }
 
     private static void logJobs(List<JobExecutionContext> jobs)
