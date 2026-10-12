@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.suggestions.FilterSuggestion;
 import org.labkey.api.query.suggestions.FilterSuggestion.ComposeField;
+import org.labkey.api.query.suggestions.FilterSuggestion.Match;
 import org.labkey.api.query.suggestions.SuggestionColumn;
 import org.labkey.api.util.DateUtil.MonthDayOption;
 import org.labkey.api.util.JsonUtil;
@@ -86,7 +87,7 @@ public class FilterSuggestionRanker
         {
             for (SuggestionColumn column : columns)
                 if (column.isKey() && column.getType() == SuggestionColumn.Type.INT)
-                    addFilter(direct, seen, column, "eq", raw, "key");
+                    addFilter(direct, seen, column, "eq", raw, "key", raw);
         }
 
         for (SuggestionColumn column : columns)
@@ -96,10 +97,10 @@ public class FilterSuggestionRanker
             boolean nameMatch = matchesNameExpression(column, raw);
             if (nameMatch || (column.isUniqueId() && BARCODE_PATTERN.matcher(raw).matches()))
             {
-                addFilter(direct, seen, column, "eq", raw, "identity");
+                addFilter(direct, seen, column, "eq", raw, "identity", raw);
                 // Any prefix of a generated name also matches its pattern, and users often type only a prefix
                 if (nameMatch)
-                    addFilter(direct, seen, column, "contains", raw, "identityContains");
+                    addFilter(direct, seen, column, "contains", raw, "identityContains", raw);
                 stringSignals.putIfAbsent(column.getFieldKey(), "eq");
             }
         }
@@ -109,7 +110,7 @@ public class FilterSuggestionRanker
             if (column.getType() == SuggestionColumn.Type.INT || column.getValues() == null)
                 continue;
             column.getValues().stream().filter(value -> lower(value).equals(lcRaw)).findFirst().ifPresent(exact -> {
-                addFilter(direct, seen, column, "eq", exact, "exactValue");
+                addFilter(direct, seen, column, "eq", exact, "exactValue", raw);
                 if (column.getType() == SuggestionColumn.Type.STRING)
                     stringSignals.putIfAbsent(column.getFieldKey(), "contains");
             });
@@ -136,7 +137,7 @@ public class FilterSuggestionRanker
             partials.stream()
                 .sorted(Comparator.comparing((Partial p) -> !p.isPrefix()).thenComparingInt(p -> p.value().length()))
                 .limit(MAX_PARTIAL_VALUE_SUGGESTIONS)
-                .forEach(p -> addFilter(direct, seen, p.column(), "eq", p.value(), "partialValue"));
+                .forEach(p -> addFilter(direct, seen, p.column(), "eq", p.value(), "partialValue", raw));
         }
 
         if (isCount)
@@ -145,7 +146,7 @@ public class FilterSuggestionRanker
             columns.stream()
                 .filter(column -> column.getType() == SuggestionColumn.Type.INT && !column.isKey() && column.getValues() != null && column.getValues().contains(value))
                 .limit(MAX_INTEGER_VALUE_SUGGESTIONS)
-                .forEach(column -> addFilter(direct, seen, column, "eq", value, "integerValue"));
+                .forEach(column -> addFilter(direct, seen, column, "eq", value, "integerValue", raw));
         }
 
         String shape = getValueShape(raw);
@@ -153,7 +154,7 @@ public class FilterSuggestionRanker
         {
             if (column.getType() == SuggestionColumn.Type.STRING && column.getShapes() != null && column.getShapes().contains(shape))
             {
-                addFilter(direct, seen, column, "eq", raw, "shape");
+                addFilter(direct, seen, column, "eq", raw, "shape", raw);
                 stringSignals.putIfAbsent(column.getFieldKey(), "eq");
             }
         }
@@ -215,28 +216,25 @@ public class FilterSuggestionRanker
         return s.toLowerCase(Locale.ROOT);
     }
 
-    private static void addFilter(List<FilterSuggestion> direct, Set<String> seen, SuggestionColumn column, String op, String value, String source)
+    private static void addFilter(List<FilterSuggestion> direct, Set<String> seen, SuggestionColumn column, String op, String value, String source, String raw)
     {
         String verb = "contains".equals(op) ? " contains " : " is ";
         if (seen.add(lower(column.getFieldKey() + "|" + op + "|" + value)))
-            direct.add(FilterSuggestion.filter(column.getFieldKey(), op, value, column.getCaption() + verb + value, source));
+            direct.add(FilterSuggestion.filter(column.getFieldKey(), op, value, column.getCaption() + verb, source, raw));
     }
 
     private static FilterSuggestion createCompose(List<SuggestionColumn> columns, List<ComposeField> fields, String value, String valueType, String raw)
     {
-        String label;
         if (fields.size() == 1)
         {
             String fieldKey = fields.getFirst().fieldKey();
             String caption = columns.stream().filter(column -> column.getFieldKey().equals(fieldKey)).findFirst().map(SuggestionColumn::getCaption).orElse(fieldKey);
-            label = "Compose a filter on " + caption + "…";
-        }
-        else
-        {
-            label = "Compose a " + valueType + " filter for \"" + raw + "\"… (" + fields.size() + " columns)";
+            return FilterSuggestion.compose(fields, value, valueType, "Filter " + caption + "…", null);
         }
 
-        return FilterSuggestion.compose(fields, value, valueType, label);
+        String prefix = "Filter a " + valueType + " field for ";
+        String label = prefix + raw + " (" + fields.size() + " columns)";
+        return FilterSuggestion.compose(fields, value, valueType, label, new Match(prefix.length(), prefix.length() + raw.length()));
     }
 
     private static boolean matchesNameExpression(SuggestionColumn column, String raw)
