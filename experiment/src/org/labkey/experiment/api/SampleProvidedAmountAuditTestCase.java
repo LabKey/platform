@@ -49,7 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
@@ -60,7 +60,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 public class SampleProvidedAmountAuditTestCase extends Assert
 {
     private static final int ROW_COUNT = 2500; // spans three audit batches
-    private static final String PROVIDED_AMOUNT_KEY = PROVIDED_DATA_PREFIX + StoredAmount.label();
+    private static final String PROVIDED_AMOUNT_KEY = USER_PROVIDED_DATA_PREFIX + StoredAmount.label();
 
     private static Container _c;
     private static User _user;

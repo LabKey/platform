@@ -166,6 +166,7 @@ import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
+import org.labkey.experiment.samples.SampleTimelineMetadataDisplayColumn;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
 import org.labkey.experiment.samples.SampleTypeFolderWriter;
 import org.labkey.experiment.security.DataClassDesignerRole;
@@ -1170,6 +1171,7 @@ public class ExperimentModule extends SpringModule
             LsidUtils.TestCase.class,
             PropertyController.TestCase.class,
             Quantity.TestCase.class,
+            SampleTimelineMetadataDisplayColumn.TestCase.class,
             Unit.TestCase.class
         );
     }

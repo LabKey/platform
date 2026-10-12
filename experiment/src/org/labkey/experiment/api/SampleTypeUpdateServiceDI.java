@@ -136,6 +136,7 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
+import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
@@ -379,14 +380,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<String, Object> result = new HashMap<>();
         String unitsStr = "";
         String prefix;
+        String metadataPrefix;
         if (dataRow.containsKey(DELTA_PROVIDED_DATA_PREFIX + StoredAmount.name()))
+        {
             prefix = DELTA_PROVIDED_DATA_PREFIX;
+            metadataPrefix = DELTA_PROVIDED_DATA_PREFIX;
+        }
         else
         {
             // with no sample type display unit, no conversion will happen
             if (_sampleType == null || _sampleType.getMetricUnit() == null)
                 return null;
             prefix = PROVIDED_DATA_PREFIX;
+            metadataPrefix = USER_PROVIDED_DATA_PREFIX;
         }
         Object amountVal = dataRow.get(prefix + StoredAmount.name());
         if (amountVal == null)
@@ -395,7 +401,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (dataRow.get(prefix + Units.name()) != null)
             unitsStr = " " + dataRow.get(prefix + Units.name()).toString();
 
-        result.put(prefix + StoredAmount.label(), amountVal + unitsStr);
+        result.put(metadataPrefix + StoredAmount.label(), amountVal + unitsStr);
 
         return result;
     }

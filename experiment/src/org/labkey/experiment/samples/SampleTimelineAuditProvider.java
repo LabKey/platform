@@ -140,6 +140,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Reason");
                 }
+                else if (METADATA_COLUMN_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setDisplayColumnFactory(SampleTimelineMetadataDisplayColumn::new);
+                }
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
