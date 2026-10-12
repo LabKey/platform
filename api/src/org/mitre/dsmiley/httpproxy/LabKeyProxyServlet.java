@@ -23,11 +23,9 @@ public class LabKeyProxyServlet extends ProxyServlet
 
     /** The source URI to proxy from , defaults to /{contextpath}/{servletpath}  */
     protected static final String P_SOURCE_PATH = "sourcePath";
-    protected static final String FLEX_REDIRECT_PROTOCOL = "flexRedirectProtocol";
     public static final String ALLOW_PROTOCOL_UPGRADE_PARAM_NAME = "LKS-protocolUpgradeEnabled";
 
     protected String sourcePath;
-    private boolean flexRedirectProtocol;
     private boolean _allowProtocolUpgrade;
 
     @Override
@@ -36,12 +34,6 @@ public class LabKeyProxyServlet extends ProxyServlet
         super.initTarget();
 
         sourcePath = getConfigParam(P_SOURCE_PATH);
-
-        String flexRedirectProtocolString = getConfigParam(FLEX_REDIRECT_PROTOCOL);
-        if (flexRedirectProtocolString != null)
-        {
-            this.flexRedirectProtocol = Boolean.parseBoolean(flexRedirectProtocolString);
-        }
 
         // httpclient5 v5.4 protocolUpgradeEnabled default to true
         // https://github.com/apache/httpcomponents-client/commit/3235f00
@@ -141,7 +133,7 @@ public class LabKeyProxyServlet extends ProxyServlet
         LOG.info("getTargetHost(servletRequest): {}", getTargetHost(servletRequest));
         LOG.info("servletRequest.getRequestURL(): {}", servletRequest.getRequestURL());
 
-        if (flexRedirectProtocol && theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
+        if (theUrl.startsWith("https://localhost:") && targetUri.startsWith("http://localhost:"))
         {
             // Issue 47596: Make Dockerized version of rstudio server work in LabKey's AWS environment
             // For unknown reason, with AWS ALB, docker instance uses inconsistent http vs https protocol
