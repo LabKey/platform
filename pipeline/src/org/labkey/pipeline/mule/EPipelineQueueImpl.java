@@ -354,7 +354,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     // Trade a little latency in updating queue positions for performance. On some servers, this is queried
     // multiple times a second by a bunch of clients waiting for their import to complete
     private static final Object SINGLE_KEY = new Object();
-    private final BlockingCache<Object, Map<String, Integer>> POSITION_CACHE = CacheManager.getBlockingCache(1, 15_000, "Pipeline Queue Position",
+    private final BlockingCache<Object, Map<String, Integer>> POSITION_CACHE = CacheManager.getBlockingCache(Object.class, 1, 15_000, "Pipeline Queue Position",
             (k, v) -> Collections.unmodifiableMap(loadQueuePositions()));
 
 

@@ -509,7 +509,7 @@ public class IssueManager
         return initialAssignedTo;
     }
 
-    private static final BlockingCache<String, Set<User>> ASSIGNED_TO_CACHE = DatabaseCache.get(IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists", (key, argument) ->
+    private static final BlockingCache<String, Set<User>> ASSIGNED_TO_CACHE = DatabaseCache.get(String.class, IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists", (key, argument) ->
     {
         assert argument != null;
         Pair<Container, String> pair = (Pair<Container, String>)argument;
