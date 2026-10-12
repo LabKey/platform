@@ -41,6 +41,26 @@
         { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-5000000-1", "label": "Sample ID is PL-5000000-1", "source": "identity", "match": { "start": 13, "end": 25 } },
         { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-5000000-1", "label": "Sample ID contains PL-5000000-1", "source": "identityContains", "match": { "start": 19, "end": 31 } },
         { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-5000000-1", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "PL-5000000-1",
+          "valueType": "string",
+          "label": "Filter a string field for PL-5000000-1 (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 38 }
+        },
         { "kind": "search", "value": "PL-5000000-1", "label": "Search all columns for PL-5000000-1", "source": "fallback", "match": { "start": 23, "end": 35 } }
       ]
     },
@@ -52,6 +72,26 @@
         { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-500", "label": "Sample ID is PL-500", "source": "identity", "match": { "start": 13, "end": 19 } },
         { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-500", "label": "Sample ID contains PL-500", "source": "identityContains", "match": { "start": 19, "end": 25 } },
         { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-500", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "PL-500",
+          "valueType": "string",
+          "label": "Filter a string field for PL-500 (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 32 }
+        },
         { "kind": "search", "value": "PL-500", "label": "Search all columns for PL-500", "source": "fallback", "match": { "start": 23, "end": 29 } }
       ]
     },
@@ -62,6 +102,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "partialValue", "match": { "start": 13, "end": 19 } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Sodium", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "Sodium",
+          "valueType": "string",
+          "label": "Filter a string field for Sodium (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 32 }
+        },
         { "kind": "search", "value": "Sodium", "label": "Search all columns for Sodium", "source": "fallback", "match": { "start": 23, "end": 29 } }
       ]
     },
@@ -73,6 +133,26 @@
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 } },
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Na", "label": "Tube Type is Heparin Na", "source": "partialValue", "match": { "start": 13, "end": 16 } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "Hep",
+          "valueType": "string",
+          "label": "Filter a string field for Hep (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 29 }
+        },
         { "kind": "search", "value": "Hep", "label": "Search all columns for Hep", "source": "fallback", "match": { "start": 23, "end": 26 } }
       ]
     },
@@ -80,10 +160,30 @@
       "name": "direct filters are capped to leave room for compose and search",
       "columnSet": "plasma",
       "term": "Hep",
-      "maxSuggestions": 3,
+      "maxSuggestions": 4,
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "Hep",
+          "valueType": "string",
+          "label": "Filter a string field for Hep (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 29 }
+        },
         { "kind": "search", "value": "Hep", "label": "Search all columns for Hep", "source": "fallback", "match": { "start": 23, "end": 26 } }
       ]
     },
@@ -94,6 +194,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "exactValue", "match": { "start": 13, "end": 27 } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "sodium citrate", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "sodium citrate",
+          "valueType": "string",
+          "label": "Filter a string field for sodium citrate (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 40 }
+        },
         { "kind": "search", "value": "sodium citrate", "label": "Search all columns for sodium citrate", "source": "fallback", "match": { "start": 23, "end": 37 } }
       ]
     },
@@ -104,6 +224,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "BloodType", "op": "eq", "value": "A+", "label": "Blood Type is A+", "source": "exactValue", "match": { "start": 14, "end": 16 } },
         { "kind": "compose", "fields": [{ "fieldKey": "BloodType", "op": "contains" }], "value": "A+", "valueType": "string", "label": "Filter Blood Type…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "A+",
+          "valueType": "string",
+          "label": "Filter a string field for A+ (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 28 }
+        },
         { "kind": "search", "value": "A+", "label": "Search all columns for A+", "source": "fallback", "match": { "start": 23, "end": 25 } }
       ]
     },
@@ -114,6 +254,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "SampleState/Label", "op": "eq", "value": "Available", "label": "Status is Available", "source": "partialValue", "match": { "start": 10, "end": 15 } },
         { "kind": "compose", "fields": [{ "fieldKey": "SampleState/Label", "op": "contains" }], "value": "Avail", "valueType": "string", "label": "Filter Status…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "Avail",
+          "valueType": "string",
+          "label": "Filter a string field for Avail (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 31 }
+        },
         { "kind": "search", "value": "Avail", "label": "Search all columns for Avail", "source": "fallback", "match": { "start": 23, "end": 28 } }
       ]
     },
@@ -124,6 +284,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "SubjectID", "op": "eq", "value": "SUBJ-028504", "label": "Subject ID is SUBJ-028504", "source": "shape", "match": { "start": 14, "end": 25 } },
         { "kind": "compose", "fields": [{ "fieldKey": "SubjectID", "op": "eq" }], "value": "SUBJ-028504", "valueType": "string", "label": "Filter Subject ID…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "SUBJ-028504",
+          "valueType": "string",
+          "label": "Filter a string field for SUBJ-028504 (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 37 }
+        },
         { "kind": "search", "value": "SUBJ-028504", "label": "Search all columns for SUBJ-028504", "source": "fallback", "match": { "start": 23, "end": 34 } }
       ]
     },
@@ -230,6 +410,26 @@
       "expected": [
         { "kind": "filter", "fieldKey": "Barcode", "op": "eq", "value": "005004441", "label": "Barcode is 005004441", "source": "identity", "match": { "start": 11, "end": 20 } },
         { "kind": "compose", "fields": [{ "fieldKey": "Barcode", "op": "eq" }], "value": "005004441", "valueType": "string", "label": "Filter Barcode…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "005004441",
+          "valueType": "string",
+          "label": "Filter a string field for 005004441 (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 35 }
+        },
         { "kind": "search", "value": "005004441", "label": "Search all columns for 005004441", "source": "fallback", "match": { "start": 23, "end": 32 } }
       ]
     },
