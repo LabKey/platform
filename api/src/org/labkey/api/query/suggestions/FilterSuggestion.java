@@ -34,7 +34,8 @@ public record FilterSuggestion(
     @Nullable String fieldKey,
     @Nullable String op,
     @Nullable List<ComposeField> fields,
-    @Nullable String valueType
+    @Nullable String valueType,
+    @Nullable Match match
 )
 {
     public static final String KIND_COMPOSE = "compose";
@@ -44,19 +45,41 @@ public record FilterSuggestion(
     /** @param op the filter type's URL suffix, e.g. "eq" */
     public record ComposeField(@NotNull String fieldKey, @NotNull String op) {}
 
-    public static FilterSuggestion filter(String fieldKey, String op, String value, String label, String source)
+    /**
+     * Where the label shows the search term, which the menu bolds.
+     * @param end exclusive
+     */
+    public record Match(int start, int end) {}
+
+    /** @param labelPrefix the label up to the value, e.g. "Tube Type is " */
+    public static FilterSuggestion filter(String fieldKey, String op, String value, String labelPrefix, String source, String term)
     {
-        return new FilterSuggestion(KIND_FILTER, label, source, value, fieldKey, op, null, null);
+        Match match = null;
+        int index = indexOfIgnoreCase(value, term);
+        if (index >= 0)
+            match = new Match(labelPrefix.length() + index, labelPrefix.length() + index + term.length());
+        return new FilterSuggestion(KIND_FILTER, labelPrefix + value, source, value, fieldKey, op, null, null, match);
     }
 
     /** @param fields ordered best-first; the first is selected when the filter modal opens */
-    public static FilterSuggestion compose(List<ComposeField> fields, String value, String valueType, String label)
+    public static FilterSuggestion compose(List<ComposeField> fields, String value, String valueType, String label, @Nullable Match match)
     {
-        return new FilterSuggestion(KIND_COMPOSE, label, "compose", value, null, null, List.copyOf(fields), valueType);
+        return new FilterSuggestion(KIND_COMPOSE, label, "compose", value, null, null, List.copyOf(fields), valueType, match);
     }
 
     public static FilterSuggestion search(String value)
     {
-        return new FilterSuggestion(KIND_SEARCH, "Search all columns for \"" + value + "\"", "fallback", value, null, null, null, null);
+        String prefix = "Search all columns for ";
+        return new FilterSuggestion(KIND_SEARCH, prefix + value, "fallback", value, null, null, null, null, new Match(prefix.length(), prefix.length() + value.length()));
+    }
+
+    private static int indexOfIgnoreCase(String s, String term)
+    {
+        for (int i = 0; i + term.length() <= s.length(); i++)
+        {
+            if (s.regionMatches(true, i, term, 0, term.length()))
+                return i;
+        }
+        return -1;
     }
 }
