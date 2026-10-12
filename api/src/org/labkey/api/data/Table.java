@@ -58,6 +58,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.io.EOFException;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -573,7 +574,20 @@ public class Table
     // Standard SQLException catch block: log exception, query SQL, and params
     static void logException(@Nullable SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
     {
-        if (SqlDialect.isCancelException(e) || ExceptionUtil.isIgnorable(e))
+        if (SqlDialect.isCancelException(e))
+        {
+            return;
+        }
+
+        // A killed backend surfaces as an I/O error wrapping EOFException, which isIgnorable() mistakes for a client abort
+        if (SqlDialect.isConnectionLostException(e))
+        {
+            _log.warn("Database connection lost during query, SQLState: {}", e.getSQLState(), e);
+            _logQuery(Level.WARN, sql, conn);
+            return;
+        }
+
+        if (ExceptionUtil.isIgnorable(e))
         {
             return;
         }
@@ -1896,6 +1910,34 @@ public class Table
             assertFalse(dic.getErrors().hasErrors());
 
             new SqlExecutor(testTable.getSchema()).execute("DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
+        }
+    }
+
+
+    public static class ConnectionLostTestCase extends Assert
+    {
+        @Test
+        public void testBackendTerminated()
+        {
+            // How PgJDBC reports a backend killed mid-query
+            SQLException e = new SQLException("An I/O error occurred while sending to the backend.", "08006", new EOFException());
+            assertTrue(SqlDialect.isConnectionLostException(e));
+            assertTrue("logException() must check connection loss before isIgnorable()", ExceptionUtil.isIgnorable(e));
+        }
+
+        @Test
+        public void testShutdown()
+        {
+            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection due to administrator command", "57P01")));
+            assertTrue(SqlDialect.isConnectionLostException(new SQLException("terminating connection because of crash of another server process", "57P02")));
+        }
+
+        @Test
+        public void testOtherErrors()
+        {
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("canceling statement due to user request", "57014")));
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("relation does not exist", "42P01")));
+            assertFalse(SqlDialect.isConnectionLostException(new SQLException("no state")));
         }
     }
 }
