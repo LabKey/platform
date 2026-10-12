@@ -1,5 +1,5 @@
 {
-  "description": "Ranking cases for grid search suggestions: a term plus what is known about each column yields an ordered suggestion list. Shared by the client engine's tests and the planned server endpoint's tests.",
+  "description": "Ranking cases for grid search suggestions: a term plus what is known about each column yields an ordered suggestion list.",
   "columnSets": {
     "plasma": [
       { "fieldKey": "Name", "caption": "Sample ID", "type": "string", "isTitle": true, "nameExpression": "PL-${genId}", "shapes": ["AA-9999999", "AA-9999999-9"] },

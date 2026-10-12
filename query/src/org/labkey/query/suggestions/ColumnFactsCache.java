@@ -105,7 +105,7 @@ public class ColumnFactsCache
     private static final int MAX_PENDING_LOADS = 100;
 
     private static final ColumnFactsCache INSTANCE = new ColumnFactsCache(
-        CacheManager.getStringKeyCache(CacheManager.DEFAULT_CACHE_SIZE, TOKEN_TTL, "Grid search suggestion facts"),
+        CacheManager.getCache(String.class, CacheManager.DEFAULT_CACHE_SIZE, TOKEN_TTL, "Grid search suggestion facts"),
         new JobRunner("Grid search suggestions", MAX_CONCURRENT_LOADS),
         new ColumnFactsLoader()
     );
@@ -622,7 +622,7 @@ public class ColumnFactsCache
         @Before
         public void createCache()
         {
-            _testCache = CacheManager.getTemporaryCache(1000, TOKEN_TTL, "Grid search suggestion facts test", null);
+            _testCache = CacheManager.getTemporaryCache(String.class, 1000, TOKEN_TTL, "Grid search suggestion facts test", null);
             _executor = Executors.newFixedThreadPool(2);
         }
 
