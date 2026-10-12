@@ -1541,7 +1541,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** @return true if a materialized view is cached, or being built, for this sample type */
     static boolean isMaterialized(String lsid)
     {
-        return _materializedQueries.getKeys().contains(lsid);
+        return _materializedQueries.getKeys().anyMatch(lsid::equals);
     }
 
     private static InvalidationCounters getInvalidateCounters(String lsid)
@@ -1555,7 +1555,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     /** Look up (or build and cache) the {@link _MaterializedQueryHelper} for this table's sample type. Caller must ensure {@code _ss != null}. */
     private _MaterializedQueryHelper getOrCreateMQH()
     {
-        return _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
+        return _materializedQueries.get(_ss.getLSID(), null, (_, _) ->
         {
             /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
              * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
@@ -2593,11 +2593,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             ExpSampleType st = createSampleType("IncrUpdDeleteNoView");
             List<Integer> roots = insertRoots(st, "R1", "R2");
+            // Indexing the inserted samples reads through the view and would rebuild it after the remove
+            SearchService.get().waitForIdle();
             _materializedQueries.remove(st.getLSID());
+            assertFalse("Precondition: no cached view", isMaterialized(st.getLSID()));
 
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
             long before = counters.delete.get();
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.get(0).longValue()), true, st, false, false);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.getFirst().longValue()), true, st, false, false);
             assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
         }
 
@@ -2611,7 +2614,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             assertCacheMatchesFreshDerivation(table, st.getLSID());
 
             // An unlogged delete after the logged one forces the next read onto the full reconcile pass.
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.get(0).longValue()), true, st, false, false);
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.getFirst().longValue()), true, st, false, false);
             getInvalidateCounters(st.getLSID()).recordDelete(null);
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
