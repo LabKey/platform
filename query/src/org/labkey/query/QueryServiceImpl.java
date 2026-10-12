@@ -207,6 +207,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -3526,6 +3527,50 @@ public class QueryServiceImpl implements QueryService
                     assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
+        }
+
+        @Test
+        public void testInClauseInnerJoin()
+        {
+            QueryService qs = QueryService.get();
+            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            assertNotNull(users);
+            List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
+
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                ids.add(i);
+            FieldKey pk = FieldKey.fromParts("userid");
+            Supplier<SimpleFilter> pkInFilter = () -> new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids));
+
+            // sorted + paged on a temp-table-backed PK IN: drive from the value set
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
+            assertFalse("Driving join should replace the PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+
+            // unpaged: nothing for the planner to short-circuit, so leave the semi-join alone
+            String unpagedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).buildSqlFragment().getSQL();
+            assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
+            assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
+
+            // paged with no sort of its own: getSelectSQL() supplies a default sort, so the planner still sees ORDER BY + LIMIT
+            String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("A paged query picks up a default sort, so it should drive from the value set:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+
+            // below the temp-table threshold there is no temp table to drive from
+            SimpleFilter smallFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids.subList(0, 10)));
+            String smallSql = qs.getSelectBuilder(users).columns(cols).filter(smallFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("A value set below the temp table threshold should not produce a driving join:\n" + smallSql, smallSql.contains("_drive_"));
+
+            // NOT IN cannot become a join
+            SimpleFilter negatedFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids, false, true));
+            String negatedSql = qs.getSelectBuilder(users).columns(cols).filter(negatedFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Negated IN should not produce a driving join:\n" + negatedSql, negatedSql.contains("_drive_"));
+
+            // non-PK column
+            SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
+            String nonPkSql = qs.getSelectBuilder(users).columns(cols).filter(nonPkFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Non-PK IN should not produce a driving join:\n" + nonPkSql, nonPkSql.contains("_drive_"));
         }
 
         @Test
