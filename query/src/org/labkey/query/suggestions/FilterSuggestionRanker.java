@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 /**
  * Ranks targeted filters for a search term from what is known about each column. Direct filters are ordered by tier
  * (numeric key, identity, exact value, partial value, integer value, shape), then come the compose options, and the
- * Q filter is always last. Port of buildSuggestions in @labkey/components; filterSuggestionCases.json keeps them in step.
+ * Q filter is always last.
  */
 public class FilterSuggestionRanker
 {

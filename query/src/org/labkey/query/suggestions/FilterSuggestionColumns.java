@@ -51,8 +51,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Describes the candidate columns of a grid search from their metadata alone. Mirrors planColumns/classifyColumn in
- * the @labkey/components ClientFilterSuggestionEngine so both pick the same columns and filter fieldKeys.
+ * Describes the candidate columns of a grid search from their metadata alone.
  */
 public class FilterSuggestionColumns
 {
