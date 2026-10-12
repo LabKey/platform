@@ -38,6 +38,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -254,13 +255,17 @@ public class SchemaColumnMetaData
 
     private void loadFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        try (var ignore = DebugInfoDumper.pushThreadDumpContext("SchemaColumnMetaData.loadFromMetaData(" + ti.getSelectName() + ")"))
+        DbScope scope = ti.getSchema().getScope();
+
+        // Hold the thread connection so the three metadata passes share one pool borrow
+        try (var ignore = DebugInfoDumper.pushThreadDumpContext("SchemaColumnMetaData.loadFromMetaData(" + ti.getSelectName() + ")");
+             Connection ignored = scope.getConnection())
         {
             // With the Microsoft JDBC driver we're seeing more deadlocks loading schema metadata so try multiple
             // times when possible
-            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadColumnsFromMetaData(ti)));
-            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadPkColumns(ti)));
-            ti.getSchema().getScope().executeWithRetryReadOnly(createRetryWrapper((tx) -> loadIndices(ti)));
+            scope.executeWithRetryReadOnly(createRetryWrapper((tx) -> loadColumnsFromMetaData(ti)));
+            scope.executeWithRetryReadOnly(createRetryWrapper((tx) -> loadPkColumns(ti)));
+            scope.executeWithRetryReadOnly(createRetryWrapper((tx) -> loadIndices(ti)));
         }
         catch (RuntimeSQLException e)
         {

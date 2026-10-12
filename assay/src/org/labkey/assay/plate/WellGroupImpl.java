@@ -19,7 +19,6 @@ package org.labkey.assay.plate;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataRow;
-import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
@@ -28,8 +27,6 @@ import org.labkey.api.assay.plate.WellData;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -462,10 +459,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
 
     private void populateStatsFromTable()
     {
-        ExpRun run = ExperimentService.get().getExpRun(_plate.getRunId());
-        List<DilutionDataRow> dilutionDataRows = DilutionManager.getDilutionDataRows(_plate.getRunId(),
-                _plate.getPlateNumber(), getName(), run.getContainer(),
-                Type.REPLICATE.equals(getType()));
+        List<DilutionDataRow> dilutionDataRows = _plate.getDilutionDataRows(getName(), Type.REPLICATE.equals(getType()));
         if (1 != dilutionDataRows.size())
             throw new IllegalStateException("Expected a single DilutionData row to calculate wellgroup stats, but found " + dilutionDataRows.size() + " rows");
         _dilutionDataRow = dilutionDataRows.getFirst();

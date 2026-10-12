@@ -1765,7 +1765,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably
-    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
+    private static final Cache<Container, Boolean> _fileDataUpToDateCache = CacheManager.getCache(Container.class, CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "Files");
 
     @TestWhen(TestWhen.When.BVT)
     public static class TestCase extends AssertionError

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DbScope.ConnectionType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -81,6 +82,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static final Logger LOG = LogHelper.getLogger(ConnectionWrapper.class, "All JDBC metadata and SQL execution calls being made");
 
     private static final Cleaner CLEANER = Cleaner.create();
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE, StackWalker.Option.DROP_METHOD_INFO));
 
     private static class ConnectionState implements Runnable
     {
@@ -159,6 +161,9 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private volatile boolean _allowClose = true;
 
+    // Captured at borrow because the return can happen on another thread
+    private volatile @Nullable ConnectionUsage.Borrow _borrow;
+
     static
     {
         // Issue 51483: DB query can be left running after shutting down server
@@ -224,21 +229,26 @@ public class ConnectionWrapper implements java.sql.Connection
         _cleanable = CLEANER.register(this, _state);
     }
 
+    /** Called only for real pool borrows, so wrappers created without one never record a return */
+    void trackUsage(long acquireStart, long poolDone, long setupDone)
+    {
+        long now = System.nanoTime();
+        _borrow = ConnectionUsage.recordBorrow(now - acquireStart, poolDone - acquireStart, setupDone - poolDone, now);
+    }
+
     /** this is a best guess logger, pass one in to be predictable */
     static Logger getConnectionLogger()
     {
         if (_explicitLogger)
             return LOG;
-        StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-        for (StackTraceElement ste : stes)
-        {
-            String className = ste.getClassName();
-            if (className.equals("org.labkey.api.view.ViewServlet") || className.equals("org.labkey.api.action.SpringActionController"))
-                break;
-            if (className.endsWith("Controller") && !className.startsWith("org.labkey.api.view"))
-                return LogManager.getLogger(className);
-        }
-        return LOG;
+        // Runs on every borrow, so walk lazily and stop early rather than materializing the whole stack
+        return STACK_WALKER.walk(frames -> frames
+            .map(StackWalker.StackFrame::getDeclaringClass)
+            .takeWhile(clazz -> clazz != ViewServlet.class && clazz != SpringActionController.class)
+            .filter(clazz -> clazz.getName().endsWith("Controller") && !clazz.getPackageName().startsWith(ViewServlet.class.getPackageName()))
+            .findFirst()
+            .map(clazz -> LogManager.getLogger(clazz.getName()))
+            .orElse(LOG));
     }
 
     public @NotNull Logger getLogger()
@@ -555,6 +565,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private void realCloseInternal() throws SQLException
     {
         _openConnections.remove(this);
+        ConnectionUsage.recordReturn(_borrow);
         _loggedLeaks.remove(this);
 
         // The Tomcat connection pool violates the API for close() - it throws an exception

@@ -235,6 +235,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -3597,6 +3598,13 @@ public class QueryController extends SpringActionController
             _includeTotalCount = includeTotalCount;
         }
 
+        /** True when the request sent includeTotalCount rather than leaving it at its default. */
+        public boolean isIncludeTotalCountSet()
+        {
+            return null != getViewContext().getRequest().getParameter("includeTotalCount") ||
+                    (null != _initParameters && null != _initParameters.getPropertyValue("includeTotalCount"));
+        }
+
         public boolean isIncludeStyle()
         {
             return _includeStyle;
@@ -3719,7 +3727,10 @@ public class QueryController extends SpringActionController
             }
 
             boolean isEditable = isQueryEditable(view.getTable());
-            boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
+            boolean noRows = form.getQuerySettings().getMaxRows() == 0;
+            // GH Issue 1607: maxRows=0 with an explicit includeTotalCount=true returns just the row count
+            boolean countOnly = noRows && form.isIncludeTotalCount() && form.isIncludeTotalCountSet();
+            boolean metaDataOnly = noRows && !countOnly;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
             boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
@@ -3749,6 +3760,7 @@ public class QueryController extends SpringActionController
                         form.isIncludeDisplayValues(), form.isIncludeMetadata());
             }
             response.includeStyle(form.isIncludeStyle());
+            response.countOnly(countOnly);
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
             // requested minimal columns, as we now do for ExtJS stores
@@ -4648,7 +4660,7 @@ public class QueryController extends SpringActionController
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
             if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
-                _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
+                _json = new JSONObject(new KeySharingJSONTokener(getViewContext().getRequest().getParameter("json")));
         }
 
         protected JSONObject getJsonObject()
@@ -4802,6 +4814,11 @@ public class QueryController extends SpringActionController
                     rowsAffected++;
                 }
             }
+
+            // The form and action share this JSONObject for the whole request, so drop the converted rows to free the parse tree; provenance rereads them after the save
+            if (!json.has("provenance"))
+                json.remove(PROP_ROWS);
+            rows = null;
 
             Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 

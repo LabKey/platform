@@ -165,7 +165,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
             }
         };
 
-        _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, _loader);  // Cache is one entry per module
+        _cache = CacheManager.getBlockingCache(String.class, Constants.getMaxModules(), CacheManager.DAY, description, _loader);  // Cache is one entry per module
         _handler = handler;
 
         ContextListener.addModuleChangeListener(this);

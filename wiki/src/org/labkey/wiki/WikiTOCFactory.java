@@ -31,11 +31,6 @@ import org.labkey.api.view.WebPartView;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 10:51:27 AM
- */
 public class WikiTOCFactory extends BaseWebPartFactory
 {
     public WikiTOCFactory()

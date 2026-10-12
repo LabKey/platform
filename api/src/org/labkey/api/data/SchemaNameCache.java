@@ -28,7 +28,7 @@ public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
 
-    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(500, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
+    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingCache(String.class, 500, CacheManager.YEAR, "Schema names in each scope", (dsName, argument) -> {
         DbScope scope = DbScope.getDbScope(dsName);
 
         try
