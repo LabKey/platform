@@ -192,15 +192,17 @@ public class FilterSuggestionRanker
                 compose.add(createCompose(columns, fields, value, "date", raw));
         }
 
-        // A term with no string signal that also parses as a number or date belongs to those tiers, not to every string
-        if (stringSignals.isEmpty() && number == null && dateSpan == null)
+        // Numbers and dates belong to their own tiers, not to every string column; zero-padded numbers are identifiers
+        if ((number == null || term.hasLeadingZero()) && dateSpan == null)
         {
             List<ComposeField> fields = columns.stream()
                 .filter(column -> column.getType() == SuggestionColumn.Type.STRING)
                 .sorted(Comparator.comparing((SuggestionColumn column) -> !column.isTitle()))
                 .map(column -> new ComposeField(column.getFieldKey(), "contains"))
                 .toList();
-            if (!fields.isEmpty())
+            Set<String> signalKeys = stringSignals.keySet();
+            boolean sameAsSignals = fields.size() == signalKeys.size() && fields.stream().allMatch(field -> signalKeys.contains(field.fieldKey()));
+            if (!fields.isEmpty() && !sameAsSignals)
                 compose.add(createCompose(columns, fields, raw, "string", raw));
         }
 
