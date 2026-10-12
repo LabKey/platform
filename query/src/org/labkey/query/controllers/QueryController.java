@@ -153,6 +153,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
+import org.labkey.api.mcp.GuardrailException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
@@ -8903,10 +8904,17 @@ public class QueryController extends SpringActionController
                     {
                         // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                        responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
-                        var newSqlResponse = extractSql(responses);
-                        if (isNotBlank(newSqlResponse.sql()))
-                            sqlResponse = newSqlResponse;
+                        try
+                        {
+                            responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
+                            var newSqlResponse = extractSql(responses);
+                            if (isNotBlank(newSqlResponse.sql()))
+                                sqlResponse = newSqlResponse;
+                        }
+                        catch (GuardrailException ignored)
+                        {
+                            // Keep the unvalidated SQL rather than replacing it with the guardrail's message
+                        }
                     }
                 }
 
