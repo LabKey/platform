@@ -285,6 +285,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 throw new NotFoundException("Could not find experiment run " + runId);
             }
+            if (!run.getContainer().equals(context.getContainer()))
+            {
+                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+            }
             if (null != batch && !batch.getContainer().equals(context.getContainer()))
             {
                 throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
@@ -458,6 +462,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 existingOutputs.put(input.getMaterial().getRowId(), input.getMaterial());
         }
 
+        Set<Long> existingInputRowIds = new HashSet<>();
+        for (ExpMaterial in : run.getMaterialInputs().keySet())
+            existingInputRowIds.add(in.getRowId());
+        Set<Long> postedInputRowIds = new HashSet<>();
+        for (ExpMaterial in : inputMaterial.keySet())
+            postedInputRowIds.add(in.getRowId());
+        boolean inputsUnchanged = existingInputRowIds.equals(postedInputRowIds);
+
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
@@ -484,7 +496,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 // Attaching an output rewrites the material's lineage, so require write access - but skip
                 // materials that were already outputs of this run, since a re-save isn't changing them.
                 // A sample created in this request only needs insert rights.
-                if (!existingOutputs.containsKey(material.getRowId()))
+                if (!existingOutputs.containsKey(material.getRowId()) || !inputsUnchanged)
                     assertCanEditLineage(context.getUser(), material.getLSID(), material, createdMaterialLsids.contains(material.getLSID()));
 
                 if (isAliquotProtocol)
