@@ -180,10 +180,15 @@ public class TransactionFilter implements Filter
         }
         finally
         {
-            if (null == previousSummary)
-                _pendingRequests.remove(t);
-            else
-                _pendingRequests.put(t, previousSummary);
+            // Waits out a cancel in progress, whose close and interrupt would otherwise land on this thread's next request
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (tracker)
+            {
+                if (null == previousSummary)
+                    _pendingRequests.remove(t);
+                else
+                    _pendingRequests.put(t, previousSummary);
+            }
             DbScope.finishedWithThread();
             RequestCancellation.requestFinished(t, tracker);
 
@@ -218,7 +223,14 @@ public class TransactionFilter implements Filter
      */
     private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
-        boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
+        // The cancelled query fails within milliseconds, so the request can finish mid-cancel; doFilter() can't release the thread while we hold this
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (tracker)
+        {
+            if (_pendingRequests.get(thread) != tracker)
+                return;
+
+            boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
 
         // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
         RequestCancellation.cancelQueries(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
