@@ -698,7 +698,7 @@ public class ExceptionUtil
     /** The server stopped this request's query itself, on timeout or shutdown */
     private static boolean isServerCancelledQuery(Throwable ex)
     {
-        for (Throwable t = ex; t != null; t = t.getCause() == t ? null : t.getCause())
+        for (Throwable t = ex; t != null; t = getCause(t))
         {
             if (t instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx))
                 return RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown();
