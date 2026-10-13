@@ -223,6 +223,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
@@ -10766,6 +10767,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             ExpMaterial sample = st.getSample(c, "sample");
             String lsid = sample.getLSID();
 
+            try
+            {
+                DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, NoPermissionsRole.class), lsid, sample);
+                fail("A user without read access should get NotFoundException");
+            }
+            catch (NotFoundException expected)
+            {
+            }
+
             for (User u : List.of(new LimitedUser(admin, ReaderRole.class), new LimitedUser(admin, AuthorRole.class)))
             {
                 try
@@ -10773,7 +10783,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     DefaultExperimentSaveHandler.assertCanEditLineage(u, lsid, sample);
                     fail("User without edit rights should not be able to edit lineage of a pre-existing sample");
                 }
-                catch (NotFoundException expected)
+                catch (UnauthorizedException expected)
                 {
                 }
             }

@@ -80,14 +80,16 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     // reader & locked sample is blocked
     public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material, boolean createdHere)
     {
+        if (material == null || !material.getContainer().hasPermission(user, ReadPermission.class))
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+
         Class<? extends Permission> permission = createdHere
                 ? InsertPermission.class
                 : SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
-        if (material == null || permission == null || !material.getContainer().hasPermission(user, permission))
+        if (permission == null || !material.getContainer().hasPermission(user, permission))
         {
-            if (material != null)
-                LOG.warn("User {} cannot edit lineage of material {} in {}", user, lsid, material.getContainer().getPath());
-            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+            LOG.warn("User {} cannot edit lineage of material {} in {}", user, lsid, material.getContainer().getPath());
+            throw new UnauthorizedException("User does not have permission to edit lineage of sample '" + material.getName() + "'");
         }
 
         if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
