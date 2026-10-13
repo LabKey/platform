@@ -27,13 +27,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -232,15 +235,16 @@ public class TransactionFilter implements Filter
 
             boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
 
-        // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
-        RequestCancellation.cancelQueries(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
+            // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
+            RequestCancellation.cancelQueries(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
 
-        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
-        {
-            DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-            PipelineJobService.get().killProcessesForThread(thread);
+            try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
+            {
+                DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
+                PipelineJobService.get().killProcessesForThread(thread);
+            }
+            thread.interrupt();
         }
-        thread.interrupt();
     }
 
     public static int getPendingRequestCount()
@@ -292,6 +296,55 @@ public class TransactionFilter implements Filter
                     assertFalse("Recycled request", isTimedOut(thread, getRequestSummary(thread), Long.MAX_VALUE));
                 });
             });
+        }
+
+        /** The real sweep must find a long read-only request, stop its query, and leave exports alone */
+        @Test
+        public void testSweep() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            Assume.assumeTrue("Needs PostgreSQL", scope.getSqlDialect().isPostgreSQL());
+
+            int originalTimeout = AppProps.getInstance().getReadOnlyHttpRequestTimeout();
+            setReadOnlyTimeout(2);
+            try
+            {
+                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                    Thread thread = Thread.currentThread();
+
+                    RequestCancellation.TestCase.doRequest(null, () -> {
+                        long start = System.currentTimeMillis();
+                        try
+                        {
+                            new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                            fail("Query wasn't cancelled");
+                        }
+                        catch (RuntimeException ignored) {} // Checked by its source below
+                        // Timeout plus the sweep's 5 s interval, with slack
+                        assertTrue("Cancel took too long", System.currentTimeMillis() - start < 10_000);
+                        assertEquals(RequestCancellation.Source.TIMEOUT, RequestCancellation.getSource(thread));
+                    });
+                    assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
+
+                    RequestCancellation.TestCase.doRequest(null, () -> {
+                        getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
+                        // Long enough for at least one sweep after the timeout
+                        new SqlSelector(scope, "SELECT pg_sleep(8)").getObject(Object.class);
+                        assertNull("Export was cancelled", RequestCancellation.getSource(thread));
+                    });
+                });
+            }
+            finally
+            {
+                setReadOnlyTimeout(originalTimeout);
+            }
+        }
+
+        private static void setReadOnlyTimeout(int seconds)
+        {
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            props.setReadOnlyHttpRequestTimeout(seconds);
+            props.save(TestContext.get().getUser());
         }
     }
 }
