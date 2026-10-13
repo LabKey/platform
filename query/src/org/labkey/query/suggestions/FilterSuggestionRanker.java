@@ -155,6 +155,9 @@ public class FilterSuggestionRanker
             if (column.getType() == SuggestionColumn.Type.STRING && column.getShapes() != null && column.getShapes().contains(shape))
             {
                 addFilter(direct, seen, column, "eq", raw, "shape", raw);
+                // Titles entered by hand don't follow the name expression, but users still search them by prefix
+                if (column.isTitle())
+                    addFilter(direct, seen, column, "contains", raw, "shapeContains", raw);
                 stringSignals.putIfAbsent(column.getFieldKey(), "eq");
             }
         }
