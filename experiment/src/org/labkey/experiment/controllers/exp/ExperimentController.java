@@ -110,8 +110,6 @@ import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
@@ -241,6 +239,7 @@ import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -331,7 +330,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -353,6 +351,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
@@ -2465,16 +2464,24 @@ public class ExperimentController extends SpringActionController
             }
 
             PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-            if (root != null && !root.isUnderRoot(_data.getFileLike()))
+            if (root == null || !root.isUnderRoot(_data.getFileLike()))
             {
-                // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
                 FileContentService fileSvc = FileContentService.get();
                 if (fileSvc == null)
                     throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
 
-                List<Container> containers = fileSvc.getContainersForFilePath(_data.getFilePath());
-                if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
-                    throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
+                Path dataPath = _data.getFilePath();
+                boolean underFileRoot = Stream.of(FileContentService.ContentType.files, FileContentService.ContentType.assayfiles)
+                        .map(type -> fileSvc.getConfiguredFileRootPath(getContainer(), type))
+                        .anyMatch(fileRoot -> fileRoot != null && URIUtil.isDescendant(fileRoot.toUri(), dataPath.toUri()));
+
+                if (!underFileRoot)
+                {
+                    // Issue 35649: ImmPort module "publish" creates exp.data object in this container for paths that originate in a different container
+                    List<Container> containers = fileSvc.getContainersForFilePath(dataPath);
+                    if (containers.isEmpty() || containers.stream().noneMatch(c -> c.hasPermission(getUser(), ReadPermission.class)))
+                        throw new UnauthorizedException("Data file is not under the pipeline root for this folder");
+                }
             }
 
             //Issues 25667 and 31152
@@ -6613,61 +6620,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getSuccessURL(MoveRunsForm form)
         {
             return urlProvider(PipelineUrls.class).urlBegin(_targetContainer);
-        }
-    }
-
-    public static class ShowExternalDocsForm
-    {
-        private String _objectURI;
-        private String _propertyURI;
-
-        public String getObjectURI()
-        {
-            return _objectURI;
-        }
-
-        public void setObjectURI(String objectURI)
-        {
-            _objectURI = objectURI;
-        }
-
-        public String getPropertyURI()
-        {
-            return _propertyURI;
-        }
-
-        public void setPropertyURI(String propertyURI)
-        {
-            _propertyURI = propertyURI;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public static class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
-    {
-        @Override
-        public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
-        {
-            Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(getContainer(), form.getObjectURI());
-            ObjectProperty prop = props.get(form.getPropertyURI());
-            if (prop == null || !getContainer().equals(prop.getContainer()))
-            {
-                throw new NotFoundException();
-            }
-            URI uri = new URI(prop.getStringValue());
-            File f = new File(uri);
-            if (!f.exists())
-            {
-                throw new NotFoundException();
-            }
-
-            PageFlowUtil.streamFile(getViewContext().getResponse(), f.toPath(), false);
-            return null;
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
         }
     }
 
