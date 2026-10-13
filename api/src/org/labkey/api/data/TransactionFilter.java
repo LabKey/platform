@@ -26,6 +26,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
@@ -34,6 +36,7 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -42,6 +45,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -119,18 +123,8 @@ public class TransactionFilter implements Filter
                             {
                                 RequestTracker tracker = entry.getValue();
                                 Thread thread = entry.getKey();
-                                
-                                Object readOnly = Boolean.FALSE;
-                                Object export = Boolean.FALSE;
-                                try
-                                {
-                                    readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
-                                    export = tracker.request.getAttribute(EXPORT_ATTRIBUTE_NAME);
-                                }
-                                catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
 
-                                // The thread may have moved on to another request since the copy above
-                                if (Boolean.TRUE.equals(readOnly) && !Boolean.TRUE.equals(export) && tracker.startTime < cutoff && _pendingRequests.get(thread) == tracker)
+                                if (isTimedOut(thread, tracker, cutoff))
                                 {
                                     _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
                                     cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
@@ -202,6 +196,22 @@ public class TransactionFilter implements Filter
         FileUtil.stopRequest();
     }
 
+    /** @return true if this read-only, non-export request started before the cutoff and is still running on the thread */
+    static boolean isTimedOut(Thread thread, RequestTracker tracker, long cutoff)
+    {
+        Object readOnly = Boolean.FALSE;
+        Object export = Boolean.FALSE;
+        try
+        {
+            readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
+            export = tracker.request.getAttribute(EXPORT_ATTRIBUTE_NAME);
+        }
+        catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
+
+        // The thread may have moved on to another request since the sweep copied the pending requests
+        return Boolean.TRUE.equals(readOnly) && !Boolean.TRUE.equals(export) && tracker.startTime < cutoff && _pendingRequests.get(thread) == tracker;
+    }
+
     /**
      * Stops a request and its database work. An interrupt alone stops a query only on the AsyncQueryRequest path; a
      * thread blocked in a JDBC read elsewhere (e.g. selectDistinct) needs the database to cancel its statement.
@@ -236,4 +246,40 @@ public class TransactionFilter implements Filter
             msWaitForRequests -= 100;
         }
     }
-} 
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testIsTimedOut() throws Exception
+        {
+            RequestCancellation.TestCase.runOnRequestThread(() -> {
+                Thread thread = Thread.currentThread();
+                AtomicReference<RequestTracker> finished = new AtomicReference<>();
+
+                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
+                    RequestTracker tracker = getRequestSummary(thread);
+                    finished.set(tracker);
+                    assertTrue("Read-only request past the cutoff", isTimedOut(thread, tracker, tracker.startTime() + 1));
+                    assertFalse("Read-only request within the timeout", isTimedOut(thread, tracker, tracker.startTime()));
+                });
+                assertFalse("Finished request", isTimedOut(thread, finished.get(), Long.MAX_VALUE));
+
+                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("GET", "/test"), null, () -> {
+                    RequestTracker tracker = getRequestSummary(thread);
+                    tracker.request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
+                    assertFalse("Export", isTimedOut(thread, tracker, Long.MAX_VALUE));
+                });
+
+                RequestCancellation.TestCase.doRequest(new MockHttpServletRequest("POST", "/test"), null, () ->
+                    assertFalse("Mutating request", isTimedOut(thread, getRequestSummary(thread), Long.MAX_VALUE)));
+
+                MockHttpServletRequest recycled = new MockHttpServletRequest("GET", "/test");
+                RequestCancellation.TestCase.doRequest(recycled, null, () -> {
+                    // A closed mock request throws on getAttribute(), like a request Tomcat has recycled
+                    recycled.close();
+                    assertFalse("Recycled request", isTimedOut(thread, getRequestSummary(thread), Long.MAX_VALUE));
+                });
+            });
+        }
+    }
+}

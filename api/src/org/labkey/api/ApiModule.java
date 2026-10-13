@@ -92,6 +92,7 @@ import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelectorTestCase;
 import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
@@ -587,6 +588,7 @@ public class ApiModule extends CodeOnlyModule
             Table.TestCase.class,
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
+            TransactionFilter.TestCase.class,
             URLHelper.TestCase.class,
             UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,

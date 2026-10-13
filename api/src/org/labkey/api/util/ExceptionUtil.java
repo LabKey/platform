@@ -92,6 +92,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -1511,6 +1512,50 @@ public class ExceptionUtil
             answer = handleIt(me, new NullPointerException());
             assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Logger.error"));
+        }
+
+        @Test
+        public void testCancelledQuery() throws Exception
+        {
+            User me = TestContext.get().getUser();
+
+            // A statement cancelled by something other than the server is still an error
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(null, () -> {
+                assertFalse(isIgnorable(cancelledQuery()));
+                ExceptionResponse answer = handleIt(me, cancelledQuery());
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+                assertTrue(answer.response.headers.containsKey("Logger.error"));
+            }));
+
+            // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertTrue(isRequestTimeout(cancelledQuery()));
+                assertTrue(isRequestTimeout(new AbortedRequestException("test")));
+
+                for (Exception ex : List.of(cancelledQuery(), new AbortedRequestException("test")))
+                {
+                    ExceptionResponse answer = handleIt(me, ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, answer.response.status);
+                    assertFalse(answer.response.headers.containsKey("Logger.error"));
+                }
+            }));
+
+            // Nobody's waiting on a disconnected client
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertFalse(isRequestTimeout(cancelledQuery()));
+                assertFalse(isRequestTimeout(new AbortedRequestException("test")));
+
+                ExceptionResponse answer = handleIt(me, new AbortedRequestException("test"));
+                assertEquals(0, answer.response.status);
+                assertFalse(answer.response.headers.containsKey("Logger.error"));
+            }));
+        }
+
+        private static RuntimeSQLException cancelledQuery()
+        {
+            return new RuntimeSQLException(new SQLException("ERROR: canceling statement due to user request", "57014"));
         }
 
         @Test

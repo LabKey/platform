@@ -17,6 +17,8 @@ package org.labkey.api.data;
 
 import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,9 +27,14 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.List;
@@ -207,9 +214,118 @@ public final class RequestCancellation
 
     public static class TestCase extends Assert
     {
-        /** A query outside AsyncQueryRequest, like selectDistinct, ignores an interrupt; the out-of-band cancel must stop it */
+        /** Runs body on a new thread that carries this test's TestContext, rethrowing whatever it throws */
+        public static void runOnRequestThread(Runnable body) throws Exception
+        {
+            HttpServletRequest testRequest = TestContext.get().getRequest();
+            User user = TestContext.get().getUser();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread thread = new Thread(() -> {
+                try
+                {
+                    TestContext.setTestContext(testRequest, user);
+                    body.run();
+                }
+                catch (Throwable t)
+                {
+                    failure.set(t);
+                }
+            }, "RequestCancellation test request");
+
+            thread.start();
+            thread.join(30_000);
+            assertFalse("Request thread didn't exit", thread.isAlive());
+            assertFalse("Cancel entry outlived its request", _cancelledRequests.containsKey(thread));
+
+            switch (failure.get())
+            {
+                case null -> {}
+                case Error e -> throw e;
+                case Exception e -> throw e;
+                default -> throw new RuntimeException(failure.get());
+            }
+        }
+
+        /** Runs body inside a TransactionFilter request on the current thread, cancelled first if cancelledBy is set */
+        public static void doRequest(@NotNull MockHttpServletRequest request, @Nullable Source cancelledBy, @NotNull Runnable body)
+        {
+            try
+            {
+                new TransactionFilter().doFilter(request, new MockHttpServletResponse(), (_, _) -> {
+                    if (cancelledBy != null)
+                    {
+                        Thread thread = Thread.currentThread();
+                        assertTrue(requestCancelled(thread, TransactionFilter.getRequestSummary(thread), cancelledBy));
+                    }
+                    body.run();
+                });
+            }
+            catch (IOException | ServletException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static void doRequest(@Nullable Source cancelledBy, @NotNull Runnable body)
+        {
+            doRequest(new MockHttpServletRequest("GET", "/test"), cancelledBy, body);
+        }
+
         @Test
-        public void testCancelBlockedQuery() throws Exception
+        public void testCancelledOnce() throws Exception
+        {
+            runOnRequestThread(() -> doRequest(null, () -> {
+                Thread thread = Thread.currentThread();
+                TransactionFilter.RequestTracker tracker = TransactionFilter.getRequestSummary(thread);
+                assertNull(getSource(thread));
+
+                assertTrue(requestCancelled(thread, tracker, Source.CLIENT_DISCONNECT));
+                // Only the first cancel logs and counts
+                assertFalse(requestCancelled(thread, tracker, Source.TIMEOUT));
+                assertEquals(Source.CLIENT_DISCONNECT, getSource(thread));
+            }));
+        }
+
+        /** A sweep can cancel a request just as it finishes, leaving an entry for a tracker that's gone */
+        @Test
+        public void testStaleEntry() throws Exception
+        {
+            runOnRequestThread(() -> {
+                Thread thread = Thread.currentThread();
+                AtomicReference<TransactionFilter.RequestTracker> finished = new AtomicReference<>();
+                doRequest(null, () -> finished.set(TransactionFilter.getRequestSummary(thread)));
+
+                // When the next request is cancelled too
+                requestCancelled(thread, finished.get(), Source.TIMEOUT);
+                doRequest(null, () -> {
+                    assertNull("Stale entry applied to the next request", getSource(thread));
+                    assertTrue(requestCancelled(thread, TransactionFilter.getRequestSummary(thread), Source.CLIENT_DISCONNECT));
+                    assertEquals(Source.CLIENT_DISCONNECT, getSource(thread));
+                });
+                assertFalse(_cancelledRequests.containsKey(thread));
+
+                // When it isn't, its exit removes the entry
+                requestCancelled(thread, finished.get(), Source.TIMEOUT);
+                doRequest(null, () -> assertNull("Stale entry applied to the next request", getSource(thread)));
+                assertFalse(_cancelledRequests.containsKey(thread));
+            });
+        }
+
+        /** A request nested on the thread, e.g. an include, must not clear the outer request's cancel when it exits */
+        @Test
+        public void testNestedRequest() throws Exception
+        {
+            runOnRequestThread(() -> doRequest(Source.TIMEOUT, () -> {
+                Thread thread = Thread.currentThread();
+                doRequest(null, () -> {});
+                assertEquals(Source.TIMEOUT, getSource(thread));
+            }));
+        }
+
+        private record BlockedQuery(DbScope scope, Thread thread, AtomicReference<Throwable> failure, Set<ConnectionWrapper> connections, long start) {}
+
+        /** Starts a query that runs outside AsyncQueryRequest, like selectDistinct, so it ignores an interrupt */
+        private static BlockedQuery startBlockedQuery() throws InterruptedException
         {
             DbScope scope = DbScope.getLabKeyScope();
             Assume.assumeTrue("Needs PostgreSQL", scope.getSqlDialect().isPostgreSQL());
@@ -244,13 +360,44 @@ public final class RequestCancellation
             // Let the statement reach the server
             Thread.sleep(500);
 
-            cancelQueries(connections, Source.TIMEOUT, true);
-            queryThread.join(15_000);
+            return new BlockedQuery(scope, queryThread, failure, connections.get(scope), start);
+        }
 
-            assertFalse("Query wasn't cancelled", queryThread.isAlive());
-            assertNotNull("Query should have failed with a cancellation", failure.get());
-            assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
-            assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(queryThread).isEmpty());
+        private static void assertStopped(BlockedQuery query) throws InterruptedException
+        {
+            query.thread().join(15_000);
+
+            assertFalse("Query wasn't cancelled", query.thread().isAlive());
+            assertNotNull("Query should have failed with a cancellation", query.failure().get());
+            assertTrue("Cancel took too long", System.currentTimeMillis() - query.start() < 15_000);
+            assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(query.thread()).isEmpty());
+        }
+
+        @Test
+        public void testCancelBlockedQuery() throws Exception
+        {
+            BlockedQuery query = startBlockedQuery();
+            cancelQueries(Map.of(query.scope(), query.connections()), Source.TIMEOUT, true);
+            assertStopped(query);
+        }
+
+        /** The usual path, which needs no pool connection */
+        @Test
+        public void testDriverCancel() throws Exception
+        {
+            BlockedQuery query = startBlockedQuery();
+            Set<ConnectionWrapper> signalled = query.scope().getSqlDialect().cancelQueriesWithoutConnection(query.connections());
+            assertEquals("Driver cancel didn't signal every connection", query.connections(), signalled);
+            assertStopped(query);
+        }
+
+        /** The fallback for sessions the driver's cancel request can't reach */
+        @Test
+        public void testCancelBackendFallback() throws Exception
+        {
+            BlockedQuery query = startBlockedQuery();
+            assertTrue("pg_cancel_backend failed", query.scope().getSqlDialect().cancelQueries(query.scope(), query.connections(), false));
+            assertStopped(query);
         }
     }
 }
