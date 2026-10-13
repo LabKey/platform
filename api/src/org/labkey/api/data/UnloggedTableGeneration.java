@@ -146,6 +146,14 @@ public class UnloggedTableGeneration
 
     private static void verifyMarker(DbScope scope, Connection conn, String markerName)
     {
+        // A missing table fails the EXISTS query at parse time, and SqlSelector logs that failure at ERROR
+        SQLFragment found = new SQLFragment("SELECT to_regclass(?) IS NOT NULL", markerTable(markerName).getRawSQL());
+        if (!Boolean.TRUE.equals(new SqlSelector(scope, conn, found).getObject(Boolean.class)))
+        {
+            replaceMissingMarker(scope, conn, markerName);
+            return;
+        }
+
         try
         {
             SQLFragment exists = new SQLFragment("SELECT EXISTS (SELECT 1 FROM ").append(markerTable(markerName)).append(")");
@@ -161,15 +169,20 @@ public class UnloggedTableGeneration
         {
             if (!SqlDialect.isObjectNotFoundException(x))
                 throw x;
-            createMarker(scope, conn);
-            _generation.incrementAndGet();
-            LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
+            replaceMissingMarker(scope, conn, markerName);
         }
+    }
+
+    private static void replaceMissingMarker(DbScope scope, Connection conn, String markerName)
+    {
+        createMarker(scope, conn);
+        _generation.incrementAndGet();
+        LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
     }
 
     private static void createMarker(DbScope scope, Connection conn)
     {
-        // A fresh name never collides with tables TempTableTracker purges asynchronously at startup
+        TempTableTracker.init();
         String name = "unlogged_marker_" + GUID.makeHash();
         new SqlExecutor(scope, conn).execute(new SQLFragment("CREATE UNLOGGED TABLE ").append(markerTable(name)).append(" AS SELECT 1 AS x"));
         TempTableTracker.track(name, MARKER_REF);
