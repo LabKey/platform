@@ -53,6 +53,8 @@ public class TransactionFilter implements Filter
     private static final Map<Thread, RequestTracker> _pendingRequests = Collections.synchronizedMap(new WeakHashMap<>());
 
     public static final String READ_ONLY_ATTRIBUTE_NAME = "ReadOnlyHttpRequest";
+    /** Read-only, but a legitimate export on a large instance can outlast the read-only timeout */
+    public static final String EXPORT_ATTRIBUTE_NAME = "ExportHttpRequest";
 
     public record RequestTracker(HttpServletRequest request, long startTime)
     {
@@ -119,9 +121,11 @@ public class TransactionFilter implements Filter
                                 Thread thread = entry.getKey();
                                 
                                 Object readOnly = Boolean.FALSE;
+                                Object export = Boolean.FALSE;
                                 try
                                 {
                                     readOnly = tracker.request.getAttribute(READ_ONLY_ATTRIBUTE_NAME);
+                                    export = tracker.request.getAttribute(EXPORT_ATTRIBUTE_NAME);
                                 }
                                 catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
 

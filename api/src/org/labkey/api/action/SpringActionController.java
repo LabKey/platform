@@ -559,6 +559,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
+            if (ExportAction.class.isAssignableFrom(actionClass) ||
+                (actionClass.isAnnotationPresent(Action.class) && actionClass.getAnnotation(Action.class).value().equals(ActionType.Export.class)))
+            {
+                request.setAttribute(TransactionFilter.EXPORT_ATTRIBUTE_NAME, true);
+            }
+
             // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
             // through rendering because the action's memory is live for that whole time.
             try (ConcurrencyLimiter.Permit ignored = ConcurrencyLimiter.acquire(actionClass, context))
