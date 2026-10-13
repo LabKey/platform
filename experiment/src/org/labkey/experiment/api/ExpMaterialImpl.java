@@ -61,6 +61,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -386,6 +387,30 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         return getTargetRuns(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId");
     }
 
+    private static @Nullable TableInfo getSearchTable(Container container, ExpSampleType st)
+    {
+        return QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(st.getName());
+    }
+
+    protected record TableCacheKey(GUID containerId, long sampleTypeRowId)
+    {
+        TableCacheKey(Container c, ExpSampleType st)
+        {
+            this(c.getEntityId(), st.getRowId());
+        }
+    }
+
+    /** Index using a samples table shared with other materials of the same container and type, since building one per material dominates indexing cost */
+    public void indexWithTableCache(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Map<TableCacheKey, TableInfo> tableCache)
+    {
+        Container container = getContainer();
+        ExpSampleType st = getSampleType();
+        TableInfo table = null;
+        if (container != null && st != null)
+            table = tableCache.computeIfAbsent(new TableCacheKey(container, st), k -> getSearchTable(container, st));
+        index(queue, table);
+    }
+
     @Override
     public @Nullable WebdavResource createIndexDocument(@Nullable TableInfo tableInfo)
     {
@@ -436,7 +461,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (null != st)
         {
             if (tableInfo == null)
-                tableInfo = QueryService.get().getUserSchema(User.getSearchUser(), container, SCHEMA_SAMPLES).getTable(st.getName());
+                tableInfo = getSearchTable(container, st);
 
             if (!(tableInfo instanceof ExpMaterialTableImpl expMaterialTable))
                 throw new IllegalArgumentException(String.format("Unable to index material in %s. Table must be an instance of %s", st.getName(), ExpMaterialTableImpl.class.getName()));

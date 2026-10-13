@@ -1151,10 +1151,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
-            ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            expMaterial.index(queue, null);
-        });
+        Map<ExpMaterialImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
 
         if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
