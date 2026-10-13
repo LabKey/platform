@@ -546,11 +546,21 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // TODO Better/custom error report page/response
                     if (x.getCause() instanceof BadRequestException)
                         return handleBadRequestException(request, response, controller, (BadRequestException)x.getCause());
-                    if (x instanceof MultipartException)
+                    if (x instanceof MultipartException && ExceptionUtil.isClientRequestFailure(x))
                     {
                         _log.debug("Unable to parse multipart request", x);
-                        int status = x instanceof MaxUploadSizeExceededException ? HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE : HttpServletResponse.SC_BAD_REQUEST;
-                        String message = StringUtils.defaultIfBlank(ExceptionUtils.getRootCause(x).getMessage(), x.getMessage());
+                        int status;
+                        String message;
+                        if (x instanceof MaxUploadSizeExceededException)
+                        {
+                            status = HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE;
+                            message = StringUtils.defaultIfBlank(ExceptionUtils.getRootCause(x).getMessage(), x.getMessage());
+                        }
+                        else
+                        {
+                            status = HttpServletResponse.SC_BAD_REQUEST;
+                            message = "Unable to parse multipart request";
+                        }
                         return handleBadRequestException(request, response, controller, new BadRequestException(message, x), status);
                     }
                     throw x;

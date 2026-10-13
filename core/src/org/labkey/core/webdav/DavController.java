@@ -324,7 +324,7 @@ public class DavController extends SpringActionController
                 }
                 catch (MultipartException x)
                 {
-                    _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
+                    _webdavresponse.sendError(ExceptionUtil.isClientRequestFailure(x) ? WebdavStatus.SC_BAD_REQUEST : WebdavStatus.SC_INTERNAL_SERVER_ERROR, x);
                     return null;
                 }
             }
