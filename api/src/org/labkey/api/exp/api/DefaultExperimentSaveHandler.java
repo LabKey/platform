@@ -650,7 +650,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             return null;
 
         if (!material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
-            throw new UnauthorizedException("User does not have permissions to reference Material with row id " + material.getRowId());
+            throw new NotFoundException("Could not find material with row id " + material.getRowId());
 
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
