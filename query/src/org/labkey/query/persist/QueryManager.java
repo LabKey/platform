@@ -67,6 +67,7 @@ import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
+import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.audit.GridViewAuditProvider;
 import org.labkey.query.audit.GridViewAuditProvider.GridViewAuditEvent;
 import org.labkey.query.audit.QueryExportAuditProvider;
@@ -433,6 +434,8 @@ public class QueryManager
         {
             ExternalSchemaDefCache.uncache(c);
             ExternalSchemaDocumentProvider.getInstance().enumerateDocuments(SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified), null);
+            // GH Issue 1512: a schema reload can change a source-table PK without touching the query row
+            QueryDefinitionImpl.clearHasPkColumnCache();
         }
     }
 
@@ -444,6 +447,7 @@ public class QueryManager
     public void reloadExternalSchema(ExternalSchemaDef def)
     {
         ExternalSchema.uncache(def);
+        QueryDefinitionImpl.clearHasPkColumnCache();
     }
 
     public boolean canInherit(int flag)

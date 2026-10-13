@@ -53,8 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.junit.Assume.assumeFalse;
-import static org.labkey.api.query.QueryService.USE_ROW_BY_ROW_UPDATE;
 import static org.labkey.api.query.QueryUpdateService.ConfigParameters.PreferPKOverObjectUriAsKey;
 
 /**
@@ -105,9 +103,6 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
     private boolean shouldUpdateUsingDIB(Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters)
     {
         if (oldKeys != null) // could be called by updateChangingKeys
-            return false;
-
-        if (OptionalFeatureService.get().isFeatureEnabled(USE_ROW_BY_ROW_UPDATE))
             return false;
 
         if (!supportUpdateUsingDIB())
@@ -329,7 +324,6 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         @Test
         public void testAfterInsertUpdateFiresOnce() throws Exception
         {
-            assumeFalse("Row-by-row update bypasses the DIB update path", OptionalFeatureService.get().isFeatureEnabled(USE_ROW_BY_ROW_UPDATE));
             CountingUpdateService qus = createService();
 
             BatchValidationException errors = new BatchValidationException();

@@ -270,7 +270,8 @@ public class SearchModule extends DefaultModule
         (
             LuceneSearchServiceImpl.TestCase.class,
             LuceneSearchServiceImpl.TikaTestCase.class,
-            LuceneSearchServiceImpl.IndexWriterTestCase.class
+            LuceneSearchServiceImpl.IndexWriterTestCase.class,
+            SecurityQuery.FilterTestCase.class
         );
     }
 

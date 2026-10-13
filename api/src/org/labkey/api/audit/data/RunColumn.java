@@ -27,7 +27,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -55,7 +54,7 @@ public class RunColumn extends ExperimentAuditColumn<ExpRun>
 
     @Override
     @Nullable
-    protected Pair<ExpRun, ActionURL> getExpValue(RenderContext ctx)
+    protected ExpLink<ExpRun> getExpValue(RenderContext ctx)
     {
         String runLsid = (String) getBoundColumn().getValue(ctx);
         if (runLsid != null)
@@ -77,7 +76,7 @@ public class RunColumn extends ExperimentAuditColumn<ExpRun>
                 else if (run != null)
                     url = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(run);
 
-                return run == null ? null : new Pair<>(run, url);
+                return run == null ? null : new ExpLink<>(run, url);
             }
         }
         return null;

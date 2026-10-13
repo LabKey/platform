@@ -267,13 +267,6 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-                AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
-                "Derive Samples in LabKey Server UI",
-                "Enables the UI for deriving samples in LabKey Server UI from either the samples grids or a sample lineage page. This option will be removed in LabKey Server 26.11",
-                false,
-                false,
-                OptionalFeatureService.FeatureType.Deprecated));
         OptionalFeatureService.get().addExperimentalFeatureFlag(SAMPLE_FILES_TABLE, "Manage Unreferenced Sample Files",
                 "Enable 'Unreferenced Sample Files' table to view and delete sample files that are no longer referenced by samples", false);
 
@@ -283,8 +276,6 @@ public class ExperimentModule extends SpringModule
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
                 "Support for querying lineage of experiment objects", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
-                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());

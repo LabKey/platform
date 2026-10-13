@@ -141,25 +141,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private Long _fileRootSize = null;
     private LocalDateTime _fileRootLastCrawled = null;
 
-    private final static BlockingCache<GUID, Set<Module>> REQUIRED_MODULES_CACHE = new BlockingCache<>(
-        CacheManager.getCache(
-            Constants.getMaxContainers(),
-            CacheManager.DAY,
-            "Required modules per container"),
-        (key, argument) -> {
-            if (!(argument instanceof Container c))
-            {
-                throw new IllegalStateException("Expected usage pattern is to include the container instance as the argument. Key: " + key);
-            }
+    private final static BlockingCache<Container, Set<Module>> REQUIRED_MODULES_CACHE = DatabaseCache.get(
+        Container.class,
+        CoreSchema.getInstance().getScope(),
+        Constants.getMaxContainers(),
+        CacheManager.DAY,
+        "Required modules per container",
+        (c, _) -> {
             Set<Module> requiredModules = new HashSet<>(c.getRequiredModulesForFolderType(c.getFolderType()));
             requiredModules.add(ModuleLoader.getInstance().getModule("API"));
 
-            for (Container child: c.getChildren())
+            if (c.canHaveChildren())
             {
-                if (child.isWorkbook())
-                {
-                    requiredModules.addAll(c.getRequiredModulesForFolderType(child.getFolderType()));
-                }
+                for (FolderType workbookFolderType : ContainerManager.getWorkbookChildFolderTypes(c))
+                    requiredModules.addAll(c.getRequiredModulesForFolderType(workbookFolderType));
             }
 
             return Collections.unmodifiableSet(requiredModules);
@@ -167,19 +162,20 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     static
     {
-        // Clear the required modules cache on any change to the container tree or container properties
+        // An entry depends on its container's folder type, its workbook children's, and (via module path patterns) its
+        // path. Uncache just the container and its parent, except renames and moves, which change descendants' paths.
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {
             @Override
             public void containerCreated(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
             public void containerDeleted(Container c, User user)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                uncacheRequiredModules(c, c.getParent());
             }
 
             @Override
@@ -191,9 +187,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
             @Override
             public void propertyChange(PropertyChangeEvent evt)
             {
-                REQUIRED_MODULES_CACHE.clear();
+                if (evt instanceof ContainerManager.ContainerPropertyChangeEvent cpce && null != cpce.container
+                    && cpce.property != ContainerManager.Property.Name && cpce.property != ContainerManager.Property.Parent)
+                    uncacheRequiredModules(cpce.container, cpce.container.getParent());
+                else
+                    REQUIRED_MODULES_CACHE.clear();
             }
         });
+    }
+
+    private static void uncacheRequiredModules(Container... containers)
+    {
+        for (Container c : containers)
+        {
+            if (null != c)
+                REQUIRED_MODULES_CACHE.remove(c);
+        }
     }
 
     // Might add others in the future (e.g., ReadOnly)
@@ -1007,7 +1016,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     public Set<Module> getRequiredModules()
     {
-        return REQUIRED_MODULES_CACHE.get(getEntityId(), this);
+        return REQUIRED_MODULES_CACHE.get(this);
     }
 
     public Set<Module> getRequiredModulesForFolderType(FolderType folderType)

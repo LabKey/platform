@@ -27,19 +27,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.ApiModule;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderOverrideHandler;
 import org.labkey.api.action.UrlProviderService;
@@ -68,7 +70,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -928,19 +929,20 @@ public class PageFlowUtil
         return getMediaTypeFor(file.toPath());
     }
 
+    private static final Detector DETECTOR = new DefaultDetector();
+
     public static MediaType getMediaTypeFor(Path file)
     {
-        try
+        Metadata metaData = new Metadata();
+        String filename = file.getFileName().toString();
+
+        // use the metadata to hint at the type for a faster lookup
+        metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+        metaData.add(HttpHeaders.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
+
+        try (TikaInputStream tis = TikaInputStream.get(file))
         {
-            DefaultDetector detector = new DefaultDetector();
-            Metadata metaData = new Metadata();
-            String filename = file.getFileName().toString();
-
-            // use the metadata to hint at the type for a faster lookup
-            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
-
-            return detector.detect(TikaInputStream.get(file), metaData);
+            return DETECTOR.detect(tis, metaData, new ParseContext());
         }
         catch (IOException e)
         {
@@ -1673,12 +1675,6 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            // Respect App Properties regarding Ext3 configuration
-            if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_API_REQUIRED))
-                resources.add(ClientDependency.fromPath("clientapi/ext3"));
-            else if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_REQUIRED))
-                resources.add(ClientDependency.fromPath("Ext3"));
-
             // TODO: Turn this into a lib.xml
             // core/css/core.js requires jQuery
             resources.add(ClientDependency.fromPath("internal/jQuery"));

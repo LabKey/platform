@@ -72,6 +72,12 @@ public interface PlateService
     @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, long runId, int plateNumber);
 
     /**
+     * Instantiates a new plate instance whose well group statistics come from the run's stored DilutionData.
+     * This plate is not persisted to the database.
+     */
+    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, @NotNull ExpRun run, int plateNumber);
+
+    /**
      * Instantiates a new plate instance based on the specified plate and well data.
      * This plate is not persisted to the database.
      * @param plate The plate that this instance is based upon.

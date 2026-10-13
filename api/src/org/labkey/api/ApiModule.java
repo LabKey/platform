@@ -37,6 +37,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.ContainerKeySimpleCache;
+import org.labkey.api.cache.SimpleKeyMappingCache;
+import org.labkey.api.cache.UserKeySimpleCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -54,6 +58,7 @@ import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -88,12 +93,14 @@ import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
+import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
 import org.labkey.api.dataiterator.ExistingRecordDataIterator;
 import org.labkey.api.dataiterator.GenerateUniqueDataIterator;
+import org.labkey.api.dataiterator.QueryDataIteratorBuilder;
 import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -130,6 +137,7 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.search.SearchScope;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationConfiguration;
@@ -173,6 +181,7 @@ import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
@@ -233,10 +242,6 @@ public class ApiModule extends CodeOnlyModule
     private static final String CORS_PREFIX = "cors.";
     private static final String CORS_FILTER_NAME = "CorsFilter";
 
-    public static final String EXTJS_3_REQUIRED = "ExtJs3Required";
-    public static final String EXTJS_3_API_REQUIRED = "ExtJs3ApiRequired";
-    public static final String ALLOW_MUTATING_SQL_VIA_GET = "AllowMutatingSqlViaGet";
-
     @Override
     protected void init()
     {
@@ -265,30 +270,6 @@ public class ApiModule extends CodeOnlyModule
             false,
             false,
             OptionalFeatureService.FeatureType.Optional
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            EXTJS_3_REQUIRED,
-            "Require that ExtJS v3.4.1 is loaded on every page",
-            "This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            EXTJS_3_API_REQUIRED,
-            "Require that ExtJS v3.x-based Client API is loaded on every page",
-            "This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            ALLOW_MUTATING_SQL_VIA_GET,
-            "Allow GET requests to execute mutating SQL",
-            "We strongly recommend leaving this off since it bypasses a critical security check (CSRF). This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
         ));
     }
 
@@ -421,6 +402,7 @@ public class ApiModule extends CodeOnlyModule
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
+            CacheManager.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -464,6 +446,7 @@ public class ApiModule extends CodeOnlyModule
             JobRunner.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
@@ -491,6 +474,7 @@ public class ApiModule extends CodeOnlyModule
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
             SimpleFilter.SqlClauseTestCase.class,
+            SimpleKeyMappingCache.TestCase.class,
             SqlExecutingSelector.TestCase.class,
             SqlScanner.TestCase.class,
             StrictBoundedReader.TestCase.class,
@@ -540,8 +524,10 @@ public class ApiModule extends CodeOnlyModule
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
             CompareType.TestCase.class,
+            ConnectionUsage.TestCase.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
+            ContainerKeySimpleCache.TestCase.class,
             ContainerManager.TestCase.class,
             ContentSecurityPolicyFilter.TestCase.class,
             DbSchema.DDLMethodsTestCase.class,
@@ -553,7 +539,7 @@ public class ApiModule extends CodeOnlyModule
             DbScope.PoolStatisticsTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
-                DisplayColumn.TestCase.class,
+            DisplayColumn.TestCase.class,
             DomTestCase.class,
             DomainTemplateGroup.TestCase.class,
             Encryption.TestCase.class,
@@ -574,12 +560,15 @@ public class ApiModule extends CodeOnlyModule
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
+            PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
+            QueryDataIteratorBuilder.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
             RowTrackingResultSetWrapper.TestCase.class,
+            SearchScope.TestCase.class,
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
@@ -593,6 +582,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
+            UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,

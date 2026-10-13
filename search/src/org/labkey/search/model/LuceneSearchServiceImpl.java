@@ -56,17 +56,29 @@ import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.AutoDetectParserConfig;
+import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.mat.MatParser;
+import org.apache.tika.parser.microsoft.JackcessParser;
+import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
+import org.apache.tika.parser.microsoft.pst.PSTMailItemParser;
+import org.apache.tika.parser.pkg.RarParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,7 +125,6 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -232,20 +243,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
     public LuceneSearchServiceImpl()
     {
-        TikaConfig config;
-
-        try
-        {
-            InputStream is = getClass().getResourceAsStream("tikaConfig.xml");
-            org.w3c.dom.Document doc = XmlBeansUtil.DOCUMENT_BUILDER_FACTORY.newDocumentBuilder().parse(is);
-            config = new TikaConfig(doc, new ServiceLoader(Thread.currentThread().getContextClassLoader(), LoadErrorHandler.IGNORE, new ProblemHandler(_log), true));
-        }
-        catch (Exception e)
-        {
-            config = TikaConfig.getDefaultConfig();
-        }
-
-        _autoDetectParser = new AutoDetectParser(config);
+        ServiceLoader loader = new ServiceLoader(Thread.currentThread().getContextClassLoader());
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+        // We don't ship these parsers' libraries. Excluding them here prevents logging about their missing libraries.
+        // Any other missing classes would be logged in the future, requiring adjustments here or in jars we pull in.
+        List<Class<? extends Parser>> excluded = List.of(MatParser.class, JackcessParser.class, OutlookPSTParser.class, PSTMailItemParser.class, RarParser.class);
+        DefaultParser parser = new DefaultParser(registry, loader, excluded);
+        _autoDetectParser = new AutoDetectParser(registry, parser, new DefaultDetector(mimeTypes, loader), AutoDetectParserConfig.DEFAULT);
     }
 
     private final List<SearchStartupListener> _startupListeners = new CopyOnWriteArrayList<>();
@@ -795,13 +800,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
                 Metadata metadata = new Metadata();
                 metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, PageFlowUtil.encode(r.getName()));
-                metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
+                metadata.add(HttpHeaders.CONTENT_TYPE, r.getContentType());
 
                 // Tika guesses content encoding of "IBM500" for short text and html documents, so suggest UTF-8. Seems
                 // related to https://issues.apache.org/jira/browse/TIKA-2771. This is just a hint, but I hope that's
                 // sufficient. If not, TikaCoreProperties.CONTENT_TYPE_OVERRIDE is an option to force UTF-8.
                 if (r.getContentType().startsWith("text"))
-                    metadata.add(Metadata.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
+                    metadata.add(HttpHeaders.CONTENT_ENCODING, StringUtilsLabKey.DEFAULT_CHARSET.name());
 
                 handler = _BodyContentHandler.create();     // no write limit on the handler -- rely on file size check to limit content
                 parse(r, is, handler, metadata, isTooBig(fs, type));
@@ -1213,7 +1218,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         DocumentParser p = detectParser(r, is);
         if (null != p)
         {
-            metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
+            metadata.set(HttpHeaders.CONTENT_TYPE, p.getMediaType());
             if (!tooBig)  //Check filesize even if parser set. Issue #40253
                 p.parse(is, handler);
             return;
@@ -1226,9 +1231,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             return;
         }
 
-        try
+        try (TikaInputStream tis = TikaInputStream.get(is, metadata))
         {
-            _autoDetectParser.parse(is, handler, metadata);
+            // Detection reads ahead and some parsers need random access, so cache the stream before anything reads it
+            tis.enableRewind();
+            _autoDetectParser.parse(tis, handler, metadata);
         }
         catch (ZeroByteFileException e)
         {
@@ -1386,18 +1393,28 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
 
                 return null != value ? value : metadata.get(OfficeOpenXMLExtended.COMPANY); // In a few sample documents, COMPANY was populated but PUBLISHER was not
             }
-        };
+        },
+        // Tika 4.x no longer writes email headers into the body text
+        To(Message.MESSAGE_TO, true),
+        Cc(Message.MESSAGE_CC, true);
 
         private final Property _property;
+        private final boolean _multiValued;
 
         InterestingDocumentProperty(Property property)
         {
+            this(property, false);
+        }
+
+        InterestingDocumentProperty(Property property, boolean multiValued)
+        {
             _property = property;
+            _multiValued = multiValued;
         }
 
         @Nullable String getValue(Metadata metadata)
         {
-            return metadata.get(_property);
+            return _multiValued ? String.join(" ", metadata.getValues(_property)) : metadata.get(_property);
         }
     }
 
@@ -2165,9 +2182,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
                         }
                         else
                         {
+                            String indexed = body + lssi.getInterestingMetadataProperties(metadata);
+
                             for (String s : expectation.second)
                             {
-                                if (!body.contains(s))
+                                if (!indexed.contains(s))
                                 {
                                     message = "expected text not found \"" + s + "\"";
                                     break;
@@ -2234,22 +2253,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
             add(map, "docx_sample.docx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dot_sample.dot", 3589, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
             add(map, "dotx_sample.dotx", 3579, "In the Learn section you can find detailed information", "In reality that visit is at a different week across studies and treatments");
+            add(map, "eml_sample.eml", 182, "plate reader results for batch 42 are uploaded", "Assay Team", "Data Manager");
             add(map, "exe_sample.exe", 0);
             add(map, "html_sample.html", 1049, "Align redeploy resource modification", "57855: Explicitly handle the case");
-            add(map, "hdf_sample.hdf", 0);  //We are blocking loading of the hdf parser instead of taking an additional dependency Issue 38386
+            add(map, "hdf_sample.hdf", 0);  // HDF parser lives in Tika's scientific module, which we don't ship (Issue 38386)
             add(map, "ico_sample.ico", 0);
             add(map, "jar_sample.jar", 712120, "org/json/simple/JSONValue.class", "Main-Class: org.labkey.AssayValidator", "public synchronized class ApiVersionException extends CommandException", "protected java.util.Map findObject(java.util.List, String, String);");
             add(map, "java_sample.java", 149, "main(String[] args)", "System.out.println");
             add(map, "jpg_sample.jpg", 0);
             add(map, "js_sample.js", 21405, "Magnific Popup Core JS file", "convert jQuery collection to array");
             add(map, "mov_sample.mov", 0);
-            add(map, "msg_outlook_sample.msg", 1797, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
+            add(map, "msg_outlook_sample.msg", 1884, "Nouvel utilisateur de Outlook Express", "Messagerie et groupes de discussion", "R\u00E8gles am\u00E9lior\u00E9es");
             add(map, "pdf_sample.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "pdf_sample_with+%$@+%%+#-+=.pdf", 1501, "acyclic is a filter that takes a directed graph", "The following options");
             add(map, "png_sample.png", 0);
             add(map, "ppt_sample.ppt", 115, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "pptx_sample.pptx", 118, "Slide With Image", "Slide With Text", "Hello world", "How are you?");
             add(map, "rtf_sample.rtf", 11, "One on One");
+            add(map, "sas7bdat_sample.sas7bdat", 521, "recnum", "This is row            7 of           10");
             add(map, "sample.txt", 37, "Sample text file", "1", "2", "9");
             add(map, "sql_sample.sql", 2232, "for JDBC Login support", "Container of parent, if parent has no ACLs");
             add(map, "svg_sample.svg", 18, " "); // Not empty, but just a bunch of whitespace

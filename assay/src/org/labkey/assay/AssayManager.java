@@ -142,7 +142,7 @@ public class AssayManager implements AssayService
     };
 
     /** Cache the protocols defined in a given container, which we can quickly compose to get the protocols in scope */
-    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
+    private static final Cache<Container, List<ExpProtocol>> PROTOCOL_CACHE = DatabaseCache.get(Container.class, ExperimentService.get().getSchema().getScope(), CacheManager.UNLIMITED, TimeUnit.HOURS.toMillis(1), "Assay protocols", (c, _) ->
     {
         List<ExpProtocol> result = new ArrayList<>();
 

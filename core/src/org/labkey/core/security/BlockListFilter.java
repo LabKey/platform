@@ -16,6 +16,7 @@
 package org.labkey.core.security;
 
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -31,9 +32,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.BadRequestException;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 public class BlockListFilter
 {
     static Logger _log = LogManager.getLogger(BlockListFilter.class);
-    static Cache<String,Suspicious> suspiciousMap = CacheManager.getStringKeyCache(1_000, CacheManager.HOUR, "Suspicious requests");
+    static Cache<String,Suspicious> suspiciousMap = CacheManager.getCache(String.class, 1_000, CacheManager.HOUR, "Suspicious requests");
 
 
     private static String getBrowserKey(HttpServletRequest req)
@@ -228,17 +228,12 @@ public class BlockListFilter
 
     public static Collection<Suspicious> reportSuspicious()
     {
-        ArrayList<Suspicious> ret = new ArrayList<>();
-        for (String key : suspiciousMap.getKeys())
-        {
-            Suspicious s = suspiciousMap.get(key);
-            if (null == s)
-                continue;
-            Suspicious copy = s.clone();
-            if (copy.getCount() > 0)
-                ret.add(copy);
-        }
-        return ret;
+        return suspiciousMap.getKeys()
+            .map(suspiciousMap::get)
+            .filter(Objects::nonNull)
+            .map(Suspicious::clone)
+            .filter(copy -> copy.getCount() > 0)
+            .toList();
     }
 
     public static class Suspicious

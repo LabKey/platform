@@ -392,7 +392,8 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
-            return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", _wiki);
+            // GH Issue 1468: warn up front, rather than failing on submit, when the subtree can't be deleted
+            return new JspView<>("/org/labkey/wiki/view/wikiDelete.jsp", new WikiDeleteBean(_wiki, findUndeletableDescendant(perms, _wiki)));
         }
 
         @Override
@@ -407,16 +408,50 @@ public class WikiController extends SpringActionController
             if (!perms.allowDelete(_wiki))
                 throw new UnauthorizedException("You do not have permissions to delete this wiki page");
 
+            // GH Issue 1468: permission on the root page (e.g., as its creator) doesn't extend to descendants created by
+            // others. Check the whole subtree up front so the delete is all-or-nothing, then check each page again just
+            // before it's deleted to catch any child added concurrently.
+            if (form.getIsDeletingSubtree())
+            {
+                Wiki blocked = findUndeletableDescendant(perms, _wiki);
+                if (null != blocked)
+                    throw undeletableDescendantException(blocked);
+            }
+
             try
             {
                 //delete page and all versions
-                getWikiManager().deleteWiki(getUser(), c, _wiki, form.getIsDeletingSubtree());
+                getWikiManager().deleteWiki(getUser(), c, _wiki, form.getIsDeletingSubtree(), descendant -> {
+                    if (!perms.allowDelete(descendant))
+                        throw undeletableDescendantException(descendant);
+                });
             }
             catch (OptimisticConflictException e)
             {
                 // Issue 13549: if someone else already deleted the wiki, no need to throw exception
             }
             return true;
+        }
+
+        // Returns the first descendant (depth-first) the user cannot delete, or null if all are deletable.
+        // A single blocked page prevents the subtree delete, so there's no need to collect every blocked page.
+        private @Nullable Wiki findUndeletableDescendant(BaseWikiPermissions perms, Wiki wiki)
+        {
+            for (Wiki child : wiki.children())
+            {
+                if (!perms.allowDelete(child))
+                    return child;
+
+                Wiki blocked = findUndeletableDescendant(perms, child);
+                if (null != blocked)
+                    return blocked;
+            }
+            return null;
+        }
+
+        private UnauthorizedException undeletableDescendantException(Wiki descendant)
+        {
+            return new UnauthorizedException("You do not have permissions to delete the child wiki page '" + descendant.getName() + "', so this wiki subtree can't be deleted");
         }
 
         @Override
@@ -442,6 +477,8 @@ public class WikiController extends SpringActionController
             return _wiki != null ? new ManageAction(getViewContext(), _wiki).getUrl() : null;
         }
     }
+
+    public record WikiDeleteBean(Wiki wiki, @Nullable Wiki undeletableDescendant){}
 
     public enum NextAction
     {

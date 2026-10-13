@@ -19,10 +19,10 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-public interface Cache<K, V>
+public interface Cache<K, V> extends AutoCloseable
 {
     void put(@NotNull K key, V value);
 
@@ -33,25 +33,26 @@ public interface Cache<K, V>
     /**
      * The wrapped calls to get() and put() are not guaranteed synchronous (see subclass/wrapper impl)
      */
-    V get(@NotNull K key, @Nullable Object arg, CacheLoader<K,V> loader);
+    V get(@NotNull K key, @Nullable Object arg, CacheLoader<K, V> loader);
 
-    void remove(@NotNull K key);
+    boolean remove(@NotNull K key);
 
-    /** Removes every element in the cache where filter.accept(K key) evaluates to true.
+    /**
+     * Removes every element in the cache where filter.accept(K key) evaluates to true.
      * Returns the number of elements that were removed.
      */
     int removeUsingFilter(Predicate<K> filter);
 
     record StringPrefixFilter(String prefix) implements Predicate<String>
+    {
+        @Override
+        public boolean test(String s)
         {
-            @Override
-            public boolean test(String s)
-            {
-                return s.startsWith(prefix);
-            }
+            return s.startsWith(prefix);
         }
+    }
 
-    Set<K> getKeys();
+    Stream<K> getKeys();
 
     void clear();
 
@@ -59,6 +60,7 @@ public interface Cache<K, V>
      * Some CacheProviders (e.g., Ehcache) hold on to the caches they create. close() lets us discard temporary
      * caches when we're done with them (e.g., after a transaction is complete) so we don't leak them.
      */
+    @Override
     void close();
 
     // Get the underlying implementation cache

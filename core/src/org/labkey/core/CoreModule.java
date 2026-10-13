@@ -48,6 +48,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -215,6 +216,7 @@ import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.AllowListType;
+import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -373,6 +375,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
+import static org.labkey.api.security.SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -543,6 +546,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
             false, false, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER,
+            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION,
+            "Allows tools such as SSRS to authenticate by providing an API key via an 'apikey' parameter. Providing " +
+            "a credential via a URL parameter is not generally recommended, but in some cases this is the only option.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
@@ -1049,24 +1057,26 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                 }
 
-                Logger logger = LogManager.getLogger(ActionsTsvWriter.class);
+                logTsv(new ActionsTsvWriter());
+                if (ConnectionUsage.isEnabled())
+                    logTsv(new ConnectionUsageTsvWriter());
+                LOG.info("Completed logging statistics for actions prior to web application shut down");
+            }
 
-                if (null != logger)
+            private void logTsv(TSVWriter writer)
+            {
+                StringBuilder buf = new StringBuilder();
+
+                try (writer)
                 {
-                    StringBuilder buf = new StringBuilder();
-
-                    try (TSVWriter writer = new ActionsTsvWriter())
-                    {
-                        writer.write(buf);
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.error("Exception exporting action stats", e);
-                    }
-
-                    logger.info(buf.toString());
-                    LOG.info("Completed logging statistics for actions prior to web application shut down");
+                    writer.write(buf);
                 }
+                catch (IOException e)
+                {
+                    LOG.error("Exception exporting {}", writer.getClass().getSimpleName(), e);
+                }
+
+                LogManager.getLogger(writer.getClass()).info(buf.toString());
             }
 
             @Override

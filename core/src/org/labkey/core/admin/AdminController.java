@@ -108,6 +108,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.compliance.PhiColumnBehavior;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Container.ContainerException;
@@ -138,6 +139,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.PostgresSnapshot;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.queryprofiler.QueryProfiler.QueryStatTsvWriter;
@@ -508,6 +511,7 @@ public class AdminController extends SpringActionController
 
         AdminConsole.addLink(Diagnostics, "postgres activity", new ActionURL(PostgresStatActivityAction.class, root));
         AdminConsole.addLink(Diagnostics, "postgres locks", new ActionURL(PostgresLocksAction.class, root));
+        AdminConsole.addLink(Diagnostics, "postgres snapshot", new ActionURL(PostgresSnapshotAction.class, root));
         AdminConsole.addLink(Diagnostics, "postgres table sizes", new ActionURL(PostgresTableSizesAction.class, root));
 
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
@@ -2735,6 +2739,57 @@ public class AdminController extends SpringActionController
         }
     }
 
+    private static void validatePostgresSnapshotRequest(Container c)
+    {
+        if (!c.isRoot())
+            throw new NotFoundException("Available only in the root container");
+
+        if (!CoreSchema.getInstance().getSqlDialect().isPostgreSQL())
+            throw new NotFoundException("Available only with Postgres as the primary database");
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class PostgresSnapshotAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String warning = switch (PostgresSnapshot.getStatementsStatus())
+            {
+                case AVAILABLE -> null;
+                case NOT_INSTALLED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is not installed in this database. To install it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, restart Postgres, then execute CREATE EXTENSION pg_stat_statements;";
+                case NOT_LOADED -> "Snapshots will omit per-query statistics because the pg_stat_statements extension is installed but its library is not loaded. To load it, add pg_stat_statements to shared_preload_libraries in postgresql.conf, then restart Postgres.";
+            };
+
+            return new HtmlView(DIV(
+                null == warning ? null : DIV(cl("labkey-warning-messages"), warning),
+                P("Captures Postgres configuration and cumulative statistics as a JSON file. Comparing a snapshot taken before a workload against one taken after it shows the work the database actually did and can be useful for evaluating bottlenecks and optimizing resources."),
+                PageFlowUtil.button("Download Snapshot").href(new ActionURL(DownloadPostgresSnapshotAction.class, getContainer())).getHtmlString()
+            ));
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Postgres Snapshot", this.getClass(), getContainer());
+        }
+    }
+
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class DownloadPostgresSnapshotAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            validatePostgresSnapshotRequest(getContainer());
+
+            String filename = FileUtil.makeFileNameWithTimestamp("pg-snapshot", "json");
+            PageFlowUtil.streamFileBytes(response, filename, PostgresSnapshot.capture().getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
+        }
+    }
+
     @AdminConsoleAction
     public class DumpHeapAction extends ConfirmAction<Object>
     {
@@ -3043,6 +3098,59 @@ public class AdminController extends SpringActionController
         }
     }
 
+    @AdminConsoleAction
+    public static class ExportConnectionUsageAction extends ExportAction<Object>
+    {
+        @Override
+        public void export(Object form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try (ConnectionUsageTsvWriter writer = new ConnectionUsageTsvWriter())
+            {
+                writer.write(response);
+            }
+        }
+    }
+
+    @AdminConsoleAction
+    public static class GetConnectionPoolStatsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            // Initialized scopes only, so an unreachable external data source isn't probed
+            return Map.of(
+                "connectionUsageTracked", ConnectionUsage.isEnabled(),
+                "dataSources", DbScope.getInitializedDbScopes().stream()
+                    .map(GetConnectionPoolStatsAction::getPoolStats)
+                    .toList());
+        }
+
+        private static Map<String, Object> getPoolStats(DbScope scope)
+        {
+            DataSourcePropertyReader props = scope.getDataSourceProperties();
+            DataSourcePropertyReader.PoolStatistics pool = props.getPoolStatistics();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("name", scope.getDataSourceName());
+            result.put("isLabKeyScope", scope.isLabKeyScope());
+            result.put("maxTotal", props.getMaxTotal());
+            result.put("maxIdle", props.getMaxIdle());
+            result.put("numActive", props.getNumActive());
+            result.put("numIdle", props.getNumIdle());
+            if (null != pool)
+            {
+                result.put("createdCount", pool.createdCount());
+                result.put("destroyedCount", pool.destroyedCount());
+                result.put("destroyedByEvictorCount", pool.destroyedByEvictorCount());
+                result.put("destroyedByBorrowValidationCount", pool.destroyedByBorrowValidationCount());
+                result.put("borrowedCount", pool.borrowedCount());
+                result.put("numWaiters", pool.numWaiters());
+                result.put("meanBorrowWaitMillis", pool.meanBorrowWaitMillis());
+                result.put("maxBorrowWaitMillis", pool.maxBorrowWaitMillis());
+            }
+            return result;
+        }
+    }
+
     private static ActionURL getQueriesURL(@Nullable String statName)
     {
         ActionURL url = new ActionURL(QueriesAction.class, ContainerManager.getRoot());
@@ -3283,7 +3391,38 @@ public class AdminController extends SpringActionController
             html.append(createHtmlFragment(BR(), BR()));
             appendStats(html, "Transaction Caches", transactionStats, true);
 
+            html.append(createHtmlFragment(BR(), BR()));
+            appendKeyClasses(html, caches);
+
             return new HtmlView(html);
+        }
+
+        private void appendKeyClasses(HtmlStringBuilder html, List<TrackingCache<?, ?>> caches)
+        {
+            List<Map.Entry<String, Long>> counts = caches.stream()
+                .collect(Collectors.groupingBy(cache -> cache.getKeyClass().getName(), Collectors.counting()))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                .toList();
+
+            AtomicInteger rowCount = new AtomicInteger();
+            html.append(createHtmlFragment(
+                P(B("Key Classes (" + counts.size() + ")")),
+                TABLE(cl("labkey-data-region-legacy", "labkey-show-borders", "labkey-data-region-header-lock"),
+                    TR(
+                        TD(cl("labkey-column-header"), "Key Class"),
+                        TD(cl("labkey-column-header"), "Caches")
+                    ),
+                    counts.stream().map(entry -> TR(cl(rowCount.getAndIncrement() % 2 == 0 ? "labkey-alternate-row" : "labkey-row"),
+                        TD(entry.getKey()),
+                        longCells(entry.getValue())
+                    )),
+                    TR(cl("labkey-row"),
+                        TD(B("Total")),
+                        longCells((long) caches.size())
+                    )
+                )
+            ));
         }
 
         private void appendStats(HtmlStringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
@@ -12376,7 +12515,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), ModuleHtmlView.getGeneratedViewPath("ViewUsageStatistics"));
         }
 
         @Override
@@ -12716,6 +12855,8 @@ public class AdminController extends SpringActionController
                 controller.new ShowCspReportLogAction(),
                 controller.new ShowThreadsAction(),
                 new ExportActionsAction(),
+                new ExportConnectionUsageAction(),
+                new GetConnectionPoolStatsAction(),
                 new ExportQueriesAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()

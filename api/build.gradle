@@ -1019,7 +1019,11 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Just detection of file content types and extraction of text (no parsers)",
-        )
+        ),
+        {
+            // Only Tika's Markdown content handler needs commonmark; core module ships its own copy
+            exclude group: "org.commonmark"
+        }
     )
 
     BuildUtils.addExternalDependency(

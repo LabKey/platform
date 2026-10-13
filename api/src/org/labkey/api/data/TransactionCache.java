@@ -16,8 +16,7 @@
 
 package org.labkey.api.data;
 
-import com.google.common.collect.Sets;
-import org.apache.commons.lang3.mutable.MutableInt;
+import com.google.common.collect.Streams;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
@@ -26,8 +25,8 @@ import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.data.DbScope.Transaction;
 
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * A read-through, transaction-specific cache. Reads through to the shared cache for each entry until a write operation
@@ -140,30 +139,27 @@ public class TransactionCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
         _transaction.addCommitTask(new CacheKeyRemovalCommitTask(key), DbScope.CommitTaskOption.POSTCOMMIT);
         _privateCache.put(key, REMOVED_MARKER);
+        return true; // We could issue a get to determine if the key is already there, but very few callers care, so skip the work
     }
 
     @Override
     public int removeUsingFilter(Predicate<K> filter)
     {
         _transaction.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
-        MutableInt count = new MutableInt(0);
-        getKeys().stream()
+        return (int)getKeys()
             .filter(filter)
-            .forEach(key -> {
-                remove(key);
-                count.increment();
-            });
-        return count.intValue();
+            .filter(this::remove)
+            .count();
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
-        return Sets.union(_privateCache.getKeys(), _sharedCache.getKeys());
+        return Streams.concat(_privateCache.getKeys(), _sharedCache.getKeys()).distinct();
     }
 
     @Override

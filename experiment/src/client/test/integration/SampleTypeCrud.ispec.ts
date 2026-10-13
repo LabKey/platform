@@ -1184,7 +1184,7 @@ describe('Amount/Unit CRUD', () => {
         errorMsg = await ExperimentCRUDUtils.importSample(server, "Name\tStoredAmount\tUnits\n" + dataName + "\t-1.1\tkg", dataType, "MERGE", topFolderOptions, editorUserOptions);
         expect(errorMsg.text).toContain(NEGATIVE_ERROR);
 
-        // Using row-by-row
+        // Using partitioned data iterator
         await server.post('query', 'updateRows', {
             schemaName: 'samples',
             queryName: dataType,

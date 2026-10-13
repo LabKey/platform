@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -37,15 +38,18 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.LinkBuilder;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.HtmlWriter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class DomainAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
@@ -221,6 +225,12 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
         private final String _containerColumnName;
         @NotNull
         private final String _defaultNameColumnName;
+        // Empty when the domain no longer exists
+        private final Map<DomainKey, Optional<DomainLink>> _domainLinks = new HashMap<>();
+
+        private record DomainKey(String containerId, String domainURI) {}
+
+        private record DomainLink(String name, @Nullable ActionURL url, boolean hasKind) {}
 
         public DomainColumn(@NotNull ColumnInfo col, @NotNull String containerColumnName, @NotNull String defaultNameColumnName)
         {
@@ -255,19 +265,14 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
 
             if (uri != null && cId != null)
             {
-                Container c = ContainerManager.getForId(cId);
-                if (c != null)
+                Optional<DomainLink> link = _domainLinks.computeIfAbsent(new DomainKey(cId, uri), _ -> getDomainLink(ctx, cId, uri));
+                if (link.isPresent())
                 {
-                    Domain domain = PropertyService.get().getDomain(c, uri);
-                    if (domain != null)
-                    {
-                        DomainKind<?> kind = PropertyService.get().getDomainKind(domain.getTypeURI());
-                        if (kind != null)
-                            out.write(LinkBuilder.simpleLink(domain.getName(), kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser()))));
-                        else
-                            out.write(domain.getName());
-                        return;
-                    }
+                    if (link.get().hasKind())
+                        out.write(LinkBuilder.simpleLink(link.get().name(), link.get().url()));
+                    else
+                        out.write(link.get().name());
+                    return;
                 }
             }
 
@@ -276,6 +281,23 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 out.write(value.toString());
             else
                 out.write(HtmlString.NBSP);
+        }
+
+        private Optional<DomainLink> getDomainLink(RenderContext ctx, String cId, String uri)
+        {
+            Container c = ContainerManager.getForId(cId);
+            if (c == null)
+                return Optional.empty();
+
+            Domain domain = PropertyService.get().getDomain(c, uri);
+            if (domain == null)
+                return Optional.empty();
+
+            DomainKind<?> kind = PropertyService.get().getDomainKind(domain.getTypeURI());
+            if (kind == null)
+                return Optional.of(new DomainLink(domain.getName(), null, false));
+
+            return Optional.of(new DomainLink(domain.getName(), kind.urlShowData(domain, new DefaultContainerUser(c, ctx.getViewContext().getUser())), true));
         }
 
         @Override

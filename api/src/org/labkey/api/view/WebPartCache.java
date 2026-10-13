@@ -49,7 +49,7 @@ import java.util.Map;
 public class WebPartCache
 {
     private static final Logger LOG = LogManager.getLogger(WebPartCache.class);
-    private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Webparts");
+    private static final Cache<String, Map<String, Portal.PortalPage>> CACHE = CacheManager.getCache(String.class, 10000, CacheManager.DAY, "Webparts");
 
     static public Portal.PortalPage getPortalPage(@NotNull Container c, @NotNull String pageId)
     {

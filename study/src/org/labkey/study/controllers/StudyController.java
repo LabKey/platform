@@ -1096,19 +1096,18 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    Participant findParticipant(Study study, String particpantId) throws StudyManager.ParticipantNotUniqueException
+    Participant findParticipant(Study study, String participantId) throws StudyManager.ParticipantNotUniqueException
     {
-        Participant participant = StudyManager.getInstance().getParticipant(study, particpantId);
+        Participant participant = StudyManager.getInstance().getParticipant(study, participantId);
         if (participant == null)
         {
             if (study.isDataspaceStudy())
             {
-                Container c = StudyManager.getInstance().findParticipant(study, particpantId);
+                Container c = StudyManager.getInstance().findParticipant(study, participantId);
                 Study s = null == c ? null : StudyManager.getInstance().getStudy(c);
                 if (null != s && c.hasPermission(getUser(), ReadPermission.class))
                 {
-                    participant = StudyManager.getInstance().getParticipant(s, particpantId);
+                    participant = StudyManager.getInstance().getParticipant(s, participantId);
                 }
             }
         }
@@ -1217,7 +1216,7 @@ public class StudyController extends BaseStudyController
         // TODO participant list support? cohortfilter support?
         // TODO define participant context
 //        {
-//            particpantId:"",
+//            participantId:"",
 //            participantGroup:""
 //            demoMode:false
 //        }

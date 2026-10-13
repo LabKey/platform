@@ -235,6 +235,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -283,6 +284,7 @@ import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
 import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomQueryDefinition;
+import org.labkey.query.QueryDefinitionImpl;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.QueryServiceImpl.CalculatedColumnParseResult;
@@ -3596,6 +3598,13 @@ public class QueryController extends SpringActionController
             _includeTotalCount = includeTotalCount;
         }
 
+        /** True when the request sent includeTotalCount rather than leaving it at its default. */
+        public boolean isIncludeTotalCountSet()
+        {
+            return null != getViewContext().getRequest().getParameter("includeTotalCount") ||
+                    (null != _initParameters && null != _initParameters.getPropertyValue("includeTotalCount"));
+        }
+
         public boolean isIncludeStyle()
         {
             return _includeStyle;
@@ -3718,7 +3727,10 @@ public class QueryController extends SpringActionController
             }
 
             boolean isEditable = isQueryEditable(view.getTable());
-            boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
+            boolean noRows = form.getQuerySettings().getMaxRows() == 0;
+            // GH Issue 1607: maxRows=0 with an explicit includeTotalCount=true returns just the row count
+            boolean countOnly = noRows && form.isIncludeTotalCount() && form.isIncludeTotalCountSet();
+            boolean metaDataOnly = noRows && !countOnly;
             boolean arrayMultiValueColumns = getRequestedApiVersion() >= 16.2;
             boolean includeFormattedValue = getRequestedApiVersion() >= 17.1;
 
@@ -3748,6 +3760,7 @@ public class QueryController extends SpringActionController
                         form.isIncludeDisplayValues(), form.isIncludeMetadata());
             }
             response.includeStyle(form.isIncludeStyle());
+            response.countOnly(countOnly);
 
             // Issues 29515 and 32269 - force key and other non-requested columns to be sent back, but only if the client has
             // requested minimal columns, as we now do for ExtJS stores
@@ -4647,7 +4660,7 @@ public class QueryController extends SpringActionController
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
             if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
-                _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
+                _json = new JSONObject(new KeySharingJSONTokener(getViewContext().getRequest().getParameter("json")));
         }
 
         protected JSONObject getJsonObject()
@@ -4801,6 +4814,11 @@ public class QueryController extends SpringActionController
                     rowsAffected++;
                 }
             }
+
+            // The form and action share this JSONObject for the whole request, so drop the converted rows to free the parse tree; provenance rereads them after the save
+            if (!json.has("provenance"))
+                json.remove(PROP_ROWS);
+            rows = null;
 
             Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
@@ -6849,6 +6867,7 @@ public class QueryController extends SpringActionController
     {
         private String _schemaName;
         private boolean _includeUserQueries = true;
+        private boolean _includeUserQueriesForLookups = false;
         private boolean _includeSystemQueries = true;
         private boolean _includeColumns = true;
         private boolean _includeViewDataUrl = true;
@@ -6873,6 +6892,16 @@ public class QueryController extends SpringActionController
         public void setIncludeUserQueries(boolean includeUserQueries)
         {
             _includeUserQueries = includeUserQueries;
+        }
+
+        public boolean isIncludeUserQueriesForLookups()
+        {
+            return _includeUserQueriesForLookups;
+        }
+
+        public void setIncludeUserQueriesForLookups(boolean includeUserQueriesForLookups)
+        {
+            _includeUserQueriesForLookups = includeUserQueriesForLookups;
         }
 
         public boolean isIncludeSystemQueries()
@@ -6948,15 +6977,28 @@ public class QueryController extends SpringActionController
             List<Map<String, Object>> qinfos = new ArrayList<>();
 
             //user-defined queries
-            if (form.isIncludeUserQueries())
+            if (form.isIncludeUserQueries() || form.isIncludeUserQueriesForLookups())
             {
+                // GH Issue 1512: includeUserQueries returns them all; includeUserQueriesForLookups (only when the former is off)
+                // restricts to lookup-eligible queries that expose a primary key
+                boolean requirePk = form.isIncludeUserQueriesForLookups() && !form.isIncludeUserQueries();
                 for (QueryDefinition qdef : uschema.getQueryDefs().values())
                 {
-                    if (!qdef.isTemporary())
+                    if (qdef.isTemporary())
+                        continue;
+
+                    if (requirePk)
                     {
-                        ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
+                        if (!qdef.isIncludedForLookups())
+                            continue;
+                        if (qdef instanceof QueryDefinitionImpl q && Boolean.FALSE.equals(q.getCachedHasPkColumn()))
+                            continue;
                     }
+
+                    ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
+                    Map<String, Object> props = getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), requirePk);
+                    if (props != null)
+                        qinfos.add(props);
                 }
             }
 
@@ -6971,7 +7013,9 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = form.isIncludeViewDataUrl() ? uschema.urlFor(QueryAction.executeQuery, qdef) : null;
-                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle()));
+                        Map<String, Object> props = getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns(), form.isQueryDetailColumns(), form.isIncludeTitle(), false);
+                        if (props != null)
+                            qinfos.add(props);
                     }
                 }
             }
@@ -6980,7 +7024,7 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle)
+        private @Nullable Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns, boolean useQueryDetailColumns, boolean includeTitle, boolean requirePk)
         {
             Map<String, Object> qinfo = new HashMap<>();
             qinfo.put("hidden", qdef.isHidden());
@@ -7008,15 +7052,22 @@ public class QueryController extends SpringActionController
 
             String title = qdef.getName();
             String name = qdef.getName();
+            boolean hasPk = false;
             try
             {
-                // get the TableInfo if the user requested column info or title, otherwise skip (it can be expensive)
-                if (includeColumns || includeTitle)
+                // get the TableInfo if the user requested column info or title or a PK filter, otherwise skip (it can be expensive)
+                if (includeColumns || includeTitle || requirePk)
                 {
                     TableInfo table = qdef.getTable(schema, null, true);
 
                     if (null != table)
                     {
+                        hasPk = table.getPkColumns().stream().anyMatch(col -> !col.isAdditionalQueryColumn());
+                        if (isUserDefined && qdef instanceof QueryDefinitionImpl q)
+                            q.cacheHasPkColumn(hasPk);
+                        if (requirePk && !hasPk)
+                            return null;
+
                         if (includeColumns)
                         {
                             Collection<Map<String, Object>> columns;
@@ -7057,10 +7108,14 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //may happen due to query failing parse
             }
+
+            // GH Issue 1512: a query that didn't resolve (null table or parse failure) can't be confirmed as a lookup target
+            if (requirePk && !hasPk)
+                return null;
 
             qinfo.put("title", title);
             qinfo.put("name", name);

@@ -1472,6 +1472,8 @@ public class DbScope
         }
 
         Connection conn;
+        boolean trackUsage = ConnectionUsage.isEnabled();
+        long acquireStart = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1481,6 +1483,8 @@ public class DbScope
         {
             throw new ConfigurationException("Can't create a database connection for data source " + getDbScopeLoader().getDsName(), e);
         }
+
+        long poolDone = trackUsage ? System.nanoTime() : 0;
 
         try
         {
@@ -1506,7 +1510,11 @@ public class DbScope
                 _initializedConnections.put(delegate, spid == null ? spidUnknown : spid);
             }
 
-            return new ConnectionWrapper(conn, this, spid, type, log);
+            long setupDone = trackUsage ? System.nanoTime() : 0;
+            ConnectionWrapper wrapper = new ConnectionWrapper(conn, this, spid, type, log);
+            if (trackUsage)
+                wrapper.trackUsage(acquireStart, poolDone, setupDone);
+            return wrapper;
         }
         catch (Throwable t)
         {
@@ -3331,10 +3339,9 @@ public class DbScope
         public void testCommitAndKeepConnection()
         {
             DbScope scope = getLabKeyScope();
-            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
-            DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test");
 
-            try
+            // TempDatabaseCache's shared cache is temporary, so it stays out of KNOWN_CACHES; close() it below
+            try (DatabaseCache<String, String> cache = new DatabaseCache.TestCase.TempDatabaseCache<>(scope, 10, "commitAndKeepConnection test"))
             {
                 cache.put("key_1", "value_1");
                 cache.put("key_2", "value_2");
@@ -3347,15 +3354,15 @@ public class DbScope
                     cache.remove("key_1");
 
                     // DatabaseCache defers removals to the commit, so the shared cache still serves the old value
-                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().contains("key_1"));
+                    assertTrue("Shared cache should still hold key_1 before the commit", cache.getKeys().anyMatch("key_1"::equals));
 
                     t.commitAndKeepConnection();
 
                     // The deferred removal must land on the shared cache. If this transaction is still on the thread
                     // while the POSTCOMMIT tasks run, the removal builds a fresh TransactionCache and clears that
                     // throwaway private cache instead, leaving key_1 in the shared cache until it expires.
-                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().contains("key_1"));
-                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().contains("key_2"));
+                    assertFalse("commitAndKeepConnection() must invalidate the shared cache", cache.getKeys().anyMatch("key_1"::equals));
+                    assertTrue("commitAndKeepConnection() should leave unrelated keys alone", cache.getKeys().anyMatch("key_2"::equals));
 
                     // POSTCOMMIT tasks must run detached from the transaction, exactly as they do under commit()
                     assertEquals("POSTCOMMIT task should have run exactly once", 1, transactionsSeenByPostCommitTask.size());
@@ -3366,17 +3373,13 @@ public class DbScope
                     assertSame("commitAndKeepConnection() must leave the transaction on the thread", t, scope.getCurrentTransaction());
 
                     cache.remove("key_2");
-                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().contains("key_2"));
+                    assertTrue("Removal after commitAndKeepConnection() should be deferred again", cache.getKeys().anyMatch("key_2"::equals));
 
                     t.commit();
                 }
 
-                assertFalse("commit() must invalidate the shared cache", cache.getKeys().contains("key_2"));
+                assertFalse("commit() must invalidate the shared cache", cache.getKeys().anyMatch("key_2"::equals));
                 assertFalse(scope.isTransactionActive());
-            }
-            finally
-            {
-                cache.close();
             }
         }
 
