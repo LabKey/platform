@@ -10833,6 +10833,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             assertEquals("Property must be unchanged after an unauthorized edit",
                     "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
+
+            JSONObject unchangedJson = new JSONObject();
+            unchangedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            unchangedJson.put(ExperimentJSONConverter.PROPERTIES,
+                    new JSONObject().put("color", "red").put(ExperimentJSONConverter.NAME, "newSample"));
+            handler.handleMaterial(context, unchangedJson);
+
+            assertEquals("Property must be unchanged after the round-trip",
+                    "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
         }
 
         private int countMaterialInputObjects(Container c)

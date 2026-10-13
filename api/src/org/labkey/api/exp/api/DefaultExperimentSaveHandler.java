@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
@@ -631,23 +632,41 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (!materialProperties.isEmpty())
             {
-                // A sample created by this request needs only insert rights; an existing one needs edit rights.
-                // The status check below applies either way.
-                Class<? extends Permission> editPerm = createdHere
-                        ? InsertPermission.class
-                        : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
-                if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
-                    throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
-                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
-                    throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
-                            List.of(material), SampleTypeService.SampleOperations.EditMetadata));
-
                 List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
+
+                if (propertiesWouldChange(context, material, dps, materialProperties))
+                {
+                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
+                    // The status check below applies either way.
+                    Class<? extends Permission> editPerm = createdHere
+                            ? InsertPermission.class
+                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
+                }
+
                 handleProperties(context, material, dps, materialProperties);
             }
         }
 
         return material;
+    }
+
+    private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
+    {
+        if (submitted.has(ExperimentJSONConverter.NAME)
+                && !Objects.equals(submitted.get(ExperimentJSONConverter.NAME), material.getName()))
+            return true;
+
+        for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(submitted, dps, context.getContainer(), true).entrySet())
+        {
+            if (!Objects.equals(material.getProperty(entry.getKey()), entry.getValue()))
+                return true;
+        }
+        return false;
     }
 
     @Override
