@@ -78,6 +78,7 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -566,6 +567,7 @@ public class ApiModule extends CodeOnlyModule
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
             RecordFactory.TestCase.class,
+            RequestCancellation.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,

@@ -125,15 +125,11 @@ public class TransactionFilter implements Filter
                                 }
                                 catch (IllegalStateException ignored) {} // Ignore when the request has already been recycled
 
-                                if (Boolean.TRUE.equals(readOnly) && tracker.startTime < cutoff)
+                                // The thread may have moved on to another request since the copy above
+                                if (Boolean.TRUE.equals(readOnly) && !Boolean.TRUE.equals(export) && tracker.startTime < cutoff && _pendingRequests.get(thread) == tracker)
                                 {
-                                    try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
-                                    {
-                                        _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
-                                        DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-                                        PipelineJobService.get().killProcessesForThread(thread);
-                                    }
-                                    thread.interrupt();
+                                    _log.info("Timing out request for {} on thread {}", tracker.toLogString(), thread);
+                                    cancelRequest(thread, tracker, RequestCancellation.Source.TIMEOUT);
                                 }
                             }
                         }
@@ -170,6 +166,7 @@ public class TransactionFilter implements Filter
         FileUtil.startRequest();
 
         final Thread t = Thread.currentThread();
+        final RequestTracker tracker = new RequestTracker(request);
         RequestTracker previousSummary = null;
         try
         {
@@ -180,7 +177,7 @@ public class TransactionFilter implements Filter
             {
                 request.setAttribute(READ_ONLY_ATTRIBUTE_NAME, true);
             }
-            previousSummary = _pendingRequests.put(t, new RequestTracker(request));
+            previousSummary = _pendingRequests.put(t, tracker);
             chain.doFilter(req, resp);
         }
         finally
@@ -190,6 +187,7 @@ public class TransactionFilter implements Filter
             else
                 _pendingRequests.put(t, previousSummary);
             DbScope.finishedWithThread();
+            RequestCancellation.requestFinished(t, tracker);
 
             // Clear the interrupted flag before we wrap up
             if (Thread.interrupted())
@@ -198,6 +196,25 @@ public class TransactionFilter implements Filter
             }
         }
         FileUtil.stopRequest();
+    }
+
+    /**
+     * Stops a request and its database work. An interrupt alone stops a query only on the AsyncQueryRequest path; a
+     * thread blocked in a JDBC read elsewhere (e.g. selectDistinct) needs the database to cancel its statement.
+     */
+    private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
+    {
+        boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
+
+        // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
+        RequestCancellation.cancelQueries(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
+
+        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
+        {
+            DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
+            PipelineJobService.get().killProcessesForThread(thread);
+        }
+        thread.interrupt();
     }
 
     public static int getPendingRequestCount()

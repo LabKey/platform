@@ -33,6 +33,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -754,6 +755,12 @@ public class ExceptionUtil
             }
 
             if (ex instanceof AbortedRequestException || ex instanceof DbScope.ConnectionAlreadyReleasedException)
+            {
+                return true;
+            }
+
+            // The server stopped this request's query itself, on timeout or shutdown
+            if (ex instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx) && (RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown()))
             {
                 return true;
             }

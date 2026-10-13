@@ -68,6 +68,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
 
 /**
  * Wrapper over another JDBC Connection object that provides logging for errors and some tracking of usage.
@@ -170,13 +171,12 @@ public class ConnectionWrapper implements java.sql.Connection
     static
     {
         // Issue 51483: DB query can be left running after shutting down server
-        ContextListener.addShutdownListener(ShutdownListener.of("DB connection closer", null, () -> {
-
-            // Only kill connections that have been open for more than two seconds to avoid
-            // interrupting work related to the shutdown
-            Calendar cutoffCal = Calendar.getInstance();
-            cutoffCal.add(Calendar.SECOND, -2);
-            Date cutoffDate = new Date(cutoffCal.getTimeInMillis());
+        ContextListener.addShutdownListener(ShutdownListener.of("DB connection closer", () -> {
+            // Closing doesn't stop a busy backend, which notices its client is gone only once it sends results
+            Date cutoffDate = getShutdownCutoff();
+            RequestCancellation.cancelQueries(getConnectionsByScope(c -> c._allocationTime.before(cutoffDate)), RequestCancellation.Source.SHUTDOWN, true);
+        }, () -> {
+            Date cutoffDate = getShutdownCutoff();
 
             // Build up the list and release the lock on _openConnections
             List<ConnectionWrapper> toClose = new ArrayList<>();
@@ -202,6 +202,14 @@ public class ConnectionWrapper implements java.sql.Connection
                 }
             }
         }));
+    }
+
+    // Only kill connections that have been open for more than two seconds to avoid interrupting work related to the shutdown
+    private static Date getShutdownCutoff()
+    {
+        Calendar cutoffCal = Calendar.getInstance();
+        cutoffCal.add(Calendar.SECOND, -2);
+        return new Date(cutoffCal.getTimeInMillis());
     }
 
     private static boolean initializeExplicitLogger()
@@ -374,19 +382,36 @@ public class ConnectionWrapper implements java.sql.Connection
      */
     public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForThread(Thread t)
     {
+        return getConnectionsByScope(c -> c._allocatingThread == t);
+    }
+
+    /** Like {@link #getConnectionsByScopeForThread}, but also includes connections allocated by threads currently sharing t's connections, such as AsyncQueryRequest workers */
+    public static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScopeForEffectiveThread(Thread t)
+    {
+        return getConnectionsByScope(c -> c._allocatingThread == t || DbScope.getEffectiveThread(c._allocatingThread) == t);
+    }
+
+    private static Map<DbScope, Set<ConnectionWrapper>> getConnectionsByScope(Predicate<ConnectionWrapper> filter)
+    {
         Map<DbScope, Set<ConnectionWrapper>> result = new HashMap<>();
         synchronized(_openConnections)
         {
             for (ConnectionWrapper c : _openConnections)
             {
                 // A null or negative SPID means the dialect couldn't determine one, so there's nothing to cancel
-                if (c._allocatingThread == t && c._spid != null && c._spid >= 0)
+                if (c._spid != null && c._spid >= 0 && filter.test(c))
                 {
                     result.computeIfAbsent(c._scope, k -> new HashSet<>()).add(c);
                 }
             }
         }
         return result;
+    }
+
+    /** The driver's own connection behind the pool's wrapper, for driver-specific operations like an out-of-band cancel */
+    public Connection getPhysicalConnection()
+    {
+        return DbScope.getDelegate(_connection);
     }
 
     @Nullable DbScope.ConnectionHolder getThreadConnectionHolder()

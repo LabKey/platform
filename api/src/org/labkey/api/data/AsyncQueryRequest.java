@@ -200,7 +200,7 @@ public class AsyncQueryRequest<T>
                     }
                     catch (InterruptedException ie)
                     {
-                        cancel();
+                        cancel(RequestCancellation.getSource(Thread.currentThread()));
                         awaitWorkerAfterInterrupt(thread);
                         throw new AbortedRequestException("Interrupted before DB query completed");
                     }
@@ -306,11 +306,16 @@ public class AsyncQueryRequest<T>
         return _cancelled;
     }
 
-    synchronized private void cancel()
+    synchronized private void cancel(@Nullable RequestCancellation.Source source)
     {
         _cancelled = true;
         if (_span != null)
+        {
             _span.setTag("labkey.async_query.cancelled", true);
+            if (source != null)
+                _span.setTag("labkey.cancel.source", source.toString());
+        }
+        RequestCancellation.statementCancelled(source, _statement != null);
         if (_statement != null)
         {
             try
@@ -337,7 +342,8 @@ public class AsyncQueryRequest<T>
         catch (IOException ioe)
         {
             _log.debug("ping client: failure: {}", ioe.getMessage());
-            cancel();
+            RequestCancellation.requestCancelled(Thread.currentThread(), TransactionFilter.getRequestSummary(Thread.currentThread()), RequestCancellation.Source.CLIENT_DISCONNECT);
+            cancel(RequestCancellation.Source.CLIENT_DISCONNECT);
             return ioe;
         }
         return null;
