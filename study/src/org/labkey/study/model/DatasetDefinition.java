@@ -546,7 +546,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
         return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };
 
-    private static final Cache<String, Date> MODIFIED_DATES_CACHE = DatabaseCache.get(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified", MODIFIED_DATES_LOADER);
+    private static final Cache<String, Date> MODIFIED_DATES_CACHE = DatabaseCache.get(String.class, StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified", MODIFIED_DATES_LOADER);
 
     @Override
     public Date getModified()

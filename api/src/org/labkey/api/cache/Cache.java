@@ -19,8 +19,8 @@ package org.labkey.api.cache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 public interface Cache<K, V> extends AutoCloseable
 {
@@ -35,8 +35,7 @@ public interface Cache<K, V> extends AutoCloseable
      */
     V get(@NotNull K key, @Nullable Object arg, CacheLoader<K, V> loader);
 
-    // TODO: Return boolean like SimpleCache
-    void remove(@NotNull K key);
+    boolean remove(@NotNull K key);
 
     /**
      * Removes every element in the cache where filter.accept(K key) evaluates to true.
@@ -53,8 +52,7 @@ public interface Cache<K, V> extends AutoCloseable
         }
     }
 
-    // TODO: Consider switching this to Stream<K>, as in SimpleCache. There are very few callers, and most are tests.
-    Set<K> getKeys();
+    Stream<K> getKeys();
 
     void clear();
 

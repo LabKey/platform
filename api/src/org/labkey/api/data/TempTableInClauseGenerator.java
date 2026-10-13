@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ import java.util.function.Supplier;
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
     private static final Cache<String, TempTableInfo> _tempTableCache =
-            CacheManager.getStringKeyCache(200, CacheManager.MINUTE * 5, "IN clause temp tables");
+            CacheManager.getCache(String.class, 200, CacheManager.MINUTE * 5, "IN clause temp tables");
 
     // Need to set a supplier instead of setting the default temp schema directly because this class is constructed at
     // dialect init time, before schemas can be referenced.
@@ -67,17 +68,39 @@ public class TempTableInClauseGenerator implements InClauseGenerator
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> params)
     {
+        JdbcType jdbcType = jdbcTypeFor(params);
+        if (null == jdbcType)
+            return null;
+        TempTableInfo tempTableInfo = getOrCreateTempTable(params, jdbcType);
+        if (null == tempTableInfo)
+            return null;
+        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
+        sql.addTempToken(tempTableInfo);
+        return sql;
+    }
+
+    @Override
+    public @Nullable TempTableInfo getTempTableInfo(@NotNull Collection<?> params)
+    {
+        JdbcType jdbcType = jdbcTypeFor(params);
+        return null == jdbcType ? null : getOrCreateTempTable(params, jdbcType);
+    }
+
+    private static @Nullable JdbcType jdbcTypeFor(@NotNull Collection<?> params)
+    {
+        if (params.isEmpty())
+            return null;
         Object first = params.iterator().next();
         if (first instanceof Long)
-            return appendInClauseSql(sql, params, JdbcType.BIGINT);
+            return JdbcType.BIGINT;
         else if (first instanceof Integer)
-            return appendInClauseSql(sql, params, JdbcType.INTEGER);
+            return JdbcType.INTEGER;
         else if (first instanceof String)
-            return appendInClauseSql(sql, params, JdbcType.VARCHAR);
+            return JdbcType.VARCHAR;
         return null;
     }
 
-    private SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> paramsCollection, JdbcType jdbcType)
+    private @Nullable TempTableInfo getOrCreateTempTable(final @NotNull Collection<?> paramsCollection, JdbcType jdbcType)
     {
         List<?> sortedParameters = null;
         if (jdbcType == JdbcType.INTEGER)
@@ -154,9 +177,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 _tempTableCache.put(cacheKey, cacheEntry);
         }
 
-        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
-        sql.addTempToken(tempTableInfo);
-        return sql;
+        return tempTableInfo;
     }
 
 

@@ -163,14 +163,14 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
-    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
-    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
-    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
+    private static final Cache<Path, Container> CACHE_PATH = CacheManager.getCache(Path.class, Constants.getMaxContainers(), CacheManager.DAY, "Containers by Path");
+    private static final Cache<GUID, Container> CACHE_ENTITY_ID = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Containers by EntityId");
+    private static final Cache<GUID, List<GUID>> CACHE_CHILDREN = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Child EntityIds of Containers");
     // Maps to EntityId rather than Container so the RowId path inherits CACHE_ENTITY_ID's invalidation
-    private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
+    private static final Cache<Integer, GUID> CACHE_ROW_ID = CacheManager.getCache(Integer.class, Constants.getMaxContainers(), CacheManager.DAY, "Container EntityIds by RowId");
     // RowIds and EntityIds are never reused, so a lookup miss (typically a deleted container) stays a miss
     private static final GUID CACHE_MISS_GUID = new GUID("00000000-0000-0000-0000-000000000000");
-    private static final Cache<GUID, Boolean> CACHE_MISSING_ENTITY_ID = CacheManager.getCache(Constants.getMaxContainers(), CacheManager.DAY, "Missing container EntityIds");
+    private static final Cache<GUID, Boolean> CACHE_MISSING_ENTITY_ID = CacheManager.getCache(GUID.class, Constants.getMaxContainers(), CacheManager.DAY, "Missing container EntityIds");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";

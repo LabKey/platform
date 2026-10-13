@@ -137,16 +137,16 @@ import static org.labkey.api.util.IntegerUtils.asLong;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<Pair<GUID, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
-    private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
+    private static final Cache<PropertyMapKey, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(PropertyMapKey.class, getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
+    private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
+    private static final Cache<ProjectUriKey, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
-        public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        public PropertyDescriptor load(@NotNull ProjectUriKey key, @Nullable Object argument)
         {
             PropertyDescriptor ret = null;
-            String propertyURI = key.first;
-            Container c = ContainerManager.getForId(key.second);
+            String propertyURI = key.uri();
+            Container c = ContainerManager.getForId(key.projectId());
             if (null != c)
             {
                 Container proj = c.getProject();
@@ -176,9 +176,9 @@ public class OntologyManager
     });
 
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
-    private static final Cache<Pair<String, GUID>, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
-        String domainURI = key.first;
-        Container c = ContainerManager.getForId(key.second);
+    private static final Cache<ProjectUriKey, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
+        String domainURI = key.uri();
+        Container c = ContainerManager.getForId(key.projectId());
 
         if (c == null)
         {
@@ -219,14 +219,14 @@ public class OntologyManager
         return ddList.isEmpty() ? null : ddList.getFirst();
     }
 
-    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
+    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(Integer.class, getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by ID", new DomainDescriptorLoader());
+    private static final BlockingCache<ProjectUriKey, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
     {
         @Override
-        public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        public List<Pair<String, Boolean>> load(@NotNull ProjectUriKey key, @Nullable Object argument)
         {
-            String typeURI = key.first;
-            Container c = ContainerManager.getForId(key.second);
+            String typeURI = key.uri();
+            Container c = ContainerManager.getForId(key.projectId());
             if (null == c)
                 return Collections.emptyList();
             SQLFragment sql = new SQLFragment("SELECT PropertyURI, Required " +
@@ -852,10 +852,12 @@ public class OntologyManager
         void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException;
     }
 
+    private record PropertyMapKey(@Nullable GUID containerId, @NotNull String objectLSID) {}
+
     @NotNull
-    private static Pair<GUID, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    private static PropertyMapKey getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
     {
-        return Pair.of(null == container ? null : container.getEntityId(), objectLSID);
+        return new PropertyMapKey(null == container ? null : container.getEntityId(), objectLSID);
     }
 
     /**
@@ -866,17 +868,17 @@ public class OntologyManager
      */
     public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Pair<GUID, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        PropertyMapKey cacheKey = getPropertyMapCacheKey(container, objectLSID);
         return PROPERTY_MAP_CACHE.get(cacheKey);
     }
 
-    public static class PropertyMapCacheLoader implements CacheLoader<Pair<GUID, String>, Map<String, ObjectProperty>>
+    public static class PropertyMapCacheLoader implements CacheLoader<PropertyMapKey, Map<String, ObjectProperty>>
     {
         @Override
-        public Map<String, ObjectProperty> load(@NotNull Pair<GUID, String> key, @Nullable Object argument)
+        public Map<String, ObjectProperty> load(@NotNull PropertyMapKey key, @Nullable Object argument)
         {
-            GUID containerId = key.first;
-            String objectLSID = key.second;
+            GUID containerId = key.containerId();
+            String objectLSID = key.objectLSID();
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
             if (containerId != null)
@@ -2216,7 +2218,7 @@ public class OntologyManager
             executor.execute(deleteObjPropSql);
             executor.execute(deletePropDomSql);
             executor.execute(deletePropSql);
-            Pair<String, GUID> key = getCacheKey(pd);
+            ProjectUriKey key = getCacheKey(pd);
             _log.debug("Removing property descriptor from cache. Key: {} descriptor: {}", key, pd);
             PROP_DESCRIPTOR_CACHE.remove(key);
             DOMAIN_PROPERTIES_CACHE.clear();
@@ -2323,7 +2325,7 @@ public class OntologyManager
     public static PropertyDescriptor getPropertyDescriptor(String propertyURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        Pair<String, GUID> key = getCacheKey(propertyURI, c);
+        ProjectUriKey key = getCacheKey(propertyURI, c);
         PropertyDescriptor pd = PROP_DESCRIPTOR_CACHE.get(key);
         if (null != pd)
             return pd;
@@ -2525,7 +2527,7 @@ public class OntologyManager
             return getDomainDescriptorForUpdate(domainURI, c);
 
         // cache lookup by project. if not found at project level, check to see if global
-        Pair<String, GUID> key = getCacheKey(domainURI, c);
+        ProjectUriKey key = getCacheKey(domainURI, c);
         DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(key);
         if (null != dd)
             return dd;
@@ -2598,17 +2600,17 @@ public class OntologyManager
         return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
     }
 
-    public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
+    public static ProjectUriKey getURICacheKey(DomainDescriptor dd)
     {
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
-    public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
+    public static ProjectUriKey getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
 
-    public static Pair<String, GUID> getCacheKey(String uri, Container c)
+    public static ProjectUriKey getCacheKey(String uri, Container c)
     {
         Container proj = c.getProject();
         GUID projId;
@@ -2618,8 +2620,10 @@ public class OntologyManager
         else
             projId = proj.getEntityId();
 
-        return Pair.of(uri, projId);
+        return new ProjectUriKey(uri, projId);
     }
+
+    public record ProjectUriKey(String uri, GUID projectId) {}
 
     //TODO: Cache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
@@ -2943,9 +2947,9 @@ public class OntologyManager
         Set<String> propertyURIs = d.getProperties().stream().map(DomainProperty::getPropertyURI).collect(Collectors.toSet());
 
         // Keys are per lookup project and nulls are cached, so drop this domain's entries under every project
-        DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.removeUsingFilter(key -> domainURI.equals(key.uri()));
         DOMAIN_DESC_BY_ID_CACHE.remove(d.getTypeId());
-        DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.first));
+        DOMAIN_PROPERTIES_CACHE.removeUsingFilter(key -> domainURI.equals(key.uri()));
         uncachePropertyDescriptors(propertyURIs);
         DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(d.getContainer());
 
@@ -2960,7 +2964,7 @@ public class OntologyManager
         if (!propertyURIs.isEmpty())
         {
             Set<String> uris = propertyURIs instanceof Set<String> set ? set : new HashSet<>(propertyURIs);
-            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> uris.contains(key.first));
+            PROP_DESCRIPTOR_CACHE.removeUsingFilter(key -> uris.contains(key.uri()));
         }
     }
 
@@ -2980,7 +2984,7 @@ public class OntologyManager
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.objectLSID(), parentObjectURI));
     }
 
     /**
@@ -3003,12 +3007,12 @@ public class OntologyManager
     }
 
     /** A record rather than a lambda so a transaction's equal post-commit removal tasks dedupe */
-    private record ContainerPropertyMapKeys(Container c) implements Predicate<Pair<GUID, String>>
+    private record ContainerPropertyMapKeys(Container c) implements Predicate<PropertyMapKey>
     {
         @Override
-        public boolean test(Pair<GUID, String> key)
+        public boolean test(PropertyMapKey key)
         {
-            return key.first == null || key.first.equals(c.getEntityId());
+            return key.containerId() == null || key.containerId().equals(c.getEntityId());
         }
     }
 
