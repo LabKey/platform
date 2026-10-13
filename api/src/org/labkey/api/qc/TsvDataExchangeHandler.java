@@ -35,6 +35,7 @@ import org.labkey.api.assay.transform.DataExchangeHandler;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.assay.transform.DefaultTransformResult;
 import org.labkey.api.assay.transform.TransformResult;
+import org.labkey.api.assay.transform.TransformScriptOutput;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
@@ -147,6 +148,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
     /** Files that shouldn't be considered part of the run's output, such as the transform script itself */
     private final Set<File> _filesToIgnore = new HashSet<>();
+    private Collection<? extends ExpData> _runDataInputs = Collections.emptyList();
 
     // Map to store the working directory to span across a transform warning. See directoryKey() for the String key.
     // Container is saved to ensure the user has access to the container and File is the actual working directory.
@@ -156,6 +158,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public DataSerializer getDataSerializer()
     {
         return _serializer;
+    }
+
+    @Override
+    public void setRunDataInputs(@NotNull Collection<? extends ExpData> dataInputs)
+    {
+        _runDataInputs = dataInputs;
     }
 
     @Override
@@ -262,8 +270,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (iterator.next())
                 {
                     rawDataHasRows = true;
-                    if (run != null)
-                        dataInputs = run.getDataInputs().keySet();
+                    dataInputs = run != null ? run.getDataInputs().keySet() : _runDataInputs;
                 }
             }
         }
@@ -879,14 +886,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     }
 
     @Override
-    public TransformResult processTransformationOutput(
+    public TransformResult parseTransformationOutput(
             DataTransformService.TransformOperation operation,
             AssayRunUploadContext<? extends AssayProvider> context,
             FileLike runInfo,
-            @Nullable ExpRun run,
             FileLike scriptFile,
             TransformResult mergeResult,
-            Set<FileLike> inputDataFiles
+            TransformScriptOutput scriptOutput
     ) throws ValidationException
     {
         Logger log = context.getLogger();
@@ -908,44 +914,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         // Set protocol
         info.setProtocol(context.getProtocol());
-
-        // Find the output step for the run
-        ExpProtocolApplication outputProtocolApplication = null;
-        ExpProtocolApplication scriptPA = null;
-        if (run != null)
-        {
-            for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
-            {
-                if (protocolApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
-                {
-                    outputProtocolApplication = protocolApplication;
-                }
-            }
-
-            // Create an extra ProtocolApplication that represents the script invocation
-            scriptPA = ExperimentService.get().createSimpleRunExtraProtocolApplication(run, scriptFile.getName());
-            scriptPA.save(context.getUser());
-
-            DataType dataType = context.getProvider().getDataType();
-            if (dataType == null)
-                dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
-
-            // Wire up the script's inputs
-            Lsid.LsidBuilder builder = new Lsid.LsidBuilder(ExpData.DEFAULT_CPAS_TYPE, "");
-            for (FileLike dataFile : inputDataFiles)
-            {
-                ExpData data = ExperimentService.get().getExpDataByURL(dataFile.toNioPathForRead().toFile(), context.getContainer());
-                if (data == null)
-                {
-                    data = ExperimentService.get().createData(context.getContainer(), dataType, dataFile.getName());
-                    data.setLSID(builder.setObjectId(GUID.makeGUID()).build());
-                    assert dataFile.toURI().equals(dataFile.toNioPathForRead().toFile().toURI());
-                    data.setDataFileURI(dataFile.toURI());
-                    data.save(context.getUser());
-                }
-                scriptPA.addDataInput(context.getUser(), data, "Data");
-            }
-        }
 
         // if input data was transformed,
         boolean runInfoExists;
@@ -1040,18 +1008,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         // Copy the file to the same directory as the original data file
                         FileUtils.moveFile(file, targetFile);
 
-                        // Add the file as an output to the run, and as being created by the script
-                        if (run != null)
-                        {
-                            Pair<ExpData, String> outputData = DefaultAssayRunCreator.createdRelatedOutputData(context, baseName, targetFile);
-                            if (outputData != null)
-                            {
-                                outputData.getKey().setSourceApplication(scriptPA);
-                                outputData.getKey().save(context.getUser());
-
-                                outputProtocolApplication.addDataInput(context.getUser(), outputData.getKey(), outputData.getValue());
-                            }
-                        }
+                        scriptOutput.addRelatedOutputFile(baseName, targetFile);
                     }
                 }
 
@@ -1098,9 +1055,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         }
 
                         dataMap.put(data, getDataSerializer().importRunData(context.getProtocol(), file));
-
-                        data.setSourceApplication(scriptPA);
-                        data.save(context.getUser());
+                        scriptOutput.addTransformedData(data);
                     }
                     result = new DefaultTransformResult(dataMap);
                     result.setBatchProperties(mergeResult.getBatchProperties());
@@ -1184,6 +1139,70 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
         }
         return result;
+    }
+
+    @Override
+    public void recordTransformationOutput(
+            AssayRunUploadContext<? extends AssayProvider> context,
+            @Nullable ExpRun run,
+            TransformScriptOutput scriptOutput
+    ) throws ValidationException
+    {
+        ExpProtocolApplication scriptPA = null;
+        if (run != null)
+        {
+            ExpProtocolApplication outputProtocolApplication = null;
+            for (ExpProtocolApplication protocolApplication : run.getProtocolApplications())
+            {
+                if (protocolApplication.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                {
+                    outputProtocolApplication = protocolApplication;
+                }
+            }
+
+            // Create an extra ProtocolApplication that represents the script invocation
+            scriptPA = ExperimentService.get().createSimpleRunExtraProtocolApplication(run, scriptOutput.getScriptName());
+            scriptPA.save(context.getUser());
+
+            DataType dataType = context.getProvider().getDataType();
+            if (dataType == null)
+                dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
+
+            // Wire up the script's inputs
+            Lsid.LsidBuilder builder = new Lsid.LsidBuilder(ExpData.DEFAULT_CPAS_TYPE, "");
+            for (FileLike dataFile : scriptOutput.getInputDataFiles())
+            {
+                ExpData data = ExperimentService.get().getExpDataByURL(dataFile.toNioPathForRead().toFile(), context.getContainer());
+                if (data == null)
+                {
+                    data = ExperimentService.get().createData(context.getContainer(), dataType, dataFile.getName());
+                    data.setLSID(builder.setObjectId(GUID.makeGUID()).build());
+                    assert dataFile.toURI().equals(dataFile.toNioPathForRead().toFile().toURI());
+                    data.setDataFileURI(dataFile.toURI());
+                    data.save(context.getUser());
+                }
+                scriptPA.addDataInput(context.getUser(), data, "Data");
+            }
+
+            // Add the files the script wrote as outputs of the run, and as being created by the script
+            for (Pair<String, File> relatedFile : scriptOutput.getRelatedOutputFiles())
+            {
+                Pair<ExpData, String> outputData = DefaultAssayRunCreator.createdRelatedOutputData(context, relatedFile.first, relatedFile.second);
+                if (outputData != null)
+                {
+                    outputData.getKey().setSourceApplication(scriptPA);
+                    outputData.getKey().save(context.getUser());
+
+                    outputProtocolApplication.addDataInput(context.getUser(), outputData.getKey(), outputData.getValue());
+                }
+            }
+        }
+
+        for (ExpData data : scriptOutput.getTransformedDatas())
+        {
+            data.setSourceApplication(scriptPA);
+            data.save(context.getUser());
+        }
     }
 
     protected static String getSampleValue(DomainProperty prop)

@@ -29,6 +29,7 @@ import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.assay.sample.AssaySampleLookupContext;
 import org.labkey.api.assay.transform.DataTransformService;
+import org.labkey.api.assay.transform.PreparedTransform;
 import org.labkey.api.assay.transform.TransformDataHandler;
 import org.labkey.api.assay.transform.TransformResult;
 import org.labkey.api.collections.LongHashMap;
@@ -95,12 +96,12 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -120,9 +121,55 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         _provider = provider;
     }
 
+    /** Records transform output prepared before the transaction, or runs the scripts now if none was. */
     public TransformResult transform(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
+        PreparedTransform prepared = DataTransformService.get().takePreparedTransform(context);
+        if (prepared != null)
+            return DataTransformService.get().recordTransform(context, run, prepared);
         return DataTransformService.get().transformAndValidate(context, run, DataTransformService.TransformOperation.INSERT);
+    }
+
+    @Override
+    public @Nullable PreparedTransform prepareTransform(AssayRunUploadContext<ProviderType> context, boolean forceAsync) throws ExperimentException, ValidationException
+    {
+        if (isBackgroundImport(context.getProvider(), context.getProtocol(), forceAsync) || !hasTransformBeforeRun(context))
+            return null;
+
+        context.init();
+        return prepareTransformAfterInit(context);
+    }
+
+    private PreparedTransform prepareTransformAfterInit(AssayRunUploadContext<ProviderType> context) throws ExperimentException, ValidationException
+    {
+        Map<ExpData, String> inputDatas = new HashMap<>();
+        addInputDatas(context, inputDatas);
+        return runTransformBeforeRun(context, inputDatas.keySet());
+    }
+
+    private boolean hasTransformBeforeRun(AssayRunUploadContext<ProviderType> context)
+    {
+        return context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
+            && !context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL).isEmpty()
+            && !DataTransformService.get().hasPreparedTransform(context);
+    }
+
+    private PreparedTransform runTransformBeforeRun(AssayRunUploadContext<ProviderType> context, Collection<ExpData> inputDatas) throws ExperimentException, ValidationException
+    {
+        // No import lock: script callbacks into the server may need it
+        PreparedTransform prepared = null;
+        try
+        {
+            prepared = DataTransformService.get().executeTransform(context, null, inputDatas, DataTransformService.TransformOperation.INSERT);
+        }
+        finally
+        {
+            // Issue 51300: this runs outside saveExperimentRun's cleanup, so drop the primary file of a failed import here
+            if (prepared == null)
+                cleanPrimaryFile(context);
+        }
+        DataTransformService.get().setPreparedTransform(context, prepared);
+        return prepared;
     }
 
     /** Issue 26811: If we don't have a view, assume that we are on a background job thread already. */
@@ -163,8 +210,18 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpRun run = null;
         // Check if assay protocol is configured to import in the background.
         boolean importInBackground = isBackgroundImport(provider, protocol, forceAsync);
+        DbScope scope = ExperimentService.get().getSchema().getScope();
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(protocolImportLocks(importInBackground)))
+        // Callers that open their own transaction prepare the transform before it; init() would delete its output files
+        PreparedTransform prepared = null;
+        if (!DataTransformService.get().hasPreparedTransform(context))
+        {
+            context.init();
+            if (!importInBackground && !scope.isTransactionActive() && hasTransformBeforeRun(context))
+                prepared = prepareTransformAfterInit(context);
+        }
+
+        try (PreparedTransform ignored = prepared; DbScope.Transaction transaction = scope.ensureTransaction(protocolImportLocks(importInBackground)))
         {
             TransactionAuditProvider.TransactionAuditEvent auditEvent = transaction.getAuditEvent();
             if (auditEvent == null)
@@ -172,7 +229,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(context.getContainer(), context.getReRunId() == null ? QueryService.AuditAction.UPDATE : QueryService.AuditAction.INSERT, transactionDetails);
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
-            context.init();
             if (!importInBackground)
             {
                 if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)
@@ -234,7 +290,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 // Choose another file as the primary
                 primaryFile = context.getUploadedData().entrySet().iterator().next().getValue();
             }
-            Objects.requireNonNull(primaryFile);
+            if (primaryFile == null)
+                throw new ExperimentException("A background assay import requires a data file");
             AssayRunAsyncContext asyncContext = context.getProvider().createRunAsyncContext(context);
             final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<>(
                 asyncContext,
@@ -330,7 +387,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         boolean success = false;
         DbScope scope = ExperimentService.get().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        PreparedTransform prepared = null;
+        if (!scope.isTransactionActive() && hasTransformBeforeRun(context))
+            prepared = runTransformBeforeRun(context, inputDatas.keySet());
+
+        try (PreparedTransform ignored = prepared; DbScope.Transaction transaction = scope.ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             if (transaction.getAuditId() == null)
             {
@@ -398,10 +459,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (saveBatchProps)
                 saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties);
-            if (null != transformResult.getAssayId())
-                run.setName(transformResult.getAssayId());
-            if (null != transformResult.getComments())
-                run.setComments(transformResult.getComments());
+            if (null != transformResult.getAssayId() || null != transformResult.getComments())
+            {
+                if (null != transformResult.getAssayId())
+                    run.setName(transformResult.getAssayId());
+                if (null != transformResult.getComments())
+                    run.setComments(transformResult.getComments());
+                run.save(context.getUser());
+            }
             saveProperties(context, run, transformResult.getRunProperties(), runProperties);
 
             AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);

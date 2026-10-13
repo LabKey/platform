@@ -15,7 +15,9 @@
  */
 package org.labkey.api.assay.transform;
 
+import com.google.common.collect.MapMaker;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
@@ -23,8 +25,10 @@ import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.Readers;
@@ -36,7 +40,7 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
 import javax.script.Bindings;
@@ -44,15 +48,26 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.labkey.api.security.SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID;
 
 public class DataTransformService
 {
     private static final DataTransformService _instance = new DataTransformService();
+    private static final Logger LOG = LogHelper.getLogger(DataTransformService.class, "Assay transform scripts");
+
+    // Weak, identity-keyed so any upload context implementation can carry a prepared transform
+    private final Map<AssayRunUploadContext<?>, PreparedTransform> _preparedTransforms = new MapMaker().weakKeys().makeMap();
 
     private DataTransformService() {}
 
@@ -77,19 +92,43 @@ public class DataTransformService
         UPDATE
     }
 
+    /** Runs the transform scripts and records their outputs against run in one step. */
     public TransformResult transformAndValidate(
             AssayRunUploadContext<?> context,
             @Nullable ExpRun run,
             TransformOperation operation
     ) throws ValidationException
     {
-        boolean isDefault = isDefault(context.getProtocol());
-        TransformResult result = DefaultTransformResult.createEmptyResult();
+        try (PreparedTransform prepared = executeTransform(context, run, null, operation))
+        {
+            return recordTransform(context, run, prepared);
+        }
+    }
+
+    /**
+     * Runs the assay's transform and validation scripts and reads their output without writing to the database.
+     * @param run the saved run, or null when the scripts run before the run is saved
+     * @param runDataInputs the run's data inputs when run is null
+     */
+    public @NotNull PreparedTransform executeTransform(
+            AssayRunUploadContext<?> context,
+            @Nullable ExpRun run,
+            @Nullable Collection<? extends ExpData> runDataInputs,
+            TransformOperation operation
+    ) throws ValidationException
+    {
         DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
         if (dataHandler == null)
         {
-            return result;
+            return PreparedTransform.empty();
         }
+        if (runDataInputs != null)
+            dataHandler.setRunDataInputs(runDataInputs);
+
+        boolean isDefault = isDefault(context.getProtocol());
+        TransformResult result = DefaultTransformResult.createEmptyResult();
+        List<TransformScriptOutput> scriptOutputs = new ArrayList<>();
+        List<FileLike> scriptDirs = new ArrayList<>();
 
         Map<DomainProperty, String> batchProperties;
         Map<DomainProperty, String> runProperties;
@@ -103,15 +142,24 @@ public class DataTransformService
             throw new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
         }
 
-        for (AnalysisScript analysisScript : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL))
+        boolean success = false;
+        try
         {
-            if (!analysisScript.canExecute(operation))
-                continue;
-
-            // read the contents of the script file
-            FileLike scriptFile = analysisScript.getScript();
-            if (scriptFile.exists())
+            for (AnalysisScript analysisScript : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL))
             {
+                if (!analysisScript.canExecute(operation))
+                    continue;
+
+                // read the contents of the script file
+                FileLike scriptFile = analysisScript.getScript();
+                if (!scriptFile.exists())
+                {
+                    throw new ValidationException("The transform script, " + scriptFile + ", configured for this assay does not exist. Please check " +
+                            "the configuration for this assay design.");
+                }
+
+                warnIfInTransaction(context, operation);
+
                 if (operation == TransformOperation.UPDATE)
                     SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
                 if (operation == TransformOperation.INSERT)
@@ -136,120 +184,153 @@ public class DataTransformService
                     engine = LabKeyScriptEngineManager.get()
                             .getEngineByExtension(context.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 }
-                if (engine != null)
-                {
-                    // issue : 46838 remote scripting engines don't support transform scripts yet
-                    if (engine instanceof ExternalScriptEngine externalScriptEngine)
-                    {
-                        if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
-                            throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
-                    }
-                    FileLike scriptDir = null;
-                    // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
-                    try (SecurityManager.TransformSession session = SecurityManager.createTransformSession(context))
-                    {
-                        scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
-                        // issue 13643: ensure script dir is initially empty
-                        FileUtil.deleteDirectoryContents(scriptDir);
-
-                        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-                        String script = sb.toString();
-                        Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(operation, context, run, scriptDir, runProperties, batchProperties);
-                        FileLike runInfo = files.getKey();
-
-                        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
-                        bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().getAbsolutePath());
-                        bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "transform protocol=" + context.getProtocol().getRowId()
-                                + " name='" + context.getProtocol().getName() + "'"
-                                + " operation=" + operation.name()
-                                + " script='" + scriptFile.getName() + "'"
-                                + " container=" + context.getContainer().getPath());
-
-                        Map<String, String> paramMap = new HashMap<>();
-
-                        // Issue 51543: Resolve windows path to run properties
-                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
-                        paramMap.put(TRANSFORM_OPERATION, operation.name());
-
-                        addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
-
-                        bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
-                        bindings.put(ExternalScriptEngine.FAIL_ON_UNREPLACED_PARAMS, true);
-
-                        Object output = engine.eval(script);
-
-                        FileLike rewrittenScriptFile;
-                        if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike file)
-                        {
-                            rewrittenScriptFile = file;
-                        }
-                        else
-                        {
-                            rewrittenScriptFile = scriptFile;
-                        }
-
-                        // process any output from the transformation script
-                        result = dataHandler.processTransformationOutput(operation, context, runInfo, run, rewrittenScriptFile, result, files.getValue());
-
-                        // Propagate any transformed batch properties on to the next script
-                        if (result.getBatchProperties() != null && !result.getBatchProperties().isEmpty())
-                        {
-                            batchProperties = result.getBatchProperties();
-                        }
-                        // Propagate any transformed run properties on to the next script
-                        if (result.getRunProperties() != null && !result.getRunProperties().isEmpty())
-                        {
-                            runProperties = result.getRunProperties();
-                        }
-
-                        context.setTransformResult(result);
-                    }
-                    catch (ValidationException | RuntimeException e)
-                    {
-                        throw e;
-                    }
-                    catch (Exception e)
-                    {
-                        ValidationException ve = new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
-                        ve.initCause(e);
-                        throw ve;
-                    }
-                    finally
-                    {
-                        // clean up temp directory
-                        if (!isDefault)
-                        {
-                            try
-                            {
-                                if (null != scriptDir)
-                                {
-                                    FileUtil.deleteDir(scriptDir.toNioPathForWrite().toFile());
-                                    FileLike parent = scriptDir.getParent();
-                                    if (parent != null)
-                                        parent.delete();
-                                }
-                            }
-                            catch (IOException e)
-                            {
-                                throw UnexpectedException.wrap(e);
-                            }
-                        }
-                    }
-                }
-                else
+                if (engine == null)
                 {
                     // we may just want to log an error rather than fail the upload due to an engine config problem.
                     throw new ValidationException("A script engine implementation was not found for the specified QC script (" + scriptFile.getName() + "). " +
                             "Check configurations in the Admin Console.");
                 }
+
+                // issue : 46838 remote scripting engines don't support transform scripts yet
+                if (engine instanceof ExternalScriptEngine externalScriptEngine)
+                {
+                    if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
+                        throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
+                }
+                // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
+                try (SecurityManager.TransformSession session = SecurityManager.createTransformSession(context))
+                {
+                    FileLike scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
+                    if (!isDefault)
+                        scriptDirs.add(scriptDir);
+                    // issue 13643: ensure script dir is initially empty
+                    FileUtil.deleteDirectoryContents(scriptDir);
+
+                    Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                    String script = sb.toString();
+                    Pair<FileLike, Set<FileLike>> files = dataHandler.createTransformationRunInfo(operation, context, run, scriptDir, runProperties, batchProperties);
+                    FileLike runInfo = files.getKey();
+
+                    bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.toNioPathForWrite().toString());
+                    bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.toNioPathForRead().toFile().getAbsolutePath());
+                    bindings.put(ExternalScriptEngine.INVOCATION_LABEL, "transform protocol=" + context.getProtocol().getRowId()
+                            + " name='" + context.getProtocol().getName() + "'"
+                            + " operation=" + operation.name()
+                            + " script='" + scriptFile.getName() + "'"
+                            + " container=" + context.getContainer().getPath());
+
+                    int timeoutMinutes = AppProps.getInstance().getAssayTransformScriptTimeout();
+                    if (timeoutMinutes > 0)
+                        bindings.put(ExternalScriptEngine.TIMEOUT, TimeUnit.MINUTES.toSeconds(timeoutMinutes));
+
+                    Map<String, String> paramMap = new HashMap<>();
+
+                    // Issue 51543: Resolve windows path to run properties
+                    paramMap.put(RUN_INFO_REPLACEMENT, runInfo.toNioPathForWrite().toFile().getAbsolutePath().replaceAll("\\\\", "/"));
+                    paramMap.put(TRANSFORM_OPERATION, operation.name());
+
+                    addStandardParameters(context.getRequest(), context.getContainer(), scriptFile, session.getApiKey(), paramMap);
+
+                    bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+                    bindings.put(ExternalScriptEngine.FAIL_ON_UNREPLACED_PARAMS, true);
+
+                    engine.eval(script);
+
+                    FileLike rewrittenScriptFile;
+                    if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof FileLike file)
+                    {
+                        rewrittenScriptFile = file;
+                    }
+                    else
+                    {
+                        rewrittenScriptFile = scriptFile;
+                    }
+
+                    // process any output from the transformation script
+                    TransformScriptOutput scriptOutput = new TransformScriptOutput(rewrittenScriptFile.getName(), files.getValue());
+                    result = dataHandler.parseTransformationOutput(operation, context, runInfo, rewrittenScriptFile, result, scriptOutput);
+                    scriptOutputs.add(scriptOutput);
+
+                    // Propagate any transformed batch properties on to the next script
+                    if (result.getBatchProperties() != null && !result.getBatchProperties().isEmpty())
+                    {
+                        batchProperties = result.getBatchProperties();
+                    }
+                    // Propagate any transformed run properties on to the next script
+                    if (result.getRunProperties() != null && !result.getRunProperties().isEmpty())
+                    {
+                        runProperties = result.getRunProperties();
+                    }
+
+                    context.setTransformResult(result);
+                }
+                catch (ValidationException | RuntimeException e)
+                {
+                    throw e;
+                }
+                catch (Exception e)
+                {
+                    ValidationException ve = new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
+                    ve.initCause(e);
+                    throw ve;
+                }
             }
-            else
-            {
-                throw new ValidationException("The transform script, " + scriptFile + ", configured for this assay does not exist. Please check " +
-                        "the configuration for this assay design.");
-            }
+            success = true;
+            return new PreparedTransform(dataHandler, result, scriptOutputs, scriptDirs);
         }
-        return result;
+        finally
+        {
+            if (!success)
+                PreparedTransform.deleteScriptDirs(scriptDirs);
+        }
+    }
+
+    /** Saves the protocol applications and output data of transform scripts run by {@link #executeTransform}. */
+    public TransformResult recordTransform(AssayRunUploadContext<?> context, @Nullable ExpRun run, @NotNull PreparedTransform prepared) throws ValidationException
+    {
+        if (prepared.isRecorded())
+            throw new IllegalStateException("Transform outputs have already been recorded");
+        prepared.setRecorded();
+
+        DataExchangeHandler dataHandler = prepared.getHandler();
+        if (dataHandler != null)
+        {
+            for (TransformScriptOutput scriptOutput : prepared.getScriptOutputs())
+                dataHandler.recordTransformationOutput(context, run, scriptOutput);
+        }
+        return prepared.getResult();
+    }
+
+    /** Holds a transform run before the import transaction opens until the run creator records it. */
+    public void setPreparedTransform(AssayRunUploadContext<?> context, @NotNull PreparedTransform prepared)
+    {
+        prepared.setContext(context);
+        _preparedTransforms.put(context, prepared);
+    }
+
+    void forgetPreparedTransform(AssayRunUploadContext<?> context, PreparedTransform prepared)
+    {
+        _preparedTransforms.remove(context, prepared);
+    }
+
+    public boolean hasPreparedTransform(AssayRunUploadContext<?> context)
+    {
+        return _preparedTransforms.containsKey(context);
+    }
+
+    public @Nullable PreparedTransform takePreparedTransform(AssayRunUploadContext<?> context)
+    {
+        return _preparedTransforms.remove(context);
+    }
+
+    private void warnIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
+    {
+        if (operation == TransformOperation.INSERT
+                && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
+                && ExperimentService.get().getSchema().getScope().isTransactionActive())
+        {
+            LOG.warn("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
+        }
     }
 
     public void addStandardParameters(@Nullable HttpServletRequest request, @Nullable Container container, @Nullable FileLike scriptFile, @Nullable String apiKey, @NotNull Map<String, String> paramMap)
@@ -293,15 +374,30 @@ public class DataTransformService
             tempRoot = tempDir.resolveChild("TransformAndValidationFiles");
         }
 
-        if (!tempRoot.exists())
-            FileUtil.mkdir(tempRoot);
-
         FileLike tempParent = tempRoot.resolveChild("AssayId_" + protocol.getRowId());
-        FileLike tempFolder = FileUtil.findUniqueFileName("work", tempParent);
-        if (!tempFolder.exists())
-            FileUtil.mkdirs(tempFolder);
 
-        return tempFolder;
+        // Concurrent imports of the same assay run scripts in parallel, so claim the folder atomically
+        int uniquifier = 0;
+        while (true)
+        {
+            FileLike tempFolder = tempParent.resolveChild(FileUtil.getAppendedFileName("work", uniquifier));
+            try
+            {
+                //noinspection SSBasedInspection
+                Files.createDirectory(tempFolder.toNioPathForWrite());
+                tempFolder.refresh();
+                return tempFolder;
+            }
+            catch (FileAlreadyExistsException e)
+            {
+                uniquifier++;
+            }
+            catch (NoSuchFileException e)
+            {
+                // Missing, or just removed by another import's cleanup of its own folder
+                FileUtil.createDirectories(tempParent);
+            }
+        }
     }
 
     private boolean isDefault(ExpProtocol protocol)

@@ -73,6 +73,7 @@ import static org.labkey.api.settings.SiteSettingsProperties.administratorContac
 import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.apiKeyExpirationSeconds;
+import static org.labkey.api.settings.SiteSettingsProperties.assayTransformScriptTimeout;
 import static org.labkey.api.settings.SiteSettingsProperties.baseServerURL;
 import static org.labkey.api.settings.SiteSettingsProperties.exceptionReportingLevel;
 import static org.labkey.api.settings.SiteSettingsProperties.includeServerHttpHeader;
@@ -351,6 +352,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     public int getScriptExecutionTimeout()
     {
         return lookupIntValue(scriptExecutionTimeout, DEFAULT_SCRIPT_EXECUTION_TIMEOUT);
+    }
+
+    @Override
+    public int getAssayTransformScriptTimeout()
+    {
+        return lookupIntValue(assayTransformScriptTimeout, DEFAULT_ASSAY_TRANSFORM_SCRIPT_TIMEOUT);
     }
 
     @Override
