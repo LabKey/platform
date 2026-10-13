@@ -10794,10 +10794,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             final User admin = TestContext.get().getUser();
             final Container c = JunitUtil.getTestContainer();
 
+            GWTPropertyDescriptor score = new GWTPropertyDescriptor("score", "int");
+            score.setMvEnabled(true);
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("color", "string"));
             props.add(new GWTPropertyDescriptor("count", "int"));
             props.add(new GWTPropertyDescriptor("collected", "dateTime"));
+            props.add(new GWTPropertyDescriptor("flag", "boolean"));
+            props.add(score);
             ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
             DomainProperty color = st.getDomain().getPropertyByName("color");
 
@@ -10815,7 +10819,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             createJson.put(ExperimentJSONConverter.NAME, "newSample");
             createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
             createJson.put(ExperimentJSONConverter.PROPERTIES,
-                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02"));
+                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
+                            .put("flag", true).put("score", 7));
 
             ExpMaterial created = handler.handleMaterial(context, createJson);
             assertNotNull("Author should be able to create a sample with properties", created);
@@ -10837,10 +10842,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             assertEquals("Property must be unchanged after an unauthorized edit",
                     "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
 
+            // Changing the boolean must still be caught and blocked
+            JSONObject flagJson = new JSONObject();
+            flagJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            flagJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("flag", false));
+            try
+            {
+                handler.handleMaterial(context, flagJson);
+                fail("Author should not be able to change a boolean property of an existing sample");
+            }
+            catch (UnauthorizedException expected)
+            {
+            }
+
+            // A full round-trip of every field (string, int, dateTime, boolean, MV-enabled int) must not over-gate
             JSONObject unchangedJson = new JSONObject();
             unchangedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
             unchangedJson.put(ExperimentJSONConverter.PROPERTIES,
                     new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
+                            .put("flag", true).put("score", 7)
                             .put(ExperimentJSONConverter.NAME, "newSample"));
             handler.handleMaterial(context, unchangedJson);
 

@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
@@ -680,16 +682,32 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
     {
-        if (submitted.has(ExperimentJSONConverter.NAME)
-                && !valuesEqual(submitted.get(ExperimentJSONConverter.NAME), material.getName()))
-            return true;
-
         for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(submitted, dps, context.getContainer(), true).entrySet())
         {
-            if (!valuesEqual(material.getProperty(entry.getKey()), entry.getValue()))
+            // Submitted side is already coerced to the property's Java type; coerce the stored side the same way.
+            Object storedValue = normalizeStored(entry.getKey(), material.getProperty(entry.getKey()));
+            if (!valuesEqual(storedValue, entry.getValue()))
                 return true;
         }
         return false;
+    }
+
+    // Unwrap MV fields and coerce to the property's Java type so stored and submitted values compare like-for-like.
+    private static Object normalizeStored(PropertyDescriptor pd, Object value)
+    {
+        if (value instanceof MvFieldWrapper mv)
+            value = mv.getValue();
+        if (value == null)
+            return null;
+        try
+        {
+            Class<?> javaType = pd.getPropertyType().getJavaType();
+            return ConvertUtils.lookup(javaType).convert(javaType, value);
+        }
+        catch (ConversionException e)
+        {
+            return value;
+        }
     }
 
     private static boolean valuesEqual(Object stored, Object submitted)
@@ -705,6 +723,26 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (stored instanceof BigDecimal || submitted instanceof BigDecimal)
                 return new BigDecimal(stored.toString()).compareTo(new BigDecimal(submitted.toString())) == 0;
             return ((Number) stored).doubleValue() == ((Number) submitted).doubleValue();
+        }
+        if (stored instanceof Collection<?> && submitted instanceof Collection<?>)
+        {
+            List<Object> remaining = new ArrayList<>((Collection<?>) stored);
+            for (Object s : (Collection<?>) submitted)
+            {
+                boolean found = false;
+                for (int i = 0; i < remaining.size(); i++)
+                {
+                    if (valuesEqual(remaining.get(i), s))
+                    {
+                        remaining.remove(i);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return false;
+            }
+            return remaining.isEmpty();
         }
         return false;
     }
