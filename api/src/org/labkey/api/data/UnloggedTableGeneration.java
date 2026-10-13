@@ -92,6 +92,11 @@ public class UnloggedTableGeneration
         }
     }
 
+    static @Nullable String markerNameForTest()
+    {
+        return _markerName;
+    }
+
     /**
      * Empties the marker as a reset would and checks it immediately. Callers must empty their own UNLOGGED tables.
      * Invalidates every UNLOGGED materialized table on the server, not just the caller's.
