@@ -153,6 +153,9 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private volatile @NotNull Closer _runOnClose = () -> {};
 
+    // Set for ConnectionType.Thread; release must go back here even if the closing thread no longer shares the lender's connections
+    private volatile @Nullable DbScope.ConnectionHolder _threadConnectionHolder;
+
     /** Remember the first SQLException that happened on this connection, as it may have left the connection in a bad state */
     private SQLException _originalSqlException;
 
@@ -384,6 +387,16 @@ public class ConnectionWrapper implements java.sql.Connection
             }
         }
         return result;
+    }
+
+    @Nullable DbScope.ConnectionHolder getThreadConnectionHolder()
+    {
+        return _threadConnectionHolder;
+    }
+
+    void setThreadConnectionHolder(@Nullable DbScope.ConnectionHolder holder)
+    {
+        _threadConnectionHolder = holder;
     }
 
     /**

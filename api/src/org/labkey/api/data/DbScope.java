@@ -1158,7 +1158,9 @@ public class DbScope
                     @Override
                     void close(DbScope scope, Connection conn, Closer closer) throws SQLException
                     {
-                        if (scope.getConnectionHolder().release(conn))
+                        // Looking the holder up by effective thread is wrong once an AsyncQueryRequest worker outlives its share
+                        ConnectionHolder holder = conn instanceof ConnectionWrapper w && w.getThreadConnectionHolder() != null ? w.getThreadConnectionHolder() : scope.getConnectionHolder();
+                        if (holder.release(conn))
                         {
                             closer.close();
                         }
@@ -1176,7 +1178,7 @@ public class DbScope
         abstract void close(DbScope scope, Connection conn, Closer closer) throws SQLException;
     }
 
-    private class ConnectionHolder
+    class ConnectionHolder
     {
         private int _refCount = 0;
         private Connection _conn;
@@ -1189,7 +1191,9 @@ public class DbScope
         {
             if (0 == _refCount)
             {
-                _conn = getPooledConnection(ConnectionType.Thread, log);
+                ConnectionWrapper conn = getPooledConnection(ConnectionType.Thread, log);
+                conn.setThreadConnectionHolder(this);
+                _conn = conn;
             }
 
             _refCount++;

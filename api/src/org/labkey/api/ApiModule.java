@@ -53,6 +53,7 @@ import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AsyncQueryRequest;
 import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
@@ -520,6 +521,7 @@ public class ApiModule extends CodeOnlyModule
             ApiKeyManager.TestCase.class,
             ApiQueryResponse.TestCase.class,
             AppPropsTestCase.class,
+            AsyncQueryRequest.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
             BindingTestCase.class,
             BlockingCache.BlockingCacheTest.class,
