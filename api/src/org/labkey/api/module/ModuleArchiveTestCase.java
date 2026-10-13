@@ -119,6 +119,28 @@ public class ModuleArchiveTestCase extends Assert
         assertFalse(v2.isModified());
     }
 
+    @Test
+    public void testHeldUnchangedJarIsKept() throws IOException
+    {
+        long now = System.currentTimeMillis();
+        ModuleArchive v1 = writeArchive(now - 60_000, Map.of("dep.jar", "1", "app.jar", "1"));
+        File exploded = v1.extractAll();
+        File dep = libJar(exploded, "dep.jar");
+        File app = libJar(exploded, "app.jar");
+
+        // A rebuild that changes only app.jar, while the server holds dep.jar open
+        ModuleArchive v2 = writeArchive(now, Map.of("dep.jar", "1", "app.jar", "2"));
+        try (JarFile heldDep = new JarFile(dep))
+        {
+            heldDep.getEntry("version.txt");
+            v2.extractAll();
+        }
+
+        assertEquals("1", readVersion(dep));
+        assertEquals("2", readVersion(app));
+        assertFalse(v2.isModified());
+    }
+
     private static File libJar(File exploded, String name)
     {
         return FileUtil.appendPath(exploded, org.labkey.api.util.Path.parse("lib/" + name));
