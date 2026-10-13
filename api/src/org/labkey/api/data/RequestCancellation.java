@@ -25,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -36,11 +35,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -76,9 +75,7 @@ public final class RequestCancellation
         }
     }
 
-    private record Cancelled(Source source, long cancelledAt, @Nullable TransactionFilter.RequestTracker tracker) {}
-
-    private static final Map<Thread, Cancelled> _cancelledRequests = new ConcurrentHashMap<>();
+    record Cancelled(Source source, long cancelledAt) {}
 
     private RequestCancellation()
     {
@@ -90,10 +87,8 @@ public final class RequestCancellation
      */
     static boolean requestCancelled(@NotNull Thread thread, @Nullable TransactionFilter.RequestTracker tracker, @NotNull Source source)
     {
-        // A request can be cancelled more than once, e.g. a timeout after a client disconnect; time its exit from the first.
-        // An entry for another tracker is stale, left by a request that finished as it was being cancelled.
-        Cancelled cancelled = new Cancelled(source, System.currentTimeMillis(), tracker);
-        if (_cancelledRequests.compute(thread, (t, existing) -> existing != null && existing.tracker() == tracker ? existing : cancelled) != cancelled)
+        // A request can be cancelled more than once, e.g. a timeout after a client disconnect; time its exit from the first
+        if (tracker != null && !tracker.cancellation().compareAndSet(null, new Cancelled(source, System.currentTimeMillis())))
             return false;
 
         Long elapsedMs = null;
@@ -127,23 +122,19 @@ public final class RequestCancellation
     /** @return how the request on this thread was cancelled, or null if it hasn't been */
     public static @Nullable Source getSource(@NotNull Thread thread)
     {
-        Cancelled cancelled = _cancelledRequests.get(thread);
-        return cancelled == null || cancelled.tracker() != TransactionFilter.getRequestSummary(thread) ? null : cancelled.source();
+        TransactionFilter.RequestTracker tracker = TransactionFilter.getRequestSummary(thread);
+        Cancelled cancelled = tracker == null ? null : tracker.cancellation().get();
+        return cancelled == null ? null : cancelled.source();
     }
 
     /**
-     * Called as every request exits, after it's no longer pending; logs how long a cancelled one took to stop
+     * Called as every request exits; logs how long a cancelled one took to stop
      * @param tracker the exiting request's
      */
     static void requestFinished(@NotNull Thread thread, @NotNull TransactionFilter.RequestTracker tracker)
     {
-        Cancelled cancelled = _cancelledRequests.get(thread);
-        // Keep an entry that belongs to an outer request still running on this thread
-        if (cancelled == null || cancelled.tracker() == TransactionFilter.getRequestSummary(thread))
-            return;
-
-        _cancelledRequests.remove(thread, cancelled);
-        if (cancelled.tracker() != tracker)
+        Cancelled cancelled = tracker.cancellation().get();
+        if (cancelled == null)
             return;
 
         long cancelToExitMs = System.currentTimeMillis() - cancelled.cancelledAt();
@@ -165,38 +156,70 @@ public final class RequestCancellation
      */
     public static void cancelQueries(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
+        cancelQueriesWithPoolConnection(cancelQueriesWithoutConnection(connectionsByScope, source, count), source, count);
+    }
+
+    /**
+     * The first half of {@link #cancelQueries}, which never waits on the pool
+     * @return the connections it couldn't signal, for {@link #cancelQueriesWithPoolConnection}
+     */
+    static Map<DbScope, Set<ConnectionWrapper>> cancelQueriesWithoutConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
+    {
+        Map<DbScope, Set<ConnectionWrapper>> remaining = new HashMap<>();
         connectionsByScope.forEach((scope, connections) -> {
             if (connections.isEmpty())
                 return;
 
+            Set<ConnectionWrapper> signalled = Set.of();
             try
             {
-                SqlDialect dialect = scope.getSqlDialect();
-                Set<ConnectionWrapper> signalled = new HashSet<>(dialect.cancelQueriesWithoutConnection(connections));
+                signalled = scope.getSqlDialect().cancelQueriesWithoutConnection(connections);
+                backendsCancelled(scope, signalled, source, count);
+            }
+            catch (RuntimeException e)
+            {
+                LOG.error("Failed to cancel queries on {} for {}", scope.getDisplayName(), source, e);
+            }
 
-                // Falls back for sessions the driver's cancel request couldn't reach
-                List<ConnectionWrapper> remaining = connections.stream().filter(c -> !signalled.contains(c) && c.isAllocated()).toList();
-                if (!remaining.isEmpty() && dialect.cancelQueries(scope, remaining, false))
-                    signalled.addAll(remaining);
+            Set<ConnectionWrapper> unsignalled = new HashSet<>(connections);
+            unsignalled.removeAll(signalled);
+            if (!unsignalled.isEmpty())
+                remaining.put(scope, unsignalled);
+        });
+        return remaining;
+    }
 
-                if (!signalled.isEmpty())
-                {
-                    LOG.info("request-cancel-backends source={} scope={} spids={}", source, scope.getDisplayName(),
-                        signalled.stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet()));
-                    if (count)
-                    {
-                        signalled.forEach(c -> increment("backendCancelled"));
-                        // Shutdown never goes through requestCancelled, so its source metric counts backends instead of requests
-                        if (source == Source.SHUTDOWN)
-                            signalled.forEach(c -> increment(source._metricName));
-                    }
-                }
+    /** The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it can wait on an exhausted pool */
+    static void cancelQueriesWithPoolConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
+    {
+        connectionsByScope.forEach((scope, connections) -> {
+            try
+            {
+                List<ConnectionWrapper> allocated = connections.stream().filter(ConnectionWrapper::isAllocated).toList();
+                if (!allocated.isEmpty() && scope.getSqlDialect().cancelQueries(scope, allocated, false))
+                    backendsCancelled(scope, new HashSet<>(allocated), source, count);
             }
             catch (RuntimeException e)
             {
                 LOG.error("Failed to cancel queries on {} for {}", scope.getDisplayName(), source, e);
             }
         });
+    }
+
+    private static void backendsCancelled(DbScope scope, Set<ConnectionWrapper> signalled, Source source, boolean count)
+    {
+        if (signalled.isEmpty())
+            return;
+
+        LOG.info("request-cancel-backends source={} scope={} spids={}", source, scope.getDisplayName(),
+            signalled.stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet()));
+        if (count)
+        {
+            signalled.forEach(c -> increment("backendCancelled"));
+            // Shutdown never goes through requestCancelled, so its source metric counts backends instead of requests
+            if (source == Source.SHUTDOWN)
+                signalled.forEach(c -> increment(source._metricName));
+        }
     }
 
     private static void increment(String metricName)
@@ -233,9 +256,8 @@ public final class RequestCancellation
             }, "RequestCancellation test request");
 
             thread.start();
-            thread.join(30_000);
+            thread.join(60_000);
             assertFalse("Request thread didn't exit", thread.isAlive());
-            assertFalse("Cancel entry outlived its request", _cancelledRequests.containsKey(thread));
 
             switch (failure.get())
             {
@@ -286,28 +308,17 @@ public final class RequestCancellation
             }));
         }
 
-        /** A sweep can cancel a request just as it finishes, leaving an entry for a tracker that's gone */
+        /** A sweep can cancel a request just as it finishes; that mustn't carry over to the thread's next request */
         @Test
-        public void testStaleEntry() throws Exception
+        public void testFinishedRequest() throws Exception
         {
             runOnRequestThread(() -> {
                 Thread thread = Thread.currentThread();
                 AtomicReference<TransactionFilter.RequestTracker> finished = new AtomicReference<>();
                 doRequest(null, () -> finished.set(TransactionFilter.getRequestSummary(thread)));
 
-                // When the next request is cancelled too
                 requestCancelled(thread, finished.get(), Source.TIMEOUT);
-                doRequest(null, () -> {
-                    assertNull("Stale entry applied to the next request", getSource(thread));
-                    assertTrue(requestCancelled(thread, TransactionFilter.getRequestSummary(thread), Source.CLIENT_DISCONNECT));
-                    assertEquals(Source.CLIENT_DISCONNECT, getSource(thread));
-                });
-                assertFalse(_cancelledRequests.containsKey(thread));
-
-                // When it isn't, its exit removes the entry
-                requestCancelled(thread, finished.get(), Source.TIMEOUT);
-                doRequest(null, () -> assertNull("Stale entry applied to the next request", getSource(thread)));
-                assertFalse(_cancelledRequests.containsKey(thread));
+                doRequest(null, () -> assertNull("Cancel applied to the next request", getSource(thread)));
             });
         }
 

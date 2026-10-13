@@ -46,6 +46,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,11 +64,12 @@ public class TransactionFilter implements Filter
     /** Read-only, but a legitimate export on a large instance can outlast the read-only timeout */
     public static final String EXPORT_ATTRIBUTE_NAME = "ExportHttpRequest";
 
-    public record RequestTracker(HttpServletRequest request, long startTime)
+    /** @param cancellation set once, by the first {@link RequestCancellation#requestCancelled} */
+    public record RequestTracker(HttpServletRequest request, long startTime, AtomicReference<RequestCancellation.Cancelled> cancellation)
     {
         private RequestTracker(HttpServletRequest request)
         {
-            this(request, System.currentTimeMillis());
+            this(request, System.currentTimeMillis(), new AtomicReference<>());
         }
 
         public String toLogString()
@@ -226,6 +228,9 @@ public class TransactionFilter implements Filter
      */
     private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
+        Map<DbScope, Set<ConnectionWrapper>> unsignalled;
+        boolean first;
+
         // The cancelled query fails within milliseconds, so the request can finish mid-cancel; doFilter() can't release the thread while we hold this
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (tracker)
@@ -233,10 +238,10 @@ public class TransactionFilter implements Filter
             if (_pendingRequests.get(thread) != tracker)
                 return;
 
-            boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
+            first = RequestCancellation.requestCancelled(thread, tracker, source);
 
             // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
-            RequestCancellation.cancelQueries(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
+            unsignalled = RequestCancellation.cancelQueriesWithoutConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
 
             try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
             {
@@ -245,6 +250,10 @@ public class TransactionFilter implements Filter
             }
             thread.interrupt();
         }
+
+        // Outside the lock: borrowing from an exhausted pool must not hold up the request, which can't return its connection until it exits.
+        // Safe once the request is gone, since its wrappers are no longer allocated and the fallback skips them.
+        RequestCancellation.cancelQueriesWithPoolConnection(unsignalled, source, first);
     }
 
     public static int getPendingRequestCount()
@@ -320,16 +329,16 @@ public class TransactionFilter implements Filter
                             fail("Query wasn't cancelled");
                         }
                         catch (RuntimeException ignored) {} // Checked by its source below
-                        // Timeout plus the sweep's 5 s interval, with slack
-                        assertTrue("Cancel took too long", System.currentTimeMillis() - start < 10_000);
+                        // Timeout, HeartBeat's up-to-2 s lag, and the sweep's 5 s interval, with slack
+                        assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
                         assertEquals(RequestCancellation.Source.TIMEOUT, RequestCancellation.getSource(thread));
                     });
                     assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(thread).isEmpty());
 
                     RequestCancellation.TestCase.doRequest(null, () -> {
                         getRequestSummary(thread).request().setAttribute(EXPORT_ATTRIBUTE_NAME, true);
-                        // Long enough for at least one sweep after the timeout
-                        new SqlSelector(scope, "SELECT pg_sleep(8)").getObject(Object.class);
+                        // Long enough for a sweep after the timeout despite HeartBeat's lag
+                        new SqlSelector(scope, "SELECT pg_sleep(12)").getObject(Object.class);
                         assertNull("Export was cancelled", RequestCancellation.getSource(thread));
                     });
                 });
