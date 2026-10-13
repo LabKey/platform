@@ -1339,14 +1339,14 @@ public class Table
             for (; i < ste.length; i++)
             {
                 String line = ste[i].toString();
-                if (!line.startsWith("org.labkey.api.data.Table."))
+                if (!line.startsWith(Table.class.getName() + "."))
                     break;
             }
             int last = Math.min(ste.length, i + count);
             for (; i < last; i++)
             {
                 String line = ste[i].toString();
-                if (line.startsWith("javax.servelet.http.HttpServlet.service("))
+                if (line.startsWith(ExceptionUtil.SERVLET_SERVICE_FRAME_PREFIX))
                     break;
                 sb.append("\n\t").append(line);
             }
