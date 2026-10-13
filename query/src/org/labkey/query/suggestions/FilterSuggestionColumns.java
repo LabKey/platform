@@ -62,10 +62,7 @@ public class FilterSuggestionColumns
     /** @param lookups the lookup column whose target table supplies each lookup-valued column's values */
     public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups) {}
 
-    /**
-     * @param fieldKeys the grid's display columns; only those that resolve and that the user may read are kept, plus
-     *                  integer primary keys, which Q matches even when they are not displayed
-     */
+    /** @param fieldKeys the grid's display columns; only those that resolve and that the user may read are kept */
     public static @NotNull Described describe(@NotNull TableInfo table, @Nullable CustomView view, @Nullable Collection<String> fieldKeys)
     {
         Set<FieldKey> requested = new LinkedHashSet<>();
@@ -97,12 +94,7 @@ public class FilterSuggestionColumns
 
         Set<FieldKey> pkFieldKeys = new HashSet<>();
         for (ColumnInfo pk : table.getPkColumns())
-        {
             pkFieldKeys.add(pk.getFieldKey());
-            if (pk.getJdbcType().isInteger() && isAllowed(pk, maxAllowedPhi)
-                    && candidates.stream().noneMatch(c -> c.column().getFieldKey().equals(pk.getFieldKey())))
-                candidates.add(new Candidate(pk, viewCaptions.get(pk.getFieldKey())));
-        }
 
         String titleColumn = table.getTitleColumn();
         Set<String> seen = new HashSet<>();

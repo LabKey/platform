@@ -278,6 +278,37 @@
       ]
     },
     {
+      "name": "title that matches by shape but not the name expression",
+      "columnSet": "plasma",
+      "term": "XY-1234567",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "XY-1234567", "label": "Sample ID is XY-1234567", "source": "shape", "match": { "start": 13, "end": 23 } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "XY-1234567", "label": "Sample ID contains XY-1234567", "source": "shapeContains", "match": { "start": 19, "end": 29 } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "XY-1234567", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "XY-1234567",
+          "valueType": "string",
+          "label": "Filter a string field for XY-1234567 (10 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 36 }
+        },
+        { "kind": "search", "value": "XY-1234567", "label": "Search all columns for XY-1234567", "source": "fallback", "match": { "start": 23, "end": 33 } }
+      ]
+    },
+    {
       "name": "value shape of a high-cardinality column",
       "columnSet": "plasma",
       "term": "SUBJ-028504",
