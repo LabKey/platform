@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -151,18 +152,11 @@ public class UnloggedTableGeneration
 
     private static void verifyMarker(DbScope scope, Connection conn, String markerName)
     {
-        // A missing table fails the EXISTS query at parse time, and SqlSelector logs that failure at ERROR
-        SQLFragment found = new SQLFragment("SELECT to_regclass(?) IS NOT NULL", markerTable(markerName).getRawSQL());
-        if (!Boolean.TRUE.equals(new SqlSelector(scope, conn, found).getObject(Boolean.class)))
-        {
-            replaceMissingMarker(scope, conn, markerName);
-            return;
-        }
-
         try
         {
             SQLFragment exists = new SQLFragment("SELECT EXISTS (SELECT 1 FROM ").append(markerTable(markerName)).append(")");
-            if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).getObject(Boolean.class)))
+            // A missing marker is handled below; check() logs other failures through its throttle
+            if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).setLogLevel(Level.OFF).getObject(Boolean.class)))
                 return;
 
             // Bump only after the repair succeeds, so a failing repair does not bump again on every retry
@@ -174,15 +168,11 @@ public class UnloggedTableGeneration
         {
             if (!SqlDialect.isObjectNotFoundException(x))
                 throw x;
-            replaceMissingMarker(scope, conn, markerName);
-        }
-    }
 
-    private static void replaceMissingMarker(DbScope scope, Connection conn, String markerName)
-    {
-        createMarker(scope, conn);
-        _generation.incrementAndGet();
-        LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
+            createMarker(scope, conn);
+            _generation.incrementAndGet();
+            LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
+        }
     }
 
     private static void createMarker(DbScope scope, Connection conn)
