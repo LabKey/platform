@@ -10796,6 +10796,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("color", "string"));
+            props.add(new GWTPropertyDescriptor("count", "int"));
+            props.add(new GWTPropertyDescriptor("collected", "dateTime"));
             ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
             DomainProperty color = st.getDomain().getPropertyByName("color");
 
@@ -10812,7 +10814,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             JSONObject createJson = new JSONObject();
             createJson.put(ExperimentJSONConverter.NAME, "newSample");
             createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
-            createJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "red"));
+            createJson.put(ExperimentJSONConverter.PROPERTIES,
+                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02"));
 
             ExpMaterial created = handler.handleMaterial(context, createJson);
             assertNotNull("Author should be able to create a sample with properties", created);
@@ -10837,7 +10840,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             JSONObject unchangedJson = new JSONObject();
             unchangedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
             unchangedJson.put(ExperimentJSONConverter.PROPERTIES,
-                    new JSONObject().put("color", "red").put(ExperimentJSONConverter.NAME, "newSample"));
+                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
+                            .put(ExperimentJSONConverter.NAME, "newSample"));
             handler.handleMaterial(context, unchangedJson);
 
             assertEquals("Property must be unchanged after the round-trip",

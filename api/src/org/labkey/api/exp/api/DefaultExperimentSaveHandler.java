@@ -48,9 +48,11 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -462,13 +464,22 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 existingOutputs.put(input.getMaterial().getRowId(), input.getMaterial());
         }
 
-        Set<Long> existingInputRowIds = new HashSet<>();
+        Set<Long> existingMaterialInputRowIds = new HashSet<>();
         for (ExpMaterial in : run.getMaterialInputs().keySet())
-            existingInputRowIds.add(in.getRowId());
-        Set<Long> postedInputRowIds = new HashSet<>();
+            existingMaterialInputRowIds.add(in.getRowId());
+        Set<Long> postedMaterialInputRowIds = new HashSet<>();
         for (ExpMaterial in : inputMaterial.keySet())
-            postedInputRowIds.add(in.getRowId());
-        boolean inputsUnchanged = existingInputRowIds.equals(postedInputRowIds);
+            postedMaterialInputRowIds.add(in.getRowId());
+
+        Set<Long> existingDataInputRowIds = new HashSet<>();
+        for (ExpData in : run.getDataInputs().keySet())
+            existingDataInputRowIds.add(in.getRowId());
+        Set<Long> postedDataInputRowIds = new HashSet<>();
+        for (ExpData in : inputData.keySet())
+            postedDataInputRowIds.add(in.getRowId());
+
+        boolean inputsUnchanged = existingMaterialInputRowIds.equals(postedMaterialInputRowIds)
+                && existingDataInputRowIds.equals(postedDataInputRowIds);
 
         run.deleteProtocolApplications(context.getUser());
 
@@ -670,13 +681,30 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
     {
         if (submitted.has(ExperimentJSONConverter.NAME)
-                && !Objects.equals(submitted.get(ExperimentJSONConverter.NAME), material.getName()))
+                && !valuesEqual(submitted.get(ExperimentJSONConverter.NAME), material.getName()))
             return true;
 
         for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(submitted, dps, context.getContainer(), true).entrySet())
         {
-            if (!Objects.equals(material.getProperty(entry.getKey()), entry.getValue()))
+            if (!valuesEqual(material.getProperty(entry.getKey()), entry.getValue()))
                 return true;
+        }
+        return false;
+    }
+
+    private static boolean valuesEqual(Object stored, Object submitted)
+    {
+        if (Objects.equals(stored, submitted))
+            return true;
+        if (stored == null || submitted == null)
+            return false;
+        if (stored instanceof Date && submitted instanceof Date)
+            return ((Date) stored).getTime() == ((Date) submitted).getTime();
+        if (stored instanceof Number && submitted instanceof Number)
+        {
+            if (stored instanceof BigDecimal || submitted instanceof BigDecimal)
+                return new BigDecimal(stored.toString()).compareTo(new BigDecimal(submitted.toString())) == 0;
+            return ((Number) stored).doubleValue() == ((Number) submitted).doubleValue();
         }
         return false;
     }
