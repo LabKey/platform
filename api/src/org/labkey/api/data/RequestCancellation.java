@@ -177,7 +177,12 @@ public final class RequestCancellation
                     LOG.info("request-cancel-backends source={} scope={} spids={}", source, scope.getDisplayName(),
                         signalled.stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet()));
                     if (count)
+                    {
                         signalled.forEach(c -> increment("backendCancelled"));
+                        // Shutdown never goes through requestCancelled, so its source metric counts backends instead of requests
+                        if (source == Source.SHUTDOWN)
+                            signalled.forEach(c -> increment(source._metricName));
+                    }
                 }
             }
             catch (RuntimeException e)

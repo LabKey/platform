@@ -691,7 +691,26 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                isServerCancelledQuery(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
+    }
+
+    /** The server stopped this request's query itself, on timeout or shutdown */
+    private static boolean isServerCancelledQuery(Throwable ex)
+    {
+        for (Throwable t = ex; t != null; t = t.getCause() == t ? null : t.getCause())
+        {
+            if (t instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx))
+                return RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown();
+        }
+        return false;
+    }
+
+    /** Unlike a client abort, the client is still waiting for a response */
+    private static boolean isRequestTimeout(Throwable ex)
+    {
+        return RequestCancellation.getSource(Thread.currentThread()) == RequestCancellation.Source.TIMEOUT &&
+            (ex instanceof AbortedRequestException || isServerCancelledQuery(ex));
     }
 
     static class WebPartErrorView extends WebPartView<Object>
@@ -759,12 +778,6 @@ public class ExceptionUtil
                 return true;
             }
 
-            // The server stopped this request's query itself, on timeout or shutdown
-            if (ex instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx) && (RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown()))
-            {
-                return true;
-            }
-
             // Recurse to see if the root exception is a client abort exception
             if (ex.getCause() != ex)
             {
@@ -806,7 +819,7 @@ public class ExceptionUtil
         Throwable unhandledException = ex;
         String responseStatusMessage = null;    // set to use non default status message
 
-        if (isClientAbortException(ex))
+        if (isClientAbortException(ex) && !isRequestTimeout(ex))
         {
             // The client dropped the connection. We don't care about this case,
             // and don't need to send an error back to the browser either.
@@ -877,6 +890,13 @@ public class ExceptionUtil
                 // Do nothing
             }
             return null;
+        }
+        else if (isRequestTimeout(ex))
+        {
+            responseStatus = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            message = "This request took too long and was cancelled";
+            responseStatusMessage = message;
+            unhandledException = null;
         }
         else if (ex instanceof ApiUsageException)
         {
