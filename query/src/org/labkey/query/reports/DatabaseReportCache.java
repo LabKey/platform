@@ -43,70 +43,74 @@ import java.util.Map;
  */
 public class DatabaseReportCache
 {
-    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database reports", (c, argument) -> new ReportCollections(c));
+    private static final Cache<Container, ReportCollections> REPORT_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database reports", (c, argument) -> ReportCollections.load(c));
 
-    private static class ReportCollections
-    {
-        private final Map<Integer, Report> _rowIdMap;
-        private final Map<String, Report> _entityIdMap;
-        private final MultiValuedMap<String, Report> _reportKeyMap;
-        private final Collection<Report> _inheritableReports;
-
-        private ReportCollections(Container c)
+    private record ReportCollections(Map<Integer, Report> _rowIdMap, Map<String, Report> _entityIdMap,
+                                     MultiValuedMap<String, Report> _reportKeyMap,
+                                     Collection<Report> _inheritableReports)
         {
-            ReportServiceImpl svc = ReportServiceImpl.getInstance();
-            Map<Integer, Report> rowIdMap = new IntHashMap<>();
-            Map<String, Report> entityIdMap = new HashMap<>();
-            MultiValuedMap<String, Report> reportKeyMap = new CaseInsensitiveArrayListValuedMap<>(); // Issue 36199: change map to by case insensitive
-            List<Report> inheritableReports = new LinkedList<>();
+            // Issue 53472: most containers have no reports, so share one instance across them
+            private static final ReportCollections EMPTY = new ReportCollections(Collections.emptyMap(), Collections.emptyMap(), MultiMapUtils.emptyMultiValuedMap(), Collections.emptyList());
 
-            new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(ReportDB.class, reportDB -> {
-                Report report = svc._getInstance(reportDB);
+            private static ReportCollections load(Container c)
+            {
+                ReportServiceImpl svc = ReportServiceImpl.getInstance();
+                Map<Integer, Report> rowIdMap = new IntHashMap<>();
+                Map<String, Report> entityIdMap = new HashMap<>();
+                MultiValuedMap<String, Report> reportKeyMap = new CaseInsensitiveArrayListValuedMap<>(); // Issue 36199: change map to by case insensitive
+                List<Report> inheritableReports = new LinkedList<>();
 
-                // Reports can be null if type is unknown (e.g., defining module disappears)
-                if (null != report)
-                {
-                    rowIdMap.put(reportDB.getRowId(), report);
-                    entityIdMap.put(reportDB.getEntityId(), report);
-                    reportKeyMap.put(reportDB.getReportKey(), report);
+                new TableSelector(CoreSchema.getInstance().getTableInfoReport(), SimpleFilter.createContainerFilter(c, "ContainerId"), null).forEach(ReportDB.class, reportDB -> {
+                    Report report = svc._getInstance(reportDB);
 
-                    if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
-                        inheritableReports.add(report);
-                }
-            });
+                    // Reports can be null if type is unknown (e.g., defining module disappears)
+                    if (null != report)
+                    {
+                        rowIdMap.put(reportDB.getRowId(), report);
+                        entityIdMap.put(reportDB.getEntityId(), report);
+                        reportKeyMap.put(reportDB.getReportKey(), report);
 
-            _rowIdMap = rowIdMap.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(rowIdMap);
-            _entityIdMap = entityIdMap.isEmpty() ? Collections.emptyMap() : Collections.unmodifiableMap(entityIdMap);
-            _reportKeyMap = reportKeyMap.isEmpty() ? MultiMapUtils.emptyMultiValuedMap() : MultiMapUtils.unmodifiableMultiValuedMap(reportKeyMap);
-            _inheritableReports = inheritableReports.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(inheritableReports);
+                        if ((reportDB.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+                            inheritableReports.add(report);
+                    }
+                });
+
+                if (rowIdMap.isEmpty())
+                    return EMPTY;
+
+                return new ReportCollections(
+                        Collections.unmodifiableMap(rowIdMap),
+                        Collections.unmodifiableMap(entityIdMap),
+                        MultiMapUtils.unmodifiableMultiValuedMap(reportKeyMap),
+                        inheritableReports.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(inheritableReports));
+            }
+
+            private @Nullable Report getForRowId(int rowId)
+            {
+                return _rowIdMap.get(rowId);
+            }
+
+            private @Nullable Report getForEntityId(String entityId)
+            {
+                return _entityIdMap.get(entityId);
+            }
+
+            private @NotNull Collection<Report> getForReportKey(String reportKey)
+            {
+                Collection<Report> reports = _reportKeyMap.get(reportKey);
+                return null != reports ? reports : Collections.emptyList();
+            }
+
+            private @NotNull Collection<Report> getReports()
+            {
+                return _rowIdMap.values();
+            }
+
+            private @NotNull Collection<Report> getInheritableReports()
+            {
+                return _inheritableReports;
+            }
         }
-
-        private @Nullable Report getForRowId(int rowId)
-        {
-            return _rowIdMap.get(rowId);
-        }
-
-        private @Nullable Report getForEntityId(String entityId)
-        {
-            return _entityIdMap.get(entityId);
-        }
-
-        private @NotNull Collection<Report> getForReportKey(String reportKey)
-        {
-            Collection<Report> reports = _reportKeyMap.get(reportKey);
-            return null != reports ? reports : Collections.emptyList();
-        }
-
-        private @NotNull Collection<Report> getReports()
-        {
-            return _rowIdMap.values();
-        }
-
-        private @NotNull Collection<Report> getInheritableReports()
-        {
-            return _inheritableReports;
-        }
-    }
 
     static @Nullable Report getReport(Container c, int rowId)
     {

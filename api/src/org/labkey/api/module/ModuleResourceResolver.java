@@ -46,7 +46,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = LogManager.getLogger(ModuleResourceResolver.class);
-    private static final BlockingCache<String, Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
+    private static final BlockingCache<String, Resource> CACHE = CacheManager.getBlockingCache(String.class, 50000, CacheManager.DAY, "Module resources", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
 
     // This ends up one per module; Consider: single static set to track all registered listeners?

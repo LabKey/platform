@@ -39,6 +39,8 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
+import org.labkey.api.cache.UserKeySimpleCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -124,6 +126,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
@@ -180,6 +183,7 @@ import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JspTestCase;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
@@ -240,10 +244,6 @@ public class ApiModule extends CodeOnlyModule
     private static final String CORS_PREFIX = "cors.";
     private static final String CORS_FILTER_NAME = "CorsFilter";
 
-    public static final String EXTJS_3_REQUIRED = "ExtJs3Required";
-    public static final String EXTJS_3_API_REQUIRED = "ExtJs3ApiRequired";
-    public static final String ALLOW_MUTATING_SQL_VIA_GET = "AllowMutatingSqlViaGet";
-
     @Override
     protected void init()
     {
@@ -272,30 +272,6 @@ public class ApiModule extends CodeOnlyModule
             false,
             false,
             OptionalFeatureService.FeatureType.Optional
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            EXTJS_3_REQUIRED,
-            "Require that ExtJS v3.4.1 is loaded on every page",
-            "This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            EXTJS_3_API_REQUIRED,
-            "Require that ExtJS v3.x-based Client API is loaded on every page",
-            "This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
-        ));
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-            ALLOW_MUTATING_SQL_VIA_GET,
-            "Allow GET requests to execute mutating SQL",
-            "We strongly recommend leaving this off since it bypasses a critical security check (CSRF). This option will be removed in LabKey Server 26.11",
-            false,
-            false,
-            FeatureType.Deprecated
         ));
     }
 
@@ -428,6 +404,7 @@ public class ApiModule extends CodeOnlyModule
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
+            CacheManager.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,
@@ -471,6 +448,7 @@ public class ApiModule extends CodeOnlyModule
             JobRunner.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            KeySharingJSONTokener.TestCase.class,
             LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
@@ -588,6 +566,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryView.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
@@ -607,6 +586,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.CoreTableSelectorTest.class,
             TempTableInClauseGenerator.TestCase.class,
             URLHelper.TestCase.class,
+            UserKeySimpleCache.TestCase.class,
             UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,
