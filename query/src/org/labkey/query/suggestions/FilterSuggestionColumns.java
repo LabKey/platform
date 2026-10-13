@@ -151,9 +151,15 @@ public class FilterSuggestionColumns
             && !(fk instanceof RowIdForeignKey rowIdFk && rowIdFk.getOriginalColumn().equals(column));
     }
 
+    private static boolean isJunctionLookup(ColumnInfo column)
+    {
+        return column.getFk() instanceof MultiValuedForeignKey mvfk && mvfk.getJunctionLookup() != null && isLookup(column);
+    }
+
     private static boolean isFacetingOff(ColumnInfo column, DisplayColumn renderer)
     {
-        if (PropertyType.FILE_LINK == column.getPropertyType() || renderer instanceof IMultiValuedDisplayColumn)
+        // Faceting is off for multi-valued renderers, but junction lookup values are read one per row from the junction table
+        if (PropertyType.FILE_LINK == column.getPropertyType() || (renderer instanceof IMultiValuedDisplayColumn && !isJunctionLookup(column)))
             return true;
         TableInfo parent = column.getParentTable();
         if (parent != null && parent.getSqlDialect() != null && !parent.getSqlDialect().isSortableDataType(column.getSqlTypeName()))
@@ -172,14 +178,18 @@ public class FilterSuggestionColumns
         if (!renderer.isFilterable() || isFacetingOff(column, renderer))
             return null;
         String inputType = column.getInputType();
-        if ("file".equals(inputType) || "textarea".equals(inputType) || PropertyType.TIME.getTypeUri().equals(column.getRangeURI()))
+        // LSID keys default to textarea, but a lookup is searched by its display value
+        boolean longText = "textarea".equals(inputType) && !isLookup(column);
+        if ("file".equals(inputType) || longText || PropertyType.TIME.getTypeUri().equals(column.getRangeURI()))
             return null;
-        if (renderer instanceof IMultiValuedDisplayColumn || PropertyType.MULTI_CHOICE.getTypeUri().equals(column.getRangeURI()))
-            return null;
-        if (column.getFk() instanceof MultiValuedForeignKey mvfk && mvfk.getJunctionLookup() != null && isLookup(column))
+        if (PropertyType.MULTI_CHOICE.getTypeUri().equals(column.getRangeURI()))
             return null;
 
         String jsonType = displayField != null ? displayField.getRenderer().getJsonTypeName() : renderer.getJsonTypeName();
+        if (isJunctionLookup(column))
+            return "string".equals(jsonType) ? Strategy.LOOKUP : null;
+        if (renderer instanceof IMultiValuedDisplayColumn)
+            return null;
         if (isPrimaryKey && "int".equals(jsonType))
             return Strategy.KEY;
         if (validValues != null && !validValues.isEmpty())
@@ -223,6 +233,7 @@ public class FilterSuggestionColumns
         SuggestionColumn suggestionColumn = new SuggestionColumn(filterColumn.getFieldKey().toString(), caption, type, filterColumn);
         suggestionColumn.setTitle(titleColumn != null && titleColumn.equalsIgnoreCase(column.getFieldKey().toString()));
         suggestionColumn.setUniqueId(column.isUniqueIdField());
+        suggestionColumn.setMultiValued(isJunctionLookup(column));
         suggestionColumn.addNameExpression(column.getNameExpression());
 
         switch (strategy)

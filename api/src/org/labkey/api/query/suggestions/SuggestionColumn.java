@@ -39,6 +39,7 @@ public class SuggestionColumn
     private boolean _title;
     private boolean _uniqueId;
     private boolean _rangeUnknown;
+    private boolean _multiValued;
     private final List<String> _nameExpressions = new ArrayList<>();
     private @Nullable List<String> _values;
     private @Nullable List<String> _shapes;
@@ -115,6 +116,17 @@ public class SuggestionColumn
     public void setRangeUnknown(boolean rangeUnknown)
     {
         _rangeUnknown = rangeUnknown;
+    }
+
+    /** Each row's values are joined into one string, so a single value can only be matched with Contains. */
+    public boolean isMultiValued()
+    {
+        return _multiValued;
+    }
+
+    public void setMultiValued(boolean multiValued)
+    {
+        _multiValued = multiValued;
     }
 
     /** Name expressions whose generated names this column holds, e.g. a sample type's name and aliquot expressions. */
