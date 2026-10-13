@@ -26,6 +26,11 @@
       { "fieldKey": "IsAliquot", "caption": "Is Aliquot", "type": "boolean", "values": ["true", "false"] },
       { "fieldKey": "RowId", "caption": "Row Id", "type": "int", "isKey": true }
     ],
+    "molecules": [
+      { "fieldKey": "Name", "caption": "Name", "type": "string", "isTitle": true, "nameExpression": "M-${genId}", "shapes": ["A-9", "A-99"] },
+      { "fieldKey": "Components/Name", "caption": "Components", "type": "string", "multiValued": true, "values": ["CMP-7", "NS-29", "NS-30", "PS-28", "PS-29"] },
+      { "fieldKey": "Features/Name", "caption": "Features", "type": "string", "multiValued": true, "shapes": ["AAA-999"] }
+    ],
     "unknownRanges": [
       { "fieldKey": "Concentration", "caption": "Concentration", "type": "float", "rangeUnknown": true },
       { "fieldKey": "Collected", "caption": "Collected", "type": "date", "rangeUnknown": true },
@@ -275,6 +280,52 @@
           "match": { "start": 26, "end": 31 }
         },
         { "kind": "search", "value": "Avail", "label": "Search all columns for Avail", "source": "fallback", "match": { "start": 23, "end": 28 } }
+      ]
+    },
+    {
+      "name": "a value of a multi-valued lookup is matched with contains",
+      "columnSet": "molecules",
+      "term": "PS-29",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Components/Name", "op": "contains", "value": "PS-29", "label": "Components contains PS-29", "source": "exactValue", "match": { "start": 20, "end": 25 } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Components/Name", "op": "contains" }], "value": "PS-29", "valueType": "string", "label": "Filter Components…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "Components/Name", "op": "contains" },
+            { "fieldKey": "Features/Name", "op": "contains" }
+          ],
+          "value": "PS-29",
+          "valueType": "string",
+          "label": "Filter a string field for PS-29 (3 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 31 }
+        },
+        { "kind": "search", "value": "PS-29", "label": "Search all columns for PS-29", "source": "fallback", "match": { "start": 23, "end": 28 } }
+      ]
+    },
+    {
+      "name": "value shape of a multi-valued lookup is matched with contains",
+      "columnSet": "molecules",
+      "term": "FTR-123",
+      "expected": [
+        { "kind": "filter", "fieldKey": "Features/Name", "op": "contains", "value": "FTR-123", "label": "Features contains FTR-123", "source": "shape", "match": { "start": 18, "end": 25 } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Features/Name", "op": "contains" }], "value": "FTR-123", "valueType": "string", "label": "Filter Features…", "source": "compose" },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "Components/Name", "op": "contains" },
+            { "fieldKey": "Features/Name", "op": "contains" }
+          ],
+          "value": "FTR-123",
+          "valueType": "string",
+          "label": "Filter a string field for FTR-123 (3 columns)",
+          "source": "compose",
+          "match": { "start": 26, "end": 33 }
+        },
+        { "kind": "search", "value": "FTR-123", "label": "Search all columns for FTR-123", "source": "fallback", "match": { "start": 23, "end": 30 } }
       ]
     },
     {

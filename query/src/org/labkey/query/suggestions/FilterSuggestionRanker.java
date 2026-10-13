@@ -97,11 +97,11 @@ public class FilterSuggestionRanker
             boolean nameMatch = matchesNameExpression(column, raw);
             if (nameMatch || (column.isUniqueId() && BARCODE_PATTERN.matcher(raw).matches()))
             {
-                addFilter(direct, seen, column, "eq", raw, "identity", raw);
+                addFilter(direct, seen, column, valueOp(column), raw, "identity", raw);
                 // Any prefix of a generated name also matches its pattern, and users often type only a prefix
                 if (nameMatch)
                     addFilter(direct, seen, column, "contains", raw, "identityContains", raw);
-                stringSignals.putIfAbsent(column.getFieldKey(), "eq");
+                stringSignals.putIfAbsent(column.getFieldKey(), valueOp(column));
             }
         }
 
@@ -110,7 +110,7 @@ public class FilterSuggestionRanker
             if (column.getType() == SuggestionColumn.Type.INT || column.getValues() == null)
                 continue;
             column.getValues().stream().filter(value -> lower(value).equals(lcRaw)).findFirst().ifPresent(exact -> {
-                addFilter(direct, seen, column, "eq", exact, "exactValue", raw);
+                addFilter(direct, seen, column, valueOp(column), exact, "exactValue", raw);
                 if (column.getType() == SuggestionColumn.Type.STRING)
                     stringSignals.putIfAbsent(column.getFieldKey(), "contains");
             });
@@ -137,7 +137,7 @@ public class FilterSuggestionRanker
             partials.stream()
                 .sorted(Comparator.comparing((Partial p) -> !p.isPrefix()).thenComparingInt(p -> p.value().length()))
                 .limit(MAX_PARTIAL_VALUE_SUGGESTIONS)
-                .forEach(p -> addFilter(direct, seen, p.column(), "eq", p.value(), "partialValue", raw));
+                .forEach(p -> addFilter(direct, seen, p.column(), valueOp(p.column()), p.value(), "partialValue", raw));
         }
 
         if (isCount)
@@ -154,11 +154,11 @@ public class FilterSuggestionRanker
         {
             if (column.getType() == SuggestionColumn.Type.STRING && column.getShapes() != null && column.getShapes().contains(shape))
             {
-                addFilter(direct, seen, column, "eq", raw, "shape", raw);
+                addFilter(direct, seen, column, valueOp(column), raw, "shape", raw);
                 // Titles entered by hand don't follow the name expression, but users still search them by prefix
                 if (column.isTitle())
                     addFilter(direct, seen, column, "contains", raw, "shapeContains", raw);
-                stringSignals.putIfAbsent(column.getFieldKey(), "eq");
+                stringSignals.putIfAbsent(column.getFieldKey(), valueOp(column));
             }
         }
 
@@ -219,6 +219,12 @@ public class FilterSuggestionRanker
     private static String lower(String s)
     {
         return s.toLowerCase(Locale.ROOT);
+    }
+
+    /** Equals never matches a multi-valued column, whose rows hold their values joined into one string */
+    private static String valueOp(SuggestionColumn column)
+    {
+        return column.isMultiValued() ? "contains" : "eq";
     }
 
     private static void addFilter(List<FilterSuggestion> direct, Set<String> seen, SuggestionColumn column, String op, String value, String source, String raw)
@@ -382,6 +388,7 @@ public class FilterSuggestionRanker
                 column.setTitle(node.path("isTitle").asBoolean(false));
                 column.setUniqueId(node.path("isUniqueId").asBoolean(false));
                 column.setRangeUnknown(node.path("rangeUnknown").asBoolean(false));
+                column.setMultiValued(node.path("multiValued").asBoolean(false));
                 column.addNameExpression(node.path("nameExpression").asText(null));
                 column.setValues(toStrings(node.get("values")));
                 column.setShapes(toStrings(node.get("shapes")));

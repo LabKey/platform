@@ -33,6 +33,8 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -168,7 +170,20 @@ public class ColumnFactsCache
 
         String shapesKey()
         {
+            if (column.isMultiValued())
+                return shapesScope().key("shapes", shapesColumn().getFieldKey().toString(), null);
             return scope.key("shapes", column.getFieldKey(), column.getChangeToken());
+        }
+
+        /** A multi-valued column joins each row's values into one string, so its shapes come from the junction table */
+        Scope shapesScope()
+        {
+            return column.isMultiValued() ? Objects.requireNonNull(lookupScope) : scope;
+        }
+
+        ColumnInfo shapesColumn()
+        {
+            return column.isMultiValued() ? Objects.requireNonNull(lookupDisplay) : info;
         }
     }
 
@@ -263,9 +278,21 @@ public class ColumnFactsCache
     {
         try
         {
-            TableInfo target = lookup.getFk() == null ? null : lookup.getFk().getLookupTableInfo();
-            UserSchema targetSchema = target == null ? null : target.getUserSchema();
+            ForeignKey fk = lookup.getFk();
+            TableInfo target;
             FieldKey displayKey = getRelativeFieldKey(info.getFieldKey(), lookup.getFieldKey());
+            if (fk instanceof MultiValuedForeignKey mvfk)
+            {
+                // The value table holds every possible value; the junction holds only those in use, one per row
+                target = mvfk.getSourceFk().getLookupTableInfo();
+                if (displayKey != null)
+                    displayKey = FieldKey.fromParts(FieldKey.fromParts(mvfk.getJunctionLookup()), displayKey);
+            }
+            else
+            {
+                target = fk == null ? null : fk.getLookupTableInfo();
+            }
+            UserSchema targetSchema = target == null ? null : target.getUserSchema();
             if (targetSchema == null || displayKey == null || !target.hasPermission(user, ReadPermission.class))
                 return null;
 
@@ -368,10 +395,10 @@ public class ColumnFactsCache
         plans.forEach(plan -> byKey.put(plan.shapesKey(), plan));
         return ensure(byKey.keySet(), scope.ttl(), environment, scope.name(), keys -> {
             List<Plan> missing = keys.stream().map(byKey::get).toList();
-            Map<FieldKey, ColumnFact.Shapes> shapes = _source.loadShapes(scope.table(), missing.stream().map(Plan::info).toList(), scope.parameters());
+            Map<FieldKey, ColumnFact.Shapes> shapes = _source.loadShapes(scope.table(), missing.stream().map(Plan::shapesColumn).toList(), scope.parameters());
             Map<String, ColumnFact> facts = new HashMap<>();
             missing.forEach(plan -> {
-                ColumnFact.Shapes columnShapes = shapes.get(plan.info().getFieldKey());
+                ColumnFact.Shapes columnShapes = shapes.get(plan.shapesColumn().getFieldKey());
                 if (columnShapes != null)
                     facts.put(plan.shapesKey(), columnShapes);
             });
@@ -384,7 +411,7 @@ public class ColumnFactsCache
         Scope lookupScope = Objects.requireNonNull(plan.lookupScope());
         return loadValues(plan, lookupScope, environment).thenCompose(_ ->
             _cache.get(plan.valuesKey()) instanceof ColumnFact.Values values && values.isOverflow()
-                ? loadShapes(plan.scope(), List.of(plan), environment)
+                ? loadShapes(plan.shapesScope(), List.of(plan), environment)
                 : CompletableFuture.completedFuture(null));
     }
 
