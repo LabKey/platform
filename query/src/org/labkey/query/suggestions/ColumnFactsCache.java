@@ -518,7 +518,8 @@ public class ColumnFactsCache
         ColumnFact stats = _cache.get(plan.statsKey());
         if (plan.kind() != Kind.STRING)
         {
-            column.setRangeUnknown(stats instanceof ColumnFact.Failed || (stats instanceof ColumnFact.Stats s && s.rangeUnknown()));
+            // Stats that failed or haven't loaded yet leave the range unknown, so the column isn't treated as out of range
+            column.setRangeUnknown(!(stats instanceof ColumnFact.Stats s) || s.rangeUnknown());
             if (stats instanceof ColumnFact.Stats s)
                 column.setRange(s.min(), s.max());
         }
@@ -844,6 +845,8 @@ public class ColumnFactsCache
             assertTrue("Budget not honored", System.currentTimeMillis() - start < 1_500);
             assertNull(byFieldKey(cold).get("color").getValues());
             assertNull(byFieldKey(cold).get("concentration").getMin());
+            assertTrue(byFieldKey(cold).get("concentration").isRangeUnknown());
+            assertTrue(byFieldKey(cold).get("collected").isRangeUnknown());
 
             assertTrue(cache.awaitIdle(60_000));
             FilterSuggestionColumns.Described warm = FilterSuggestionColumns.describe(table, null, FIELD_KEYS);
