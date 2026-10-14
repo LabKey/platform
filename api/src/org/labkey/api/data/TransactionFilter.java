@@ -228,6 +228,7 @@ public class TransactionFilter implements Filter
     private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
         Map<DbScope, Set<ConnectionWrapper>> unsignalled;
+        RequestCancellation.Cancelled cancelled;
         boolean first;
 
         // The cancelled query fails within milliseconds, so the request can finish mid-cancel; doFilter() can't release the thread while we hold this
@@ -238,9 +239,12 @@ public class TransactionFilter implements Filter
                 return;
 
             first = RequestCancellation.requestCancelled(thread, tracker, source);
+            if (!first)
+                RequestCancellation.cancelledRequestStillRunning(thread, tracker);
+            cancelled = tracker.cancellation().get();
 
             // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
-            unsignalled = RequestCancellation.cancelQueriesWithoutConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, first);
+            unsignalled = RequestCancellation.cancelQueriesWithoutConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, cancelled, first);
 
             try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
             {
@@ -252,7 +256,7 @@ public class TransactionFilter implements Filter
 
         // Outside the lock: opening a connection to a struggling database must not hold up the request's exit.
         // Safe once the request is gone, since its wrappers are no longer allocated and the fallback skips them.
-        RequestCancellation.cancelQueriesWithNewConnection(unsignalled, source, first);
+        RequestCancellation.cancelQueriesWithNewConnection(unsignalled, source, cancelled, first);
     }
 
     public static int getPendingRequestCount()
