@@ -562,7 +562,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
             material = ExperimentService.get().getExpMaterial(materialRowId);
-            if (material == null)
+            if (material == null || !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find material with row id '" + materialRowId + "'");
             sampleType = material.getSampleType();
         }
@@ -570,7 +570,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             String materialLsid = materialObject.getString(ExperimentJSONConverter.LSID);
             material = ExperimentService.get().getExpMaterial(materialLsid);
-            if (material == null)
+            if (material == null || !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find material with LSID '" + materialLsid + "'");
             sampleType = material.getSampleType();
         }
@@ -637,6 +637,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                         material = materials.getFirst();
                 }
 
+                if (material != null && !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
+                    throw new NotFoundException("Could not find material '" + materialName + "'");
+
                 if (material == null)
                 {
                     material = createMaterial(context, sampleType, materialName);
@@ -648,9 +651,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
         if (material == null)
             return null;
-
-        if (!material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
-            throw new NotFoundException("Could not find material with row id " + material.getRowId());
 
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
