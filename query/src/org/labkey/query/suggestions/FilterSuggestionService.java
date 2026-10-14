@@ -113,6 +113,10 @@ public class FilterSuggestionService
         if (!table.hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException();
 
+        // No cached value or sample name is longer, so only the search can match
+        if (term.getRaw().length() > ColumnFactsLoader.MAX_VALUE_LENGTH)
+            return new FilterSuggestionsResponse(List.of(FilterSuggestion.search(term.getRaw())), true);
+
         FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, getView(schema, request, user), request.columns());
         List<SuggestionColumn> columns = described.columns();
 

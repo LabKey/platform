@@ -896,6 +896,12 @@ public class ColumnFactsCache
                 SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, FIELD_KEYS, "SUBJ-999999", null);
             suggestions = FilterSuggestionService.getSuggestions(_user, _c, subject).suggestions();
             assertTrue(suggestions.toString(), suggestions.stream().anyMatch(s -> "subject".equalsIgnoreCase(s.fieldKey()) && "shape".equals(s.source())));
+
+            String longTerm = "a".repeat(ColumnFactsLoader.MAX_VALUE_LENGTH + 1);
+            FilterSuggestionService.FilterSuggestionsRequest tooLong = new FilterSuggestionService.FilterSuggestionsRequest(
+                SamplesSchema.SCHEMA_NAME, SAMPLE_TYPE, null, null, null, FIELD_KEYS, longTerm, null);
+            suggestions = FilterSuggestionService.getSuggestions(_user, _c, tooLong).suggestions();
+            assertEquals(List.of(FilterSuggestion.search(longTerm)), suggestions);
         }
     }
 }
