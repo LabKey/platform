@@ -489,6 +489,7 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
