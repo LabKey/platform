@@ -23,12 +23,14 @@ import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.simple.SimpleLogger;
 import org.apache.logging.log4j.util.PropertiesUtil;
 import org.apache.tomcat.util.http.InvalidParameterException;
+import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.apache.tomcat.util.http.fileupload.InvalidFileNameException;
 import org.apache.tomcat.util.http.fileupload.MultipartStream;
 import org.apache.tomcat.util.http.fileupload.impl.FileCountLimitExceededException;
 import org.apache.tomcat.util.http.fileupload.impl.IOFileUploadException;
 import org.apache.tomcat.util.http.fileupload.impl.InvalidContentTypeException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeException;
+import org.apache.tomcat.util.res.StringManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -707,6 +709,7 @@ public class ExceptionUtil
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
                 isInvalidParameterException(ex) ||
+                isMaxPostSizeExceeded(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
     }
 
@@ -741,7 +744,17 @@ public class ExceptionUtil
             return true;
 
         return Stream.iterate(ex, Objects::nonNull, Throwable::getCause)
-            .anyMatch(t -> CLIENT_REQUEST_FAILURES.stream().anyMatch(c -> c.isInstance(t)));
+            .anyMatch(t -> CLIENT_REQUEST_FAILURES.stream().anyMatch(c -> c.isInstance(t)) ||
+                isMaxPostSizeExceeded(t) ||
+                // Tomcat throws a cause-less FileUploadException for a malformed header, e.g., no boundary
+                (t.getClass() == FileUploadException.class && t.getCause() == null));
+    }
+
+    /** Tomcat reports multipart form fields over the connector's maxPostSize as a plain IllegalStateException */
+    public static boolean isMaxPostSizeExceeded(Throwable ex)
+    {
+        return ex != null && ex.getClass() == IllegalStateException.class && ex.getMessage() != null &&
+            ex.getMessage().equals(StringManager.getManager("org.apache.catalina.connector").getString("coyoteRequest.maxPostSizeExceeded"));
     }
 
     private static @Nullable IllegalStateException getParameterFailure(Throwable ex, HttpServletRequest request)
@@ -754,7 +767,7 @@ public class ExceptionUtil
             request.getParameterMap();
             return null;
         }
-        // Tomcat throws a plain IllegalStateException for some multipart failures, e.g., no multipart config
+        // Tomcat throws a plain IllegalStateException for some multipart failures, e.g., fields over maxPostSize
         catch (IllegalStateException ise)
         {
             return ise;
@@ -868,7 +881,8 @@ public class ExceptionUtil
         Throwable unhandledException = ex;
         String responseStatusMessage = null;    // set to use non default status message
 
-        if (isClientAbortException(ex))
+        // A malformed upload looks like a client abort, but the client is still waiting for a response
+        if (isClientAbortException(ex) && !isInvalidParameterException(ex))
         {
             // The client dropped the connection. We don't care about this case,
             // and don't need to send an error back to the browser either.
@@ -951,6 +965,12 @@ public class ExceptionUtil
                 log.debug("Invalid request parameters", parameterFailure);
                 status = ((InvalidParameterException) parameterFailure).getErrorCode();
                 statusMessage = "Invalid request parameters";
+            }
+            else if (isMaxPostSizeExceeded(parameterFailure))
+            {
+                log.debug("Request parameters too large", parameterFailure);
+                status = HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE;
+                statusMessage = "Request parameters too large";
             }
             else
             {
@@ -1615,6 +1635,22 @@ public class ExceptionUtil
             assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
             assertFalse(answer.response.headers.containsKey("Logger.error"));
             assertTrue(isIgnorable(new InvalidParameterException(new org.apache.coyote.BadRequestException("Connection reset"))));
+
+            // Thrown directly, the upload failure looks like a client abort but still needs a response
+            InvalidParameterException truncated = new InvalidParameterException(new IOFileUploadException("Processing failed", new MultipartStream.MalformedStreamException("Stream ended unexpectedly")));
+            answer = handleIt(guest, truncated, truncated);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+
+            InvalidParameterException noBoundary = new InvalidParameterException(new FileUploadException("the request was rejected because no multipart boundary was found"));
+            answer = handleIt(guest, noBoundary, noBoundary);
+            assertEquals(HttpServletResponse.SC_BAD_REQUEST, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+            IllegalStateException tooLarge = new IllegalStateException(StringManager.getManager("org.apache.catalina.connector").getString("coyoteRequest.maxPostSizeExceeded"));
+            answer = handleIt(guest, tooLarge, tooLarge);
+            assertEquals(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, answer.response.status);
+            assertFalse(answer.response.headers.containsKey("Logger.error"));
+            assertTrue(isIgnorable(tooLarge));
         }
 
         @Test
