@@ -772,7 +772,7 @@ public class SecurityManager
     }
 
     // Unauthenticated callers can trigger these warnings on every request
-    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>("apikey parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>(String.class, "API key parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 

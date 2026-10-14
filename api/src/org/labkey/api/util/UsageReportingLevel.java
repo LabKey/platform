@@ -121,7 +121,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
                     putModulesMetrics(modulesMap);
                     putModulesBuildInfo(modulesMap);
 
-                    metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
+                    metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts());
                     metrics.put("auditCommentsRequiredContainerCount", ContainerManager.getAuditCommentRequiredCount());
 
                     report.addHostName();
