@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.security.User;
@@ -339,7 +338,6 @@ public final class RequestCancellation
         private static BlockedQuery startBlockedQuery() throws InterruptedException
         {
             DbScope scope = DbScope.getLabKeyScope();
-            Assume.assumeTrue("Needs PostgreSQL", scope.getSqlDialect().isPostgreSQL());
 
             AtomicReference<Throwable> failure = new AtomicReference<>();
             Thread queryThread = new Thread(() -> {

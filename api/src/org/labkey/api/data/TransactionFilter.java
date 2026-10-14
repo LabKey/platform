@@ -27,7 +27,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
@@ -312,7 +311,6 @@ public class TransactionFilter implements Filter
         public void testSweep() throws Exception
         {
             DbScope scope = DbScope.getLabKeyScope();
-            Assume.assumeTrue("Needs PostgreSQL", scope.getSqlDialect().isPostgreSQL());
 
             int originalTimeout = AppProps.getInstance().getReadOnlyHttpRequestTimeout();
             setReadOnlyTimeout(2);

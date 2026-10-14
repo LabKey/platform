@@ -29,7 +29,6 @@ import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -362,7 +361,6 @@ public class AsyncQueryRequest<T>
         public void testInterruptReleasesConnection() throws Exception
         {
             DbScope scope = DbScope.getLabKeyScope();
-            Assume.assumeTrue("Needs PostgreSQL", scope.getSqlDialect().isPostgreSQL());
 
             for (int i = 0; i < 5; i++)
             {
