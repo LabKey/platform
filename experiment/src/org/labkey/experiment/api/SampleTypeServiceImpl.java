@@ -378,7 +378,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        Map<ExpMaterialImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
         tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
 
         if (tracker.wasFull())

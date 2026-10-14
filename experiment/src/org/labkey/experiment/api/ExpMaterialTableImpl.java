@@ -244,7 +244,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
+        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, ExpMaterialTable.Column.class, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId"), NullResult));
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
@@ -1055,7 +1055,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         setDefaultVisibleColumns(defaultCols);
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn(RowId.name()), _ss, true);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn(RowId.name()), _ss, true);
         addColumn(lineageLookup);
     }
 
