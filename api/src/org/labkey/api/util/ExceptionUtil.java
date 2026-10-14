@@ -76,6 +76,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -117,6 +118,8 @@ public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
     public static final String CALCULATED_COLUMN_SQL_TAG = "/* CALCULATED-EXPRESSION-COLUMN-QUERY */";
+    /** Stack frames from here down are container plumbing, not useful in a trace */
+    public static final String SERVLET_SERVICE_FRAME_PREFIX = HttpServlet.class.getName() + ".service(";
 
     private static final JobRunner JOB_RUNNER = new JobRunner("Mothership Reporting", 1);
     private static final Logger LOG = LogHelper.getLogger(ExceptionUtil.class, "Handles rendering of errors during requests");
@@ -162,7 +165,7 @@ public class ExceptionUtil
         for (int i = linesToSkip; i < stackTrace.length; i++)
         {
             String line = String.valueOf(stackTrace[i]);
-            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+            if (line.startsWith(SERVLET_SERVICE_FRAME_PREFIX))
                 break;
             trace.append("\n\tat ");
             trace.append(line);

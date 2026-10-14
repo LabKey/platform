@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.StringUtilsLabKey.pluralize;
@@ -201,6 +202,9 @@ public class QueryMcp implements McpService.McpImpl
 
         if (columnMap == null)
             throw new IllegalArgumentException("validateCalculatedColumnExpression requires a columnMap supplied by the endpoint; it cannot be invoked directly.");
+
+        if (toolContext.getContext().get(ExpressionAssistantAgentAction.VALIDATION_CALLS_ATTR) instanceof AtomicInteger calls)
+            calls.incrementAndGet();
 
         try
         {
