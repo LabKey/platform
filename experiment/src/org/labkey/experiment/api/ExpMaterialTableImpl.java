@@ -2612,16 +2612,23 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         public void testDeleteWithoutViewNotLogged() throws Exception
         {
             ExpSampleType st = createSampleType("IncrUpdDeleteNoView");
-            List<Integer> roots = insertRoots(st, "R1", "R2");
-            // Indexing the inserted samples reads through the view and would rebuild it after the remove
-            SearchService.get().waitForIdle();
-            _materializedQueries.remove(st.getLSID());
-            assertFalse("Precondition: no cached view", isMaterialized(st.getLSID()));
-
+            List<Integer> roots = insertRoots(st, "R1", "R2", "R3", "R4", "R5", "R6");
             InvalidationCounters counters = getInvalidateCounters(st.getLSID());
-            long before = counters.delete.get();
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(roots.getFirst().longValue()), true, st, false, false);
-            assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
+
+            // Async search indexing reads through the view and can rebuild it mid-attempt. Only this test removes it,
+            // so if it's still absent after the delete, it was absent during the delete too.
+            for (Integer root : roots)
+            {
+                _materializedQueries.remove(st.getLSID());
+                long before = counters.delete.get();
+                ExperimentServiceImpl.get().deleteMaterialByRowIds(_user, _c, List.of(root.longValue()), true, st, false, false);
+                if (!isMaterialized(st.getLSID()))
+                {
+                    assertNull("Deletes with no cached view must not be logged", counters.getDeletedRowIds(before, counters.delete.get()));
+                    return;
+                }
+            }
+            fail("View was rebuilt during every delete attempt");
         }
 
         @Test
