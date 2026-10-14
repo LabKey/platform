@@ -710,8 +710,15 @@ public class ExceptionUtil
     /** Unlike a client abort, the client is still waiting for a response */
     private static boolean isRequestTimeout(Throwable ex)
     {
-        return RequestCancellation.getSource(Thread.currentThread()) == RequestCancellation.Source.TIMEOUT &&
-            (ex instanceof AbortedRequestException || isServerCancelledQuery(ex));
+        if (RequestCancellation.getSource(Thread.currentThread()) != RequestCancellation.Source.TIMEOUT)
+            return false;
+
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof AbortedRequestException)
+                return true;
+        }
+        return isServerCancelledQuery(ex);
     }
 
     static class WebPartErrorView extends WebPartView<Object>
@@ -1532,6 +1539,7 @@ public class ExceptionUtil
                 assertTrue(isIgnorable(cancelledQuery()));
                 assertTrue(isRequestTimeout(cancelledQuery()));
                 assertTrue(isRequestTimeout(new AbortedRequestException("test")));
+                assertTrue(isRequestTimeout(new RuntimeException(new AbortedRequestException("test"))));
 
                 for (Exception ex : List.of(cancelledQuery(), new AbortedRequestException("test")))
                 {

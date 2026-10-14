@@ -405,6 +405,11 @@ public class DbScope
                 // don't know what database version is there.
                 if (_dialect.isIdentifierTooLong(name))
                     throw new ConfigurationException("Database name \"" + name + "\" in DataSource \"" + dsName + "\" exceeds the maximum identifier length");
+
+                // The read-only timeout sweep sends cancels while holding up the request's exit,
+                // so don't wait out pgjdbc's 10 s default on an unreachable database. A setting in the JDBC URL or connection properties still wins.
+                if (_connectionProperties != null)
+                    _connectionProperties.putIfAbsent("cancelSignalTimeout", "2");
             }
 
             // Validate that the data source is using a supported connection pool
