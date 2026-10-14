@@ -20,10 +20,10 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
 /**
- * Local implementation of documentation search/retrieval, backing the {@code searchDocumentation}/
- * {@code retrieveDocument} MCP tools in {@code CoreMcp}. Only registered on servers that host the LabKey
- * documentation content and its vector store (currently www.labkey.org); every other server forwards those
- * tool calls to www.labkey.org instead of calling this service. See {@link #isEnabled()}.
+ * Documentation search/retrieval, backing the {@code searchDocumentation}/{@code retrieveDocument} MCP tools in
+ * {@code CoreMcp}. The registered implementation does the work locally and exists only on servers that host the
+ * LabKey documentation content and its vector store (currently www.labkey.org); elsewhere, {@code CoreMcp} uses an
+ * unregistered implementation that forwards each call to that server. See {@link #isEnabled()}.
  */
 public interface DocumentationService
 {

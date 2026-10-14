@@ -19,6 +19,7 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
@@ -47,7 +48,6 @@ import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,31 +57,35 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
-    private static boolean isDocumentationSourceRemote(ToolContext context)
+    /** Settings and the forwarded-request guard can change per call, so the implementation is chosen per call */
+    private static @NotNull DocumentationService getDocumentationService(ToolContext context)
     {
-        if (McpToolProxy.isForwarded(context))
-            return false;
-        if (DocumentationService.get() instanceof DocumentationService s && s.isEnabled())
-            return false;
-        var documentationServer = AppProps.getInstance().getDocumentationServer();
+        DocumentationService local = DocumentationService.get();
+        if (local != null && local.isEnabled())
+            return local;
+
+        String documentationServer = AppProps.getInstance().getDocumentationServer();
+        // A forwarded call must never be forwarded again
+        if (!McpToolProxy.isForwarded(context) && isRemote(documentationServer))
+            return new ForwardingDocumentationService(documentationServer);
+
+        throw new McpException("Documentation is not available on this server.");
+    }
+
+    private static boolean isRemote(String documentationServer)
+    {
         if (isBlank(documentationServer))
             return false;
 
-        var baseServerUrl = AppProps.getInstance().getBaseServerUrl();
         try
         {
-            // Disallow call back to self.  If this looks like a self-reference (www.labkey.org trying to call www.labkey.org) return false.
-            return !(new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(baseServerUrl).getHost()));
+            // Disallow call back to self. If this looks like a self-reference (www.labkey.org trying to call www.labkey.org) return false.
+            return !new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(AppProps.getInstance().getBaseServerUrl()).getHost());
         }
         catch (URISyntaxException x)
         {
             return false;
         }
-    }
-
-    private String forward(String remoteToolName, Map<String, Object> arguments)
-    {
-        return McpToolProxy.forward(AppProps.getInstance().getDocumentationServer(), remoteToolName, arguments);
     }
 
 
@@ -94,19 +98,7 @@ public class CoreMcp implements McpService.McpImpl
             @ToolParam(description = "Natural language search query describing what you're looking for") String query,
             @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") Integer topK)
     {
-        if (isDocumentationSourceRemote(context))
-        {
-            Map<String, Object> arguments = new HashMap<>();
-            arguments.put("query", query);
-            if (topK != null)
-                arguments.put("topK", topK);
-            return forward("searchDocumentation", arguments);
-        }
-
-        DocumentationService svc = DocumentationService.get();
-        if (svc == null || !svc.isEnabled())
-            throw new McpException("Documentation search is not available on this server.");
-        return svc.searchDocumentation(query, topK);
+        return getDocumentationService(context).searchDocumentation(query, topK);
     }
 
     @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
@@ -114,15 +106,7 @@ public class CoreMcp implements McpService.McpImpl
     String retrieveDocument(ToolContext context,
             @ToolParam(description = "Id of the document to return") String id)
     {
-        if (isDocumentationSourceRemote(context))
-        {
-            return forward("retrieveDocument", Map.of("id", id));
-        }
-
-        DocumentationService svc = DocumentationService.get();
-        if (svc == null || !svc.isEnabled())
-            throw new McpException("Documentation retrieval is not available on this server.");
-        return svc.retrieveDocument(id);
+        return getDocumentationService(context).retrieveDocument(id);
     }
 
     @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +
