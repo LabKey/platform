@@ -29,6 +29,7 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -47,6 +48,8 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         AuditUserComment
     }
 
+    record RowData(Map<String, Object> updatedRow, Map<String, Object> providedValues, Map<String, Object> existingRow) {}
+
     final MapDataIterator _data;
     final User _user;
     final Container _container;
@@ -58,9 +61,8 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     Function<Map<String, Object>, Map<String, Object>> _extractProvidedValues;
 
     // for batching
-    final ArrayList<Map<String,Object>> _updatedRows = new ArrayList<>();
-    final ArrayList<Map<String, Object>> _providedValues = new ArrayList<>();
-    final ArrayList<Map<String,Object>> _existingRows;
+    final List<RowData> _rowData = new ArrayList<>();
+    final boolean _supportsExistingRows;
 
     protected DetailedAuditLogDataIterator(DataIterator data, DataIteratorContext context, TableInfo table, QueryService.AuditAction auditAction, User user, Container c, @Nullable Function<Map<String, Object>, Map<String, Object>> extractProvidedValues)
     {
@@ -80,7 +82,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.BulkLoad);
         assert !context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.ByPassAudit);
 
-        _existingRows = _data.supportsGetExistingRecord() ? new ArrayList<>() : null;
+        _supportsExistingRows = _data.supportsGetExistingRecord();
     }
 
     @Override
@@ -100,25 +102,24 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
     {
         boolean hasNext = _data.next();
 
-        if (!hasNext || _updatedRows.size() > 1000)
+        if (!hasNext || _rowData.size() > 1000)
         {
-            if (!_updatedRows.isEmpty())
-                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, _updatedRows, _existingRows, _providedValues, _useTransactionAuditCache);
-            _updatedRows.clear();
-            if (null != _existingRows)
-                _existingRows.clear();
+            if (!_rowData.isEmpty())
+            {
+                List<Map<String, Object>> updatedRows = _rowData.stream().map(RowData::updatedRow).toList();
+                List<Map<String, Object>> providedValues = _rowData.stream().map(RowData::providedValues).toList();
+                List<Map<String, Object>> existingRows = _supportsExistingRows ? _rowData.stream().map(RowData::existingRow).toList() : null;
+                _auditHandler.addAuditEvent(_user, _container, _table, DETAILED, _userComment, _auditAction, updatedRows, existingRows, providedValues, _useTransactionAuditCache);
+            }
+            _rowData.clear();
         }
         if (hasNext)
         {
             Map<String, Object> map = _data.getMap();
-            _updatedRows.add(map);
-            if (_extractProvidedValues != null)
-                _providedValues.add(_extractProvidedValues.apply(map));
-            else
-                _providedValues.add(null);
-
-            if (null != _existingRows)
-                _existingRows.add(_data.getExistingRecord());
+            _rowData.add(new RowData(
+                map,
+                _extractProvidedValues != null ? _extractProvidedValues.apply(map) : null,
+                _supportsExistingRows ? _data.getExistingRecord() : null));
         }
         return hasNext;
     }
