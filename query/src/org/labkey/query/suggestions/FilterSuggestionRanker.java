@@ -16,6 +16,7 @@
 package org.labkey.query.suggestions;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -65,9 +66,37 @@ public class FilterSuggestionRanker
     private static final Pattern DIGIT_PATTERN = Pattern.compile("\\d");
     private static final Pattern ALPHANUMERIC_PATTERN = Pattern.compile("[A-Za-z0-9]");
 
-    private static final Map<String, Optional<Pattern>> NAME_EXPRESSION_PATTERNS = new ConcurrentHashMap<>();
+    private static final Map<String, Optional<NameExpressionMatcher>> NAME_EXPRESSION_MATCHERS = new ConcurrentHashMap<>();
 
     private record Partial(SuggestionColumn column, boolean isPrefix, String value) {}
+
+    /**
+     * Constant parts of a name expression, with gaps[i] the minimum length of the substitutions between literals[i] and
+     * literals[i + 1]. Matched without regex so a term can't trigger backtracking.
+     */
+    record NameExpressionMatcher(List<String> literals, int[] gaps)
+    {
+        boolean matches(String value)
+        {
+            if (!Strings.CI.startsWith(value, literals.getFirst()))
+                return false;
+            int pos = literals.getFirst().length();
+            if (gaps.length == 0)
+                return value.length() == pos;
+
+            // Substitutions match anything, so placing each literal at its earliest position never rules out a match
+            for (int i = 1; i < literals.size() - 1; i++)
+            {
+                int idx = Strings.CI.indexOf(value, literals.get(i), pos + gaps[i - 1]);
+                if (idx < 0)
+                    return false;
+                pos = idx + literals.get(i).length();
+            }
+
+            String suffix = literals.getLast();
+            return value.length() - suffix.length() >= pos + gaps[gaps.length - 1] && Strings.CI.endsWith(value, suffix);
+        }
+    }
 
     public static @NotNull List<FilterSuggestion> rank(@NotNull SuggestionTerm term, @NotNull List<SuggestionColumn> columns, int maxSuggestions)
     {
@@ -251,21 +280,21 @@ public class FilterSuggestionRanker
     private static boolean matchesNameExpression(SuggestionColumn column, String raw)
     {
         return column.getNameExpressions().stream()
-            .map(FilterSuggestionRanker::getNameExpressionPattern)
-            .anyMatch(pattern -> pattern != null && pattern.matcher(raw).matches());
+            .map(FilterSuggestionRanker::getNameExpressionMatcher)
+            .anyMatch(matcher -> matcher != null && matcher.matches(raw));
     }
 
-    private static @Nullable Pattern getNameExpressionPattern(String expression)
+    private static @Nullable NameExpressionMatcher getNameExpressionMatcher(String expression)
     {
-        Optional<Pattern> pattern = NAME_EXPRESSION_PATTERNS.get(expression);
-        if (pattern == null)
+        Optional<NameExpressionMatcher> matcher = NAME_EXPRESSION_MATCHERS.get(expression);
+        if (matcher == null)
         {
-            if (NAME_EXPRESSION_PATTERNS.size() >= MAX_CACHED_PATTERNS)
-                NAME_EXPRESSION_PATTERNS.clear();
-            pattern = Optional.ofNullable(nameExpressionToPattern(expression));
-            NAME_EXPRESSION_PATTERNS.put(expression, pattern);
+            if (NAME_EXPRESSION_MATCHERS.size() >= MAX_CACHED_PATTERNS)
+                NAME_EXPRESSION_MATCHERS.clear();
+            matcher = Optional.ofNullable(compileNameExpression(expression));
+            NAME_EXPRESSION_MATCHERS.put(expression, matcher);
         }
-        return pattern.orElse(null);
+        return matcher.orElse(null);
     }
 
     private static @Nullable BigDecimal toBigDecimal(@Nullable Object value)
@@ -313,15 +342,16 @@ public class FilterSuggestionRanker
     }
 
     /**
-     * Compiles a name expression into a pattern where each ${...} substitution matches anything. Returns null when the
+     * Compiles a name expression into a matcher where each ${...} substitution matches anything. Returns null when the
      * constant parts carry no letter or digit, since a bare separator (e.g. "${Parent}-${genId}") matches too much.
      */
-    public static @Nullable Pattern nameExpressionToPattern(@Nullable String expression)
+    static @Nullable NameExpressionMatcher compileNameExpression(@Nullable String expression)
     {
         if (expression == null || expression.isEmpty())
             return null;
 
-        StringBuilder pattern = new StringBuilder("^");
+        List<String> literals = new ArrayList<>();
+        List<Integer> gaps = new ArrayList<>();
         StringBuilder literal = new StringBuilder();
         StringBuilder run = new StringBuilder();
         int i = 0;
@@ -345,8 +375,15 @@ public class FilterSuggestionRanker
                         j++;
                     }
                 }
-                appendLiteral(pattern, run);
-                pattern.append(".+?");
+                // Adjacent substitutions widen the current gap rather than adding an empty literal
+                if (run.isEmpty() && !gaps.isEmpty())
+                    gaps.set(gaps.size() - 1, gaps.getLast() + 1);
+                else
+                {
+                    literals.add(run.toString());
+                    run.setLength(0);
+                    gaps.add(1);
+                }
                 i = j;
             }
             else
@@ -356,21 +393,12 @@ public class FilterSuggestionRanker
                 i++;
             }
         }
-        appendLiteral(pattern, run);
+        literals.add(run.toString());
 
         if (!ALPHANUMERIC_PATTERN.matcher(literal).find())
             return null;
 
-        return Pattern.compile(pattern.append("$").toString(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-    }
-
-    private static void appendLiteral(StringBuilder pattern, StringBuilder run)
-    {
-        if (!run.isEmpty())
-        {
-            pattern.append(Pattern.quote(run.toString()));
-            run.setLength(0);
-        }
+        return new NameExpressionMatcher(List.copyOf(literals), gaps.stream().mapToInt(Integer::intValue).toArray());
     }
 
     public static class TestCase extends Assert
@@ -434,25 +462,43 @@ public class FilterSuggestionRanker
         }
 
         @Test
-        public void testNameExpressionPattern()
+        public void testNameExpressionMatcher()
         {
-            Pattern pattern = nameExpressionToPattern("PL-${genId}");
-            assertNotNull(pattern);
-            assertTrue(pattern.matcher("PL-5000000").matches());
-            assertTrue(pattern.matcher("pl-5000000-1").matches());
-            assertFalse(pattern.matcher("PL-").matches());
-            assertFalse(pattern.matcher("XPL-1").matches());
+            NameExpressionMatcher matcher = compileNameExpression("PL-${genId}");
+            assertNotNull(matcher);
+            assertTrue(matcher.matches("PL-5000000"));
+            assertTrue(matcher.matches("pl-5000000-1"));
+            assertFalse(matcher.matches("PL-"));
+            assertFalse(matcher.matches("XPL-1"));
 
-            Pattern nested = nameExpressionToPattern("S-${${AliquotedFrom}-:defaultValue('x')}.${genId}");
+            NameExpressionMatcher nested = compileNameExpression("S-${${AliquotedFrom}-:defaultValue('x')}.${genId}");
             assertNotNull(nested);
-            assertTrue(nested.matcher("S-abc.1").matches());
+            assertTrue(nested.matches("S-abc.1"));
+            assertFalse(nested.matches("S-.1"));
+            assertFalse(nested.matches("S-abc."));
 
-            assertNull(nameExpressionToPattern("${Parent}-${genId}"));
-            assertNull(nameExpressionToPattern(""));
-            Pattern literalDot = nameExpressionToPattern("a.b${x}");
+            assertNull(compileNameExpression("${Parent}-${genId}"));
+            assertNull(compileNameExpression(""));
+            NameExpressionMatcher literalDot = compileNameExpression("a.b${x}");
             assertNotNull(literalDot);
-            assertTrue(literalDot.matcher("a.b1").matches());
-            assertFalse(literalDot.matcher("aXb1").matches());
+            assertTrue(literalDot.matches("a.b1"));
+            assertFalse(literalDot.matches("aXb1"));
+
+            NameExpressionMatcher adjacent = compileNameExpression("${a}${b}x");
+            assertNotNull(adjacent);
+            assertFalse(adjacent.matches("ax"));
+            assertTrue(adjacent.matches("abx"));
+
+            NameExpressionMatcher constant = compileNameExpression("Fixed");
+            assertNotNull(constant);
+            assertTrue(constant.matches("fixed"));
+            assertFalse(constant.matches("Fixed1"));
+
+            // Suffix may not overlap the last middle literal
+            NameExpressionMatcher overlap = compileNameExpression("${a}-x${b}x-");
+            assertNotNull(overlap);
+            assertFalse(overlap.matches("1-x-"));
+            assertTrue(overlap.matches("1-x2x-"));
         }
 
         @Test
