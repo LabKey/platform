@@ -32,12 +32,12 @@ import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -4676,7 +4676,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(Path.class, 1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {

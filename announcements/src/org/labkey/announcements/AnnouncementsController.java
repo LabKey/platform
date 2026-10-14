@@ -34,6 +34,7 @@ import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.announcements.model.DailyDigestEmailPrefsSelector;
 import org.labkey.announcements.model.IndividualEmailPrefsSelector;
 import org.labkey.announcements.model.InsertMessagePermission;
+import org.labkey.announcements.model.MessageBoardContributorRole;
 import org.labkey.announcements.model.Permissions;
 import org.labkey.announcements.model.Settings;
 import org.labkey.announcements.query.AnnouncementSchema;
@@ -814,6 +815,16 @@ public class AnnouncementsController extends SpringActionController
             if (null == insert.getParent() || insert.getParent().isEmpty())
                 insert.setParent(form.getParentId());
 
+            if (null != insert.getParent())
+            {
+                AnnouncementModel parent = AnnouncementManager.getAnnouncement(c, insert.getParent());
+                // A response's own member list is a stale snapshot, so allowResponse() must see the thread itself
+                if (null == parent || null != parent.getParent())
+                    throw createThreadNotFoundException(c);
+                if (!getPermissions().allowResponse(parent))
+                    throw new UnauthorizedException();
+            }
+
             try
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
@@ -931,7 +942,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != form.getParentId())
                 parent = AnnouncementManager.getAnnouncement(c, form.getParentId());
 
-            if (null == parent)
+            if (null == parent || null != parent.getParent())
             {
                 throw createThreadNotFoundException(c);
             }
@@ -2696,6 +2707,22 @@ public class AnnouncementsController extends SpringActionController
         return thread;
     }
 
+    // An empty memberListInput clears the thread's member list, so API writes carry the current list forward. Members
+    // who can no longer read are dropped, otherwise validation rejects the whole post.
+    private String getRetainedMemberListInput(List<Integer> memberListIds)
+    {
+        Settings settings = getSettings();
+        AnnouncementModel probe = new AnnouncementModel();
+        probe.setMemberListIds(memberListIds);
+
+        return memberListIds.stream()
+            .map(UserManager::getUser)
+            .filter(Objects::nonNull)
+            .filter(member -> getPermissions(getContainer(), member, settings).allowRead(probe))
+            .map(member -> String.valueOf(member.getUserId()))
+            .collect(Collectors.joining("\n"));
+    }
+
     public static class CreateThreadForm extends ThreadForm
     {
         private boolean _reply;
@@ -2738,7 +2765,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 var parentThread = getThread(getContainer(), null, newThread.getParent());
 
-                if (parentThread == null)
+                if (parentThread == null || parentThread.getParent() != null)
                 {
                     errors.reject(ERROR_MSG, "Failed to reply to thread. Unable to find parent thread \"" + newThread.getParent() + "\".");
                     return null;
@@ -2748,6 +2775,11 @@ public class AnnouncementsController extends SpringActionController
                     errors.reject(ERROR_MSG, "Failed to reply to thread. Could not locate most recent response for thread \"" + parentThread.getEntityId() + "\".");
                     return null;
                 }
+
+                if (!getPermissions().allowResponse(parentThread))
+                    throw new UnauthorizedException();
+
+                newThread.setMemberListInput(getRetainedMemberListInput(parentThread.getMemberListIds()));
             }
 
             try
@@ -2878,6 +2910,8 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
 
             var updatedThread = copyEditableProps(thread, rawThread, false);
+            // The member list is saved per post, so keep this post's own list rather than the thread's latest
+            updatedThread.setMemberListInput(getRetainedMemberListInput(AnnouncementManager.getPostMemberList(thread.getRowId())));
 
             try
             {
@@ -3090,6 +3124,174 @@ public class AnnouncementsController extends SpringActionController
             assertNotNull("announcement schema should be available in a secure message board folder", schema);
             TableInfo table = schema.getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
             return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), null, null).getArrayList(Integer.class));
+        }
+    }
+
+    // GH Issue 1444
+    public static class MemberListTestCase extends AbstractContainerScopingTest
+    {
+        private Container createBoard(String name, String secure)
+        {
+            Container c = createContainer(name);
+            Settings settings = AnnouncementManager.getMessageBoardSettings(c);
+            settings.setSecure(secure);
+            settings.setMemberList(true);
+            AnnouncementManager.saveMessageBoardSettings(c, settings);
+            return c;
+        }
+
+        private AnnouncementModel insertThread(Container c, User... members) throws Exception
+        {
+            AnnouncementModel insert = new AnnouncementModel();
+            insert.setTitle("Member list test thread");
+            insert.setBody("body");
+            insert.setMemberListInput(Arrays.stream(members).map(member -> String.valueOf(member.getUserId())).collect(Collectors.joining("\n")));
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), insert, null, false);
+        }
+
+        private List<Integer> currentMemberList(Container c, AnnouncementModel thread)
+        {
+            return AnnouncementManager.getAnnouncement(c, thread.getEntityId()).getMemberListIds();
+        }
+
+        @Test
+        public void testSecureReplyRequiresMembership() throws Exception
+        {
+            Container secure = createBoard("Secure", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            User nonMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, member);
+
+            ActionURL apiReply = new ActionURL(CreateThreadAction.class, secure)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", thread.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+            ActionURL uiReply = new ActionURL(RespondAction.class, secure)
+                .addParameter("parentId", thread.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(apiReply, nonMember));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(uiReply, nonMember));
+            assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
+
+            // Positive control: a member can reply through the API, and the reply keeps them on the member list
+            assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
+            assertEquals(List.of(member.getUserId()), currentMemberList(secure, thread));
+        }
+
+        @Test
+        public void testRemovedMemberCannotReplyViaOldResponse() throws Exception
+        {
+            Container secure = createBoard("SecureRemoved", Settings.SECURE_WITHOUT_EMAIL);
+            User formerMember = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, formerMember);
+
+            // The first response still records formerMember on its member list; the second removes them from the thread
+            AnnouncementModel oldResponse = insertResponse(secure, thread, String.valueOf(formerMember.getUserId()));
+            insertResponse(secure, thread, null);
+            assertEquals(List.of(), currentMemberList(secure, thread));
+
+            ActionURL viaOldResponse = new ActionURL(RespondAction.class, secure)
+                .addParameter("parentId", oldResponse.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+            ActionURL viaThread = new ActionURL(RespondAction.class, secure)
+                .addParameter("parentId", thread.getEntityId())
+                .addParameter("title", "Reply")
+                .addParameter("body", "reply body");
+
+            assertStatus(HttpServletResponse.SC_NOT_FOUND, post(viaOldResponse, formerMember));
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, post(viaThread, formerMember));
+        }
+
+        @Test
+        public void testApiReplyToResponseRejected() throws Exception
+        {
+            Container secure = createBoard("SecureApiResponse", Settings.SECURE_WITHOUT_EMAIL);
+            User member = createUserInRole(secure, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(secure, member);
+            AnnouncementModel response = insertResponse(secure, thread, String.valueOf(member.getUserId()));
+
+            ActionURL viaResponse = new ActionURL(CreateThreadAction.class, secure)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", response.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, post(viaResponse, member));
+            assertEquals(1, AnnouncementManager.getAnnouncement(secure, thread.getEntityId()).getResponses().size());
+        }
+
+        private AnnouncementModel insertResponse(Container c, AnnouncementModel thread, String memberListInput) throws Exception
+        {
+            AnnouncementModel response = new AnnouncementModel();
+            response.setParent(thread.getEntityId());
+            response.setTitle("Response");
+            response.setBody("response body");
+            response.setMemberListInput(memberListInput);
+            return AnnouncementManager.insertAnnouncement(c, getAdmin(), response, null, false);
+        }
+
+        @Test
+        public void testApiUpdateRetainsMemberList() throws Exception
+        {
+            Container board = createBoard("Normal", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member);
+
+            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
+                .addParameter("thread.rowId", thread.getRowId())
+                .addParameter("thread.body", "updated body");
+
+            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testApiUpdateRetainsPostMemberList() throws Exception
+        {
+            Container board = createBoard("NormalResponded", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            User other = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel thread = insertThread(board, member, other);
+            insertResponse(board, thread, String.valueOf(member.getUserId()));
+
+            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
+                .addParameter("thread.rowId", thread.getRowId())
+                .addParameter("thread.body", "updated body");
+
+            // Editing the original must keep its own list, not copy the latest response's list onto it
+            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(Set.of(member.getUserId(), other.getUserId()), new HashSet<>(AnnouncementManager.getPostMemberList(thread.getRowId())));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, thread));
+        }
+
+        @Test
+        public void testApiWritesDropMembersWhoCannotRead() throws Exception
+        {
+            Container board = createBoard("NormalInactive", Settings.SECURE_OFF);
+            User member = createUserInRole(board, MessageBoardContributorRole.class);
+            User inactive = createUserInRole(board, MessageBoardContributorRole.class);
+            AnnouncementModel updated = insertThread(board, member, inactive);
+            AnnouncementModel repliedTo = insertThread(board, member, inactive);
+            UserManager.setUserActive(getAdmin(), inactive, false);
+
+            ActionURL update = new ActionURL(UpdateThreadAction.class, board)
+                .addParameter("thread.rowId", updated.getRowId())
+                .addParameter("thread.body", "updated body");
+            ActionURL apiReply = new ActionURL(CreateThreadAction.class, board)
+                .addParameter("reply", true)
+                .addParameter("thread.parent", repliedTo.getEntityId())
+                .addParameter("thread.title", "Reply")
+                .addParameter("thread.body", "reply body");
+
+            // Without the filter, validation rejects these writes because a listed member can't read the thread
+            assertStatus(HttpServletResponse.SC_OK, post(update, getAdmin()));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, updated));
+            assertStatus(HttpServletResponse.SC_OK, post(apiReply, member));
+            assertEquals(List.of(member.getUserId()), currentMemberList(board, repliedTo));
         }
     }
 }

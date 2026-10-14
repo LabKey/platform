@@ -1080,7 +1080,7 @@ public class AuthenticationManager
     public static long AUTH_LOGGING_THROTTLE_TTL = TimeUnit.MINUTES.toMillis(10);
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, AUTH_LOGGING_THROTTLE_TTL, "Authentication messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(String.class, 1000, AUTH_LOGGING_THROTTLE_TTL, "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -1328,12 +1328,12 @@ public class AuthenticationManager
     }
 
     // limit one bad login per second averaged out over 60sec
-    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
-    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
+    private static final Cache<Integer, RateLimiter> addrLimiter = CacheManager.getCache(Integer.class, 1001, TimeUnit.MINUTES.toMillis(5), "Login limiter");
+    private static final Cache<Integer, RateLimiter> pwdLimiter = CacheManager.getCache(Integer.class, 1001, TimeUnit.MINUTES.toMillis(5), "Password limiter");
     private static final CacheLoader<Integer, RateLimiter> addrLoader = (key, _) -> new RateLimiter("Addr limiter: " + key, new Rate(60, TimeUnit.MINUTES));
     private static final CacheLoader<Integer, RateLimiter> pwdLoader = (key, _) -> new RateLimiter("Pwd limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
-    private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
+    private static final Cache<String, RateLimiter> userLimiter = CacheManager.getCache(String.class, 10000, TimeUnit.MINUTES.toMillis(5), "User limiter");
     private static final CacheLoader<String, RateLimiter> userLoader = (key, _) -> new RateLimiter("User limiter: " + key, new Rate(20, TimeUnit.MINUTES));
 
     private static Integer getIntCacheKey(String s)

@@ -2337,7 +2337,7 @@ public class StudyManager
 
 
     // domainURI -> <Container,DatasetId>
-    private static final Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(5000, CacheManager.DAY, "Domain->Dataset map");
+    private static final Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(String.class, 5000, CacheManager.DAY, "Domain->Dataset map");
 
     private static final CacheLoader<String, Pair<String, Integer>> loader = (domainURI, argument) -> {
         SQLFragment sql = new SQLFragment();

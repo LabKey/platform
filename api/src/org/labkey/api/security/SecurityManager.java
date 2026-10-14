@@ -42,7 +42,6 @@ import org.labkey.api.action.LabKeyErrorWithHtml;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.Throttle;
@@ -772,7 +771,7 @@ public class SecurityManager
     }
 
     // Unauthenticated callers can trigger these warnings on every request
-    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>("apikey parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
+    private static final Throttle<String> API_KEY_PARAMETER_WARNING_THROTTLE = new Throttle<>(String.class, "API key parameter warnings", 10, CacheManager.HOUR, AUTH_LOG::warn);
 
     public static final int SECONDS_PER_DAY = 60*60*24;
 
@@ -2641,15 +2640,6 @@ public class SecurityManager
     public static boolean canSeeUserDetails(Container c, User user)
     {
         return c.hasPermission(user, SeeUserDetailsPermission.class) || user.hasRootPermission(SeeUserDetailsPermission.class);
-    }
-
-    public static boolean canSeeAuditLog(User user)
-    {
-        //
-        // Only returns true if the user has the site permission. If the user is an admin, then the permission
-        // check on the current container filter will return true
-        //
-        return user.hasRootPermission(CanSeeAuditLogPermission.class);
     }
 
     public static boolean canSeeFilePaths(Container c, User user)

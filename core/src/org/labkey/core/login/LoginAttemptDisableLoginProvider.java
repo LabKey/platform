@@ -15,6 +15,7 @@
  */
 package org.labkey.core.login;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +33,6 @@ import org.labkey.api.util.CountLimiter;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.concurrent.TimeUnit;
 
 import static org.labkey.api.security.AuthenticationManager.getEmailCacheKey;
@@ -43,7 +43,7 @@ public class LoginAttemptDisableLoginProvider implements AuthenticationProvider.
 
     private static final String NAME        = "loginAttemptDisableLogin";
     private static final String DESCRIPTION = "Disable unsuccessful login provider";
-    private static final Cache<String, CountLimiter> userLimiter = CacheManager.getCache(10000, CacheManager.DAY, "User login attempt limiter");
+    private static final Cache<String, CountLimiter> userLimiter = CacheManager.getCache(String.class, 10000, CacheManager.DAY, "User login attempt limiter");
 
     private static volatile CacheLoader<String, CountLimiter> userLoader;
 

@@ -51,7 +51,7 @@ import java.util.Set;
  *
  * <p>The repeated scaffolding lives here so each subclass keeps only its data fixture and the action under test:
  * <ul>
- *   <li>{@link #createContainer(String)} — make a throwaway child of the junit container (auto-cleaned).</li>
+ *   <li>{@link #createContainer(String, Module...)} — make a throwaway child of the junit container (auto-cleaned).</li>
  *   <li>{@link #createUserInRole(Container, Class)} — make a user with a role assigned in <em>one</em> folder only
  *       (auto-cleaned). Use this to obtain a caller who is, say, admin in folder A but has no rights in folder B.</li>
  *   <li>{@link #grantRootRole(User, Class)} — grant a site-wide role such as Platform Developer (auto-cleaned).</li>

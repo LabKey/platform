@@ -1053,8 +1053,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.standby();
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to put Quartz scheduler in standby", e);
                 }
 
                 logTsv(new ActionsTsvWriter());
@@ -1084,12 +1085,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 try
                 {
-                    // Clean up Quartz resources and wait for jobs to complete
-                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-                    scheduler.shutdown(true);
+                    QuartzShutdown.shutdown(StdSchedulerFactory.getDefaultScheduler(), QuartzShutdown.DEFAULT_TIMEOUT);
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to shut down Quartz scheduler", e);
                 }
             }
         });
@@ -1534,6 +1534,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
+            QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
             SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,

@@ -57,9 +57,11 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -73,10 +75,10 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.NameExpressionOptionService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -99,13 +101,13 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -169,7 +171,52 @@ import static org.labkey.api.exp.api.SampleTypeDomainKind.ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_COUNT_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.AVAILABLE_ALIQUOT_VOLUME_LABEL;
 import static org.labkey.api.exp.api.SampleTypeDomainKind.SAMPLE_TYPE_FILE_DIRECTORY_NAME;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.*;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Alias;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotCount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CpasType;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Created;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.CreatedBy;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Description;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ExpMaterialColor;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Flag;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Folder;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Inputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.IsAliquot;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.IsPlated;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LastIndexed;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialExpDate;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.MaterialSourceId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Modified;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ModifiedBy;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.ObjectId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Outputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Properties;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Property;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotUnit;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawAvailableAliquotVolume;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RawUnits;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Run;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RunApplication;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RunApplicationOutput;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleSet;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceApplicationInput;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceProtocolApplication;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SourceProtocolLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.merge;
 import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.schema;
@@ -1289,7 +1336,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
+    static final BlockingCache<String,_MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, 8 * CacheManager.DAY, "materialized sample types", null);
     static final Map<String, InvalidationCounters> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
 
@@ -2280,6 +2327,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // before reading. The next read must rebuild the whole view from scratch.
             updateRows(st, List.of(CaseInsensitiveHashMap.of(RowId.name(), roots.getFirst(), "rootProp", "fullResynced")));
             _materializedQueries.remove(st.getLSID());
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+        }
+
+        @Test
+        public void testUnloggedReset() throws Exception
+        {
+            Assume.assumeTrue("Materialized views are only UNLOGGED on PostgreSQL", ExperimentService.get().getSchema().getSqlDialect().isPostgreSQL());
+            ExpSampleType st = createSampleType("IncrUpdUnlogged");
+            insertRoots(st, "R1", "R2", "R3");
+            insertAliquots(st, "R1", 3);
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            // Empty the view and the marker as a failover or crash recovery would. The next read must rebuild.
+            DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
+            new SqlExecutor(scope).execute(new SQLFragment("TRUNCATE ").append(table.getOrCreateMQH().getFromSql(null)));
+            UnloggedTableGeneration.simulateResetForTest();
             assertCacheMatchesFreshDerivation(table, st.getLSID());
         }
 

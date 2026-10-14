@@ -69,13 +69,12 @@ import java.util.Set;
 
 public interface QueryService
 {
-    String EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
+    String DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS = "queryDisableManagedTriggerColumns";
     String EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS = "queryProductAllFolderLookups";
     String EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED = "queryProductProjectDataListingScoped";
     String MAX_QUERY_SELECTION = "maxQuerySelection";
     String PRODUCT_FOLDERS_ENABLED = "isProductFoldersEnabled";
     String PRODUCT_FOLDERS_EXIST = "hasProductFolders";
-    String USE_ROW_BY_ROW_UPDATE = "useLegacyUpdateRows";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
