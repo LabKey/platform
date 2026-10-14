@@ -139,7 +139,7 @@ public final class RequestCancellation
      */
     static void statementCancelled(@Nullable Source source, boolean statementLive)
     {
-        LOG.debug("request-cancel-statement source={} statementLive={}", source == null ? "interrupt" : source, statementLive);
+        LOG.log(source == null ? Level.INFO : Level.DEBUG, "request-cancel-statement source={} statementLive={}", source == null ? "interrupt" : source, statementLive);
         if (statementLive)
         {
             increment("statementCancelled");
@@ -181,7 +181,7 @@ public final class RequestCancellation
         }
         catch (IllegalStateException ignored) {} // The request has already been recycled
 
-        LOG.info("request-cancel source={} thread={} elapsedMs={} cancelToExitMs={} statementCancelled={} spids={} user={} url={}",
+        LOG.info("request-cancel source={} thread={} elapsedMs={} cancelToExitMs={} statementCancelled={} spidsSignalled={} user={} url={}",
             cancelled._source, thread.getName(), cancelled._cancelledAt - tracker.startTime(), cancelToExitMs,
             cancelled._statementCancelled, cancelled._spids, user, getUrl(tracker));
 
