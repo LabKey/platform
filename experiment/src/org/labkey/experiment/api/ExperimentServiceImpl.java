@@ -10810,7 +10810,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             props.add(new GWTPropertyDescriptor("color", "string"));
             props.add(new GWTPropertyDescriptor("count", "int"));
             props.add(new GWTPropertyDescriptor("collected", "dateTime"));
-            props.add(new GWTPropertyDescriptor("flag", "boolean"));
+            props.add(new GWTPropertyDescriptor("shipped", "boolean"));
             props.add(score);
             ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
             DomainProperty color = st.getDomain().getPropertyByName("color");
@@ -10830,7 +10830,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
             createJson.put(ExperimentJSONConverter.PROPERTIES,
                     new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
-                            .put("flag", true).put("score", 7));
+                            .put("shipped", true).put("score", 7));
 
             ExpMaterial created = handler.handleMaterial(context, createJson);
             assertNotNull("Author should be able to create a sample with properties", created);
@@ -10853,12 +10853,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
 
             // Changing the boolean must still be caught and blocked
-            JSONObject flagJson = new JSONObject();
-            flagJson.put(ExperimentJSONConverter.LSID, created.getLSID());
-            flagJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("flag", false));
+            JSONObject shippedJson = new JSONObject();
+            shippedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            shippedJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("shipped", false));
             try
             {
-                handler.handleMaterial(context, flagJson);
+                handler.handleMaterial(context, shippedJson);
                 fail("Author should not be able to change a boolean property of an existing sample");
             }
             catch (UnauthorizedException expected)
@@ -10870,7 +10870,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             unchangedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
             unchangedJson.put(ExperimentJSONConverter.PROPERTIES,
                     new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
-                            .put("flag", true).put("score", 7)
+                            .put("shipped", true).put("score", 7)
                             .put(ExperimentJSONConverter.NAME, "newSample"));
             handler.handleMaterial(context, unchangedJson);
 
