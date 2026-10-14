@@ -250,9 +250,9 @@ public class TransactionFilter implements Filter
             thread.interrupt();
         }
 
-        // Outside the lock: borrowing from an exhausted pool must not hold up the request, which can't return its connection until it exits.
+        // Outside the lock: opening a connection to a struggling database must not hold up the request's exit.
         // Safe once the request is gone, since its wrappers are no longer allocated and the fallback skips them.
-        RequestCancellation.cancelQueriesWithPoolConnection(unsignalled, source, first);
+        RequestCancellation.cancelQueriesWithNewConnection(unsignalled, source, first);
     }
 
     public static int getPendingRequestCount()

@@ -155,12 +155,12 @@ public final class RequestCancellation
      */
     public static void cancelQueries(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
-        cancelQueriesWithPoolConnection(cancelQueriesWithoutConnection(connectionsByScope, source, count), source, count);
+        cancelQueriesWithNewConnection(cancelQueriesWithoutConnection(connectionsByScope, source, count), source, count);
     }
 
     /**
      * The first half of {@link #cancelQueries}, which never waits on the pool
-     * @return the connections it couldn't signal, for {@link #cancelQueriesWithPoolConnection}
+     * @return the connections it couldn't signal, for {@link #cancelQueriesWithNewConnection}
      */
     static Map<DbScope, Set<ConnectionWrapper>> cancelQueriesWithoutConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
@@ -188,8 +188,8 @@ public final class RequestCancellation
         return remaining;
     }
 
-    /** The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it can wait on an exhausted pool */
-    static void cancelQueriesWithPoolConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
+    /** The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it opens a new connection */
+    static void cancelQueriesWithNewConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
         connectionsByScope.forEach((scope, connections) -> {
             try

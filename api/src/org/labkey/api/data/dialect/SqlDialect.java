@@ -1538,8 +1538,7 @@ public abstract class SqlDialect
     }
 
     /**
-     * Like a {@link #cancelQueries} cancel, but signals each session without borrowing a pool connection, so it still
-     * works when the pool is exhausted.
+     * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
      * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
      */
     public Set<ConnectionWrapper> cancelQueriesWithoutConnection(Collection<ConnectionWrapper> connections)

@@ -307,7 +307,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         });
     }
 
-    /** Isolated per scope so that one failure, such as waiting out maxWaitMillis for a connection, doesn't skip the remaining scopes or the escalation */
+    /** Isolated per scope so that one failure, such as failing to connect, doesn't skip the remaining scopes or the escalation */
     private static void cancelQueries(DbScope scope, Set<ConnectionWrapper> connections, boolean terminate, String jobGuid)
     {
         try
