@@ -18,18 +18,61 @@ package org.labkey.api.mcp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.URLHelper;
+import org.springframework.ai.chat.model.ToolContext;
+
+import java.net.URISyntaxException;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Documentation search/retrieval, backing the {@code searchDocumentation}/{@code retrieveDocument} MCP tools in
  * {@code CoreMcp}. The registered implementation does the work locally and exists only on servers that host the
- * LabKey documentation content and its vector store (currently www.labkey.org); elsewhere, {@code CoreMcp} uses an
- * unregistered implementation that forwards each call to that server. See {@link #isEnabled()}.
+ * LabKey documentation content and its vector store (currently www.labkey.org); elsewhere, {@link #get(ToolContext)}
+ * returns an unregistered implementation that forwards each call to that server. See {@link #isEnabled()}.
  */
 public interface DocumentationService
 {
+    /** The registered implementation, which does the work locally; null except on servers that host the documentation */
     static @Nullable DocumentationService get()
     {
         return ServiceRegistry.get().getService(DocumentationService.class);
+    }
+
+    /**
+     * The implementation an MCP tool call should use: the local one if enabled, otherwise one that forwards to the
+     * configured documentation server. Chosen per call since settings and the forwarded-request guard can change.
+     * @throws McpException if neither is available
+     */
+    static @NotNull DocumentationService get(ToolContext context)
+    {
+        DocumentationService local = get();
+        if (local != null && local.isEnabled())
+            return local;
+
+        String documentationServer = AppProps.getInstance().getDocumentationServer();
+        // A forwarded call must never be forwarded again
+        if (!McpToolProxy.isForwarded(context) && isRemote(documentationServer))
+            return new ForwardingDocumentationService(documentationServer);
+
+        throw new McpException("Documentation is not available on this server.");
+    }
+
+    private static boolean isRemote(String documentationServer)
+    {
+        if (isBlank(documentationServer))
+            return false;
+
+        try
+        {
+            // Disallow call back to self. If this looks like a self-reference (www.labkey.org trying to call www.labkey.org) return false.
+            return !new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(AppProps.getInstance().getBaseServerUrl()).getHost());
+        }
+        catch (URISyntaxException x)
+        {
+            return false;
+        }
     }
 
     static void setInstance(DocumentationService impl)

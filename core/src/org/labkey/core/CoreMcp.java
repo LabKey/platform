@@ -19,15 +19,12 @@ import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpSchema.ReadResourceResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.mcp.DocumentationService;
-import org.labkey.api.mcp.McpException;
-import org.labkey.api.mcp.McpToolProxy;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresNoPermission;
@@ -39,7 +36,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.springframework.ai.chat.model.ToolContext;
 import org.springframework.ai.mcp.annotation.McpResource;
@@ -47,7 +43,6 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,38 +52,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class CoreMcp implements McpService.McpImpl
 {
-    /** Settings and the forwarded-request guard can change per call, so the implementation is chosen per call */
-    private static @NotNull DocumentationService getDocumentationService(ToolContext context)
-    {
-        DocumentationService local = DocumentationService.get();
-        if (local != null && local.isEnabled())
-            return local;
-
-        String documentationServer = AppProps.getInstance().getDocumentationServer();
-        // A forwarded call must never be forwarded again
-        if (!McpToolProxy.isForwarded(context) && isRemote(documentationServer))
-            return new ForwardingDocumentationService(documentationServer);
-
-        throw new McpException("Documentation is not available on this server.");
-    }
-
-    private static boolean isRemote(String documentationServer)
-    {
-        if (isBlank(documentationServer))
-            return false;
-
-        try
-        {
-            // Disallow call back to self. If this looks like a self-reference (www.labkey.org trying to call www.labkey.org) return false.
-            return !new URLHelper(documentationServer).getHost().equalsIgnoreCase(new URLHelper(AppProps.getInstance().getBaseServerUrl()).getHost());
-        }
-        catch (URISyntaxException x)
-        {
-            return false;
-        }
-    }
-
-
     @Tool(description = "Search the LabKey documentation for chunks of text semantically similar to a natural language query. " +
             "Each result is an excerpt from a larger document, not the full document -- multiple results may come from the same " +
             "source document. Returns each chunk's content, metadata (title, source URL, content type), a similarity score, and " +
@@ -98,7 +61,7 @@ public class CoreMcp implements McpService.McpImpl
             @ToolParam(description = "Natural language search query describing what you're looking for") String query,
             @ToolParam(required = false, description = "Maximum number of results to return, defaults to 5") Integer topK)
     {
-        return getDocumentationService(context).searchDocumentation(query, topK);
+        return DocumentationService.get(context).searchDocumentation(query, topK);
     }
 
     @Tool(description = "Return the entire document from the LabKey documentation using the `id` as returned by `searchDocumentation`.")
@@ -106,7 +69,7 @@ public class CoreMcp implements McpService.McpImpl
     String retrieveDocument(ToolContext context,
             @ToolParam(description = "Id of the document to return") String id)
     {
-        return getDocumentationService(context).retrieveDocument(id);
+        return DocumentationService.get(context).retrieveDocument(id);
     }
 
     @Tool(description = "This tool provides useful context information about the current user (name, userid), webserver " +

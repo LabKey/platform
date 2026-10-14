@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.core;
+package org.labkey.api.mcp;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.mcp.DocumentationService;
-import org.labkey.api.mcp.McpToolProxy;
 
 import java.util.HashMap;
 import java.util.Map;
