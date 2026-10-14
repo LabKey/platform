@@ -396,6 +396,13 @@ public abstract class SqlDialect
                sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
+    /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
+    public static boolean isConnectionLostException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        return null != sqlState && (sqlState.startsWith("08") || sqlState.startsWith("57P"));
+    }
+
 
     public static boolean isTransactionException(Exception x)
     {

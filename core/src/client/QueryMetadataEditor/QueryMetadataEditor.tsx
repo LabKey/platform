@@ -108,7 +108,7 @@ class QueryMetadataEditor extends PureComponent<any, Partial<IAppState>> {
         }
     };
 
-    onChangeHandler = (newDomain: DomainDesign, dirty: boolean, rowIndexChange?, changes?: List<IFieldChange>) => {
+    onChangeHandler = (newDomain: DomainDesign, dirty: boolean, rowIndexChange?, changes?: IFieldChange[]) => {
         this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
 
         if (newDomain) {
