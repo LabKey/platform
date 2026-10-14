@@ -46,7 +46,7 @@ public class UnloggedTableGeneration
     // Held for the life of the server so TempTableTracker drops the marker only at shutdown
     private static final Object MARKER_REF = new Object();
     // A failed check is retried on the next read, so an outage would otherwise warn on every read
-    private static final Throttle<String> CHECK_FAILURE_THROTTLE = new Throttle<>("UNLOGGED reset check failures", 100, CacheManager.HOUR,
+    private static final Throttle<String> CHECK_FAILURE_THROTTLE = new Throttle<>(String.class, "UNLOGGED reset check failures", 100, CacheManager.HOUR,
             failure -> LOG.warn("Failed to check for a reset of UNLOGGED tables ({}). Further failures of this kind log at DEBUG for an hour.", failure));
 
     private static final AtomicLong _generation = new AtomicLong();
