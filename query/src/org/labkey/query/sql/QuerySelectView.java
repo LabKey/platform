@@ -347,6 +347,25 @@ public class QuerySelectView extends AbstractQueryRelation
             }
         }
 
+        // GH Issue 1595: with ORDER BY + LIMIT, the planner satisfies a "PK IN (...)" semi-join by scanning the base table's
+        // index rather than driving from the bounded value set, so let a clause trade itself for a driving join; on the
+        // outer wrapper the planner still backward-scans. Moving a predicate inward assumes the inner select is a plain
+        // projection; it would change the value of any window function computed there.
+        Map<String, SQLFragment> drivingJoins = new LinkedHashMap<>();
+        Filter effectiveFilter = filter;
+        // Rebuilding the filter below drops any subclass behavior, so apply this only to a plain SimpleFilter
+        if (null != filter && filter.getClass() == SimpleFilter.class && null != sort && maxRows > 0)
+        {
+            SimpleFilter reduced = new SimpleFilter();
+            for (SimpleFilter.FilterClause c : ((SimpleFilter) filter).getClauses())
+            {
+                if (!c.replaceWithJoin(table, tableAlias, columnMap, drivingJoins))
+                    reduced.addClause(c);
+            }
+            if (!drivingJoins.isEmpty())
+                effectiveFilter = reduced;
+        }
+
         SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = new TreeSet<>();
         allColumns.stream()
@@ -361,6 +380,9 @@ public class QuerySelectView extends AbstractQueryRelation
         fromFrag.append(getFromSql);
         fromFrag.append(" ");
 
+        for (SQLFragment drivingJoin : drivingJoins.values())
+            fromFrag.append("\n").append(drivingJoin);
+
         for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
         {
             fromFrag.append("\n").append(entry.getValue());
@@ -368,9 +390,9 @@ public class QuerySelectView extends AbstractQueryRelation
 
         SQLFragment filterFrag = null;
 
-        if (filter != null)
+        if (effectiveFilter != null)
         {
-            if (filter instanceof SimpleFilter simpleFilter)
+            if (effectiveFilter instanceof SimpleFilter simpleFilter)
             {
                 for (var c : simpleFilter.getClauses())
                 {
@@ -378,7 +400,7 @@ public class QuerySelectView extends AbstractQueryRelation
                         qcc.setQuery(_query);
                 }
             }
-            filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
+            filterFrag = effectiveFilter.getSQLFragment(dialect, "x", columnMap);
         }
 
         SQLFragment orderBy = null;

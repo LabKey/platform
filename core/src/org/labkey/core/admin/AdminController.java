@@ -3699,7 +3699,7 @@ public class AdminController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            addAdminNavTrail(root, "AI Assistant Status", this.getClass());
+            addAdminNavTrail(root, "LabKey Assistant Status", this.getClass());
         }
     }
 

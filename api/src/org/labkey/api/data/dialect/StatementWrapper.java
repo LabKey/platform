@@ -27,6 +27,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.ResultSetWrapper;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.queryprofiler.Query;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.settings.AppProps;
@@ -2971,14 +2972,14 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             for (; i < ste.length; i++)
             {
                 String line = ste[i].toString();
-                if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
+                if (!(line.startsWith(Table.class.getPackageName() + ".") || line.startsWith(Thread.class.getName())))
                     break;
             }
             int last = Math.min(ste.length, i + count);
             for (; i < last; i++)
             {
                 String line = ste[i].toString();
-                if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+                if (line.startsWith(ExceptionUtil.SERVLET_SERVICE_FRAME_PREFIX))
                     break;
                 sb.append("\n    ").append(line);
             }
