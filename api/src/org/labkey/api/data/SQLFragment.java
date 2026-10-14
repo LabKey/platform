@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -27,12 +26,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -70,10 +67,6 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 /// semicolons in appended text.
 public class SQLFragment implements Appendable, CharSequence
 {
-    private static final Logger LOG = LogHelper.getLogger(SQLFragment.class, "SQL injection safety net diagnostics");
-
-    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "SQLFragmentDisableStrictChecks";
-
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -466,15 +459,7 @@ public class SQLFragment implements Appendable, CharSequence
 
         // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
         if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
-        {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
-            else
-            {
-                LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
-                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
-            }
-        }
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
 
         getStringBuilder().append(charseq);
         return this;
