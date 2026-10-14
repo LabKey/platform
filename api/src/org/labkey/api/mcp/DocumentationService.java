@@ -34,7 +34,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  */
 public interface DocumentationService
 {
-    /** The registered implementation, which does the work locally; null except on servers that host the documentation */
+    /**
+     * The registered local implementation, or null if no module provides one; it serves documentation only where
+     * {@link #isEnabled()}. Practically speaking, the local implementation is provided by the Service Tools module,
+     * which is deployed on labkey.org (and staging.labkey.org) only.
+     **/
     static @Nullable DocumentationService get()
     {
         return ServiceRegistry.get().getService(DocumentationService.class);
