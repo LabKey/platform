@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -40,6 +42,7 @@ import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
@@ -61,6 +64,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -392,6 +396,13 @@ public abstract class SqlDialect
                sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
+    /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
+    public static boolean isConnectionLostException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        return null != sqlState && (sqlState.startsWith("08") || sqlState.startsWith("57P"));
+    }
+
 
     public static boolean isTransactionException(Exception x)
     {
@@ -482,7 +493,8 @@ public abstract class SqlDialect
         return new StandardDialectStringHandler();
     }
 
-    public synchronized DialectStringHandler getStringHandler()
+    // Override createStringHandler() instead
+    public final synchronized DialectStringHandler getStringHandler()
     {
         if (null == _stringHandler)
             _stringHandler = createStringHandler();
@@ -756,6 +768,18 @@ public abstract class SqlDialect
     public boolean supportsGroupConcatSubSelect()
     {
         return true;
+    }
+
+    /** Whether the dialect supports {@link #appendLateralJoin} */
+    public boolean supportsLateralJoin()
+    {
+        return false;
+    }
+
+    /** Append a join to an aliased subquery that references earlier FROM items; the correlation lives in the subquery, so there's no join condition */
+    public void appendLateralJoin(SQLFragment sql, LookupColumn.JoinType joinType, SQLFragment aliasedSubquery)
+    {
+        throw new UnsupportedOperationException("Lateral joins are not supported by " + getProductName());
     }
 
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
@@ -1584,11 +1608,13 @@ public abstract class SqlDialect
     /**
      * Drop a schema if it exists.
      * Throws an exception if schema exists and could not be dropped.
+     * @param scope DbScope where the schema might exist
+     * @param schemaName Name of the schema to drop. Casing must match the name in the database exactly. By convention,
+     *                   schema names are all lowercase, but quoting supports mixed case and uppercase as well.
      */
-    public void dropSchema(DbSchema schema, String schemaName)
+    public void dropSchema(DbScope scope, String schemaName)
     {
-        SQLFragment sql = schema.getSqlDialect().execute(CoreSchema.getInstance().getSchema(), "fn_dropifexists", new SQLFragment("?, ?, ?, ?", "*", schemaName, "SCHEMA", null));
-        new SqlExecutor(schema).execute(sql);
+        new SqlExecutor(scope).execute("DROP SCHEMA IF EXISTS " + quoteIdentifier(schemaName)+ " CASCADE");
     }
 
     /**
@@ -1707,6 +1733,19 @@ public abstract class SqlDialect
             }
         }
 
+        public Integer getMaxIdle()
+        {
+            try
+            {
+                return callGetter("getMaxIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection pool max idle from data source \"{}\"", _dsName);
+                return null;
+            }
+        }
+
         public Integer getNumActive()
         {
             try
@@ -1743,6 +1782,62 @@ public abstract class SqlDialect
                 LOG.error("Could not extract connection pool max wait (ms) from data source \"{}\"", _dsName);
                 return null;
             }
+        }
+
+        /**
+         * Statistics tracked by the commons-pool2 GenericObjectPool that BasicDataSource wraps. They're reachable only
+         * through the pool itself; BasicDataSource doesn't republish them the way it does numActive/numIdle.
+         */
+        public record PoolStatistics(
+            // Total connections opened
+            long createdCount,
+            // Tocal connections closed, for any reason
+            long destroyedCount,
+            // Total connections closed by the idle evictor, either for exceeding the idle timeout or failing idle validation
+            long destroyedByEvictorCount,
+            // Total connections closed because they failed validation when a caller tried to borrow them
+            long destroyedByBorrowValidationCount,
+            // Total connections handed out
+            long borrowedCount,
+            // Threads currently blocked waiting for a connection
+            long numWaiters,
+            // Mean wait time to borrow a connection, over the most recent 100 borrows
+            long meanBorrowWaitMillis,
+            // Longest a caller has ever waited to borrow a connection
+            long maxBorrowWaitMillis
+        ) {}
+
+        public @Nullable PoolStatistics getPoolStatistics()
+        {
+            try
+            {
+                Object pool = _ds.getClass().getMethod("getConnectionPool").invoke(_ds);
+
+                // BasicDataSource creates the pool lazily, on the first connection request
+                if (null == pool)
+                    return null;
+
+                return new PoolStatistics(
+                    getPoolStatistic(pool, "getCreatedCount"),
+                    getPoolStatistic(pool, "getDestroyedCount"),
+                    getPoolStatistic(pool, "getDestroyedByEvictorCount"),
+                    getPoolStatistic(pool, "getDestroyedByBorrowValidationCount"),
+                    getPoolStatistic(pool, "getBorrowedCount"),
+                    getPoolStatistic(pool, "getNumWaiters"),
+                    getPoolStatistic(pool, "getMeanBorrowWaitTimeMillis"),
+                    getPoolStatistic(pool, "getMaxBorrowWaitTimeMillis")
+                );
+            }
+            catch (Exception e)
+            {
+                LOG.warn("Could not extract connection pool statistics from data source \"{}\"", _dsName, e);
+                return null;
+            }
+        }
+
+        private static long getPoolStatistic(Object pool, String methodName) throws ReflectiveOperationException
+        {
+            return ((Number)pool.getClass().getMethod(methodName).invoke(pool)).longValue();
         }
 
         public @Nullable Properties getConnectionProperties()
@@ -2416,39 +2511,43 @@ public abstract class SqlDialect
     //
 
     @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
     public static class DialectTestCase
     {
-        DbScope s;
-        SqlDialect d;
-
-        @Test
-        public void testScopes()
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
         {
-            DbScope.getDbScopesToTest().forEach(scope ->
-            {
-                this.s = scope;
-                this.d = scope.getSqlDialect();
-                testDialectStringHandler();
-                testLikeOperator();
-            });
+            return JunitUtil.getDbScopesTestParameters();
+        }
+
+        private final DbScope s;
+        private final SqlDialect d;
+
+        public DialectTestCase(DbScope scope, String displayName)
+        {
+            this.s = scope;
+            this.d = scope.getSqlDialect();
         }
 
         void testEquals(String expected, SQLFragment sqlf)
         {
+            if (d.isOracle() && expected.isEmpty())
+                expected = null; // Oracle returns 'null' for an empty string
             try
             {
                 assertEquals(expected, new SqlSelector(s, sqlf).getObject(String.class));
             }
-            catch (AssertionError|Exception ae)
+            catch (AssertionError | Exception ae)
             {
                 throw new AssertionError("Expected [" + expected + "] Failed for dialect " + d.getClass().getName() + " on scope " + s.getDatabaseUrl() + ": " + sqlf.toDebugString(), ae);
             }
         }
 
-        void testDialectStringHandler()
+        @Test
+        public void testDialectStringHandler()
         {
             // quotes backslashes etc
-            for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
+            for (String v : Arrays.asList("", " ", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
                 testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
 
             // test things that look like postgres escapes
@@ -2457,7 +2556,8 @@ public abstract class SqlDialect
                 testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
         }
 
-        void testLikeOperator()
+        @Test
+        public void testLikeOperator()
         {
             String stringLiteralPrefix = d.isSqlServer() ? " N" : " ";
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'ABC%' ESCAPE '!'", d.appendCaseInsensitiveStartsWith(new SQLFragment("SELECT * FROM A WHERE Name"), "ABC").toDebugString(d));
@@ -2468,7 +2568,10 @@ public abstract class SqlDialect
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString(d));
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString(d));
         }
+    }
 
+    public static class LabKeyScopeDialectTestCase
+    {
         @Test
         public void testAutoIncrementQuery()
         {

@@ -40,6 +40,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.DatabaseIdentifier;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -107,6 +108,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -117,6 +119,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
@@ -1050,6 +1053,8 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey(), valueUpdate, validationException);
+                    if (!validationException.getErrors().isEmpty())
+                        return validationException;
                 }
 
                 // update indices - add missing and drop those that aren't included in domain info
@@ -1409,6 +1414,8 @@ public class DomainUtil
         return Pair.of(valueUpdates, deletedValues);
     }
 
+    private static final int TEXT_CHOICE_UPDATE_BATCH_SIZE = 1000;
+
     private static void updateTextChoiceValueRows(Domain domain, User user, DomainProperty prop, Map<String, Object> valueUpdates, ValidationException errors)
     {
         if (domain != null && domain.getDomainKind() != null)
@@ -1421,63 +1428,76 @@ public class DomainUtil
             TableInfo domainTable = domain.getDomainKind().getTableInfo(user, domain.getContainer(), domain, ContainerFilter.getUnsafeEverythingFilter());
             if (domainTable != null && domainTable.getUpdateService() != null)
             {
-                // we need to make all the row updates for this domain property at one time to prevent the
-                // double mapping if one choice value was changed from a -> b and another from b -> c
-                // (not sure why someone would do that though)
-                List<Map<String, Object>> rows = new ArrayList<>();
-
-                for (Map.Entry<String, Object> entry : valueUpdates.entrySet())
+                List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
+                ColumnInfo propCol = domainTable.getColumn(propName);
+                if (propCol == null)
                 {
-                    // query for the row PKs of domain rows that have the original text choice value
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(propName), entry.getKey());
-                    // filter out aliquots for sample type domain
-                    if (domain.getDomainKind() instanceof SampleTypeDomainKind && isParentOnlyField)
-                        filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
-                    List<ColumnInfo> columns = new ArrayList<>(domainTable.getPkColumns());
-                    if (domainTable.getContainerFieldKey() != null)
-                        columns.add(domainTable.getColumn(domainTable.getContainerFieldKey()));
-                    var resultsetRows = new TableSelector(domainTable, columns, filter, null).getMapCollection();
+                    errors.addError(new PropertyValidationError("Property column not found", propName));
+                    return;
+                }
+                columns.add(propCol);
+                ColumnInfo containerCol = domainTable.getContainerFieldKey() != null ? domainTable.getColumn(domainTable.getContainerFieldKey()) : null;
+                if (containerCol != null)
+                    columns.add(containerCol);
 
-                    // generate a column name map for updateRow(), add the updated property value into the row map as well
-                    for (Map<String, Object> rsRow : resultsetRows)
+                SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(propCol.getFieldKey(), valueUpdates.keySet()));
+                // filter out aliquots for sample type domain
+                if (domain.getDomainKind() instanceof SampleTypeDomainKind && isParentOnlyField)
+                    filter.addCondition(FieldKey.fromParts("IsAliquot"), false);
+
+                Map<String, TableInfo> containerTables = new HashMap<>();
+                BatchValidationException batchErrors = new BatchValidationException();
+                // The transaction makes the PostgreSQL driver use a cursor; the cursor's snapshot reads each row once with its original value, so a -> b, b -> c (or a swap) can't double map
+                try (DbScope.Transaction transaction = domainTable.getSchema().getScope().ensureTransaction();
+                     Stream<Map<String, Object>> stream = new TableSelector(domainTable, columns, filter, null).uncachedMapStream())
+                {
+                    List<Map<String, Object>> batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
+                    Iterator<Map<String, Object>> iter = stream.iterator();
+                    while (iter.hasNext())
                     {
+                        Map<String, Object> rsRow = iter.next();
                         var valueRow = new CaseInsensitiveHashMap<>();
                         for (ColumnInfo col : columns)
                             valueRow.put(col.getName(), col.getValue(rsRow));
-                        valueRow.put(propName, entry.getValue());
-                        rows.add(valueRow);
-                    }
-                }
+                        valueRow.put(propCol.getName(), valueUpdates.get((String) propCol.getValue(rsRow)));
+                        batch.add(valueRow);
 
-                try
-                {
-                    BatchValidationException batchErrors = new BatchValidationException();
-                    // use update rows against each distinct row container to map the text choice value to the updated value,
-                    // using each row container so that the audit events end up in the right container
-                    if (domainTable.getContainerFieldKey() != null)
-                    {
-                        String containerFieldName = domainTable.getContainerFieldKey().getName();
-                        Set<String> rowContainers = rows.stream().map((row) -> (String) row.get(containerFieldName)).collect(Collectors.toSet());
-                        for (String rowContainer : rowContainers)
+                        if (batch.size() == TEXT_CHOICE_UPDATE_BATCH_SIZE || !iter.hasNext())
                         {
-                            // GitHub Issue 924: Updating Single Text choice values errors when there are child folders
-                            var dataContainer = ContainerManager.getForId(rowContainer);
-                            var domainTable_ = domain.getDomainKind().getTableInfo(user, dataContainer, domain, ContainerFilter.getUnsafeEverythingFilter());
-                            List<Map<String, Object>> containerRows = rows.stream().filter((row) -> row.get(containerFieldName).equals(rowContainer)).collect(Collectors.toList());
-                            domainTable_.getUpdateService().updateRows(user, dataContainer, containerRows, containerRows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+                            updateTextChoiceValueBatch(domain, user, domainTable, containerCol, containerTables, batch, batchErrors);
+                            if (batchErrors.hasErrors())
+                                throw batchErrors;
+                            batch = new ArrayList<>(TEXT_CHOICE_UPDATE_BATCH_SIZE);
                         }
                     }
-                    else
-                        domainTable.getUpdateService().updateRows(user, domain.getContainer(), rows, rows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
-
-                    if (batchErrors.hasErrors())
-                        throw batchErrors;
+                    transaction.commit();
                 }
                 catch (Exception e)
                 {
                     errors.addError(new PropertyValidationError(e.getMessage(), propName));
                 }
             }
+        }
+    }
+
+    private static void updateTextChoiceValueBatch(Domain domain, User user, TableInfo domainTable, @Nullable ColumnInfo containerCol, Map<String, TableInfo> containerTables,
+                                                   List<Map<String, Object>> batch, BatchValidationException batchErrors) throws Exception
+    {
+        if (containerCol == null)
+        {
+            domainTable.getUpdateService().updateRows(user, domain.getContainer(), batch, batch, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
+            return;
+        }
+
+        Map<String, List<Map<String, Object>>> rowsByContainer = batch.stream().collect(Collectors.groupingBy(row -> (String) row.get(containerCol.getName())));
+        for (Map.Entry<String, List<Map<String, Object>>> entry : rowsByContainer.entrySet())
+        {
+            // GitHub Issue 924: Updating Single Text choice values errors when there are child folders
+            Container dataContainer = ContainerManager.getForId(entry.getKey());
+            TableInfo table = containerTables.computeIfAbsent(entry.getKey(),
+                    id -> domain.getDomainKind().getTableInfo(user, dataContainer, domain, ContainerFilter.getUnsafeEverythingFilter()));
+            List<Map<String, Object>> rows = entry.getValue();
+            table.getUpdateService().updateRows(user, dataContainer, rows, rows, batchErrors, Map.of(AuditBehavior, AuditBehaviorType.DETAILED), null);
         }
     }
 

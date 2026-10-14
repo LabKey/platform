@@ -62,9 +62,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * User: kevink
- * Date: 11/18/13
- *
  * SimpleTaskFactory is a base class for creating file-based module task definitions.
  * Modules register a XMLBean SchemaType with a XMLBeanTaskFactoryFactory to create concrete TaskFactory types.
  * CONSIDER: Move to API or Internal so other modules can create subclasses.
@@ -75,14 +72,14 @@ import java.util.Set;
 public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 {
     protected static Set<String> RESERVED_TOKENS = new CaseInsensitiveHashSet(
-            PipelineJob.PIPELINE_JOB_INFO_PARAM,
-            PipelineJob.PIPELINE_TASK_INFO_PARAM,
-            PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM,
-            // The following replacements aren't used yet, but are reserved for future use.
-            DataTransformService.RUN_INFO_REPLACEMENT,
-            DataTransformService.SRC_DIR_REPLACEMENT,
-            DataTransformService.R_SESSIONID_REPLACEMENT
-        );
+        PipelineJob.PIPELINE_JOB_INFO_PARAM,
+        PipelineJob.PIPELINE_TASK_INFO_PARAM,
+        PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM,
+        // The following replacements aren't used yet, but are reserved for future use.
+        DataTransformService.RUN_INFO_REPLACEMENT,
+        DataTransformService.SRC_DIR_REPLACEMENT,
+        DataTransformService.R_SESSIONID_REPLACEMENT
+    );
 
     protected Map<String, JobParamToCommandArgs> _params;
 

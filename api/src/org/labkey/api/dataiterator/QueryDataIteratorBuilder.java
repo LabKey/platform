@@ -15,6 +15,8 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -32,7 +34,11 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.sql.LabKeySql;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,7 +124,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
         String sql;
         if (null != _queryName)
-            sql = "SELECT * FROM " + s.getDbSchema().getSqlDialect().quoteIdentifier(_queryName);
+            sql = "SELECT * FROM " + LabKeySql.quoteIdentifier(_queryName);
         else
             sql = _sql;
 
@@ -137,6 +143,17 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         // Issue 42242: Don't include suggested columns in QueryDataIterator
         TableInfo t = qd.getTable((UserSchema)_schema, qerrors, true, true);
 
+        if (!qerrors.isEmpty())
+        {
+            context.getErrors().addRowError(new ValidationException(qerrors.getFirst().getMessage()));
+            return null;
+        }
+        if (null == t)
+        {
+            context.getErrors().addRowError(new ValidationException("Query not found: " + sql));
+            return null;
+        }
+
         Collection<ColumnInfo> selectCols = t.getColumns();
         if (null != _columns && !_columns.isEmpty())
         {
@@ -144,12 +161,6 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
             _columns.forEach(x -> keys.add(FieldKey.fromString(x)));
 
             selectCols = qs.getColumns(t, keys).values();
-        }
-
-        if (!qerrors.isEmpty())
-        {
-            context.getErrors().addRowError(new ValidationException(qerrors.getFirst().getMessage()));
-            return null;
         }
 
         /*
@@ -170,5 +181,49 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
             context.getErrors().addRowError(new ValidationException("Error parsing query: ", x.getMessage()));
         }
         return null;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private DataIterator run(String queryName, DataIteratorContext context)
+        {
+            QuerySchema core = QueryService.get().getUserSchema(TestContext.get().getUser(), JunitUtil.getTestContainer(), "core");
+            return new QueryDataIteratorBuilder(core, queryName, null, null).getDataIterator(context);
+        }
+
+        @Test
+        public void existingQuery() throws IOException
+        {
+            DataIteratorContext context = new DataIteratorContext();
+            try (DataIterator it = run("Users", context))
+            {
+                assertNotNull(it);
+                assertFalse(context.getErrors().hasErrors());
+            }
+        }
+
+        @Test
+        public void bogusQueryName()
+        {
+            DataIteratorContext context = new DataIteratorContext();
+            assertNull(run("NoSuchQuery", context));
+            assertTrue(context.getErrors().hasErrors());
+            String message = context.getErrors().getRowErrors().getFirst().getMessage();
+            assertTrue(message, message.contains("NoSuchQuery"));
+        }
+
+        @Test
+        public void quoteCharactersInQueryName()
+        {
+            // the name is quoted as LabKey SQL, so characters other dialects quote with are just part of the name
+            for (String name : List.of("No`Such`Query", "No\"Such\"Query", "No[Such]Query"))
+            {
+                DataIteratorContext context = new DataIteratorContext();
+                assertNull(run(name, context));
+                assertTrue(context.getErrors().hasErrors());
+                String message = context.getErrors().getRowErrors().getFirst().getMessage();
+                assertTrue(message, message.contains("not found"));
+            }
+        }
     }
 }

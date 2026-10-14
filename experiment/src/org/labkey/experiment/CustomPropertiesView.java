@@ -27,8 +27,8 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -38,11 +38,9 @@ import org.labkey.api.view.JspView;
 import org.labkey.experiment.api.ExpMaterialImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -54,44 +52,20 @@ import static java.util.Collections.emptyList;
  */
 public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPropertiesBean>
 {
-    private static final CustomPropertyRenderer DEFAULT_RENDERER = new DefaultCustomPropertyRenderer();
-    private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<>()
-    {
-        @Override
-        public CustomPropertyRenderer get(Object key)
-        {
-            CustomPropertyRenderer result = super.get(key);
-            return Objects.requireNonNullElse(result, DEFAULT_RENDERER);
-        }
-    };
-
-    static
-    {
-        _renderers.put(ExternalDocsURLCustomPropertyRenderer.URI, new ExternalDocsURLCustomPropertyRenderer());
-        _renderers.put(ExternalDocsLabelCustomPropertyRenderer.URI, new ExternalDocsLabelCustomPropertyRenderer());
-    }
-
     public static class CustomPropertiesBean
     {
         private final Map<String, ObjectProperty> _customProperties;
-        private final Map<String, CustomPropertyRenderer> _renderers;
         private final List<Pair<String, ActionURL>> _attachments;
 
-        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, Map<String, CustomPropertyRenderer> renderers, List<Pair<String, ActionURL>> attachments)
+        public CustomPropertiesBean(Map<String, ObjectProperty> customProperties, List<Pair<String, ActionURL>> attachments)
         {
             _customProperties = customProperties;
-            _renderers = renderers;
             _attachments = attachments;
         }
 
         public Map<String, ObjectProperty> getCustomProperties()
         {
             return _customProperties;
-        }
-
-        public Map<String, CustomPropertyRenderer> getRenderers()
-        {
-            return _renderers;
         }
 
         public List<Pair<String, ActionURL>> getAttachments()
@@ -120,7 +94,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
             }
         }
 
-        setModelBean(new CustomPropertiesBean(map, _renderers, attachments));
+        setModelBean(new CustomPropertiesBean(map, attachments));
     }
 
     public CustomPropertiesView(ExpMaterialImpl m, Container c, User u)
@@ -155,7 +129,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                     propertyUris.add(property.getPropertyURI());
                 }
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), parentLSID);
+                SimpleFilter filter = new SimpleFilter(ExpMaterialTable.Column.RowId.fieldKey(), m.getRowId());
                 Map<String,Object> tableProps = new TableSelector(queryTable, filter, null).getMap();
                 // include calculated fields from the domain / query as well
                 List<ColumnInfo> cols = queryTable.getColumns().stream()
@@ -182,7 +156,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
                 }
             }
         }
-        setModelBean(new CustomPropertiesBean(map, _renderers, emptyList()));
+        setModelBean(new CustomPropertiesBean(map, emptyList()));
     }
 
     public boolean hasProperties()

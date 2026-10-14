@@ -26,7 +26,6 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.transform.DataTransformService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -89,9 +88,7 @@ import org.labkey.api.ontology.Quantity;
 import org.labkey.api.ontology.Unit;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
@@ -138,6 +135,7 @@ import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.VocabularyDomainKind;
@@ -167,6 +165,7 @@ import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
+import org.labkey.experiment.samples.SampleTimelineMetadataDisplayColumn;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
 import org.labkey.experiment.samples.SampleTypeFolderWriter;
 import org.labkey.experiment.security.DataClassDesignerRole;
@@ -212,7 +211,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 26.008;
+        return 26.009;
     }
 
     @Nullable
@@ -270,15 +269,6 @@ public class ExperimentModule extends SpringModule
         ExperimentService.get().registerNameExpressionType("aliquots", "exp", "MaterialSource", "aliquotnameexpression");
         ExperimentService.get().registerNameExpressionType("dataclass", "exp", "DataClass", "nameexpression");
 
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(
-                AppProps.DEPRECATED_DERIVE_SAMPLES_NOT_IN_APP,
-                "Derive Samples in LabKey Server UI",
-                "Enables the UI for deriving samples in LabKey Server UI from either the samples grids or a sample lineage page. This option will be removed in LabKey Server 26.11",
-                false,
-                false,
-                OptionalFeatureService.FeatureType.Deprecated));
-        OptionalFeatureService.get().addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
-            "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false, true);
         OptionalFeatureService.get().addExperimentalFeatureFlag(SAMPLE_FILES_TABLE, "Manage Unreferenced Sample Files",
                 "Enable 'Unreferenced Sample Files' table to view and delete sample files that are no longer referenced by samples", false);
 
@@ -288,8 +278,6 @@ public class ExperimentModule extends SpringModule
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
                 "Support for querying lineage of experiment objects", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
-                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
@@ -769,27 +757,6 @@ public class ExperimentModule extends SpringModule
                         map -> (Long) map.get("totalCount") > 0 && map.get("totalCount") == map.get("numberNameCount")
                 ).count());
 
-                UserSchema userSchema = AuditLogService.getAuditLogSchema(User.getSearchUser(), ContainerManager.getRoot());
-                FilteredTable<?> table = (FilteredTable<?>) userSchema.getTable(SampleTimelineAuditEvent.EVENT_TYPE);
-
-                SQLFragment sql = new SQLFragment("SELECT COUNT(*)\n" +
-                        "                        FROM (\n" +
-                        "                                 -- updates that are marked as lineage updates\n" +
-                        "                                 (SELECT DISTINCT transactionId\n" +
-                        "                                  FROM " + table.getRealTable().getFromSQL("").getSQL() +"\n" +
-                        "                                  WHERE islineageupdate = " + schema.getSqlDialect().getBooleanTRUE() + "\n" +
-                        "                                    AND comment = 'Sample was updated.'\n" +
-                        "                                 ) a1\n" +
-                        "                                     JOIN\n" +
-                        "                                     -- but have associated entries that are not lineage updates\n" +
-                        "                                     (SELECT DISTINCT transactionid\n" +
-                        "                                      FROM " + table.getRealTable().getFromSQL("").getSQL() + "\n" +
-                        "                                      WHERE islineageupdate = " + schema.getSqlDialect().getBooleanFALSE() + ") a2\n" +
-                        "                                 ON a1.transactionid = a2.transactionid\n" +
-                        "                                 )");
-
-                results.put("sampleLineageAuditDiscrepancyCount", new SqlSelector(schema, sql.getSQL()).getObject(Long.class));
-
                 results.put("sampleCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
                 results.put("aliquotCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material where aliquotedfromlsid IS NOT NULL").getObject(Long.class));
                 results.put("sampleNullAmountCount", new SqlSelector(schema, "SELECT COUNT(*) FROM exp.material WHERE storedamount IS NULL").getObject(Long.class));
@@ -1172,6 +1139,7 @@ public class ExperimentModule extends SpringModule
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
+            SampleProvidedAmountAuditTestCase.class,
             SampleTypeServiceImpl.TestCase.class,
             SpecialCharacterMetricsMaintenanceTask.TestCase.class,
             StorageNameGenerator.TestCase.class,
@@ -1201,6 +1169,7 @@ public class ExperimentModule extends SpringModule
             LsidUtils.TestCase.class,
             PropertyController.TestCase.class,
             Quantity.TestCase.class,
+            SampleTimelineMetadataDisplayColumn.TestCase.class,
             Unit.TestCase.class
         );
     }

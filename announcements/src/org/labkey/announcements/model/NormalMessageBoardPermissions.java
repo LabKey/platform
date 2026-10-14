@@ -16,6 +16,7 @@
 
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
@@ -30,14 +31,7 @@ import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
-import java.util.Collections;
 import java.util.Set;
-
-/**
- * User: adam
- * Date: Nov 16, 2006
- * Time: 9:54:48 AM
- */
 
 public class NormalMessageBoardPermissions implements Permissions
 {
@@ -52,11 +46,9 @@ public class NormalMessageBoardPermissions implements Permissions
         _settings = settings;
     }
 
-    protected Set<Role> getContextualRoles(AnnouncementModel ann)
+    protected @NotNull Set<Role> getContextualRoles(AnnouncementModel ann)
     {
-        if (userIsCreator(ann) && allowRead(ann) && allowInsert())
-            return Collections.singleton(RoleManager.getRole(OwnerRole.class));
-        return Collections.emptySet();
+        return userIsCreator(ann) && allowRead(ann) && allowInsert() ? Set.of(RoleManager.getRole(OwnerRole.class)) : Set.of();
     }
 
     @Override
@@ -113,10 +105,10 @@ public class NormalMessageBoardPermissions implements Permissions
 
     protected boolean hasPermission(Class<? extends Permission> perm)
     {
-        return hasPermission(perm, null);
+        return hasPermission(perm, Set.of());
     }
 
-    protected boolean hasPermission(Class<? extends Permission> perm, @Nullable Set<Role> contextualRoles)
+    protected boolean hasPermission(Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
         return _c.hasPermission(_user, perm, contextualRoles);
     }

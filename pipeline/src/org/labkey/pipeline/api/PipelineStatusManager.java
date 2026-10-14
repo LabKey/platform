@@ -125,6 +125,27 @@ public class PipelineStatusManager
     }
 
     /**
+     * Get the <code>PipelineStatusFileImpl</code>s with the given RowIds that are reachable from <code>c</code>, using
+     * the same container scope that {@link #deleteStatus} deletes within. Rows outside that scope are not returned.
+     */
+    public static List<PipelineStatusFileImpl> getStatusFilesInScope(Container c, User user, int... rowIds)
+    {
+        if (rowIds.length == 0)
+            return Collections.emptyList();
+
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(_schema.getTableInfoStatusFiles()).append(" WHERE RowId ");
+        _schema.getSqlDialect().appendInClauseSql(sql, Arrays.stream(rowIds).boxed().collect(Collectors.toList()));
+
+        if (!c.isRoot())
+        {
+            sql.append(" AND ");
+            sql.append(ContainerFilter.current(c, user).getSQLFragment(_schema.getSchema(), new SQLFragment("Container")));
+        }
+
+        return new SqlSelector(_schema.getSchema(), sql).getArrayList(PipelineStatusFileImpl.class);
+    }
+
+    /**
      * Get a <code>PipelineStatusFileImpl</code> by the file path associated with the
      * entry.
      *
@@ -808,9 +829,6 @@ public class PipelineStatusManager
             _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds);
             _schema.getSqlDialect().appendInClauseSql(expSql, statusFileIds);
 
-            // Remember that we deleted these rows
-            statusFileIds.forEach(rowIds::remove);
-
             if (!container.isRoot())
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
@@ -828,6 +846,12 @@ public class PipelineStatusManager
             }
 
             int rowCount = new SqlExecutor(_schema.getSchema()).execute(sql);
+
+            // Only forget the rows the DELETE actually reached: the container filter above can exclude a job in
+            // another container, and it has to stay in rowIds so the caller reports a failure instead of success
+            SimpleFilter survivorFilter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), statusFileIds));
+            Set<Long> survivors = new HashSet<>(new TableSelector(_schema.getTableInfoStatusFiles(), Collections.singleton("RowId"), survivorFilter, null).getArrayList(Long.class));
+            statusFileIds.stream().filter(id -> !survivors.contains(id)).forEach(rowIds::remove);
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted

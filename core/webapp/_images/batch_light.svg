@@ -1,19 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 22.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Light" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="64" height="64"
-	 viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#FFFFFF;}
-	.st1{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;}
-	.st2{fill:none;stroke:#96C3E5;stroke-width:3;stroke-linecap:round;stroke-miterlimit:10;}
-</style>
-<g>
-	<path class="st0" d="M17.5,27h30c0.6,0,1,0.4,1,1v27c0,0.6-0.4,1-1,1h-30c-0.6,0-1-0.4-1-1V28C16.5,27.4,17,27,17.5,27z"/>
-	<path class="st1" d="M16.6,54.3c0,0.5,0.4,1,0.9,1h30.1c0.5,0,0.9-0.5,0.9-1v-44c0-0.5-0.4-1-0.9-1H12.9c-0.6,0-1,0.5-0.9,1
-		c0,0.2,0.1,0.4,0.2,0.6l4.1,8.3c0.1,0.1,0.1,0.3,0.1,0.4L16.6,54.3z"/>
-	<line class="st2" x1="36.5" y1="34" x2="44.5" y2="34"/>
-	<line class="st2" x1="36.5" y1="46" x2="44.5" y2="46"/>
-	<line class="st2" x1="36.5" y1="40" x2="44.5" y2="40"/>
-</g>
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M49.5293 55.6667H19.5293C18.9773 55.6667 18.5293 55.2187 18.5293 54.6667V27.6667C18.5293 27.1147 18.9773 26.6667 19.5293 26.6667H49.5293C50.0823 26.6667 50.5293 27.1147 50.5293 27.6667V54.6667C50.5293 55.2187 50.0823 55.6667 49.5293 55.6667Z" fill="white"/>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M18.5593 54.0002C18.5593 54.5522 18.9813 55.0002 19.5003 55.0002H49.6183C50.1383 55.0002 50.5593 54.5522 50.5593 54.0002V10.0002C50.5593 9.44821 50.1383 9.00021 49.6183 9.00021H14.9433C14.1623 9.00021 13.7203 9.95221 14.1973 10.6102L18.2643 18.9162C18.3303 19.0512 18.3663 19.2002 18.3663 19.3502L18.5593 54.0002Z" stroke="#99C9E8" stroke-width="2" stroke-linecap="round"/>
+<path d="M38.5293 33.6667H46.5293" stroke="#99C9E8" stroke-width="2" stroke-linecap="round"/>
+<path d="M38.5293 45.6667H46.5293" stroke="#99C9E8" stroke-width="2" stroke-linecap="round"/>
+<path d="M38.5293 39.6667H46.5293" stroke="#99C9E8" stroke-width="2" stroke-linecap="round"/>
 </svg>

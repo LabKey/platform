@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Constraint;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseIdentifier;
@@ -40,6 +41,7 @@ import org.labkey.api.data.TempTableInClauseGenerator;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.dialect.BackslashEscapingStringHandler;
 import org.labkey.api.data.dialect.BasePostgreSqlDialect;
+import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -47,6 +49,7 @@ import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
@@ -58,6 +61,7 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -89,6 +93,128 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
 
     private final TempTableInClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
+
+    // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
+    // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
+    // standard_conforming_strings is on by default; before 9.1, it was off by default. We check the server setting
+    // when we prepare a new DbScope and use this when we escape and parse string literals.
+    private Boolean _standardConformingStrings = Boolean.TRUE;
+    private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
+    private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
+
+    public boolean getStandardConformingStrings()
+    {
+        // This should always be set before prior to getting the value
+        if (_standardConformingStrings == null)
+            throw new IllegalStateException("Standard Conforming Strings are not set for " + this);
+        return _standardConformingStrings;
+    }
+
+    @Override
+    protected DialectStringHandler createStringHandler()
+    {
+        // TODO: Should we look at "backslash_quote" setting instead/in addition?
+        if (getStandardConformingStrings())
+            return super.createStringHandler();
+        else
+            return new BackslashEscapingStringHandler();
+    }
+
+    public void setStandardConformingStrings(boolean standardConformingStrings)
+    {
+        _standardConformingStrings = standardConformingStrings;
+    }
+
+    public PostgreSqlServerType getServerType()
+    {
+        return _serverType;
+    }
+
+    public void setServerType(PostgreSqlServerType serverType)
+    {
+        _serverType = serverType;
+    }
+
+    // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
+    // of the datasource, determine their "scale," and stash that information in a map associated with the DbScope.
+    // When the PostgreSQLColumnMetaDataReader reads metadata, it returns these scale values for all domains.
+    private void initializeUserDefinedTypes(DbScope scope)
+    {
+        // Skip domains query if connecting to LabKey Server - it has no user-defined types
+        if (getServerType().supportsSpecialMetadataQueries())
+        {
+            Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains");
+            selector.forEach(rs -> {
+                String schemaName = rs.getString("domain_schema");
+                String domainName = rs.getString("domain_name");
+                String dataType = rs.getString("data_type");
+                int scale;
+
+                if (dataType.startsWith("character"))
+                {
+                    String maxLength = rs.getString("character_maximum_length");
+
+                    // VARCHAR with no specific size has null maxLength... but character_octet_length seems okay
+                    scale = Integer.parseInt(null != maxLength ? maxLength : rs.getString("character_octet_length"));
+                }
+                else
+                {
+                    // Assume everything else is an integer for now. We should support more types for better external schema handling.
+                    scale = 4;
+                }
+
+                String key = getDomainKey(schemaName, domainName);
+                _domainScaleMap.put(key, scale);
+            });
+        }
+    }
+
+    private String getDomainKey(String schemaName, String domainName)
+    {
+        // Domain names are returned from column metadata fully qualified and quoted, so save them that way. See #26149.
+        return ("public".equals(schemaName) ? domainName : "\"" + schemaName + "\".\"" + domainName + "\"");
+    }
+
+    @Override
+    public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
+    {
+        // Subclass that supports PostgreSQL-specific domains / user-defined types
+        return new PostgreSqlColumnMetaDataReader(rsCols, table)
+        {
+            @Override
+            public int getScale() throws SQLException
+            {
+                int sqlType = super.getSqlType();
+
+                return Types.DISTINCT == sqlType ? getDomainScale(getSqlTypeName()) : super.getScale();
+            }
+
+            private int getDomainScale(String domainName) throws SQLException
+            {
+                Integer scale = _domainScaleMap.get(domainName);
+
+                if (null == scale)
+                {
+                    // Some domain wasn't there when we initialized the datasource, so reload now. This will happen at bootstrap.
+                    DbSchema schema = _table.getSchema();
+                    initializeUserDefinedTypes(schema.getScope());
+                    scale = _domainScaleMap.get(domainName);
+
+                    // If scale is still null, then we have a problem. We've seen occasional exception reports showing this,
+                    // but haven't had the information to track it down... so log additional info.
+                    if (null == scale)
+                    {
+                        String message = "Null scale for \"" + domainName + "\" in column \"" + _table.getName() + "." + getName() + "\" in schema \"" + schema.getName() + "\"";
+                        ExceptionUtil.logExceptionToMothership(null, new Exception(message));
+                        assert false : message;
+                        return 4;   // Return something on production servers so schema can continue to load
+                    }
+                }
+
+                return scale;
+            }
+        };
+    }
 
     @Override
     public void handleCreateDatabaseException(SQLException e) throws ServletException
@@ -136,6 +262,8 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     {
         initializeInClauseGenerator(scope);
         determineIfArraySortFunctionExists(scope);
+        initializeUserDefinedTypes(scope);
+        determineSettings(scope);
         return super.prepare(scope);
     }
 
@@ -164,13 +292,42 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
         return PRODUCT_NAME;
     }
 
-    // Query PostgreSQL-specific settings
     @Override
+    protected String getSystemTableNames()
+    {
+        return "pg_logdir_ls";
+    }
+
+    @Override
+    public SQLFragment getDatabaseSizeSql(String databaseName)
+    {
+        return new SQLFragment("SELECT pg_database_size(?)", databaseName);
+    }
+
+    @Override
+    public String getExtraInfo(SQLException e)
+    {
+        // Deadlock between two different DB connections
+        if ("40P01".equals(e.getSQLState()))
+        {
+            return getOtherDatabaseThreads();
+        }
+        return null;
+    }
+
+    @Override
+    public @NotNull String getApplicationConnectionsSql()
+    {
+        return "SELECT pid, usename, client_addr, client_hostname, xact_start, query_start, state, application_name, query FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = ? AND application_name = ?";
+    }
+
+    // Query PostgreSQL-specific settings
     protected void determineSettings(DbScope scope)
     {
         if (getServerType().supportsSpecialMetadataQueries())
         {
-            super.determineSettings(scope);
+            Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
+            _standardConformingStrings = "on".equalsIgnoreCase(selector.getObject(String.class));
 
             String value = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'max_identifier_length'").getObject(String.class);
             try
@@ -185,13 +342,17 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
-    protected DialectStringHandler createStringHandler()
+    public boolean isProcedureExists(DbScope scope, String schema, String name)
     {
-        // TODO: Isn't this the wrong setting?  Should we be looking at the "backslash_quote" setting instead?
-        if (getStandardConformingStrings())
-            return super.createStringHandler();
-        else
-            return new BackslashEscapingStringHandler();
+        // Don't bother querying LabKey for stored procedures
+        return getServerType().supportsSpecialMetadataQueries() && super.isProcedureExists(scope, schema, name);
+    }
+
+    @Override
+    public boolean shouldTest()
+    {
+        // Don't test a LabKey data source
+        return getServerType().shouldTest();
     }
 
     /*

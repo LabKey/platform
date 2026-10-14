@@ -17,12 +17,16 @@
 package org.labkey.api.data;
 
 import datadog.trace.api.CorrelationIdentifier;
+import datadog.trace.api.DDTags;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
+import io.opentracing.log.Fields;
+import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -39,6 +43,7 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
@@ -52,16 +57,23 @@ public class AsyncQueryRequest<T>
     @Nullable
     private final StackTraceElement[] _creationStackTrace;
     private final HttpServletResponse _rootResponse;
+    /** Names the APM span; without it every async query aggregates under the bare operation name */
+    private final @Nullable String _resourceName;
+    /** Extra tags for APM search and grouping, beyond the resource name */
+    private final @NotNull Map<String, String> _spanTags;
 
     boolean _cancelled;
     @Nullable Statement _statement;
+    @Nullable Span _span;
 
     T _result;
     Throwable _exception;
 
-    public AsyncQueryRequest(HttpServletResponse response)
+    public AsyncQueryRequest(HttpServletResponse response, @Nullable String resourceName, @NotNull Map<String, String> spanTags)
     {
         _creationStackTrace = MiniProfiler.getTroubleshootingStackTrace();
+        _resourceName = resourceName;
+        _spanTags = spanTags;
 
         _rootResponse = getRootResponse(response);
     }
@@ -103,29 +115,40 @@ public class AsyncQueryRequest<T>
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
 
-        String traceId = CorrelationIdentifier.getTraceId();
-
         // Create the span, so we can connect the async query with its owning thread
         final Tracer tracer = GlobalTracer.get();
         final Span span = tracer.buildSpan("AsyncRequest").start();
-        String spanId = CorrelationIdentifier.getSpanId();
+        // Never a service-entry span, so Datadog computes no hits/duration/error metrics for it without this
+        span.setTag(DDTags.MEASURED, true);
+        if (_resourceName != null)
+            span.setTag(DDTags.RESOURCE_NAME, _resourceName);
+        _spanTags.forEach(span::setTag);
+        _span = span;
 
         Runnable runnable = () -> {
             if (current != null)
                  MemTracker.get().startProfiler("async query");
 
             assert ThreadContext.isEmpty();  // Prevent/detect leaks
-            // Connect log messages with the active trace and span
-            ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), traceId);
-            ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), spanId);
 
             qs.copyEnvironment(state);
-            try
+            // Activate on this thread, not the caller's, or the JDBC integration starts a new trace instead of parenting here
+            try (Scope ignored = tracer.activateSpan(span))
             {
+                // Connect log messages with the active trace and span
+                ThreadContext.put(CorrelationIdentifier.getTraceIdKey(), CorrelationIdentifier.getTraceId());
+                ThreadContext.put(CorrelationIdentifier.getSpanIdKey(), CorrelationIdentifier.getSpanId());
+
                 setResult(callable.call());
             }
             catch (Throwable t)
             {
+                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure
+                if (!isCancelled())
+                {
+                    Tags.ERROR.set(span, true);
+                    span.log(Map.of(Fields.ERROR_OBJECT, t));
+                }
                 setException(t);
             }
             finally
@@ -150,10 +173,11 @@ public class AsyncQueryRequest<T>
         Thread thread = new Thread(runnable, threadName);
         // We want the async thread to use the same database connection, in case we have a transaction open, and
         // so that when the original thread finishes processing the results it ends up closing the right connection
-        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread);
-             Scope ignore = tracer.activateSpan(span))
+        boolean started = false;
+        try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(Thread.currentThread(), thread))
         {
             thread.start();
+            started = true;
 
             // Stash the original disconnect exception if the client has dropped off
             IOException clientDisconnectException = null;
@@ -209,6 +233,12 @@ public class AsyncQueryRequest<T>
                 }
             }
         }
+        finally
+        {
+            // The runnable finishes the span; without a thread to run it the span stays open and its parent trace never completes
+            if (!started)
+                span.finish();
+        }
     }
 
     synchronized public void setResult(T result)
@@ -234,9 +264,16 @@ public class AsyncQueryRequest<T>
         notify();
     }
 
+    synchronized private boolean isCancelled()
+    {
+        return _cancelled;
+    }
+
     synchronized private void cancel()
     {
         _cancelled = true;
+        if (_span != null)
+            _span.setTag("labkey.async_query.cancelled", true);
         if (_statement != null)
         {
             try

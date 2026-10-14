@@ -102,6 +102,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
@@ -123,6 +124,19 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         return DataTransformService.get().transformAndValidate(context, run, DataTransformService.TransformOperation.INSERT);
     }
+
+    /** Issue 26811: If we don't have a view, assume that we are on a background job thread already. */
+    public static boolean isBackgroundImport(AssayProvider provider, ExpProtocol protocol, boolean forceAsync)
+    {
+        return forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
+    }
+
+    /** Queueing a background job only writes the batch and job rows; the import itself takes the lock when the job runs. */
+    public static Lock[] protocolImportLocks(boolean importInBackground)
+    {
+        return importInBackground ? new Lock[0] : new Lock[] { ExperimentService.get().getProtocolImportLock() };
+    }
+
     /**
      * Create and save an experiment run synchronously or asynchronously in a background job depending upon the assay design.
      *
@@ -147,8 +161,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayProvider provider = context.getProvider();
         ExpProtocol protocol = context.getProtocol();
         ExpRun run = null;
+        // Check if assay protocol is configured to import in the background.
+        boolean importInBackground = isBackgroundImport(provider, protocol, forceAsync);
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(protocolImportLocks(importInBackground)))
         {
             TransactionAuditProvider.TransactionAuditEvent auditEvent = transaction.getAuditEvent();
             if (auditEvent == null)
@@ -157,9 +173,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, context.getUser(), auditEvent);
             }
             context.init();
-            // Check if assay protocol is configured to import in the background.
-            // Issue 26811: If we don't have a view, assume that we are on a background job thread already.
-            boolean importInBackground = forceAsync || (provider.isBackgroundUpload(protocol) && HttpView.hasCurrentView());
             if (!importInBackground)
             {
                 if ((Object) context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE) instanceof File errFile)

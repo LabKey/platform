@@ -68,6 +68,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SQLParameterException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -206,6 +207,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -2996,7 +2998,7 @@ public class QueryServiceImpl implements QueryService
         return new AbstractAuditHandler()
         {
             @Override
-            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+            protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row, null);
                 event.setUserComment(userComment);
@@ -3004,7 +3006,7 @@ public class QueryServiceImpl implements QueryService
             }
 
             @Override
-            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues)
+            protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow, @Nullable Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
             {
                 DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);
@@ -3457,7 +3459,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !AppProps.getInstance().isOptionalFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
@@ -3525,6 +3527,82 @@ public class QueryServiceImpl implements QueryService
                     assertEquals(4, rs.getMetaData().getColumnCount());
                 }
 	        }
+        }
+
+        @Test
+        public void testInClauseInnerJoin()
+        {
+            QueryService qs = QueryService.get();
+            TableInfo users = DbSchema.get("core", DbSchemaType.Module).getTable("users");
+            assertNotNull(users);
+            List<ColumnInfo> cols = List.of(users.getColumn("userid"), users.getColumn("displayname"));
+
+            List<Integer> ids = new ArrayList<>();
+            for (int i = 1; i <= SqlDialect.TEMP_TABLE_GENERATOR_MIN_SIZE + 1; i++)
+                ids.add(i);
+            FieldKey pk = FieldKey.fromParts("userid");
+            Supplier<SimpleFilter> pkInFilter = () -> new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids));
+
+            // sorted + paged on a temp-table-backed PK IN: drive from the value set
+            String joinSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("Expected a driving INNER JOIN to the temp table, got:\n" + joinSql, joinSql.contains("INNER JOIN") && joinSql.contains("_drive_"));
+            assertFalse("Driving join should replace the PK IN (SELECT ...) semi-join:\n" + joinSql, joinSql.contains("IN (SELECT Id FROM"));
+
+            // unpaged: nothing for the planner to short-circuit, so leave the semi-join alone
+            String unpagedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).sort(new Sort("-userid")).buildSqlFragment().getSQL();
+            assertFalse("Unpaged query should not produce a driving join:\n" + unpagedSql, unpagedSql.contains("_drive_"));
+            assertTrue("Unpaged query should keep the IN (SELECT ...) semi-join:\n" + unpagedSql, unpagedSql.contains("IN (SELECT Id FROM"));
+
+            // paged with no sort of its own: getSelectSQL() supplies a default sort, so the planner still sees ORDER BY + LIMIT
+            String unsortedSql = qs.getSelectBuilder(users).columns(cols).filter(pkInFilter.get()).maxRows(10).buildSqlFragment().getSQL();
+            assertTrue("A paged query picks up a default sort, so it should drive from the value set:\n" + unsortedSql, unsortedSql.contains("_drive_"));
+
+            // below the temp-table threshold there is no temp table to drive from
+            SimpleFilter smallFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids.subList(0, 10)));
+            String smallSql = qs.getSelectBuilder(users).columns(cols).filter(smallFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("A value set below the temp table threshold should not produce a driving join:\n" + smallSql, smallSql.contains("_drive_"));
+
+            // NOT IN cannot become a join
+            SimpleFilter negatedFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(pk, ids, false, true));
+            String negatedSql = qs.getSelectBuilder(users).columns(cols).filter(negatedFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Negated IN should not produce a driving join:\n" + negatedSql, negatedSql.contains("_drive_"));
+
+            // non-PK column
+            SimpleFilter nonPkFilter = new SimpleFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("displayname"), ids));
+            String nonPkSql = qs.getSelectBuilder(users).columns(cols).filter(nonPkFilter).sort(new Sort("-userid")).maxRows(10).buildSqlFragment().getSQL();
+            assertFalse("Non-PK IN should not produce a driving join:\n" + nonPkSql, nonPkSql.contains("_drive_"));
+        }
+
+        @Test
+        public void testSortTrimmedAfterPk()
+        {
+            TableInfo principals = CoreSchema.getInstance().getTableInfoPrincipals();
+            assertEquals(List.of("userid"), principals.getPkColumnNames().stream().map(String::toLowerCase).toList());
+
+            assertEquals("order by userid asc", orderBy(principals, "UserId,Name,-Type"));
+            assertEquals("order by name asc, userid desc", orderBy(principals, "Name,-UserId,Type"));
+            assertEquals("order by name asc, type asc, userid asc", orderBy(principals, "Name,Type"));
+
+            Sort sort = new Sort("UserId,Name");
+            orderBy(principals, sort);
+            assertEquals("Caller's sort was modified", 2, sort.getSortList().size());
+
+            // A view's PK is declared in schema XML, not enforced by the database
+            TableInfo users = CoreSchema.getInstance().getTableInfoUsers();
+            assertEquals(List.of("userid"), users.getPkColumnNames().stream().map(String::toLowerCase).toList());
+            assertEquals("order by userid asc, email asc", orderBy(users, "UserId,Email"));
+        }
+
+        private String orderBy(TableInfo table, String sort)
+        {
+            return orderBy(table, new Sort(sort));
+        }
+
+        private String orderBy(TableInfo table, Sort sort)
+        {
+            String sql = QueryService.get().getSelectBuilder(table).sort(sort).maxRows(10).buildSqlFragment().getRawSQL();
+            String orderBy = sql.substring(sql.indexOf("ORDER BY"), sql.indexOf("LIMIT")).trim();
+            return orderBy.replaceAll("\\s+", " ").replace("\"", "").toLowerCase();
         }
 
         @Test

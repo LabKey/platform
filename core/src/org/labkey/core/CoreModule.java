@@ -48,6 +48,7 @@ import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.audit.provider.ModulePropertiesAuditProvider;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -88,6 +89,7 @@ import org.labkey.api.files.FileBrowserConfigImporter;
 import org.labkey.api.files.FileBrowserConfigWriter;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.migration.DatabaseMigrationService;
@@ -214,6 +216,7 @@ import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.admin.AllowListType;
+import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
 import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.DisplayFormatAnalyzer;
@@ -259,6 +262,7 @@ import org.labkey.core.login.LoginAttemptDisableLoginProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
+import org.labkey.core.metrics.WebSocketMXBean;
 import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
 import org.labkey.core.notification.EmailPreferenceContainerListener;
 import org.labkey.core.notification.EmailPreferenceUserListener;
@@ -344,11 +348,12 @@ import org.radeox.test.macro.list.AtoZListFormatterTest;
 import org.radeox.test.macro.list.ExampleListFormatterTest;
 import org.radeox.test.macro.list.SimpleListTest;
 
+import javax.management.StandardMBean;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -364,11 +369,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.mcp.McpService.VECTOR_SCHEMA;
+import static org.labkey.api.security.SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -535,6 +542,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
             "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
+            "Allow script authentication via legacy substitution parameters",
+            "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
+            false, false, FeatureType.Deprecated));
+        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATURE_FLAG_ALLOW_APIKEY_PARAMETER,
+            FEATURE_FLAG_ALLOW_APIKEY_PARAMETER_DESCRIPTION,
+            "Allows tools such as SSRS to authenticate by providing an API key via an 'apikey' parameter. Providing " +
+            "a credential via a URL parameter is not generally recommended, but in some cases this is the only option.",
+            false, false, FeatureType.Optional));
         OptionalFeatureService.get().addExperimentalFeatureFlag(PageTemplate.EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS,
             "Short-circuit robots",
             "Save resources by not rendering pages marked as 'noindex' for robots. This is experimental as not all robots are search engines.",
@@ -579,6 +595,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private void registerHealthChecks()
     {
+        // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
+        Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
+
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
             {
                 Map<String, Object> healthValues = new HashMap<>();
@@ -590,10 +609,17 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     {
                         dbConnected = conn != null;
                     }
-                    catch (SQLException e)
+                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+                    // we return a 200 saying we're not healthy instead of a 500
+                    catch (Exception e)
                     {
+                        if (failedDataSources.add(dbScope.getDataSourceName()))
+                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
                         dbConnected = false;
                     }
+
+                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
 
                     healthValues.put(dbScope.getDatabaseName(), dbConnected);
                     allConnected &= dbConnected;
@@ -1027,28 +1053,31 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.standby();
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to put Quartz scheduler in standby", e);
                 }
 
-                Logger logger = LogManager.getLogger(ActionsTsvWriter.class);
+                logTsv(new ActionsTsvWriter());
+                if (ConnectionUsage.isEnabled())
+                    logTsv(new ConnectionUsageTsvWriter());
+                LOG.info("Completed logging statistics for actions prior to web application shut down");
+            }
 
-                if (null != logger)
+            private void logTsv(TSVWriter writer)
+            {
+                StringBuilder buf = new StringBuilder();
+
+                try (writer)
                 {
-                    StringBuilder buf = new StringBuilder();
-
-                    try (TSVWriter writer = new ActionsTsvWriter())
-                    {
-                        writer.write(buf);
-                    }
-                    catch (IOException e)
-                    {
-                        LOG.error("Exception exporting action stats", e);
-                    }
-
-                    logger.info(buf.toString());
-                    LOG.info("Completed logging statistics for actions prior to web application shut down");
+                    writer.write(buf);
                 }
+                catch (IOException e)
+                {
+                    LOG.error("Exception exporting {}", writer.getClass().getSimpleName(), e);
+                }
+
+                LogManager.getLogger(writer.getClass()).info(buf.toString());
             }
 
             @Override
@@ -1056,12 +1085,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 try
                 {
-                    // Clean up Quartz resources and wait for jobs to complete
-                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-                    scheduler.shutdown(true);
+                    QuartzShutdown.shutdown(StdSchedulerFactory.getDefaultScheduler(), QuartzShutdown.DEFAULT_TIMEOUT);
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to shut down Quartz scheduler", e);
                 }
             }
         });
@@ -1276,6 +1304,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        LabKeyManagement.register(new StandardMBean(WebSocketConnectionManager.getInstance(), WebSocketMXBean.class, true), "WebSockets");
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
         UsageMetricsService.get().registerUsageMetrics(getName(), DisplayFormatAnalyzer.getMetricsProvider());
@@ -1473,6 +1502,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
             SqlDialect.DialectTestCase.class,
+            SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,
             TableViewFormTestCase.class,
             UnknownSchemasTest.class,
@@ -1505,6 +1535,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
+            QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
             SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,

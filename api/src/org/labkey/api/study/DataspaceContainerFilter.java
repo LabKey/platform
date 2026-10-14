@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -122,7 +123,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
-    public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+    public @Nullable Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, @NotNull Set<Role> contextualRoles)
     {
         HashSet<GUID> allowedContainers = new HashSet<>();
         if (_containerIds != null && !_containerIds.isEmpty())
@@ -130,16 +131,16 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
             for (GUID guid : _containerIds)
             {
                 Container c = ContainerManager.getForId(guid);
-                if (null != c && c.isContainerFor(ContainerType.DataType.dataspace) && c.hasPermission(_user, perm, roles))
+                if (null != c && c.isContainerFor(ContainerType.DataType.dataspace) && c.hasPermission(_user, perm, contextualRoles))
                     allowedContainers.add(guid);
             }
         }
         else
         {
-            allowedContainers.addAll(super.generateIds(currentContainer, perm, roles));
+            allowedContainers.addAll(super.generateIds(currentContainer, perm, contextualRoles));
         }
         Container project = currentContainer.getProject();
-        if (_includeProject && null != project &&  project.hasPermission(_user, perm, roles))
+        if (_includeProject && null != project &&  project.hasPermission(_user, perm, contextualRoles))
             allowedContainers.add(project.getEntityId());
 
         if (_allowOptimizePermissionsCheck)
@@ -180,7 +181,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
      CONSIDER: if there were a caching version of StudyService.get().getAllStudies(project)
      we could do away with this cache
     */
-    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", (key, argument) -> {
+    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingCache(String.class, CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", (key, argument) -> {
         Container project = ContainerManager.getForId(key);
         if (null == project || !project.isProject())
             return null;

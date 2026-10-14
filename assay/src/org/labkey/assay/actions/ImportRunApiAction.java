@@ -201,6 +201,14 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             auditDetailsJsonStr = form.getAuditDetails();
         }
 
+        if (workflowTaskId != null)
+        {
+            WorkflowService workService = WorkflowService.get();
+
+            if (workService != null && protocol != null && !workService.isTaskAssayType(workflowTaskId, protocol.getRowId()))
+                throw new ValidationException("Invalid job task id " + workflowTaskId + ". Either the task does not exist or does not reference this assay type.");
+        }
+
         if (reImportOption == null)
         {
             if (provider != null && protocol != null && provider.isPlateMetadataEnabled(protocol))
@@ -319,8 +327,9 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
 
         boolean success = false;
         AssayFilePropertyWriter<? extends AssayProvider> filePropertyWriter = new AssayFilePropertyWriter<>();
+        boolean importInBackground = DefaultAssayRunCreator.isBackgroundImport(provider, protocol, forceAsync);
 
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(DefaultAssayRunCreator.protocolImportLocks(importInBackground)))
         {
             Map<TransactionAuditProvider.TransactionDetail, Object> transactionDetails = getTransactionAuditDetails();
             if (!StringUtils.isEmpty(auditDetailsJsonStr))

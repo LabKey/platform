@@ -63,7 +63,7 @@ public class RScriptEngine extends ExternalScriptEngine
     }
 
     @Override
-    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions)
+    protected FileLike prepareScriptFile(String script, ScriptContext context, List<String> extensions) throws ScriptException
     {
         FileLike scriptFile;
         if (getKnitrFormat(context) != RReportDescriptor.KnitrFormat.None)

@@ -329,24 +329,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private final Cache<Long, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
+    private final Cache<Long, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(Long.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
         (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key)));
 
-    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
+    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
         (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key)));
 
-    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
+    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
+
+    /** ExcludedContainer id -> excluded data type row ids, by data type */
+    private final Cache<String, Map<DataTypeForExclusion, Set<Long>>> DATA_TYPE_EXCLUSION_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Data type exclusions",
+        (containerId, _) -> loadContainerDataTypeExclusions(containerId));
 
     /** DataClass LSID -> Container */
-    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
 
     /** ContainerId -> DataClasses */
-    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
+    private final Cache<Container, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (c, _) ->
     {
-        Container c = ContainerManager.getForId(containerId);
-        if (c == null)
-            return Collections.emptySortedSet();
-
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
@@ -370,7 +370,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final List<NameExpressionType> _nameExpressionTypes = new CopyOnWriteArrayList<>();
 
-    private Cache<String, SortedSet<DataClass>> getDataClassCache()
+    private Cache<Container, SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
     }
@@ -381,7 +381,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (c == null)
             dataClassCache.clear();
         else
-            dataClassCache.remove(c.getId());
+            dataClassCache.remove(c);
     }
 
     private @NotNull List<ExperimentRun> getExperimentRuns(SimpleFilter filter)
@@ -389,25 +389,25 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class);
     }
 
-    @Override
-    public @Nullable ExpRunImpl getExpRun(long rowId)
+    private @Nullable ExpRunImpl getExpRun(SimpleFilter filter)
     {
-        return getExpRun(rowId, null);
+        ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
+        return run == null ? null : new ExpRunImpl(run);
     }
 
     @Override
-    public @Nullable ExpRunImpl getExpRun(long rowId, @Nullable Container container)
+    public @Nullable ExpRunImpl getExpRun(long rowId)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
-        ExperimentRun run = new TableSelector(getTinfoExperimentRun(), filter, null).getObject(ExperimentRun.class);
-        if (run == null)
-            return null;
+        return getExpRun(new SimpleFilter(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId));
+    }
 
-        // GitHub Issue #1892: if container provided, ensure the run belongs to the container
-        if (container != null && !run.getContainer().equals(container))
-            return null;
-
-        return new ExpRunImpl(run);
+    @Override
+    public @Nullable ExpRunImpl getExpRun(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowId);
+        return getExpRun(filter);
     }
 
     private List<ExpRunImpl> getExpRuns(SimpleFilter filter)
@@ -717,6 +717,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public @Nullable ExpDataImpl getExpData(long rowId)
     {
         return getExpData(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
+    }
+
+    @Override
+    public @Nullable ExpDataImpl getExpData(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        return getExpData(filter);
     }
 
     @Override
@@ -1409,6 +1418,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public @Nullable ExpProtocolImpl getExpProtocol(@NotNull Container container, long rowId)
+    {
+        Objects.requireNonNull(container, "container");
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("RowId"), rowId);
+        return getExpProtocol(filter);
+    }
+
+    @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
         return PROTOCOL_LSID_CACHE.get(lsid);
@@ -1810,10 +1828,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, includeProjectAndShared);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : createContainerList(container, includeProjectAndShared))
         {
-            SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
+            SortedSet<DataClass> dataClasses = getDataClassCache().get(scopeContainer);
             classes.addAll(dataClasses);
         }
 
@@ -1876,10 +1893,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, includeProjectAndShared);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : createContainerList(c, includeProjectAndShared))
         {
-            Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
+            Collection<DataClass> dataClasses = getDataClassCache().get(scopeContainer);
             for (DataClass dataClass : dataClasses)
             {
                 if (predicate.test(dataClass))
@@ -4080,20 +4096,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         throw new IllegalStateException("Found multiple matching LSID types for '" + lsid + "': " + types);
     }
 
-    public List<String> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
+    public List<Container> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
     {
-        List<String> containerIds = new ArrayList<>();
-        containerIds.add(container.getId());
+        List<Container> containers = new ArrayList<>();
+        containers.add(container);
         if (includeProjectAndShared)
         {
             Container project = container.getProject();
             if (project != null)
             {
-                containerIds.add(project.getId());
+                containers.add(project);
             }
-            containerIds.add(ContainerManager.getSharedContainer().getId());
+            containers.add(ContainerManager.getSharedContainer());
         }
-        return containerIds;
+        return containers;
     }
 
     @Override
@@ -8936,6 +8952,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         fields.put("DataType", dataType.name());
         fields.put("ExcludedContainer", excludedContainerId);
         Table.insert(user, getTinfoDataTypeExclusion(), fields);
+        DATA_TYPE_EXCLUSION_CACHE.remove(excludedContainerId);
     }
 
     @Override
@@ -8946,6 +8963,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 .append(" WHERE excludedContainer = ? ");
         sql.add(containerId);
         new SqlExecutor(getExpSchema()).execute(sql);
+        DATA_TYPE_EXCLUSION_CACHE.remove(containerId);
     }
 
     @Override
@@ -8969,6 +8987,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         new SqlExecutor(getExpSchema()).execute(sql);
+
+        if (StringUtils.isEmpty(excludedContainerId))
+            DATA_TYPE_EXCLUSION_CACHE.clear();
+        else
+            DATA_TYPE_EXCLUSION_CACHE.remove(excludedContainerId);
     }
 
     @NotNull private List<Map<String, Object>> _getContainerDataTypeExclusions(@Nullable DataTypeForExclusion dataType, @Nullable String excludedContainerIdOrPath, @Nullable Long dataTypeRowId)
@@ -9016,7 +9039,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerId)
+    public @NotNull Map<DataTypeForExclusion, Set<Long>> getContainerDataTypeExclusions(@NotNull String excludedContainerIdOrPath)
+    {
+        // Resolve to a real container so arbitrary client-supplied ids can't add cache entries
+        Container container = ContainerManager.getForPath(excludedContainerIdOrPath);
+        if (container == null)
+            return Collections.emptyMap();
+
+        return DATA_TYPE_EXCLUSION_CACHE.get(container.getId());
+    }
+
+    private @NotNull Map<DataTypeForExclusion, Set<Long>> loadContainerDataTypeExclusions(@NotNull String excludedContainerId)
     {
         List<Map<String, Object>> exclusions = _getContainerDataTypeExclusions(null, excludedContainerId, null);
 
@@ -9025,12 +9058,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String dataTypeStr = (String) exclusion.get("DataType");
             DataTypeForExclusion dataType = DataTypeForExclusion.valueOf(dataTypeStr);
-            if (!typeExclusions.containsKey(dataType))
-                typeExclusions.put(dataType, new HashSet<>());
-            typeExclusions.get(dataType).add(asLong(exclusion.get("DataTypeRowId")));
+            typeExclusions.computeIfAbsent(dataType, _ -> new HashSet<>()).add(asLong(exclusion.get("DataTypeRowId")));
         }
 
-        return typeExclusions;
+        typeExclusions.replaceAll((_, rowIds) -> Collections.unmodifiableSet(rowIds));
+        return Collections.unmodifiableMap(typeExclusions);
     }
 
     @Override

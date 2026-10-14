@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -51,13 +53,16 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -150,7 +155,14 @@ public abstract class Method
                 return new PassthroughInfo("coalesce", null, JdbcType.OTHER);
             }
         });
-        labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
+        labkeyMethod.put("concat", new Method("concat", JdbcType.VARCHAR, 2, Integer.MAX_VALUE)
+        {
+            @Override
+            public MethodInfo getMethodInfo()
+            {
+                return new ConcatInfo();
+            }
+        });
         labkeyMethod.put("contextpath", new Method("contextPath", JdbcType.VARCHAR, 0, 0)
         {
             @Override
@@ -590,10 +602,14 @@ public abstract class Method
         int count = args.size();
         if (count < _minArgs || count > _maxArgs)
         {
+            String message;
             if (_minArgs == _maxArgs)
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s"), null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s");
+            else if (_maxArgs == Integer.MAX_VALUE)
+                message = _name.toUpperCase() + " function expects at least " + _minArgs + " argument" + (_minArgs == 1 ? "" : "s");
             else
-                parseErrors.add(new QueryParseException(_name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments", null, fn.getLine(), fn.getCharPositionInLine()));
+                message = _name.toUpperCase() + " function expects " + _minArgs + " to " + _maxArgs + " arguments";
+            parseErrors.add(new QueryParseException(message, null, fn.getLine(), fn.getCharPositionInLine()));
         }
     }
 
@@ -1067,6 +1083,25 @@ public abstract class Method
                 ret.append("=(").append(arguments[1]).append(")");
                 return ret;
             }
+        }
+    }
+
+
+    // Same SQL as the || operator
+    static class ConcatInfo extends AbstractMethodInfo
+    {
+        ConcatInfo()
+        {
+            super(JdbcType.VARCHAR);
+        }
+
+        @Override
+        public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
+        {
+            SQLFragment[] terms = Arrays.stream(arguments)
+                    .map(arg -> new SQLFragment("(").append(arg).append(")"))
+                    .toArray(SQLFragment[]::new);
+            return new SQLFragment("(").append(dialect.concatenate(terms)).append(")");
         }
     }
 
@@ -1731,7 +1766,7 @@ public abstract class Method
         postgresMethods.put("translate", new PassthroughMethod("translate", JdbcType.VARCHAR, 3, 3));
         postgresMethods.put("to_char", new PassthroughMethod("to_char", JdbcType.VARCHAR, 2, 2));
         postgresMethods.put("to_date", new PassthroughMethod("to_date", JdbcType.DATE, 2, 2));
-        postgresMethods.put("to_timestamp", new PassthroughMethod("to_timestamp", JdbcType.TIMESTAMP, 2, 2));
+        postgresMethods.put("to_timestamp", new PassthroughMethod("to_timestamp", JdbcType.TIMESTAMP, 1, 2));
         postgresMethods.put("to_number", new PassthroughMethod("to_number", JdbcType.DECIMAL, 2, 2));
         postgresMethods.put("string_to_array", new PassthroughMethod("string_to_array", JdbcType.VARCHAR, 2, 3));
         postgresMethods.put("unnest", new PassthroughMethod("unnest", JdbcType.VARCHAR, 1, 1));
@@ -2000,7 +2035,6 @@ public abstract class Method
         }
     }
 
-    @TestWhen(TestWhen.When.DBSCOPE)
     public static class TestCase extends Assert
     {
         void assertIsSimpleString(String expected, SQLFragment s)
@@ -2039,6 +2073,24 @@ public abstract class Method
             assertNotSimpleString(new SQLFragment("SELECT 'test'"));
             assertNotSimpleString(new SQLFragment("'test''string'"));
         }
+    }
+
+    @TestWhen(TestWhen.When.DBSCOPE)
+    @RunWith(Parameterized.class)
+    public static class IsDistinctFromMethodTestCase extends Assert
+    {
+        @Parameterized.Parameters(name = "{1}")
+        public static Collection<Object[]> schemas()
+        {
+            return JunitUtil.getDbScopesTestParameters();
+        }
+
+        private final DbScope scope;
+
+        public IsDistinctFromMethodTestCase(DbScope scope, String displayName)
+        {
+            this.scope = scope;
+        }
 
         // Exercises both the native and portable-fallback branches of IsDistinctFromMethodInfo.getSQL() against every
         // dialect that's actually connected in this environment, not just whichever dialect the current CI leg happens
@@ -2058,17 +2110,14 @@ public abstract class Method
                 new Case("1", "NULL", true)
             );
 
-            for (DbScope scope : DbScope.getDbScopesToTest())
-            {
-                SqlDialect d = scope.getSqlDialect();
+            SqlDialect d = scope.getSqlDialect();
 
-                for (Case c : cases)
-                {
-                    assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
-                    assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
-                    assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
-                    assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
-                }
+            for (Case c : cases)
+            {
+                assertIsDistinctFrom(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFrom(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS, c.a(), c.b(), c.distinct());
+                assertIsDistinctFromWhere(scope, d, IS_NOT, c.a(), c.b(), !c.distinct());
             }
         }
 

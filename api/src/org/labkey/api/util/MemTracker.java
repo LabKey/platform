@@ -420,33 +420,52 @@ public class MemTracker
     // reference tracking impl
     //
 
+    // Separate from this object's monitor so tracking allocations doesn't contend with request profiling
+    private final Object _referencesLock = new Object();
     private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<>(ReferenceStrength.WEAK, ReferenceStrength.HARD, true);
     private final List<MemTrackerListener> _listeners = new CopyOnWriteArrayList<>();
 
-    private synchronized boolean _put(Object object)
+    private boolean _put(Object object)
     {
         if (object != null)
-            _references.put(object, new AllocationInfo());
+        {
+            // Built outside the lock because it may capture a stack trace
+            AllocationInfo allocationInfo = new AllocationInfo();
+            synchronized (_referencesLock)
+            {
+                _references.put(object, allocationInfo);
+            }
+        }
+        // Touches only the calling thread's RequestInfo
         MiniProfiler.addObject(object);
         return true;
     }
 
-    private synchronized boolean _remove(Object object)
+    private boolean _remove(Object object)
     {
         if (object != null)
-            _references.remove(object);
+        {
+            synchronized (_referencesLock)
+            {
+                _references.remove(object);
+            }
+        }
         return true;
     }
 
-    public synchronized List<HeldReference> getReferences()
+    public List<HeldReference> getReferences()
     {
-        List<HeldReference> refs = new ArrayList<>(_references.size());
-        for (Map.Entry<Object, AllocationInfo> entry : _references.entrySet())
+        List<HeldReference> refs;
+        synchronized (_referencesLock)
         {
-            // get a hard reference so we know that we're placing an actual object into our list:
-            Object obj = entry.getKey();
-            if (obj != null)
-                refs.add(new HeldReference(entry.getKey(), entry.getValue()));
+            refs = new ArrayList<>(_references.size());
+            for (Map.Entry<Object, AllocationInfo> entry : _references.entrySet())
+            {
+                // get a hard reference so we know that we're placing an actual object into our list:
+                Object obj = entry.getKey();
+                if (obj != null)
+                    refs.add(new HeldReference(obj, entry.getValue()));
+            }
         }
         refs.sort(Comparator.comparing(HeldReference::getClassName, String.CASE_INSENSITIVE_ORDER));
         return refs;

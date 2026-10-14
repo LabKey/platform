@@ -22,11 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
-import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.ParameterMapStatement;
@@ -81,23 +79,9 @@ public class LogManager
 
         if (provider != null)
         {
-            Container c = type.getContainer();
-
-            UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
-
-            if (schema != null)
-            {
-                TableInfo table = schema.getTable(provider.getEventName(), false);
-
-                if (table instanceof DefaultAuditTypeTable auditTypeTable)
-                {
-                    // consider using etl data iterator for inserts
-                    type = validateFields(provider, type);
-                    TableInfo dbTable = auditTypeTable.getRealTable();
-                    K ret = Table.insert(user, dbTable, type);
-                    return ret;
-                }
-            }
+            // consider using etl data iterator for inserts
+            type = validateFields(provider, type);
+            return Table.insert(user, provider.getStorageTableInfoForInsert(), type);
         }
         return null;
     }
@@ -142,33 +126,28 @@ public class LogManager
         if (null == provider)
             return;
         Container c = type.getContainer();
-        UserSchema schema = AuditLogService.getAuditLogSchema(user, c != null ? c : ContainerManager.getRoot());
-        TableInfo table = null==schema ? null : schema.getTable(provider.getEventName(), false);
-        TableInfo dbTable = table instanceof DefaultAuditTypeTable auditTypeTable ? auditTypeTable.getRealTable() : null;
+        TableInfo dbTable = provider.getStorageTableInfoForInsert();
 
         Logger auditLogger = getAuditLogger(type);
         SQLException sqlx = null;
 
-        if (null != dbTable)
+        try (Connection conn = dbTable.getSchema().getScope().getConnection();
+             ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true))
         {
-            try (Connection conn = dbTable.getSchema().getScope().getConnection())
+            for (var event : events)
             {
-                ParameterMapStatement stmt = StatementUtils.insertStatement(conn, dbTable, c, user, false, true);
-                for (var event : events)
-                {
-                    event = validateFields(provider, event);
-                    Map<String,Object> map = ObjectFactory.Registry.getFactory((Class<K>)event.getClass()).toMap(event, null);
-                    stmt.clearParameters();
-                    stmt.putAll(map);
-                    stmt.addBatch();
-                }
-                stmt.executeBatch();
+                event = validateFields(provider, event);
+                Map<String,Object> map = ObjectFactory.Registry.getFactory((Class<K>)event.getClass()).toMap(event, null);
+                stmt.clearParameters();
+                stmt.putAll(map);
+                stmt.addBatch();
             }
-            catch (SQLException x)
-            {
-                auditLogger.warn("Error occurred saving audit entries to database");
-                sqlx = x;
-            }
+            stmt.executeBatch();
+        }
+        catch (SQLException x)
+        {
+            auditLogger.warn("Error occurred saving audit entries to database");
+            sqlx = x;
         }
 
         if (auditLogger.isInfoEnabled())

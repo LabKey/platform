@@ -58,6 +58,7 @@ import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
+import org.labkey.list.model.ListQueryUpdateService;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.ListWriter;
@@ -234,6 +235,14 @@ public class ListModule extends SpringModule
             ListManager.TestCase.class,
             ListWriter.TestCase.class,
             ListAuditProvider.TestCase.class
+        );
+    }
+
+    @Override
+    public @NotNull Set<Class<?>> getIntegrationTests()
+    {
+        return Set.of(
+            ListQueryUpdateService.AuditBatchTestCase.class
         );
     }
 }

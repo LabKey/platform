@@ -15,8 +15,13 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.HasPermission;
@@ -39,10 +44,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.mock.web.MockHttpServletRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +59,6 @@ import java.util.Set;
 /**
  * Holds many of the key pieces of context about an HTTP request, including the {@link HttpServletRequest} and
  * {@link HttpServletResponse} objects, the {@link User} making the request, etc.
- * User: matthewb
- * Date: Mar 20, 2005
  */
 public class ViewContext implements MessageSource, ContainerContext, ContainerUser, ApplicationContextAware, HasPermission, HasHttpRequest
 {
@@ -71,7 +72,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private Container _c = null;
 
 
-    private final Set<Role> _contextualRoles = new HashSet<>();
+    private final @NotNull Set<Role> _contextualRoles = new HashSet<>();
     private boolean _isAppView = false;
 
     transient protected HashMap<String, Object> _map = new HashMap<>();
@@ -164,6 +165,18 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return new StackResetter(context, stackSize);
     }
 
+    /**
+     * Ensures a view context is available without disturbing one that's already there: if a view is
+     * already on the stack, returns it wrapped in a no-op resetter; otherwise pushes a new mock context
+     * via {@link #pushMockViewContext}.
+     */
+    public static StackResetter ensureViewContext(User user, Container c, ActionURL url)
+    {
+        if (HttpView.hasCurrentView())
+            return new StackResetter(HttpView.currentContext(), HttpView.getStackSize());
+        else
+            return pushMockViewContext(user, c, url);
+    }
 
     // Needed by background threads that call entrypoints that require ViewContexts
     // TODO: Well-behaved interfaces should not take ViewContexts -- clean up query, et al to remove ViewContext params
@@ -178,7 +191,11 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         if (null != url)
             context.setBindPropertyValues(url.getPropertyValues());
 
-        HttpServletRequest request = ViewServlet.mockRequest("GET", url, user, null, null);
+        // Inherit current request's method, if present.
+        HttpServletRequest currentRequest = HttpView.currentRequest();
+        String mockRequestMethod = pushViewContext && currentRequest != null ? currentRequest.getMethod() : "GET";
+
+        HttpServletRequest request = ViewServlet.mockRequest(mockRequestMethod, url, user, null, null);
         context.setRequest(request);
 
         // Major hack -- QueryView needs the context pushed onto the ViewContext stack in thread local 
@@ -197,9 +214,23 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _map;
     }
 
-    public Object get(Object key)
+    public Object get(String key)
     {
         return _map.get(key);
+    }
+
+    /*
+     * Safer and more convenient than using get() with a String cast. Returns _map.get(key) if it's null or a String.
+     * Otherwise, throws BadRequestException. See GH Issue 1631.
+     */
+    public @Nullable String getString(String key)
+    {
+        Object value = _map.get(key);
+        if (value == null)
+            return null;
+        if (value instanceof String stringValue)
+            return stringValue;
+        throw new BadRequestException(String.format("Expected a single string value for key: %s", key)); // No logging, no mothership
     }
 
     public Object put(String key, Object value)
@@ -507,5 +538,23 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     {
         var r = getRequest();
         return null != r && PageFlowUtil.isRobotUserAgent(r.getHeader("User-Agent"));
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testGetString()
+        {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.addParameter("single", "value");
+            request.addParameter("repeated", "one", "two");
+            ViewContext context = new ViewContext(request, null, null);
+            context.put("number", 42);
+
+            assertEquals("value", context.getString("single"));
+            assertNull(context.getString("missing"));
+            assertThrows(BadRequestException.class, () -> context.getString("repeated"));
+            assertThrows(BadRequestException.class, () -> context.getString("number"));
+        }
     }
 }

@@ -16,6 +16,7 @@
 package org.labkey.test.tests.study;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hc.core5.http.HttpStatus;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,6 +26,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Path;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
+import org.labkey.remoteapi.query.Sort;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.Locators;
@@ -37,23 +42,30 @@ import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldKey;
+import org.labkey.test.util.ApiPermissionsHelper;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.Maps;
+import org.labkey.test.util.PermissionsHelper;
+import org.labkey.test.util.SimpleHttpRequest;
+import org.labkey.test.util.SimpleHttpResponse;
 import org.labkey.test.util.StudyHelper;
 import org.labkey.test.util.TestDataGenerator;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.labkey.test.util.PermissionsHelper.FOLDER_ADMIN_ROLE;
 import static org.labkey.test.util.PermissionsHelper.READER_ROLE;
 
 @Category({Daily.class})
@@ -71,6 +83,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     private static final String[] STUDY2_PTIDS = {"9000", "9001"};
     public static final File STUDY_DIR = TestFileUtils.getSampleData("studies/ExtraKeyStudy");
     private static final String user = "study_reader@sharedstudy.test";
+    private static final String visitAdminUser = "visit_admin@sharedstudy.test";
     public static final String PARTICIPANT_NOUN_PLURAL = "Pandas";
     public static final String PARTICIPANT_NOUN_SINGULAR = "Panda";
 
@@ -97,7 +110,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
-        _userHelper.deleteUsers(false, user);
+        _userHelper.deleteUsers(false, user, visitAdminUser);
     }
 
     @BeforeClass
@@ -205,6 +218,67 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         String title = getDriver().getTitle();
         Assert.assertTrue("Expected title to start with 'Manage Shared Timepoints', got:" + title, title.startsWith("Manage Shared Visits"));
+    }
+
+    // GH Issue 1450: shared visits live in the project, so a subfolder admin must not be able to import over them
+    @Test
+    public void testImportVisitMapDeniedInSubfolder()
+    {
+        String studyPath = getProjectName() + "/" + STUDY1;
+        String visitMap = """
+                <visitMap xmlns="http://labkey.org/study/xml">
+                  <visit label="Relabeled by subfolder admin" sequenceNum="1.0" maxSequenceNum="1.99"/>
+                  <visit label="Injected by subfolder admin" sequenceNum="4242.0" maxSequenceNum="4242.99"/>
+                </visitMap>""";
+
+        log("Grant admin in the subfolder only, leaving the project alone");
+        _userHelper.createUser(visitAdminUser);
+        new ApiPermissionsHelper(this).addMemberToRole(visitAdminUser, FOLDER_ADMIN_ROLE, PermissionsHelper.MemberType.user, studyPath);
+        List<String> visitsBeforeImport = getProjectVisitLabels();
+
+        log("Post a visit map to the subfolder, bypassing the form's redirect to the project");
+        clickFolder(STUDY1);
+        impersonate(visitAdminUser);
+        SimpleHttpResponse response = postVisitMap(studyPath, visitMap);
+        stopImpersonating();
+
+        assertEquals("Expected the import to be refused", HttpStatus.SC_FORBIDDEN, response.getResponseCode());
+        assertEquals("Visit map import from a subfolder rewrote the project's shared visits",
+                visitsBeforeImport, getProjectVisitLabels());
+    }
+
+    private SimpleHttpResponse postVisitMap(String containerPath, String visitMap)
+    {
+        SimpleHttpRequest request = new SimpleHttpRequest(WebTestHelper.buildURL("study", containerPath, "importVisitMap",
+                Map.of("content", visitMap)), "POST");
+        request.copySession(getDriver()); // post as the impersonated user; carries the CSRF token
+        request.clearLogin();             // rely solely on the impersonated session, not admin basic-auth
+
+        try
+        {
+            return request.getResponse();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<String> getProjectVisitLabels()
+    {
+        SelectRowsCommand command = new SelectRowsCommand("study", "Visit");
+        command.setColumns(List.of("Label"));
+        command.setSorts(List.of(new Sort("SequenceNumMin")));
+
+        try
+        {
+            SelectRowsResponse response = command.execute(createDefaultConnection(), getProjectName());
+            return response.getRows().stream().map(row -> String.valueOf(row.get("Label"))).toList();
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

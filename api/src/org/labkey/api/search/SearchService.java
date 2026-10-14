@@ -305,19 +305,14 @@ public interface SearchService extends SearchMXBean
             return _name;
         }
 
-        protected Set<String> getPermittedContainerIds(User user, Map<String, Container> containers, @NotNull Class<? extends Permission> perm)
+        /**
+         * Permission required, beyond base container Read (which every searchable container already has), for this
+         * category's documents to be visible. Return null if base Read is sufficient.
+         */
+        @Nullable
+        public Class<? extends Permission> getRequiredPermission()
         {
-            Set<String> containerIds = new HashSet<>();
-            containers.forEach((id, container) -> {
-                if (container.hasPermission(user, perm))
-                    containerIds.add(id);
-            });
-            return containerIds.size() == containers.size() ? containers.keySet() : containerIds;
-        }
-
-        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
-        {
-            return containers.keySet();
+            return null;
         }
 
         public boolean isShowInAdvancedSearch()
@@ -841,7 +836,7 @@ public interface SearchService extends SearchMXBean
             {
                 var list = SearchService.get().getCategories(categories);
                 if (null != list && !list.isEmpty())
-                this.categories = list;
+                    this.categories = list;
                 return this;
             }
 
@@ -851,5 +846,4 @@ public interface SearchService extends SearchMXBean
             }
         }
     }
-
 }

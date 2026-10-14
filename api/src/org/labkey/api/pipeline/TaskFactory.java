@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.PipelineJob.Task;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 
@@ -27,8 +28,6 @@ import java.util.List;
  * <code>TaskFactory</code> is responsible for creating a task to run on a
  * PipelineJob.  Create an implementation of this interface to support custom
  * Task configuration inside the Mule configuration Spring context.
- *
- * @author brendanx
  */
 public interface TaskFactory<SettingsType extends TaskFactorySettings>
 {
@@ -36,17 +35,17 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     TaskId getActiveId(PipelineJob job);
 
-    PipelineJob.Task createTask(PipelineJob job);
+    Task<?> createTask(PipelineJob job);
 
-    TaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException;
+    TaskFactory<?> cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException;
 
     /** @return the types of files that are consumable by this task as input */
     List<FileType> getInputTypes();
 
     /**
-     * All of the ProtocolAction names that this task may include when it runs. It need not execute all of them for
-     * each invocation.
-     * These names are used to build up a full Experiment Protocol for each pipeline to which this tasks belongs.
+     * All the ProtocolAction names that this task may include when it runs. It need not execute all of them for
+     * each invocation. These names are used to build up a full Experiment Protocol for each pipeline to which this
+     * task belongs.
      */
     List<String> getProtocolActionNames();
 
@@ -57,7 +56,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
     String getGroupParameterName();
 
     /**
-     * @return true if this task operates on all of the split items (say, multiple input files) as a whole, or false
+     * @return true if this task operates on all the split items (say, multiple input files) as a whole, or false
      * if each split item should be operated on independently (and potentially in parallel)
      */
     boolean isJoin();

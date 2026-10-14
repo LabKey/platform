@@ -46,6 +46,7 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchema.HasContextualRoles;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.query.snapshot.AbstractTableMethodInfo;
 import org.labkey.api.security.UserPrincipal;
@@ -310,10 +311,8 @@ abstract public class ExpTableImpl<C extends Enum>
     {
         if (perm == ReadPermission.class || getUpdateService() != null)
         {
-            Set<Role> roles = null;
-            if (_userSchema instanceof UserSchema.HasContextualRoles contextualRolesSchema)
-                roles = contextualRolesSchema.getContextualRoles();
-            return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm, roles);
+            Set<Role> contextualRoles = _userSchema instanceof HasContextualRoles hasRoles ? hasRoles.getContextualRoles() : Set.of();
+            return isAllowedPermission(perm) && _userSchema.getContainer().hasPermission(user, perm, contextualRoles);
         }
         return false;
     }

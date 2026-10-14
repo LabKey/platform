@@ -166,7 +166,7 @@ public class RoleManager
     }
 
     // Limit logging of each unique role or permission warning to once-per-day
-    private static final Throttle<String> WARNING_THROTTLE = new Throttle<>("RoleManagerWarningThrottle", 500, CacheManager.DAY, LOG::warn);
+    private static final Throttle<String> WARNING_THROTTLE = new Throttle<>(String.class, "role and permission warnings", 500, CacheManager.DAY, LOG::warn);
 
     private static <T extends Role> T warnIfNull(@Nullable T role, Supplier<String> warningSupplier)
     {
@@ -372,15 +372,13 @@ public class RoleManager
      * @return A set of Role objects corresponding to the role classes
      */
     @NotNull
-    public static Set<Role> mergeContextualRoles(ViewContext context, Class<? extends HasContextualRoles>[] roleFactories, Set<Role> contextualRoles)
+    public static Set<Role> mergeContextualRoles(ViewContext context, Class<? extends HasContextualRoles>[] roleFactories, @NotNull Set<Role> contextualRoles)
     {
         if (roleFactories == null || roleFactories.length == 0)
             return contextualRoles;
 
-        Set<Role> allContextualRoles = new HashSet<>();
-        if (contextualRoles != null)
-            allContextualRoles.addAll(contextualRoles);
-        
+        Set<Role> allContextualRoles = new HashSet<>(contextualRoles);
+
         for (Class<? extends HasContextualRoles> roleFactory : roleFactories)
         {
             HasContextualRoles factory;
@@ -396,9 +394,7 @@ public class RoleManager
                 throw new RuntimeException(e);
             }
 
-            Set<Role> roles = factory.getContextualRoles(context);
-            if (roles != null)
-                allContextualRoles.addAll(roles);
+            allContextualRoles.addAll(factory.getContextualRoles(context));
         }
 
         return allContextualRoles;

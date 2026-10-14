@@ -17,6 +17,9 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.Strings;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.SQLFragment;
 
 // Adds support for backslash escaping in string literals
 public class BackslashEscapingStringHandler extends StandardDialectStringHandler
@@ -55,5 +58,26 @@ public class BackslashEscapingStringHandler extends StandardDialectStringHandler
         }
 
         return current;
+    }
+
+    public static abstract class BackslashEscapingStringHandlerTestCase extends Assert
+    {
+        protected abstract SqlDialect getSqlDialect();
+
+        @Test
+        public void testAppendLiteral()
+        {
+            SqlDialect dialect = getSqlDialect();
+            testAppendLiteral(dialect, "\\", "'\\\\'");
+            testAppendLiteral(dialect, "C:\\Users\\Name\\Documents", "'C:\\\\Users\\\\Name\\\\Documents'");
+            testAppendLiteral(dialect, "What's the buzz, tell me what's happening", "'What''s the buzz, tell me what''s happening'");
+            testAppendLiteral(dialect, "\\d+", "'\\\\d+'");
+        }
+
+        private void testAppendLiteral(SqlDialect dialect , String literal, String expected)
+        {
+            String actual = new SQLFragment().appendStringLiteral(literal, dialect).toDebugString(dialect);
+            assertEquals(expected, actual);
+        }
     }
 }

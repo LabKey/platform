@@ -15,7 +15,6 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +31,6 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
 {
     public static final String SCOPE_PRODUCT_CONFIGURATION = "ProductConfiguration";
     public static final String PROPERTY_NAME = "productKey";
-    public static final String INCLUDE_NAME = "include";
     private static final Logger _logger = LogHelper.getLogger(ProductConfiguration.class, "Product Configuration properties");
 
     @Override
@@ -117,13 +115,13 @@ public class ProductConfiguration extends AbstractWriteableSettingsGroup impleme
         });
     }
 
-    // return true if the ProductConfiguration.include startup prop is set to include the product by name
-    public static boolean shouldIncludeViaStartupProperty(String productName)
+    // return true if the ProductConfiguration.productKey startup property is set to any of the provided product key values
+    public static boolean hasMatchingProductKeyStartupProperty(String... productKeys)
     {
         ModuleLoader loader = ModuleLoader.getInstance();
         StartupPropertyEntry entry = loader.getStartupPropertyEntries(SCOPE_PRODUCT_CONFIGURATION).stream()
-                .filter(e -> INCLUDE_NAME.equals(e.getName()))
-                .findFirst().orElse(null);
-        return entry != null && Arrays.stream(StringUtils.split(entry.getValue(), ",")).anyMatch(val -> productName.equals(val.trim()));
+            .filter(e -> PROPERTY_NAME.equals(e.getName()))
+            .findFirst().orElse(null);
+        return entry != null && Arrays.stream(productKeys).anyMatch(key -> key.equalsIgnoreCase(entry.getValue().trim()));
     }
 }

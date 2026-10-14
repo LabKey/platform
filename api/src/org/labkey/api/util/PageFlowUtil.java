@@ -27,19 +27,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.ApiModule;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.action.UrlProviderOverrideHandler;
 import org.labkey.api.action.UrlProviderService;
@@ -68,7 +70,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.settings.Theme;
@@ -188,7 +189,7 @@ public class PageFlowUtil
      */
     private static final String DEFAULT_PARSER_NAME = "org.apache.xerces.parsers.SAXParser";
 
-    private static final String NONPRINTING_ALTCHAR = "~";
+    private static final char NONPRINTING_ALTCHAR = '~';
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
 
@@ -349,14 +350,25 @@ public class PageFlowUtil
             return "";
 
         int len = s.length();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; ++i)
+        int first = 0;
+        while (first < len && isPrintable(s.charAt(first)))
+            first++;
+        if (first == len)
+            return s;
+
+        StringBuilder sb = new StringBuilder(len).append(s, 0, first);
+        for (int i = first; i < len; ++i)
         {
             char c = s.charAt(i);
-            sb.append(c >= ' ' || c == '\n' || c == '\r' || c == '\t' ? c : NONPRINTING_ALTCHAR);
+            sb.append(isPrintable(c) ? c : NONPRINTING_ALTCHAR);
         }
 
         return sb.toString();
+    }
+
+    private static boolean isPrintable(char c)
+    {
+        return c >= ' ' || c == '\n' || c == '\r' || c == '\t';
     }
 
     /**
@@ -917,19 +929,20 @@ public class PageFlowUtil
         return getMediaTypeFor(file.toPath());
     }
 
+    private static final Detector DETECTOR = new DefaultDetector();
+
     public static MediaType getMediaTypeFor(Path file)
     {
-        try
+        Metadata metaData = new Metadata();
+        String filename = file.getFileName().toString();
+
+        // use the metadata to hint at the type for a faster lookup
+        metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+        metaData.add(HttpHeaders.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
+
+        try (TikaInputStream tis = TikaInputStream.get(file))
         {
-            DefaultDetector detector = new DefaultDetector();
-            Metadata metaData = new Metadata();
-            String filename = file.getFileName().toString();
-
-            // use the metadata to hint at the type for a faster lookup
-            metaData.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(filename));
-
-            return detector.detect(TikaInputStream.get(file), metaData);
+            return DETECTOR.detect(tis, metaData, new ParseContext());
         }
         catch (IOException e)
         {
@@ -1662,12 +1675,6 @@ public class PageFlowUtil
 
         if (includeDefaultResources)
         {
-            // Respect App Properties regarding Ext3 configuration
-            if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_API_REQUIRED))
-                resources.add(ClientDependency.fromPath("clientapi/ext3"));
-            else if (OptionalFeatureService.get().isFeatureEnabled(ApiModule.EXTJS_3_REQUIRED))
-                resources.add(ClientDependency.fromPath("Ext3"));
-
             // TODO: Turn this into a lib.xml
             // core/css/core.js requires jQuery
             resources.add(ClientDependency.fromPath("internal/jQuery"));
@@ -2759,6 +2766,17 @@ public class PageFlowUtil
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testFilterControlChars()
+        {
+            assertEquals("", filterControlChars(null));
+            assertEquals("", filterControlChars(""));
+            String clean = "plain text\twith\r\nwhitespace";
+            assertSame(clean, filterControlChars(clean));
+            assertEquals("42", filterControlChars(42));
+            assertEquals("~a~b\n~", filterControlChars("\u0000a\u0007b\n\u001F"));
+        }
+
         @Test
         public void testScriptDetection()
         {

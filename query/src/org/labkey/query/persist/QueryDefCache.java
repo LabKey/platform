@@ -25,6 +25,7 @@ import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
+import org.labkey.query.QueryDefinitionImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +39,7 @@ import java.util.Map;
  */
 public class QueryDefCache
 {
-    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
+    private static final Cache<Container, QueryDefCollections> QUERY_DEF_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Database QueryDefs", (c, argument) -> new QueryDefCollections(c));
 
     private static class QueryDefCollections
     {
@@ -168,5 +169,6 @@ public class QueryDefCache
     public static void uncache(Container c)
     {
         QUERY_DEF_DB_CACHE.remove(c);
+        QueryDefinitionImpl.clearHasPkColumnCache();
     }
 }

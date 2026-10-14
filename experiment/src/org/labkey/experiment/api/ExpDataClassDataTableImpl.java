@@ -113,7 +113,6 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
@@ -822,7 +821,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass(), null);
+        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass());
     }
 
     private @NotNull Class<? extends Permission> getReadPermissionClass()
@@ -1027,9 +1026,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                         if (isUpdate)
                             continue;
 
-                        // While accepting RowId during merge is not our preferred behavior, we want to give users a way
-                        // to opt-in to the old behavior where RowId is accepted and ignored.
-                        if (isMerge && !OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE))
+                        if (isMerge)
                         {
                             context.getErrors().addRowError(new ValidationException("RowId is not accepted when merging data. Specify only the data name instead.", Column.RowId.name()));
                             return null;

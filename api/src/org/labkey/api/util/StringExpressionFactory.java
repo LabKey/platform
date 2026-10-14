@@ -68,8 +68,8 @@ import static org.labkey.api.data.AbstractTableInfo.LINK_DISABLER;
  */
 public class StringExpressionFactory
 {
-    private static final Cache<String, StringExpression> templates = CacheManager.getCache(5000, CacheManager.DAY, "StringExpression templates");
-    private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(10000, CacheManager.DAY, "StringExpression template URLs");
+    private static final Cache<String, StringExpression> templates = CacheManager.getCache(String.class, 5000, CacheManager.DAY, "StringExpression templates");
+    private static final Cache<String, StringExpression> templatesUrl = CacheManager.getCache(String.class, 10000, CacheManager.DAY, "StringExpression template URLs");
 
     public static final StringExpression EMPTY_STRING = new ConstantStringExpression("");
 

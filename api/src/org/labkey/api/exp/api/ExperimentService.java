@@ -131,8 +131,6 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS = "org.labkey.api.exp.api.ExperimentService#FROM_EXPANCESTORS";
 
-    String EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE = "org.labkey.experiment.api.SampleTypeUpdateServiceDI#ALLOW_ROW_ID_SAMPLE_MERGE";
-
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
@@ -176,7 +174,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun getExpRun(long rowId);
 
     @Nullable
-    ExpRun getExpRun(long rowId, @Nullable Container container);
+    ExpRun getExpRun(@NotNull Container container, long rowId);
 
     List<? extends ExpRun> getExpRuns(Collection<Long> rowIds);
 
@@ -230,6 +228,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable
     ExpData getExpData(long rowId);
+
+    @Nullable
+    ExpData getExpData(@NotNull Container container, long rowId);
 
     @Nullable
     ExpData getExpData(String lsid);
@@ -458,6 +459,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     @Nullable ExpProtocol getExpProtocol(long rowId);
+
+    @Nullable ExpProtocol getExpProtocol(@NotNull Container container, long rowId);
 
     @Nullable ExpProtocol getExpProtocol(String lsid);
 

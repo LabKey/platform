@@ -741,6 +741,8 @@ d,seven,twelve,day,month,date,duration,guid
         new MethodSqlTest("SELECT CEILING(1.5) FROM R WHERE rowid=1", JdbcType.DECIMAL, 2),
         new MethodSqlTest("SELECT COALESCE(NULL, 'empty') FROM R WHERE rowid=1", JdbcType.VARCHAR, "empty"),
         new MethodSqlTest("SELECT concat('concat', concat('in', concat('the', 'hat'))) FROM R WHERE rowid=1", JdbcType.VARCHAR, "concatinthehat"),
+        new MethodSqlTest("SELECT concat('the', 'cat', 'in', 'the', 'hat') FROM R WHERE rowid=1", JdbcType.VARCHAR, "thecatinthehat"),
+        new MethodSqlTest("SELECT concat('hat', NULL) FROM R WHERE rowid=1", JdbcType.VARCHAR, null),
         new MethodSqlTest("SELECT contextPath()", JdbcType.VARCHAR, () -> new ActionURL().getContextPath()),
         new MethodSqlTest("SELECT CONVERT(123, VARCHAR) FROM R WHERE rowid=1", JdbcType.VARCHAR, "123"),
         new MethodSqlTest("SELECT CONVERT('+infinity', DOUBLE)", JdbcType.DOUBLE, Double.POSITIVE_INFINITY),
@@ -970,6 +972,11 @@ d,seven,twelve,day,month,date,duration,guid
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','%(b|d)%')", 1, 1),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc','(b|c)%')", 1, 0),
                 new SqlTest("SELECT 'similar' WHERE similar_to('abc|','abc\\|', '\\')", 1, 1),
+
+                // GH Issue 1227: epoch form returns timestamptz, so the instant is independent of the session time zone
+                new MethodSqlTest("SELECT to_timestamp(1284352323)", JdbcType.TIMESTAMP, new Timestamp(1284352323000L)),
+                new MethodSqlTest("SELECT to_timestamp(1284352323.5)", JdbcType.TIMESTAMP, new Timestamp(1284352323500L)),
+                new MethodSqlTest("SELECT to_timestamp('2010-09-13 04:32:03', 'YYYY-MM-DD HH24:MI:SS')", JdbcType.TIMESTAMP, Timestamp.valueOf("2010-09-13 04:32:03")),
 
                 // parse_json, parse_jsonb, and json_op
                 new SqlTest("SELECT parse_jsonb('{\"a\":1, \"b\":null}')", 1, 1),

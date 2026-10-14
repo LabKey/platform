@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -126,7 +127,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         for (Map.Entry<String, Pair<Integer, Integer>> countEntry : visitDataCounts.entrySet())
         {
             assertEquals("Unexpected visit dataset row count", countEntry.getValue().getLeft().intValue(), deleteMultipleVisitsPage.getVisitDatasetRowCount(countEntry.getKey()));
-            assertEquals("Unexpected visit specimen row count", countEntry.getValue().getRight().intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
+            if (_studyHelper.isSpecimenModulePresent())
+                assertEquals("Unexpected visit specimen row count", countEntry.getValue().getRight().intValue(), deleteMultipleVisitsPage.getVisitSpecimenRowCount(countEntry.getKey()));
         }
     }
 
@@ -137,11 +139,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
     private void verifySpecimenDataRowCount(int expectedRowCount)
     {
-        DataRegionTable table = ExecuteQueryPage.beginAt(this,"study", "SpecimenDetail").getDataRegion();
-        if (expectedRowCount < 100)
-            assertEquals("Unexpected number of specimen rows", expectedRowCount, table.getDataRowCount());
-        else
-            assertElementPresent(Locator.paginationText(1, 100, expectedRowCount));
+        if (_studyHelper.isSpecimenModulePresent())
+        {
+            DataRegionTable table = ExecuteQueryPage.beginAt(this, "study", "SpecimenDetail").getDataRegion();
+            if (expectedRowCount < 100)
+                assertEquals("Unexpected number of specimen rows", expectedRowCount, table.getDataRowCount());
+            else
+                assertElementPresent(Locator.paginationText(1, 100, expectedRowCount));
+        }
     }
 
     private void verifyDatasetRowCount(String datasetName, int expectedRowCount)
@@ -155,6 +160,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     @Test
     public void testFailForUndefinedVisitsSpecimen()
     {
+        Assume.assumeTrue("Specimen module not present", _studyHelper.isSpecimenModulePresent());
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
         testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, STUDY_UNDEFINED_VISIT_MSG, 3);
     }
@@ -235,7 +241,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0", "601.0", "701.0");
         verifyStudyVisits(definedVisits, null);
 
-        checkExpectedErrors(6);
+        checkExpectedErrors(_studyHelper.isSpecimenModulePresent() ? 6 : 5);
     }
 
     private void startFolderImport(boolean failForUndefinedVisits)

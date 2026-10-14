@@ -19,25 +19,25 @@
 -- NOTE: Don't remove any of these drop statements, even if we stop re-creating the view in *-create.sql. Drop statements must
 -- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
 
-SELECT core.fn_dropifexists('ObjectPropertiesView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ExperimentRunMaterialOutputs', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ObjectClasses', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('AllLsidContainers', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ExperimentRunDataInputs', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ExperimentRunMaterialInputs', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ExperimentRunDataOutputs', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('AllLsid', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('OutputDataForNode', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('OutputMaterialForNode', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('MarkedOutputDataForRun', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('MarkedOutputMaterialForRun', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ChildDataForApplication', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ChildMaterialForApplication', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorAllDataView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorRunStartDataView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorOutputDataView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorAllMaterialsView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorRunStartMaterialsView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('PredecessorOutputMaterialsView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ProtocolActionPredecessorLSIDView', 'exp', 'VIEW', NULL);
-SELECT core.fn_dropifexists('ProtocolActionStepDetailsView', 'exp', 'VIEW', NULL);
+DROP VIEW IF EXISTS exp.ObjectPropertiesView;
+DROP VIEW IF EXISTS exp.ExperimentRunMaterialOutputs;
+DROP VIEW IF EXISTS exp.ObjectClasses;
+DROP VIEW IF EXISTS exp.AllLsidContainers;
+DROP VIEW IF EXISTS exp.ExperimentRunDataInputs;
+DROP VIEW IF EXISTS exp.ExperimentRunMaterialInputs;
+DROP VIEW IF EXISTS exp.ExperimentRunDataOutputs;
+DROP VIEW IF EXISTS exp.AllLsid;
+DROP VIEW IF EXISTS exp.OutputDataForNode;
+DROP VIEW IF EXISTS exp.OutputMaterialForNode;
+DROP VIEW IF EXISTS exp.MarkedOutputDataForRun;
+DROP VIEW IF EXISTS exp.MarkedOutputMaterialForRun;
+DROP VIEW IF EXISTS exp.ChildDataForApplication;
+DROP VIEW IF EXISTS exp.ChildMaterialForApplication;
+DROP VIEW IF EXISTS exp.PredecessorAllDataView;
+DROP VIEW IF EXISTS exp.PredecessorRunStartDataView;
+DROP VIEW IF EXISTS exp.PredecessorOutputDataView;
+DROP VIEW IF EXISTS exp.PredecessorAllMaterialsView;
+DROP VIEW IF EXISTS exp.PredecessorRunStartMaterialsView;
+DROP VIEW IF EXISTS exp.PredecessorOutputMaterialsView;
+DROP VIEW IF EXISTS exp.ProtocolActionPredecessorLSIDView;
+DROP VIEW IF EXISTS exp.ProtocolActionStepDetailsView;

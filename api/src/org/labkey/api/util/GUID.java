@@ -22,6 +22,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONString;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.reader.Readers;
@@ -237,9 +239,22 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     public static boolean isGUID(@Nullable String s)
     {
         // quick check
-        if (null == s || s.length() != 36 || s.charAt(8) != '-' || s.charAt(13) != '-' || s.charAt(18) != '-' || s.charAt(23) != '-')
+        if (null == s || s.length() != 36)
             return false;
-        return guidPattern.matcher(s).find();
+        for (int i = 0; i < 36; i++)
+        {
+            char ch = s.charAt(i);
+            boolean valid = (i == 8 || i == 13 || i == 18 || i == 23) ? ch == '-' : isHexDigit(ch);
+            if (!valid)
+                return false;
+        }
+        return true;
+    }
+
+    // Same as \p{XDigit} without regex overhead, since containers are resolved per rendered cell
+    private static boolean isHexDigit(char ch)
+    {
+        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
     }
 
 
@@ -357,5 +372,21 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     {
         return JSONObject.quote(_str);
     }
-}
 
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testIsGUID()
+        {
+            String[] inputs = {
+                makeGUID(), makeGUID().toUpperCase(), "01234567-89ab-cdef-ABCD-EF0123456789",
+                null, "", "01234567-89ab-cdef-abcd-ef012345678", "01234567-89ab-cdef-abcd-ef01234567890",
+                "0123456789-ab-cdef-abcd-ef0123456789", "g1234567-89ab-cdef-abcd-ef0123456789",
+                "01234567-89ab-cdef-abcd-ef012345678-", "01234567_89ab_cdef_abcd_ef0123456789",
+                "\u0660\u0661234567-89ab-cdef-abcd-ef0123456789"
+            };
+            for (String s : inputs)
+                assertEquals(String.valueOf(s), s != null && guidPattern.matcher(s).matches(), isGUID(s));
+        }
+    }
+}

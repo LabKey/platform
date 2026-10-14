@@ -219,20 +219,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     /** SampleType LSID -> Container cache */
-    private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
+    private final Cache<String, String> sampleTypeCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
 
-    /** ContainerId -> MaterialSources */
-    private final Cache<String, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (container, argument) ->
+    private final Cache<Container, SortedSet<MaterialSource>> materialSourceCache = DatabaseCache.get(Container.class, ExperimentServiceImpl.get().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Material sources", (c, argument) ->
     {
-        Container c = ContainerManager.getForId(container);
-        if (c == null)
-            return Collections.emptySortedSet();
-
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
     });
 
-    Cache<String, SortedSet<MaterialSource>> getMaterialSourceCache()
+    Cache<Container, SortedSet<MaterialSource>> getMaterialSourceCache()
     {
         return materialSourceCache;
     }
@@ -284,7 +279,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (c == null)
             materialSourceCache.clear();
         else
-            materialSourceCache.remove(c.getId());
+            materialSourceCache.remove(c);
     }
 
 
@@ -484,13 +479,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public List<ExpSampleTypeImpl> getSampleTypes(@NotNull Container container, boolean includeOtherContainers)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers);
-
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
         TreeSet<ExpSampleTypeImpl> result = new TreeSet<>();
-        for (String containerId : containerIds)
+        for (Container scopeContainer : ExperimentServiceImpl.get().createContainerList(container, includeOtherContainers))
         {
-            for (MaterialSource source : getMaterialSourceCache().get(containerId))
+            for (MaterialSource source : getMaterialSourceCache().get(scopeContainer))
             {
                 result.add(new ExpSampleTypeImpl(source));
             }
@@ -525,10 +518,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
-        List<String> containerIds = ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers))
         {
-            Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(containerId);
+            Collection<MaterialSource> sampleTypes = getMaterialSourceCache().get(scopeContainer);
             for (MaterialSource materialSource : sampleTypes)
             {
                 if (predicate.test(materialSource))
@@ -1274,13 +1266,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> row, Map<String, Object> existingRow, Map<String, Object> providedValues, List<AuditTypeEvent> sideEffectEvents)
     {
         return createAuditRecord(c, tInfo, getCommentDetailed(action, !existingRow.isEmpty()), userComment, action, row, existingRow, providedValues);
     }
 
     @Override
-    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row, List<AuditTypeEvent> sideEffectEvents)
     {
         return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), userComment, row);
     }
@@ -1411,10 +1403,37 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
+        AuditLogService.get().addEvent(user, createTimelineAuditRecord(container, comment, userComment, sample, metadata, updateType));
+    }
+
+    @Override
+    public SampleTimelineAuditEvent createTimelineAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
+    {
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         event.setUserComment(userComment);
-        AuditLogService.get().addEvent(user, event);
+        return event;
+    }
+
+    @Override
+    public void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata)
+    {
+        AuditLogService auditLog = AuditLogService.get();
+        List<SampleTimelineAuditEvent> events = new ArrayList<>(Math.min(samples.size(), AUDIT_BATCH_SIZE));
+
+        for (ExpMaterial sample : samples)
+        {
+            events.add(createAuditRecord(container, comment, userComment, sample, metadata));
+
+            if (events.size() >= AUDIT_BATCH_SIZE)
+            {
+                auditLog.addEvents(user, events);
+                events.clear();
+            }
+        }
+
+        if (!events.isEmpty())
+            auditLog.addEvents(user, events);
     }
 
     @Override
@@ -2398,7 +2417,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         User searchUser = User.getSearchUser();
         ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
-        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, Set.of());
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
         sql.append(tableInfo);
