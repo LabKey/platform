@@ -239,6 +239,6 @@ public interface McpService extends ToolCallbackProvider
 
     default HttpView<Object> getAssistantStatusView()
     {
-        return new HtmlView(HtmlString.of("AI Assistant features are not available."));
+        return new HtmlView(HtmlString.of("LabKey Assistant features are not available."));
     }
 }
