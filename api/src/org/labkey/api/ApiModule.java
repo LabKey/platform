@@ -114,6 +114,7 @@ import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
+import org.labkey.api.module.ModuleArchiveTestCase;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
@@ -125,6 +126,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.reader.ExcelFactory;
@@ -451,6 +453,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             ModuleHtmlViewDefinition.TestCase.class,
@@ -488,6 +491,7 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
@@ -563,6 +567,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryView.TestCase.class,
             RecordFactory.TestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,

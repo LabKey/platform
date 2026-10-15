@@ -125,9 +125,9 @@ public class LimitedUser extends ClonedUser
             Container root = ContainerManager.getRoot();
 
             testPermissions(ElevatedUser.getElevatedUser(new LimitedUser(user, SubmitterRole.class, null), ReaderRole.class, null), 2, 0, true, true, false, false, false);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, 1, false, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, 1, true, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, 1, true, true, true, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, 0, false, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, 0, true, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, 0, true, true, true, false, true);
 
             int groupCount = user.getGroups().size();
             int roleCount = (int)user.getAssignedRoles(c).count();

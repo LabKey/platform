@@ -3459,7 +3459,7 @@ public class QueryServiceImpl implements QueryService
     @Override
     public boolean isTriggerManagedColumnsEnabled()
     {
-        return !AppProps.getInstance().isOptionalFeatureEnabled(EXPERIMENTAL_DISABLE_MANAGED_TRIGGER_COLUMNS);
+        return !AppProps.getInstance().isOptionalFeatureEnabled(DEPRECATED_DISABLE_MANAGED_TRIGGER_COLUMNS);
     }
 
     public static class TestCase extends Assert
