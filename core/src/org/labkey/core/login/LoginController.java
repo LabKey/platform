@@ -730,8 +730,8 @@ public class LoginController extends SpringActionController
                     response.put("approvedTermsOfUse", true);
                 }
 
-                // Use the full hostname in the URL if we have one, otherwise just go with a local URI
-                String redirectString = redirectUrl.getHost() != null && redirectUrl.getScheme() != null ? redirectUrl.getURIString() : redirectUrl.toString();
+                // Use relative path.  If the host in the URL changes then our session won't follow us, and we won't be logged in (that kinda defeats the purpose of this API)
+                String redirectString = redirectUrl.getLocalURIString();
 
                 if (null != user)
                 {
