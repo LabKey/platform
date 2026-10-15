@@ -869,6 +869,18 @@ public class ColumnFactsCache
         }
 
         @Test
+        public void testGridFieldKeyIsTheRequestedColumn()
+        {
+            TableInfo table = getTable(SAMPLE_TYPE);
+            Map<String, SuggestionColumn> described = byFieldKey(FilterSuggestionColumns.describe(table, null, List.of("createdBy", "color")));
+
+            SuggestionColumn createdBy = described.get("CreatedBy/DisplayName");
+            assertNotNull(described.keySet().toString(), createdBy);
+            assertEquals("createdBy", createdBy.getGridFieldKey());
+            assertEquals("color", Objects.requireNonNull(described.get("color")).getGridFieldKey());
+        }
+
+        @Test
         public void testUndeclaredParametersAreIgnored()
         {
             ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));

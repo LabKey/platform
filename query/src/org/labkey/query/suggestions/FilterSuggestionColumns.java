@@ -57,7 +57,7 @@ public class FilterSuggestionColumns
 {
     private enum Strategy { BOOLEAN, DATE, FIXED, FLOAT, INT, KEY, LOOKUP, STRING }
 
-    private record Candidate(ColumnInfo column, @Nullable String caption) {}
+    private record Candidate(FieldKey fieldKey, ColumnInfo column, @Nullable String caption) {}
 
     /** @param lookups the multi-valued lookup column whose junction table supplies each such column's values */
     public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups) {}
@@ -89,7 +89,7 @@ public class FilterSuggestionColumns
         {
             ColumnInfo column = resolved.get(fieldKey);
             if (column != null && isReadable(fieldKey, resolved, maxAllowedPhi))
-                candidates.add(new Candidate(column, viewCaptions.get(fieldKey)));
+                candidates.add(new Candidate(fieldKey, column, viewCaptions.get(fieldKey)));
         }
 
         Set<FieldKey> pkFieldKeys = new HashSet<>();
@@ -234,6 +234,7 @@ public class FilterSuggestionColumns
         };
 
         SuggestionColumn suggestionColumn = new SuggestionColumn(filterColumn.getFieldKey().toString(), caption, type, filterColumn);
+        suggestionColumn.setGridFieldKey(candidate.fieldKey().toString());
         suggestionColumn.setTitle(titleColumn != null && titleColumn.equalsIgnoreCase(column.getFieldKey().toString()));
         suggestionColumn.setUniqueId(column.isUniqueIdField());
         suggestionColumn.setMultiValued(isJunctionLookup(column));
