@@ -16,7 +16,6 @@
 package org.labkey.announcements.query;
 
 import org.labkey.announcements.AnnouncementModule;
-import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.Container;
@@ -31,6 +30,8 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +56,7 @@ public class AnnouncementSchema extends UserSchema
     public static final String THREADS_TABLE_NAME = "Threads";
 
     private static final Set<String> TABLE_NAMES;
+    private static final Set<String> ADMIN_TABLE_NAMES;
 
     static
     {
@@ -66,6 +68,11 @@ public class AnnouncementSchema extends UserSchema
         names.add(RSS_FEEDS_TABLE_NAME);
         names.add(THREADS_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
+
+        Set<String> adminNames = new TreeSet<>(names);
+        adminNames.add(MODERATOR_REVIEW_TABLE_NAME);
+        adminNames.add(SPAM_TABLE_NAME);
+        ADMIN_TABLE_NAMES = Collections.unmodifiableSet(adminNames);
     }
 
     public static void register(Module module)
@@ -75,9 +82,8 @@ public class AnnouncementSchema extends UserSchema
             @Override
             public boolean isAvailable(DefaultSchema schema, Module module)
             {
-                // Schema is always available unless marked as secure.
-                // Brute force fix for #3453 -- no query access to secure message board  TODO: Filter based on permissions instead.
-                return !AnnouncementsController.getSettings(schema.getContainer()).isSecureOn();
+                // Always available; AnnouncementTable and ThreadsTable enforce secure message board permissions per row
+                return true;
             }
 
             @Override
@@ -162,27 +168,33 @@ public class AnnouncementSchema extends UserSchema
         return new AnnouncementTable(this, cf);
     }
 
-    private AnnouncementTable createFilteredAnnouncementTable(ContainerFilter cf, SimpleFilter filter)
+    // Moderation tables are admin-only, matching ModeratorReviewAction
+    private AnnouncementTable createModerationTable(ContainerFilter cf, SimpleFilter filter, String name)
     {
-        AnnouncementTable table = new AnnouncementTable(this, cf, filter);
+        AnnouncementTable table = new AnnouncementTable(this, cf, filter)
+        {
+            @Override
+            protected Class<? extends Permission> getRequiredPermission()
+            {
+                return AdminPermission.class;
+            }
+        };
+        table.setName(name);
 
-        for (String name : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "Folder", "LastIndexed"))
-            table.getMutableColumnOrThrow(name).setHidden(true);
+        for (String column : Arrays.asList("Expires", "RendererType", "Status", "AssignedTo", "DiscussionSrcIdentifier", "Folder", "LastIndexed"))
+            table.getMutableColumnOrThrow(column).setHidden(true);
 
         return table;
     }
 
     private AnnouncementTable createModeratorReviewTable(ContainerFilter cf)
     {
-        return createFilteredAnnouncementTable(cf, AnnouncementManager.REQUIRES_REVIEW_FILTER);
+        return createModerationTable(cf, AnnouncementManager.REQUIRES_REVIEW_FILTER, MODERATOR_REVIEW_TABLE_NAME);
     }
 
     private AnnouncementTable createSpamTable(ContainerFilter cf)
     {
-        AnnouncementTable spamTable = createFilteredAnnouncementTable(cf, AnnouncementManager.IS_SPAM_FILTER);
-        spamTable.setTitle("Spam");
-
-        return spamTable;
+        return createModerationTable(cf, AnnouncementManager.IS_SPAM_FILTER, SPAM_TABLE_NAME);
     }
 
     public TableInfo createThreadsTable(ContainerFilter cf)
@@ -193,7 +205,7 @@ public class AnnouncementSchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
-        return TABLE_NAMES;
+        return getContainer().hasPermission(getUser(), AdminPermission.class) ? ADMIN_TABLE_NAMES : TABLE_NAMES;
     }
 
     @Override
