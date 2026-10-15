@@ -135,6 +135,7 @@ import org.labkey.experiment.api.ImportAbortResourceTestCase;
 import org.labkey.experiment.api.LineageTest;
 import org.labkey.experiment.api.LogDataType;
 import org.labkey.experiment.api.Protocol;
+import org.labkey.experiment.api.SampleProvidedAmountAuditTestCase;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.api.UniqueValueCounterTestCase;
 import org.labkey.experiment.api.VocabularyDomainKind;
@@ -164,6 +165,7 @@ import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
+import org.labkey.experiment.samples.SampleTimelineMetadataDisplayColumn;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
 import org.labkey.experiment.samples.SampleTypeFolderWriter;
 import org.labkey.experiment.security.DataClassDesignerRole;
@@ -276,8 +278,6 @@ public class ExperimentModule extends SpringModule
                 "If a column name contains a \"__<unit>\" suffix, this feature allows for testing it as a Quantity display column", false);
         OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_FROM_EXPANCESTORS, "SQL syntax: 'FROM EXPANCESTORS()'",
                 "Support for querying lineage of experiment objects", false, true);
-        OptionalFeatureService.get().addExperimentalFeatureFlag(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, "Allow RowId to be accepted when merging samples or data class data",
-                "If the incoming data includes a RowId column we will allow the column but ignore it's values.", false, true);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
         RoleManager.registerRole(new SampleTypeDesignerRole());
@@ -1139,6 +1139,7 @@ public class ExperimentModule extends SpringModule
             LineageTest.class,
             OntologyManager.TestCase.class,
             PropertyServiceImpl.TestCase.class,
+            SampleProvidedAmountAuditTestCase.class,
             SampleTypeServiceImpl.TestCase.class,
             SpecialCharacterMetricsMaintenanceTask.TestCase.class,
             StorageNameGenerator.TestCase.class,
@@ -1168,6 +1169,7 @@ public class ExperimentModule extends SpringModule
             LsidUtils.TestCase.class,
             PropertyController.TestCase.class,
             Quantity.TestCase.class,
+            SampleTimelineMetadataDisplayColumn.TestCase.class,
             Unit.TestCase.class
         );
     }

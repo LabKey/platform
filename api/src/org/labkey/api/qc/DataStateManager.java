@@ -42,7 +42,7 @@ public class DataStateManager
     private static final Logger LOG = LogHelper.getLogger(DataStateManager.class, "Data state persistence issues");
     private static final DataStateManager _instance = new DataStateManager();
     private static final Map<String, DataStateHandler<AbstractManageDataStatesForm>> _DataStateHandlers = new HashMap<>();
-    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
+    private static final Cache<Container, DataStateCollections> DATA_STATE_DB_CACHE = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data states",
             (c, argument) -> new DataStateCollections(c)
     );
 

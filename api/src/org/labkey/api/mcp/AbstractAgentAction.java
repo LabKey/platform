@@ -37,9 +37,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
- * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then
- * start here.
- * First implement getServicePrompt() to tell your "agent its mission.  You can also listen in on the
+ * "Agent" it is too strong a word, but if you want to create a tools-specific chat endpoint, then start here.
+ * First implement getServicePrompt() to tell your agent its mission. You can also listen in on the
  * conversation to help your user get the right results.
  */
 public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnlyApiAction<F>
@@ -53,12 +52,18 @@ public abstract class AbstractAgentAction<F extends PromptForm> extends ReadOnly
 
     protected abstract String getServicePrompt();
 
+    /** The registered tools this agent's chat may offer the model; null offers all of them. */
+    protected @Nullable Set<String> getToolNames()
+    {
+        return null;
+    }
+
     protected ChatClient getChat(boolean create)
     {
         String conversationName = getAgentName() + ":" + getConversationId();
 
         HttpSession session = getViewContext().getSession();
-        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create);
+        ChatClient chatSession = McpService.get().getChat(session, conversationName, this::getServicePrompt, create, getToolNames());
 
         return chatSession;
     }

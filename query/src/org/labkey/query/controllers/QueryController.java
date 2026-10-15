@@ -153,6 +153,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.mcp.AbstractAgentAction;
 import org.labkey.api.mcp.ChatException;
+import org.labkey.api.mcp.GuardrailException;
 import org.labkey.api.mcp.McpContext;
 import org.labkey.api.mcp.McpService;
 import org.labkey.api.mcp.PromptForm;
@@ -235,6 +236,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.KeySharingJSONTokener;
 import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -4659,7 +4661,7 @@ public class QueryController extends SpringActionController
             // if the POST was done using FormData, the apiSaveRowsForm would not have bound the json data, so
             // we'll instead look for that data in the request param directly
             if (_json == null && getViewContext().getRequest() != null && getViewContext().getRequest().getParameter("json") != null)
-                _json = new JSONObject(getViewContext().getRequest().getParameter("json"));
+                _json = new JSONObject(new KeySharingJSONTokener(getViewContext().getRequest().getParameter("json")));
         }
 
         protected JSONObject getJsonObject()
@@ -4813,6 +4815,11 @@ public class QueryController extends SpringActionController
                     rowsAffected++;
                 }
             }
+
+            // The form and action share this JSONObject for the whole request, so drop the converted rows to free the parse tree; provenance rereads them after the save
+            if (!json.has("provenance"))
+                json.remove(PROP_ROWS);
+            rows = null;
 
             Map<String, Object> extraContext = json.has("extraContext") ? new CaseInsensitiveHashMap<>(json.getJSONObject("extraContext").toMap()) : new CaseInsensitiveHashMap<>();
 
@@ -8941,10 +8948,17 @@ public class QueryController extends SpringActionController
                     {
                         // CONSIDER remove line line/character information from DB errors as they won't match the LabKey SQL
                         String validationPrompt = "That SQL caused the " + (x instanceof QueryParseWarning ? "warning" : "error") + " below, can you attempt to fix this?\n```" + x.getMessage() + "```";
-                        responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
-                        var newSqlResponse = extractSql(responses);
-                        if (isNotBlank(newSqlResponse.sql()))
-                            sqlResponse = newSqlResponse;
+                        try
+                        {
+                            responses = McpService.get().sendMessageEx(chatSession, validationPrompt);
+                            var newSqlResponse = extractSql(responses);
+                            if (isNotBlank(newSqlResponse.sql()))
+                                sqlResponse = newSqlResponse;
+                        }
+                        catch (GuardrailException ignored)
+                        {
+                            // Keep the unvalidated SQL rather than replacing it with the guardrail's message
+                        }
                     }
                 }
 

@@ -29,7 +29,6 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.MapDataIterator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -38,7 +37,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateService.InsertOption;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.experiment.ExpDataIterators;
@@ -59,7 +57,6 @@ public class ImportAbortResourceTestCase extends Assert
 {
     private static Container _c;
     private static User _user;
-    private static boolean _restoreAllowRowIdMerge;
 
     @BeforeClass
     public static void setUp()
@@ -67,18 +64,11 @@ public class ImportAbortResourceTestCase extends Assert
         JunitUtil.deleteTestContainer();
         _c = JunitUtil.getTestContainer();
         _user = TestContext.get().getUser();
-
-        // These tests drive the RowId-on-merge rejection, so the server-wide opt-out must be off.
-        _restoreAllowRowIdMerge = OptionalFeatureService.get().isFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE);
-        if (_restoreAllowRowIdMerge)
-            OptionalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, false, _user);
     }
 
     @AfterClass
     public static void tearDown()
     {
-        if (_restoreAllowRowIdMerge)
-            OptionalFeatureService.get().setFeatureEnabled(ExperimentService.EXPERIMENTAL_FEATURE_ALLOW_ROW_ID_MERGE, true, _user);
         JunitUtil.deleteTestContainer();
     }
 

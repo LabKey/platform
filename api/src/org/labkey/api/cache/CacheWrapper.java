@@ -24,9 +24,8 @@ import org.labkey.api.util.HeartBeat;
 
 import javax.management.DynamicMBean;
 import javax.management.StandardMBean;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // Wraps a SimpleCache to provide a full Cache implementation. Adds null markers, loaders, statistics gathering and debug name.
 class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
@@ -34,6 +33,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private static final Object NULL_MARKER = new Object() {public String toString(){return "MISSING VALUE MARKER";}};
 
     private final SimpleCache<K, V> _cache;
+    private final Class<K> _keyClass;
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
@@ -46,9 +46,10 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private boolean _maxSizeDirty;
     private long _maxSizeNextUpdate;
 
-    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
+    CacheWrapper(@NotNull SimpleCache<K, V> cache, @NotNull Class<K> keyClass, @NotNull String debugName, @Nullable Stats stats, @Nullable StackTraceElement[] stackTrace)
     {
         _cache = cache;
+        _keyClass = keyClass;
         assert StringUtils.isNotBlank(debugName);
         _debugName = debugName;
         _stats = (null != stats ? stats : new Stats());
@@ -125,19 +126,22 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
-    public void remove(@NotNull K key)
+    public boolean remove(@NotNull K key)
     {
+        boolean ret = false;
         try
         {
-            _cache.remove(key);
+            ret = _cache.remove(key);
             trackRemove();
         }
         catch (IllegalStateException ise)
         {
-            if (ContextListener.isShuttingDown())
-                return; // ignore
-            throw ise;
+            // Ignore shutdown exception
+            if (!ContextListener.isShuttingDown())
+                throw ise;
         }
+
+        return ret;
     }
 
     @Override
@@ -147,9 +151,9 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
-    public Set<K> getKeys()
+    public Stream<K> getKeys()
     {
-        return _cache.getKeys().collect(Collectors.toUnmodifiableSet());
+        return _cache.getKeys();
     }
 
     @Override
@@ -193,6 +197,12 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     public void close()
     {
         _cache.close();
+    }
+
+    @Override
+    public Class<K> getKeyClass()
+    {
+        return _keyClass;
     }
 
     @Override

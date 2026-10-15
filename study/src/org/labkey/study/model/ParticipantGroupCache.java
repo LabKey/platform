@@ -41,10 +41,11 @@ import java.util.Set;
 public class ParticipantGroupCache
 {
     private static final Cache<Container, ParticipantGroupCollections> PARTICIPANT_GROUP_CACHE = CacheManager.getBlockingCache(
+            Container.class,
             Constants.getMaxContainers(),
             CacheManager.DAY,
             "Participant groups",
-            (c, argument) -> new ParticipantGroupCollections(c));
+            (c, _) -> new ParticipantGroupCollections(c));
 
     private static class ParticipantGroupCollections
     {

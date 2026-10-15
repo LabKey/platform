@@ -172,14 +172,7 @@ public abstract class ContainerFilter
     /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
     public FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission)
     {
-        return new ContainerClause(schema, containerFilterColumn, this, permission, Set.of());
-    }
-
-    /** Create a FilterClause that restricts based on the containers that meet the filter and user that meets the permission*/
-    @Deprecated // TODO: only one use, which we should refactor away. GH Issue 1353
-    public FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
-    {
-        return new ContainerClause(schema, containerFilterColumn, this, permission, contextualRoles);
+        return new ContainerClause(schema, containerFilterColumn, this, permission);
     }
 
     /** Create an expression for a WHERE clause */
@@ -1312,20 +1305,18 @@ public abstract class ContainerFilter
         private final FieldKey _fieldKey;
         private final ContainerFilter _filter;
         private final Class<? extends Permission> _permission;
-        private final @NotNull Set<Role> _contextualRoles;
 
         public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter)
         {
-            this(schema, fieldKey, filter, null, Set.of());
+            this(schema, fieldKey, filter, null);
         }
 
-        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, @Nullable Class<? extends Permission> permission, @NotNull Set<Role> contextualRoles)
+        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, @Nullable Class<? extends Permission> permission)
         {
             _schema = schema;
             _fieldKey = fieldKey;
             _filter = filter;
             _permission = permission != null ? permission : ReadPermission.class;
-            _contextualRoles = contextualRoles;
         }
 
         @Override
@@ -1345,7 +1336,7 @@ public abstract class ContainerFilter
         {
             if (_filter instanceof ContainerFilterWithPermission filter)
             {
-                return filter.getSQLFragment(_schema, _fieldKey, _permission, _contextualRoles);
+                return filter.getSQLFragment(_schema, _fieldKey, _permission, Set.of());
             }
             return _filter.getSQLFragment(_schema, _fieldKey, columnMap);
         }

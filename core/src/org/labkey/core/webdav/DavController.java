@@ -32,12 +32,12 @@ import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONWriter;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -324,7 +324,7 @@ public class DavController extends SpringActionController
                 }
                 catch (MultipartException x)
                 {
-                    _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
+                    _webdavresponse.sendError(ExceptionUtil.isClientRequestFailure(x) ? WebdavStatus.SC_BAD_REQUEST : WebdavStatus.SC_INTERNAL_SERVER_ERROR, x);
                     return null;
                 }
             }
@@ -342,8 +342,21 @@ public class DavController extends SpringActionController
                 return null;
             }
 
+            String skipProfiling;
+            try
+            {
+                skipProfiling = request.getParameter("skip-profiling");
+            }
+            catch (IllegalStateException x)
+            {
+                if (!ExceptionUtil.isInvalidParameterException(x))
+                    throw x;
+                ExceptionUtil.handleException(request, response, x, null, false);
+                return null;
+            }
+
             Class<? extends Controller> actionClass = action.getClass();
-            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(skipProfiling))
             {
                 MemTracker.get().ignore();
             }
@@ -455,7 +468,10 @@ public class DavController extends SpringActionController
 
         WebdavStatus sendError(WebdavStatus status, Exception x)
         {
-            ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            if (status.code >= HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                ExceptionUtil.logExceptionToMothership(getRequest(), x);
+            else
+                _log.debug("{} response", status.code, x);
             if (x instanceof ConfigurationException)
             {
                 // These exceptions are skipped in the logExceptionToMothership() call. They're useful to log here
@@ -4676,7 +4692,7 @@ public class DavController extends SpringActionController
     }
 
 
-    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(1000, 5*CacheManager.MINUTE, "WebDAV errors");
+    static Cache<Path,JSONObject> exceptionCache = CacheManager.getCache(Path.class, 1000, 5*CacheManager.MINUTE, "WebDAV errors");
 
     private @Nullable Path getErrorCacheKey()
     {

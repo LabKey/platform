@@ -62,6 +62,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -267,6 +268,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -329,28 +331,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private final Cache<Long, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
+    private final Cache<Long, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(Long.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
         (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("RowId"), key)));
 
-    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
+    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
         (key, _) -> getExpProtocol(new SimpleFilter(FieldKey.fromParts("LSID"), key)));
 
-    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
+    private final Cache<String, ExperimentRun> EXPERIMENT_RUN_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), getTinfoExperimentRun().getCacheSize(), "Experiment Run by LSID", new ExperimentRunCacheLoader());
 
     /** ExcludedContainer id -> excluded data type row ids, by data type */
-    private final Cache<String, Map<DataTypeForExclusion, Set<Long>>> DATA_TYPE_EXCLUSION_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Data type exclusions",
+    private final Cache<String, Map<DataTypeForExclusion, Set<Long>>> DATA_TYPE_EXCLUSION_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "Data type exclusions",
         (containerId, _) -> loadContainerDataTypeExclusions(containerId));
 
     /** DataClass LSID -> Container */
-    private final Cache<String, String> dataClassLsidCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
+    private final Cache<String, String> dataClassLsidCache = CacheManager.getCache(String.class, CacheManager.UNLIMITED, CacheManager.DAY, "DataClass to container");
 
     /** ContainerId -> DataClasses */
-    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, _) ->
+    private final Cache<Container, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingCache(Container.class, CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (c, _) ->
     {
-        Container c = ContainerManager.getForId(containerId);
-        if (c == null)
-            return Collections.emptySortedSet();
-
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
@@ -381,7 +379,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private final List<NameExpressionType> _nameExpressionTypes = new CopyOnWriteArrayList<>();
 
-    private Cache<String, SortedSet<DataClass>> getDataClassCache()
+    private Cache<Container, SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
     }
@@ -392,7 +390,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (c == null)
             dataClassCache.clear();
         else
-            dataClassCache.remove(c.getId());
+            dataClassCache.remove(c);
     }
 
     private @NotNull List<ExperimentRun> getExperimentRuns(SimpleFilter filter)
@@ -1839,10 +1837,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public List<ExpDataClassImpl> getDataClasses(@NotNull Container container, boolean includeProjectAndShared)
     {
         SortedSet<DataClass> classes = new TreeSet<>();
-        List<String> containerIds = createContainerList(container, includeProjectAndShared);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : createContainerList(container, includeProjectAndShared))
         {
-            SortedSet<DataClass> dataClasses = getDataClassCache().get(containerId);
+            SortedSet<DataClass> dataClasses = getDataClassCache().get(scopeContainer);
             classes.addAll(dataClasses);
         }
 
@@ -1905,10 +1902,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private ExpDataClassImpl getDataClass(@NotNull Container c, boolean includeProjectAndShared, Predicate<DataClass> predicate)
     {
-        List<String> containerIds = createContainerList(c, includeProjectAndShared);
-        for (String containerId : containerIds)
+        for (Container scopeContainer : createContainerList(c, includeProjectAndShared))
         {
-            Collection<DataClass> dataClasses = getDataClassCache().get(containerId);
+            Collection<DataClass> dataClasses = getDataClassCache().get(scopeContainer);
             for (DataClass dataClass : dataClasses)
             {
                 if (predicate.test(dataClass))
@@ -2886,7 +2882,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    parents.append("\nSELECT * FROM " + tokens.first);
+                    parents.append("\nSELECT * FROM ").append(tokens.first);
                 }
 
                 parents.append("\nWHERE depth != 0");
@@ -2961,7 +2957,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    children.append("\nSELECT * FROM " + tokens.second);
+                    children.append("\nSELECT * FROM ").append(tokens.second);
                 }
 
                 children.append("\nWHERE depth != 0");
@@ -4109,20 +4105,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         throw new IllegalStateException("Found multiple matching LSID types for '" + lsid + "': " + types);
     }
 
-    public List<String> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
+    public List<Container> createContainerList(@NotNull Container container, boolean includeProjectAndShared)
     {
-        List<String> containerIds = new ArrayList<>();
-        containerIds.add(container.getId());
+        List<Container> containers = new ArrayList<>();
+        containers.add(container);
         if (includeProjectAndShared)
         {
             Container project = container.getProject();
             if (project != null)
             {
-                containerIds.add(project.getId());
+                containers.add(project);
             }
-            containerIds.add(ContainerManager.getSharedContainer().getId());
+            containers.add(ContainerManager.getSharedContainer());
         }
-        return containerIds;
+        return containers;
     }
 
     @Override
@@ -4947,6 +4943,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
+            // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
+            Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Set<String> untrackedDeletes = new HashSet<>();
+
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
             // will be successful
             final List<String> docids = new ArrayList<>();
@@ -5000,13 +5000,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // verify the material doesn't belong to a SampleType
                         if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                             throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                    }
-
-                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                    {
-                        ExpSampleType sampleType = material.getSampleType();
-                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (_) -> new HashSet<>())
-                                .add(material.getRootMaterialRowId());
                     }
                 }
 
@@ -5117,11 +5110,49 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            int deletedCount;
             try (Timing ignored = MiniProfiler.step("exp.Material"))
             {
-                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE ");
-                materialSQL.append(materialFilterSQL);
-                executor.execute(materialSQL);
+                // Take ids from the delete itself so they match exactly what was removed
+                SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+                    .append(materialFilterSQL)
+                    .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                    .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+                if (truncateContainer)
+                    materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+                else
+                    materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                        .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                        .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+                materialSQL.append("\nFROM deleted GROUP BY CpasType");
+
+                deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
+                    int total = 0;
+                    while (rs.next())
+                    {
+                        String cpasType = rs.getString("CpasType");
+                        total += rs.getInt("DeletedCount");
+
+                        // No cached view means no reader for the ids, so skip collecting them
+                        Array rowIds = rs.getArray("RowIds");
+                        if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
+                            untrackedDeletes.add(cpasType);
+                        else
+                            deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
+
+                        Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
+                        if (roots != null)
+                        {
+                            ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
+                                    sampleTypes.get(cpasType) :
+                                    SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
+                            if (sampleType != null)
+                                sampleTypeAliquotRoots.computeIfAbsent(sampleType,
+                                        (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
+                        }
+                    }
+                    return total;
+                });
             }
 
             // clean up provenance
@@ -5164,7 +5195,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
             transaction.addCommitTask(
@@ -5179,7 +5210,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             transaction.commit();
             if (timing != null)
                 LOG.info("SampleType delete timings\n{}", timing.dump());
-            return count;
+            return deletedCount;
         }
     }
 
@@ -5214,7 +5245,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 runsUsingItems.removeAll(runsToKeep);
             }
             // add runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(materialItems), getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         if (!dataIds.isEmpty())
@@ -5243,7 +5274,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             runsUsingItems.addAll(dataInputRuns);
             // get runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(dataItems), getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<ExpRunImpl> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -5275,6 +5306,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /** Only items output by a run can leave that run without outputs. */
+    private static Set<Long> rowIdsWithRun(Collection<? extends RunItem> items)
+    {
+        return items.stream().filter(item -> item.getRunId() != null).map(RunItem::getRowId).collect(Collectors.toSet());
+    }
+
     /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Long> rowIds, TableInfo primaryTableInfo, Collection<Long> siblingRowIds, TableInfo siblingTableInfo)
     {
@@ -5285,12 +5322,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SELECT DISTINCT m.runId
 	    FROM exp.material m
         WHERE m.rowId in (3592, 3593, 3594)
+            AND m.runId IS NOT NULL
             AND NOT EXIST (
                 -- Check for siblings
-                SELECT DISTINCT m2.runId
+                SELECT 1
                 FROM exp.material m2
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = m2.runId
+                WHERE m2.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5301,10 +5338,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             )
             AND NOT EXIST (
              -- Check for siblings that are not being deleted
-                SELECT DISTINCT d.runId
+                SELECT 1
                 FROM exp.data d
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = d.runId
+                WHERE d.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5325,21 +5361,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append("SELECT DISTINCT m.runId\n")
                 .append("FROM ").append(primaryTableInfo, "m").append("\n")
                 .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId IS NOT NULL\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT m2.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(primaryTableInfo, "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = m2.runId\n")
+                .append("WHERE m2.runId = m.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
                 .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
                 .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
                 .append("))\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT s.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(siblingTableInfo, "s").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = s.runId\n");
+                .append("WHERE s.runId = m.runId\n");
         if (!siblingRowIds.isEmpty())
         {
             sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds

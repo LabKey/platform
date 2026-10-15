@@ -21,6 +21,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,6 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -74,6 +74,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
@@ -104,7 +106,6 @@ import java.util.function.Supplier;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.labkey.api.ApiModule.ALLOW_MUTATING_SQL_VIA_GET;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
@@ -369,6 +370,11 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x) throws Exception
+    {
+        return handleBadRequestException(request, response, controller, x, HttpServletResponse.SC_BAD_REQUEST);
+    }
+
+    private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, BadRequestException x, int status) throws Exception
    {
        // TODO: we are assuming that all ApiActions respond with JSON and all !ApiAction respond HTML. Would be better to be explicit.
        boolean jsonResponse = controller instanceof BaseApiAction;
@@ -381,13 +387,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
            {
                // Issue 53120: Set content-type, status when responding with JSON content
                response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-               response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+               response.setStatus(status);
            }
 
            Writer w = response.getWriter();
            JSONObject json = new JSONObject();
            json.put("success", false);
-           json.put("status", HttpServletResponse.SC_BAD_REQUEST);
+           json.put("status", status);
            json.put("exception", x.getMessage());
            if (htmlWrappedJson)
                w.write("<html><body><textarea>");
@@ -399,7 +405,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
        if (textResponse)
        {
-           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           response.setStatus(status);
            response.setContentType("text/plain");
            Writer w = response.getWriter();
            w.write(x.getMessage());
@@ -409,7 +415,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
        // TODO design/text for custom view
        if (x instanceof AntiVirusException)
        {
-           response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+           response.setStatus(status);
            HttpView<?> view = SimpleErrorView.fromMessage(x.getMessage());
 
            PageConfig page = new PageConfig(request);
@@ -418,7 +424,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
            return null;
        }
 
-       response.sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+       response.sendError(status, x.getMessage());
        return null;
    }
 
@@ -540,6 +546,23 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // TODO Better/custom error report page/response
                     if (x.getCause() instanceof BadRequestException)
                         return handleBadRequestException(request, response, controller, (BadRequestException)x.getCause());
+                    if (x instanceof MultipartException && ExceptionUtil.isClientRequestFailure(x))
+                    {
+                        _log.debug("Unable to parse multipart request", x);
+                        int status;
+                        String message;
+                        if (x instanceof MaxUploadSizeExceededException)
+                        {
+                            status = HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE;
+                            message = StringUtils.defaultIfBlank(ExceptionUtils.getRootCause(x).getMessage(), x.getMessage());
+                        }
+                        else
+                        {
+                            status = HttpServletResponse.SC_BAD_REQUEST;
+                            message = "Unable to parse multipart request";
+                        }
+                        return handleBadRequestException(request, response, controller, new BadRequestException(message, x), status);
+                    }
                     throw x;
                 }
             }
@@ -1455,11 +1478,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             String mutatingSql = mutatingSqlSupplier.get();
             if (mutatingSql != null)
             {
-                // Checking late in the game to ensure OptionalFeatureService has been initialized and to avoid
-                // reentrancy when querying this optional feature flag's value when it's not already cached.
-                if (OptionalFeatureService.get().isFeatureEnabled(ALLOW_MUTATING_SQL_VIA_GET))
-                    return;
-
                 boolean verbose = _log.isDebugEnabled() || mutatingActionsWarned.add(actionClass.getName());
                 String message = "MUTATING SQL executed as part of handling action: " +
                         (null == vc ? "" : vc.getRequest().getMethod()) + " " +

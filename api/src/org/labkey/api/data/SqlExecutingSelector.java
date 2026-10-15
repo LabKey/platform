@@ -60,7 +60,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     private static final int LARGE_RESULT_THRESHOLD = 10_000;
 
     // At most one warning per day per call site (not per query or row count), so a legitimately large but expected load doesn't flood the log; see getStackKey()
-    private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>("SqlSelector large result warnings", 1000, CacheManager.DAY,
+    private static final Throttle<LargeResultWarning> LARGE_RESULT_WARNING_THROTTLE = new Throttle<>(LargeResultWarning.class, "SqlSelector large result warnings", 1000, CacheManager.DAY,
         w -> LOGGER.warn("{} {} rows loaded into a collection via {}. Consider switching to streaming variants to reduce memory usage. SQL: {}",
             String.format("%,d", w.rowCount), w.elementClass, w.selectorClass, w.sql, w.stackTrace));
 

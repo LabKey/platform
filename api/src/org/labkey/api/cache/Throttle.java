@@ -15,6 +15,8 @@
  */
 package org.labkey.api.cache;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -26,7 +28,7 @@ import java.util.function.Consumer;
  *
  * <pre>
  * {@code
- * Throttle<User> THROTTLE = new Throttle<>("bad users", 100, CacheManager.HOUR, user -> LOG.warn(user + " is a bad hombre!"));}
+ * Throttle<User> THROTTLE = new Throttle<>(User.class, "bad users", 100, CacheManager.HOUR, user -> LOG.warn(user + " is a bad hombre!"));}
  * </pre>
  *
  * <p>And then attempt the logging like this:</p>
@@ -47,9 +49,9 @@ public class Throttle<K>
     private final AtomicLong _executionCount = new AtomicLong();
     private final AtomicLong _requestCount = new AtomicLong();
 
-    public Throttle(String name, int limit, long timeToLive, Consumer<K> consumer)
+    public Throttle(@NotNull Class<K> keyClass, String label, int limit, long timeToLive, Consumer<K> consumer)
     {
-        _cache = CacheManager.getBlockingCache(limit, timeToLive, "Throttle for " + name, (key, argument) ->
+        _cache = CacheManager.getBlockingCache(keyClass, limit, timeToLive, "Throttle for " + label, (key, _) ->
         {
             _executionCount.incrementAndGet();
             consumer.accept(key);
