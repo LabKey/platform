@@ -19,7 +19,10 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import static org.labkey.announcements.query.AnnouncementSchema.THREADS_TABLE_NAME;
 
@@ -41,5 +44,11 @@ public class ThreadsTable extends FilteredTable<AnnouncementSchema>
         setDescription("Contains one row per thread");
         setName(THREADS_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);
+    }
+
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, ReadPermission.class, "EntityId", _userSchema.getUser());
     }
 }

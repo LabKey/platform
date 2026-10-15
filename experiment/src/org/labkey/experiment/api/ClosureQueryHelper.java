@@ -17,8 +17,10 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -57,8 +59,10 @@ import org.labkey.api.view.NotFoundException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -303,24 +307,53 @@ public class ClosureQueryHelper
 
     public static void clearAncestorsForMaterials(Collection<Long> materialRowIds)
     {
-        var tx = getScope().getCurrentTransaction();
-        if (null != tx)
-        {
-            tx.addCommitTask(() -> clearAncestorsForMaterials(materialRowIds), DbScope.CommitTaskOption.POSTCOMMIT);
-            return;
-        }
-        recomputeMaterialAncestors(materialRowIds);
+        new RecomputeObjectAncestorsTask(true).register(getScope(), materialRowIds, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     public static void clearAncestorsForDataObjects(Collection<Long> dataRowIds)
     {
-        var tx = getScope().getCurrentTransaction();
-        if (null != tx)
+        new RecomputeObjectAncestorsTask(false).register(getScope(), dataRowIds, DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    /** Recomputes ancestors of the registered material (key true) or data (key false) row ids once per transaction */
+    private static class RecomputeObjectAncestorsTask extends AccumulatingCommitTask<Boolean, Long>
+    {
+        RecomputeObjectAncestorsTask(boolean isSampleType)
         {
-            tx.addCommitTask(() -> clearAncestorsForDataObjects(dataRowIds), DbScope.CommitTaskOption.POSTCOMMIT);
-            return;
+            super(isSampleType);
         }
-        recomputeDataObjectAncestors(dataRowIds);
+
+        @Override
+        protected void process(@NotNull Boolean isSampleType, @NotNull Set<Long> rowIds)
+        {
+            if (rowIds.isEmpty())
+                return;
+
+            if (isSampleType)
+                recomputeMaterialAncestors(rowIds);
+            else
+                recomputeDataObjectAncestors(rowIds);
+        }
+    }
+
+    private record RunOutputType(boolean isSampleType, String cpasType) {}
+
+    /** Recomputes ancestors of the registered runs' outputs of one sample type or data class once per transaction */
+    private static class RecomputeRunOutputAncestorsTask extends AccumulatingCommitTask<RunOutputType, Long>
+    {
+        RecomputeRunOutputAncestorsTask(boolean isSampleType, String cpasType)
+        {
+            super(new RunOutputType(isSampleType, cpasType));
+        }
+
+        @Override
+        protected void process(@NotNull RunOutputType type, @NotNull Set<Long> runIds)
+        {
+            if (type.isSampleType())
+                recomputeMaterialAncestorsForRunOutputs(type.cpasType(), runIds);
+            else
+                recomputeDataAncestorsForRunOutputs(type.cpasType(), runIds);
+        }
     }
 
     public static void populateMaterialAncestors(Logger logger)
@@ -455,18 +488,16 @@ public class ClosureQueryHelper
 
     public static void recomputeMaterialAncestorsForRun(String sourceTypeLsid, long runId)
     {
-        var tx = getScope().getCurrentTransaction();
-        if (null != tx)
-        {
-            tx.addCommitTask(() -> recomputeMaterialAncestorsForRun(sourceTypeLsid, runId), DbScope.CommitTaskOption.POSTCOMMIT);
-            return;
-        }
+        new RecomputeRunOutputAncestorsTask(true, sourceTypeLsid).register(getScope(), List.of(runId), DbScope.CommitTaskOption.POSTCOMMIT);
+    }
 
+    private static void recomputeMaterialAncestorsForRunOutputs(String sourceTypeLsid, Collection<Long> runIds)
+    {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT m.RowId, m.ObjectId, 'm' AS ObjectType FROM exp.material m\n")
                 .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId = ").appendValue(runId)
+                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
                 .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, true);
@@ -500,18 +531,16 @@ public class ClosureQueryHelper
 
     public static void recomputeDataAncestorsForRun(String sourceTypeLsid, long runId)
     {
-        var tx = getScope().getCurrentTransaction();
-        if (null != tx)
-        {
-            tx.addCommitTask(() -> recomputeDataAncestorsForRun(sourceTypeLsid, runId), DbScope.CommitTaskOption.POSTCOMMIT);
-            return;
-        }
+        new RecomputeRunOutputAncestorsTask(false, sourceTypeLsid).register(getScope(), List.of(runId), DbScope.CommitTaskOption.POSTCOMMIT);
+    }
 
+    private static void recomputeDataAncestorsForRunOutputs(String sourceTypeLsid, Collection<Long> runIds)
+    {
         SQLFragment selectSeedsSql = new SQLFragment()
                 .append("SELECT d.RowId, d.ObjectId, 'd' AS ObjectType FROM exp.data d\n")
                 .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId = ").appendValue(runId)
+                .append("WHERE pa.RunId ").appendInClause(runIds, getScope().getSqlDialect())
                 .append(" AND d.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput);
         recomputeFromSeeds(selectSeedsSql, false);
