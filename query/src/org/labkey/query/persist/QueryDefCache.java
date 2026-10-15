@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.query.QueryDefinitionImpl;
@@ -166,9 +167,12 @@ public class QueryDefCache
         return QUERY_DEF_DB_CACHE.get(container)._queryDefIdMap.get(queryDefId);
     }
 
+    // GH Issue 1736: a thread outside the transaction can reload pre-commit rows after the immediate remove, so remove again after commit
     public static void uncache(Container c)
     {
-        QUERY_DEF_DB_CACHE.remove(c);
-        QueryDefinitionImpl.clearHasPkColumnCache();
+        QueryManager.get().getDbSchema().getScope().addCommitTask(() -> {
+            QUERY_DEF_DB_CACHE.remove(c);
+            QueryDefinitionImpl.clearHasPkColumnCache();
+        }, DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
     }
 }
