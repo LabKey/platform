@@ -120,9 +120,9 @@
         final HashMap<String,Integer> ptidMap = new HashMap<>();
 
         SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ")
-            .append(columnParticipant.getValueSql("P")).append(" AS participantId FROM ")
+            .append(columnParticipant.getValueSql("P")).unsafeAppend(" AS participantId FROM ")
             .append(tableParticipants.getFromSQL("P"))
-            .append(" ORDER BY 1");
+            .unsafeAppend(" ORDER BY 1");
 
         new SqlSelector(dbschema, sqlf).forEach(rs-> {
             String ptid = rs.getString(1);
@@ -223,8 +223,8 @@
         if (hasCohorts)
         {
             sqlf = new SQLFragment("SELECT ")
-                .append(columnCurrentCohortId.getValueSql("P")).append(" as currentcohortid, ")
-                .append(columnParticipant.getValueSql("P")).append(" AS participantid FROM ")
+                .append(columnCurrentCohortId.getValueSql("P")).unsafeAppend(" as currentcohortid, ")
+                .append(columnParticipant.getValueSql("P")).unsafeAppend(" AS participantid FROM ")
                 .append(tableParticipants.getFromSQL("P"));
 
             new SqlSelector(dbschema, sqlf).forEach(rs-> {
@@ -250,7 +250,7 @@
 
         if (hasGroups)
         {
-            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).append(")");
+            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).unsafeAppend(")");
             (new SqlSelector(dbschema, sqlGroups)).forEach(rs-> {
                 Integer igroup = groupMap.get(rs.getInt(1));
                 Integer iptid = ptidMap.get(rs.getString(2));

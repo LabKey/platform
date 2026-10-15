@@ -117,8 +117,8 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
         categoriesToDelete.addAll(category.getSubcategories());
 
         // delete the category definition (plus any subcategories) and fire the deleted event
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").append(" WHERE RowId = ?");
-        sql.append(" OR Parent = ?");
+        SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoCategories(), "").unsafeAppend(" WHERE RowId = ?");
+        sql.unsafeAppend(" OR Parent = ?");
         sql.addAll(category.getRowId(), category.getRowId());
 
         SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());

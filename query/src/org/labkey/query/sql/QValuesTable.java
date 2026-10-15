@@ -56,9 +56,9 @@ public class QValuesTable extends QTable
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" VALUES ");
+        builder.unsafeAppend(" VALUES ");
         values.appendSource(builder,false);
-        builder.append(" AS ");
+        builder.unsafeAppend(" AS ");
         builder.append(_alias.getTokenText());
     }
 
@@ -299,11 +299,11 @@ public class QValuesTable extends QTable
         public SQLFragment getFromSql()
         {
             SqlBuilder ret = new SqlBuilder(query.getSchema().getDbSchema().getSqlDialect());
-            ret.append("(");
+            ret.unsafeAppend("(");
             appendSql(ret);
-            ret.append(") ");
+            ret.unsafeAppend(") ");
             ret.appendIdentifier(getAlias());
-            ret.append(" (");
+            ret.unsafeAppend(" (");
             String comma = "";
             // generate names consistent with PostgreSQL default name for VALUES
             // https://www.postgresql.org/docs/12/queries-values.html
@@ -312,7 +312,7 @@ public class QValuesTable extends QTable
                 ret.append(comma).append("column" + i);
                 comma = ",";
             }
-            ret.append(")\n");
+            ret.unsafeAppend(")\n");
             return ret;
         }
 
@@ -324,7 +324,7 @@ public class QValuesTable extends QTable
 
         SqlBuilder appendSql(SqlBuilder sql)
         {
-            sql.append(" VALUES ");
+            sql.unsafeAppend(" VALUES ");
             values.appendSql(sql, query, false);
             return sql;
         }

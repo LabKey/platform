@@ -75,7 +75,7 @@ public class IssueMigrationSchemaHandler extends DefaultMigrationSchemaHandler
         SQLClause joinOnEntityId = new SQLClause(
             new SQLFragment("EntityId IN (SELECT EntityId FROM ")
                 .append(targetTable)
-                .append(")")
+                .unsafeAppend(")")
         );
 
         new TableSelector(IssuesSchema.getInstance().getTableInfoIssues(), new CsvSet("IssueId, EntityId"), new SimpleFilter(joinOnEntityId), null).stream(Integer.class)

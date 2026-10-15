@@ -65,10 +65,10 @@ public class QType extends QExpr
 
         if (null != len)
         {
-            builder.append("(").appendValue(len);
+            builder.unsafeAppend("(").appendValue(len);
             if (scale != null)
-                builder.append(",").appendValue(scale);
-            builder.append(")");
+                builder.unsafeAppend(",").appendValue(scale);
+            builder.unsafeAppend(")");
         }
     }
 
@@ -84,10 +84,10 @@ public class QType extends QExpr
         builder.append(jdbcType.name());
         if (null != length)
         {
-            builder.append("(").appendValue(length);
+            builder.unsafeAppend("(").appendValue(length);
             if (scale != null)
-                builder.append(",").appendValue(scale);
-            builder.append(")");
+                builder.unsafeAppend(",").appendValue(scale);
+            builder.unsafeAppend(")");
         }
     }
 }

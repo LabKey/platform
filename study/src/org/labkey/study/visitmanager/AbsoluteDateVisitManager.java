@@ -83,18 +83,18 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
         sql.appendComment("<RelativeDateVisitManager.getVisitSummarySql>", participantTable.getSqlDialect());
 
         SQLFragment keyCols = datasetId.getValueSql(alias);
-        SQLFragment selectCols = new SQLFragment(keyCols).append(", -1 as VisitId");
+        SQLFragment selectCols = new SQLFragment(keyCols).unsafeAppend(", -1 as VisitId");
         for (var stat : stats)
-            selectCols.append(",").append(stat.getSql(participant.getValueSql(alias)));
+            selectCols.unsafeAppend(",").append(stat.getSql(participant.getValueSql(alias)));
 
         if (cohortFilter == null)
         {
-            sql.append("SELECT ").append(selectCols);
-            sql.append("\nFROM ").append(studyData.getFromSQL(alias));
+            sql.unsafeAppend("SELECT ").append(selectCols);
+            sql.unsafeAppend("\nFROM ").append(studyData.getFromSQL(alias));
             if (null != qcStates)
-                sql.append("\nWHERE ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
-            sql.append("\nGROUP BY ").append(keyCols);
-            sql.append("\nORDER BY 1, 2");
+                sql.unsafeAppend("\nWHERE ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+            sql.unsafeAppend("\nGROUP BY ").append(keyCols);
+            sql.unsafeAppend("\nORDER BY 1, 2");
         }
         else
         {
@@ -102,17 +102,18 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
             {
                 case PTID_CURRENT:
                 case PTID_INITIAL:
-                    sql.append("SELECT ").append(selectCols);
-                    sql.append("\nFROM ").append(studyData.getFromSQL(alias))
-                            .append("\nJOIN ").append(participantTable.getFromSQL("P")).append(" ON (")
-                            .append(participant.getValueSql(alias)).append(" = P.ParticipantId AND ")
-                            .append(container.getValueSql(alias)).append(" = P.Container)\n");
-                    sql.append("\nWHERE ")
-                            .append(" P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                            .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
-                    sql.add(cohortFilter.getCohortId());
-                    sql.append("\nGROUP BY ").append(keyCols);
-                    sql.append("\nORDER BY 1, 2");
+                    sql.unsafeAppend("SELECT ").append(selectCols);
+                    sql.unsafeAppend("\nFROM ").append(studyData.getFromSQL(alias))
+                            .unsafeAppend("\nJOIN ").append(participantTable.getFromSQL("P")).unsafeAppend(" ON (")
+                            .append(participant.getValueSql(alias)).unsafeAppend(" = P.ParticipantId AND ")
+                            .append(container.getValueSql(alias)).unsafeAppend(" = P.Container)\n");
+                    sql.unsafeAppend("\nWHERE ")
+                            .unsafeAppend(" P.").appendIdentifier(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
+                            .unsafeAppend(" = ").appendValue(cohortFilter.getCohortId()).unsafeAppend("\n");
+                    if (qcStates != null)
+                        sql.unsafeAppend("AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME)).unsafeAppend("\n");
+                    sql.unsafeAppend("\nGROUP BY ").append(keyCols);
+                    sql.unsafeAppend("\nORDER BY 1, 2");
                     break;
                 //case DATA_COLLECTION:
                 default:

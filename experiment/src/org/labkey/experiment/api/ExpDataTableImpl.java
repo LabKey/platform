@@ -311,8 +311,8 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case LastIndexed:
                 SQLFragment lastIndexedSql = new SQLFragment("(SELECT LastIndexed FROM ").
                         append(ExperimentServiceImpl.get().getTinfoDataIndexed(), "di").
-                        append(" WHERE di.DataId = ").
-                        append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                        unsafeAppend(" WHERE di.DataId = ").
+                        append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var lastIndexed = new ExprColumn(this, Column.LastIndexed.name(), lastIndexedSql, JdbcType.TIMESTAMP);
                 lastIndexed.setDescription("Date when the data was last full-text search indexed in the system");
                 lastIndexed.setHidden(true);
@@ -359,9 +359,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
-                        .append(")");
+                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).unsafeAppend("'")
+                        .unsafeAppend(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
                 col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
@@ -615,14 +615,14 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 "\nAND ");
         if (role == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.role = ?");
+            sql.unsafeAppend("exp.datainput.role = ?");
             sql.add(role);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         return doAdd(ret);
     }
@@ -636,10 +636,10 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             "\nWHERE " + ExprColumn.STR_TABLE_ALIAS + ".SourceApplicationId = exp.materialInput.TargetApplicationId");
         if (sampleType != null)
         {
-            sql.append("\nAND InputMaterial.CPASType = ?");
+            sql.unsafeAppend("\nAND InputMaterial.CPASType = ?");
             sql.add(sampleType.getLSID());
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         ExprColumn ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
         ret.setFk(schema.materialIdForeignKey(sampleType, null));
         return doAdd(ret);

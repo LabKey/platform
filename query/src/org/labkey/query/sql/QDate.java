@@ -53,7 +53,7 @@ public class QDate extends QExpr implements IConstant
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("{d ").append(getTokenText()).append("}");
+        builder.unsafeAppend("{d ").append(getTokenText()).unsafeAppend("}");
     }
 
     @Override

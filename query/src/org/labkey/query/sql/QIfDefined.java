@@ -60,9 +60,9 @@ public class QIfDefined extends QExpr
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("IFDEFINED(");
+        builder.unsafeAppend("IFDEFINED(");
         getFirstChild().appendSource(builder);
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override

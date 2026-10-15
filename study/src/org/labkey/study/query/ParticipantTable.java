@@ -191,15 +191,15 @@ public class ParticipantTable extends BaseStudyTable
                     // Make the SQL that will be used to build the concatenated aliases value
                     // Need to do this with a subquery so that SQLServer is happy with the DISTINCT and ORDER BY
                     SQLFragment concatSQL = new SQLFragment("SELECT AliasValue ");
-                    concatSQL.append(" FROM (SELECT DISTINCT ");
+                    concatSQL.unsafeAppend(" FROM (SELECT DISTINCT ");
                     concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
-                    concatSQL.append(" AS AliasValue FROM ");
+                    concatSQL.unsafeAppend(" AS AliasValue FROM ");
                     concatSQL.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
-                    concatSQL.append(" WHERE ");
-                    concatSQL.append(ALIAS_INNER_QUERY_ALIAS);
-                    concatSQL.append(".ParticipantID = ");
-                    concatSQL.append(ExprColumn.STR_TABLE_ALIAS);
-                    concatSQL.append(".ParticipantID) Y ORDER BY AliasValue");
+                    concatSQL.unsafeAppend(" WHERE ");
+                    concatSQL.appendIdentifier(ALIAS_INNER_QUERY_ALIAS);
+                    concatSQL.unsafeAppend(".ParticipantID = ");
+                    concatSQL.appendIdentifier(ExprColumn.STR_TABLE_ALIAS);
+                    concatSQL.unsafeAppend(".ParticipantID) Y ORDER BY AliasValue");
 
                     ExprColumn aliasesColumn = new ExprColumn(this, ALIASES_COLUMN_NAME, getSqlDialect().getSelectConcat(concatSQL, MultiValuedRenderContext.VALUE_DELIMITER), JdbcType.VARCHAR);
                     aliasesColumn.setDisplayColumnFactory(colInfo -> {
@@ -225,7 +225,7 @@ public class ParticipantTable extends BaseStudyTable
         {
             SQLFragment sql = new SQLFragment("SELECT DISTINCT ");
             sql.append(sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
-            sql.append(" FROM ");
+            sql.unsafeAppend(" FROM ");
             sql.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
             // Use a case-insensitive set because want separate columns for each source, and column names are case
             // insensitive. When selecting out the values for each source via SQL, we do a case insensitive comparison.
@@ -267,12 +267,12 @@ public class ParticipantTable extends BaseStudyTable
                 // to avoid SQL exceptions we change Label to MIN(Label)
                 SQLFragment sql = new SQLFragment();
                 sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
-                sql.append("(SELECT MIN(Label) FROM ");
+                sql.unsafeAppend("(SELECT MIN(Label) FROM ");
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g" );
-                sql.append(" JOIN ");
+                sql.unsafeAppend(" JOIN ");
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
-                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=").appendValue(c);
-                sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
+                sql.unsafeAppend(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=").appendValue(c);
+                sql.unsafeAppend("WHERE _m.ParticipantId = ").appendIdentifier(parentAlias).unsafeAppend(".ParticipantId)");
                 sql.add(_def.getRowId());
                 sql.appendComment("</ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
                 return sql;
@@ -282,12 +282,12 @@ public class ParticipantTable extends BaseStudyTable
             {
                 SQLFragment sql = new SQLFragment();
                 sql.appendComment("<ParticipantTable: " + _def.getLabel() + ">", getSqlDialect());
-                sql.append("(SELECT Label FROM ");
+                sql.unsafeAppend("(SELECT Label FROM ");
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroup(), "_g");
-                sql.append(" JOIN ");
+                sql.unsafeAppend(" JOIN ");
                 sql.append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "_m");
-                sql.append(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=? AND _m.Container=?\n");
-                sql.append("WHERE _m.ParticipantId = ").append(parentAlias).append(".ParticipantId)");
+                sql.unsafeAppend(" ON _g.CategoryId = ? AND _g.RowId = _m.GroupId AND _g.Container=? AND _m.Container=?\n");
+                sql.unsafeAppend("WHERE _m.ParticipantId = ").appendIdentifier(parentAlias).unsafeAppend(".ParticipantId)");
                 sql.add(_def.getRowId());
                 sql.add(_def.getContainerId());
                 sql.add(_def.getContainerId());
@@ -346,17 +346,17 @@ public class ParticipantTable extends BaseStudyTable
                     // There should be zero or one one value per participant/source combination, so we could either use MIN/MAX
                     SQLFragment sql = new SQLFragment("(SELECT MAX(");
                     sql.append(_aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
-                    sql.append(") FROM ");
+                    sql.unsafeAppend(") FROM ");
                     sql.append(_datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
                     // Do a LOWER on the source column in case there are multiple casings stored as values
-                    sql.append(" WHERE LOWER(");
+                    sql.unsafeAppend(" WHERE LOWER(");
                     sql.append(_sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
-                    sql.append(") = ? AND ");
+                    sql.unsafeAppend(") = ? AND ");
                     sql.add(source.toLowerCase());
-                    sql.append(ALIAS_INNER_QUERY_ALIAS);
-                    sql.append(".ParticipantID = ");
-                    sql.append(ExprColumn.STR_TABLE_ALIAS);
-                    sql.append(".ParticipantID)");
+                    sql.appendIdentifier(ALIAS_INNER_QUERY_ALIAS);
+                    sql.unsafeAppend(".ParticipantID = ");
+                    sql.appendIdentifier(ExprColumn.STR_TABLE_ALIAS);
+                    sql.unsafeAppend(".ParticipantID)");
 
                     return new ExprColumn(parent.getParentTable(), source, sql, JdbcType.VARCHAR, parent);
                 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 
 /**
@@ -48,15 +49,14 @@ public class NullColumnInfo extends BaseColumnInfo
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(nullValue(getSqlTypeName()));
+        return nullValue(getSqlTypeName());
     }
 
-    public static String nullValue(String typeName)
+    public static SQLFragment nullValue(@Nullable String typeName)
     {
         if (null == typeName)
-            return "NULL";
-        else
-            return "CAST(NULL AS " + typeName + ")";
+            return new SQLFragment("NULL");
+        return new SQLFragment("CAST(NULL AS ").append(SQLFragment.unsafe(typeName)).unsafeAppend(")");
     }
 }
 

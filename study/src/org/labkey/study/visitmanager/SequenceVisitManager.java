@@ -112,34 +112,34 @@ public class SequenceVisitManager extends VisitManager
 
         SQLFragment sqlSequenceVisitMap = new SQLFragment();
         sqlSequenceVisitMap.appendComment("<MapSequenceNumToVisitRowId>", participantTable.getSqlDialect());
-        sqlSequenceVisitMap.append("\nSELECT Container, SequenceNum, MIN(VisitRowId) AS VisitId");
-        sqlSequenceVisitMap.append("\n\tFROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV"));
+        sqlSequenceVisitMap.unsafeAppend("\nSELECT Container, SequenceNum, MIN(VisitRowId) AS VisitId");
+        sqlSequenceVisitMap.unsafeAppend("\n\tFROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV"));
         if (!_study.isDataspaceStudy())
         {
-            sqlSequenceVisitMap.append("\n\tWHERE ").append("PV.Container = ?");
+            sqlSequenceVisitMap.unsafeAppend("\n\tWHERE ").unsafeAppend("PV.Container = ?");
             sqlSequenceVisitMap.add(_study.getContainer());
         }
-        sqlSequenceVisitMap.append("\n\tGROUP BY Container, SequenceNum");
+        sqlSequenceVisitMap.unsafeAppend("\n\tGROUP BY Container, SequenceNum");
         sqlSequenceVisitMap.appendComment("</MapSequenceNumToVisitRowId>", participantTable.getSqlDialect());
 
-        SQLFragment keyCols = new SQLFragment().append(datasetId.getValueSql(alias)).append(", ").append("SVM.VisitId").append(" ");
+        SQLFragment keyCols = new SQLFragment().append(datasetId.getValueSql(alias)).unsafeAppend(", ").unsafeAppend("SVM.VisitId").unsafeAppend(" ");
         SQLFragment selectCols = new SQLFragment(keyCols);
         for (var stat : stats)
-            selectCols.append(",").append(stat.getSql(participant.getValueSql(alias)));
+            selectCols.unsafeAppend(",").append(stat.getSql(participant.getValueSql(alias)));
 
         if (cohortFilter == null)
         {
-            sql.append("SELECT ").append(selectCols);
-            sql.append("\nFROM ").append(studyData.getFromSQL(alias));
-            sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                    .append(sequencenum.getValueSql(alias)).append(" = SVM.SequenceNum AND ")
-                    .append(container.getValueSql(alias)).append(" = SVM.container");
+            sql.unsafeAppend("SELECT ").append(selectCols);
+            sql.unsafeAppend("\nFROM ").append(studyData.getFromSQL(alias));
+            sql.unsafeAppend(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).unsafeAppend(") AS SVM ON ")
+                    .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
+                    .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
 
             String where = "\nWHERE ";
             if (null != qcStates)
-                sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
-            sql.append("\nGROUP BY ").append(keyCols);
-            sql.append("\nORDER BY 1, 2");
+                sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+            sql.unsafeAppend("\nGROUP BY ").append(keyCols);
+            sql.unsafeAppend("\nORDER BY 1, 2");
         }
         else
         {
@@ -147,39 +147,39 @@ public class SequenceVisitManager extends VisitManager
             {
                 case DATA_COLLECTION:
                 {
-                    sql.append("SELECT ").append(selectCols);
-                    sql.append("\nFROM ").append(studyData.getFromSQL(alias));
-                    sql.append(" INNER JOIN study.ParticipantVisit PV ON (")
-                            .append(container.getValueSql(alias)).append(" = ? AND \n\tPV.ParticipantId = ").append(participant.getValueSql(alias)).append(" AND \n\tPV.SequenceNum = ")
-                            .append(sequencenum.getValueSql(alias)).append(" AND\n\t").append(container.getValueSql(alias)).append("=PV.Container AND \n" + "\tPV.CohortID = ?)\n");
+                    sql.unsafeAppend("SELECT ").append(selectCols);
+                    sql.unsafeAppend("\nFROM ").append(studyData.getFromSQL(alias));
+                    sql.unsafeAppend(" INNER JOIN study.ParticipantVisit PV ON (")
+                            .append(container.getValueSql(alias)).unsafeAppend(" = ? AND \n\tPV.ParticipantId = ").append(participant.getValueSql(alias)).unsafeAppend(" AND \n\tPV.SequenceNum = ")
+                            .append(sequencenum.getValueSql(alias)).unsafeAppend(" AND\n\t").append(container.getValueSql(alias)).unsafeAppend("=PV.Container AND \n" + "\tPV.CohortID = ?)\n");
                     sql.add(getStudy().getContainer());
                     sql.add(cohortFilter.getCohortId());
-                    sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                            .append(sequencenum.getValueSql(alias)).append(" = SVM.SequenceNum AND ")
-                            .append(container.getValueSql(alias)).append(" = SVM.container");
+                    sql.unsafeAppend(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).unsafeAppend(") AS SVM ON ")
+                            .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
+                            .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
                     String where = "\nWHERE ";
                     if (qcStates != null)
-                        sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
-                    sql.append("\nGROUP BY ").append(keyCols);
-                    sql.append("\nORDER BY 1, 2");
+                        sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                    sql.unsafeAppend("\nGROUP BY ").append(keyCols);
+                    sql.unsafeAppend("\nORDER BY 1, 2");
                     break;
                 }
                 case PTID_CURRENT:
                 case PTID_INITIAL:
                 {
-                    sql.append("SELECT ").append(selectCols);
-                    sql.append("\nFROM ").append(studyData.getFromSQL(alias))
-                        .append(" INNER JOIN ").append(participantTable.getFromSQL("P")).append(" ON (P.ParticipantId = ").append(participant.getValueSql(alias))
-                        .append(" AND ").append(container.getValueSql(alias)).append("=P.Container AND P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId").append(" = ?)\n");
+                    sql.unsafeAppend("SELECT ").append(selectCols);
+                    sql.unsafeAppend("\nFROM ").append(studyData.getFromSQL(alias))
+                        .unsafeAppend(" INNER JOIN ").append(participantTable.getFromSQL("P")).unsafeAppend(" ON (P.ParticipantId = ").append(participant.getValueSql(alias))
+                        .unsafeAppend(" AND ").append(container.getValueSql(alias)).unsafeAppend("=P.Container AND P.").appendIdentifier(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId").unsafeAppend(" = ?)\n");
                     sql.add(cohortFilter.getCohortId());
-                    sql.append(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).append(") AS SVM ON ")
-                            .append(sequencenum.getValueSql(alias)).append(" = SVM.SequenceNum AND ")
-                            .append(container.getValueSql(alias)).append(" = SVM.container");
+                    sql.unsafeAppend(" LEFT OUTER JOIN (").append(sqlSequenceVisitMap).unsafeAppend(") AS SVM ON ")
+                            .append(sequencenum.getValueSql(alias)).unsafeAppend(" = SVM.SequenceNum AND ")
+                            .append(container.getValueSql(alias)).unsafeAppend(" = SVM.container");
                     String where = "\nWHERE ";
                     if (qcStates != null)
-                        sql.append(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
-                    sql.append("\nGROUP BY ").append(keyCols);
-                    sql.append("\nORDER BY 1, 2");
+                        sql.unsafeAppend(where).append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME));
+                    sql.unsafeAppend("\nGROUP BY ").append(keyCols);
+                    sql.unsafeAppend("\nORDER BY 1, 2");
                     break;
                 }
             }
@@ -207,32 +207,32 @@ public class SequenceVisitManager extends VisitManager
         // populate ParticipantVisit
         //
         SQLFragment sqlSelect = new SQLFragment();
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
+        sqlSelect.unsafeAppend("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
         sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
-        sqlSelect.append(" WHERE Container = ? AND ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
+        sqlSelect.unsafeAppend(" WHERE Container = ? AND ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
         sqlSelect.add(container);
         if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
         {
-            sqlSelect.append(" AND SD.ParticipantId ");
+            sqlSelect.unsafeAppend(" AND SD.ParticipantId ");
             schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants);
         }
-        sqlSelect.append("\nEXCEPT\n");
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container = ?");
+        sqlSelect.unsafeAppend("\nEXCEPT\n");
+        sqlSelect.unsafeAppend("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).unsafeAppend(" WHERE Container = ?");
         sqlSelect.add(container);
         if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
         {
-            sqlSelect.append(" AND PV.ParticipantId ");
+            sqlSelect.unsafeAppend(" AND PV.ParticipantId ");
             schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants);
         }
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlSelect.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
-        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT ? AS Container, ParticipantId, SequenceNum, ParticipantSequenceNum FROM (");
+        sqlInsertParticipantVisit.unsafeAppend("INSERT INTO ").append(tableParticipantVisit);
+        sqlInsertParticipantVisit.unsafeAppend(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.unsafeAppend("SELECT ? AS Container, ParticipantId, SequenceNum, ParticipantSequenceNum FROM (");
         sqlInsertParticipantVisit.add(container);
         sqlInsertParticipantVisit.append(sqlSelect);
-        sqlInsertParticipantVisit.append(") _");
+        sqlInsertParticipantVisit.unsafeAppend(") _");
         sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
@@ -255,22 +255,22 @@ public class SequenceVisitManager extends VisitManager
         // populate ParticipantVisit
         //
         SQLFragment sqlSelect = new SQLFragment();
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
+        sqlSelect.unsafeAppend("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
         sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
-        sqlSelect.append("\nWHERE  ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
-        sqlSelect.append("\nEXCEPT\n");
-        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS ").append(d.getGuidType()).append(")\n");
+        sqlSelect.unsafeAppend("\nWHERE  ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL");
+        sqlSelect.unsafeAppend("\nEXCEPT\n");
+        sqlSelect.unsafeAppend("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).unsafeAppend(" WHERE Container=CAST(? AS ").append(d.getGuidTypeAsSql()).unsafeAppend(")\n");
         sqlSelect.add(container);
 
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTable>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
-        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT CAST(? AS " + d.getGuidType() +"), ParticipantId, SequenceNum, ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.unsafeAppend("INSERT INTO ").append(tableParticipantVisit);
+        sqlInsertParticipantVisit.unsafeAppend(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.unsafeAppend("SELECT CAST(? AS ").append(d.getGuidTypeAsSql()).unsafeAppend("), ParticipantId, SequenceNum, ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("FROM (");
+        sqlInsertParticipantVisit.unsafeAppend("FROM (");
         sqlInsertParticipantVisit.append(sqlSelect);
-        sqlInsertParticipantVisit.append(") _");
+        sqlInsertParticipantVisit.unsafeAppend(") _");
         sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTable>", schema.getSqlDialect());
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
@@ -286,17 +286,17 @@ public class SequenceVisitManager extends VisitManager
         // visit table to tell us which date corresponds to which visit:
         sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTable>",schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit);
-        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
+        sqlInsertParticipantVisit.unsafeAppend("INSERT INTO ").append(tableParticipantVisit);
+        sqlInsertParticipantVisit.unsafeAppend(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.unsafeAppend("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum,\n");
         sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("MIN(").append(StudyUtils.getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
-        sqlInsertParticipantVisit.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
-        sqlInsertParticipantVisit.append("WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
-        sqlInsertParticipantVisit.append("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").append("\n");
-        sqlInsertParticipantVisit.append("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
+        sqlInsertParticipantVisit.unsafeAppend("MIN(").append(StudyUtils.getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).unsafeAppend(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.unsafeAppend("FROM ").append(tableSpecimen, "Specimen").unsafeAppend("\n");
+        sqlInsertParticipantVisit.unsafeAppend("WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (");
+        sqlInsertParticipantVisit.unsafeAppend("SELECT ParticipantId, SequenceNum FROM ").append(tableParticipantVisit, "PV").unsafeAppend("\n");
+        sqlInsertParticipantVisit.unsafeAppend("WHERE Container = ? AND Specimen.Ptid = PV.ParticipantId AND Specimen.VisitValue = PV.SequenceNum)\n");
         sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("GROUP BY Ptid, VisitValue");
+        sqlInsertParticipantVisit.unsafeAppend("GROUP BY Ptid, VisitValue");
         sqlInsertParticipantVisit.appendComment("</SequenceVisitManager.updateParticipantVisitTable>",schema.getSqlDialect());
         executor.execute(sqlInsertParticipantVisit);
 
@@ -332,9 +332,9 @@ public class SequenceVisitManager extends VisitManager
         if (defsWithVisitDates.isEmpty())
         {
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append("\n")
-                .append("SET VisitDate = NULL, Day = NULL")
-                .append(" WHERE Container = ?");
+            sqlUpdateVisitDates.unsafeAppend("UPDATE ").append(tableParticipantVisit).unsafeAppend("\n")
+                .unsafeAppend("SET VisitDate = NULL, Day = NULL")
+                .unsafeAppend(" WHERE Container = ?");
             sqlUpdateVisitDates.add(visitStudy.getContainer());
             executor.execute(sqlUpdateVisitDates);
         }
@@ -342,16 +342,16 @@ public class SequenceVisitManager extends VisitManager
         {
             TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), defsWithVisitDates, user);
             SQLFragment sqlUpdateVisitDates = new SQLFragment();
-            sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append(" PV");
-            sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
-                .append(" (\n")
-                .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
-                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
+            sqlUpdateVisitDates.unsafeAppend("UPDATE ").append(tableParticipantVisit).unsafeAppend(" PV");
+            sqlUpdateVisitDates.unsafeAppend("\n").unsafeAppend("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
+                .unsafeAppend(" (\n")
+                .unsafeAppend(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+                .unsafeAppend(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).unsafeAppend(") SD,  ")
                 .append(tableVisit.getFromSQL("V"));
 
-            sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
-                .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-                .append("   SD.DatasetId = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
+            sqlUpdateVisitDates.unsafeAppend("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
+                .unsafeAppend("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+                .unsafeAppend("   SD.DatasetId = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
             sqlUpdateVisitDates.add(visitStudy.getContainer());
             sqlUpdateVisitDates.add(container);
@@ -408,16 +408,16 @@ public class SequenceVisitManager extends VisitManager
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
         TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(def), user);
         SQLFragment sqlUpdateVisitDates = new SQLFragment();
-        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit).append(" PV");
-        sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
-            .append(" (\n")
-            .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
-            .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD, ")
+        sqlUpdateVisitDates.unsafeAppend("UPDATE ").append(tableParticipantVisit).unsafeAppend(" PV");
+        sqlUpdateVisitDates.unsafeAppend("\n").unsafeAppend("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
+            .unsafeAppend(" (\n")
+            .unsafeAppend(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+            .unsafeAppend(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).unsafeAppend(") SD, ")
             .append(tableVisit.getFromSQL("V"));
 
-        sqlUpdateVisitDates.append("\n WHERE PV.VisitRowId = V.RowId AND")    // 'join' V
-            .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
-            .append("   ? = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
+        sqlUpdateVisitDates.unsafeAppend("\n WHERE PV.VisitRowId = V.RowId AND")    // 'join' V
+            .unsafeAppend("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+            .unsafeAppend("   ? = V.VisitDateDatasetId AND V.Container = ? AND PV.Container = ?\n");
 
         sqlUpdateVisitDates.add(def.getDatasetId());
         sqlUpdateVisitDates.add(visitStudy.getContainer());
@@ -437,25 +437,26 @@ public class SequenceVisitManager extends VisitManager
         SQLFragment seqnum2visit = new SQLFragment();
         if (USE_CASE_STATEMENT)
         {
-            String caseStmt = generateSequenceToVisit(visitStudy, "SequenceNum");
-            seqnum2visit.append(
-                    "WITH seqnum2visit AS (" +
-                            "  SELECT SequenceNum, " + caseStmt + " AS RowId\n" +
-                            "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
+            SQLFragment caseStmt = generateSequenceToVisit(visitStudy, "SequenceNum");
+            seqnum2visit.unsafeAppend("WITH seqnum2visit AS ("
+                        + "  SELECT SequenceNum, ")
+                    .append(caseStmt)
+                    .unsafeAppend(" AS RowId\n"
+                        + "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
             if (!updateAll)
-                seqnum2visit.append(" AND VisitRowId=-1");
-            seqnum2visit.append(") seqnumPV)\n");
+                seqnum2visit.unsafeAppend(" AND VisitRowId=-1");
+            seqnum2visit.unsafeAppend(") seqnumPV)\n");
             seqnum2visit.add(getStudy().getContainer());
         }
         else
         {
-            seqnum2visit.append(
+            seqnum2visit.unsafeAppend(
                 "WITH seqnum2visit AS (" +
                 "  SELECT SequenceNum, COALESCE(V.RowId,-1) AS RowId\n" +
                 "  FROM (SELECT DISTINCT SequenceNum FROM study.ParticipantVisit WHERE Container = ?");
             if (!updateAll)
-                seqnum2visit.append(" AND VisitRowId=-1");
-            seqnum2visit.append(") seqnumPV, study.Visit V\n" +
+                seqnum2visit.unsafeAppend(" AND VisitRowId=-1");
+            seqnum2visit.unsafeAppend(") seqnumPV, study.Visit V\n" +
                 "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container = ?)\n");
             seqnum2visit.add(getStudy().getContainer());
             seqnum2visit.add(visitStudy.getContainer());
@@ -465,14 +466,14 @@ public class SequenceVisitManager extends VisitManager
         // updating a column to the existing value
         SQLFragment sqlUpdateVisitRowId = new SQLFragment();
         sqlUpdateVisitRowId.append(seqnum2visit);
-        sqlUpdateVisitRowId.append(
+        sqlUpdateVisitRowId.unsafeAppend(
             "UPDATE study.ParticipantVisit PV\n" +
             "        SET VisitRowId = RowId\n" +
             "        FROM seqnum2visit\n" +
             "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND PV.Container = ? AND seqnum2visit.RowId <> VisitRowId");
         sqlUpdateVisitRowId.add(getStudy().getContainer());
         if (!updateAll)
-            sqlUpdateVisitRowId.append(" AND VisitRowId=-1");
+            sqlUpdateVisitRowId.unsafeAppend(" AND VisitRowId=-1");
 
         long start = System.currentTimeMillis();
         (null==logger?LogManager.getLogger(SequenceVisitManager.class):logger).trace("START UPDATE", new Throwable());
@@ -522,13 +523,13 @@ public class SequenceVisitManager extends VisitManager
         {
             SQLFragment sqlParticipantSequenceNumTemp = new SQLFragment("""
                         SELECT ParticipantSequenceNum
-                        FROM\s""").append(tableStudyData.getParticipantSequenceNumSQL("SD")).append("\n");
-            sqlParticipantSequenceNumTemp.append("""
+                        FROM\s""").append(tableStudyData.getParticipantSequenceNumSQL("SD")).unsafeAppend("\n");
+            sqlParticipantSequenceNumTemp.unsafeAppend("""
                         WHERE ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL
                         UNION
-                        SELECT\s""").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(" AS ParticipantSequenceNum\n");
-            sqlParticipantSequenceNumTemp.append(
-                    "FROM (SELECT DISTINCT Ptid AS ParticipantId, VisitValue AS SequenceNum FROM ").append(tableSpecimen).append(" WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL) specimen_");
+                        SELECT\s""").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).unsafeAppend(" AS ParticipantSequenceNum\n");
+            sqlParticipantSequenceNumTemp.unsafeAppend(
+                    "FROM (SELECT DISTINCT Ptid AS ParticipantId, VisitValue AS SequenceNum FROM ").append(tableSpecimen).unsafeAppend(" WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL) specimen_");
 
 // CONSIDER: temp table if warranted (this is not a common code path)
 //            var tt = "svm" + GUID.makeHash();
@@ -540,9 +541,9 @@ public class SequenceVisitManager extends VisitManager
 //            tempTableName = tt;
 
             SQLFragment sqlPurgeParticipantVisit = new SQLFragment()
-                    .append("DELETE FROM ").append(tableParticipantVisit.getSQLName()).append("\n")
-                    .append("WHERE Container=").appendValue(container).append(" AND ParticipantSequenceNum NOT IN (")
-                    .append(sqlParticipantSequenceNumTemp).append(")");
+                    .unsafeAppend("DELETE FROM ").append(tableParticipantVisit.getSQLName()).unsafeAppend("\n")
+                    .unsafeAppend("WHERE Container=").appendValue(container).unsafeAppend(" AND ParticipantSequenceNum NOT IN (")
+                    .append(sqlParticipantSequenceNumTemp).unsafeAppend(")");
             new SqlExecutor(schema).execute(sqlPurgeParticipantVisit);
         }
         finally
@@ -560,92 +561,90 @@ public class SequenceVisitManager extends VisitManager
     protected SQLFragment getDatasetSequenceNumsSQL(Study study)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append(
+        sql.unsafeAppend(
             "SELECT x.DatasetId AS DatasetId, CAST(x.SequenceNum AS FLOAT) AS SequenceNum\n" +
                 "FROM (" +
                 "     SELECT DISTINCT SequenceNum, DatasetId\n" +
-                "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).append(
+                "     FROM ").append(StudySchema.getInstance().getTableInfoStudyData(getStudy(), null).getFromSQL("SD")).unsafeAppend(
             ") x\nORDER BY DatasetId, SequenceNum");
         return sql;
     }
 
-    private String generateSequenceToVisit(StudyImpl study, String sn)
+    private SQLFragment generateSequenceToVisit(StudyImpl study, String sn)
     {
         Collection<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
         if (visits.isEmpty())
-            return "-1";
+            return new SQLFragment("-1");
         return generateSequenceToVisit(visits, sn, 1);
     }
 
-    private String generateSequenceToVisit(Collection<VisitImpl> visits, String sn, int indent)
+    private SQLFragment generateSequenceToVisit(Collection<VisitImpl> visits, String sn, int indent)
     {
+        SQLFragment sql = new SQLFragment();
         if (visits.size() <= 16)
         {
-            StringBuilder sb = new StringBuilder();
             boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) == 0);
             if (allEqual)
             {
-                _indent(sb,indent);
-                sb.append("CASE ").append(sn);
+                _indent(sql,indent);
+                sql.unsafeAppend("CASE ").appendIdentifier(sn);
                 for (VisitImpl v : visits)
                 {
-                    _indent(sb,indent);
-                    sb.append("WHEN ");
-                    v.appendSqlSequenceNumMin(sb);
-                    sb.append(" THEN " ).append(v.getId());
+                    _indent(sql,indent);
+                    sql.unsafeAppend("WHEN ");
+                    v.appendSqlSequenceNumMin(sql);
+                    sql.unsafeAppend(" THEN ").appendValue(v.getId());
                 }
-                _indent(sb,indent); sb.append("ELSE -1");
-                _indent(sb,indent); sb.append("END");
+                _indent(sql,indent); sql.unsafeAppend("ELSE -1");
+                _indent(sql,indent); sql.unsafeAppend("END");
             }
             else
             {
-                _indent(sb,indent); sb.append("CASE");
+                _indent(sql,indent); sql.unsafeAppend("CASE");
                 for (VisitImpl v : visits)
                 {
                     if (v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) == 0)
                     {
-                        _indent(sb, indent);
-                        sb.append(" WHEN ").append(sn).append(" = ");
-                        v.appendSqlSequenceNumMin(sb);
-                        sb.append(" THEN ").append(v.getId());
+                        _indent(sql, indent);
+                        sql.unsafeAppend(" WHEN ").appendIdentifier(sn).unsafeAppend(" = ");
+                        v.appendSqlSequenceNumMin(sql);
+                        sql.unsafeAppend(" THEN ").appendValue(v.getId());
                     }
                     else
                     {
-                        _indent(sb,indent);
-                        sb.append(" WHEN ").append(sn).append(" BETWEEN ");
-                        v.appendSqlSequenceNumMin(sb).append(" AND ");
-                        v.appendSqlSequenceNumMax(sb).append(" THEN ").append(v.getId());
+                        _indent(sql,indent);
+                        sql.unsafeAppend(" WHEN ").appendIdentifier(sn).unsafeAppend(" BETWEEN ");
+                        v.appendSqlSequenceNumMin(sql).unsafeAppend(" AND ");
+                        v.appendSqlSequenceNumMax(sql).unsafeAppend(" THEN ").appendValue(v.getId());
                     }
                 }
-                _indent(sb,indent); sb.append("ELSE -1");
-                _indent(sb,indent); sb.append("END");
+                _indent(sql,indent); sql.unsafeAppend("ELSE -1");
+                _indent(sql,indent); sql.unsafeAppend("END");
             }
-            return sb.toString();
         }
         else
         {
             List<VisitImpl> visitList = new ArrayList<>(visits);
-            StringBuilder sb = new StringBuilder();
-            _indent(sb,indent); sb.append("CASE");
+            _indent(sql,indent); sql.unsafeAppend("CASE");
             int partStart = 0, partEnd;
             for (int part=1 ; part<4 ; part++)
             {
                 partEnd = visitList.size()*part / 4;
                 VisitImpl v = visitList.get(partEnd);
-                _indent(sb,indent); sb.append("WHEN ").append(sn).append(" < ");
-                v.appendSqlSequenceNumMin(sb).append(" THEN");
-                sb.append(generateSequenceToVisit(visitList.subList(partStart, partEnd), sn, indent+1));
+                _indent(sql,indent); sql.unsafeAppend("WHEN ").appendIdentifier(sn).unsafeAppend(" < ");
+                v.appendSqlSequenceNumMin(sql).unsafeAppend(" THEN");
+                sql.append(generateSequenceToVisit(visitList.subList(partStart, partEnd), sn, indent+1));
                 partStart = partEnd;
             }
-            _indent(sb,indent); sb.append("ELSE");
-            sb.append(generateSequenceToVisit(visitList.subList(partStart, visitList.size()), sn, indent+1));
-            _indent(sb,indent); sb.append("END");
-            return sb.toString();
+            _indent(sql,indent); sql.unsafeAppend("ELSE");
+            sql.append(generateSequenceToVisit(visitList.subList(partStart, visitList.size()), sn, indent+1));
+            _indent(sql,indent); sql.unsafeAppend("END");
         }
+        return sql;
     }
 
-    private void _indent(StringBuilder sb, int indent)
+    private void _indent(SQLFragment sql, int indent)
     {
-        sb.append("\n                                             ", 0, indent);
+        sql.unsafeAppend("\n                                             ".substring(0, indent));
     }
 }

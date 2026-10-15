@@ -110,7 +110,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
         sql.add(Boolean.TRUE);
         sql.add(Boolean.FALSE);
         sql.append(tableInfoVial.getFromSQL("Vial"))
-            .append("\n  GROUP BY Vial.specimenhash) ")
+            .unsafeAppend("\n  GROUP BY Vial.specimenhash) ")
             .appendIdentifier(alias);
         return sql;
     }

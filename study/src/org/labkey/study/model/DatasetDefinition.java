@@ -837,13 +837,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             // and we are not at the container where the definition lives (see issue 28224)
             if (isShared() && !getContainer().getId().equals(getDefinitionContainer().getId()))
             {
-                studyDataFrag.append(and).append("container=").appendValue(getContainer());
+                studyDataFrag.unsafeAppend(and).unsafeAppend("container=").appendValue(getContainer());
                 and = " AND ";
             }
 
             if (cutoff != null)
             {
-                studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
+                studyDataFrag.unsafeAppend(and).unsafeAppend("_VisitDate > ?").add(cutoff);
             }
 
             SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
@@ -1658,13 +1658,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 SQLFragment from = new SQLFragment();
                 from.appendComment("<DatasetDefinition: " + getName() + ">", d); // UNDONE stash name
                 String comma = " ";
-                from.append("(SELECT ");
+                from.unsafeAppend("(SELECT ");
                 for (ColumnInfo ci : _template.getColumns())
                 {
-                    from.append(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).append(" AS ").append(ci.getName());
+                    from.unsafeAppend(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).unsafeAppend(" AS ").appendIdentifier(ci.getSelectIdentifier());
                     comma = ", ";
                 }
-                from.append("\nWHERE 0=1) AS ").appendIdentifier(alias);
+                from.unsafeAppend("\nWHERE 0=1) AS ").appendIdentifier(alias);
                 from.appendComment("</DatasetDefinition>", d);
                 return from;
             }
@@ -1674,14 +1674,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 SQLFragment ret = new SQLFragment();
                 ret.appendComment("<DatasetDefinition: " + getName() + (getDataSharingEnum() != DataSharing.NONE ? " sharing=" + getDataSharingEnum().name() : "") + ">", d);
-                ret.append("(SELECT * FROM ");
+                ret.unsafeAppend("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
-                ret.append(" WHERE container="); //?) ");
+                ret.unsafeAppend(" WHERE container="); //?) ");
                 if (getDataSharingEnum() == DataSharing.NONE)
                     ret.appendValue(getContainer());
                 else
                     ret.appendValue(getDefinitionContainer());
-                ret.append(")");
+                ret.unsafeAppend(")");
                 ret.appendIdentifier(alias);
                 ret.appendComment("</DatasetDefinition>", d);
                 return ret;
@@ -2451,9 +2451,9 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             if (!_study.getTimepointType().isVisitBased())
             {
                 SQLFragment seq = new SQLFragment();
-                seq.append("CAST((");
+                seq.unsafeAppend("CAST((");
                 seq.append(StudyUtils.sequenceNumFromDateSQL("date"));
-                seq.append(") AS VARCHAR(36))");
+                seq.unsafeAppend(") AS VARCHAR(36))");
                 parts.add(seq);
                 parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
             }

@@ -245,7 +245,7 @@ public class AnnouncementManager
     {
         SQLFragment sql = new SQLFragment( "SELECT LatestId FROM ");
         sql.append(_comm.getTableInfoThreads(), "t");
-        sql.append(" WHERE RowId = ?");
+        sql.unsafeAppend(" WHERE RowId = ?");
         sql.add(parent.getRowId());
         return new SqlSelector(_comm.getSchema(), sql).getObject(Integer.class);
     }
@@ -857,9 +857,9 @@ public class AnnouncementManager
         // Delete rows from UserList first because of the FK
         SQLFragment sql = new SQLFragment("DELETE FROM ")
             .append(CommSchema.getInstance().getTableInfoMemberList())
-            .append(" WHERE MessageId IN (SELECT RowId FROM ")
+            .unsafeAppend(" WHERE MessageId IN (SELECT RowId FROM ")
             .append(CommSchema.getInstance().getTableInfoAnnouncements())
-            .append(" WHERE Container = ?)")
+            .unsafeAppend(" WHERE Container = ?)")
             .add(c);
         new SqlExecutor(CommSchema.getInstance().getSchema()).execute(sql);
 
@@ -883,13 +883,13 @@ public class AnnouncementManager
             return;
 
         SQLFragment sql = new SQLFragment("SELECT EntityId FROM " + _comm.getTableInfoThreads() + " _t_ ");
-        sql.append(" WHERE Container = ?");
+        sql.unsafeAppend(" WHERE Container = ?");
         sql.add(c);
         String and = " AND ";
 
         if (null != threadId)
         {
-            sql.append(and).append(" EntityId = ?");
+            sql.append(and).unsafeAppend(" EntityId = ?");
             sql.add(threadId);
         }
         else
@@ -950,12 +950,12 @@ public class AnnouncementManager
         // so we need a different query.
         // find all messages that have attachments
         sql = new SQLFragment("SELECT a.EntityId, MIN(CAST(a.Parent AS VARCHAR(36))) as parent, MIN(a.Title) AS title FROM " + _comm.getTableInfoAnnouncements() + " a INNER JOIN core.Documents d ON a.entityid = d.parent");
-        sql.append("\nWHERE a.container = ?");
+        sql.unsafeAppend("\nWHERE a.container = ?");
         sql.add(c);
         and = " AND ";
         if (null != threadId)
         {
-            sql.append(and).append("(a.entityId = ? OR a.parent = ?)");
+            sql.append(and).unsafeAppend("(a.entityId = ? OR a.parent = ?)");
             sql.add(threadId);
             sql.add(threadId);
         }
@@ -965,7 +965,7 @@ public class AnnouncementManager
             if (!modified.isEmpty())
                 sql.append(and).append(modified);
         }
-        sql.append("\nGROUP BY a.EntityId");
+        sql.unsafeAppend("\nGROUP BY a.EntityId");
 
         final Collection<String> annIds = new HashSet<>();
         final Map<String, AnnouncementModel> map = new HashMap<>();

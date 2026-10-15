@@ -564,8 +564,8 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             return;
 
         DbSchema expSchema = ExperimentService.get().getSchema();
-        SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
-                .append(" AND ObjectURI ").appendInClause(inputLsids, expSchema.getSqlDialect());
+        SQLFragment lsidsSql = new SQLFragment().unsafeAppend("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
+                .unsafeAppend(" AND ObjectURI ").appendInClause(inputLsids, expSchema.getSqlDialect());
         OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
 
         SimpleFilter filter = new SimpleFilter();

@@ -83,11 +83,11 @@ public class SpecimenManager
             return 0;
 
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS NumVials FROM ");
-        sql.append(tableInfoVial.getFromSQL(tableInfoVialAlias)).append(" \n")
-                .append("LEFT OUTER JOIN ").append(tableInfoSpecimen.getFromSQL(tableInfoSpecimenAlias)).append(" ON\n\t")
-                .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialAlias)).append(" = ")
+        sql.append(tableInfoVial.getFromSQL(tableInfoVialAlias)).unsafeAppend(" \n")
+                .unsafeAppend("LEFT OUTER JOIN ").append(tableInfoSpecimen.getFromSQL(tableInfoSpecimenAlias)).unsafeAppend(" ON\n\t")
+                .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialAlias)).unsafeAppend(" = ")
                 .append(tableInfoSpecimen.getColumn("RowId").getValueSql(tableInfoSpecimenAlias))
-                .append("\n WHERE ").append(visitRangeSql);
+                .unsafeAppend("\n WHERE ").append(visitRangeSql);
         List<Integer> results = new SqlSelector(SpecimenSchema.get().getSchema(), sql).getArrayList(Integer.class);
         if (1 != results.size())
             throw new IllegalStateException("Expected value from Select Count(*)");
@@ -114,29 +114,29 @@ public class SpecimenManager
         SQLFragment specimenRowIdWhereSql = new SQLFragment(" WHERE ").append(visitRangeSql2);
 
         SQLFragment deleteEventSql = new SQLFragment("DELETE FROM ");
-        deleteEventSql.append(tableInfoSpecimenEventSelectName)
-                .append(" WHERE RowId IN (\n")
-                .append("SELECT Event.RowId FROM ")
-                .append(tableInfoSpecimenEventSelectName).append(" AS Event\n")
-                .append("LEFT OUTER JOIN ").append(tableInfoVialSelectName).append(" AS Vial ON\n")
-                .append("\tEvent.VialId = Vial.RowId\n")
-                .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
-                .append("\tVial.SpecimenId = Specimen.RowId\n")
-                .append(specimenRowIdWhereSql).append(")");
+        deleteEventSql.appendIdentifier(tableInfoSpecimenEventSelectName)
+                .unsafeAppend(" WHERE RowId IN (\n")
+                .unsafeAppend("SELECT Event.RowId FROM ")
+                .appendIdentifier(tableInfoSpecimenEventSelectName).unsafeAppend(" AS Event\n")
+                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoVialSelectName).unsafeAppend(" AS Vial ON\n")
+                .unsafeAppend("\tEvent.VialId = Vial.RowId\n")
+                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoSpecimenSelectName).unsafeAppend(" AS Specimen ON\n")
+                .unsafeAppend("\tVial.SpecimenId = Specimen.RowId\n")
+                .append(specimenRowIdWhereSql).unsafeAppend(")");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteEventSql);
 
         SQLFragment deleteVialSql = new SQLFragment("DELETE FROM ");
-        deleteVialSql.append(tableInfoVialSelectName)
-                .append(" WHERE RowId IN (\n")
-                .append("SELECT Vial.RowId FROM ")
-                .append(tableInfoVialSelectName).append(" AS Vial\n")
-                .append("LEFT OUTER JOIN ").append(tableInfoSpecimenSelectName).append(" AS Specimen ON\n")
-                .append("\tVial.SpecimenId = Specimen.RowId\n")
-                .append(specimenRowIdWhereSql).append(")");
+        deleteVialSql.appendIdentifier(tableInfoVialSelectName)
+                .unsafeAppend(" WHERE RowId IN (\n")
+                .unsafeAppend("SELECT Vial.RowId FROM ")
+                .appendIdentifier(tableInfoVialSelectName).unsafeAppend(" AS Vial\n")
+                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoSpecimenSelectName).unsafeAppend(" AS Specimen ON\n")
+                .unsafeAppend("\tVial.SpecimenId = Specimen.RowId\n")
+                .append(specimenRowIdWhereSql).unsafeAppend(")");
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteVialSql);
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " ).append( tableInfoSpecimen ).append( " WHERE ").append(visitRangeSql1);
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " ).append( tableInfoSpecimen ).unsafeAppend( " WHERE ").append(visitRangeSql1);
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
@@ -156,8 +156,8 @@ public class SpecimenManager
             throw new IllegalStateException("No study found.");
 
         SQLFragment sqlVisitRange = new SQLFragment();
-        sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" >= ? AND ")
-            .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" <= ?");
+        sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).unsafeAppend(" >= ? AND ")
+            .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).unsafeAppend(" <= ?");
 
         if (TimepointType.VISIT == study.getTimepointType())
         {

@@ -71,29 +71,29 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
                 TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
 
                 SQLFragment sampleFileSql = new SQLFragment("SELECT m.Container, if.FilePathShort \n")
-                        .append("FROM (")
+                        .unsafeAppend("FROM (")
                         .append(listQuery)
-                        .append(") AS if \n")
-                        .append("JOIN ")
+                        .unsafeAppend(") AS if \n")
+                        .unsafeAppend("JOIN ")
                         .append(materialTable, "m")
-                        .append(" ON if.SourceKey = m.RowId");
+                        .unsafeAppend(" ON if.SourceKey = m.RowId");
 
                 SQLFragment unreferencedFileSql = new SQLFragment("SELECT ed.rowId, ed.name as filename, ed.container, ed.created, ed.createdBy, ed.DataFileUrl FROM ")
                         .append(expDataTable, "ed")
-                        .append(" LEFT JOIN (")
+                        .unsafeAppend(" LEFT JOIN (")
                         .append(sampleFileSql)
-                        .append(" ) sf\n")
-                        .append(" ON ed.name = sf.FilePathShort AND ed.container = sf.container\n")
-                        .append(" WHERE ed.datafileurl LIKE ")
+                        .unsafeAppend(" ) sf\n")
+                        .unsafeAppend(" ON ed.name = sf.FilePathShort AND ed.container = sf.container\n")
+                        .unsafeAppend(" WHERE ed.datafileurl LIKE ")
                         .appendValue("%@files/sampletype/%")
-                        .append(" AND sf.FilePathShort IS NULL");
+                        .unsafeAppend(" AND sf.FilePathShort IS NULL");
 
                 _query.append(unreferencedFileSql);
 
             }
             else
             {
-                _query.append("SELECT RowId, Name AS FileName, Container, Created, CreatedBy, DataFileUrl FROM ").append(expDataTable).append(" WHERE (1=0)");
+                _query.unsafeAppend("SELECT RowId, Name AS FileName, Container, Created, CreatedBy, DataFileUrl FROM ").append(expDataTable).unsafeAppend(" WHERE (1=0)");
             }
             _query.appendComment("</SampleFileListTableInfo>", getSchema().getSqlDialect());
 

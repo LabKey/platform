@@ -443,7 +443,7 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     SQLFragment sql = new SQLFragment("UPDATE ")
                         .append(getListMetadataTable().getSelectName())
-                        .append(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
+                        .unsafeAppend(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
                         .add(list.getListId());
 
                     new SqlExecutor(scope).execute(sql);
@@ -1138,8 +1138,8 @@ public class ListManager implements SearchService.DocumentProvider
             // Using EXISTS query should be reasonably efficient.
             SQLFragment sql = new SQLFragment("SELECT 1 FROM ");
             sql.append(getListTableName(table));
-            sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
-            sql.append(" WHERE ListId = ? AND Container = ?)");
+            sql.unsafeAppend(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable());
+            sql.unsafeAppend(" WHERE ListId = ? AND Container = ?)");
             sql.add(list.getListId());
             sql.add(list.getContainer().getEntityId());
 
@@ -1153,7 +1153,7 @@ public class ListManager implements SearchService.DocumentProvider
     {
         // list table does not have an index on listid, so we should include container in the WHERE
         SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
-                .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
+                .unsafeAppend(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
         _listDefCache.remove(list.getContainer());
         list = ListDefinitionImpl.of(getList(list.getContainer(), list.getListId()));
@@ -1175,8 +1175,8 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 var keySelectName = keyColumn.getSelectIdentifier();
                 SQLFragment sqlf = new SQLFragment("UPDATE ").appendIdentifier(getListTableName(sti))
-                        .append(" SET LastIndexed = ").appendValue(new Timestamp(ms))
-                        .append(" WHERE ").appendIdentifier(keySelectName).append(" = ?").add(pk);
+                        .unsafeAppend(" SET LastIndexed = ").appendValue(new Timestamp(ms))
+                        .unsafeAppend(" WHERE ").appendIdentifier(keySelectName).unsafeAppend(" = ?").add(pk);
                 new SqlExecutor(sti.getSchema()).execute(sqlf);
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";

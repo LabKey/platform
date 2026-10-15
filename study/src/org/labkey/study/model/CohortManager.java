@@ -324,10 +324,10 @@ public class CohortManager
 
                     // Find the set of cohorts specified in our dataset
                     SQLFragment sqlFragment = new SQLFragment();
-                    sqlFragment.append("SELECT DISTINCT ").append(cohortLabelCol.getValueSql("CO")).append("\nFROM ");
-                    sqlFragment.append(cohortDatasetTinfo.getFromSQL("CO")).append("\n" +
-                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).append(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO"))
-                            .append(" NOT IN\n" + "  (SELECT Label FROM ").append(StudySchema.getInstance().getTableInfoCohort()).append(" WHERE Container = ?)");
+                    sqlFragment.unsafeAppend("SELECT DISTINCT ").append(cohortLabelCol.getValueSql("CO")).unsafeAppend("\nFROM ");
+                    sqlFragment.append(cohortDatasetTinfo.getFromSQL("CO")).unsafeAppend("\n" +
+                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).unsafeAppend(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO"))
+                            .unsafeAppend(" NOT IN\n" + "  (SELECT Label FROM ").append(StudySchema.getInstance().getTableInfoCohort()).unsafeAppend(" WHERE Container = ?)");
                     sqlFragment.add(study.getContainer().getId());
 
                     Collection<String> labels = new SqlSelector(StudySchema.getInstance().getScope(), sqlFragment, QueryLogging.noValidationNeededQueryLogging()).getCollection(String.class);
@@ -373,15 +373,15 @@ public class CohortManager
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
         SQLFragment pvCohortSql = new SQLFragment()
-                .append("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ")
-                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
-                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n")
-                .append("  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n")
-                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
-                    (!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "") +
-                    "\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
-                .append("WHERE PV.Container = ").appendValue(study.getContainer()).append(study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "").append("\n")
-                .append("ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
+                .unsafeAppend("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ")
+                .append(   cohortLabelCol.getValueSql("D")).unsafeAppend(" AS ").appendIdentifier(cohortLabelCol.getAlias()).unsafeAppend("\n")
+                .unsafeAppend("FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).unsafeAppend("\n")
+                .unsafeAppend("  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).unsafeAppend(" ON PV.VisitRowId = V.RowId\n")
+                .unsafeAppend("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).unsafeAppend(" ON ")
+                        .unsafeAppend(!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "")
+                        .unsafeAppend("\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).unsafeAppend("\n")
+                .unsafeAppend("WHERE PV.Container = ").appendValue(study.getContainer()).unsafeAppend(study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "").unsafeAppend("\n")
+                .unsafeAppend("ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         return pvCohortSql;
     }
 
@@ -398,12 +398,12 @@ public class CohortManager
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
         SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
-                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
-                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n")
-                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON ")
-                .append("    P.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
-                .append("WHERE P.Container = ").appendValue(study.getContainer()).append("\n")
-                .append("ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNum" : ""));
+                .append(   cohortLabelCol.getValueSql("D")).unsafeAppend(" AS ").appendIdentifier(cohortLabelCol.getAlias()).unsafeAppend("\n")
+                .unsafeAppend("FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).unsafeAppend("\n")
+                .unsafeAppend("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).unsafeAppend(" ON ")
+                .unsafeAppend("    P.ParticipantId = ").append(subjectCol.getValueSql("D")).unsafeAppend("\n")
+                .unsafeAppend("WHERE P.Container = ").appendValue(study.getContainer()).unsafeAppend("\n")
+                .unsafeAppend("ORDER BY P.ParticipantId").unsafeAppend(!dsd.isDemographicData() ? ", D.SequenceNum" : "");
         return pCohortSql;
     }
 

@@ -652,7 +652,7 @@ public class ContainerManager
     private static SQLFragment getFolderTypeNameJoin()
     {
         return new SQLFragment(" LEFT OUTER JOIN ").append(PropertySchema.getInstance().getTableInfoPropertyEntries(), "pe")
-            .append(" ON pe.ObjectId = c.EntityId AND pe.Category = ? AND pe.Name = ? AND pe.UserId = ?")
+            .unsafeAppend(" ON pe.ObjectId = c.EntityId AND pe.Category = ? AND pe.Name = ? AND pe.UserId = ?")
             .add(FOLDER_TYPE_PROPERTY_SET_NAME).add(FOLDER_TYPE_PROPERTY_NAME).add(PropertyManager.SHARED_USER.getUserId());
     }
 
@@ -668,7 +668,7 @@ public class ContainerManager
     {
         SQLFragment sql = new SQLFragment("SELECT pe.Value, COUNT(*) FROM ").append(CORE.getTableInfoContainers(), "c")
             .append(getFolderTypeNameJoin())
-            .append(" GROUP BY pe.Value");
+            .unsafeAppend(" GROUP BY pe.Value");
         Map<String, Integer> nameCounts = new TreeMap<>();
         new SqlSelector(CORE.getSchema(), sql).forEach(rs -> nameCounts.merge(resolveFolderType(rs.getString(1)).getName(), rs.getInt(2), Integer::sum));
         return nameCounts;
@@ -680,7 +680,7 @@ public class ContainerManager
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT pe.Value FROM ").append(CORE.getTableInfoContainers(), "c")
             .append(getFolderTypeNameJoin())
-            .append(" WHERE c.Parent = ? AND c.Type = ?").add(parent.getEntityId()).add(WorkbookContainerType.NAME);
+            .unsafeAppend(" WHERE c.Parent = ? AND c.Type = ?").add(parent.getEntityId()).add(WorkbookContainerType.NAME);
         return new SqlSelector(CORE.getSchema(), sql).stream(String.class)
             .map(ContainerManager::resolveFolderType)
             .collect(Collectors.toSet());
@@ -847,7 +847,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
+        sql.unsafeAppend(" SET Description=? WHERE RowID=?").add(description).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
         
         String oldValue = container.getDescription();
@@ -863,7 +863,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
+        sql.unsafeAppend(" SET Searchable=? WHERE RowID=?").add(searchable).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -875,7 +875,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
+        sql.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL WHERE RowID = ?").add(lockState).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -902,7 +902,7 @@ public class ContainerManager
         // First clear all existing "Excluded" states
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
+        sql.unsafeAppend(" SET LockState = NULL, ExpirationDate = NULL WHERE LockState = ?").add(LockState.Excluded);
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         // Now set the passed-in projects to "Excluded"
@@ -912,7 +912,7 @@ public class ContainerManager
             Filter inClauseFilter = new SimpleFilter(new InClause(entityIdCol.getFieldKey(), ids));
             SQLFragment frag = new SQLFragment("UPDATE ");
             frag.append(CORE.getTableInfoContainers().getSelectName());
-            frag.append(" SET LockState = ?, ExpirationDate = NULL ");
+            frag.unsafeAppend(" SET LockState = ?, ExpirationDate = NULL ");
             frag.add(LockState.Excluded);
             frag.append(inClauseFilter.getSQLFragment(CORE.getSqlDialect(), "c", Map.of(entityIdCol.getFieldKey(), entityIdCol)));
             new SqlExecutor(CORE.getSchema()).execute(frag);
@@ -932,16 +932,16 @@ public class ContainerManager
         sql.append(CORE.getTableInfoContainers().getSelectName());
         if (archive)
         {
-            sql.append(" SET LockState = ? ");
+            sql.unsafeAppend(" SET LockState = ? ");
             sql.add(LockState.Archived);
-            sql.append(" WHERE LockState IS NULL ");
+            sql.unsafeAppend(" WHERE LockState IS NULL ");
         }
         else
         {
-            sql.append(" SET LockState = NULL WHERE LockState = ? ");
+            sql.unsafeAppend(" SET LockState = NULL WHERE LockState = ? ");
             sql.add(LockState.Archived);
         }
-        sql.append("AND EntityId = ? ");
+        sql.unsafeAppend("AND EntityId = ? ");
         sql.add(container.getEntityId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
@@ -974,7 +974,7 @@ public class ContainerManager
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
         // Note: jTDS doesn't support LocalDate, so convert to java.sql.Date
-        sql.append(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
+        sql.unsafeAppend(" SET ExpirationDate = ? WHERE RowID = ?").add(java.sql.Date.valueOf(expirationDate)).add(container.getRowId());
 
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
@@ -989,7 +989,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
+        sql.unsafeAppend(" SET Type=? WHERE RowID=?").add(newType).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -1004,7 +1004,7 @@ public class ContainerManager
         //so we can't use Table.update here
         SQLFragment sql = new SQLFragment("UPDATE ");
         sql.append(CORE.getTableInfoContainers());
-        sql.append(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
+        sql.unsafeAppend(" SET Title=? WHERE RowID=?").add(title).add(container.getRowId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
 
         _removeFromCache(container, false);
@@ -1358,22 +1358,22 @@ public class ContainerManager
             // Delete all of the aliases for the current container, plus any of the aliases that might be associated
             // with another container right now
             SQLFragment deleteSQL = new SQLFragment();
-            deleteSQL.append("DELETE FROM ");
+            deleteSQL.unsafeAppend("DELETE FROM ");
             deleteSQL.append(CORE.getTableInfoContainerAliases());
-            deleteSQL.append(" WHERE ContainerRowId = ? ");
+            deleteSQL.unsafeAppend(" WHERE ContainerRowId = ? ");
             deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR Path IN (");
+                deleteSQL.unsafeAppend(" OR Path IN (");
                 String separator = "";
                 for (String alias : aliases)
                 {
                     deleteSQL.append(separator);
                     separator = ", ";
-                    deleteSQL.append("LOWER(?)");
+                    deleteSQL.unsafeAppend("LOWER(?)");
                     deleteSQL.add(alias);
                 }
-                deleteSQL.append(")");
+                deleteSQL.unsafeAppend(")");
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
@@ -1381,9 +1381,9 @@ public class ContainerManager
             for (String alias : newAliases)
             {
                 SQLFragment insertSQL = new SQLFragment();
-                insertSQL.append("INSERT INTO ");
+                insertSQL.unsafeAppend("INSERT INTO ");
                 insertSQL.append(CORE.getTableInfoContainerAliases());
-                insertSQL.append(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
+                insertSQL.unsafeAppend(" (Path, ContainerRowId) VALUES (LOWER(?), ?)");
                 insertSQL.add(alias);
                 insertSQL.add(container.getRowId());
                 new SqlExecutor(CORE.getSchema()).execute(insertSQL);
@@ -2367,7 +2367,7 @@ public class ContainerManager
             comma = ",";
             csvList.appendValue(container, d);
         }
-        csvList.append(")");
+        csvList.unsafeAppend(")");
 
         return csvList;
     }

@@ -73,21 +73,21 @@ public class EmailPreferenceConfigManager
         List<EmailPref> prefs = new ArrayList<>();
 
         // This query returns one row for every site user, left joined to that user's folder preference (null if no preference has been selected, in which case the caller will fill in the default)
-        sql.append("SELECT u.UserId, EmailOptionId, ? AS SrcIdentifier FROM ");
-        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" LEFT JOIN ");
-        sql.append(_core.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
-        sql.append("AND Type = ? AND Container = ? AND Container = SrcIdentifier");
+        sql.unsafeAppend("SELECT u.UserId, EmailOptionId, ? AS SrcIdentifier FROM ");
+        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").unsafeAppend(" LEFT JOIN ");
+        sql.append(_core.getTableInfoEmailPrefs(), "prefs").unsafeAppend(" ON u.UserId = prefs.UserId ");
+        sql.unsafeAppend("AND Type = ? AND Container = ? AND Container = SrcIdentifier");
         sql.add(c);
         sql.add(type);
         sql.add(c);
 
-        sql.append("\nUNION\n");
+        sql.unsafeAppend("\nUNION\n");
 
         // This query returns one row for every thread preference
-        sql.append("SELECT u.UserId, EmailOptionId, SrcIdentifier FROM ");
-        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").append(" INNER JOIN ");
-        sql.append(_core.getTableInfoEmailPrefs(), "prefs").append(" ON u.UserId = prefs.UserId ");
-        sql.append("AND Type = ? AND Container = ? AND Container <> SrcIdentifier");
+        sql.unsafeAppend("SELECT u.UserId, EmailOptionId, SrcIdentifier FROM ");
+        sql.append(CoreSchema.getInstance().getTableInfoUsers(), "u").unsafeAppend(" INNER JOIN ");
+        sql.append(_core.getTableInfoEmailPrefs(), "prefs").unsafeAppend(" ON u.UserId = prefs.UserId ");
+        sql.unsafeAppend("AND Type = ? AND Container = ? AND Container <> SrcIdentifier");
         sql.add(type);
         sql.add(c);
 

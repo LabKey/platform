@@ -150,26 +150,26 @@ public class QCStateSet
             return new SQLFragment("0 = 1");
         
         SQLFragment sql = new SQLFragment();
-        sql.append("(");
+        sql.unsafeAppend("(");
         if (!_states.isEmpty())
         {
-            sql.append(rowIdColumnAlias).append(" IN (");
+            sql.append(rowIdColumnAlias).unsafeAppend(" IN (");
             String comma = "";
             for (DataState state : _states)
             {
-                sql.append(comma).appendValue(state.getRowId());
+                sql.unsafeAppend(comma).appendValue(state.getRowId());
                 comma = ", ";
             }
-            sql.append(")");
+            sql.unsafeAppend(")");
         }
         if (_includeUnmarked)
         {
             // our length will be 1 if our statement consists of just the open paren:
             if (sql.length() > 1)
-                sql.append(" OR ");
-            sql.append(rowIdColumnAlias).append(" IS NULL");
+                sql.unsafeAppend(" OR ");
+            sql.append(rowIdColumnAlias).unsafeAppend(" IS NULL");
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return sql;
     }
 

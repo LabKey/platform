@@ -77,16 +77,16 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         checkReadBeforeExecute();
         SQLFragment result = new SQLFragment();
         result.appendComment("<DataSetColumnsTable>", getSqlDialect());
-        result.append("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
+        result.unsafeAppend("(SELECT DataSet.DataSetId, PropertyDescriptor.* FROM ");
         result.append(super.getFromSQL("PropertyDescriptor"));
-        result.append("\n" +
+        result.unsafeAppend("\n" +
                 "JOIN exp.PropertyDomain AS PropertyDomain ON PropertyDomain.PropertyId = PropertyDescriptor.PropertyId\n" +
                 "JOIN exp.DomainDescriptor AS DomainDescriptor ON DomainDescriptor.DomainId = PropertyDomain.DomainId\n" +
                 "JOIN (SELECT * FROM study.DataSet ");
         TableInfo dataset = StudySchema.getInstance().getTableInfoDataset();
         SQLFragment datasetFilter = DatasetsTable.getDatasetFilter(getContainer()).getSQLFragment(dataset, "DataSet");
         result.append(datasetFilter);
-        result.append(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
+        result.unsafeAppend(") AS DataSet ON DataSet.TypeURI = DomainDescriptor.DomainURI) ");
         result.appendIdentifier(alias);
         result.appendComment("</DataSetColumnsTable>", getSqlDialect());
         return result;

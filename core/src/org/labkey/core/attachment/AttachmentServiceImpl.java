@@ -872,7 +872,7 @@ public class AttachmentServiceImpl implements AttachmentService
     {
         SQLFragment sql = new SQLFragment("SELECT RowId, CreatedBy, Created, ModifiedBy, Modified, Container, DocumentName, TableName FROM core.Documents LEFT OUTER JOIN (\n");
         addSelectAllEntityIdsSql(sql, null, Sets.newCaseInsensitiveHashSet("Audit"), false);
-        sql.append(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
+        sql.unsafeAppend(") c ON EntityId = Parent\nORDER BY TableName, DocumentName, Container");
 
         return getResultSetView(sql, "Probable Attachment Parents", null);
     }
@@ -933,14 +933,14 @@ public class AttachmentServiceImpl implements AttachmentService
         TableInfo table = column.getParentTable();
         SQLFragment sql = new SQLFragment("    SELECT ")
             .append(expression)
-            .append(" AS EntityId, ? AS TableName FROM ")
+            .unsafeAppend(" AS EntityId, ? AS TableName FROM ")
             .add(table.getSelectName())
             .append(table);
 
         if (null != where)
-            sql.append(" WHERE ").append(where);
+            sql.unsafeAppend(" WHERE ").append(where);
 
-        sql.append("\n");
+        sql.unsafeAppend("\n");
 
         return sql;
     }

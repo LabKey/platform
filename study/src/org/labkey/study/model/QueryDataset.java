@@ -191,7 +191,7 @@ public class QueryDataset extends VirtualTable<UserSchema>
         public @NotNull SQLFragment getFromSQL()
         {
             SQLFragment sql;
-            sql = new SQLFragment("(SELECT ").append(queryAlias).append(".* FROM ").append(_sql).append(")");
+            sql = new SQLFragment("(SELECT ").appendIdentifier(queryAlias).unsafeAppend(".* FROM ").append(_sql).unsafeAppend(")");
             return sql;
         }
 

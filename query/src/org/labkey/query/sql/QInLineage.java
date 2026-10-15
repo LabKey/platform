@@ -130,12 +130,12 @@ final public class QInLineage extends QExpr
         options.setOnlySelectObjectId(true);    // generate one column SELECT, also don't join to material/data/protocolapplication
         SQLFragment lineage = ExperimentService.get().generateExperimentTreeSQL(subquery, options);
 
-        builder.append("((");
+        builder.unsafeAppend("((");
         LHS.appendSql(builder, query);
-        builder.append(")");
+        builder.unsafeAppend(")");
         builder.append(_in ? " IN (" : " NOT IN (");
         builder.append(lineage);
-        builder.append("))");
+        builder.unsafeAppend("))");
     }
 
     @Override

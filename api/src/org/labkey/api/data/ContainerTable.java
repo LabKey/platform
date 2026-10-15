@@ -110,11 +110,11 @@ public class ContainerTable extends FilteredTable<UserSchema>
         PropertySchema propertySchema = PropertySchema.getInstance();
         TableInfo propertiesTable = propertySchema.getTableInfoProperties();
         TableInfo propertiesSets = propertySchema.getTableInfoPropertySets();
-        SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM ").append(propertiesTable).append(" p, ")
-                .append(propertySchema.getTableInfoPropertySets()).append(" ps ")
+        SQLFragment folderTypeSQL = new SQLFragment("(SELECT Value FROM ").append(propertiesTable).unsafeAppend(" p, ")
+                .append(propertySchema.getTableInfoPropertySets()).unsafeAppend(" ps ")
                 .append("WHERE ps.ObjectId = " + ExprColumn.STR_TABLE_ALIAS + ".EntityId AND ps.Category = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME)
-                .append(    " AND ").append(propertiesSets.getColumn("set").getValueSql("ps")).append(" = ").append(propertiesTable.getColumn("set").getValueSql("p"))
-                .append(    " AND p.Name = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_NAME).append(")");
+                .unsafeAppend(    " AND ").append(propertiesSets.getColumn("set").getValueSql("ps")).unsafeAppend(" = ").append(propertiesTable.getColumn("set").getValueSql("p"))
+                .unsafeAppend(    " AND p.Name = ").appendValue(ContainerManager.FOLDER_TYPE_PROPERTY_NAME).unsafeAppend(")");
         ExprColumn folderTypeColumn = new ExprColumn(this, "FolderType", folderTypeSQL, JdbcType.VARCHAR);
         folderTypeColumn.setReadOnly(true);
         addColumn(folderTypeColumn);
@@ -143,7 +143,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
             if (cType.equalsIgnoreCase(NormalContainerType.NAME))
                 continue;
             containerTypeSQL = containerTypeSQL.
-                    append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".Type = ").appendValue(cType,dialect).append(" THEN ").appendValue(cType,dialect).append(" ");
+                    unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".Type = ").appendValue(cType,dialect).unsafeAppend(" THEN ").appendValue(cType,dialect).unsafeAppend(" ");
         }
         containerTypeSQL = containerTypeSQL.append(
                     "WHEN "+ExprColumn.STR_TABLE_ALIAS+".entityid = ? THEN 'root' " +
@@ -184,7 +184,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         SQLFragment webpartNamesSQL = new SQLFragment("(SELECT ")
                 .append(getSqlDialect().getGroupConcat(new SQLFragment("PWP.name"), true, true, ", "))
-                .append(" FROM ").append(Portal.getTableInfoPortalWebParts(), "PWP")
+                .unsafeAppend(" FROM ").append(Portal.getTableInfoPortalWebParts(), "PWP")
                 .append(" WHERE PWP.container = " + ExprColumn.STR_TABLE_ALIAS + ".entityId)");
         ExprColumn webpartColumn = new ExprColumn(this, "WebParts", webpartNamesSQL, JdbcType.VARCHAR);
         webpartColumn.setReadOnly(true);

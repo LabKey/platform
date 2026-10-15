@@ -691,13 +691,13 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, pCols);
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT ");
+        sql.unsafeAppend("(SELECT * FROM\n");
+        sql.unsafeAppend("(SELECT ");
         String comma = "";
         for (String dataCol : dataCols)
         {
             sql.append(comma);
-            sql.append("d.").append(dataCol);
+            sql.unsafeAppend("d.").append(dataCol);
             comma = ", ";
         }
 
@@ -709,18 +709,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 sql.append(provisioned.getColumn(pCol).getValueSql("p"));
             }
         }
-        sql.append(" FROM ");
+        sql.unsafeAppend(" FROM ");
         sql.append(_rootTable, "d");
         if (hasProvisionedColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.RowId = p.rowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "p").unsafeAppend(" ON d.RowId = p.rowId");
         String subAlias = getSqlDialect().truncate(alias + "_dc_sub", 0);
-        sql.append(") ").appendIdentifier(subAlias);
-        sql.append("\n");
+        sql.unsafeAppend(") ").appendIdentifier(subAlias);
+        sql.unsafeAppend("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }

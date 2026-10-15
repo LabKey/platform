@@ -56,11 +56,11 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         return new SQLClause(new SQLFragment()
             .appendIdentifier(joinColumnName)
-            .append(" IN (SELECT ")
+            .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
-            .append(" FROM exp.Material WHERE Container")
+            .unsafeAppend(" FROM exp.Material WHERE Container")
             .appendInClause(containers, sourceTable.getSqlDialect())
-            .append(")")
+            .unsafeAppend(")")
         );
     }
 
@@ -76,11 +76,11 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             orClause.addClause(
                 new SQLClause(new SQLFragment()
                     .appendIdentifier(joinColumnName)
-                    .append(" IN (SELECT ")
+                    .unsafeAppend(" IN (SELECT ")
                     .appendIdentifier(joinColumnName)
-                    .append(" FROM exp.Material WHERE Container")
+                    .unsafeAppend(" FROM exp.Material WHERE Container")
                     .appendInClause(filter.containers(), sourceTable.getSqlDialect())
-                    .append(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
+                    .unsafeAppend(" AND ObjectId IN (SELECT ObjectId FROM exp.ObjectProperty WHERE StringValue = ? AND PropertyId = ?))")
                     .add(filter.condition().getParamVals()[0])
                     .add(getCommentPropertyId(sourceTable.getSchema().getScope()))
                 )
@@ -110,13 +110,13 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
 
         SQLFragment rowIdAndObjectIdSql = new SQLFragment("SELECT RowId, ObjectId FROM exp.Material WHERE ")
             .appendIdentifier(joinColumnName)
-            .append(" IN (SELECT ")
+            .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
-            .append(" FROM ")
+            .unsafeAppend(" FROM ")
             .appendIdentifier(sourceTable.getSelectName())
-            .append(" ")
+            .unsafeAppend(" ")
             .append(notCopiedFilter.getSQLFragment(dialect))
-            .append(")");
+            .unsafeAppend(")");
 
         Collection<Integer> notCopiedMaterialIds = new ArrayList<>();
         Collection<Long> notCopiedObjectIds = new ArrayList<>();
@@ -160,7 +160,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             executor.execute(
                 new SQLFragment("DELETE FROM exp.MaterialAliasMap WHERE LSID IN (SELECT LSID FROM exp.Material WHERE RowId")
                     .append(materialIdClause)
-                    .append(")")
+                    .unsafeAppend(")")
             );
             LOG.info("   assay.Well");
             executor.execute(

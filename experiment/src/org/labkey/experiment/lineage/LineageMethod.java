@@ -80,9 +80,9 @@ public class LineageMethod extends AbstractTableMethodInfo
         UserSchema schema = parentTable.getUserSchema();
 
         SQLFragment objectids = new SQLFragment();
-        objectids.append("(SELECT qq.objectid FROM ");
+        objectids.unsafeAppend("(SELECT qq.objectid FROM ");
         objectids.append(parentTable.getFromSQL("qq"));
-        objectids.append(")");
+        objectids.unsafeAppend(")");
 
         SQLFragment[] fragments = getSQLFragments(arguments);
         ExpLineageOptions.LineageExpType expType = null;
@@ -112,7 +112,7 @@ public class LineageMethod extends AbstractTableMethodInfo
     @Override
     public SQLFragment getSQL(String tableAlias, DbSchema schema, SQLFragment[] arguments)
     {
-        return new SQLFragment().appendIdentifier(tableAlias).append(".").appendIdentifier(_lsidColumn.getAlias());
+        return new SQLFragment().appendIdentifier(tableAlias).unsafeAppend(".").appendIdentifier(_lsidColumn.getAlias());
     }
 
     public static boolean isSimpleString(SQLFragment f)

@@ -50,7 +50,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         clearConditions(containerFK);
         SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-        sqlFragment.append(" WHERE er.RowId = RunId)    ");
+        sqlFragment.unsafeAppend(" WHERE er.RowId = RunId)    ");
 
         addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), containerFK);
     }
@@ -106,18 +106,18 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(ExprColumn.STR_TABLE_ALIAS + ".RowId = exp.MaterialInput.TargetApplicationId");
         if (roleNames.length != 0)
         {
-            sql.append("\nAND (");
+            sql.unsafeAppend("\nAND (");
             String strOr = "";
             for (String roleName : roleNames)
             {
                 sql.append(strOr);
                 strOr = " OR ";
-                sql.append("exp.MaterialInput.Role = ?");
+                sql.unsafeAppend("exp.MaterialInput.Role = ?");
                 sql.add(roleName);
             }
-            sql.append(")");
+            sql.unsafeAppend(")");
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         var ret = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
 
         ret.setFk(schema.materialIdForeignKey(sampleType, null));
@@ -131,18 +131,18 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sql.append(ExprColumn.STR_TABLE_ALIAS +".RowId = exp.DataInput.TargetApplicationId");
         if (roleNames.length != 0)
         {
-            sql.append("\nAND (");
+            sql.unsafeAppend("\nAND (");
             String strOr = "";
             for (String roleName : roleNames)
             {
                 sql.append(strOr);
                 strOr = " OR ";
-                sql.append("\nexp.DataInput.Role = ?");
+                sql.unsafeAppend("\nexp.DataInput.Role = ?");
                 sql.add(roleName);
             }
-            sql.append(")");
+            sql.unsafeAppend(")");
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         var ret = new ExprColumn(this, name, sql, JdbcType.INTEGER);
 
         // TODO add ContainerFilter to ExperimentLookupForeignKey() constructor

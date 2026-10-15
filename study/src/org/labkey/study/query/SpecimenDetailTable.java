@@ -192,10 +192,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment(), tableAlias);
-            joinSql.append(" ON ");
-            joinSql.append(parentAlias).append(".GlobalUniqueId = ").append(tableAlias).append(".GlobalUniqueId AND ");
-            joinSql.append(tableAlias).append(".Container = ").append(parentAlias).append(".Container");
+            joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(SpecimenSchema.get().getTableInfoSpecimenComment(), tableAlias);
+            joinSql.unsafeAppend(" ON ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".GlobalUniqueId = ").appendIdentifier(tableAlias).unsafeAppend(".GlobalUniqueId AND ");
+            joinSql.appendIdentifier(tableAlias).unsafeAppend(".Container = ").appendIdentifier(parentAlias).unsafeAppend(".Container");
 
             map.put(tableAlias, joinSql);
         }
@@ -239,10 +239,10 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return;
 
             SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), tableAlias);
-            joinSql.append(" ON ");
-            joinSql.append(parentAlias).append(".ParticipantSequenceNum = ").append(tableAlias).append(".ParticipantSequenceNum");
-            joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
+            joinSql.unsafeAppend(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), tableAlias);
+            joinSql.unsafeAppend(" ON ");
+            joinSql.appendIdentifier(parentAlias).unsafeAppend(".ParticipantSequenceNum = ").appendIdentifier(tableAlias).unsafeAppend(".ParticipantSequenceNum");
+            joinSql.unsafeAppend(" AND ").appendIdentifier(parentAlias).unsafeAppend(".Container = ").appendIdentifier(tableAlias).unsafeAppend(".Container");
 
             map.put(tableAlias, joinSql);
         }
@@ -403,26 +403,26 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
         sqlf.appendComment("<getSpecimenAndVialFromSQL>",dialect);
-        sqlf.append("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
+        sqlf.unsafeAppend("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
                 " vial.requestable, vial.currentlocation, vial.atrepository, vial.lockedinrequest, vial.available, vial.processinglocation, \n" +
                 " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
                 "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, \n");
         for (DomainProperty property : optionalVialProperties)
-            sqlf.append("    vial.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
+            sqlf.unsafeAppend("    vial.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(",\n");
 
-        sqlf.append("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
+        sqlf.unsafeAppend("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
                 "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
                 "    specimen.derivativetypeid, specimen.derivativetypeid2, specimen.subadditivederivative, specimen.drawtimestamp, specimen.drawdate, specimen.drawtime,\n" +
                 "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
                 "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n");
         for (DomainProperty property : optionalSpecimenProperties)
-            sqlf.append("    specimen.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
+            sqlf.unsafeAppend("    specimen.").appendIdentifier(property.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(",\n");
 
-        sqlf.append(getContainerValueSql(container,schema.getSqlDialect())).append("\n   FROM ");
+        sqlf.append(getContainerValueSql(container,schema.getSqlDialect())).unsafeAppend("\n   FROM ");
         sqlf.append(vialTI.getFromSQL("vial"));
-        sqlf.append("\n  JOIN ");
+        sqlf.unsafeAppend("\n  JOIN ");
         sqlf.append(specimenTI.getFromSQL("specimen"));
-        sqlf.append(" ON vial.specimenid = specimen.rowid) ");
+        sqlf.unsafeAppend(" ON vial.specimenid = specimen.rowid) ");
         sqlf.appendIdentifier(alias);
         sqlf.appendComment("</getSpecimenAndVialFromSQL>", dialect);
         return sqlf;
@@ -432,7 +432,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
     public static SQLFragment getContainerValueSql(Container c, SqlDialect d)
     {
         SQLFragment sqlf = new SQLFragment();
-        sqlf.append("CAST(").appendValue(c).append(" AS ").append(d.getGuidType()).append(") AS Container");
+        sqlf.unsafeAppend("CAST(").appendValue(c).unsafeAppend(" AS ").append(d.getGuidTypeAsSql()).unsafeAppend(") AS Container");
         return sqlf;
     }
 

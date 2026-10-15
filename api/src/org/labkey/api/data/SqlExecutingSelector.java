@@ -459,7 +459,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         {
             SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM\n(\n");
             sql.append(_factory.getSql());
-            sql.append("\n) x");
+            sql.unsafeAppend("\n) x");
 
             return sql;
         }
@@ -483,7 +483,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
             SQLFragment existsSql = new SQLFragment("EXISTS\n(\n");
             existsSql.append(_factory.getSql());
-            existsSql.append("\n)");
+            existsSql.unsafeAppend("\n)");
 
             // Turn this into an expression that can be SELECTed
             SQLFragment selectSql = dialect.wrapBooleanExpression(existsSql);

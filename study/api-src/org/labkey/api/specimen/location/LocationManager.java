@@ -281,40 +281,40 @@ public class LocationManager
 
             SQLFragment existsSQL = new SQLFragment();
             existsSQL
-                .append(EXISTS)
+                .unsafeAppend(EXISTS)
                 .append(eventTableInfo, "se")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = se.LabId OR ")
-                .append(tableAlias)
-                .append(".RowId = se.OriginatingLocationId)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = se.LabId OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = se.OriginatingLocationId)) ");
 
             existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
+                .unsafeAppend(" OR\n")
+                .unsafeAppend(EXISTS)
                 .append(vialTableInfo, "v")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = v.CurrentLocation OR ")
-                .append(tableAlias)
-                .append(".RowId = v.ProcessingLocation)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = v.CurrentLocation OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = v.ProcessingLocation)) ");
 
             existsSQL
-                .append(" OR\n")
-                .append(EXISTS)
+                .unsafeAppend(" OR\n")
+                .unsafeAppend(EXISTS)
                 .append(specimenTableInfo, "s")
-                .append(" WHERE (")
-                .append(tableAlias)
-                .append(".RowId = s.OriginatingLocationId OR ")
-                .append(tableAlias)
-                .append(".RowId = s.ProcessingLocation)) ");
+                .unsafeAppend(" WHERE (")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = s.OriginatingLocationId OR ")
+                .appendIdentifier(tableAlias)
+                .unsafeAppend(".RowId = s.ProcessingLocation)) ");
 
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
             updateSQL
                 .append(locationTableInfo)
-                .append(" SET ")
+                .unsafeAppend(" SET ")
                 .appendIdentifier(inUseColumn.getSelectIdentifier())
-                .append(" = ")
+                .unsafeAppend(" = ")
                 .append(schema.getSqlDialect().wrapBooleanExpression(existsSQL));
 
             try

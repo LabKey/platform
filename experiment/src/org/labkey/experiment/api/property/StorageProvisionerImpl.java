@@ -600,11 +600,11 @@ public class StorageProvisionerImpl implements StorageProvisioner
                         var selectColumnName = prop.getPropertyDescriptor().getLegalSelectName(scope.getSqlDialect());
                         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
                                 .appendDottedIdentifiers(kind.getStorageSchemaName(), domain.getStorageTableName())
-                                .append(" WHERE ")
+                                .unsafeAppend(" WHERE ")
                                 .appendIdentifier(selectColumnName)
-                                .append(" IS NOT NULL AND array_length(")
+                                .unsafeAppend(" IS NOT NULL AND array_length(")
                                 .appendIdentifier(selectColumnName)
-                                .append(", 1) > 1");
+                                .unsafeAppend(", 1) > 1");
                         long count = new SqlSelector(scope, sql).getObject(Long.class);
                         if (count > 0)
                         {
@@ -1288,7 +1288,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 .append(OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
         if (null != domainuri)
         {
-            sql.append(" WHERE domainuri=?");
+            sql.unsafeAppend(" WHERE domainuri=?");
             sql.add(domainuri);
         }
 

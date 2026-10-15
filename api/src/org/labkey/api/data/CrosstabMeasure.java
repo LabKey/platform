@@ -106,9 +106,9 @@ public class CrosstabMeasure
         public SQLFragment getSqlExpression(SqlDialect sqlDialect, SQLFragment columnSQL)
         {
             SQLFragment result = new SQLFragment(getSqlFunction(sqlDialect));
-            result.append("(");
+            result.unsafeAppend("(");
             result.append(columnSQL);
-            result.append(")");
+            result.unsafeAppend(")");
             return result;
         }
 

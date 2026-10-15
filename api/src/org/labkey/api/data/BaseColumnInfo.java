@@ -631,7 +631,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // call generateSelectName() to avoid asserts in getSelectName()
         var colIdentifier = generateSelectName();
         if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
-            return SQLFragment.unsafe(tableAliasName).append(".").appendIdentifier(colIdentifier);
+            return SQLFragment.unsafe(tableAliasName).unsafeAppend(".").appendIdentifier(colIdentifier);
         else
             return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
     }

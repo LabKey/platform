@@ -592,7 +592,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         {
             TableInfo table = getTable();
             SQLFragment sql = new SQLFragment("UPDATE ").append(table, "");
-            sql.append(" SET DisplayOrder = ? WHERE RowId = ?");
+            sql.unsafeAppend(" SET DisplayOrder = ? WHERE RowId = ?");
             sql.addAll(displayOrder, reportIdentifier.getRowId());
 
             new SqlExecutor(table.getSchema()).execute(sql);
@@ -1098,7 +1098,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                 // Type comes from the descriptor XML, so instantiate each report, but stream rows rather than load every container's report cache
                 TableInfo table = getTable();
                 SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "r")
-                    .append(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").append(")");
+                    .unsafeAppend(" WHERE r.ContainerId IN (SELECT EntityId FROM ").append(CoreSchema.getInstance().getTableInfoContainers(), "c").unsafeAppend(")");
                 ReportServiceImpl reportService = getInstance();
                 Map<String, Long> countsByType;
                 try (Stream<ReportDB> rows = new SqlSelector(table.getSchema(), sql).uncachedStream(ReportDB.class))

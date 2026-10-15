@@ -95,8 +95,8 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
             case RunCount:
             {
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "r")
-                        .append(" WHERE r.replacedByRunId IS NULL")
-                        .append(" AND r.protocolLsid = ").append(ExprColumn.STR_TABLE_ALIAS + ".lsid)");
+                        .unsafeAppend(" WHERE r.replacedByRunId IS NULL")
+                        .unsafeAppend(" AND r.protocolLsid = ").append(ExprColumn.STR_TABLE_ALIAS + ".lsid)");
                 ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", sql, JdbcType.INTEGER);
                 runCountColumnInfo.setDescription("Contains the number of runs of this protocol type");
                 return runCountColumnInfo;

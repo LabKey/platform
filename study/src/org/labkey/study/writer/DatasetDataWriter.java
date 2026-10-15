@@ -224,20 +224,20 @@ public class DatasetDataWriter implements InternalStudyWriter
     {
         // join to the study.participant table to get the participant's date offset number
         SQLFragment dateOffsetJoin = new SQLFragment();
-        dateOffsetJoin.append("(SELECT p.DateOffset FROM ");
+        dateOffsetJoin.unsafeAppend("(SELECT p.DateOffset FROM ");
         dateOffsetJoin.append(StudySchema.getInstance().getTableInfoParticipant());
-        dateOffsetJoin.append(" p  WHERE p.participantid = ");
-        dateOffsetJoin.append(ExprColumn.STR_TABLE_ALIAS);
-        dateOffsetJoin.append(".participantid  AND p.container = ?)");
+        dateOffsetJoin.unsafeAppend(" p  WHERE p.participantid = ");
+        dateOffsetJoin.appendIdentifier(ExprColumn.STR_TABLE_ALIAS);
+        dateOffsetJoin.unsafeAppend(".participantid  AND p.container = ?)");
         dateOffsetJoin.add(c);
 
         // use the timestampadd function to apply the date offset (subtracting the offset)
         SQLFragment sql = new SQLFragment ();
-        sql.append("{fn timestampadd(SQL_TSI_DAY, -");
+        sql.unsafeAppend("{fn timestampadd(SQL_TSI_DAY, -");
         sql.append(dateOffsetJoin);
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
-        sql.append(")}");
+        sql.unsafeAppend(")}");
 
         return sql;
     }

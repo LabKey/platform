@@ -386,8 +386,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
                 ExprColumn columnInfo = new ExprColumn(this, IsAliquot.fieldKey(), new SQLFragment(
                         "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE())
-                        .append(" WHEN ").append(rowIdField).append(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
-                        .append(" ELSE NULL END)"), JdbcType.BOOLEAN);
+                        .unsafeAppend(" WHEN ").append(rowIdField).unsafeAppend(" IS NOT NULL THEN ").append(getSqlDialect().getBooleanTRUE()) // Issue 52745
+                        .unsafeAppend(" ELSE NULL END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -565,9 +565,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
-                        .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
-                        .append(")");
+                        .unsafeAppend(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".runId")
+                        .unsafeAppend(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
+                        .unsafeAppend(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
                 col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
@@ -792,7 +792,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var sql = new SQLFragment("(SELECT LastIndexed FROM ")
                         .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
-                        .append(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                        .unsafeAppend(" WHERE mi.MaterialId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
                 var ret = new ExprColumn(this, LastIndexed.name(), sql, JdbcType.TIMESTAMP);
                 ret.setDescription("Date when the material was last full-text search indexed in the system");
                 ret.setHidden(true);
@@ -994,16 +994,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + RowId.name();
             SQLFragment existsSubquery = new SQLFragment()
-                    .append("SELECT 1 FROM ")
+                    .unsafeAppend("SELECT 1 FROM ")
                     .append(plateUserSchema.getTable("Well"), "well")
-                    .append(" WHERE well.sampleid = ").append(rowIdField);
+                    .unsafeAppend(" WHERE well.sampleid = ").append(rowIdField);
 
             sql = new SQLFragment()
-                    .append("CASE WHEN EXISTS (")
+                    .unsafeAppend("CASE WHEN EXISTS (")
                     .append(existsSubquery)
-                    .append(") THEN 'Plated' ")
-                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId").append(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
-                    .append("ELSE NULL END");
+                    .unsafeAppend(") THEN 'Plated' ")
+                    .unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId").unsafeAppend(" IS NOT NULL THEN 'Not Plated' ")// Issue 52745
+                    .unsafeAppend("ELSE NULL END");
         }
         else
         {
@@ -1276,16 +1276,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        sql.append("\n").append(filterFrag);
+        sql.unsafeAppend("\n").append(filterFrag);
         if (_ss != null && !usedMaterialized)
         {
             if (!filterFrag.isEmpty())
-                sql.append(" AND ");
+                sql.unsafeAppend(" AND ");
             else
-                sql.append(" WHERE ");
-            sql.append("CpasType = ").appendValue(_ss.getLSID());
+                sql.unsafeAppend(" WHERE ");
+            sql.unsafeAppend("CpasType = ").appendValue(_ss.getLSID());
         }
-        sql.append(") ").appendIdentifier(alias);
+        sql.unsafeAppend(") ").appendIdentifier(alias);
 
         return getTransformedFromSQL(sql);
     }
@@ -1436,7 +1436,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
              * Maybe have a callback to generate the SQL dynamically and verify that the SQL is unchanged.
              */
             List<ColumnInfo> updateColumns = new ArrayList<>();
-            SQLFragment viewSql = getJoinSQL(null, updateColumns).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
+            SQLFragment viewSql = getJoinSQL(null, updateColumns).unsafeAppend(" WHERE CpasType = ").appendValue(_ss.getLSID());
             MaterializedQueryHelper.Builder builder = new _MaterializedQueryHelper.Builder(_ss.getLSID(), "", getExpSchema().getDbSchema().getScope(), viewSql)
                 .updateColumns(updateColumns)
                 .traceLabel(new MaterializedQueryHelper.TraceLabel(SamplesSchema.SCHEMA_NAME, SamplesSchema.SCHEMA_NAME + "." + _ss.getName(), _ss.getContainer()))
@@ -1709,9 +1709,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         void executeIncrementalInsert()
         {
             SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
-                    .append("SELECT * FROM (")
-                    .append(getViewSourceSql()).append(") viewsource_\n")
-                    .append("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
+                    .unsafeAppend("SELECT * FROM (")
+                    .append(getViewSourceSql()).unsafeAppend(") viewsource_\n")
+                    .unsafeAppend("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
             upsertWithRetry(incremental);
         }
 
@@ -1721,8 +1721,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // POSTGRES bug??? the obvious query is _very_ slow O(n^2)
             // DELETE FROM temp.${NAME} WHERE rowid NOT IN (SELECT rowid FROM exp.material WHERE cpastype = <<_lsid>>)
             SQLFragment incremental = new SQLFragment()
-                    .append("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).append(")\n")
-                    .append("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
+                    .unsafeAppend("WITH deleted AS (SELECT rowid FROM temp.${NAME} EXCEPT SELECT rowid FROM exp.material WHERE cpastype = ").appendValue(_lsid,d).unsafeAppend(")\n")
+                    .unsafeAppend("DELETE FROM temp.${NAME} WHERE rowid IN (SELECT rowid from deleted)\n");
             upsertWithRetry(incremental);
         }
 
@@ -1731,16 +1731,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             SQLFragment incremental = new SQLFragment();
             incremental
-                    .append("UPDATE temp.${NAME} AS st\n")
-                    .append("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
-                    .append("FROM exp.Material AS expm\n")
-                    .append("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).append(" AND (\n")
-                    .append("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
-                    .append("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
-                    .append("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
-                    .append("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
-                    .append("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
-                    .append(")");
+                    .unsafeAppend("UPDATE temp.${NAME} AS st\n")
+                    .unsafeAppend("SET aliquotcount = expm.aliquotcount, availablealiquotcount = expm.availablealiquotcount, aliquotvolume = expm.aliquotvolume, availablealiquotvolume = expm.availablealiquotvolume, aliquotunit = expm.aliquotunit\n")
+                    .unsafeAppend("FROM exp.Material AS expm\n")
+                    .unsafeAppend("WHERE expm.rowid = st.rowid AND expm.cpastype = ").appendValue(_lsid,d).unsafeAppend(" AND (\n")
+                    .unsafeAppend("    st.aliquotcount IS DISTINCT FROM expm.aliquotcount OR ")
+                    .unsafeAppend("    st.availablealiquotcount IS DISTINCT FROM expm.availablealiquotcount OR ")
+                    .unsafeAppend("    st.aliquotvolume IS DISTINCT FROM expm.aliquotvolume OR ")
+                    .unsafeAppend("    st.availablealiquotvolume IS DISTINCT FROM expm.availablealiquotvolume OR ")
+                    .unsafeAppend("    st.aliquotunit IS DISTINCT FROM expm.aliquotunit")
+                    .unsafeAppend(")");
             upsertWithRetry(incremental);
         }
 
@@ -1766,17 +1766,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         SQLFragment buildIncrementalUpdateSql(@NotNull Timestamp changedSince)
         {
             SQLFragment sql = new SQLFragment("WITH wModified AS (\n")
-                    .append("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
-                    .append(")\n");
+                    .unsafeAppend("SELECT rowId FROM exp.material expm WHERE expm.modified >= ?\n").add(changedSince)
+                    .unsafeAppend(")\n");
 
             SQLFragment src = new SQLFragment()
-                    .append(getViewSourceSql()).append(" AND m.rowId IN (SELECT rowId FROM wModified)\n")
-                    .append("UNION\n")
-                    .append(getViewSourceSql()).append(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
+                    .append(getViewSourceSql()).unsafeAppend(" AND m.rowId IN (SELECT rowId FROM wModified)\n")
+                    .unsafeAppend("UNION\n")
+                    .append(getViewSourceSql()).unsafeAppend(" AND m.rootmaterialrowid IN (SELECT rowId FROM wModified)\n");
 
-            sql.append("UPDATE temp.${NAME} AS st\nSET ");
+            sql.unsafeAppend("UPDATE temp.${NAME} AS st\nSET ");
             appendSetFromSrc(sql);
-            sql.append("\nFROM (").append(src).append("\n) src\n").append("WHERE st.rowid = src.rowid");
+            sql.unsafeAppend("\nFROM (").append(src).unsafeAppend("\n) src\n").unsafeAppend("WHERE st.rowid = src.rowid");
 
             return sql;
         }
@@ -1787,7 +1787,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             for (ColumnInfo col : _updateColumns)
             {
                 DatabaseIdentifier identifier = col.getSelectIdentifier();
-                sql.append(comma).appendIdentifier(identifier).append(" = src.").appendIdentifier(identifier);
+                sql.append(comma).appendIdentifier(identifier).unsafeAppend(" = src.").appendIdentifier(identifier);
                 comma = ", ";
             }
         }
@@ -1866,14 +1866,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
         String comma = "";
         for (ColumnInfo materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
             if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(materialCol.getFieldKey()))
             {
-                sql.append(comma).append("m.").appendIdentifier(materialCol.getSelectIdentifier());
+                sql.append(comma).unsafeAppend("m.").appendIdentifier(materialCol.getSelectIdentifier());
                 comma = ", ";
                 if (null != outUpdateColumns && !IMMUTABLE_UPDATE_COLUMNS.contains(materialCol.getFieldKey()))
                     outUpdateColumns.add(materialCol);
@@ -1915,7 +1915,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         hasAliquotColumns = true;
                     }
 
-                    sql.append(comma).append(propertyColumn.getValueSql(alias)).append(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
+                    sql.append(comma).append(propertyColumn.getValueSql(alias)).unsafeAppend(" AS ").appendIdentifier(propertyColumn.getSelectIdentifier());
                     comma = ", ";
 
                     // provisioned columns are never immutable join keys, so always re-derivable on update
@@ -1925,12 +1925,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
-        sql.append("\nFROM ");
+        sql.unsafeAppend("\nFROM ");
         sql.append(_rootTable, "m");
         if (hasSampleColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "m_sample").unsafeAppend(" ON m.RootMaterialRowId = m_sample.RowId");
         if (hasAliquotColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
+            sql.unsafeAppend(" INNER JOIN ").append(provisioned, "m_aliquot").unsafeAppend(" ON m.RowId = m_aliquot.RowId");
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
@@ -1942,12 +1942,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             super(parent, FieldKey.fromParts(amountFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" / ? AS ")
-                            .append("DECIMAL")
-                            .append(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
-                            .append(" END)")
+                            .unsafeAppend(" = ? AND ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .unsafeAppend(" IS NOT NULL THEN CAST(").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .unsafeAppend(" / ? AS ")
+                            .unsafeAppend("DECIMAL")
+                            .unsafeAppend(") ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(amountFieldName)
+                            .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.getValue()),
                     JdbcType.DOUBLE);
@@ -1963,8 +1963,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             super(parent, FieldKey.fromParts(unitFieldName), new SQLFragment(
                             "(CASE WHEN ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
-                            .append(" END)")
+                            .unsafeAppend(" = ? THEN ? ELSE ").append(ExprColumn.STR_TABLE_ALIAS + ".").append(unitFieldName)
+                            .unsafeAppend(" END)")
                             .add(typeUnit.getBase().toString())
                             .add(typeUnit.toString()),
                     JdbcType.VARCHAR);
@@ -2515,7 +2515,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _MaterializedQueryHelper mqh = table.getOrCreateMQH();
             assertNotNull("MQH should not be null for a sample type table", mqh);
             SQLFragment cached = new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
-            SQLFragment fresh = table.getJoinSQL(null).append(" WHERE CpasType = ").appendValue(lsid);
+            SQLFragment fresh = table.getJoinSQL(null).unsafeAppend(" WHERE CpasType = ").appendValue(lsid);
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
             assertEquals("Fresh-derivation rows not found in cache", 0, countDiff(scope, fresh, cached));
@@ -2523,7 +2523,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         private int countDiff(DbScope scope, SQLFragment a, SQLFragment b)
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).append("\nEXCEPT\n").append(b).append("\n) diff_");
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (\n").append(a).unsafeAppend("\nEXCEPT\n").append(b).unsafeAppend("\n) diff_");
             Integer count = new SqlSelector(scope, sql).getObject(Integer.class);
             return count == null ? 0 : count;
         }

@@ -423,7 +423,7 @@ public class SecurityPolicyManager
 
         SQLFragment sql = new SQLFragment("DELETE FROM ");
         sql.append(core.getTableInfoRoleAssignments());
-        sql.append(" WHERE ResourceId ");
+        sql.unsafeAppend(" WHERE ResourceId ");
 
         List<String> resourceIds = new ArrayList<>(resources.size());
         for (SecurableResource resource : resources)
@@ -432,7 +432,7 @@ public class SecurityPolicyManager
         }
         core.getSqlDialect().appendInClauseSql(sql, resourceIds);
 
-        sql.append(" AND UserId ");
+        sql.unsafeAppend(" AND UserId ");
         List<Integer> userIds = new ArrayList<>(principals.size());
         for (UserPrincipal principal : principals)
         {

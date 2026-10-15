@@ -582,23 +582,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             StudySchema schema = StudySchema.getInstance();
 
-            StringBuilder groupInClause = new StringBuilder();
-            String delim = "";
-
-            groupInClause.append("(");
-            for (ParticipantGroup group : participantGroups)
-            {
-                groupInClause.append(delim);
-                groupInClause.append(group.getRowId());
-
-                delim = ",";
-            }
-            groupInClause.append(")");
+            List<Integer> groupIds = participantGroups.stream().map(ParticipantGroup::getRowId).toList();
 
             SQLFragment sql = new SQLFragment();
-            sql.append(" SELECT DISTINCT ParticipantId, ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
-            sql.append(" WHERE GroupId IN ").append(groupInClause);
-            sql.add(getDstContainer());
+            sql.unsafeAppend(" SELECT DISTINCT ParticipantId, ? FROM ").add(getDstContainer()).append(ParticipantGroupManager.getTableInfoParticipantGroupMap(), "");
+            sql.unsafeAppend(" WHERE GroupId").appendInClause(groupIds, schema.getSqlDialect());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
 
             if (form.isUseAlternateParticipantIds())
@@ -629,31 +617,20 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         {
             StudySchema schema = StudySchema.getInstance();
 
-            StringBuilder groupInClause = new StringBuilder();
-            String delim = "";
-
-            groupInClause.append("(");
-            for (ParticipantGroup group : participantGroups)
-            {
-                groupInClause.append(delim);
-                groupInClause.append(group.getRowId());
-
-                delim = ",";
-            }
-            groupInClause.append(")");
+            List<Integer> groupIds = participantGroups.stream().map(ParticipantGroup::getRowId).toList();
 
             String columnName = useAlternateParticipantIds ? "AlternateId" : "ParticipantId";
 
             SQLFragment sql = new SQLFragment();
 
-            sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
-            sql.append(" SELECT DISTINCT ").append(columnName).append(", ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
+            sql.unsafeAppend("INSERT INTO ").append(schema.getTableInfoParticipant()).unsafeAppend(" (ParticipantId, Container)");
+            sql.unsafeAppend(" SELECT DISTINCT ").appendIdentifier(columnName).unsafeAppend(", ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "gm");
             sql.add(getDstContainer());
 
             if (useAlternateParticipantIds)
-                sql.append(" INNER JOIN ").append(schema.getTableInfoParticipant(), "p").append(" ON gm.Container = p.Container AND gm.ParticipantId = p.ParticipantId");
+                sql.unsafeAppend(" INNER JOIN ").append(schema.getTableInfoParticipant(), "p").unsafeAppend(" ON gm.Container = p.Container AND gm.ParticipantId = p.ParticipantId");
 
-            sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND gm.Container = ?");
+            sql.unsafeAppend(" WHERE GroupId").appendInClause(groupIds, schema.getSqlDialect()).unsafeAppend(" AND gm.Container = ?");
             sql.add(sourceStudy.getContainer());
 
             new SqlExecutor(schema.getSchema()).execute(sql);

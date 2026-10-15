@@ -71,8 +71,8 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
 
                 SQLFragment existsSql = new SQLFragment("EXISTS (SELECT RowId FROM ");
                 existsSql.append(tinfo, "qs");
-                existsSql.append(" WHERE qs.").appendIdentifier(getSqlDialect().makeLegalIdentifier("schema")).append(" = ").appendValue(StudySchema.getInstance().getSchemaName()).append(" AND ").append(tableAlias).append(".Name = qs.Name AND ");
-                existsSql.append(tableAlias).append(".Container = qs.Container)");
+                existsSql.unsafeAppend(" WHERE qs.").appendIdentifier(getSqlDialect().makeLegalIdentifier("schema")).unsafeAppend(" = ").appendValue(StudySchema.getInstance().getSchemaName()).unsafeAppend(" AND ").appendIdentifier(tableAlias).unsafeAppend(".Name = qs.Name AND ");
+                existsSql.appendIdentifier(tableAlias).unsafeAppend(".Container = qs.Container)");
                 
                 return getSqlDialect().wrapBooleanExpression(existsSql);
             }

@@ -528,7 +528,7 @@ public abstract class Method
                         SQLFragment cte = new SQLFragment("SELECT 2 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test__two__", "_two", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -547,7 +547,7 @@ public abstract class Method
                         SQLFragment cte = new SQLFragment("SELECT 3 as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, "__test_three__", "_three", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -564,10 +564,10 @@ public abstract class Method
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         SQLFragment cte = new SQLFragment();
-                        cte.append("SELECT (").append(arguments[0]).append(")*(").append(arguments[1]).append(") as x");
+                        cte.unsafeAppend("SELECT (").append(arguments[0]).unsafeAppend(")*(").append(arguments[1]).unsafeAppend(") as x");
                         SQLFragment ret = new SQLFragment();
                         String token = ret.addCommonTableExpression(dialect, GUID.makeGUID(), "_times", cte);
-                        ret.append("(SELECT x FROM ").append(token).append(" y)");
+                        ret.unsafeAppend("(SELECT x FROM ").append(token).unsafeAppend(" y)");
                         return ret;
                     }
                 };
@@ -769,15 +769,15 @@ public abstract class Method
             }
 
             SQLFragment ret = new SQLFragment();
-            ret.append("CAST(");
+            ret.unsafeAppend("CAST(");
             if (fragments.length > 0)
                 ret.append(fragments[0]);
             if (fragments.length > 1)
             {
-                ret.append(" AS ");
+                ret.unsafeAppend(" AS ");
                 ret.append(fragments[1]);
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
 
@@ -848,9 +848,9 @@ public abstract class Method
             if (_declaringSchemaName != null)
             {
                 ret.append(_declaringSchemaName);
-                ret.append(".");
+                ret.unsafeAppend(".");
             }
-            ret.append(_name).append("(");
+            ret.append(_name).unsafeAppend("(");
             String comma = "";
             for (SQLFragment arg : arguments)
             {
@@ -858,7 +858,7 @@ public abstract class Method
                 ret.append(arg);
                 comma = ",";
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
     }
@@ -896,7 +896,7 @@ public abstract class Method
                 // This CAST works because in postgres NUMERIC(unspecified) => up to 131072 digits before the decimal point; up to 16383 digits after the decimal point
                 // This is not SQL standard behavior
                 SQLFragment numeric = new SQLFragment();
-                numeric.append("CAST((").append(arguments[0]).append(") AS NUMERIC)");
+                numeric.unsafeAppend("CAST((").append(arguments[0]).unsafeAppend(") AS NUMERIC)");
                 return super.getSQL(dialect, new SQLFragment[]{numeric, arguments[1]});
             }
             else
@@ -916,9 +916,9 @@ public abstract class Method
                 if (n == Integer.MIN_VALUE)
                     return super.getSQL(dialect, arguments);
                 var scale = Math.pow(10, n);
-                SQLFragment scaled = new SQLFragment().append("(").append(arguments[0]).append(")*").appendValue(scale);
+                SQLFragment scaled = new SQLFragment().unsafeAppend("(").append(arguments[0]).unsafeAppend(")*").appendValue(scale);
                 SQLFragment ret = super.getSQL(dialect, new SQLFragment[]{scaled});
-                ret.append("/").appendValue(scale);
+                ret.unsafeAppend("/").appendValue(scale);
                 return ret;
             }
         }
@@ -974,15 +974,15 @@ public abstract class Method
             SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
-            ret.append("(CASE WHEN (")
-                    .append(monthA).append(">").append(monthB).append(" OR ")
-                    .append(monthA).append("=").append(monthB).append(" AND ")
-                    .append(dayA).append(">").append(dayB)
-                    .append(") THEN (")
-                    .append(yearB).append("-").append(yearA).append("-1")
-                    .append(") ELSE (")
-                    .append(yearB).append("-").append(yearA)
-                    .append(") END)");
+            ret.unsafeAppend("(CASE WHEN (")
+                    .append(monthA).unsafeAppend(">").append(monthB).unsafeAppend(" OR ")
+                    .append(monthA).unsafeAppend("=").append(monthB).unsafeAppend(" AND ")
+                    .append(dayA).unsafeAppend(">").append(dayB)
+                    .unsafeAppend(") THEN (")
+                    .append(yearB).unsafeAppend("-").append(yearA).unsafeAppend("-1")
+                    .unsafeAppend(") ELSE (")
+                    .append(yearB).unsafeAppend("-").append(yearA)
+                    .unsafeAppend(") END)");
             return ret;
         }
     }
@@ -1011,17 +1011,17 @@ public abstract class Method
             SQLFragment monthB = month.getSQL(dialect, new SQLFragment[]{arguments[1]});
             SQLFragment dayB = dayofmonth.getSQL(dialect, new SQLFragment[]{arguments[1]});
 
-            ret.append("(CASE WHEN (")
-                    .append(dayA).append(">").append(dayB)
-                    .append(") THEN (")
-                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
-                    .append("+")
-                    .append(monthB).append("-").append(monthA).append("-1")
-                    .append(") ELSE (")
-                    .append("12*(").append(yearB).append("-").append(yearA).append(")")
-                    .append("+")
-                    .append(monthB).append("-").append(monthA)
-                    .append(") END)");
+            ret.unsafeAppend("(CASE WHEN (")
+                    .append(dayA).unsafeAppend(">").append(dayB)
+                    .unsafeAppend(") THEN (")
+                    .unsafeAppend("12*(").append(yearB).unsafeAppend("-").append(yearA).unsafeAppend(")")
+                    .unsafeAppend("+")
+                    .append(monthB).unsafeAppend("-").append(monthA).unsafeAppend("-1")
+                    .unsafeAppend(") ELSE (")
+                    .unsafeAppend("12*(").append(yearB).unsafeAppend("-").append(yearA).unsafeAppend(")")
+                    .unsafeAppend("+")
+                    .append(monthB).unsafeAppend("-").append(monthA)
+                    .unsafeAppend(") END)");
             return ret;
         }
     }
@@ -1043,7 +1043,7 @@ public abstract class Method
             SQLFragment endDate = convert.getSQL(dialect, new SQLFragment[]{arguments[1], dateType});
 
             if (dialect.isPostgreSQL())
-                return new SQLFragment("(").append(endDate).append(" - ").append(startDate).append(")");
+                return new SQLFragment("(").append(endDate).unsafeAppend(" - ").append(startDate).unsafeAppend(")");
 
             return dialect.getDateDiff(Calendar.DATE, endDate, startDate);
         }
@@ -1066,21 +1066,21 @@ public abstract class Method
             {
                 String like = dialect.getCaseInsensitiveLikeOperator();
                 SQLFragment ret = new SQLFragment();
-                ret.append("((").append(arguments[0]).append(") ").append(like).append(" ").append(pattern).append(" ESCAPE '!')");
+                ret.unsafeAppend("((").append(arguments[0]).unsafeAppend(") ").append(like).unsafeAppend(" ").append(pattern).unsafeAppend(" ESCAPE '!')");
                 return ret;
             }
             else if (dialect.isCaseSensitive())
             {
                 SQLFragment ret = new SQLFragment();
-                ret.append("{fn lcase({fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})})}");
-                ret.append("={fn lcase(").append(arguments[1]).append(")}");
+                ret.unsafeAppend("{fn lcase({fn left(").append(arguments[0]).unsafeAppend(",").unsafeAppend("{fn length(").append(arguments[1]).unsafeAppend(")})})}");
+                ret.unsafeAppend("={fn lcase(").append(arguments[1]).unsafeAppend(")}");
                 return ret;
             }
             else
             {
                 SQLFragment ret = new SQLFragment();
-                ret.append("{fn left(").append(arguments[0]).append(",").append("{fn length(").append(arguments[1]).append(")})}");
-                ret.append("=(").append(arguments[1]).append(")");
+                ret.unsafeAppend("{fn left(").append(arguments[0]).unsafeAppend(",").unsafeAppend("{fn length(").append(arguments[1]).unsafeAppend(")})}");
+                ret.unsafeAppend("=(").append(arguments[1]).unsafeAppend(")");
                 return ret;
             }
         }
@@ -1120,11 +1120,11 @@ public abstract class Method
             SQLFragment a = arguments[0];
             SQLFragment b = arguments[1];
 
-            ret.append("(");
-            ret.append("(").append(a).append(")=(").append(b).append(")");
-            ret.append(" OR (");
-            ret.append("(").append(a).append(") IS NULL AND (").append(b).append(") IS NULL");
-            ret.append("))");
+            ret.unsafeAppend("(");
+            ret.unsafeAppend("(").append(a).unsafeAppend(")=(").append(b).unsafeAppend(")");
+            ret.unsafeAppend(" OR (");
+            ret.unsafeAppend("(").append(a).unsafeAppend(") IS NULL AND (").append(b).unsafeAppend(") IS NULL");
+            ret.unsafeAppend("))");
 
             return ret;
         }
@@ -1390,9 +1390,9 @@ public abstract class Method
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
-                ret.append("(").append(groupArg).append(") IN (").append(
+                ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (").append(
                         user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
-                ).append(")");
+                ).unsafeAppend(")");
                 return ret;
             }
 
@@ -1480,9 +1480,9 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("(").append(arguments[0]).append(",").append(arguments[1]).append(")");
-            ret.append(" overlaps ");
-            ret.append("(").append(arguments[2]).append(",").append(arguments[3]).append(")");
+            ret.unsafeAppend("(").append(arguments[0]).unsafeAppend(",").append(arguments[1]).unsafeAppend(")");
+            ret.unsafeAppend(" overlaps ");
+            ret.unsafeAppend("(").append(arguments[2]).unsafeAppend(",").append(arguments[3]).unsafeAppend(")");
             return ret;
         }
     }
@@ -1498,14 +1498,14 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("((").append(arguments[0]).append(")");
-            ret.append(" SIMILAR TO ");
-            ret.append("(").append(arguments[1]).append(")");
+            ret.unsafeAppend("((").append(arguments[0]).unsafeAppend(")");
+            ret.unsafeAppend(" SIMILAR TO ");
+            ret.unsafeAppend("(").append(arguments[1]).unsafeAppend(")");
             if (arguments.length == 3)
             {
-                ret.append(" ESCAPE (").append(arguments[2]).append(")");
+                ret.unsafeAppend(" ESCAPE (").append(arguments[2]).unsafeAppend(")");
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             return ret;
         }
     }
@@ -1685,7 +1685,7 @@ public abstract class Method
                 @Override
                 public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                 {
-                    return new SQLFragment("CAST(").append(dialect.array_construct(arguments)).append(" AS TEXT[])");
+                    return new SQLFragment("CAST(").append(dialect.array_construct(arguments)).unsafeAppend(" AS TEXT[])");
                 }
             };
         }
@@ -1834,9 +1834,9 @@ public abstract class Method
                             throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
-                        return new SQLFragment("(").append(arguments[0]).append(")").
+                        return new SQLFragment("(").append(arguments[0]).unsafeAppend(")").
                                 append(strippedOperator).
-                                append("(").append(arguments[2]).append(")");
+                                unsafeAppend("(").append(arguments[2]).unsafeAppend(")");
                     }
                 };
             }
@@ -1918,12 +1918,12 @@ public abstract class Method
 
             if (dialect.supportsNativeIsDistinctFrom())
             {
-                ret.append(" ((").append(a).append(")");
+                ret.unsafeAppend(" ((").append(a).unsafeAppend(")");
                 if (token == IS)
-                    ret.append(" IS DISTINCT FROM ");
+                    ret.unsafeAppend(" IS DISTINCT FROM ");
                 else
-                    ret.append(" IS NOT DISTINCT FROM ");
-                ret.append("(").append(b).append(")) ");
+                    ret.unsafeAppend(" IS NOT DISTINCT FROM ");
+                ret.unsafeAppend("(").append(b).unsafeAppend(")) ");
             }
             else
             {
@@ -1935,12 +1935,12 @@ public abstract class Method
                 // This is more complicated than the obvious (a=b or a is null and b is null).
                 // That expression can return NULL, we need to return only TRUE/FALSE.
                 if (token == IS)
-                    ret.append(" NOT ");
-                ret.append("(");
-                ret.append("((").append(a).append(") IS NOT NULL AND (").append(b).append(") IS NOT NULL AND (").append(a).append(")=(").append(b).append("))");
-                ret.append(" OR ");
-                ret.append("((").append(a).append(") IS NULL AND (").append(b).append(") IS NULL)");
-                ret.append(")");
+                    ret.unsafeAppend(" NOT ");
+                ret.unsafeAppend("(");
+                ret.unsafeAppend("((").append(a).unsafeAppend(") IS NOT NULL AND (").append(b).unsafeAppend(") IS NOT NULL AND (").append(a).unsafeAppend(")=(").append(b).unsafeAppend("))");
+                ret.unsafeAppend(" OR ");
+                ret.unsafeAppend("((").append(a).unsafeAppend(") IS NULL AND (").append(b).unsafeAppend(") IS NULL)");
+                ret.unsafeAppend(")");
             }
 
             return ret;
@@ -2029,7 +2029,7 @@ public abstract class Method
                 @Override
                 public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                 {
-                    return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
+                    return new SQLFragment("(").append(arguments[0]).unsafeAppend(")::").append(_targetType);
                 }
             };
         }
@@ -2125,9 +2125,9 @@ public abstract class Method
         {
             SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
             SQLFragment T = new SQLFragment(d.getBooleanTRUE()), F = new SQLFragment(d.getBooleanFALSE());
-            SQLFragment sql = new SQLFragment("SELECT ").append("CASE WHEN ").append(expr).append(" THEN ").append(T).append(" ELSE ").append(F).append(" END");
+            SQLFragment sql = new SQLFragment("SELECT ").unsafeAppend("CASE WHEN ").append(expr).unsafeAppend(" THEN ").append(T).unsafeAppend(" ELSE ").append(F).unsafeAppend(" END");
             if (d.isOracle())
-                sql.append(" FROM DUAL");
+                sql.unsafeAppend(" FROM DUAL");
             Boolean result = new SqlSelector(scope, sql).getObject(Boolean.class);
             assertEquals(d.getClass().getSimpleName() + ": " + sql.toDebugString(), expected, result);
         }
@@ -2137,8 +2137,8 @@ public abstract class Method
             SQLFragment expr = new IsDistinctFromMethodInfo(token).getSQL(d, new SQLFragment[]{new SQLFragment(a), new SQLFragment(b)});
             SQLFragment sql = new SQLFragment("SELECT 1");
             if (d.isOracle())
-                sql.append(" FROM DUAL");
-            sql.append(" WHERE ").append(expr);
+                sql.unsafeAppend(" FROM DUAL");
+            sql.unsafeAppend(" WHERE ").append(expr);
 
             boolean matched = new SqlSelector(scope, sql).exists();
             assertEquals(d.getClass().getSimpleName() + " (WHERE): " + sql.toDebugString(), expected, matched);

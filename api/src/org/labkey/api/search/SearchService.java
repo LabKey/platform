@@ -677,7 +677,7 @@ public interface SearchService extends SearchMXBean
             String or = "";
             if (null != lastIndexed)
             {
-                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).append(" IS NULL");
+                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).unsafeAppend(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
@@ -685,7 +685,7 @@ public interface SearchService extends SearchMXBean
             if (null != modified && null != lastIndexed)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
@@ -694,19 +694,19 @@ public interface SearchService extends SearchMXBean
             if (null != modifiedSince && null != modified)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append("> ?");
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).unsafeAppend("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
             }
 
             if (_sqlf.isEmpty())
             {
-                _sqlf.append("1=1");
+                _sqlf.unsafeAppend("1=1");
             }
             else
             {
                 _sqlf.insert(0, "(");
-                _sqlf.append(")");
+                _sqlf.unsafeAppend(")");
             }
         }
 

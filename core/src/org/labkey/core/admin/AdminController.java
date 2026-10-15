@@ -11425,7 +11425,7 @@ public class AdminController extends SpringActionController
 
             final Map<String,Map<String,Object>> sets = new TreeMap<>();
             var sql = new SQLFragment("SELECT category, name, value FROM prop.propertysets PS inner join prop.properties P on PS.\"set\" = P.\"set\"\n")
-                    .append("WHERE objectid = ").appendValue(ContainerManager.getRoot()).append(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
+                    .unsafeAppend("WHERE objectid = ").appendValue(ContainerManager.getRoot()).unsafeAppend(" AND category IN ('SiteConfig') AND encryption='None' AND LOWER(name) NOT LIKE '%password%'");
             new SqlSelector(CoreSchema.getInstance().getScope(), sql)
                     .forEachMap(m ->
                 {
@@ -12442,7 +12442,7 @@ public class AdminController extends SpringActionController
                 {
                     updating.add(fieldName);
                     if (sql.isEmpty())
-                        sql.append("UPDATE ").append(tInfo, "").append(" SET ");
+                        sql.unsafeAppend("UPDATE ").append(tInfo, "").unsafeAppend(" SET ");
                     sql.append(comma)
                             .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectIdentifier(), delta, col.getSelectIdentifier()));
                     comma = ", ";

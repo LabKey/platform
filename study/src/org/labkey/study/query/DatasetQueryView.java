@@ -848,11 +848,11 @@ public class DatasetQueryView extends StudyQueryView
 
                     // create the validation query
                     SQLFragment sql = new SQLFragment("SELECT DS.lsid")
-                            .append(" FROM ").append(rootTable,"DS")
-                            .append(" JOIN ").append(dataTable, "AT")
-                            .append(" ON DS.").append(_dataset.getKeyPropertyName()).append(" = ").append("AT.").append(dataTable.getPkColumnNames().getFirst())
-                            .append(" WHERE DS.").append(studyVisit).append(" <> AT.").append(_assayVisit).append(" OR ")
-                            .append(" DS.ParticipantId <> ").append(rootTable.getSqlDialect().getVarcharCast(new SQLFragment("AT." + _assaySubject.getName())));
+                            .unsafeAppend(" FROM ").append(rootTable,"DS")
+                            .unsafeAppend(" JOIN ").append(dataTable, "AT")
+                            .unsafeAppend(" ON DS.").appendIdentifier(rootTable.getSqlDialect().getColumnSelectName(_dataset.getKeyPropertyName())).unsafeAppend(" = ").unsafeAppend("AT.").appendIdentifier(rootTable.getSqlDialect().getColumnSelectName(dataTable.getPkColumnNames().getFirst()))
+                            .unsafeAppend(" WHERE DS.").appendIdentifier(studyVisit).unsafeAppend(" <> AT.").append(_assayVisit).unsafeAppend(" OR ")
+                            .unsafeAppend(" DS.ParticipantId <> ").append(rootTable.getSqlDialect().getVarcharCast(new SQLFragment("AT." + _assaySubject.getName())));
 
                     return sql;
                 }

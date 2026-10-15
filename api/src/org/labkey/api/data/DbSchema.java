@@ -717,15 +717,15 @@ public class DbSchema
                 if (col.getName().equalsIgnoreCase("Container"))
                 {
                     sbSql.append(" INSERT INTO " + tempTableName );
-                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).append(" AS TableName, ");
+                    sbSql.append(" SELECT " + (++row) + " AS rowId, ").appendValue(t.getSelectName()).unsafeAppend(" AS TableName, ");
                     List<ColumnInfo> pkColumns = t.getPkColumns();
 
                     if (pkColumns.size() == 1)
                     {
                         ColumnInfo pkColumn = pkColumns.getFirst();
                         sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
-                        sbSql.append(" AS FirstPKColName, ");
-                        sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).append(" AS VARCHAR(100)) AS FirstPKValue, ");
+                        sbSql.unsafeAppend(" AS FirstPKColName, ");
+                        sbSql.unsafeAppend(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -734,25 +734,25 @@ public class DbSchema
                             tmp = "multiCol PK ";
                         if(t.getName().equals("ACLs"))
                             tmp = "objectid ";
-                        sbSql.appendValue(tmp).append(" AS FirstPKColName, ");
-                        sbSql.append(" NULL AS FirstPKValue, ");
+                        sbSql.appendValue(tmp).unsafeAppend(" AS FirstPKColName, ");
+                        sbSql.unsafeAppend(" NULL AS FirstPKValue, ");
                     }
-                    sbSql.appendValue(moduleName).append(" AS ModuleName, ");
-                    sbSql.append(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).append(" AS VARCHAR(100)) AS OrphanedContainer ");
-                    sbSql.append(" FROM ").appendIdentifier(t.getSelectName());
-                    sbSql.append( " LEFT OUTER JOIN  core.Containers C ");
-                    sbSql.append(" ON (").appendIdentifier(t.getSelectName()).append(".").append("Container = C.EntityId ) ");
-                    sbSql.append( " WHERE C.EntityId IS NULL ");
+                    sbSql.appendValue(moduleName).unsafeAppend(" AS ModuleName, ");
+                    sbSql.unsafeAppend(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.unsafeAppend(" FROM ").appendIdentifier(t.getSelectName());
+                    sbSql.unsafeAppend( " LEFT OUTER JOIN  core.Containers C ");
+                    sbSql.unsafeAppend(" ON (").appendIdentifier(t.getSelectName()).unsafeAppend(".").unsafeAppend("Container = C.EntityId ) ");
+                    sbSql.unsafeAppend( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes
                     if (null != t.getColumn("Deleted"))
                     {
-                        sbSql.append( " AND Deleted = ? ");
+                        sbSql.unsafeAppend( " AND Deleted = ? ");
                         sbSql.add(Boolean.FALSE);
                     }
                     else if (t.getSchema().getName().equals("ms2") && null != t.getColumn("Run"))
                     {
-                        sbSql.append(" AND Run IN (SELECT Run FROM ms2.runs WHERE Deleted = ? ) ");
+                        sbSql.unsafeAppend(" AND Run IN (SELECT Run FROM ms2.runs WHERE Deleted = ? ) ");
                         sbSql.add(Boolean.FALSE);
                     }
 

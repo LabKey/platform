@@ -564,7 +564,7 @@ public class ParticipantGroupManager
 
             // add the mapping from group to participants
             SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
-            sql.append(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
+            sql.unsafeAppend(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
 
             Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
             SqlExecutor executor = new SqlExecutor(scope);
@@ -767,7 +767,7 @@ public class ParticipantGroupManager
 
             // add the mapping from group to participants
             SQLFragment sql = new SQLFragment("INSERT INTO ").append(getTableInfoParticipantGroupMap(), "");
-            sql.append(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
+            sql.unsafeAppend(" (GroupId, ParticipantId, Container) VALUES (?, ?, ?)");
 
             Set<String> existingMembers = group.getParticipantSet();
             Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
@@ -808,7 +808,7 @@ public class ParticipantGroupManager
     {
         // remove the mapping from group to participants
         SQLFragment sql = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "");
-        sql.append(" WHERE GroupId = ?");
+        sql.unsafeAppend(" WHERE GroupId = ?");
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
         executor.execute(sql.getSQL(), group.getRowId());
@@ -934,17 +934,17 @@ public class ParticipantGroupManager
             SqlExecutor executor = new SqlExecutor(scope);
 
             // remove any participant group mappings from the junction table
-            SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").append(" WHERE GroupId IN ");
-            sqlMapping.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE CategoryId = ?)");
+            SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").unsafeAppend(" WHERE GroupId IN ");
+            sqlMapping.unsafeAppend("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").unsafeAppend(" WHERE CategoryId = ?)");
             executor.execute(sqlMapping.getSQL(), def.getRowId());
 
             // delete the participant groups
-            SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").append(" WHERE RowId IN ");
-            sqlGroup.append("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").append(" WHERE CategoryId = ?)");
+            SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").unsafeAppend(" WHERE RowId IN ");
+            sqlGroup.unsafeAppend("(SELECT RowId FROM ").append(getTableInfoParticipantGroup(), "pg").unsafeAppend(" WHERE CategoryId = ?)");
             executor.execute(sqlGroup.getSQL(), def.getRowId());
 
             // delete the participant list definition
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").append(" WHERE RowId = ?");
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "").unsafeAppend(" WHERE RowId = ?");
             executor.execute(sql.getSQL(), def.getRowId());
 
             ParticipantGroupAuditProvider.ParticipantGroupAuditEvent event = ParticipantGroupAuditProvider.EventFactory.categoryDeleted(c, user, def);
@@ -974,11 +974,11 @@ public class ParticipantGroupManager
             SqlExecutor executor = new SqlExecutor(scope);
 
             // remove any participant group mappings from the junction table
-            SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").append(" WHERE GroupId = ? ");
+            SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").unsafeAppend(" WHERE GroupId = ? ");
             executor.execute(sqlMapping.getSQL(), group.getRowId());
 
             // delete the participant group
-            SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").append(" WHERE RowId = ? ");
+            SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").unsafeAppend(" WHERE RowId = ? ");
             executor.execute(sqlGroup.getSQL(), group.getRowId());
 
             // if this is a list type of group (we automatically create a category of the same name), clean up
@@ -989,7 +989,7 @@ public class ParticipantGroupManager
                 if (groups.size() == 1 && groups.getFirst().equals(group))
                 {
                     // delete the participant category
-                    SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
+                    SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").unsafeAppend(" WHERE RowId = ? ");
                     executor.execute(sqlCat.getSQL(), cat.getRowId());
                 }
             }

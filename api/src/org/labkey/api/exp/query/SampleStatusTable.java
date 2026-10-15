@@ -33,7 +33,7 @@ public class SampleStatusTable extends FilteredTable<ExpSchema>
             this.setContainerFilter(cf);
         SQLFragment sql = new SQLFragment(("(stateType IN ("));
         sql.append(Arrays.stream(ExpSchema.SampleStateType.values()).map(type -> "'" + type.name() + "'").collect(Collectors.joining(",")));
-        sql.append(") )");
+        sql.unsafeAppend(") )");
         addCondition(sql);
         addWrapColumn(getRealTable().getColumn("RowId"));
         addWrapColumn(getRealTable().getColumn("Label"));

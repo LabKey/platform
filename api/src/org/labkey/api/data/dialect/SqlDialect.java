@@ -356,6 +356,12 @@ public abstract class SqlDialect
         return _sqlTypeIntMap.get(type.sqlType);
     }
 
+    public final @Nullable SQLFragment getSqlTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlTypeName(type);
+        return null == sql ? null : SQLFragment.unsafe(sql);
+    }
+
     // Override for alternative behavior
     @Nullable
     public String getSqlCastTypeName(JdbcType type)
@@ -363,7 +369,18 @@ public abstract class SqlDialect
         return getSqlTypeName(type);
     }
 
+    public final @Nullable SQLFragment getSqlCastTypeNameAsSql(JdbcType type)
+    {
+        String sql = getSqlCastTypeName(type);
+        return null == sql ? null : SQLFragment.unsafe(sql);
+    }
+
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
+
+    public final SQLFragment getSqlTypeNameAsSql(PropertyStorageSpec prop)
+    {
+        return SQLFragment.unsafe(getSqlTypeName(prop));
+    }
 
     protected @Nullable SQLFragment getDatabaseMaintenanceSql()
     {
@@ -588,9 +605,9 @@ public abstract class SqlDialect
         String suffix = wildcardSuffix != null ? wildcardSuffix : "";
         String prefixLike = prefix + CompareType.escapeLikePattern(matchStr, escapeChar) + suffix;
         String escapeToken = " ESCAPE '" + escapeChar + "'";
-        sql.append(" ")
+        sql.unsafeAppend(" ")
             .append(getCaseInsensitiveLikeOperator())
-            .append(" ")
+            .unsafeAppend(" ")
             .appendValue(prefixLike)
             .append(escapeToken);
         return sql;
@@ -810,11 +827,31 @@ public abstract class SqlDialect
 
     public abstract String getDefaultDateTimeDataType();
 
+    public final SQLFragment getDefaultDateTimeDataTypeAsSql()
+    {
+        return SQLFragment.unsafe(getDefaultDateTimeDataType());
+    }
+
     public abstract String getUniqueIdentType();
+
+    public final SQLFragment getUniqueIdentTypeAsSql()
+    {
+        return SQLFragment.unsafe(getUniqueIdentType());
+    }
 
     public abstract String getGuidType();
 
+    public final SQLFragment getGuidTypeAsSql()
+    {
+        return SQLFragment.unsafe(getGuidType());
+    }
+
     public abstract String getLsidType();
+
+    public final SQLFragment getLsidTypeAsSql()
+    {
+        return SQLFragment.unsafe(getLsidType());
+    }
 
     public abstract String getTempTableKeyword();
 
@@ -842,6 +879,11 @@ public abstract class SqlDialect
 
     /** @param part the java.util.Calendar field for the unit of time, such as Calendar.DATE or Calendar.MINUTE */
     public abstract String getDatePart(int part, String value);
+
+    public final SQLFragment getDatePartAsSql(int part, String value)
+    {
+        return SQLFragment.unsafe(getDatePart(part, value));
+    }
 
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
@@ -1559,6 +1601,11 @@ public abstract class SqlDialect
 
     public abstract String getBooleanDataType();
 
+    public final SQLFragment getBooleanDataTypeAsSql()
+    {
+        return SQLFragment.unsafe(getBooleanDataType());
+    }
+
     public String getBooleanTRUE()
     {
         return "CAST(1 AS " + getBooleanDataType() + ")";
@@ -1575,6 +1622,11 @@ public abstract class SqlDialect
     }
 
     public abstract String getBinaryDataType();
+
+    public final SQLFragment getBinaryDataTypeAsSql()
+    {
+        return SQLFragment.unsafe(getBinaryDataType());
+    }
 
     // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
     // string for each driver we support. This is necessary because, unfortunately, there appears to be no standard, reliable
@@ -1972,9 +2024,9 @@ public abstract class SqlDialect
         if (from == JdbcType.GUID)
         {
             SQLFragment ret = new SQLFragment();
-            ret.append("CAST(");
-            ret.append(sql).append(" AS ");
-            ret.append(getSqlTypeName(from)).append("(36))");
+            ret.unsafeAppend("CAST(");
+            ret.append(sql).unsafeAppend(" AS ");
+            ret.append(getSqlTypeName(from)).unsafeAppend("(36))");
             return ret;
         }
         // let server do default conversion
@@ -2024,6 +2076,12 @@ public abstract class SqlDialect
             return null;
 
         return _sqlTypeIntMap.get(jdbcType.sqlType);
+    }
+
+    public final @Nullable SQLFragment getSqlTypeNameFromObjectAsSql(Object o)
+    {
+        String sql = getSqlTypeNameFromObject(o);
+        return null == sql ? null : SQLFragment.unsafe(sql);
     }
 
     /**
@@ -2331,7 +2389,7 @@ public abstract class SqlDialect
     public SQLFragment formatFunction(SQLFragment target, String fn, SQLFragment... arguments)
     {
         target.append(fn);
-        target.append("(");
+        target.unsafeAppend("(");
         String comma = "";
         for (SQLFragment argument : arguments)
         {
@@ -2339,16 +2397,16 @@ public abstract class SqlDialect
             comma = ",";
             target.append(argument);
         }
-        target.append(")");
+        target.unsafeAppend(")");
         return target;
     }
 
     public SQLFragment formatJdbcFunction(String fn, SQLFragment... arguments)
     {
         SQLFragment ret = new SQLFragment();
-        ret.append("{fn ");
+        ret.unsafeAppend("{fn ");
         formatFunction(ret, fn, arguments);
-        ret.append("}");
+        ret.unsafeAppend("}");
         return ret;
     }
 

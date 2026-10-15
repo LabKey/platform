@@ -3090,7 +3090,7 @@ public class DbScope
         {
             SQLFragment sql = new SQLFragment("SELECT (");
             sql.append(dialect.getDateDiff(part, "CAST('" + date1 + "' AS " + dialect.getDefaultDateTimeDataType() + ")", "CAST('" + date2 + "' AS " + dialect.getDefaultDateTimeDataType() + ")"));
-            sql.append(") AS Diff");
+            sql.unsafeAppend(") AS Diff");
 
             int actual = new SqlSelector(scope, sql).getObject(Integer.class);
             assertEquals(expected, actual);
@@ -3132,16 +3132,16 @@ public class DbScope
             String delimiter = " ";
 
             SQLFragment query = new SQLFragment("SELECT\n");
-            query.append("  COUNT(*) AS NumRows,\n");
-            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).append(" AS StrVals\n");
-            query.append("FROM (\n");
-            query.append("  VALUES\n");
-            query.append("  (1, 'x'),\n");
-            query.append("  (2, 'Y'),\n");
-            query.append("  (3, 'z'),\n");
-            query.append("  (4, 'z'),\n");
-            query.append("  (5, 'y')\n");
-            query.append(") AS t (IntVal, StrVal)\n");
+            query.unsafeAppend("  COUNT(*) AS NumRows,\n");
+            query.unsafeAppend("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).unsafeAppend(" AS StrVals\n");
+            query.unsafeAppend("FROM (\n");
+            query.unsafeAppend("  VALUES\n");
+            query.unsafeAppend("  (1, 'x'),\n");
+            query.unsafeAppend("  (2, 'Y'),\n");
+            query.unsafeAppend("  (3, 'z'),\n");
+            query.unsafeAppend("  (4, 'z'),\n");
+            query.unsafeAppend("  (5, 'y')\n");
+            query.unsafeAppend(") AS t (IntVal, StrVal)\n");
 
             Map<String, Object> map = new SqlSelector(scope, query).getMap();
             Number numRows = (Number)map.get("NumRows");
