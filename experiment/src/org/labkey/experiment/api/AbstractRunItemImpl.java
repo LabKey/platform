@@ -380,7 +380,11 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         }
     }
 
-    /** Index using a table shared with other items of the same container and type, since building one per item dominates indexing cost */
+    /**
+     * Index using a table shared with other items of the same container and type, since building one per item
+     * dominates indexing cost. The table caching should always be scoped to a indexing batch to avoid holding
+     * stale TableInfos after domain changes, etc.
+     */
     void indexWithTableCache(@NotNull SearchService.TaskIndexingQueue queue, @NotNull Map<TableCacheKey, TableInfo> tableCache)
     {
         Container container = getContainer();
