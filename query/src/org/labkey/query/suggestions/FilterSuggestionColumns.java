@@ -59,7 +59,7 @@ public class FilterSuggestionColumns
 
     private record Candidate(ColumnInfo column, @Nullable String caption) {}
 
-    /** @param lookups the lookup column whose target table supplies each lookup-valued column's values */
+    /** @param lookups the multi-valued lookup column whose junction table supplies each such column's values */
     public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups) {}
 
     /** @param fieldKeys the grid's display columns; only those that resolve and that the user may read are kept */
@@ -102,11 +102,11 @@ public class FilterSuggestionColumns
         Map<SuggestionColumn, ColumnInfo> lookups = new IdentityHashMap<>();
         for (Candidate candidate : candidates)
         {
-            SuggestionColumn column = toSuggestionColumn(candidate, pkFieldKeys.contains(candidate.column().getFieldKey()), titleColumn);
+            SuggestionColumn column = toSuggestionColumn(candidate, pkFieldKeys.contains(candidate.column().getFieldKey()), titleColumn, maxAllowedPhi);
             if (column != null && seen.add(column.getFieldKey().toLowerCase(Locale.ROOT)))
             {
                 columns.add(column);
-                if (column.getType() == SuggestionColumn.Type.STRING && column.getValues() == null && isLookup(candidate.column()))
+                if (column.getType() == SuggestionColumn.Type.STRING && column.getValues() == null && isJunctionLookup(candidate.column()))
                     lookups.put(column, candidate.column());
             }
         }
@@ -205,7 +205,7 @@ public class FilterSuggestionColumns
         };
     }
 
-    private static @Nullable SuggestionColumn toSuggestionColumn(Candidate candidate, boolean isPrimaryKey, @Nullable String titleColumn)
+    private static @Nullable SuggestionColumn toSuggestionColumn(Candidate candidate, boolean isPrimaryKey, @Nullable String titleColumn, PHI maxAllowedPhi)
     {
         ColumnInfo column = candidate.column();
         DisplayColumn renderer = column.getRenderer();
@@ -220,6 +220,9 @@ public class FilterSuggestionColumns
 
         // Filters on a lookup go on its display column, as the grid's own column filters do
         ColumnInfo filterColumn = displayField != null && isLookup(column) ? displayField : column;
+        // The display field isn't among the fieldKey's ancestors that isReadable checked
+        if (!isAllowed(filterColumn, maxAllowedPhi))
+            return null;
         String caption = candidate.caption() != null ? candidate.caption() : renderer.getCaption(null, false);
         SuggestionColumn.Type type = switch (strategy)
         {
