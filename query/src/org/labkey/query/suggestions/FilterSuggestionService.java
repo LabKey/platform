@@ -41,6 +41,7 @@ import org.labkey.api.view.UnauthorizedException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /** Backs query-getFilterSuggestions.api: resolves the table, describes its candidate columns, and ranks suggestions. */
 public class FilterSuggestionService
@@ -136,9 +137,13 @@ public class FilterSuggestionService
             }
         }
 
+        Function<TableInfo, String> tokens = FilterSuggestionService::getChangeToken;
+        if (!allowsSharedFacts(context))
+            tokens = _ -> null;
+
         try
         {
-            complete &= ColumnFactsCache.get().fill(context, request.parameters(), described, FilterSuggestionService::getChangeToken, ColumnFactsCache.DEFAULT_BUDGET_MS);
+            complete &= ColumnFactsCache.get().fill(context, request.parameters(), described, tokens, ColumnFactsCache.DEFAULT_BUDGET_MS);
         }
         catch (RuntimeException e)
         {
@@ -169,6 +174,26 @@ public class FilterSuggestionService
             }
         }
         return null;
+    }
+
+    /** False when any provider that handles the table, or fails to answer, rules out sharing its facts across users. */
+    private static boolean allowsSharedFacts(FilterSuggestionContext context)
+    {
+        TableInfo table = context.getTable();
+        for (FilterSuggestionProvider provider : QueryService.get().getFilterSuggestionProviders())
+        {
+            try
+            {
+                if (provider.handles(table) && !provider.allowsSharedFacts(context))
+                    return false;
+            }
+            catch (RuntimeException e)
+            {
+                LOG.warn("Filter suggestion provider {} failed to say whether facts for {} can be shared", provider.getClass().getName(), table.getName(), e);
+                return false;
+            }
+        }
+        return true;
     }
 
     private static @Nullable ContainerFilter getContainerFilter(FilterSuggestionsRequest request, Container container, User user)
