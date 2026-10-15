@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.CanSeeAuditLogFolderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.Pair;
 
@@ -111,6 +111,6 @@ public class ElevatedUser extends ClonedUser
      */
     public static User ensureCanSeeAuditLogRole(Container container, User user)
     {
-        return ensureContextualRoles(container, user, Pair.of(CanSeeAuditLogPermission.class, CanSeeAuditLogRole.class));
+        return ensureContextualRoles(container, user, Pair.of(CanSeeAuditLogPermission.class, CanSeeAuditLogFolderRole.class));
     }
 }

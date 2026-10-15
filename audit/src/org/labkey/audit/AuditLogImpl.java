@@ -51,14 +51,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.LimitedUser;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -278,7 +274,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     private static Predicate<AuditTypeEvent> inScope(User user, Container container, @Nullable ContainerFilter containerFilter)
     {
         ContainerFilter cf = null == containerFilter ? ContainerFilter.current(container, user) : containerFilter;
-        Collection<GUID> ids = scopeIds(user, container, cf);
+        Collection<GUID> ids = scopeIds(container, cf);
         if (null == ids)
             return _ -> true;
 
@@ -302,14 +298,12 @@ public class AuditLogImpl implements AuditLogService, StartupListener
      * the ReadPermission that {@link ContainerFilter#getIds()} applies, so a folder the user can read but whose audit
      * log they cannot see stays out of scope.
      */
-    private static @Nullable Collection<GUID> scopeIds(User user, Container container, ContainerFilter cf)
+    private static @Nullable Collection<GUID> scopeIds(Container container, ContainerFilter cf)
     {
         if (!(cf instanceof ContainerFilter.ContainerFilterWithPermission cfp))
             return cf.getIds();
 
-        Set<Role> contextualRoles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : Set.of();
-
-        return cfp.generateIds(container, CanSeeAuditLogPermission.class, contextualRoles);
+        return cfp.generateIds(container, CanSeeAuditLogPermission.class, Set.of());
     }
 
     public TransactionRowIds getTransactionSampleIds(long transactionAuditId, boolean includeInsertEventOnly, User user, Container container, @Nullable ContainerFilter containerFilter)

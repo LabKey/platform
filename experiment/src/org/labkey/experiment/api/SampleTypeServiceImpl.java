@@ -2105,7 +2105,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     // based on the modified date
                     indexSampleType(sampleType, SearchService.get().defaultTask().getQueue(sampleType.getContainer(), SearchService.PRIORITY.modified));
                 }
-            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            }, POSTCOMMIT);
 
             // add up the size of the value arrays in the fileMovesBySampleId map
             int fileMoveCount = fileMovesBySampleId.values().stream().mapToInt(List::size).sum();
@@ -2459,6 +2459,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, SampleChangeType reason, @Nullable Timestamp changedSince)
     {
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), reason, changedSince);
+    }
+
+    @Override
+    public void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds)
+    {
+        ExpMaterialTableImpl.refreshMaterializedViewAfterDelete(st.getLSID(), deletedRowIds);
     }
 
     public static class TestCase extends Assert
