@@ -403,7 +403,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
             JSONObject jsonData
     )
     {
-        Set<ColumnInfo> columns = table.getSearchIndexColumns();
+        List<ColumnInfo> columns = table.getSearchIndexColumns();
 
         if (columns.isEmpty())
             return;

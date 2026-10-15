@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS_ALIAS_PREFIX;
@@ -68,7 +67,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     public static final String ALIAS_CONCEPT_URI = "http://www.labkey.org/exp/xml#alias";
     private final Class<C> _columns;
 
-    private volatile Set<ColumnInfo> _searchIndexColumns;
+    private volatile List<ColumnInfo> _searchIndexColumns;
 
     protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, Class<C> columns, ContainerFilter cf)
     {
@@ -86,13 +85,13 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     }
 
     /** Columns whose values go into an item's search document, memoized because indexing calls it for every item in a batch */
-    public Set<ColumnInfo> getSearchIndexColumns()
+    public List<ColumnInfo> getSearchIndexColumns()
     {
-        Set<ColumnInfo> result = _searchIndexColumns;
+        List<ColumnInfo> result = _searchIndexColumns;
         if (result == null)
         {
             CaseInsensitiveHashSet skipColumns = getSearchIndexSkipColumns();
-            Set<ColumnInfo> columns = getExtendedColumns(true).values().stream().filter(col -> {
+            result = getExtendedColumns(true).values().stream().filter(col -> {
                 if (skipColumns.contains(col.getName()))
                     return false;
 
@@ -106,8 +105,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
 
                 // Issue 51862: Skip indexing calculated columns
                 return !col.isValueExpressionColumn();
-            }).collect(Collectors.toCollection(LinkedHashSet::new));
-            result = Collections.unmodifiableSet(columns);
+            }).toList();
             _searchIndexColumns = result;
         }
         return result;
