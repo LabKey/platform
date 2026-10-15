@@ -34,6 +34,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -129,11 +130,12 @@ public class ColumnFactsCache
 
     /**
      * A table read in one container scope with one set of parameters.
-     * @param owner the change token, or the user when there is none
+     * @param owner the change token when shared, else the user plus any change token
      */
     record Scope(TableInfo table, Map<String, Object> parameters, String name, String scopeHash, String owner, long ttl)
     {
-        static Scope create(TableInfo table, ContainerFilter containerFilter, Container container, User user, @Nullable String token, @Nullable Map<String, Object> parameters)
+        /** @param shared whether the entries are shared across users, which requires a token */
+        static Scope create(TableInfo table, ContainerFilter containerFilter, Container container, User user, @Nullable String token, boolean shared, @Nullable Map<String, Object> parameters)
         {
             Collection<GUID> ids = containerFilter.getIds();
             String containerIds = ids == null ? "*" : ids.stream().map(GUID::toString).sorted().collect(Collectors.joining(","));
@@ -141,9 +143,20 @@ public class ColumnFactsCache
             if (parameters != null)
                 sortedParameters.putAll(parameters);
             String scopeHash = HashHelpers.hash(container.getId() + "|" + containerIds + "|" + sortedParameters);
-            String owner = token != null ? "t:" + token : "u:" + user.getUserId() + user.getPermissionsContext().getCacheKey();
+            String owner;
+            long ttl;
+            if (shared)
+            {
+                owner = "t:" + Objects.requireNonNull(token);
+                ttl = TOKEN_TTL;
+            }
+            else
+            {
+                owner = "u:" + user.getUserId() + user.getPermissionsContext().getCacheKey() + (token == null ? "" : "+t:" + token);
+                ttl = NO_TOKEN_TTL;
+            }
             String name = (table.getPublicSchemaName() + "/" + table.getPublicName()).toLowerCase(Locale.ROOT);
-            return new Scope(table, Collections.unmodifiableMap(sortedParameters), name, scopeHash, owner, token != null ? TOKEN_TTL : NO_TOKEN_TTL);
+            return new Scope(table, Collections.unmodifiableMap(sortedParameters), name, scopeHash, owner, ttl);
         }
 
         Scope withName(String name)
@@ -223,12 +236,15 @@ public class ColumnFactsCache
         Map<String, Object> declaredParameters = getDeclaredParameters(table, parameters);
         // Tokens are read before the data they guard, so a race can only pair newer data with an older token
         String token = tokens.apply(table);
-        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, declaredParameters);
-        Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), null, declaredParameters);
+        Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, token != null, declaredParameters);
+        // Per-user entries follow the token too, so a change to the table's rows reaches them before they age out
+        Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, false, declaredParameters);
 
         List<Plan> plans = new ArrayList<>();
         for (SuggestionColumn column : described.columns())
         {
+            if (described.auditLogged().contains(column))
+                continue;
             Scope columnScope = userScope;
             if (isShared(column))
                 columnScope = scope;
@@ -304,15 +320,21 @@ public class ColumnFactsCache
             if (targetSchema == null || !target.hasPermission(user, ReadPermission.class))
                 return null;
 
-            ColumnInfo display = QueryService.get().getColumns(target, List.of(displayKey)).get(displayKey);
-            if (display == null || !FilterSuggestionColumns.isAllowed(display, target.getUserMaxAllowedPhiLevel()) || requiresAuditLogging(display))
+            List<FieldKey> path = new ArrayList<>();
+            for (FieldKey key = displayKey; key != null; key = key.getParent())
+                path.add(key);
+            Map<FieldKey, ColumnInfo> resolved = QueryService.get().getColumns(target, path);
+            PHI maxAllowedPhi = target.getUserMaxAllowedPhiLevel();
+            // The junction FK the values are read through is held to the same PHI and audit rules as the display column
+            if (path.stream().map(resolved::get).anyMatch(pathColumn -> pathColumn == null || !FilterSuggestionColumns.isAllowed(pathColumn, maxAllowedPhi) || requiresAuditLogging(pathColumn)))
                 return null;
+            ColumnInfo display = resolved.get(displayKey);
 
             Container targetContainer = targetSchema.getContainer();
             ContainerFilter containerFilter = Objects.requireNonNullElseGet(target.getContainerFilter(), () -> ContainerFilter.current(targetContainer, user));
             // A target's public name doesn't identify the rows its FK reaches, so key by the grid's table
             // Values come through the junction's own lookup, which its token doesn't cover, so keep them per user
-            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, null, null).withName(scope.name());
+            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, null, false, null).withName(scope.name());
             return new Plan(column, info, Kind.LOOKUP, scope, lookupScope, display);
         }
         catch (RuntimeException e)
@@ -345,8 +367,10 @@ public class ColumnFactsCache
         return declared;
     }
 
-    static boolean requiresAuditLogging(ColumnInfo column)
+    static boolean requiresAuditLogging(@Nullable ColumnInfo column)
     {
+        if (column == null)
+            return false;
         ColumnLogging logging = column.getColumnLogging();
         return logging != null && (logging.shouldLogName() || logging.getException() != null || !logging.getDataLoggingColumns().isEmpty());
     }
@@ -584,9 +608,9 @@ public class ColumnFactsCache
     }
 
     /** For tests: the cached fact a request would read, or null. */
-    @Nullable ColumnFact peek(@NotNull FilterSuggestionContext context, @Nullable String token, @NotNull String kind, @NotNull String fieldKey)
+    @Nullable ColumnFact peek(@NotNull FilterSuggestionContext context, @Nullable String token, boolean shared, @NotNull String kind, @NotNull String fieldKey)
     {
-        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, null);
+        Scope scope = Scope.create(context.getTable(), context.getContainerFilter(), context.getContainer(), context.getUser(), token, shared, null);
         return _cache.get(scope.key(kind, fieldKey, null));
     }
 
@@ -819,12 +843,12 @@ public class ColumnFactsCache
             User other = UserManager.getGuestUser();
 
             assertTrue(cache.fill(context(table, _user), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> null, 30_000));
-            assertNotNull(cache.peek(context(table, _user), null, "values", "color"));
-            assertNull("Facts of a table without a token must not cross users", cache.peek(context(table, other), null, "values", "color"));
+            assertNotNull(cache.peek(context(table, _user), null, false, "values", "color"));
+            assertNull("Facts of a table without a token must not cross users", cache.peek(context(table, other), null, false, "values", "color"));
 
             assertTrue(cache.fill(context(table, _user), null, FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
-            assertNotNull(cache.peek(context(table, other), "shared", "values", "color"));
-            assertNull("A new token must miss", cache.peek(context(table, other), "changed", "values", "color"));
+            assertNotNull(cache.peek(context(table, other), "shared", true, "values", "color"));
+            assertNull("A new token must miss", cache.peek(context(table, other), "changed", true, "values", "color"));
         }
 
         @Test
@@ -837,8 +861,20 @@ public class ColumnFactsCache
             assertTrue(byFieldKey(described).containsKey(email));
 
             assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
-            assertNotNull(cache.peek(context(table, _user), null, "values", email));
-            assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", "values", email));
+            assertNotNull(cache.peek(context(table, _user), "shared", false, "values", email));
+            assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", email));
+        }
+
+        @Test
+        public void testPerUserFactsFollowToken()
+        {
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TableInfo table = getTable(SAMPLE_TYPE);
+            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
+
+            assertTrue(cache.fill(context(table, _user), null, described, _ -> "before", 30_000));
+            assertNotNull(cache.peek(context(table, _user), "before", false, "values", "viewer"));
+            assertNull("A per-user entry must miss once the table's token changes", cache.peek(context(table, _user), "after", false, "values", "viewer"));
         }
 
         @Test
@@ -850,8 +886,8 @@ public class ColumnFactsCache
             assertTrue(byFieldKey(described).containsKey("viewer"));
 
             assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
-            assertNotNull(cache.peek(context(table, _user), null, "values", "viewer"));
-            assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", "values", "viewer"));
+            assertNotNull(cache.peek(context(table, _user), "shared", false, "values", "viewer"));
+            assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", true, "values", "viewer"));
         }
 
         @Test
@@ -887,7 +923,7 @@ public class ColumnFactsCache
             TableInfo table = getTable(SAMPLE_TYPE);
 
             assertTrue(cache.fill(context(table, _user), Map.of("bogus", 1), FilterSuggestionColumns.describe(table, null, List.of("color")), _ -> "shared", 30_000));
-            assertNotNull(cache.peek(context(table, _user), "shared", "values", "color"));
+            assertNotNull(cache.peek(context(table, _user), "shared", true, "values", "color"));
         }
 
         @Test
@@ -908,7 +944,7 @@ public class ColumnFactsCache
                 logged.add(copy);
             }
 
-            assertTrue(cache.fill(context(table, _user), null, new FilterSuggestionColumns.Described(logged, Map.of()), _ -> "token-2", 30_000));
+            assertTrue(cache.fill(context(table, _user), null, new FilterSuggestionColumns.Described(logged, Map.of(), Set.of()), _ -> "token-2", 30_000));
             assertEquals(0, source._calls.get());
             for (SuggestionColumn column : logged)
             {
@@ -917,6 +953,20 @@ public class ColumnFactsCache
                 assertNull(column.getMin());
             }
             assertTrue(logged.stream().filter(column -> column.getType() == SuggestionColumn.Type.FLOAT).allMatch(SuggestionColumn::isRangeUnknown));
+        }
+
+        @Test
+        public void testColumnsReachedThroughAuditLoggedLookupsReadNoData()
+        {
+            TestSource source = new TestSource(0);
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, source);
+            TableInfo table = getTable(SAMPLE_TYPE);
+            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy"));
+            SuggestionColumn createdBy = described.columns().getFirst();
+
+            assertTrue(cache.fill(context(table, _user), null, new FilterSuggestionColumns.Described(described.columns(), described.lookups(), Set.of(createdBy)), _ -> "token-4", 30_000));
+            assertEquals(0, source._calls.get());
+            assertNull(createdBy.getValues());
         }
 
         @Test
