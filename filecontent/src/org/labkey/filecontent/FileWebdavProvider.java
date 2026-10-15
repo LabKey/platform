@@ -213,6 +213,7 @@ public class FileWebdavProvider implements WebdavService.Provider
             AttachmentDirectory dir = _map.get(name.toString());
             if (dir != null)
             {
+                FileContentModule.incrementNamedFileSetMetric("webdavResolve");
                 Path path = getPath().append(name);
                 return AttachmentService.get().getAttachmentResource(path, dir);
             }
