@@ -1014,8 +1014,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), entityIds);
         filter.addClause(cf.createFilterClause(entityTable.getSchema(), FieldKey.fromParts("Container")));
 
+        // RowId is unique here, so fewer matching rows than distinct ids means some id is out of scope
+        // A table that can match an id more than once would run the count high and make this report everything in scope.
         long distinctIds = entityIds.stream().distinct().count();
-        return new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getRowCount() < distinctIds;
+        return new TableSelector(entityTable, filter, null).getRowCount() < distinctIds;
     }
 
     private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
