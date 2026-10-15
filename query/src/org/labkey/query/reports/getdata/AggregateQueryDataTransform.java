@@ -85,7 +85,8 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         {
             sb.append(separator);
             separator = ", ";
-            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getSchema().getDbSchema().getSqlDialect()));
+            // NOTE: consider new class LabKeySQL extends SQLFragment
+            sb.append(aggregate.toLabKeySQL(new SQLFragment(getSource().getLabKeySQL()), getSchema().getDbSchema().getSqlDialect()).getRawSQL());
         }
 
         if (_pivotBuilder != null)
