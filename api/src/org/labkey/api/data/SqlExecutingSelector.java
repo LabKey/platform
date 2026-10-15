@@ -38,13 +38,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
@@ -200,35 +198,15 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     // The selector frames that can sit between the real call site and getArrayList(). A package prefix won't do:
     // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
     private static final Set<String> PLUMBING_CLASSES = Set.of(
-            "org.labkey.api.data.BaseSelector",
-            "org.labkey.api.data.SqlExecutingSelector",
-            "org.labkey.api.data.SqlSelector",
-            "org.labkey.api.data.TableSelector");
+            BaseSelector.class.getName(),
+            SqlExecutingSelector.class.getName(),
+            SqlSelector.class.getName(),
+            TableSelector.class.getName());
 
-    // Caps key length; a stack this deep in plumbing collapses to a single key
-    private static final int MAX_KEY_FRAMES = 10;
-
-    /**
-     * The stack through the first frame outside the selector plumbing — the code that actually loaded the collection.
-     * Don't extend this to the full stack: a cache loader is reached via many callers, each of which would then get its own warning.
-     */
+    /** The stack through the first frame outside the selector plumbing: the code that actually loaded the collection */
     private static String getStackKey(Throwable t)
     {
-        StackTraceElement[] frames = t.getStackTrace();
-        int lastFrame = 0;
-
-        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
-            lastFrame++;
-
-        return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
-    }
-
-    private static boolean isPlumbingStackFrame(StackTraceElement frame)
-    {
-        String className = frame.getClassName();
-        int nested = className.indexOf('$'); // Nested classes and lambdas belong to their enclosing selector
-
-        return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
+        return CallSiteKeys.getStackKey(t, PLUMBING_CLASSES);
     }
 
     // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element
@@ -790,9 +768,9 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         @Test
         public void allPlumbingStackIsCapped()
         {
-            List<String> allPlumbing = Collections.nCopies(MAX_KEY_FRAMES + 5, "org.labkey.api.data.SqlExecutingSelector");
+            List<String> allPlumbing = Collections.nCopies(CallSiteKeys.MAX_KEY_FRAMES + 5, "org.labkey.api.data.SqlExecutingSelector");
 
-            assertEquals(MAX_KEY_FRAMES, getStackKey(createThrowable(allPlumbing)).split("\n").length);
+            assertEquals(CallSiteKeys.MAX_KEY_FRAMES, getStackKey(createThrowable(allPlumbing)).split("\n").length);
         }
 
         @Test

@@ -24,7 +24,6 @@ import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.util.logging.LogHelper;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -47,13 +45,11 @@ public class RepeatedCommitTaskMonitor
 
     static final int THRESHOLD = 10;
 
-    // Frames between the registering code and add(); see SqlExecutingSelector.PLUMBING_CLASSES for the same idea
+    // Frames between the registering code and add()
     private static final Set<String> PLUMBING_CLASSES = Set.of(
             DbScope.class.getName(),
             RepeatedCommitTaskMonitor.class.getName(),
             AccumulatingCommitTask.class.getName());
-
-    private static final int MAX_KEY_FRAMES = 10;
 
     // At most one warning per day per call site and queue, so an expected repeat doesn't flood the log
     private static final Throttle<RepeatedTaskWarning> WARNING_THROTTLE = new Throttle<>(RepeatedTaskWarning.class, "Repeated commit task warnings", 1000, CacheManager.DAY,
@@ -120,21 +116,7 @@ public class RepeatedCommitTaskMonitor
     /** The stack through the first frame outside DbScope's commit task plumbing: the code that registered the task */
     private static String getStackKey(Throwable t)
     {
-        StackTraceElement[] frames = t.getStackTrace();
-        int lastFrame = 0;
-
-        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
-            lastFrame++;
-
-        return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
-    }
-
-    private static boolean isPlumbingStackFrame(StackTraceElement frame)
-    {
-        String className = frame.getClassName();
-        int nested = className.indexOf('$'); // CommitTaskOption constants and TransactionImpl are nested in DbScope
-
-        return PLUMBING_CLASSES.contains(nested < 0 ? className : className.substring(0, nested));
+        return CallSiteKeys.getStackKey(t, PLUMBING_CLASSES);
     }
 
     private static void recordTally(RepeatedTaskWarning w)
@@ -318,19 +300,18 @@ public class RepeatedCommitTaskMonitor
         // Counts this transaction's monitors rather than the shared throttle, which other threads' commits also hit
         private static int warningsFor(boolean commit, int count, IntConsumer register)
         {
-            List<RepeatedCommitTaskMonitor> monitors;
+            Stream<RepeatedCommitTaskMonitor> monitors;
             try (DbScope.Transaction tx = scope().ensureTransaction())
             {
                 DbScope.TransactionImpl impl = scope().getCurrentTransactionImpl();
                 monitors = Stream.of(CommitTaskOption.PRECOMMIT, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK)
-                        .map(option -> option.getQueue(impl).getMonitor())
-                        .toList();
+                        .map(option -> option.getQueue(impl).getMonitor());
                 for (int i = 0; i < count; i++)
                     register.accept(i);
                 if (commit)
                     tx.commit();
             }
-            return monitors.stream().mapToInt(monitor -> monitor._warningCount).sum();
+            return monitors.mapToInt(monitor -> monitor._warningCount).sum();
         }
 
         private static int tallyTransactions(RepeatedTaskWarning key)
