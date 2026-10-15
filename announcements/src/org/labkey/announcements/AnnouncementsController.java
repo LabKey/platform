@@ -3152,6 +3152,15 @@ public class AnnouncementsController extends SpringActionController
             // Both query from A across all folders; only B's admin sees B's rows for another user
             assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 0L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 0L), subscriptionCounts(adminOfA, victim));
             assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 1L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 1L), subscriptionCounts(adminOfB, victim));
+
+            int mine = EmailOption.MESSAGES_MINE.getValue();
+            Map<String, Object> key = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId()));
+            Map<String, Object> update = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId(), "EmailOption", mine));
+            BatchValidationException errors = new BatchValidationException();
+            forumSubscriptionService(adminOfB).updateRows(adminOfB, _folderB, List.of(update), List.of(key), errors, null, null);
+            assertFalse(errors.getMessage(), errors.hasErrors());
+            TableInfo emailPrefs = CoreSchema.getInstance().getTableInfoEmailPrefs();
+            assertEquals(Integer.valueOf(mine), new TableSelector(emailPrefs, List.of(emailPrefs.getColumn("EmailOptionId")), new SimpleFilter(FieldKey.fromParts("UserId"), victim.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getObject(Integer.class));
         }
 
         private Map<String, Long> subscriptionCounts(User user, User target)

@@ -104,7 +104,8 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
         Object userId = row.get("User");
         if (userId == null)
         {
-            userId = row.get("_user");
+            // Rows read back through the query table key "User" by its SQL alias (e.g., "user_")
+            userId = row.get(getColumn("User").getAlias().getId());
         }
         if (userId != null)
         {

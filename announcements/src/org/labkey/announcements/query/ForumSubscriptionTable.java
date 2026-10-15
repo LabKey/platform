@@ -38,7 +38,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 
@@ -162,24 +161,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
         private SubscriptionTarget getTargets(Map<String, Object> row, User user, Container container) throws InvalidKeyException
         {
-            // Assume that if no User is specified, we should apply it to the current user
-            User targetUser = user;
-            Object userId = row.get("User");
-            if (userId == null)
-            {
-                userId = row.get("_user");
-            }
-            if (userId != null)
-            {
-                try
-                {
-                    targetUser = UserManager.getUser(Integer.parseInt(userId.toString()));
-                }
-                catch (NumberFormatException e)
-                {
-                    throw new InvalidKeyException("Invalid User value: " + userId);
-                }
-            }
+            User targetUser = getTargetUser(row, user);
 
             // Assume that if no Folder is specified, we should apply it to the current container
             Container targetContainer = container;
