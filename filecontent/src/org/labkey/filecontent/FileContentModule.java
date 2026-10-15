@@ -17,6 +17,7 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -25,6 +26,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -92,7 +94,7 @@ public class FileContentModule extends DefaultModule
             // Legacy values may be double-encoded, so @pipeline can also appear as %40pipeline
             if (FilesWebPart.FILESET_PROPERTY_NAME.equals(prop.getKey()) && !value.startsWith("@") && !value.startsWith("%40"))
                 return true;
-            if (FilesWebPart.FILE_ROOT_PROPERTY_NAME.equals(prop.getKey()) && StringUtils.startsWithIgnoreCase(StringUtils.stripStart(value, "/"), FileContentService.FILE_SETS_LINK))
+            if (FilesWebPart.FILE_ROOT_PROPERTY_NAME.equals(prop.getKey()) && Strings.CI.startsWith(StringUtils.stripStart(value, "/"), FileContentService.FILE_SETS_LINK))
                 return true;
         }
         return false;
@@ -227,24 +229,29 @@ public class FileContentModule extends DefaultModule
             results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
 
             // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
-            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
-                .getArrayList(String.class).stream()
-                .map(ContainerManager::getForId)
-                .filter(c -> c != null && !c.isRoot())
-                .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
-            results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
-            results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
+            try (Stream<String> disabledFileRootContainers = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"), new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
+                .uncachedStream(String.class))
+            {
+                Map<Boolean, Long> disabledFileRoots = disabledFileRootContainers
+                    .map(ContainerManager::getForId)
+                    .filter(c -> c != null && !c.isRoot())
+                    .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
+                results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
+                results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
+            }
 
             TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
-            Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(), "SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM " + mappedDirectories.getSelectName())
+            Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(),
+                    new SQLFragment("SELECT COUNT(*) AS NamedFileSets, COUNT(DISTINCT Container) AS NamedFileSetContainers FROM ").append(mappedDirectories, "md"))
                 .getMap();
             results.put("namedFileSets", fileSets.get("NamedFileSets"));
             results.put("namedFileSetContainers", fileSets.get("NamedFileSetContainers"));
 
-            results.put("filesWebPartsUsingFileSet", new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
-                .getArrayList(String.class).stream()
-                .filter(FileContentModule::usesNamedFileSet)
-                .count());
+            try (Stream<String> webPartProperties = new TableSelector(Portal.getTableInfoPortalWebParts(), PageFlowUtil.set("Properties"), new SimpleFilter(FieldKey.fromParts("Name"), FilesWebPart.PART_NAME), null)
+                .uncachedStream(String.class))
+            {
+                results.put("filesWebPartsUsingFileSet", webPartProperties.filter(FileContentModule::usesNamedFileSet).count());
+            }
 
             return results;
         });
