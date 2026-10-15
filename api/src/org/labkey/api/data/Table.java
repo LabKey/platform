@@ -884,7 +884,7 @@ public class Table
                         throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
                 }
 
-                valueSQL.append('?');
+                valueSQL.append("?");
                 if (value instanceof Parameter.JdbcParameterValue)
                     valueSQL.add(value);
                 else
@@ -906,7 +906,7 @@ public class Table
         insertSQL.append(")\n\t");
         insertSQL.append("VALUES (");
         insertSQL.append(valueSQL);
-        insertSQL.append(')');
+        insertSQL.append(")");
 
         // CONSIDER reselect version column
         if (null != autoIncColumn)
