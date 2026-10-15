@@ -87,6 +87,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
@@ -3161,6 +3162,31 @@ public class AnnouncementsController extends SpringActionController
             assertFalse(errors.getMessage(), errors.hasErrors());
             TableInfo emailPrefs = CoreSchema.getInstance().getTableInfoEmailPrefs();
             assertEquals(Integer.valueOf(mine), new TableSelector(emailPrefs, List.of(emailPrefs.getColumn("EmailOptionId")), new SimpleFilter(FieldKey.fromParts("UserId"), victim.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getObject(Integer.class));
+
+            Map<String, Object> noSuchUser = new HashMap<>(Map.of("User", Integer.MAX_VALUE, "Folder", _folderB.getId(), "EmailOption", mine));
+            assertThrows(QueryUpdateServiceException.class, () -> forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(noSuchUser), new BatchValidationException(), null, null));
+
+            // Admin moves the other user's subscription to another thread, then removes it
+            AnnouncementModel otherThread = new AnnouncementModel();
+            otherThread.setTitle("Other thread");
+            otherThread.setBody("body");
+            otherThread = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), otherThread, null, false);
+            QueryUpdateService qus = new AnnouncementSchema(adminOfB, _folderB).getTable(AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME).getUpdateService();
+            Map<String, Object> oldKey = new HashMap<>(Map.of("Announcement", _thread.getRowId(), "User", victim.getUserId()));
+            Map<String, Object> moved = new HashMap<>(Map.of("Announcement", otherThread.getRowId(), "User", victim.getUserId()));
+            errors = new BatchValidationException();
+            qus.updateRows(adminOfB, _folderB, List.of(moved), List.of(oldKey), errors, null, null);
+            assertFalse(errors.getMessage(), errors.hasErrors());
+            assertEquals(List.of(otherThread.getRowId()), memberListMessageIds(victim));
+
+            qus.deleteRows(adminOfB, _folderB, List.of(new HashMap<>(moved)), null, null);
+            assertEquals(List.of(), memberListMessageIds(victim));
+        }
+
+        private List<Integer> memberListMessageIds(User user)
+        {
+            TableInfo userList = CommSchema.getInstance().getTableInfoUserList();
+            return new TableSelector(userList, List.of(userList.getColumn("MessageId")), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null).getArrayList(Integer.class);
         }
 
         private Map<String, Long> subscriptionCounts(User user, User target)

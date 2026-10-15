@@ -117,6 +117,8 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
             {
                 throw new InvalidKeyException("Invalid User value: " + userId);
             }
+            if (targetUser == null)
+                throw new InvalidKeyException("No such User: " + userId);
         }
         return targetUser;
     }

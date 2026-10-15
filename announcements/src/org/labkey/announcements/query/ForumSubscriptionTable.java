@@ -40,6 +40,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -234,19 +235,18 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException
         {
-            Map<String, Object> existingRow = getRow(user, container, oldRow);
-            if (existingRow != null)
-            {
-                SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
-                SubscriptionTarget newTargets = getTargets(row, user, container);
-                Map<String, Object> pks = new CaseInsensitiveHashMap<>();
-                pks.put("UserId", oldTargets.getUser().getUserId());
-                pks.put("Container", oldTargets.getContainer().getEntityId());
-                pks.put("Type", "messages");
-                pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
-                checkDuplicateUpdate(pks);
-                Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
-            }
+            if (getRow(user, container, oldRow) == null)
+                throw new NotFoundException("The existing row was not found.");
+
+            SubscriptionTarget oldTargets = getTargets(oldRow, user, container);
+            SubscriptionTarget newTargets = getTargets(row, user, container);
+            Map<String, Object> pks = new CaseInsensitiveHashMap<>();
+            pks.put("UserId", oldTargets.getUser().getUserId());
+            pks.put("Container", oldTargets.getContainer().getEntityId());
+            pks.put("Type", "messages");
+            pks.put("SrcIdentifier", oldTargets.getSrcIdentifier());
+            checkDuplicateUpdate(pks);
+            Table.update(user, CoreSchema.getInstance().getTableInfoEmailPrefs(), createDatabaseMap(user, row, newTargets), pks);
 
             return getRow(user, container, row);
         }
