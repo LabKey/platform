@@ -38,7 +38,7 @@ public class RRemoteScriptEngine extends RScriptEngine
 {
     private static final Logger LOG = LogHelper.getLogger(RRemoteScriptEngine.class, "Remote R script engine");
 
-    /** Fixed because the runner unpacks the working directory to the same place every run. */
+    /** Root for the path mapper only: working-directory files map to relative paths, so the runner's real directory never shows. */
     public static final String REMOTE_WORKING_DIR = "/work";
 
     private final RemoteRunnerService _service;
@@ -89,9 +89,10 @@ public class RRemoteScriptEngine extends RScriptEngine
             throw new ScriptException("Script evaluation attempted with no RemoteRunnerService instance available.");
 
         StringBuffer output = new StringBuffer();
+        RemoteRunnerService.Result result;
         try (CustomTiming t = MiniProfiler.custom("remoteRunner", "execute r in remote runner"))
         {
-            _service.execute(scriptFile, getRWorkingDir(context), REMOTE_WORKING_DIR, inputFiles());
+            result = _service.execute(scriptFile, getRWorkingDir(context), inputFiles());
             appendConsoleOutput(context, output);
         }
         catch (Exception e)
@@ -104,9 +105,8 @@ public class RRemoteScriptEngine extends RScriptEngine
         }
 
         String scriptOut = output.toString();
-        // R CMD BATCH writes to .Rout rather than failing the process, so the only error signal is in the output.
-        if (scriptOut.contains("Execution halted"))
-            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "'.\n" + scriptOut);
+        if (!result.succeeded() || scriptOut.contains("Execution halted"))
+            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "' (" + result.status() + ").\n" + scriptOut);
         return scriptOut;
     }
 

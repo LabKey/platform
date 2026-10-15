@@ -81,6 +81,7 @@
         var REMOTE_R_ENGINE_NAME = 'Remote R Scripting Engine';
         var R_DOCKER_ENGINE_NAME = 'R Docker Scripting Engine';
         var R_RUNNER_ENGINE_NAME = 'R Remote Runner Scripting Engine';
+        var PYTHON_RUNNER_ENGINE_NAME = 'Python Remote Runner Scripting Engine';
         var JUPYTER_SERVICE_REPORT_NAME = 'Jupyter Report Engine';
 
         // Rserve file sharing constants (these should map to RserveScriptEngine.ModusOperandi enums
@@ -130,6 +131,9 @@
 
         var getEngineSpecificItems = function(record) {
             var items = [];
+            if (record.remoteRunner)
+                items = getRemoteRunnerConfigItems(items, record);
+
             if (record.extensions === R_EXTENSIONS) {
                 var isCurrentDefault = record.default && record.rowId;
 
@@ -140,9 +144,6 @@
                         value: true
                     }]);
                     items = getDockerConfigItems(items, record, DockerImageFields);
-                }
-                else if (record.remoteRunner) {
-                    items = getRemoteRunnerConfigItems(items, record);
                 }
 
                 items.push({
@@ -609,11 +610,11 @@
                             items.push(rec);
                         break;
                     case 'exePath':
-                        if (!record.docker && !record.remote)
+                        if (!record.docker && !record.remote && !record.remoteRunner)
                             items.push(rec);
                         break;
                     case 'exeCommand':
-                        if (!record.docker && !isJupyterReport)
+                        if (!record.docker && !isJupyterReport && !record.remoteRunner)
                             items.push(rec);
                         break;
                     default:
@@ -1020,6 +1021,30 @@
                 });
             }
 
+            // remote Python runner engine
+            if (remoteRunnerAvailable) {
+                items.push({
+                    id: 'add_pythonRunnerEngine',
+                    text: 'New Python Remote Runner Engine',
+                    listeners: {
+                        click: function (button, event) {
+                            editRecord(button, grid, {
+                                name: PYTHON_RUNNER_ENGINE_NAME,
+                                extensions: 'py',
+                                external: true,
+                                outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".out") %>,
+                                enabled: true,
+                                remoteRunner: true,
+                                docker: false,
+                                remote: false,
+                                languageName: 'Python',
+                                type: <%=q(ExternalScriptEngineDefinition.Type.External.name())%>
+                            });
+                        }
+                    }
+                });
+            }
+
             // perl engine
             items.push({
                 id: 'add_perlEngine',
@@ -1084,6 +1109,7 @@
                     {name:'external', type:'boolean'},
                     {name:'remote', type:'boolean'},
                     {name:'docker', type:'boolean'},
+                    {name:'remoteRunner', type:'boolean'},
                     {name:'dockerImageRowId'},
                     {name:'dockerImageConfig'},
                     {name:'outputFileName'},

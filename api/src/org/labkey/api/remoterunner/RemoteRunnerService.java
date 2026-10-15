@@ -4,6 +4,7 @@
  */
 package org.labkey.api.remoterunner;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.vfs.FileLike;
@@ -41,9 +42,21 @@ public interface RemoteRunnerService
      *
      * @param scriptFile      the script to run, already written into the working directory
      * @param localWorkingDir working directory on this server
-     * @param remoteWorkingDir path the runner will see, used for path mapping
      * @param inputFiles      which files in the working directory to send
+     * @return how the script itself ended; a failure to stage or reach the runner throws instead
      */
-    void execute(FileLike scriptFile, String localWorkingDir, String remoteWorkingDir, @Nullable FileFilter inputFiles)
+    Result execute(FileLike scriptFile, String localWorkingDir, @Nullable FileFilter inputFiles)
             throws IOException;
+
+    /**
+     * @param status     "ok", "script_error" or "timeout"
+     * @param returnCode the interpreter's exit code; null when it was killed for running too long
+     */
+    record Result(@NotNull String status, @Nullable Integer returnCode)
+    {
+        public boolean succeeded()
+        {
+            return "ok".equals(status);
+        }
+    }
 }

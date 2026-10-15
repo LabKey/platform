@@ -50,7 +50,8 @@ import org.labkey.api.reports.LabKeyScriptEngineManager;
 import org.labkey.api.reports.report.python.PythonScriptEngine;
 import org.labkey.api.remoterunner.RemoteRunnerService;
 import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
-import org.labkey.api.reports.report.r.RRemoteScriptEngineFactory;
+import org.labkey.api.reports.report.python.PythonRemoteScriptEngine;
+import org.labkey.api.reports.report.r.RRemoteScriptEngine;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
@@ -232,7 +233,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         password,
         remote,
         pandocEnabled,
-        docker
+        docker,
+        remoteRunner
     }
 
     ScriptEngineFactory rhino;
@@ -333,19 +335,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 if (def.isDocker())
                     return new RDockerScriptEngineFactory(def).getScriptEngine();
                 else if (def.isRemoteRunner())
-                {
-                    RemoteRunnerService runner = RemoteRunnerService.get();
-                    if (null == runner || !runner.isEnabled())
-                    {
-                        // Returning null here would silently fall back to running on the appserver, which is the thing
-                        // this engine exists to avoid.
-                        IllegalStateException ex = new IllegalStateException(String.format(
-                                "R engine [%1$s] targets the remote script runner, but no runner is configured on this server.", def.getName()));
-                        LOG.error(ex.getMessage());
-                        throw ex;
-                    }
-                    return new RRemoteScriptEngineFactory(def).getScriptEngine();
-                }
+                    return new RRemoteScriptEngine(def, getRemoteRunner(def));
                 else if (def.isRemote())
                 {
                     if (PremiumService.get().isRemoteREnabled())
@@ -366,11 +356,25 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 throw new PremiumFeatureNotEnabledException("Jupyter Reports are not available. Please talk to your account representative for additional information.");
             }
             else if (isPythonEngine(def))
-                return new PythonScriptEngine(def);
+                return def.isRemoteRunner() ? new PythonRemoteScriptEngine(def, getRemoteRunner(def)) : new PythonScriptEngine(def);
             else
                 return new ExternalScriptEngineFactory(def).getScriptEngine();
         }
         return null;
+    }
+
+    // Returning null instead would silently fall back to running on the appserver, which is the thing these engines exist to avoid.
+    private static @NotNull RemoteRunnerService getRemoteRunner(ExternalScriptEngineDefinition def)
+    {
+        RemoteRunnerService runner = RemoteRunnerService.get();
+        if (null == runner || !runner.isEnabled())
+        {
+            IllegalStateException ex = new IllegalStateException(String.format(
+                    "Script engine [%1$s] targets the remote script runner, but no runner is configured on this server.", def.getName()));
+            LOG.error(ex.getMessage());
+            throw ex;
+        }
+        return runner;
     }
 
     // A Python engine is configured as a generic external engine (there is no dedicated Type.Python), so identify it by
@@ -652,6 +656,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             extensions = Arrays.asList(StringUtils.split(extensionStr, ","));
         String pathMapStr = props.get(Props.pathMap.name());
         boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
+        boolean isRemoteRunner = Boolean.valueOf(props.get(Props.remoteRunner.name()));
         ExternalScriptEngineDefinition.Type type = ExternalScriptEngineDefinition.Type.External;
 
         if (extensions.contains("r"))
@@ -659,7 +664,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         else if (extensions.contains("pl"))
             type = ExternalScriptEngineDefinition.Type.Perl;
 
-        if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (isRemote || (exePath!=null)))
+        if ((key != null || isFromStartupProps) && name != null && extensionStr != null && (isRemote || isRemoteRunner || (exePath!=null)))
         {
             try
             {
