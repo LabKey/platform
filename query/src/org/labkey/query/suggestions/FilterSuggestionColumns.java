@@ -40,6 +40,7 @@ import org.labkey.api.query.suggestions.SuggestionColumn;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -59,8 +60,11 @@ public class FilterSuggestionColumns
 
     private record Candidate(FieldKey fieldKey, ColumnInfo column, @Nullable String caption) {}
 
-    /** @param lookups the multi-valued lookup column whose junction table supplies each such column's values */
-    public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups) {}
+    /**
+     * @param lookups     the multi-valued lookup column whose junction table supplies each such column's values
+     * @param auditLogged columns that are, or are reached through, an audit-logged column
+     */
+    public record Described(@NotNull List<SuggestionColumn> columns, @NotNull Map<SuggestionColumn, ColumnInfo> lookups, @NotNull Set<SuggestionColumn> auditLogged) {}
 
     /** @param fieldKeys the grid's display columns; only those that resolve and that the user may read are kept */
     public static @NotNull Described describe(@NotNull TableInfo table, @Nullable CustomView view, @Nullable Collection<String> fieldKeys)
@@ -100,6 +104,7 @@ public class FilterSuggestionColumns
         Set<String> seen = new HashSet<>();
         List<SuggestionColumn> columns = new ArrayList<>();
         Map<SuggestionColumn, ColumnInfo> lookups = new IdentityHashMap<>();
+        Set<SuggestionColumn> auditLogged = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Candidate candidate : candidates)
         {
             SuggestionColumn column = toSuggestionColumn(candidate, pkFieldKeys.contains(candidate.column().getFieldKey()), titleColumn, maxAllowedPhi);
@@ -108,9 +113,22 @@ public class FilterSuggestionColumns
                 columns.add(column);
                 if (column.getType() == SuggestionColumn.Type.STRING && column.getValues() == null && isJunctionLookup(candidate.column()))
                     lookups.put(column, candidate.column());
+                if (isAuditLogged(candidate.fieldKey(), resolved))
+                    auditLogged.add(column);
             }
         }
-        return new Described(columns, lookups);
+        return new Described(columns, lookups, auditLogged);
+    }
+
+    // A lookup's display column copies the target's logging, not its FK's, so a SELECT of it alone won't log the read
+    private static boolean isAuditLogged(FieldKey fieldKey, Map<FieldKey, ColumnInfo> resolved)
+    {
+        for (FieldKey key = fieldKey; key != null; key = key.getParent())
+        {
+            if (ColumnFactsCache.requiresAuditLogging(resolved.get(key)))
+                return true;
+        }
+        return false;
     }
 
     private static Map<FieldKey, String> getViewCaptions(@Nullable CustomView view)
