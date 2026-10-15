@@ -26,6 +26,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.suggestions.FilterSuggestion;
@@ -101,16 +102,15 @@ public class FilterSuggestionService
         if (term.isBlank())
             return new FilterSuggestionsResponse(List.of(), true);
 
-        if (StringUtils.isBlank(request.schemaName()) || StringUtils.isBlank(request.queryName()))
-            throw new ApiUsageException("schemaName and queryName are required.");
-
-        UserSchema schema = QueryService.get().getUserSchema(user, container, request.schemaName());
-        if (schema == null)
-            throw new NotFoundException("Schema not found: " + request.schemaName());
+        // Same checks and messages as QueryForm, so this fails like query-getQuery.api
+        UserSchema schema = StringUtils.isBlank(request.schemaName()) ? null : QueryService.get().getUserSchema(user, container, request.schemaName());
+        QueryForm.ensureSchemaNotNull(schema);
+        if (StringUtils.isBlank(request.queryName()))
+            throw new NotFoundException("Query not specified");
 
         TableInfo table = schema.getTable(request.queryName(), getContainerFilter(request, container, user));
         if (table == null)
-            throw new NotFoundException("Query not found: " + request.queryName());
+            throw new NotFoundException("The specified query '" + request.queryName() + "' does not exist in schema '" + request.schemaName() + "'");
         if (!table.hasPermission(user, ReadPermission.class))
             throw new UnauthorizedException();
 
