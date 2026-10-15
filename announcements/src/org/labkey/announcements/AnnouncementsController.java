@@ -81,6 +81,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
@@ -153,8 +154,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -3063,6 +3066,72 @@ public class AnnouncementsController extends SpringActionController
             AnnouncementManager.saveMessageBoardSettings(secure, settings);
             assertEquals(Set.of(), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
             assertEquals(all, queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+        }
+
+        // GH Issue 1637: on a secure board, AnnouncementSubscription rows are the member list that grants read
+        @Test
+        public void testSubscriptionTableEnforcesSecureBoardMemberList() throws Exception
+        {
+            Container secure = createContainer("SecureSubscription");
+            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
+            settings.setSecure(Settings.SECURE_WITHOUT_EMAIL);
+            settings.setMemberList(true);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+            grantRole(nonMember, _folderA, ReaderRole.class);
+
+            AnnouncementModel thread = new AnnouncementModel();
+            thread.setTitle("Member thread");
+            thread.setBody("body");
+            thread.setMemberListInput(String.valueOf(member.getUserId()));
+            thread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), thread, null, false);
+
+            // The thread's effective member list lives on its latest post
+            AnnouncementModel response = new AnnouncementModel();
+            response.setTitle("Member thread response");
+            response.setBody("body");
+            response.setParent(thread.getEntityId());
+            response.setMemberListInput(String.valueOf(member.getUserId()));
+            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
+
+            for (Container from : List.of(secure, _folderA))
+            {
+                for (AnnouncementModel target : List.of(thread, response))
+                    assertThrows(UnauthorizedException.class, () -> insertSubscription(nonMember, from, target));
+            }
+            assertFalse(canRead(nonMember, secure, thread));
+
+            insertSubscription(editor, secure, thread);
+
+            // Members can still remove themselves
+            assertTrue(canRead(member, secure, thread));
+            Map<String, Object> key = new HashMap<>(Map.of("Announcement", response.getRowId(), "User", member.getUserId()));
+            assertEquals(1, getSubscriptionTable(member, secure).getUpdateService().deleteRows(member, secure, List.of(key), null, null).size());
+            assertFalse(canRead(member, secure, thread));
+        }
+
+        private void insertSubscription(User user, Container from, AnnouncementModel target) throws Exception
+        {
+            Map<String, Object> row = new HashMap<>(Map.of("Announcement", target.getRowId()));
+            BatchValidationException errors = new BatchValidationException();
+            getSubscriptionTable(user, from).getUpdateService().insertRows(user, from, List.of(row), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private TableInfo getSubscriptionTable(User user, Container from)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, from);
+            return schema.getTable(AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, ContainerFilter.Type.AllFolders.create(schema));
+        }
+
+        private boolean canRead(User user, Container c, AnnouncementModel thread)
+        {
+            AnnouncementModel fresh = AnnouncementManager.getAnnouncement(c, thread.getRowId());
+            return getPermissions(c, user, getSettings(c)).allowRead(fresh);
         }
 
         @Test

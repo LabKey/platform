@@ -39,6 +39,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -120,7 +121,16 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
                     throw new InvalidKeyException("No such Announcement: " + announcementId);
                 }
 
-                ensurePermission(user, targetUser, announcement.lookupContainer());
+                Container c = announcement.lookupContainer();
+                ensurePermission(user, targetUser, c);
+
+                // On a secure board these rows are the thread's member list, which grants read, so require read of the
+                // thread itself. Rows live on the latest post, so resolve a response to its thread.
+                AnnouncementModel thread = announcement.getParent() == null ? announcement : AnnouncementManager.getAnnouncement(null, announcement.getParent());
+                if (thread == null || !AnnouncementManager.getPermissions(c, user, AnnouncementManager.getMessageBoardSettings(c)).allowRead(thread))
+                {
+                    throw new UnauthorizedException();
+                }
 
                 return new Pair<>(targetUser, announcement);
             }
