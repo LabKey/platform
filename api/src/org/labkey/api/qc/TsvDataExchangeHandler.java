@@ -80,7 +80,11 @@ import org.labkey.vfs.FileLike;
 import org.labkey.vfs.FileSystemLike;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -998,15 +1002,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         int extensionIndex = firstFile.getName().lastIndexOf(".");
                         String baseName = extensionIndex >= 0 ? firstFile.getName().substring(0, extensionIndex) : firstFile.getName();
 
-                        // Figure out a unique file name
-                        File targetFile;
-                        int index = 0;
-                        do
-                        {
-                            targetFile = FileUtil.appendName(firstFile.getParentFile(), baseName + (index == 0 ? "" : ("-" + index)) + "." + file.getName());
-                            index++;
-                        }
-                        while (targetFile.exists());
+                        // Move the file to the same directory as the original data file
+                        File targetFile = moveToUniqueFile(file, firstFile.getParentFile(), baseName);
 
                         // Catch errors file
                         if (file.getName().equals(TRANS_ERR_FILE))
@@ -1015,9 +1012,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         }
                         else
                             tempOutputFiles.add(targetFile);
-
-                        // Copy the file to the same directory as the original data file
-                        FileUtils.moveFile(file, targetFile);
 
                         scriptOutput.addRelatedOutputFile(baseName, targetFile);
                     }
@@ -1150,6 +1144,36 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
         }
         return result;
+    }
+
+    /** Moves file into dir as baseName.fileName, uniquified with -1, -2, ... */
+    private static File moveToUniqueFile(File file, File dir, String baseName) throws IOException
+    {
+        // Transform scripts for concurrent imports run in parallel and share the upload directory, so claim the name atomically
+        for (int index = 0; ; index++)
+        {
+            File targetFile = FileUtil.appendName(dir, baseName + (index == 0 ? "" : ("-" + index)) + "." + file.getName());
+            try
+            {
+                //noinspection SSBasedInspection
+                Files.createFile(targetFile.toPath());
+            }
+            catch (FileAlreadyExistsException e)
+            {
+                continue;
+            }
+
+            try
+            {
+                Files.move(file.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+            catch (IOException e)
+            {
+                Files.deleteIfExists(targetFile.toPath());
+                throw e;
+            }
+            return targetFile;
+        }
     }
 
     @Override
