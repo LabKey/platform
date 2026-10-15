@@ -538,7 +538,7 @@ public class VisualizationController extends SpringActionController
             return response;
         }
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
+        protected ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -591,13 +591,6 @@ public class VisualizationController extends SpringActionController
     public class cdsGetDataAction extends GetDataAction
     {
         @Override
-        protected ObjectReader getObjectReader(Class<?> c)
-        {
-            ObjectReader r = super.getObjectReader(c);
-            return r.without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        }
-
-        @Override
         public ApiResponse execute(VisDataRequest form, BindException errors) throws Exception
         {
             VisualizationCDSGenerator sqlGenerator = new VisualizationCDSGenerator(getViewContext(), form);
@@ -628,51 +621,11 @@ public class VisualizationController extends SpringActionController
 
             return response;
         }
-
-
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors)
-        {
-            String schemaName = schema.getName();
-            //create a temp query settings object initialized with the posted LabKey SQL
-            //this will provide a temporary QueryDefinition to Query
-
-            QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), schemaName, sql);
-
-            QuerySettings settings = new QuerySettings(context, "visualization", def.getName());
-
-            //need to explicitly turn off various UI options that will try to refer to the
-            //current URL and query string
-            settings.setAllowChooseView(false);
-            settings.setAllowCustomizeView(false);
-            settings.setBaseSort(sort);
-
-            //by default, return all rows
-            settings.setShowRows(ShowRows.ALL);
-
-            //build a query view using the schema and settings
-            QueryView view = new QueryView(schema, settings, errors);
-            view.setShowRecordSelectors(false);
-            view.setShowExportButtons(false);
-            view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-
-            return new ExtendedApiQueryResponse(view, false,
-                    false, schemaName, def.getName(), 0, null, metaDataOnly, false, false);
-        }
     }
 
     @RequiresSiteAdmin
-    public static class cdsTestGetDataAction extends SimpleViewAction<Object>
+    public static class cdsTestGetDataAction extends TestGetDataAction
     {
-        @Override
-        public ModelAndView getView(Object noform, BindException errors)
-        {
-            return new JspView<>("/org/labkey/visualization/test/test.jsp");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
     }
 
     /**

@@ -542,7 +542,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 aggregatedSQL.append(separator);
                 separator = " AND ";
                 aggregatedSQL.append("x.");
-                VisualizationSourceColumn vsc = (VisualizationSourceColumn)pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
+                VisualizationSourceColumn vsc = pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
                 aggregatedSQL.append(vsc.getSQLAlias());
                 aggregatedSQL.append(" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
@@ -670,7 +670,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
             {
-                VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
+                VisualizationSourceColumn col = pickFirst(selectAliases);
                 String label = col.getLabel();
                 selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
                 if (col.isHidden())
@@ -1022,7 +1022,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             throw new NotFoundException("No primary schema found.");
         }
-        VisualizationSourceQuery firstQuery = (VisualizationSourceQuery)pickFirst(_sourceQueries.values());
+        VisualizationSourceQuery firstQuery = pickFirst(_sourceQueries.values());
         return firstQuery.getSchema();
     }
 
