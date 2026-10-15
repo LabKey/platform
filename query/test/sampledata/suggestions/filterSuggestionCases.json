@@ -7,7 +7,7 @@
       { "fieldKey": "BloodType", "caption": "Blood Type", "type": "string", "values": ["A+", "A-", "AB+", "B+", "B-", "O+", "O-"] },
       { "fieldKey": "ProcessingMethod", "caption": "Processing Method", "type": "string", "values": ["Double Spin", "PRP", "Single Spin", "Standard"] },
       { "fieldKey": "HemolysisGrade", "caption": "Hemolysis Grade", "type": "string", "values": ["1+", "2+", "3+", "4+", "None"] },
-      { "fieldKey": "SampleState/Label", "caption": "Status", "type": "string", "values": ["Available", "Consumed", "Locked"] },
+      { "fieldKey": "SampleState/Label", "gridFieldKey": "SampleState", "caption": "Status", "type": "string", "values": ["Available", "Consumed", "Locked"] },
       { "fieldKey": "SubjectID", "caption": "Subject ID", "type": "string", "shapes": ["AAAA-999999"] },
       { "fieldKey": "Barcode", "caption": "Barcode", "type": "string", "isUniqueId": true, "shapes": ["999999999"] },
       { "fieldKey": "Concentration", "caption": "Concentration Mg ML", "type": "float", "min": 50.1, "max": 120.5 },
@@ -22,14 +22,14 @@
       { "fieldKey": "ProcessingDate", "caption": "Processing Date", "type": "date", "min": "2018-01-01", "max": "2024-12-31" },
       { "fieldKey": "MaterialExpDate", "caption": "Expiration Date", "type": "date", "min": "2026-07-04", "max": "2026-07-04" },
       { "fieldKey": "Created", "caption": "Created", "type": "date", "min": "2026-05-24", "max": "2026-06-04" },
-      { "fieldKey": "CreatedBy/DisplayName", "caption": "Created By", "type": "string", "values": ["hannahb"] },
+      { "fieldKey": "CreatedBy/DisplayName", "gridFieldKey": "CreatedBy", "caption": "Created By", "type": "string", "values": ["hannahb"] },
       { "fieldKey": "IsAliquot", "caption": "Is Aliquot", "type": "boolean", "values": ["true", "false"] },
       { "fieldKey": "RowId", "caption": "Row Id", "type": "int", "isKey": true }
     ],
     "molecules": [
       { "fieldKey": "Name", "caption": "Name", "type": "string", "isTitle": true, "nameExpression": "M-${genId}", "shapes": ["A-9", "A-99"] },
-      { "fieldKey": "Components/Name", "caption": "Components", "type": "string", "multiValued": true, "values": ["CMP-7", "NS-29", "NS-30", "PS-28", "PS-29"] },
-      { "fieldKey": "Features/Name", "caption": "Features", "type": "string", "multiValued": true, "shapes": ["AAA-999"] }
+      { "fieldKey": "Components/Name", "gridFieldKey": "Components", "caption": "Components", "type": "string", "multiValued": true, "values": ["CMP-7", "NS-29", "NS-30", "PS-28", "PS-29"] },
+      { "fieldKey": "Features/Name", "gridFieldKey": "Features", "caption": "Features", "type": "string", "multiValued": true, "shapes": ["AAA-999"] }
     ],
     "unknownRanges": [
       { "fieldKey": "Concentration", "caption": "Concentration", "type": "float", "rangeUnknown": true },
@@ -43,9 +43,9 @@
       "columnSet": "plasma",
       "term": "PL-5000000-1",
       "expected": [
-        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-5000000-1", "label": "Sample ID is PL-5000000-1", "source": "identity", "match": { "start": 13, "end": 25 } },
-        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-5000000-1", "label": "Sample ID contains PL-5000000-1", "source": "identityContains", "match": { "start": 19, "end": 31 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-5000000-1", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-5000000-1", "label": "Sample ID is PL-5000000-1", "source": "identity", "match": { "start": 13, "end": 25 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-5000000-1", "label": "Sample ID contains PL-5000000-1", "source": "identityContains", "match": { "start": 19, "end": 31 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-5000000-1", "valueType": "string", "label": "Filter Sample ID…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -74,9 +74,9 @@
       "columnSet": "plasma",
       "term": "PL-500",
       "expected": [
-        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-500", "label": "Sample ID is PL-500", "source": "identity", "match": { "start": 13, "end": 19 } },
-        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-500", "label": "Sample ID contains PL-500", "source": "identityContains", "match": { "start": 19, "end": 25 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-500", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "PL-500", "label": "Sample ID is PL-500", "source": "identity", "match": { "start": 13, "end": 19 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "PL-500", "label": "Sample ID contains PL-500", "source": "identityContains", "match": { "start": 19, "end": 25 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "PL-500", "valueType": "string", "label": "Filter Sample ID…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -105,8 +105,8 @@
       "columnSet": "plasma",
       "term": "Sodium",
       "expected": [
-        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "partialValue", "match": { "start": 13, "end": 19 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Sodium", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "partialValue", "match": { "start": 13, "end": 19 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Sodium", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
           "fields": [
@@ -135,9 +135,9 @@
       "columnSet": "plasma",
       "term": "Hep",
       "expected": [
-        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 } },
-        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Na", "label": "Tube Type is Heparin Na", "source": "partialValue", "match": { "start": 13, "end": 16 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Na", "label": "Tube Type is Heparin Na", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
           "fields": [
@@ -167,8 +167,8 @@
       "term": "Hep",
       "maxSuggestions": 4,
       "expected": [
-        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
           "fields": [
@@ -197,8 +197,8 @@
       "columnSet": "plasma",
       "term": "sodium citrate",
       "expected": [
-        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "exactValue", "match": { "start": 13, "end": 27 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "sodium citrate", "valueType": "string", "label": "Filter Tube Type…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "exactValue", "match": { "start": 13, "end": 27 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "sodium citrate", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
           "fields": [
@@ -227,8 +227,8 @@
       "columnSet": "plasma",
       "term": "A+",
       "expected": [
-        { "kind": "filter", "fieldKey": "BloodType", "op": "eq", "value": "A+", "label": "Blood Type is A+", "source": "exactValue", "match": { "start": 14, "end": 16 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "BloodType", "op": "contains" }], "value": "A+", "valueType": "string", "label": "Filter Blood Type…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "BloodType", "op": "eq", "value": "A+", "label": "Blood Type is A+", "source": "exactValue", "match": { "start": 14, "end": 16 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "BloodType" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "BloodType", "op": "contains" }], "value": "A+", "valueType": "string", "label": "Filter Blood Type…", "source": "compose", "colMatch": { "start": 7, "end": 17, "fieldKey": "BloodType" } },
         {
           "kind": "compose",
           "fields": [
@@ -257,8 +257,8 @@
       "columnSet": "plasma",
       "term": "Avail",
       "expected": [
-        { "kind": "filter", "fieldKey": "SampleState/Label", "op": "eq", "value": "Available", "label": "Status is Available", "source": "partialValue", "match": { "start": 10, "end": 15 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "SampleState/Label", "op": "contains" }], "value": "Avail", "valueType": "string", "label": "Filter Status…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "SampleState/Label", "op": "eq", "value": "Available", "label": "Status is Available", "source": "partialValue", "match": { "start": 10, "end": 15 }, "colMatch": { "start": 0, "end": 6, "fieldKey": "SampleState" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "SampleState/Label", "op": "contains" }], "value": "Avail", "valueType": "string", "label": "Filter Status…", "source": "compose", "colMatch": { "start": 7, "end": 13, "fieldKey": "SampleState" } },
         {
           "kind": "compose",
           "fields": [
@@ -287,8 +287,8 @@
       "columnSet": "molecules",
       "term": "PS-29",
       "expected": [
-        { "kind": "filter", "fieldKey": "Components/Name", "op": "contains", "value": "PS-29", "label": "Components contains PS-29", "source": "exactValue", "match": { "start": 20, "end": 25 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Components/Name", "op": "contains" }], "value": "PS-29", "valueType": "string", "label": "Filter Components…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Components/Name", "op": "contains", "value": "PS-29", "label": "Components contains PS-29", "source": "exactValue", "match": { "start": 20, "end": 25 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "Components" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Components/Name", "op": "contains" }], "value": "PS-29", "valueType": "string", "label": "Filter Components…", "source": "compose", "colMatch": { "start": 7, "end": 17, "fieldKey": "Components" } },
         {
           "kind": "compose",
           "fields": [
@@ -310,8 +310,8 @@
       "columnSet": "molecules",
       "term": "FTR-123",
       "expected": [
-        { "kind": "filter", "fieldKey": "Features/Name", "op": "contains", "value": "FTR-123", "label": "Features contains FTR-123", "source": "shape", "match": { "start": 18, "end": 25 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Features/Name", "op": "contains" }], "value": "FTR-123", "valueType": "string", "label": "Filter Features…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Features/Name", "op": "contains", "value": "FTR-123", "label": "Features contains FTR-123", "source": "shape", "match": { "start": 18, "end": 25 }, "colMatch": { "start": 0, "end": 8, "fieldKey": "Features" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Features/Name", "op": "contains" }], "value": "FTR-123", "valueType": "string", "label": "Filter Features…", "source": "compose", "colMatch": { "start": 7, "end": 15, "fieldKey": "Features" } },
         {
           "kind": "compose",
           "fields": [
@@ -333,9 +333,9 @@
       "columnSet": "plasma",
       "term": "XY-1234567",
       "expected": [
-        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "XY-1234567", "label": "Sample ID is XY-1234567", "source": "shape", "match": { "start": 13, "end": 23 } },
-        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "XY-1234567", "label": "Sample ID contains XY-1234567", "source": "shapeContains", "match": { "start": 19, "end": 29 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "XY-1234567", "valueType": "string", "label": "Filter Sample ID…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Name", "op": "eq", "value": "XY-1234567", "label": "Sample ID is XY-1234567", "source": "shape", "match": { "start": 13, "end": 23 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "XY-1234567", "label": "Sample ID contains XY-1234567", "source": "shapeContains", "match": { "start": 19, "end": 29 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Name", "op": "eq" }], "value": "XY-1234567", "valueType": "string", "label": "Filter Sample ID…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -364,8 +364,8 @@
       "columnSet": "plasma",
       "term": "SUBJ-028504",
       "expected": [
-        { "kind": "filter", "fieldKey": "SubjectID", "op": "eq", "value": "SUBJ-028504", "label": "Subject ID is SUBJ-028504", "source": "shape", "match": { "start": 14, "end": 25 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "SubjectID", "op": "eq" }], "value": "SUBJ-028504", "valueType": "string", "label": "Filter Subject ID…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "SubjectID", "op": "eq", "value": "SUBJ-028504", "label": "Subject ID is SUBJ-028504", "source": "shape", "match": { "start": 14, "end": 25 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "SubjectID" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "SubjectID", "op": "eq" }], "value": "SUBJ-028504", "valueType": "string", "label": "Filter Subject ID…", "source": "compose", "colMatch": { "start": 7, "end": 17, "fieldKey": "SubjectID" } },
         {
           "kind": "compose",
           "fields": [
@@ -394,7 +394,7 @@
       "columnSet": "plasma",
       "term": "86.76",
       "expected": [
-        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "86.76", "valueType": "number", "label": "Filter Concentration Mg ML…", "source": "compose" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "86.76", "valueType": "number", "label": "Filter Concentration Mg ML…", "source": "compose", "colMatch": { "start": 7, "end": 26, "fieldKey": "Concentration" } },
         { "kind": "search", "value": "86.76", "label": "Search all columns for 86.76", "source": "fallback", "match": { "start": 23, "end": 28 } }
       ]
     },
@@ -403,9 +403,9 @@
       "columnSet": "plasma",
       "term": "3",
       "expected": [
-        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "3", "label": "Row Id is 3", "source": "key", "match": { "start": 10, "end": 11 } },
-        { "kind": "filter", "fieldKey": "FreezeThawCount", "op": "eq", "value": "3", "label": "Freeze/Thaw Count is 3", "source": "integerValue", "match": { "start": 21, "end": 22 } },
-        { "kind": "filter", "fieldKey": "StorageCol", "op": "eq", "value": "3", "label": "Storage Col is 3", "source": "integerValue", "match": { "start": 15, "end": 16 } },
+        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "3", "label": "Row Id is 3", "source": "key", "match": { "start": 10, "end": 11 }, "colMatch": { "start": 0, "end": 6, "fieldKey": "RowId" } },
+        { "kind": "filter", "fieldKey": "FreezeThawCount", "op": "eq", "value": "3", "label": "Freeze/Thaw Count is 3", "source": "integerValue", "match": { "start": 21, "end": 22 }, "colMatch": { "start": 0, "end": 17, "fieldKey": "FreezeThawCount" } },
+        { "kind": "filter", "fieldKey": "StorageCol", "op": "eq", "value": "3", "label": "Storage Col is 3", "source": "integerValue", "match": { "start": 15, "end": 16 }, "colMatch": { "start": 0, "end": 11, "fieldKey": "StorageCol" } },
         {
           "kind": "compose",
           "fields": [
@@ -429,7 +429,7 @@
       "columnSet": "plasma",
       "term": "2023",
       "expected": [
-        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "2023", "label": "Row Id is 2023", "source": "key", "match": { "start": 10, "end": 14 } },
+        { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "2023", "label": "Row Id is 2023", "source": "key", "match": { "start": 10, "end": 14 }, "colMatch": { "start": 0, "end": 6, "fieldKey": "RowId" } },
         {
           "kind": "compose",
           "fields": [
@@ -490,8 +490,8 @@
       "columnSet": "plasma",
       "term": "005004441",
       "expected": [
-        { "kind": "filter", "fieldKey": "Barcode", "op": "eq", "value": "005004441", "label": "Barcode is 005004441", "source": "identity", "match": { "start": 11, "end": 20 } },
-        { "kind": "compose", "fields": [{ "fieldKey": "Barcode", "op": "eq" }], "value": "005004441", "valueType": "string", "label": "Filter Barcode…", "source": "compose" },
+        { "kind": "filter", "fieldKey": "Barcode", "op": "eq", "value": "005004441", "label": "Barcode is 005004441", "source": "identity", "match": { "start": 11, "end": 20 }, "colMatch": { "start": 0, "end": 7, "fieldKey": "Barcode" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Barcode", "op": "eq" }], "value": "005004441", "valueType": "string", "label": "Filter Barcode…", "source": "compose", "colMatch": { "start": 7, "end": 14, "fieldKey": "Barcode" } },
         {
           "kind": "compose",
           "fields": [
@@ -548,7 +548,7 @@
       "columnSet": "plasma",
       "term": "true",
       "expected": [
-        { "kind": "filter", "fieldKey": "IsAliquot", "op": "eq", "value": "true", "label": "Is Aliquot is true", "source": "exactValue", "match": { "start": 14, "end": 18 } },
+        { "kind": "filter", "fieldKey": "IsAliquot", "op": "eq", "value": "true", "label": "Is Aliquot is true", "source": "exactValue", "match": { "start": 14, "end": 18 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "IsAliquot" } },
         {
           "kind": "compose",
           "fields": [
@@ -577,8 +577,8 @@
       "columnSet": "unknownRanges",
       "term": "1000",
       "expected": [
-        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "1000", "valueType": "number", "label": "Filter Concentration…", "source": "compose" },
-        { "kind": "compose", "fields": [{ "fieldKey": "Collected", "op": "between" }], "value": "1000-01-01,1000-12-31", "valueType": "date", "label": "Filter Collected…", "source": "compose" },
+        { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "1000", "valueType": "number", "label": "Filter Concentration…", "source": "compose", "colMatch": { "start": 7, "end": 20, "fieldKey": "Concentration" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "Collected", "op": "between" }], "value": "1000-01-01,1000-12-31", "valueType": "date", "label": "Filter Collected…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "Collected" } },
         { "kind": "search", "value": "1000", "label": "Search all columns for 1000", "source": "fallback", "match": { "start": 23, "end": 27 } }
       ]
     },

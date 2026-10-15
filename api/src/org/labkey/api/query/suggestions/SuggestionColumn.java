@@ -35,6 +35,7 @@ public class SuggestionColumn
     private final Type _type;
     private final @Nullable ColumnInfo _columnInfo;
 
+    private String _gridFieldKey;
     private boolean _key;
     private boolean _title;
     private boolean _uniqueId;
@@ -54,11 +55,23 @@ public class SuggestionColumn
         _caption = caption;
         _type = type;
         _columnInfo = columnInfo;
+        _gridFieldKey = fieldKey;
     }
 
     public @NotNull String getFieldKey()
     {
         return _fieldKey;
+    }
+
+    /** The grid's column as the request named it, which differs from the fieldKey for a lookup filtered on its display column. */
+    public @NotNull String getGridFieldKey()
+    {
+        return _gridFieldKey;
+    }
+
+    public void setGridFieldKey(@NotNull String gridFieldKey)
+    {
+        _gridFieldKey = gridFieldKey;
     }
 
     public @NotNull String getCaption()
