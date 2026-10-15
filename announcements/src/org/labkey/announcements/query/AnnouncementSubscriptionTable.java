@@ -89,6 +89,11 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         sql.append(")");
 
         addCondition(sql, FieldKey.fromParts("Container"));
+
+        SQLFragment containerSql = new SQLFragment("(SELECT a.Container FROM ");
+        containerSql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
+        containerSql.append(" WHERE a.RowId = MessageId)");
+        applyUserFilter(filter, containerSql);
     }
 
     @Override

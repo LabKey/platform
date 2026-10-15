@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -44,10 +45,6 @@ import org.labkey.api.security.permissions.Permission;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Feb 6, 2012
- */
 public class ForumSubscriptionTable extends AbstractSubscriptionTable
 {
     public ForumSubscriptionTable(AnnouncementSchema schema, ContainerFilter cf)
@@ -83,6 +80,13 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     public String getPublicName()
     {
         return AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME;
+    }
+
+    @Override
+    protected void applyContainerFilter(ContainerFilter filter)
+    {
+        super.applyContainerFilter(filter);
+        applyUserFilter(filter, new SQLFragment("Container"));
     }
 
     @Override
@@ -151,7 +155,6 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
 
     private class ForumSubscriptionUpdateService extends AbstractQueryUpdateService
     {
-
         protected ForumSubscriptionUpdateService(TableInfo queryTable)
         {
             super(queryTable);

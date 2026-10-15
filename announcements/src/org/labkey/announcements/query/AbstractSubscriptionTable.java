@@ -18,7 +18,9 @@ package org.labkey.announcements.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -31,13 +33,12 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.Map;
+import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Feb 10, 2012
- */
 public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
 {
+    private static final FieldKey USER_FILTER_KEY = FieldKey.fromParts("UserId");
+
     public AbstractSubscriptionTable(TableInfo table, AnnouncementSchema schema, ContainerFilter cf)
     {
         super(table, schema, cf);
@@ -45,12 +46,18 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
         var userColumn = wrapColumn("User", getRealTable().getColumn("UserId"));
         addColumn(userColumn);
         userColumn.setFk(new UserIdQueryForeignKey(_userSchema));
+    }
 
-        // Only admins can see subscriptions for other users
-        if (!schema.getContainer().hasPermission(schema.getUser(), AdminPermission.class))
-        {
-            addCondition(getRealTable().getColumn("UserId"), schema.getUser().getUserId());
-        }
+    // Other users' rows are visible only to admins of each row's own folder, not of the folder being queried from
+    protected void applyUserFilter(ContainerFilter filter, SQLFragment containerSql)
+    {
+        User user = _userSchema.getUser();
+        ContainerFilter.ContainerFilterWithPermission scope = filter instanceof ContainerFilter.ContainerFilterWithPermission cfp ? cfp : new ContainerFilter.AllFolders(user);
+        SQLFragment sql = new SQLFragment("UserId = ? OR ", user.getUserId());
+        sql.append(scope.getSQLFragment(getSchema(), containerSql, AdminPermission.class, Set.of(), false));
+
+        clearConditions(USER_FILTER_KEY);
+        addCondition(sql, USER_FILTER_KEY);
     }
 
     @Override
@@ -112,5 +119,4 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
         }
         return targetUser;
     }
-
 }
