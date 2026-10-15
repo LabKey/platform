@@ -170,9 +170,17 @@ public class QueryDefCache
     // GH Issue 1736: a thread outside the transaction can reload pre-commit rows after the immediate remove, so remove again after commit
     public static void uncache(Container c)
     {
-        QueryManager.get().getDbSchema().getScope().addCommitTask(() -> {
+        QueryManager.get().getDbSchema().getScope().addCommitTask(new UncacheTask(c), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+    }
+
+    // record equality lets the transaction dedupe repeated uncaches of the same container
+    private record UncacheTask(Container c) implements Runnable
+    {
+        @Override
+        public void run()
+        {
             QUERY_DEF_DB_CACHE.remove(c);
             QueryDefinitionImpl.clearHasPkColumnCache();
-        }, DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+        }
     }
 }
