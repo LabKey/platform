@@ -33,7 +33,6 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyType;
@@ -97,7 +96,7 @@ public class ColumnFactsCache
 {
     private static final Logger LOG = LogHelper.getLogger(ColumnFactsCache.class, "Grid search suggestion column facts");
 
-    public static final int DISTINCT_VALUE_LIMIT = 500;
+    public static final int DISTINCT_VALUE_LIMIT = 250;
     public static final long DEFAULT_BUDGET_MS = 250;
     // A data change moves the token, so these entries only need to age out
     static final long TOKEN_TTL = CacheManager.DAY;
@@ -147,13 +146,18 @@ public class ColumnFactsCache
             return new Scope(table, Collections.unmodifiableMap(sortedParameters), name, scopeHash, owner, token != null ? TOKEN_TTL : NO_TOKEN_TTL);
         }
 
+        Scope withName(String name)
+        {
+            return new Scope(table, parameters, name, scopeHash, owner, ttl);
+        }
+
         String key(String kind, String fieldKey, @Nullable String columnToken)
         {
             return name + "|" + kind + ":" + fieldKey.toLowerCase(Locale.ROOT) + "|" + scopeHash + "|" + owner + (columnToken == null ? "" : "+" + columnToken);
         }
     }
 
-    /** @param lookupScope and lookupDisplay locate a lookup's values on its target table */
+    /** @param lookupScope and lookupDisplay locate a multi-valued lookup's values on its junction table */
     private record Plan(SuggestionColumn column, ColumnInfo info, Kind kind, Scope scope, @Nullable Scope lookupScope, @Nullable ColumnInfo lookupDisplay)
     {
         String statsKey()
@@ -163,15 +167,15 @@ public class ColumnFactsCache
 
         String valuesKey()
         {
-            if (lookupScope != null && lookupDisplay != null)
-                return lookupScope.key("values", lookupDisplay.getFieldKey().toString(), null);
+            if (lookupScope != null)
+                return lookupScope.key("values", column.getFieldKey(), null);
             return scope.key("values", column.getFieldKey(), column.getChangeToken());
         }
 
         String shapesKey()
         {
             if (column.isMultiValued())
-                return shapesScope().key("shapes", shapesColumn().getFieldKey().toString(), null);
+                return shapesScope().key("shapes", column.getFieldKey(), null);
             return scope.key("shapes", column.getFieldKey(), column.getChangeToken());
         }
 
@@ -228,7 +232,7 @@ public class ColumnFactsCache
         {
             ColumnInfo info = column.getColumnInfo();
             Scope columnScope = info != null && info.getFieldKey().getParent() == null ? scope : userScope;
-            Plan plan = plan(context.getUser(), columnScope, column, described.lookups().get(column), tokens);
+            Plan plan = plan(context.getUser(), columnScope, column, described.lookups().get(column));
             if (plan != null)
                 plans.add(plan);
         }
@@ -255,7 +259,7 @@ public class ColumnFactsCache
         return complete;
     }
 
-    private @Nullable Plan plan(User user, Scope scope, SuggestionColumn column, @Nullable ColumnInfo lookup, Function<TableInfo, String> tokens)
+    private @Nullable Plan plan(User user, Scope scope, SuggestionColumn column, @Nullable ColumnInfo lookup)
     {
         ColumnInfo info = column.getColumnInfo();
         // Shared cached values would bypass the per-user audit log, so audit-logged columns keep their metadata-only facts
@@ -263,7 +267,7 @@ public class ColumnFactsCache
             return null;
 
         if (lookup != null)
-            return planLookup(user, scope, column, info, lookup, tokens);
+            return planLookup(user, scope, column, info, lookup);
 
         return switch (column.getType())
         {
@@ -274,26 +278,19 @@ public class ColumnFactsCache
         };
     }
 
-    private @Nullable Plan planLookup(User user, Scope scope, SuggestionColumn column, ColumnInfo info, ColumnInfo lookup, Function<TableInfo, String> tokens)
+    private @Nullable Plan planLookup(User user, Scope scope, SuggestionColumn column, ColumnInfo info, ColumnInfo lookup)
     {
         try
         {
-            ForeignKey fk = lookup.getFk();
-            TableInfo target;
             FieldKey displayKey = getRelativeFieldKey(info.getFieldKey(), lookup.getFieldKey());
-            if (fk instanceof MultiValuedForeignKey mvfk)
-            {
-                // The value table holds every possible value; the junction holds only those in use, one per row
-                target = mvfk.getSourceFk().getLookupTableInfo();
-                if (displayKey != null)
-                    displayKey = FieldKey.fromParts(FieldKey.fromParts(mvfk.getJunctionLookup()), displayKey);
-            }
-            else
-            {
-                target = fk == null ? null : fk.getLookupTableInfo();
-            }
+            if (!(lookup.getFk() instanceof MultiValuedForeignKey mvfk) || displayKey == null)
+                return null;
+
+            // The junction holds only the values in use, one per row
+            TableInfo target = mvfk.getSourceFk().getLookupTableInfo();
+            displayKey = FieldKey.fromParts(FieldKey.fromParts(mvfk.getJunctionLookup()), displayKey);
             UserSchema targetSchema = target == null ? null : target.getUserSchema();
-            if (targetSchema == null || displayKey == null || !target.hasPermission(user, ReadPermission.class))
+            if (targetSchema == null || !target.hasPermission(user, ReadPermission.class))
                 return null;
 
             ColumnInfo display = QueryService.get().getColumns(target, List.of(displayKey)).get(displayKey);
@@ -302,7 +299,9 @@ public class ColumnFactsCache
 
             Container targetContainer = targetSchema.getContainer();
             ContainerFilter containerFilter = Objects.requireNonNullElseGet(target.getContainerFilter(), () -> ContainerFilter.current(targetContainer, user));
-            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, tokens.apply(target), null);
+            // A target's public name doesn't identify the rows its FK reaches, so key by the grid's table
+            // Values come through the junction's own lookup, which its token doesn't cover, so keep them per user
+            Scope lookupScope = Scope.create(target, containerFilter, targetContainer, user, null, null).withName(scope.name());
             return new Plan(column, info, Kind.LOOKUP, scope, lookupScope, display);
         }
         catch (RuntimeException e)
@@ -596,7 +595,7 @@ public class ColumnFactsCache
     public static class TestCase extends Assert
     {
         private static final String SAMPLE_TYPE = "SuggestionFacts";
-        private static final int ROWS = 600;
+        private static final int ROWS = 300;
         private static final List<String> FIELD_KEYS = List.of("color", "thawCount", "concentration", "collected", "subject");
 
         private static User _user;
@@ -773,12 +772,12 @@ public class ColumnFactsCache
 
             SuggestionColumn amount = columns.get("concentration");
             assertEquals(0, BigDecimal.ZERO.compareTo((BigDecimal) amount.getMin()));
-            assertEquals(0, new BigDecimal("898.5").compareTo((BigDecimal) amount.getMax()));
+            assertEquals(0, new BigDecimal("448.5").compareTo((BigDecimal) amount.getMax()));
             assertNull(amount.getValues());
 
             SuggestionColumn when = columns.get("collected");
             assertEquals(LocalDate.of(2023, 1, 1), when.getMin());
-            assertEquals(LocalDate.of(2023, 12, 31), when.getMax());
+            assertEquals(LocalDate.of(2023, 10, 27), when.getMax());
 
             SuggestionColumn subject = columns.get("subject");
             assertNull(subject.getValues());
@@ -819,6 +818,20 @@ public class ColumnFactsCache
             assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), null, "values", email));
             assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", "values", email));
+        }
+
+        @Test
+        public void testLookupValuesComeFromRows()
+        {
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TableInfo table = getTable(SAMPLE_TYPE);
+            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("CreatedBy", "ModifiedBy"));
+            assertEquals(2, described.columns().size());
+            assertTrue(described.lookups().isEmpty());
+
+            assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
+            for (SuggestionColumn column : described.columns())
+                assertEquals(column.getFieldKey(), List.of(_user.getDisplayName(_user)), column.getValues());
         }
 
         @Test
