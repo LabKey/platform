@@ -965,22 +965,6 @@ public class SQLFragment
         return sql.replace("\"", "");
     }
 
-
-    public char charAt(int index)
-    {
-        return getSqlCharSequence().charAt(index);
-    }
-
-    public int length()
-    {
-        return getSqlCharSequence().length();
-    }
-
-    public @NotNull CharSequence subSequence(int start, int end)
-    {
-        return getSqlCharSequence().subSequence(start, end);
-    }
-
     /**
      * KEY is used as a faster way to look for equivalent CTE expressions.
      * returning a name here allows us to potentially merge CTE at add time
