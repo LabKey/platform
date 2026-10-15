@@ -124,9 +124,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     /** Records transform output prepared before the transaction, or runs the scripts now if none was. */
     public TransformResult transform(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
-        PreparedTransform prepared = DataTransformService.get().takePreparedTransform(context);
+        PreparedTransform prepared = context.getPreparedTransform();
         if (prepared != null)
+        {
+            context.setPreparedTransform(null);
             return DataTransformService.get().recordTransform(context, run, prepared);
+        }
         return DataTransformService.get().transformAndValidate(context, run, DataTransformService.TransformOperation.INSERT);
     }
 
@@ -142,16 +145,44 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     private PreparedTransform prepareTransformAfterInit(AssayRunUploadContext<ProviderType> context) throws ExperimentException, ValidationException
     {
+        Map<DomainProperty, String> allProperties = new HashMap<>(context.getRunProperties());
+        allProperties.putAll(context.getBatchProperties());
+
         Map<ExpData, String> inputDatas = new HashMap<>();
+        addRunDataInputs(context, null, findResolverType(allProperties), inputDatas);
+        PreparedTransform prepared = runTransformBeforeRun(context, inputDatas.keySet());
+        // Run creation reuses these rather than collecting again, since a thaw list resolver writes a new file each time
+        prepared.setRunDataInputs(inputDatas);
+        return prepared;
+    }
+
+    private @Nullable ParticipantVisitResolverType findResolverType(Map<DomainProperty, String> allProperties)
+    {
+        return allProperties.entrySet().stream()
+            .filter(entry -> entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+            .findFirst()
+            .map(entry -> AbstractAssayProvider.findType(entry.getValue(), getProvider().getParticipantVisitResolverTypes()))
+            .orElse(null);
+    }
+
+    private void addRunDataInputs(
+        AssayRunUploadContext<ProviderType> context,
+        @Nullable ExpRun run,
+        @Nullable ParticipantVisitResolverType resolverType,
+        Map<ExpData, String> inputDatas
+    ) throws ExperimentException, ValidationException
+    {
+        if (resolverType != null)
+            resolverType.configureRun(context, run, inputDatas);
         addInputDatas(context, inputDatas);
-        return runTransformBeforeRun(context, inputDatas.keySet());
     }
 
     private boolean hasTransformBeforeRun(AssayRunUploadContext<ProviderType> context)
     {
         return context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
             && !context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL).isEmpty()
-            && !DataTransformService.get().hasPreparedTransform(context);
+            && context.supportsPreparedTransform()
+            && context.getPreparedTransform() == null;
     }
 
     private PreparedTransform runTransformBeforeRun(AssayRunUploadContext<ProviderType> context, Collection<ExpData> inputDatas) throws ExperimentException, ValidationException
@@ -168,7 +199,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             if (prepared == null)
                 cleanPrimaryFile(context);
         }
-        DataTransformService.get().setPreparedTransform(context, prepared);
+        context.setPreparedTransform(prepared);
         return prepared;
     }
 
@@ -214,7 +245,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         // Callers that open their own transaction prepare the transform before it; init() would delete its output files
         PreparedTransform prepared = null;
-        if (!DataTransformService.get().hasPreparedTransform(context))
+        if (context.getPreparedTransform() == null)
         {
             context.init();
             if (!importInBackground && !scope.isTransactionActive() && hasTransformBeforeRun(context))
@@ -360,19 +391,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         allProperties.putAll(runProperties);
         allProperties.putAll(batchProperties);
 
-        ParticipantVisitResolverType resolverType = null;
-        for (Map.Entry<DomainProperty, String> entry : allProperties.entrySet())
-        {
-            if (entry.getKey().getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
-            {
-                resolverType = AbstractAssayProvider.findType(entry.getValue(), getProvider().getParticipantVisitResolverTypes());
-                if (resolverType != null)
-                {
-                    resolverType.configureRun(context, run, inputDatas);
-                }
-                break;
-            }
-        }
+        ParticipantVisitResolverType resolverType = findResolverType(allProperties);
+        PreparedTransform preparedBeforeRun = context.getPreparedTransform();
+        if (preparedBeforeRun != null && preparedBeforeRun.getRunDataInputs() != null)
+            inputDatas.putAll(preparedBeforeRun.getRunDataInputs());
+        else
+            addRunDataInputs(context, run, resolverType, inputDatas);
 
         // TODO: Share these RemapCache and materialCache instances with AbstractAssayTsvDataHandler.checkData and ExpressionMatrixDataHandler.importFile
         // Cache of resolved alternate lookup keys -> rowId
@@ -381,7 +405,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         final Map<Long, ExpMaterial> materialCache = new LongHashMap<>();
 
         addInputMaterials(context, inputMaterials, cache, materialCache);
-        addInputDatas(context, inputDatas);
         addOutputMaterials(context, outputMaterials, cache, materialCache);
         addOutputDatas(context, inputDatas, outputDatas);
 
@@ -459,14 +482,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (saveBatchProps)
                 saveProperties(context, batch, transformResult.getBatchProperties(), batchProperties);
+            if (null != transformResult.getAssayId())
+                run.setName(transformResult.getAssayId());
+            if (null != transformResult.getComments())
+                run.setComments(transformResult.getComments());
             if (null != transformResult.getAssayId() || null != transformResult.getComments())
-            {
-                if (null != transformResult.getAssayId())
-                    run.setName(transformResult.getAssayId());
-                if (null != transformResult.getComments())
-                    run.setComments(transformResult.getComments());
                 run.save(context.getUser());
-            }
             saveProperties(context, run, transformResult.getRunProperties(), runProperties);
 
             AssayResultsFileWriter<AssayRunUploadContext<ProviderType>> resultsFileWriter = new AssayResultsFileWriter<>(context.getProtocol(), run, null);
@@ -1086,11 +1107,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             File[] relatedFiles = parent.listFiles(getRelatedOutputDataFileFilter(primary, baseName));
             if (relatedFiles != null)
             {
+                // A transform that ran before the run was created already wrote its files here; recording it attributes them to the script
+                PreparedTransform prepared = context.getPreparedTransform();
+                Set<Path> transformOutputs = prepared == null ? Set.of() : prepared.getOutputFiles();
+
                 for (File f : relatedFiles)
                 {
                     FileLike relatedFile = primaryFile.getParent().resolveChild(f.getName());
                     // Ignore files already considered inputs to the run
-                    if (inputFiles.contains(relatedFile))
+                    if (inputFiles.contains(relatedFile) || transformOutputs.contains(PreparedTransform.normalize(f)))
                         continue;
 
                     Pair<ExpData, String> dataOutput = createdRelatedOutputData(context, baseName, f);

@@ -18,14 +18,18 @@ package org.labkey.api.assay.transform;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.vfs.FileLike;
 
+import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The outcome of running an assay's transform scripts, before any of it is written to the database.
@@ -40,9 +44,8 @@ public class PreparedTransform implements AutoCloseable
     private final @NotNull TransformResult _result;
     private final @NotNull List<TransformScriptOutput> _scriptOutputs;
     private final @NotNull List<FileLike> _scriptDirs;
-    // Weak so this value doesn't pin its key in DataTransformService's weak-keyed map
-    private @Nullable WeakReference<AssayRunUploadContext<?>> _context;
     private boolean _recorded;
+    private @Nullable Map<ExpData, String> _runDataInputs;
 
     PreparedTransform(@Nullable DataExchangeHandler handler, @NotNull TransformResult result, @NotNull List<TransformScriptOutput> scriptOutputs, @NotNull List<FileLike> scriptDirs)
     {
@@ -72,9 +75,38 @@ public class PreparedTransform implements AutoCloseable
         return _scriptOutputs;
     }
 
-    void setContext(@NotNull AssayRunUploadContext<?> context)
+    /** Absolute paths of the files the scripts wrote, which recording attaches to the run as the scripts' outputs. */
+    public @NotNull Set<Path> getOutputFiles()
     {
-        _context = new WeakReference<>(context);
+        Set<Path> files = new HashSet<>();
+        for (TransformScriptOutput scriptOutput : _scriptOutputs)
+        {
+            for (var relatedFile : scriptOutput.getRelatedOutputFiles())
+                files.add(normalize(relatedFile.second));
+            for (ExpData data : scriptOutput.getTransformedDatas())
+            {
+                File file = data.getFile();
+                if (file != null)
+                    files.add(normalize(file));
+            }
+        }
+        return files;
+    }
+
+    /** The run's data inputs, when collected before the scripts ran; null otherwise. */
+    public @Nullable Map<ExpData, String> getRunDataInputs()
+    {
+        return _runDataInputs;
+    }
+
+    public void setRunDataInputs(@NotNull Map<ExpData, String> runDataInputs)
+    {
+        _runDataInputs = runDataInputs;
+    }
+
+    public static @NotNull Path normalize(@NotNull File file)
+    {
+        return file.toPath().toAbsolutePath().normalize();
     }
 
     boolean isRecorded()
@@ -90,9 +122,6 @@ public class PreparedTransform implements AutoCloseable
     @Override
     public void close()
     {
-        AssayRunUploadContext<?> context = _context == null ? null : _context.get();
-        if (context != null)
-            DataTransformService.get().forgetPreparedTransform(context, this);
         deleteScriptDirs(_scriptDirs);
     }
 

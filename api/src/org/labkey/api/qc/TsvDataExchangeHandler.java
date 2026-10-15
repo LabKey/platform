@@ -150,9 +150,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     private final Set<File> _filesToIgnore = new HashSet<>();
     private Collection<? extends ExpData> _runDataInputs = Collections.emptyList();
 
-    // Map to store the working directory to span across a transform warning. See directoryKey() for the String key.
+    // Map to store the working directory to span across a transform warning, keyed by upload attempt ID.
     // Container is saved to ensure the user has access to the container and File is the actual working directory.
     private static final Map<String, Pair<Container, File>> workingDirectories = Collections.synchronizedMap(new HashMap<>());
+    // Uploads without an attempt ID don't span requests, and any shared key would collide between concurrent imports
+    private File _workingDirectory;
 
     @Override
     public DataSerializer getDataSerializer()
@@ -819,18 +821,19 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _filesToIgnore.contains(file);
     }
 
-    private static String directoryKey(AssayRunUploadContext<?> context)
+    private static @Nullable String uploadAttemptID(AssayRunUploadContext<?> context)
     {
-        if (context instanceof ProtocolIdForm && null != ((ProtocolIdForm) context).getUploadAttemptID())
-            return ((ProtocolIdForm) context).getUploadAttemptID();
-
-        return context.getContainer().getId() + "-" + context.getUser().getUserId() + "-" + context.getName();
+        return context instanceof ProtocolIdForm form ? form.getUploadAttemptID() : null;
     }
 
     @Nullable
     private FileLike getWorkingDirectory(AssayRunUploadContext<?> context)
     {
-        Pair<Container, File> containerFilePair = workingDirectories.get(directoryKey(context));
+        String uploadAttemptID = uploadAttemptID(context);
+        if (uploadAttemptID == null)
+            return _workingDirectory == null ? null : new FileSystemLike.Builder(_workingDirectory).tempDir().root();
+
+        Pair<Container, File> containerFilePair = workingDirectories.get(uploadAttemptID);
         if (containerFilePair != null
                 && containerFilePair.first.hasPermission("TsvDataExchangeHandler.getWorkingDirectory()", context.getUser(), ReadPermission.class))
         {
@@ -854,11 +857,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     @Nullable
     public static File removeWorkingDirectory(AssayRunUploadContext<?> context)
     {
-        Pair<Container, File> containerFilePair = workingDirectories.get(directoryKey(context));
+        String uploadAttemptID = uploadAttemptID(context);
+        if (uploadAttemptID == null)
+            return null;
+
+        Pair<Container, File> containerFilePair = workingDirectories.get(uploadAttemptID);
         if (containerFilePair != null
                 && containerFilePair.first.hasPermission("TsvDataExchangeHandler.removeWorkingDirectory()", context.getUser(), ReadPermission.class))
         {
-            containerFilePair = workingDirectories.remove(directoryKey(context));
+            containerFilePair = workingDirectories.remove(uploadAttemptID);
             return containerFilePair.second;
         }
         return null;
@@ -881,7 +888,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         if (context.getContainer().hasPermission("TsvDataExchangeHandler.setWorkingDirectory()", context.getUser(), ReadPermission.class))
         {
-            workingDirectories.put(directoryKey(context), new Pair<>(context.getContainer(), dir));
+            String uploadAttemptID = uploadAttemptID(context);
+            if (uploadAttemptID == null)
+                _workingDirectory = dir;
+            else
+                workingDirectories.put(uploadAttemptID, new Pair<>(context.getContainer(), dir));
         }
     }
 

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.assay.transform;
 
-import com.google.common.collect.MapMaker;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -65,9 +64,6 @@ public class DataTransformService
 {
     private static final DataTransformService _instance = new DataTransformService();
     private static final Logger LOG = LogHelper.getLogger(DataTransformService.class, "Assay transform scripts");
-
-    // Weak, identity-keyed so any upload context implementation can carry a prepared transform
-    private final Map<AssayRunUploadContext<?>, PreparedTransform> _preparedTransforms = new MapMaker().weakKeys().makeMap();
 
     private DataTransformService() {}
 
@@ -158,7 +154,7 @@ public class DataTransformService
                             "the configuration for this assay design.");
                 }
 
-                warnIfInTransaction(context, operation);
+                logIfInTransaction(context, operation);
 
                 if (operation == TransformOperation.UPDATE)
                     SimpleMetricsService.get().increment("Assay", "transformScript", "executionCountForUpdate");
@@ -301,35 +297,13 @@ public class DataTransformService
         return prepared.getResult();
     }
 
-    /** Holds a transform run before the import transaction opens until the run creator records it. */
-    public void setPreparedTransform(AssayRunUploadContext<?> context, @NotNull PreparedTransform prepared)
-    {
-        prepared.setContext(context);
-        _preparedTransforms.put(context, prepared);
-    }
-
-    void forgetPreparedTransform(AssayRunUploadContext<?> context, PreparedTransform prepared)
-    {
-        _preparedTransforms.remove(context, prepared);
-    }
-
-    public boolean hasPreparedTransform(AssayRunUploadContext<?> context)
-    {
-        return _preparedTransforms.containsKey(context);
-    }
-
-    public @Nullable PreparedTransform takePreparedTransform(AssayRunUploadContext<?> context)
-    {
-        return _preparedTransforms.remove(context);
-    }
-
-    private void warnIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
+    private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
     {
         if (operation == TransformOperation.INSERT
                 && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
                 && ExperimentService.get().getSchema().getScope().isTransactionActive())
         {
-            LOG.warn("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
+            LOG.debug("Transform script for assay '{}' is running inside a database transaction; callbacks from the script into the server can deadlock", context.getProtocol().getName(), new Throwable());
         }
     }
 
