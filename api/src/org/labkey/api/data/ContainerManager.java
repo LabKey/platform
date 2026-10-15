@@ -126,6 +126,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -1364,16 +1365,8 @@ public class ContainerManager
             deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR Path IN (");
-                String separator = "";
-                for (String alias : aliases)
-                {
-                    deleteSQL.append(separator);
-                    separator = ", ";
-                    deleteSQL.append("LOWER(?)");
-                    deleteSQL.add(alias);
-                }
-                deleteSQL.append(")");
+                deleteSQL.append(" OR Path");
+                deleteSQL.appendInClause(aliases.stream().map(alias -> alias.toLowerCase(Locale.ROOT)).toList(), CORE.getSqlDialect());
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
