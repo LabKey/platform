@@ -62,6 +62,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -267,6 +268,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -353,6 +355,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
+
+    // Shared instance so commit tasks dedupe when one transaction saves or deletes several protocols
+    private static final Runnable CLEAR_PROTOCOL_CACHE_TASK = () -> {
+        AssayService assayService = AssayService.get();
+        if (assayService != null)
+            assayService.clearProtocolCache();
+    };
 
     private final List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private final Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
@@ -2873,7 +2882,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    parents.append("\nSELECT * FROM " + tokens.first);
+                    parents.append("\nSELECT * FROM ").append(tokens.first);
                 }
 
                 parents.append("\nWHERE depth != 0");
@@ -2948,7 +2957,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    children.append("\nSELECT * FROM " + tokens.second);
+                    children.append("\nSELECT * FROM ").append(tokens.second);
                 }
 
                 children.append("\nWHERE depth != 0");
@@ -4722,10 +4731,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
+                // Be sure that we clear the cache after we commit the overall transaction, in case it
+                // gets repopulated by another thread before then
+                transaction.addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
                 transaction.addCommitTask(() -> {
-                    // Be sure that we clear the cache after we commit the overall transaction, in case it
-                    // gets repopulated by another thread before then
-                    assayService.clearProtocolCache();
                     for (Protocol protocol : protocols)
                     {
                         uncacheProtocol(protocol);
@@ -4934,6 +4943,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
+            // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
+            Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Set<String> untrackedDeletes = new HashSet<>();
+
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
             // will be successful
             final List<String> docids = new ArrayList<>();
@@ -4987,13 +5000,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // verify the material doesn't belong to a SampleType
                         if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                             throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                    }
-
-                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                    {
-                        ExpSampleType sampleType = material.getSampleType();
-                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (_) -> new HashSet<>())
-                                .add(material.getRootMaterialRowId());
                     }
                 }
 
@@ -5104,11 +5110,49 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            int deletedCount;
             try (Timing ignored = MiniProfiler.step("exp.Material"))
             {
-                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE ");
-                materialSQL.append(materialFilterSQL);
-                executor.execute(materialSQL);
+                // Take ids from the delete itself so they match exactly what was removed
+                SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+                    .append(materialFilterSQL)
+                    .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                    .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+                if (truncateContainer)
+                    materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+                else
+                    materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                        .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                        .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+                materialSQL.append("\nFROM deleted GROUP BY CpasType");
+
+                deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
+                    int total = 0;
+                    while (rs.next())
+                    {
+                        String cpasType = rs.getString("CpasType");
+                        total += rs.getInt("DeletedCount");
+
+                        // No cached view means no reader for the ids, so skip collecting them
+                        Array rowIds = rs.getArray("RowIds");
+                        if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
+                            untrackedDeletes.add(cpasType);
+                        else
+                            deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
+
+                        Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
+                        if (roots != null)
+                        {
+                            ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
+                                    sampleTypes.get(cpasType) :
+                                    SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
+                            if (sampleType != null)
+                                sampleTypeAliquotRoots.computeIfAbsent(sampleType,
+                                        (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
+                        }
+                    }
+                    return total;
+                });
             }
 
             // clean up provenance
@@ -5151,7 +5195,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
             transaction.addCommitTask(
@@ -5161,12 +5205,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
             // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(() -> SampleChangeNotify.fireSampleDataChanged(container), POSTCOMMIT);
+            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)
                 LOG.info("SampleType delete timings\n{}", timing.dump());
-            return count;
+            return deletedCount;
         }
     }
 
@@ -5201,7 +5245,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 runsUsingItems.removeAll(runsToKeep);
             }
             // add runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(materialItems), getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         if (!dataIds.isEmpty())
@@ -5230,7 +5274,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             runsUsingItems.addAll(dataInputRuns);
             // get runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(dataItems), getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<ExpRunImpl> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -5262,6 +5306,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /** Only items output by a run can leave that run without outputs. */
+    private static Set<Long> rowIdsWithRun(Collection<? extends RunItem> items)
+    {
+        return items.stream().filter(item -> item.getRunId() != null).map(RunItem::getRowId).collect(Collectors.toSet());
+    }
+
     /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Long> rowIds, TableInfo primaryTableInfo, Collection<Long> siblingRowIds, TableInfo siblingTableInfo)
     {
@@ -5272,12 +5322,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SELECT DISTINCT m.runId
 	    FROM exp.material m
         WHERE m.rowId in (3592, 3593, 3594)
+            AND m.runId IS NOT NULL
             AND NOT EXIST (
                 -- Check for siblings
-                SELECT DISTINCT m2.runId
+                SELECT 1
                 FROM exp.material m2
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = m2.runId
+                WHERE m2.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5288,10 +5338,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             )
             AND NOT EXIST (
              -- Check for siblings that are not being deleted
-                SELECT DISTINCT d.runId
+                SELECT 1
                 FROM exp.data d
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = d.runId
+                WHERE d.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5312,21 +5361,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append("SELECT DISTINCT m.runId\n")
                 .append("FROM ").append(primaryTableInfo, "m").append("\n")
                 .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId IS NOT NULL\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT m2.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(primaryTableInfo, "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = m2.runId\n")
+                .append("WHERE m2.runId = m.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
                 .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
                 .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
                 .append("))\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT s.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(siblingTableInfo, "s").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = s.runId\n");
+                .append("WHERE s.runId = m.runId\n");
         if (!siblingRowIds.isEmpty())
         {
             sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds
@@ -6766,7 +6814,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
-                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT, POSTROLLBACK);
+                getExpSchema().getScope().addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, POSTROLLBACK);
             }
             else
             {
@@ -10044,7 +10092,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // to index based on the modified date
                 for (ExpDataClass dataClass : dataClassesMap.keySet())
                     indexDataClass((ExpDataClassImpl) dataClass, SearchService.get().defaultTask().getQueue(dataClass.getContainer(), SearchService.PRIORITY.modified));
-            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            }, POSTCOMMIT);
             transaction.commit();
         }
 
