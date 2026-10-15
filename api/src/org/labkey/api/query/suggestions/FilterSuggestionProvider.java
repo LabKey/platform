@@ -37,4 +37,10 @@ public interface FilterSuggestionProvider
     {
         return null;
     }
+
+    /** False keeps the table's data-derived facts per user, e.g. when every user's reads must reach an audit log. */
+    default boolean allowsSharedFacts(@NotNull FilterSuggestionContext context)
+    {
+        return true;
+    }
 }
