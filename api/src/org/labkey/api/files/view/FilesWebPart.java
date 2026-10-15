@@ -18,6 +18,7 @@ package org.labkey.api.files.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -754,17 +755,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean isCloudStoreEnabled(Container container)
         {
             String pathString = _rootPath.toString();
-            int cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN);
+            int cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN);
             int cloudPatternLength = CLOUD_PATTERN.length();
             if (-1 == cloudIndex)
             {
-                cloudIndex = StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+                cloudIndex = Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
                 cloudPatternLength = CLOUD_PATTERN_ENCODED.length();
             }
             if (-1 != cloudIndex)
             {
                 String config = StringUtils.substring(pathString, cloudIndex + cloudPatternLength);
-                int slashIndex = StringUtils.indexOf(config, "/");
+                int slashIndex = Strings.CS.indexOf(config, "/");
                 if (-1 != slashIndex)
                     config = StringUtils.substring(config, 0, slashIndex);
 
@@ -786,15 +787,15 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public boolean isCloudRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN) ||
-                   -1 != StringUtils.indexOf(pathString, CLOUD_PATTERN_ENCODED);
+            return -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN) ||
+                   -1 != Strings.CS.indexOf(pathString, CLOUD_PATTERN_ENCODED);
         }
 
         public boolean isAtFilesRootPath()
         {
             String pathString = _rootPath.toString();
-            return -1 != StringUtils.indexOf(pathString, "@files/") ||
-                   -1 != StringUtils.indexOf(pathString, "%40files/");
+            return -1 != Strings.CS.indexOf(pathString, "@files/") ||
+                   -1 != Strings.CS.indexOf(pathString, "%40files/");
         }
 
         @Nullable

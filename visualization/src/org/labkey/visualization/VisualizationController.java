@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -384,7 +385,7 @@ public class VisualizationController extends SpringActionController
                             QueryLogging queryLogging = new QueryLogging();
                             SQLFragment sql = QueryService.get().getSelectBuilder(tinfo).columns(Collections.singleton(col)).filter(filter).queryLogging(queryLogging).buildSqlFragment();
                             SQLFragment distinctSql = new SQLFragment(sql);
-                            int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
+                            int i = Strings.CS.indexOf(sql.getSqlCharSequence(), "SELECT");
                             if (i >= 0)
                                 distinctSql.insert(i + "SELECT".length(), " DISTINCT");
 
