@@ -224,14 +224,14 @@ public class ColumnFactsCache
         // Tokens are read before the data they guard, so a race can only pair newer data with an older token
         String token = tokens.apply(table);
         Scope scope = Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), token, declaredParameters);
-        // The table's token doesn't cover data reached through a lookup, which can also differ per user
         Scope userScope = token == null ? scope : Scope.create(table, context.getContainerFilter(), context.getContainer(), context.getUser(), null, declaredParameters);
 
         List<Plan> plans = new ArrayList<>();
         for (SuggestionColumn column : described.columns())
         {
-            ColumnInfo info = column.getColumnInfo();
-            Scope columnScope = info != null && info.getFieldKey().getParent() == null ? scope : userScope;
+            Scope columnScope = userScope;
+            if (isShared(column))
+                columnScope = scope;
             Plan plan = plan(context.getUser(), columnScope, column, described.lookups().get(column));
             if (plan != null)
                 plans.add(plan);
@@ -257,6 +257,17 @@ public class ColumnFactsCache
         for (Plan plan : plans)
             complete &= apply(plan);
         return complete;
+    }
+
+    /** Whether the column's facts can follow the table's token, which shares them across users */
+    private static boolean isShared(SuggestionColumn column)
+    {
+        ColumnInfo info = column.getColumnInfo();
+        // The table's token doesn't cover data reached through a lookup, which can also differ per user
+        if (info == null || info.getFieldKey().getParent() != null)
+            return false;
+        // A calculated value can depend on the user, e.g. ISMEMBEROF(), unless the column's own token vouches that it doesn't
+        return !info.isCalculated() || column.getChangeToken() != null;
     }
 
     private @Nullable Plan plan(User user, Scope scope, SuggestionColumn column, @Nullable ColumnInfo lookup)
@@ -617,7 +628,8 @@ public class ColumnFactsCache
                 new GWTPropertyDescriptor("thawCount", PropertyType.INTEGER.getTypeUri()),
                 new GWTPropertyDescriptor("concentration", PropertyType.DOUBLE.getTypeUri()),
                 new GWTPropertyDescriptor("collected", PropertyType.DATE_TIME.getTypeUri()),
-                new GWTPropertyDescriptor("subject", PropertyType.STRING.getTypeUri())
+                new GWTPropertyDescriptor("subject", PropertyType.STRING.getTypeUri()),
+                calculated("viewer", PropertyType.STRING, "USERNAME()")
             );
             ExpSampleType sampleType = SampleTypeService.get().createSampleType(_c, _user, SAMPLE_TYPE, null, props, List.of(), -1, -1, -1, -1, null, null, null, null, null, null);
 
@@ -658,6 +670,15 @@ public class ColumnFactsCache
         {
             _executor.shutdownNow();
             _testCache.close();
+        }
+
+        private static GWTPropertyDescriptor calculated(String name, PropertyType type, String expression)
+        {
+            GWTPropertyDescriptor property = new GWTPropertyDescriptor(name, type.getTypeUri());
+            property.setValueExpression(expression);
+            // Saving drops a calculated field that has no other metadata
+            property.setLabel(name);
+            return property;
         }
 
         private static TableInfo getTable(String name)
@@ -818,6 +839,19 @@ public class ColumnFactsCache
             assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
             assertNotNull(cache.peek(context(table, _user), null, "values", email));
             assertNull("The table's token doesn't cover data reached through a lookup", cache.peek(context(table, UserManager.getGuestUser()), "shared", "values", email));
+        }
+
+        @Test
+        public void testCalculatedDataIsNotShared()
+        {
+            ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));
+            TableInfo table = getTable(SAMPLE_TYPE);
+            FilterSuggestionColumns.Described described = FilterSuggestionColumns.describe(table, null, List.of("viewer"));
+            assertTrue(byFieldKey(described).containsKey("viewer"));
+
+            assertTrue(cache.fill(context(table, _user), null, described, _ -> "shared", 30_000));
+            assertNotNull(cache.peek(context(table, _user), null, "values", "viewer"));
+            assertNull("A calculated value can depend on the user", cache.peek(context(table, UserManager.getGuestUser()), "shared", "values", "viewer"));
         }
 
         @Test

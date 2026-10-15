@@ -183,7 +183,10 @@ public class SuggestionColumn
         return _changeToken;
     }
 
-    /** Cached facts for this column are keyed by the table's change token plus this one. */
+    /**
+     * Cached facts for this column are keyed by the table's change token plus this one. A calculated column with a token
+     * shares its facts across users, so set one only when its values don't depend on the user.
+     */
     public void setChangeToken(@Nullable String changeToken)
     {
         _changeToken = changeToken;
