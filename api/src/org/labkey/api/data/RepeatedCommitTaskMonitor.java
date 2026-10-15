@@ -56,7 +56,7 @@ public class RepeatedCommitTaskMonitor
     private static final int MAX_KEY_FRAMES = 10;
 
     // At most one warning per day per call site and queue, so an expected repeat doesn't flood the log
-    private static final Throttle<RepeatedTaskWarning> WARNING_THROTTLE = new Throttle<>("Repeated commit task warnings", 1000, CacheManager.DAY,
+    private static final Throttle<RepeatedTaskWarning> WARNING_THROTTLE = new Throttle<>(RepeatedTaskWarning.class, "Repeated commit task warnings", 1000, CacheManager.DAY,
             w -> {
                 Tally tally = drainTally(w);
                 LOG.warn("{} {} tasks of class {} were queued from one call site in one transaction and ran in {} ms ({} tasks in the queue). Consider a value-equal task or an AccumulatingCommitTask so the work runs once. {} transactions, max {} tasks, {} ms total, since this call site's previous warning.",
