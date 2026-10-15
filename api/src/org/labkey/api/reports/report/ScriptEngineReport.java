@@ -37,6 +37,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.LabKeyScriptEngineManager;
+import org.labkey.api.reports.RemoteWorkingDirScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -576,13 +577,17 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected String processInputReplacement(ScriptEngine engine, String script, @Nullable FileLike inputFile, boolean isRStudio)
     {
-        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile == null ? null : inputFile.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/"), isRStudio, null);
+        String path = null;
+        if (inputFile != null)
+            path = engine instanceof RemoteWorkingDirScriptEngine remote ? remote.getRemotePath(inputFile) : inputFile.toNioPathForRead().toFile().getAbsolutePath().replaceAll("\\\\", "/");
+        return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, path, isRStudio, null);
     }
 
     protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements, @NotNull ContainerUser context, boolean isRStudio) throws Exception
     {
         FileLike reportDir = getReportDirFileLike(context.getContainer().getId());
-        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, null, replacements, isRStudio);
+        String remoteRoot = engine instanceof RemoteWorkingDirScriptEngine remote ? remote.getRemotePath(reportDir) : null;
+        return ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements, isRStudio);
     }
 
     @Override
