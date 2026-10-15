@@ -10807,6 +10807,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             GWTPropertyDescriptor score = new GWTPropertyDescriptor("score", "int");
             score.setMvEnabled(true);
             List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
             props.add(new GWTPropertyDescriptor("color", "string"));
             props.add(new GWTPropertyDescriptor("count", "int"));
             props.add(new GWTPropertyDescriptor("collected", "dateTime"));
