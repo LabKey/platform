@@ -1014,8 +1014,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), entityIds);
         filter.addClause(cf.createFilterClause(entityTable.getSchema(), FieldKey.fromParts("Container")));
 
-        Set<Long> inScope = new HashSet<>(new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getArrayList(Long.class));
-        return entityIds.stream().anyMatch(id -> !inScope.contains(id));
+        long distinctIds = entityIds.stream().distinct().count();
+        return new TableSelector(entityTable, Collections.singleton("RowId"), filter, null).getRowCount() < distinctIds;
     }
 
     private @NotNull List<Material> getMaterials(SimpleFilter filter, @Nullable Sort sort)
