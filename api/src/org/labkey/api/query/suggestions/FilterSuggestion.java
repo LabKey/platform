@@ -16,6 +16,7 @@
 package org.labkey.api.query.suggestions;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,7 +65,7 @@ public record FilterSuggestion(
     {
         String labelPrefix = column.getCaption() + verb;
         Match match = null;
-        int index = indexOfIgnoreCase(value, term);
+        int index = Strings.CI.indexOf(value, term);
         if (index >= 0)
             match = new Match(labelPrefix.length() + index, labelPrefix.length() + index + term.length());
         ColumnMatch colMatch = new ColumnMatch(0, column.getCaption().length(), column.getGridFieldKey());
@@ -81,15 +82,5 @@ public record FilterSuggestion(
     {
         String prefix = "Search all columns for ";
         return new FilterSuggestion(KIND_SEARCH, prefix + value, "fallback", value, null, null, null, null, new Match(prefix.length(), prefix.length() + value.length()), null);
-    }
-
-    private static int indexOfIgnoreCase(String s, String term)
-    {
-        for (int i = 0; i + term.length() <= s.length(); i++)
-        {
-            if (s.regionMatches(true, i, term, 0, term.length()))
-                return i;
-        }
-        return -1;
     }
 }
