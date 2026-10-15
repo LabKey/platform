@@ -35,7 +35,8 @@ public record FilterSuggestion(
     @Nullable String op,
     @Nullable List<ComposeField> fields,
     @Nullable String valueType,
-    @Nullable Match match
+    @Nullable Match match,
+    @Nullable ColumnMatch colMatch
 )
 {
     public static final String KIND_COMPOSE = "compose";
@@ -51,26 +52,35 @@ public record FilterSuggestion(
      */
     public record Match(int start, int end) {}
 
-    /** @param labelPrefix the label up to the value, e.g. "Tube Type is " */
-    public static FilterSuggestion filter(String fieldKey, String op, String value, String labelPrefix, String source, String term)
+    /**
+     * Where the label shows a column's caption, which the client replaces with its own caption for the grid's column.
+     * @param end exclusive
+     * @param fieldKey the grid column as the request named it
+     */
+    public record ColumnMatch(int start, int end, @NotNull String fieldKey) {}
+
+    /** @param verb joins the caption and the value, e.g. " is " */
+    public static FilterSuggestion filter(SuggestionColumn column, String op, String value, String verb, String source, String term)
     {
+        String labelPrefix = column.getCaption() + verb;
         Match match = null;
         int index = indexOfIgnoreCase(value, term);
         if (index >= 0)
             match = new Match(labelPrefix.length() + index, labelPrefix.length() + index + term.length());
-        return new FilterSuggestion(KIND_FILTER, labelPrefix + value, source, value, fieldKey, op, null, null, match);
+        ColumnMatch colMatch = new ColumnMatch(0, column.getCaption().length(), column.getGridFieldKey());
+        return new FilterSuggestion(KIND_FILTER, labelPrefix + value, source, value, column.getFieldKey(), op, null, null, match, colMatch);
     }
 
     /** @param fields ordered best-first; the first is selected when the filter modal opens */
-    public static FilterSuggestion compose(List<ComposeField> fields, String value, String valueType, String label, @Nullable Match match)
+    public static FilterSuggestion compose(List<ComposeField> fields, String value, String valueType, String label, @Nullable Match match, @Nullable ColumnMatch colMatch)
     {
-        return new FilterSuggestion(KIND_COMPOSE, label, "compose", value, null, null, List.copyOf(fields), valueType, match);
+        return new FilterSuggestion(KIND_COMPOSE, label, "compose", value, null, null, List.copyOf(fields), valueType, match, colMatch);
     }
 
     public static FilterSuggestion search(String value)
     {
         String prefix = "Search all columns for ";
-        return new FilterSuggestion(KIND_SEARCH, prefix + value, "fallback", value, null, null, null, null, new Match(prefix.length(), prefix.length() + value.length()));
+        return new FilterSuggestion(KIND_SEARCH, prefix + value, "fallback", value, null, null, null, null, new Match(prefix.length(), prefix.length() + value.length()), null);
     }
 
     private static int indexOfIgnoreCase(String s, String term)

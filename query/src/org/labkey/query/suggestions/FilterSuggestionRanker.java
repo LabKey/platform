@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.suggestions.FilterSuggestion;
+import org.labkey.api.query.suggestions.FilterSuggestion.ColumnMatch;
 import org.labkey.api.query.suggestions.FilterSuggestion.ComposeField;
 import org.labkey.api.query.suggestions.FilterSuggestion.Match;
 import org.labkey.api.query.suggestions.SuggestionColumn;
@@ -260,7 +261,7 @@ public class FilterSuggestionRanker
     {
         String verb = "contains".equals(op) ? " contains " : " is ";
         if (seen.add(lower(column.getFieldKey() + "|" + op + "|" + value)))
-            direct.add(FilterSuggestion.filter(column.getFieldKey(), op, value, column.getCaption() + verb, source, raw));
+            direct.add(FilterSuggestion.filter(column, op, value, verb, source, raw));
     }
 
     private static FilterSuggestion createCompose(List<SuggestionColumn> columns, List<ComposeField> fields, String value, String valueType, String raw)
@@ -268,13 +269,17 @@ public class FilterSuggestionRanker
         if (fields.size() == 1)
         {
             String fieldKey = fields.getFirst().fieldKey();
-            String caption = columns.stream().filter(column -> column.getFieldKey().equals(fieldKey)).findFirst().map(SuggestionColumn::getCaption).orElse(fieldKey);
-            return FilterSuggestion.compose(fields, value, valueType, "Filter " + caption + "…", null);
+            String prefix = "Filter ";
+            SuggestionColumn column = columns.stream().filter(c -> c.getFieldKey().equals(fieldKey)).findFirst().orElse(null);
+            if (column == null)
+                return FilterSuggestion.compose(fields, value, valueType, prefix + fieldKey + "…", null, null);
+            ColumnMatch colMatch = new ColumnMatch(prefix.length(), prefix.length() + column.getCaption().length(), column.getGridFieldKey());
+            return FilterSuggestion.compose(fields, value, valueType, prefix + column.getCaption() + "…", null, colMatch);
         }
 
         String prefix = "Filter a " + valueType + " field for ";
         String label = prefix + raw + " (" + fields.size() + " columns)";
-        return FilterSuggestion.compose(fields, value, valueType, label, new Match(prefix.length(), prefix.length() + raw.length()));
+        return FilterSuggestion.compose(fields, value, valueType, label, new Match(prefix.length(), prefix.length() + raw.length()), null);
     }
 
     private static boolean matchesNameExpression(SuggestionColumn column, String raw)
@@ -412,6 +417,7 @@ public class FilterSuggestionRanker
             {
                 SuggestionColumn.Type type = SuggestionColumn.Type.valueOf(node.get("type").asText().toUpperCase(Locale.ROOT));
                 SuggestionColumn column = new SuggestionColumn(node.get("fieldKey").asText(), node.get("caption").asText(), type, null);
+                column.setGridFieldKey(node.path("gridFieldKey").asText(column.getFieldKey()));
                 column.setKey(node.path("isKey").asBoolean(false));
                 column.setTitle(node.path("isTitle").asBoolean(false));
                 column.setUniqueId(node.path("isUniqueId").asBoolean(false));
