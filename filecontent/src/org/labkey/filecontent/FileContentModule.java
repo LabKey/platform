@@ -17,7 +17,6 @@
 package org.labkey.filecontent;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
@@ -86,18 +85,16 @@ public class FileContentModule extends DefaultModule
         if (webPartProperties == null)
             return false;
 
+        String fileSet = null;
+        String fileRoot = null;
         for (Pair<String, String> prop : PageFlowUtil.fromQueryString(webPartProperties))
         {
-            String value = StringUtils.trimToNull(prop.getValue());
-            if (value == null)
-                continue;
-            // Legacy values may be double-encoded, so @pipeline can also appear as %40pipeline
-            if (FilesWebPart.FILESET_PROPERTY_NAME.equals(prop.getKey()) && !value.startsWith("@") && !value.startsWith("%40"))
-                return true;
-            if (FilesWebPart.FILE_ROOT_PROPERTY_NAME.equals(prop.getKey()) && Strings.CI.startsWith(StringUtils.stripStart(value, "/"), FileContentService.FILE_SETS_LINK))
-                return true;
+            if (FilesWebPart.FILESET_PROPERTY_NAME.equals(prop.getKey()))
+                fileSet = StringUtils.trimToNull(prop.getValue());
+            else if (FilesWebPart.FILE_ROOT_PROPERTY_NAME.equals(prop.getKey()))
+                fileRoot = StringUtils.trimToNull(prop.getValue());
         }
-        return false;
+        return FilesWebPart.usesNamedFileSet(fileSet, fileRoot);
     }
 
     @Override
@@ -229,16 +226,13 @@ public class FileContentModule extends DefaultModule
             results.put("fileRootsNotYetCrawled", ((Number)map.get("AllFileRoots")).longValue() - crawled);
 
             // findPipelineRoot() is non-null only for a valid pipeline override on the folder or an ancestor, since a disabled file root has no default
-            try (Stream<String> disabledFileRootContainers = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"), new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
-                .uncachedStream(String.class))
-            {
-                Map<Boolean, Long> disabledFileRoots = disabledFileRootContainers
-                    .map(ContainerManager::getForId)
-                    .filter(c -> c != null && !c.isRoot())
-                    .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
-                results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
-                results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
-            }
+            Map<Boolean, Long> disabledFileRoots = new TableSelector(FileRootManager.getTinfoFileRoots(), PageFlowUtil.set("Container"),new SimpleFilter(FieldKey.fromParts("Enabled"), false), null)
+                .getArrayList(String.class).stream()
+                .map(ContainerManager::getForId)
+                .filter(c -> c != null && !c.isRoot())
+                .collect(Collectors.partitioningBy(c -> PipelineService.get().findPipelineRoot(c) != null, Collectors.counting()));
+            results.put("disabledFileRootsWithPipelineOverride", disabledFileRoots.get(true));
+            results.put("disabledFileRootsWithoutPipelineOverride", disabledFileRoots.get(false));
 
             TableInfo mappedDirectories = CoreSchema.getInstance().getMappedDirectories();
             Map<String, Object> fileSets = new SqlSelector(mappedDirectories.getSchema(),

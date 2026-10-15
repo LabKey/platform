@@ -221,13 +221,13 @@ public class FileContentController extends SpringActionController
                 p = svc.getMappedAttachmentDirectory(getContainer(), false);
             }
             else
-            {
-                FileContentModule.incrementNamedFileSetMetric("legacySendFile");
                 p = svc.getRegisteredDirectory(getContainer(), fileSet);
-            }
 
             if (null == p)
                 throw new NotFoundException();
+
+            if (null != fileSet)
+                FileContentModule.incrementNamedFileSetMetric("legacySendFile");
 
             java.nio.file.Path dir = p.getFileSystemDirectoryPath();
             if (null == dir)
