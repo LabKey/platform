@@ -46,10 +46,7 @@ public class RepeatedCommitTaskMonitor
     static final int THRESHOLD = 10;
 
     // Frames between the registering code and add()
-    private static final Set<String> PLUMBING_CLASSES = Set.of(
-            DbScope.class.getName(),
-            RepeatedCommitTaskMonitor.class.getName(),
-            AccumulatingCommitTask.class.getName());
+    private static final CallSiteKeys STACK_KEYS = new CallSiteKeys(DbScope.class, RepeatedCommitTaskMonitor.class, AccumulatingCommitTask.class);
 
     // At most one warning per day per call site and queue, so an expected repeat doesn't flood the log
     private static final Throttle<RepeatedTaskWarning> WARNING_THROTTLE = new Throttle<>(RepeatedTaskWarning.class, "Repeated commit task warnings", 1000, CacheManager.DAY,
@@ -116,7 +113,7 @@ public class RepeatedCommitTaskMonitor
     /** The stack through the first frame outside DbScope's commit task plumbing: the code that registered the task */
     private static String getStackKey(Throwable t)
     {
-        return CallSiteKeys.getStackKey(t, PLUMBING_CLASSES);
+        return STACK_KEYS.getStackKey(t);
     }
 
     private static void recordTally(RepeatedTaskWarning w)

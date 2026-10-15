@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import static org.labkey.api.util.ExceptionUtil.CALCULATED_COLUMN_SQL_TAG;
@@ -197,16 +196,12 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     // The selector frames that can sit between the real call site and getArrayList(). A package prefix won't do:
     // org.labkey.api.data also holds ordinary callers (ContainerManager, PropertyManager, ...) that must end the key.
-    private static final Set<String> PLUMBING_CLASSES = Set.of(
-            BaseSelector.class.getName(),
-            SqlExecutingSelector.class.getName(),
-            SqlSelector.class.getName(),
-            TableSelector.class.getName());
+    private static final CallSiteKeys STACK_KEYS = new CallSiteKeys(BaseSelector.class, SqlExecutingSelector.class, SqlSelector.class, TableSelector.class);
 
     /** The stack through the first frame outside the selector plumbing: the code that actually loaded the collection */
     private static String getStackKey(Throwable t)
     {
-        return CallSiteKeys.getStackKey(t, PLUMBING_CLASSES);
+        return STACK_KEYS.getStackKey(t);
     }
 
     // Carries the fields needed to build the large-result warning, but hashes/compares only on the call site and element

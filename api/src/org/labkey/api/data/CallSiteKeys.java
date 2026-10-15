@@ -25,30 +25,35 @@ final class CallSiteKeys
     // Caps key length; a stack this deep in plumbing collapses to a single key
     static final int MAX_KEY_FRAMES = 10;
 
-    private CallSiteKeys()
+    // Names, not classes: stack frames carry only the class name
+    private final Set<String> _plumbingClassNames;
+
+    /** @param plumbingClasses the classes whose frames can sit between the real call site and the point the stack is captured */
+    CallSiteKeys(Class<?>... plumbingClasses)
     {
+        _plumbingClassNames = Arrays.stream(plumbingClasses).map(Class::getName).collect(Collectors.toUnmodifiableSet());
     }
 
     /**
-     * The stack through the first frame whose class isn't in plumbingClasses: the code that actually made the call.
+     * The stack through the first frame outside the plumbing classes: the code that actually made the call.
      * Don't extend this to the full stack: a shared helper is reached via many callers, each of which would then get its own key.
      */
-    static String getStackKey(Throwable t, Set<String> plumbingClasses)
+    String getStackKey(Throwable t)
     {
         StackTraceElement[] frames = t.getStackTrace();
         int lastFrame = 0;
 
-        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame], plumbingClasses))
+        while (lastFrame < frames.length - 1 && lastFrame < MAX_KEY_FRAMES - 1 && isPlumbingStackFrame(frames[lastFrame]))
             lastFrame++;
 
         return Arrays.stream(frames).limit(lastFrame + 1L).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
     }
 
-    private static boolean isPlumbingStackFrame(StackTraceElement frame, Set<String> plumbingClasses)
+    private boolean isPlumbingStackFrame(StackTraceElement frame)
     {
         String className = frame.getClassName();
         int nested = className.indexOf('$'); // Nested classes and lambdas belong to their enclosing class
 
-        return plumbingClasses.contains(nested < 0 ? className : className.substring(0, nested));
+        return _plumbingClassNames.contains(nested < 0 ? className : className.substring(0, nested));
     }
 }
