@@ -205,6 +205,14 @@ public class SQLFragment
         return new SQLFragment().setSqlUnsafe(unsafe);
     }
 
+
+    public SQLFragment append(SqlSeparator sep)
+    {
+        if (sep._count == 0) throw new IllegalStateException("call next() before append()");
+        getStringBuilder().append(sep._count == 1 ? sep._first : sep._rest);
+        return this;
+    }
+
     /** next() returns {@code first} on its first call and {@code rest} after that */
     public static SqlSeparator sep(@CompileTimeConstant String first, @CompileTimeConstant String rest)
     {
@@ -222,7 +230,7 @@ public class SQLFragment
         private final @NotNull String _first;
         private final @NotNull String _rest;
         private final String _last;
-        private boolean _started = false;
+        private int _count = 0;
 
         private SqlSeparator(
                 @CompileTimeConstant @NotNull String first,
@@ -234,17 +242,16 @@ public class SQLFragment
             _last = last;
         }
 
-        // CONSIDER: an immutable/locked SQLFragment so these could be returned without copying
-        public SQLFragment next()
+        // Returns this so callers write sql.append(sep.next()) without allocating a SQLFragment per separator
+        public SqlSeparator next()
         {
-            SQLFragment ret = new SQLFragment().setSqlUnsafe(_started ? _rest : _first);
-            _started = true;
-            return new SQLFragment(ret);
+            _count++;
+            return this;
         }
 
         public SQLFragment last()
         {
-            return _started && _last != null ? new SQLFragment().setSqlUnsafe(_last) : new SQLFragment();
+            return _count !=0 && _last != null ? new SQLFragment().setSqlUnsafe(_last) : new SQLFragment();
         }
     }
 
@@ -1519,17 +1526,6 @@ public class SQLFragment
             cond.append(terms.last());
             assertEquals("(x) AND (y) AND (z)", cond.getRawSQL());
             assertEquals(")", terms.last().getRawSQL());
-        }
-
-        @Test
-        public void testSeparatorReturnsIndependentFragments()
-        {
-            var comma = SQLFragment.sep("", ", ");
-            comma.next().unsafeAppend("a");
-            SQLFragment second = comma.next();
-            second.unsafeAppend("b");
-            assertEquals(", ", comma.next().getRawSQL());
-            assertEquals(", b", second.getRawSQL());
         }
     }
 
