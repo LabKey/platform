@@ -102,7 +102,8 @@ var testMothershipReport = function (type, level, download) {
 </script>
 
 <labkey:form name="preferences" method="post">
-<div id="siteSettingsErrors" class="labkey-error" role="alert" hidden></div>
+<%-- Stays rendered while empty; screen readers may not announce an alert that is filled while hidden --%>
+<div id="siteSettingsErrors" class="labkey-error" role="alert"></div>
 
 <table>
 <%
@@ -497,13 +498,37 @@ Click the Save button at any time to accept the current settings and continue.</
     const form = document.forms['preferences'];
     const errorEl = document.getElementById('siteSettingsErrors');
 
-    const showErrors = function(messages) {
-        errorEl.replaceChildren(...messages.map(function(msg) {
+    let invalidControls = [];
+
+    const controlsFor = function(name) {
+        const control = settingNames.includes(name) ? form.elements[name] : null;
+        if (!control)
+            return [];
+        return control instanceof RadioNodeList ? Array.from(control) : [control];
+    };
+
+    const clearErrors = function() {
+        errorEl.replaceChildren();
+        invalidControls.forEach(function(control) {
+            control.removeAttribute('aria-invalid');
+            control.removeAttribute('aria-describedby');
+        });
+        invalidControls = [];
+    };
+
+    // Each error is {msg, field}; a field naming a setting marks that control as invalid and points it at the message
+    const showErrors = function(errors) {
+        errorEl.replaceChildren(...errors.map(function(error, i) {
             const div = document.createElement('div');
-            div.textContent = msg;
+            div.id = 'siteSettingsError' + i;
+            div.textContent = error.msg;
+            controlsFor(error.field).forEach(function(control) {
+                control.setAttribute('aria-invalid', 'true');
+                control.setAttribute('aria-describedby', ((control.getAttribute('aria-describedby') || '') + ' ' + div.id).trim());
+                invalidControls.push(control);
+            });
             return div;
         }));
-        errorEl.hidden = false;
         errorEl.scrollIntoView();
     };
 
@@ -530,7 +555,7 @@ Click the Save button at any time to accept the current settings and continue.</
 
     // LABKEY's button submitForm() calls onsubmit then form.submit(), which skips submit event listeners
     form.onsubmit = function() {
-        errorEl.hidden = true;
+        clearErrors();
         LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('admin', 'updateSiteSettings.api', '/'),
             method: 'POST',
@@ -539,8 +564,8 @@ Click the Save button at any time to accept the current settings and continue.</
                 window.location = <%=q(bean.getSuccessURL())%>;
             },
             failure: LABKEY.Utils.getCallbackWrapper(function(response) {
-                const messages = (response && response.errors || []).map(function(e) { return e.msg; }).filter(Boolean);
-                showErrors(messages.length ? messages : [response && response.exception || 'Failed to save site settings']);
+                const errors = (response && response.errors || []).filter(function(e) { return e.msg; });
+                showErrors(errors.length ? errors : [{ msg: response && response.exception || 'Failed to save site settings' }]);
             }, this, true)
         });
         return false;

@@ -206,6 +206,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.MethodsAllowed;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PermissionsContext;
 import org.labkey.api.security.RequiresLogin;
@@ -272,6 +273,7 @@ import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.HttpsUtil;
 import org.labkey.api.util.JsonUtil;
@@ -1340,7 +1342,9 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // The page saves through UpdateSiteSettingsAction; rejecting POST keeps old form posts from silently saving nothing
     @AdminConsoleAction(AdminOperationsPermission.class)
+    @MethodsAllowed(HttpUtil.Method.GET)
     public class CustomizeSiteAction extends SimpleViewAction<CustomizeSiteForm>
     {
         @Override
