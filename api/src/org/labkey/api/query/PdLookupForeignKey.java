@@ -212,19 +212,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (!(schema instanceof UserSchema))
             return null;
 
-        // GH Issue 1718: Resolving the lookup compiles a query, and Query.getTableInfo() points the environment container at that
-        // query's schema without putting it back. The fallback above resolves in the property descriptor's container,
-        // so without this a lookup to a query defined in a parent folder leaves every later consumer of the
-        // environment container -- filter clauses, for one -- believing the request was for that container.
-        Object previousContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
-        try
-        {
-            _tableInfo = schema.getTable(_tableName, _containerFilter);
-        }
-        finally
-        {
-            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, previousContainer);
-        }
+        _tableInfo = schema.getTable(_tableName, _containerFilter);
         return _tableInfo;
     }
 

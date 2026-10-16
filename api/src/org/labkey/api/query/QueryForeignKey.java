@@ -348,19 +348,7 @@ public class QueryForeignKey extends AbstractForeignKey
     {
         if (_table == null && getLookupSchema() != null)
         {
-            // GH Issue 1718: Query.getTableInfo() points the environment container at the lookup query's schema and never
-            // restores it, so resolving a lookup to another container would leave every later consumer -- filter clauses,
-            // for one -- believing the request was for that container.
-            Object previousContainer = QueryService.get().getEnvironment(QueryService.Environment.CONTAINER);
-            TableInfo t;
-            try
-            {
-                t = getLookupSchema().getTable(_tableName, getLookupContainerFilter());
-            }
-            finally
-            {
-                QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, previousContainer);
-            }
+            TableInfo t = getLookupSchema().getTable(_tableName, getLookupContainerFilter());
             if (t == null)
             {
                 LOG.debug("Failed to resolve lookup to {} in schema {} in container {} for user {}", _tableName, getLookupSchema().getSchemaPath(), getLookupSchema().getContainer().getPath(), getLookupSchema().getUser());
