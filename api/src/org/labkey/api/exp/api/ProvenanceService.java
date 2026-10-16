@@ -94,13 +94,13 @@ public interface ProvenanceService
      */
     boolean isProvenanceSupported();
 
-    OntologyManager.RowCallback getAssayRowCallback(ExpRun run, Container container);
+    OntologyManager.RowCallback getAssayRowCallback(User user, ExpRun run, Container container);
 
-    void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
+    void addProvenanceInputs(User user, Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
 
-    void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
+    void addProvenanceOutputs(User user, Container container, ExpProtocolApplication app, Set<String> outputLSIDs);
 
-    void addProvenance(Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs);
+    void addProvenance(User user, Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs);
 
     /**
      * Get list of provenance input LSIDs and output LSIDs for a protocol application.

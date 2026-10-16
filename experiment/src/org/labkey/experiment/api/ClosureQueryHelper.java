@@ -73,6 +73,7 @@ public class ClosureQueryHelper
 {
     private final static Logger logger = LogHelper.getLogger(ClosureQueryHelper.class, "Sample and data class object ancestor data computation.");
     final static String CONCEPT_URI = "http://www.labkey.org/types#ancestorLookup";
+    public static final String ANCESTORS_COLUMN_NAME = "Ancestors";
 
     // N.B., This should be twice the number of generations we expect as a maximum number of ancestors due to the run nodes.
     static final int MAX_ANCESTOR_LOOKUP_DEPTH = 40;
@@ -581,9 +582,9 @@ public class ClosureQueryHelper
     /*
      * Code to create the lineage ancestor lookup column and intermediate lookups that use ClosureQueryHelper
      */
-    public static MutableColumnInfo createAncestorLookupColumnInfo(String columnName, FilteredTable<UserSchema> parent, ColumnInfo rowId, @Nullable ExpObject source, boolean isSample)
+    public static MutableColumnInfo createAncestorLookupColumnInfo(FilteredTable<UserSchema> parent, ColumnInfo rowId, @Nullable ExpObject source, boolean isSample)
     {
-        MutableColumnInfo wrappedRowId = parent.wrapColumn(columnName, rowId);
+        MutableColumnInfo wrappedRowId = parent.wrapColumn(ANCESTORS_COLUMN_NAME, rowId);
         wrappedRowId.setIsUnselectable(true);
         wrappedRowId.setReadOnly(true);
         wrappedRowId.setCalculated(true);

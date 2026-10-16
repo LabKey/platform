@@ -118,7 +118,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
 
     public ExpDataTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, cf);
+        super(name, ExperimentServiceImpl.get().getTinfoData(), schema, ExpDataTable.Column.class, cf);
 
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(InsertPermission.class);
@@ -174,7 +174,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
-        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), null, false);
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createAncestorLookupColumnInfo(this, _rootTable.getColumn("rowid"), null, false);
         addColumn(lineageLookup);
 
         addExpObjectMethod();

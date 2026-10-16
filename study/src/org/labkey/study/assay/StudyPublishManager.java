@@ -450,6 +450,8 @@ public class StudyPublishManager implements StudyPublishService
             if (defaultQCStateId != null)
                 defaultQCState = DataStateManager.getInstance().getStateForRowId(targetContainer, defaultQCStateId);
 
+            // Keep the un-elevated user for provenance permission checks; elevation below is scoped to the dataset insert
+            User publishingUser = user;
             BatchValidationException validationException = new BatchValidationException();
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
             {
@@ -461,7 +463,7 @@ public class StudyPublishManager implements StudyPublishService
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
 
             final ExpObject source = publishSource.first.resolvePublishSource(publishSource.second);
-            createProvenanceRun(user, targetContainer, publishSource.first, source, errors, dataset, datasetLsids);
+            createProvenanceRun(user, publishingUser, targetContainer, publishSource.first, source, errors, dataset, datasetLsids);
 
             if (!errors.isEmpty())
                 return null;
@@ -489,7 +491,7 @@ public class StudyPublishManager implements StudyPublishService
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
     }
 
-    private void createProvenanceRun(User user, @NotNull Container targetContainer, Dataset.PublishSource sourceType, @Nullable ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
+    private void createProvenanceRun(User user, User publishingUser, @NotNull Container targetContainer, Dataset.PublishSource sourceType, @Nullable ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
     {
         if (source == null || datasetLsids.isEmpty())
             return;
@@ -503,7 +505,7 @@ public class StudyPublishManager implements StudyPublishService
         {
             case SampleType -> {
                 ExpSampleType sampleType = (ExpSampleType) source;
-                createProvenanceRun(user, targetContainer, sampleType, errors, dataset, datasetLsids);
+                createProvenanceRun(user, publishingUser, targetContainer, sampleType, errors, dataset, datasetLsids);
             }
             case Assay -> {
                 ExpProtocol protocol = (ExpProtocol) source;
@@ -520,12 +522,12 @@ public class StudyPublishManager implements StudyPublishService
                     return;
                 }
 
-                createProvenanceRun(user, targetContainer, protocol, errors, dataset, datasetLsids);
+                createProvenanceRun(user, publishingUser, targetContainer, protocol, errors, dataset, datasetLsids);
             }
         }
     }
 
-    private void createProvenanceRun(User user, @NotNull Container targetContainer, @NotNull ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
+    private void createProvenanceRun(User user, User publishingUser, @NotNull Container targetContainer, @NotNull ExpObject source, List<String> errors, DatasetDefinition dataset, List<String> datasetLsids)
     {
         assert !datasetLsids.isEmpty();
 
@@ -589,11 +591,12 @@ public class StudyPublishManager implements StudyPublishService
             return;
         }
 
-        // Add the source row LSIDs as provenance inputs to the “StudyPublish” run’s starting protocol application
-        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), sourceRowLsids);
+        // Add the source row LSIDs as provenance inputs to the “StudyPublish” run’s starting protocol application.
+        // Use the un-elevated user so the object read check is enforced, not bypassed by the folder-admin elevation.
+        pvs.addProvenanceInputs(publishingUser, targetContainer, run.getInputProtocolApplication(), sourceRowLsids);
 
         // Add the provenance mapping of source row LSID to study dataset LSID to the run’s final protocol application
-        pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
+        pvs.addProvenance(publishingUser, targetContainer, run.getOutputProtocolApplication(), lsidPairs);
 
         // Call syncRunEdges
         ExperimentService.get().syncRunEdges(run);
