@@ -1341,10 +1341,10 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class CustomizeSiteAction extends FormViewAction<SiteSettingsForm>
+    public class CustomizeSiteAction extends SimpleViewAction<CustomizeSiteForm>
     {
         @Override
-        public ModelAndView getView(SiteSettingsForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(CustomizeSiteForm form, BindException errors)
         {
             if (form.isUpgradeInProgress())
                 getPageConfig().setTemplate(Template.Dialog);
@@ -1359,158 +1359,35 @@ public class AdminController extends SpringActionController
         {
             addAdminNavTrail(root, "Customize Site", this.getClass());
         }
+    }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class GetSiteSettingsAction extends ReadOnlyApiAction<Object>
+    {
         @Override
-        public void validateCommand(SiteSettingsForm form, Errors errors)
+        public Object execute(Object o, BindException errors)
         {
-            if (form.isShowRibbonMessage() && StringUtils.isEmpty(form.getRibbonMessage()))
-            {
-                errors.reject(ERROR_MSG, "Cannot enable the ribbon message without providing a message to show");
-            }
-            if (form.getMaxBLOBSize() < 0)
-            {
-                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be negative");
-            }
-            int hardCap = Math.max(WriteableAppProps.SOFT_MAX_BLOB_SIZE, AppProps.getInstance().getMaxBLOBSize());
-            if (form.getMaxBLOBSize() > hardCap)
-            {
-                errors.reject(ERROR_MSG, "Maximum BLOB size cannot be set higher than " + hardCap + " bytes");
-            }
-            if (form.getSslPort() < 1 || form.getSslPort() > 65535)
-            {
-                errors.reject(ERROR_MSG, "HTTPS port must be between 1 and 65,535");
-            }
-            if (form.getReadOnlyHttpRequestTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "HTTP timeout must be non-negative");
-            }
-            if (form.getMemoryUsageDumpInterval() < 0)
-            {
-                errors.reject(ERROR_MSG, "Memory logging frequency must be non-negative");
-            }
-            if (form.getScriptExecutionTimeout() == null)
-            {
-                errors.reject(ERROR_MSG, "Script execution timeout is required; set to 0 to disable the timeout");
-            }
-            else if (form.getScriptExecutionTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
-            }
+            return new ApiSimpleResponse("settings", SiteSettingsUpdater.getSettings());
         }
+    }
 
+    @AdminConsoleAction(AdminOperationsPermission.class)
+    public static class UpdateSiteSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
         @Override
-        public boolean handlePost(SiteSettingsForm form, BindException errors) throws Exception
+        public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            HttpServletRequest request = getViewContext().getRequest();
-
-            // We only need to check that SSL is running if the user isn't already using SSL
-            if (form.isSslRequired() && !(request.isSecure() && (form.getSslPort() == request.getServerPort())))
+            JSONObject settings = form.getJsonObject() == null ? null : form.getJsonObject().optJSONObject("settings");
+            if (settings == null)
             {
-                URL testURL = new URL("https", request.getServerName(), form.getSslPort(), AppProps.getInstance().getContextPath());
-                Pair<String, Integer> sslResponse = HttpsUtil.testHttpsUrl(testURL, "Ensure that the web server is configured for SSL and the port is correct. If SSL is enabled, try saving these settings while connected via SSL.");
-
-                if (sslResponse != null)
-                {
-                    errors.reject(ERROR_MSG, sslResponse.first);
-                    return false;
-                }
+                errors.reject(ERROR_MSG, "Request must include a \"settings\" object");
+                return null;
             }
 
-            if (form.getReadOnlyHttpRequestTimeout() < 0)
-            {
-                errors.reject(ERROR_MSG, "Read only HTTP request timeout must be non-negative");
-            }
+            if (!SiteSettingsUpdater.update(settings.toMap(), getUser(), getViewContext().getRequest(), errors))
+                return null;
 
-            WriteableAppProps props = AppProps.getWriteableInstance();
-
-            props.setPipelineToolsDir(form.getPipelineToolsDirectory());
-            props.setNavAccessOpen(form.isNavAccessOpen());
-            props.setSSLRequired(form.isSslRequired());
-            boolean sslSettingChanged = AppProps.getInstance().isSSLRequired() != form.isSslRequired();
-            props.setSSLPort(form.getSslPort());
-            props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
-            props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
-            props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
-            props.setMaxBLOBSize(form.getMaxBLOBSize());
-            props.setSelfReportExceptions(form.isSelfReportExceptions());
-
-            props.setAdminOnlyMessage(form.getAdminOnlyMessage());
-            props.setShowRibbonMessage(form.isShowRibbonMessage());
-            props.setRibbonMessage(form.getRibbonMessage());
-            props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
-
-            props.setAllowApiKeys(form.isAllowApiKeys());
-            props.setApiKeyExpirationSeconds(form.getApiKeyExpirationSeconds());
-            props.setAllowSessionKeys(form.isAllowSessionKeys());
-
-            try
-            {
-                ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
-                props.setExceptionReportingLevel(level);
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-
-            try
-            {
-                if (form.getUsageReportingLevel() != null)
-                {
-                    UsageReportingLevel level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
-                    props.setUsageReportingLevel(level);
-                }
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-
-            props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
-
-            if (null != form.getBaseServerURL())
-            {
-                if (form.isSslRequired() && !form.getBaseServerURL().startsWith("https"))
-                {
-                    errors.reject(ERROR_MSG, "Invalid Base Server URL. SSL connection is required. Consider https://.");
-                    return false;
-                }
-
-                try
-                {
-                    props.setBaseServerUrl(form.getBaseServerURL());
-                }
-                catch (URISyntaxException e)
-                {
-                    errors.reject(ERROR_MSG, "Invalid Base Server URL, \"" + e.getMessage() + "\"." +
-                            "Please enter a valid base URL containing the protocol, hostname, and port if required. " +
-                            "The webapp context path should not be included. " +
-                            "For example: \"https://www.example.com\" or \"http://www.labkey.org:8080\" and not \"http://www.example.com/labkey/\"");
-                    return false;
-                }
-            }
-
-            props.setIncludeServerHttpHeader(form.isIncludeServerHttpHeader());
-
-            props.setTermsOfUseFrequencySeconds(form.getTermsOfUseFrequencySeconds());
-
-            props.save(getViewContext().getUser());
-            UsageReportingLevel.reportNow();
-            if (sslSettingChanged)
-                ContentSecurityPolicyFilter.regenerateSubstitutionMap();
-
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(SiteSettingsForm form)
-        {
-            if (form.isUpgradeInProgress())
-            {
-                return AppProps.getInstance().getHomePageActionURL();
-            }
-            else
-            {
-                return new AdminUrlsImpl().getAdminConsoleURL();
-            }
+            return new ApiSimpleResponse("settings", SiteSettingsUpdater.getSettings());
         }
     }
 
@@ -1648,6 +1525,11 @@ public class AdminController extends SpringActionController
         public HtmlString getSiteSettingsHelpLink(String fragment)
         {
             return new HelpTopic("configAdmin", fragment).getSimpleLinkHtml("more info...");
+        }
+
+        public ActionURL getSuccessURL()
+        {
+            return _upgradeInProgress ? AppProps.getInstance().getHomePageActionURL() : new AdminUrlsImpl().getAdminConsoleURL();
         }
     }
 
@@ -2385,136 +2267,9 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @SuppressWarnings("unused")
-    public static class SiteSettingsForm
+    public static class CustomizeSiteForm
     {
         private boolean _upgradeInProgress = false;
-
-        private String _pipelineToolsDirectory;
-        private boolean _sslRequired;
-        private boolean _adminOnlyMode;
-        private boolean _showRibbonMessage;
-        private boolean _selfReportExceptions;
-        private String _adminOnlyMessage;
-        private String _ribbonMessage;
-        private int _sslPort;
-        private int _memoryUsageDumpInterval;
-        private int _readOnlyHttpRequestTimeout;
-        private Integer _scriptExecutionTimeout;
-        private int _maxBLOBSize;
-        private String _exceptionReportingLevel;
-        private String _usageReportingLevel;
-        private String _administratorContactEmail;
-
-        private String _baseServerURL;
-        private String _callbackPassword;
-        private boolean _allowApiKeys;
-        private int _apiKeyExpirationSeconds;
-        private boolean _allowSessionKeys;
-        private boolean _navAccessOpen;
-
-        private boolean _includeServerHttpHeader;
-        private int _termsOfUseFrequencySeconds;
-
-        public String getPipelineToolsDirectory()
-        {
-            return _pipelineToolsDirectory;
-        }
-
-        public void setPipelineToolsDirectory(String pipelineToolsDirectory)
-        {
-            _pipelineToolsDirectory = pipelineToolsDirectory;
-        }
-
-        public boolean isNavAccessOpen()
-        {
-            return _navAccessOpen;
-        }
-
-        public void setNavAccessOpen(boolean navAccessOpen)
-        {
-            _navAccessOpen = navAccessOpen;
-        }
-
-        public boolean isSslRequired()
-        {
-            return _sslRequired;
-        }
-
-        public void setSslRequired(boolean sslRequired)
-        {
-            _sslRequired = sslRequired;
-        }
-
-        public int getSslPort()
-        {
-            return _sslPort;
-        }
-
-        public void setSslPort(int sslPort)
-        {
-            _sslPort = sslPort;
-        }
-
-        public boolean isAdminOnlyMode()
-        {
-            return _adminOnlyMode;
-        }
-
-        public void setAdminOnlyMode(boolean adminOnlyMode)
-        {
-            _adminOnlyMode = adminOnlyMode;
-        }
-
-        public String getAdminOnlyMessage()
-        {
-            return _adminOnlyMessage;
-        }
-
-        public void setAdminOnlyMessage(String adminOnlyMessage)
-        {
-            _adminOnlyMessage = adminOnlyMessage;
-        }
-
-        public boolean isSelfReportExceptions()
-        {
-            return _selfReportExceptions;
-        }
-
-        public void setSelfReportExceptions(boolean selfReportExceptions)
-        {
-            _selfReportExceptions = selfReportExceptions;
-        }
-
-        public String getExceptionReportingLevel()
-        {
-            return _exceptionReportingLevel;
-        }
-
-        public void setExceptionReportingLevel(String exceptionReportingLevel)
-        {
-            _exceptionReportingLevel = exceptionReportingLevel;
-        }
-
-        public String getUsageReportingLevel()
-        {
-            return _usageReportingLevel;
-        }
-
-        public void setUsageReportingLevel(String usageReportingLevel)
-        {
-            _usageReportingLevel = usageReportingLevel;
-        }
-
-        public String getAdministratorContactEmail()
-        {
-            return _administratorContactEmail;
-        }
-
-        public void setAdministratorContactEmail(String administratorContactEmail)
-        {
-            _administratorContactEmail = administratorContactEmail;
-        }
 
         public boolean isUpgradeInProgress()
         {
@@ -2524,138 +2279,6 @@ public class AdminController extends SpringActionController
         public void setUpgradeInProgress(boolean upgradeInProgress)
         {
             _upgradeInProgress = upgradeInProgress;
-        }
-
-        public int getMemoryUsageDumpInterval()
-        {
-            return _memoryUsageDumpInterval;
-        }
-
-        public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)
-        {
-            _memoryUsageDumpInterval = memoryUsageDumpInterval;
-        }
-
-        public int getReadOnlyHttpRequestTimeout()
-        {
-            return _readOnlyHttpRequestTimeout;
-        }
-
-        /** Null when the request omits or blanks the parameter; rejected in validateCommand so an omitted value can never bind to 0 and silently disable the timeout. */
-        @Nullable
-        public Integer getScriptExecutionTimeout()
-        {
-            return _scriptExecutionTimeout;
-        }
-
-        public void setScriptExecutionTimeout(@Nullable Integer timeout)
-        {
-            _scriptExecutionTimeout = timeout;
-        }
-
-        public void setReadOnlyHttpRequestTimeout(int timeout)
-        {
-            _readOnlyHttpRequestTimeout = timeout;
-        }
-
-        public int getMaxBLOBSize()
-        {
-            return _maxBLOBSize;
-        }
-
-        public void setMaxBLOBSize(int maxBLOBSize)
-        {
-            _maxBLOBSize = maxBLOBSize;
-        }
-
-        public String getBaseServerURL()
-        {
-            return _baseServerURL;
-        }
-
-        public void setBaseServerURL(String baseServerURL)
-        {
-            _baseServerURL = baseServerURL;
-        }
-
-        public String getCallbackPassword()
-        {
-            return _callbackPassword;
-        }
-
-        public void setCallbackPassword(String callbackPassword)
-        {
-            _callbackPassword = callbackPassword;
-        }
-
-        public boolean isShowRibbonMessage()
-        {
-            return _showRibbonMessage;
-        }
-
-        public void setShowRibbonMessage(boolean showRibbonMessage)
-        {
-            _showRibbonMessage = showRibbonMessage;
-        }
-
-        public String getRibbonMessage()
-        {
-            return _ribbonMessage;
-        }
-
-        public void setRibbonMessage(String ribbonMessage)
-        {
-            _ribbonMessage = ribbonMessage;
-        }
-
-        public boolean isAllowApiKeys()
-        {
-            return _allowApiKeys;
-        }
-
-        public void setAllowApiKeys(boolean allowApiKeys)
-        {
-            _allowApiKeys = allowApiKeys;
-        }
-
-        public int getApiKeyExpirationSeconds()
-        {
-            return _apiKeyExpirationSeconds;
-        }
-
-        public void setApiKeyExpirationSeconds(int apiKeyExpirationSeconds)
-        {
-            _apiKeyExpirationSeconds = apiKeyExpirationSeconds;
-        }
-
-        public boolean isAllowSessionKeys()
-        {
-            return _allowSessionKeys;
-        }
-
-        public void setAllowSessionKeys(boolean allowSessionKeys)
-        {
-            _allowSessionKeys = allowSessionKeys;
-        }
-
-        public boolean isIncludeServerHttpHeader()
-        {
-            return _includeServerHttpHeader;
-        }
-
-        public void setIncludeServerHttpHeader(boolean includeServerHttpHeader)
-        {
-            _includeServerHttpHeader = includeServerHttpHeader;
-        }
-
-        public int getTermsOfUseFrequencySeconds()
-        {
-            return _termsOfUseFrequencySeconds;
-        }
-
-        public void setTermsOfUseFrequencySeconds(int termsOfUseFrequencySeconds)
-        {
-            _termsOfUseFrequencySeconds = termsOfUseFrequencySeconds;
         }
     }
 
@@ -12831,7 +12454,8 @@ public class AdminController extends SpringActionController
                 new OptionalFeatureAction(),
                 new GetSchemaXmlDocAction(),
                 new RecreateViewsAction(),
-                new DeleteEncryptedContentAction()
+                new DeleteEncryptedContentAction(),
+                new UpdateSiteSettingsAction()
             );
 
             // @AdminConsoleAction
@@ -12858,6 +12482,7 @@ public class AdminController extends SpringActionController
                 new ExportConnectionUsageAction(),
                 new GetConnectionPoolStatsAction(),
                 new ExportQueriesAction(),
+                new GetSiteSettingsAction(),
                 new MemoryChartAction(),
                 new ShowAdminAction()
             );

@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.MothershipReport" %>
+<%@ page import="org.labkey.api.settings.SiteSettingsProperties" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -33,6 +34,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
@@ -40,7 +42,6 @@
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<%=formatMissedErrors("form")%>
 <%
     JspView<SiteSettingsBean> view = HttpView.currentView();
     SiteSettingsBean bean = view.getModelBean();
@@ -100,8 +101,8 @@ var testMothershipReport = function (type, level, download) {
 };
 </script>
 
-<labkey:form name="preferences" enctype="multipart/form-data" method="post">
-<input type="hidden" name="upgradeInProgress" value="<%=bean._upgradeInProgress ? 1 : 0%>" />
+<labkey:form name="preferences" method="post">
+<div id="siteSettingsErrors" class="labkey-error" role="alert" hidden></div>
 
 <table>
 <%
@@ -490,3 +491,59 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 </table>
 </labkey:form>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+(function() {
+    const settingNames = <%=json(new JSONArray(Stream.of(SiteSettingsProperties.values()).map(Enum::name).toList()), 0)%>;
+    const form = document.forms['preferences'];
+    const errorEl = document.getElementById('siteSettingsErrors');
+
+    const showErrors = function(messages) {
+        errorEl.replaceChildren(...messages.map(function(msg) {
+            const div = document.createElement('div');
+            div.textContent = msg;
+            return div;
+        }));
+        errorEl.hidden = false;
+        errorEl.scrollIntoView();
+    };
+
+    // Controls the page didn't render (e.g., usage reporting on some distributions) are left out so they don't change
+    const collectSettings = function() {
+        const settings = {};
+        settingNames.forEach(function(name) {
+            const control = form.elements[name];
+            if (!control)
+                return;
+            if (control instanceof RadioNodeList) {
+                if (control.value !== '')
+                    settings[name] = control.value;
+            }
+            else if (control.type === 'checkbox') {
+                settings[name] = control.checked;
+            }
+            else {
+                settings[name] = control.value;
+            }
+        });
+        return settings;
+    };
+
+    // LABKEY's button submitForm() calls onsubmit then form.submit(), which skips submit event listeners
+    form.onsubmit = function() {
+        errorEl.hidden = true;
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('admin', 'updateSiteSettings.api', '/'),
+            method: 'POST',
+            jsonData: { settings: collectSettings() },
+            success: function() {
+                window.location = <%=q(bean.getSuccessURL())%>;
+            },
+            failure: LABKEY.Utils.getCallbackWrapper(function(response) {
+                const messages = (response && response.errors || []).map(function(e) { return e.msg; }).filter(Boolean);
+                showErrors(messages.length ? messages : [response && response.exception || 'Failed to save site settings']);
+            }, this, true)
+        });
+        return false;
+    };
+})();
+</script>
