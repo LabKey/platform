@@ -76,6 +76,7 @@ public interface NotificationService
      * Streams notifications for a specific user to the consumer without collecting them. Sorted descending by created date.
      */
     void forEachNotificationByUser(@Nullable Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer);
+
     /*
      * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
      * list returned by getNotificationsByUser(), and is significantly more efficient to query.
