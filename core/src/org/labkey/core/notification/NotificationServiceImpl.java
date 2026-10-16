@@ -206,15 +206,17 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     @Override
-    public List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
+    public void forEachNotification(@Nullable Container container, int notifyUserId, @Nullable List<String> typeLabels, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer)
     {
-        return getNotificationsByUserOrType(container, null, notifyUserId, unreadOnly, containerFilter);
-    }
+        List<String> types = null;
+        if (typeLabels != null && !typeLabels.isEmpty())
+        {
+            types = new ArrayList<>();
+            for (String label : typeLabels)
+                types.addAll(_labelTypesMap.get(label));
+        }
 
-    @Override
-    public void forEachNotificationByUser(@Nullable Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer)
-    {
-        try (Stream<Notification> stream = createSelectorByUserOrType(container, null, notifyUserId, unreadOnly, containerFilter).uncachedStream(Notification.class))
+        try (Stream<Notification> stream = createSelectorByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter).uncachedStream(Notification.class))
         {
             stream.forEach(consumer);
         }
@@ -235,14 +237,6 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
         return new TableSelector(getTable(), filter, null).exists();
     }
 
-    @Override
-    public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
-    {
-        List<String> types = new ArrayList<>();
-        typeLabels.forEach(label -> types.addAll(_labelTypesMap.get(label)));
-        return getNotificationsByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter);
-    }
-
     private TableSelector createSelectorByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -260,11 +254,6 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
         sort.appendSortColumn(FieldKey.fromParts("Created"), Sort.SortDirection.DESC, false);
 
         return new TableSelector(getTable(), filter, sort);
-    }
-
-    private List<Notification> getNotificationsByUserOrType(Container container, @Nullable List<String> types, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
-    {
-        return createSelectorByUserOrType(container, types, notifyUserId, unreadOnly, containerFilter).getArrayList(Notification.class);
     }
 
     @Override
@@ -510,7 +499,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
 
             // verify streaming notification query by user
             List<Notification> streamed = new ArrayList<>();
-            _service.forEachNotificationByUser(_container, _user.getUserId(), false, null, streamed::add);
+            _service.forEachNotification(_container, _user.getUserId(), null, false, null, streamed::add);
             assertEquals("Unexpected number of streamed notifications", 2, streamed.size());
         }
 

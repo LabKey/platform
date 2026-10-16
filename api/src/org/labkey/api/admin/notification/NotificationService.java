@@ -63,18 +63,14 @@ public interface NotificationService
                                  ActionURL linkUrl, String id, String type) throws MessagingException, ValidationException, IOException;
 
     /*
-     * Returns a list of notifications for a specific user. Sorted descending by created date.
+     * Streams notifications for a specific user to the consumer without collecting them, optionally limited to the
+     * given type labels (e.g, 'Pipeline'). Sorted descending by created date.
      */
-    List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
+    void forEachNotification(@Nullable Container container, int notifyUserId, @Nullable List<String> typeLabels, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer);
 
     /*
-     * Streams notifications for a specific user to the consumer without collecting them. Sorted descending by created date.
-     */
-    void forEachNotificationByUser(@Nullable Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer);
-
-    /*
-     * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
-     * list returned by getNotificationsByUser(), and is significantly more efficient to query.
+     * Returns just the count of unread notifications for a specific user. At any given instant, will match the number
+     * of unread notifications streamed by forEachNotification().
      */
     long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId);
 
@@ -83,10 +79,6 @@ public interface NotificationService
      */
     boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId);
 
-    /*
-     * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
-     */
-    List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
      * Returns a notification based on the notification's RowId.
      */
