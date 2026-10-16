@@ -151,16 +151,16 @@ public class QCStateSet
             return new SQLFragment("0 = 1");
         
         SQLFragment sql = new SQLFragment();
+        boolean hasStates = !_states.isEmpty();
         sql.append("(");
-        if (!_states.isEmpty())
+        if (hasStates)
         {
             sql.append(rowIdColumnAlias);
             sql.appendInClause(_states.stream().map(DataState::getRowId).toList(), StudySchema.getInstance().getSqlDialect());
         }
         if (_includeUnmarked)
         {
-            // our length will be 1 if our statement consists of just the open paren:
-            if (sql.length() > 1)
+            if (hasStates)
                 sql.append(" OR ");
             sql.append(rowIdColumnAlias).append(" IS NULL");
         }

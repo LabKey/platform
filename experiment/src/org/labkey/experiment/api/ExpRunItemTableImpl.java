@@ -65,10 +65,50 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS_ALI
 public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C> implements UpdateableTableInfo
 {
     public static final String ALIAS_CONCEPT_URI = "http://www.labkey.org/exp/xml#alias";
+    private final Class<C> _columns;
 
-    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, ContainerFilter cf)
+    private volatile List<ColumnInfo> _searchIndexColumns;
+
+    protected ExpRunItemTableImpl(String name, TableInfo rootTable, UserSchema schema, Class<C> columns, ContainerFilter cf)
     {
         super(name, rootTable, schema, cf);
+        _columns = columns;
+    }
+
+    /** Columns excluded from an item's search document, typically because it adds them separately (Issue 52467) */
+    private CaseInsensitiveHashSet getSearchIndexSkipColumns()
+    {
+        CaseInsensitiveHashSet colNames = new CaseInsensitiveHashSet("genId", ClosureQueryHelper.ANCESTORS_COLUMN_NAME);
+        for (C column : _columns.getEnumConstants())
+            colNames.add(column.name());
+        return colNames;
+    }
+
+    /** Columns whose values go into an item's search document, memoized because indexing calls it for every item in a batch */
+    public List<ColumnInfo> getSearchIndexColumns()
+    {
+        List<ColumnInfo> result = _searchIndexColumns;
+        if (result == null)
+        {
+            CaseInsensitiveHashSet skipColumns = getSearchIndexSkipColumns();
+            result = getExtendedColumns(true).values().stream().filter(col -> {
+                if (skipColumns.contains(col.getName()))
+                    return false;
+
+                // skip non-text and non-int columns or columns that aren't lookups; allow ARRAY (multi-value text choice / MVTC) columns (Issue 929)
+                if (!(col.getJdbcType().isText() || col.getJdbcType().isInteger() || col.getJdbcType() == JdbcType.ARRAY || col.getFk() != null))
+                    return false;
+
+                // Issue 52467: Skip indexing both the raw columns like LSID and the wrapped versions of those columns that are lookups to other data
+                if ("lsidtype".equalsIgnoreCase(col.getSqlTypeName()) || "entityid".equalsIgnoreCase(col.getSqlTypeName()))
+                    return false;
+
+                // Issue 51862: Skip indexing calculated columns
+                return !col.isValueExpressionColumn();
+            }).toList();
+            _searchIndexColumns = result;
+        }
+        return result;
     }
 
     @Override
