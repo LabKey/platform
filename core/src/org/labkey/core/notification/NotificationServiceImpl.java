@@ -236,12 +236,6 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     @Override
-    public List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly)
-    {
-        return getNotificationsByUserOrType(container, Collections.singletonList(type), notifyUserId, unreadOnly, null);
-    }
-
-    @Override
     public List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter)
     {
         List<String> types = new ArrayList<>();
@@ -512,10 +506,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
             verifyNotificationDetails(_notif2, _service.getNotification(_container, "objectId2", "type2", _user.getUserId()));
 
-            // verify notification query by type
-            assertEquals("Unexpected number of notifications for type 'type1'", 1, _service.getNotificationsByType(_container, "type1", _user.getUserId(), false).size());
-            assertEquals("Unexpected number of notifications for type 'type2'", 1, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
-            assertEquals("Unexpected number of notifications for type 'type3'", 0, _service.getNotificationsByType(_container, "type3", _user.getUserId(), false).size());
+            assertNull("Unexpected notification for type 'type3'", _service.getNotification(_container, "objectId1", "type3", _user.getUserId()));
 
             // verify streaming notification query by user
             List<Notification> streamed = new ArrayList<>();
@@ -534,7 +525,7 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             // mark one record as read and verify that it isn't deleted or changed in any other way
             count = _service.markAsRead(_container, _user, "objectId1", Collections.singletonList("type1"), _user.getUserId());
             assertEquals("Unexpected number of notifications updated", 1, count);
-            assertEquals("Unexpected number of unread notifications", 0, _service.getNotificationsByType(_container, "type1", _user.getUserId(), true).size());
+            assertNotNull("Expected notification to be marked as read", _service.getNotification(_container, _notif1).getReadOn());
             assertTrue("Expected a read notification", _service.hasReadNotificationsByUser(_container, _user.getUserId()));
             verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
         }
@@ -546,10 +537,10 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             int count = _service.removeNotifications(_container, "objectId0", Collections.singletonList("type2"), _user.getUserId());
             assertEquals("Unexpected number of notifications removed", 0, count);
 
-            // remove a record and verify it has been deleted using the type query
+            // remove a record and verify it has been deleted
             count = _service.removeNotifications(_container, "objectId2", Collections.singletonList("type2"), _user.getUserId());
             assertEquals("Unexpected number of notifications removed", 1, count);
-            assertEquals("Unexpected number of notifications for type 'type2'", 0, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
+            assertNull("Unexpected notification for type 'type2'", _service.getNotification(_container, "objectId2", "type2", _user.getUserId()));
         }
 
         private void addNotification(Container container, User user, Notification notification, String expectedErrorPrefix) throws ValidationException

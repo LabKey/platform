@@ -65,11 +65,6 @@ public interface NotificationService
     /*
      * Returns a list of notifications for a specific user. Sorted descending by created date.
      */
-    default List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly)
-    {
-        return getNotificationsByUser(container, notifyUserId, unreadOnly, null);
-    }
-
     List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
 
     /*
@@ -89,18 +84,8 @@ public interface NotificationService
     boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId);
 
     /*
-     * Returns a list of notifications for a specific user based on the specified type.
-     */
-    List<Notification> getNotificationsByType(Container container, @NotNull String type, int notifyUserId, boolean unreadOnly);
-
-    /*
      * Returns a list of notifications for a specific user based on the specified type labels (e.g, 'Pipeline').
      */
-    default List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly)
-    {
-        return getNotificationsByTypeLabels(container, typeLabels, notifyUserId, unreadOnly, null);
-    }
-
     List<Notification> getNotificationsByTypeLabels(Container container, @NotNull List<String> typeLabels, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
     /*
      * Returns a notification based on the notification's RowId.
