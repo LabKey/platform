@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.XarContext;
@@ -38,6 +40,9 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
@@ -45,18 +50,52 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 
 public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultExperimentSaveHandler.class);
+
+    private final Set<String> createdMaterialLsids = new HashSet<>();
+
+    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material)
+    {
+        assertCanEditLineage(user, lsid, material, false);
+    }
+
+    // new sample needs insert access
+    // existing sample needs edit access
+    // reader & locked sample is blocked
+    public static void assertCanEditLineage(User user, String lsid, @Nullable ExpMaterial material, boolean createdHere)
+    {
+        if (material == null || !material.getContainer().hasPermission(user, ReadPermission.class))
+            throw new NotFoundException("Could not find material with LSID '" + lsid + "'");
+
+        Class<? extends Permission> permission = createdHere
+                ? InsertPermission.class
+                : SampleTypeService.SampleOperations.EditLineage.getPermissionClass();
+        if (permission == null || !material.getContainer().hasPermission(user, permission))
+        {
+            LOG.warn("User {} cannot edit lineage of material {} in {}", user, lsid, material.getContainer().getPath());
+            throw new UnauthorizedException("User does not have permission to edit lineage of sample '" + material.getName() + "'");
+        }
+
+        if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                    List.of(material), SampleTypeService.SampleOperations.EditLineage));
+    }
 
     @Override
     public void beforeSave(ViewContext context, JSONObject rootJson, ExpProtocol protocol)
@@ -252,6 +291,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 throw new NotFoundException("Could not find experiment run " + runId);
             }
+            if (!run.getContainer().equals(context.getContainer()))
+            {
+                throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
+            }
             if (null != batch && !batch.getContainer().equals(context.getContainer()))
             {
                 throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
@@ -417,6 +460,31 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
+        Map<Long, ExpMaterial> existingOutputs = new HashMap<>();
+        ExpProtocolApplication existingOutputApp = run.getOutputProtocolApplication();
+        if (existingOutputApp != null)
+        {
+            for (ExpMaterialRunInput input : existingOutputApp.getMaterialInputs())
+                existingOutputs.put(input.getMaterial().getRowId(), input.getMaterial());
+        }
+
+        Set<Long> existingMaterialInputRowIds = new HashSet<>();
+        for (ExpMaterial in : run.getMaterialInputs().keySet())
+            existingMaterialInputRowIds.add(in.getRowId());
+        Set<Long> postedMaterialInputRowIds = new HashSet<>();
+        for (ExpMaterial in : inputMaterial.keySet())
+            postedMaterialInputRowIds.add(in.getRowId());
+
+        Set<Long> existingDataInputRowIds = new HashSet<>();
+        for (ExpData in : run.getDataInputs().keySet())
+            existingDataInputRowIds.add(in.getRowId());
+        Set<Long> postedDataInputRowIds = new HashSet<>();
+        for (ExpData in : inputData.keySet())
+            postedDataInputRowIds.add(in.getRowId());
+
+        boolean inputsUnchanged = existingMaterialInputRowIds.equals(postedMaterialInputRowIds)
+                && existingDataInputRowIds.equals(postedDataInputRowIds);
+
         run.deleteProtocolApplications(context.getUser());
 
         // Recreate the run
@@ -430,6 +498,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<>();
+        Set<Long> keptOutputRowIds = new HashSet<>();
         for (int i=0; i < outputMaterialArray.length(); i++)
         {
             JSONObject materialObject = outputMaterialArray.getJSONObject(i);
@@ -437,6 +506,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             if (material != null)
             {
+                keptOutputRowIds.add(material.getRowId());
+
+                // Attaching an output rewrites the material's lineage, so require write access - but skip
+                // materials that were already outputs of this run, since a re-save isn't changing them.
+                // A sample created in this request only needs insert rights.
+                if (!existingOutputs.containsKey(material.getRowId()) || !inputsUnchanged)
+                    assertCanEditLineage(context.getUser(), material.getLSID(), material, createdMaterialLsids.contains(material.getLSID()));
+
                 if (isAliquotProtocol)
                 {
                     material.setAliquotedFromLSID(aliquotParentLsid);
@@ -445,6 +522,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, ExpMaterial.DEFAULT_CPAS_TYPE));
             }
+        }
+
+        // Detaching an output also rewrites its lineage: authorize any prior output the post didn't keep.
+        // This runs inside the save's transaction, so a denial rolls the detach above back.
+        for (Map.Entry<Long, ExpMaterial> entry : existingOutputs.entrySet())
+        {
+            if (!keptOutputRowIds.contains(entry.getKey()))
+                assertCanEditLineage(context.getUser(), entry.getValue().getLSID(), entry.getValue());
         }
 
         checkForCycles(inputData, outputData);
@@ -472,11 +557,12 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         ExpSampleType sampleType = null;
         ExpMaterial material = null;
+        boolean createdHere = false;
         if (materialObject.has(ExperimentJSONConverter.ID))
         {
             int materialRowId = materialObject.getInt(ExperimentJSONConverter.ID);
             material = ExperimentService.get().getExpMaterial(materialRowId);
-            if (material == null)
+            if (material == null || !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find material with row id '" + materialRowId + "'");
             sampleType = material.getSampleType();
         }
@@ -484,7 +570,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         {
             String materialLsid = materialObject.getString(ExperimentJSONConverter.LSID);
             material = ExperimentService.get().getExpMaterial(materialLsid);
-            if (material == null)
+            if (material == null || !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
                 throw new NotFoundException("Could not find material with LSID '" + materialLsid + "'");
             sampleType = material.getSampleType();
         }
@@ -551,16 +637,20 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                         material = materials.getFirst();
                 }
 
+                if (material != null && !material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
+                    throw new NotFoundException("Could not find material '" + materialName + "'");
+
                 if (material == null)
+                {
                     material = createMaterial(context, sampleType, materialName);
+                    createdHere = true;
+                    createdMaterialLsids.add(material.getLSID());
+                }
             }
         }
 
         if (material == null)
             return null;
-
-        if (!material.getContainer().hasPermission(context.getUser(), ReadPermission.class))
-            throw new UnauthorizedException("User does not have permissions to reference Material with row id " + material.getRowId());
 
         if (materialObject.has(ExperimentJSONConverter.PROPERTIES))
         {
@@ -570,11 +660,93 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (!materialProperties.isEmpty())
             {
                 List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
+
+                if (propertiesWouldChange(context, material, dps, materialProperties))
+                {
+                    // A sample created by this request needs only insert rights; an existing one needs edit rights.
+                    // The status check below applies either way.
+                    Class<? extends Permission> editPerm = createdHere
+                            ? InsertPermission.class
+                            : SampleTypeService.SampleOperations.EditMetadata.getPermissionClass();
+                    if (editPerm == null || !material.getContainer().hasPermission(context.getUser(), editPerm))
+                        throw new UnauthorizedException("User does not have permission to edit sample '" + material.getName() + "'");
+                    if (!material.isOperationPermitted(SampleTypeService.SampleOperations.EditMetadata))
+                        throw new UnauthorizedException(SampleTypeService.get().getOperationNotPermittedMessage(
+                                List.of(material), SampleTypeService.SampleOperations.EditMetadata));
+                }
+
                 handleProperties(context, material, dps, materialProperties);
             }
         }
 
         return material;
+    }
+
+    private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
+    {
+        for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(submitted, dps, context.getContainer(), true).entrySet())
+        {
+            // Submitted side is already coerced to the property's Java type; coerce the stored side the same way.
+            Object storedValue = normalizeStored(entry.getKey(), material.getProperty(entry.getKey()));
+            if (!valuesEqual(storedValue, entry.getValue()))
+                return true;
+        }
+        return false;
+    }
+
+    // Unwrap MV fields and coerce to the property's Java type so stored and submitted values compare like-for-like.
+    private static Object normalizeStored(PropertyDescriptor pd, Object value)
+    {
+        if (value instanceof MvFieldWrapper mv)
+            value = mv.getValue();
+        if (value == null)
+            return null;
+        try
+        {
+            Class<?> javaType = pd.getPropertyType().getJavaType();
+            return ConvertUtils.lookup(javaType).convert(javaType, value);
+        }
+        catch (ConversionException e)
+        {
+            return value;
+        }
+    }
+
+    private static boolean valuesEqual(Object stored, Object submitted)
+    {
+        if (Objects.equals(stored, submitted))
+            return true;
+        if (stored == null || submitted == null)
+            return false;
+        if (stored instanceof Date && submitted instanceof Date)
+            return ((Date) stored).getTime() == ((Date) submitted).getTime();
+        if (stored instanceof Number && submitted instanceof Number)
+        {
+            if (stored instanceof BigDecimal || submitted instanceof BigDecimal)
+                return new BigDecimal(stored.toString()).compareTo(new BigDecimal(submitted.toString())) == 0;
+            return ((Number) stored).doubleValue() == ((Number) submitted).doubleValue();
+        }
+        if (stored instanceof Collection<?> && submitted instanceof Collection<?>)
+        {
+            List<Object> remaining = new ArrayList<>((Collection<?>) stored);
+            for (Object s : (Collection<?>) submitted)
+            {
+                boolean found = false;
+                for (int i = 0; i < remaining.size(); i++)
+                {
+                    if (valuesEqual(remaining.get(i), s))
+                    {
+                        remaining.remove(i);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return false;
+            }
+            return remaining.isEmpty();
+        }
+        return false;
     }
 
     @Override

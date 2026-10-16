@@ -65,7 +65,7 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 ///
 /// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
 /// semicolons in appended text.
-public class SQLFragment implements Appendable, CharSequence
+public class SQLFragment
 {
     private String sql;
     private StringBuilder sb = null;
@@ -172,7 +172,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public boolean isEmpty()
     {
         return (null == sb || sb.isEmpty()) && (sql == null || sql.isEmpty());
@@ -404,7 +403,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
@@ -531,7 +529,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
@@ -846,14 +843,6 @@ public class SQLFragment implements Appendable, CharSequence
         return append(table.getFromSQL(alias));
     }
 
-    /** Add to the SQL */
-    @Override
-    public SQLFragment append(char ch)
-    {
-        getStringBuilder().append(ch);
-        return this;
-    }
-
     /** This is like appendValue(CharSequence s), but force use of literal syntax
      * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
      *    array_agg('string') fails array_agg('string'::VARCHAR) works
@@ -959,25 +948,6 @@ public class SQLFragment implements Appendable, CharSequence
             sql = sql.replaceFirst("\\?", param);
         }
         return sql.replace("\"", "");
-    }
-
-
-    @Override
-    public char charAt(int index)
-    {
-        return getSqlCharSequence().charAt(index);
-    }
-
-    @Override
-    public int length()
-    {
-        return getSqlCharSequence().length();
-    }
-
-    @Override
-    public @NotNull CharSequence subSequence(int start, int end)
-    {
-        return getSqlCharSequence().subSequence(start, end);
     }
 
     /**

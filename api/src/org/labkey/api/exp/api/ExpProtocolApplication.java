@@ -77,8 +77,8 @@ public interface ExpProtocolApplication extends ExpObject
     void removeMaterialInput(User user, ExpMaterial material);
     void removeMaterialInputs(User user, Collection<Long> rowIds);
 
-    void addProvenanceInput(Set<String> lsids);
-    void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
+    void addProvenanceInput(User user, Set<String> lsids);
+    void addProvenanceMapping(User user, Set<Pair<String, String>> lsidPairs);
     Set<Pair<String, String>> getProvenanceMapping();
 
     ExpRun getRun();
