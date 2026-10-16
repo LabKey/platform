@@ -16,6 +16,9 @@
 package org.labkey.test.tests.study;
 
 import org.junit.Assert;
+import org.labkey.remoteapi.CommandException;
+import org.labkey.remoteapi.SimplePostCommand;
+import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.pages.DatasetInsertPage;
@@ -27,6 +30,7 @@ import org.labkey.test.pages.core.admin.LookAndFeelSettingsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,6 +217,67 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
 
     @Override
     protected void verifyStudyAndDatasets(){}
+
+    // Date-based visit managers build the navigator's cohort-filtered SQL separately from SequenceVisitManager
+    protected void verifyCohortFilteredNavigator()
+    {
+        // DEM-1's sex column splits the archive's 24 mice into Male (14) and Female (10) cohorts
+        SimplePostCommand assignCohorts = new SimplePostCommand("cohort", "manageCohorts");
+        assignCohorts.setParameters(Map.<String, Object>of(
+                "participantCohortDatasetId", 5009,
+                "participantCohortProperty", "2.What is your sex?",
+                "updateParticipants", true));
+        try
+        {
+            assignCohorts.execute(createDefaultConnection(), getProjectName() + "/" + getFolderName());
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        clickFolder(getFolderName());
+        clickAndWait(Locator.linkWithText("Study Navigator"));
+        assertElementPresent(demographicsCountLink(24));
+
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("cohortId"), "Male"));
+        assertElementPresent(demographicsCountLink(14));
+        assertElementNotPresent(demographicsCountLink(24));
+
+        beginAt(getCurrentRelativeURL().replace("PTID_CURRENT", "PTID_INITIAL"));
+        assertElementPresent(demographicsCountLink(14));
+
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("cohortId"), "Female"));
+        assertElementPresent(demographicsCountLink(10));
+        assertElementNotPresent(demographicsCountLink(14));
+
+        // Any dataset QC state makes the navigator filter on QC state too; no rows are marked with this one
+        InsertRowsCommand insertState = new InsertRowsCommand("core", "DataStates");
+        insertState.addRow(Map.<String, Object>of("label", "Pending Review", "publicData", false));
+        try
+        {
+            insertState.execute(createDefaultConnection(), getProjectName() + "/" + getFolderName());
+        }
+        catch (IOException | CommandException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        clickFolder(getFolderName());
+        clickAndWait(Locator.linkWithText("Study Navigator"));
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("cohortId"), "Male"));
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("QCState"), "Pending Review"));
+        assertElementNotPresent(demographicsCountLink(14));
+
+        // "All data" is the default once a QC state exists, so it only reloads the page after another choice
+        doAndWaitForPageToLoad(() -> selectOptionByText(Locator.name("QCState"), "All data"));
+        assertElementPresent(demographicsCountLink(14));
+    }
+
+    private Locator demographicsCountLink(int count)
+    {
+        return Locator.xpath("//table[@id='studyOverview']//tr[td[contains(., 'DEM-1: Demographics')]]//a[normalize-space()='" + count + "']");
+    }
 
     protected ViewDatasetDataPage goToDataset(String folder, String datasetName)
     {

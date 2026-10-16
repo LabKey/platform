@@ -88,6 +88,8 @@ public class StudyDateBasedTest extends AbstractStudyTimeKeyFieldTest
 
         verifyParticipantReports(26);
 
+        verifyCohortFilteredNavigator();
+
         //manageSubjectClassificationTest();
 
         verifyStudyAndDatasets(false);
