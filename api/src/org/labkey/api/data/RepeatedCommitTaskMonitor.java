@@ -24,6 +24,7 @@ import org.labkey.api.cache.Throttle;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,24 +40,47 @@ import java.util.stream.Stream;
  * Watches one commit task queue of a transaction and warns when a single task class is queued {@link #THRESHOLD} or
  * more times, which usually means work registered per row that a value-equal task or an {@link AccumulatingCommitTask}
  * would do once. Each lambda or method reference site has its own class, so counting by class counts by call site.
+ * A class that defines equals() has already been deduplicated, so its count is distinct keys and must reach
+ * {@link #VALUE_EQUAL_THRESHOLD}: per-entity keys are expected, per-row keys at scale are not.
  */
 public class RepeatedCommitTaskMonitor
 {
     private static final Logger LOG = LogHelper.getLogger(RepeatedCommitTaskMonitor.class, "Warnings about commit tasks queued repeatedly in one transaction; DEBUG summarizes every large queue");
 
-    static final int THRESHOLD = 10;
+    static final int THRESHOLD = 20;
+    static final int VALUE_EQUAL_THRESHOLD = 200;
     static final int LARGE_QUEUE = 200;
     static final int LARGE_QUEUE_CLASSES = 10;
 
     // Frames between the registering code and add()
     private static final CallSiteKeys STACK_KEYS = new CallSiteKeys(DbScope.class, RepeatedCommitTaskMonitor.class, AccumulatingCommitTask.class);
 
+    private static final ClassValue<Boolean> VALUE_EQUAL = new ClassValue<>()
+    {
+        @Override
+        protected Boolean computeValue(@NotNull Class<?> type)
+        {
+            try
+            {
+                return type.getMethod("equals", Object.class).getDeclaringClass() != Object.class;
+            }
+            catch (NoSuchMethodException e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }
+    };
+
     // At most one warning per day per call site and queue, so an expected repeat doesn't flood the log
     private static final Throttle<RepeatedTaskWarning> WARNING_THROTTLE = new Throttle<>(RepeatedTaskWarning.class, "Repeated commit task warnings", 1000, CacheManager.DAY,
             w -> {
                 Tally tally = drainTally(w);
-                LOG.warn("{} {} tasks of class {} were queued from one call site in one transaction and ran in {} ms ({} tasks in the queue). Consider a value-equal task or an AccumulatingCommitTask so the work runs once. {} transactions, max {} tasks, {} ms total, since this call site's previous warning.",
-                        w.taskCount, w.option, w.taskClass, w.elapsedMs, w.queueSize, tally.transactions, tally.maxTasks, tally.totalMs, w.stackTrace);
+                String history = tally.transactions > 1 ? String.format(" Since this call site's previous warning: %d transactions, max %d tasks, %d ms total.",
+                        tally.transactions, tally.maxTasks, tally.totalMs) : "";
+                String advice = w.valueEqual ? "The task is value-equal, so each is a distinct key; key it more coarsely or use an AccumulatingCommitTask." :
+                        "Make the task value-equal or use an AccumulatingCommitTask so it runs once.";
+                LOG.warn("{} {} tasks (of {} queued) were registered from {} in one transaction and ran in {} ms. {}{}",
+                        w.taskCount, w.option, w.queueSize, w.callSite, w.elapsedMs, advice, history, w.stackTrace);
             });
 
     // Repeats per throttle key since its last warning, so the once-a-day warning still reports how often the call site repeats
@@ -75,10 +99,15 @@ public class RepeatedCommitTaskMonitor
     /** Call only for a task that was actually queued, not one dropped as equal to a queued task */
     void added(Runnable task)
     {
-        if (_counts.merge(task.getClass(), 1, Integer::sum) == THRESHOLD)
+        if (_counts.merge(task.getClass(), 1, Integer::sum) == thresholdFor(task.getClass()))
             _repeated.put(task.getClass(), new Throwable("Stack trace for repeated commit task registration"));
         if (++_queued == LARGE_QUEUE && LOG.isDebugEnabled())
             _largeQueueStackTrace = new Throwable("Stack trace for the registration that made the commit task queue large");
+    }
+
+    static int thresholdFor(Class<?> taskClass)
+    {
+        return VALUE_EQUAL.get(taskClass) ? VALUE_EQUAL_THRESHOLD : THRESHOLD;
     }
 
     void run(Runnable task)
@@ -107,7 +136,12 @@ public class RepeatedCommitTaskMonitor
             LOG.debug(summarizeLargeQueue(option, queueSize), _largeQueueStackTrace);
 
         _repeated.forEach((taskClass, stackTrace) -> {
-            RepeatedTaskWarning warning = new RepeatedTaskWarning(getStackKey(stackTrace), option, taskClass.getName(),
+            String stackKey = getStackKey(stackTrace);
+            StackTraceElement[] frames = stackTrace.getStackTrace();
+            int callSite = STACK_KEYS.getCallSiteIndex(stackTrace);
+            // Log from the registering code down, without the commit task plumbing above it
+            stackTrace.setStackTrace(Arrays.copyOfRange(frames, callSite, frames.length));
+            RepeatedTaskWarning warning = new RepeatedTaskWarning(stackKey, option, frames.length > 0 ? frames[callSite].toString() : taskClass.getName(), VALUE_EQUAL.get(taskClass),
                     _counts.get(taskClass), queueSize, TimeUnit.NANOSECONDS.toMillis(_elapsedNanos.getOrDefault(taskClass, 0L)), stackTrace);
             recordTally(warning);
             WARNING_THROTTLE.execute(warning);
@@ -167,7 +201,7 @@ public class RepeatedCommitTaskMonitor
     }
 
     // Compares only on call site and queue, so the throttle and tally group on those rather than on every field
-    private record RepeatedTaskWarning(String stackKey, CommitTaskOption option, String taskClass, int taskCount,
+    private record RepeatedTaskWarning(String stackKey, CommitTaskOption option, String callSite, boolean valueEqual, int taskCount,
                                        int queueSize, long elapsedMs, Throwable stackTrace)
     {
         @Override
@@ -190,6 +224,14 @@ public class RepeatedCommitTaskMonitor
             return () -> assertTrue(i >= 0); // Capturing, so every call returns a new instance of one class
         }
 
+        private record KeyedTask(int i) implements Runnable
+        {
+            @Override
+            public void run()
+            {
+            }
+        }
+
         @Test
         public void flagsAClassAtTheThreshold()
         {
@@ -200,6 +242,21 @@ public class RepeatedCommitTaskMonitor
 
             monitor.added(task(THRESHOLD));
             assertEquals(Set.of(task(0).getClass()), monitor._repeated.keySet());
+        }
+
+        @Test
+        public void valueEqualClassesNeedMoreDistinctKeys()
+        {
+            assertEquals(THRESHOLD, thresholdFor(task(0).getClass()));
+            assertEquals(VALUE_EQUAL_THRESHOLD, thresholdFor(KeyedTask.class));
+
+            RepeatedCommitTaskMonitor monitor = new RepeatedCommitTaskMonitor();
+            for (int i = 0; i < VALUE_EQUAL_THRESHOLD - 1; i++)
+                monitor.added(new KeyedTask(i));
+            assertTrue(monitor._repeated.isEmpty());
+
+            monitor.added(new KeyedTask(VALUE_EQUAL_THRESHOLD));
+            assertEquals(Set.of(KeyedTask.class), monitor._repeated.keySet());
         }
 
         @Test
@@ -267,20 +324,22 @@ public class RepeatedCommitTaskMonitor
         @Test
         public void keyStopsAtTheRegisteringFrame()
         {
-            String key = getStackKey(createThrowable(List.of(
+            Throwable t = createThrowable(List.of(
                     "org.labkey.api.data.DbScope$CommitTaskOption$2",
                     "org.labkey.api.data.DbScope$TransactionImpl",
                     "org.labkey.api.data.DbScope",
                     "org.labkey.list.model.ListManager",
-                    "org.labkey.list.model.ListQueryUpdateService")));
+                    "org.labkey.list.model.ListQueryUpdateService"));
+            String key = getStackKey(t);
 
             assertTrue(key.endsWith("org.labkey.list.model.ListManager.method(Source.java:1)"));
             assertEquals(4, key.split("\n").length);
+            assertEquals(3, STACK_KEYS.getCallSiteIndex(t));
         }
 
         private static RepeatedTaskWarning createWarning(String stackKey, CommitTaskOption option, int taskCount, long elapsedMs)
         {
-            return new RepeatedTaskWarning(stackKey, option, "Task", taskCount, taskCount, elapsedMs, new Throwable());
+            return new RepeatedTaskWarning(stackKey, option, "Task", false, taskCount, taskCount, elapsedMs, new Throwable());
         }
 
         // Tallies are static, so each test uses its own stack key
@@ -410,7 +469,7 @@ public class RepeatedCommitTaskMonitor
 
                 // A warning that logs drains its call site's tally; a throttled one adds to it
                 Throwable stackTrace = monitor._repeated.values().iterator().next();
-                RepeatedTaskWarning key = new RepeatedTaskWarning(getStackKey(stackTrace), CommitTaskOption.POSTCOMMIT, "Task", THRESHOLD, THRESHOLD, 0, stackTrace);
+                RepeatedTaskWarning key = new RepeatedTaskWarning(getStackKey(stackTrace), CommitTaskOption.POSTCOMMIT, "Task", false, THRESHOLD, THRESHOLD, 0, stackTrace);
                 int before = tallyTransactions(key);
                 monitor.warnOfRepeats(CommitTaskOption.POSTCOMMIT, THRESHOLD);
 
