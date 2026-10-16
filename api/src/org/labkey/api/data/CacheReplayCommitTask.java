@@ -34,7 +34,7 @@ import java.util.Set;
  * they first happened. One per transaction, so a transaction touching many caches queues one commit task, not one per
  * cache and key, and so an operation that a later removal or clear would undo can be dropped before it runs.
  */
-final class CacheReplayCommitTask implements Runnable
+public final class CacheReplayCommitTask implements Runnable
 {
     private enum Kind { RELOAD, REMOVE, FILTER, CLEAR }
 
