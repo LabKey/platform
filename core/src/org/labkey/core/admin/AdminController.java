@@ -1396,6 +1396,14 @@ public class AdminController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Script execution timeout must be non-negative");
             }
+            if (form.getAssayTransformScriptTimeout() == null)
+            {
+                errors.reject(ERROR_MSG, "Assay transform script timeout is required; set to 0 to disable the timeout");
+            }
+            else if (form.getAssayTransformScriptTimeout() < 0)
+            {
+                errors.reject(ERROR_MSG, "Assay transform script timeout must be non-negative");
+            }
         }
 
         @Override
@@ -1431,6 +1439,7 @@ public class AdminController extends SpringActionController
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setReadOnlyHttpRequestTimeout(form.getReadOnlyHttpRequestTimeout());
             props.setScriptExecutionTimeout(form.getScriptExecutionTimeout());
+            props.setAssayTransformScriptTimeout(form.getAssayTransformScriptTimeout());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setSelfReportExceptions(form.isSelfReportExceptions());
 
@@ -2401,6 +2410,7 @@ public class AdminController extends SpringActionController
         private int _memoryUsageDumpInterval;
         private int _readOnlyHttpRequestTimeout;
         private Integer _scriptExecutionTimeout;
+        private Integer _assayTransformScriptTimeout;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
@@ -2551,6 +2561,18 @@ public class AdminController extends SpringActionController
         public void setScriptExecutionTimeout(@Nullable Integer timeout)
         {
             _scriptExecutionTimeout = timeout;
+        }
+
+        /** Null when the request omits or blanks the parameter; rejected in validateCommand like the script execution timeout. */
+        @Nullable
+        public Integer getAssayTransformScriptTimeout()
+        {
+            return _assayTransformScriptTimeout;
+        }
+
+        public void setAssayTransformScriptTimeout(@Nullable Integer timeout)
+        {
+            _assayTransformScriptTimeout = timeout;
         }
 
         public void setReadOnlyHttpRequestTimeout(int timeout)

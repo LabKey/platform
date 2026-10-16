@@ -205,7 +205,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         DataLoaderSettings settings
     ) throws ExperimentException
     {
-        ExpProtocol protocol = data.getRun().getProtocol();
+        // Transforms may run before the run is saved, so prefer the upload's protocol
+        ExpProtocol protocol = context instanceof AssayUploadXarContext uploadContext ? uploadContext.getContext().getProtocol() : data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         DataIteratorBuilder dataRows;
 
