@@ -38,9 +38,10 @@ public class TroubleshooterRole extends AbstractRootContainerRole
         super("Troubleshooter", "Troubleshooters may view administration settings but may not change them.", PERMISSIONS);
     }
 
+    // Ensures this role gets all permissions (troubleshooter, read, user detail, audit read) in the root ONLY
     @Override
     public boolean isApplicableOutsideRoot()
     {
-        return false; // This ensures troubleshooters get these permissions (esp. ReadPermission) only in the root
+        return false;
     }
 }
