@@ -127,12 +127,11 @@ public class SQLFragment
         sql = "";
     }
 
-    @Deprecated
-    public SQLFragment(@CompileTimeConstant CharSequence charseq, @Nullable List<?> params)
+    public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
-            StringUtils.contains(charseq, ';'))
+                (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+                StringUtils.contains(charseq, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
@@ -143,8 +142,7 @@ public class SQLFragment
     }
 
 
-    @Deprecated
-    public SQLFragment(@CompileTimeConstant CharSequence sql, Object... params)
+    public SQLFragment(CharSequence sql, Object... params)
     {
         this(sql, Arrays.asList(params));
     }
@@ -207,51 +205,53 @@ public class SQLFragment
         return new SQLFragment().setSqlUnsafe(unsafe);
     }
 
-    /** For SQL text assembled at runtime; use unsafe() for SQL written in source */
-    public static SQLFragment unchecked(String sql)
+
+    public SQLFragment append(SqlSeparator sep)
     {
-        return new SQLFragment().setSqlUnsafe(sql);
+        if (sep._count == 0) throw new IllegalStateException("call next() before append()");
+        getStringBuilder().append(sep._count == 1 ? sep._first : sep._rest);
+        return this;
     }
 
     /** next() returns {@code first} on its first call and {@code rest} after that */
     public static SqlSeparator sep(@CompileTimeConstant String first, @CompileTimeConstant String rest)
     {
-        return new SqlSeparator(first, rest, "");
+        return new SqlSeparator(first, rest, null);
     }
 
     /** Like sep(first, rest); last() returns {@code last} once next() has been called */
-    public static SqlSeparator sep(@CompileTimeConstant String first, @CompileTimeConstant String rest, @CompileTimeConstant String last)
+    public static SqlSeparator sep(@CompileTimeConstant @NotNull String first, @CompileTimeConstant @NotNull String rest, @CompileTimeConstant String last)
     {
         return new SqlSeparator(first, rest, last);
     }
 
     public static final class SqlSeparator
     {
-        private final SQLFragment _first;
-        private final SQLFragment _rest;
-        private final SQLFragment _last;
-        private boolean _started = false;
+        private final @NotNull String _first;
+        private final @NotNull String _rest;
+        private final String _last;
+        private int _count = 0;
 
         private SqlSeparator(
                 @CompileTimeConstant @NotNull String first,
                 @CompileTimeConstant @NotNull String rest,
                 @CompileTimeConstant String last)
         {
-            _first = SQLFragment.unchecked(first);
-            _rest = SQLFragment.unchecked(rest);
-            _last = null == last ? null : SQLFragment.unchecked(last);
+            _first = first;
+            _rest = rest;
+            _last = last;
         }
 
-        public SQLFragment next()
+        // Returns this so callers write sql.append(sep.next()) without allocating a SQLFragment per separator
+        public SqlSeparator next()
         {
-            SQLFragment ret = _started ? _rest : _first;
-            _started = true;
-            return ret;
+            _count++;
+            return this;
         }
 
         public SQLFragment last()
         {
-            return _started && _last != null ? _last : new SQLFragment();
+            return _count !=0 && _last != null ? new SQLFragment().setSqlUnsafe(_last) : new SQLFragment();
         }
     }
 
@@ -306,8 +306,8 @@ public class SQLFragment
         SqlDialect dialect = Objects.requireNonNull(commonTableExpressions.getFirst().dialect);
         AliasManager am = new AliasManager(dialect);
         List<Pair<String,CTE>> ctes = commonTableExpressions.stream()
-                    .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
-                    .collect(Collectors.toList());
+                .map(cte -> new Pair<>(am.decideAlias(cte.preferredName),cte))
+                .collect(Collectors.toList());
 
         String comma = "\n/*CTE*/\n\t";
         for (Pair<String,CTE> p : ctes)
@@ -343,7 +343,7 @@ public class SQLFragment
         String select2 = sql2.getRawSQL();
 
         if ((null == sql1.commonTableExpressionsMap || sql1.commonTableExpressionsMap.isEmpty()) &&
-            (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
+                (null == sql2.commonTableExpressionsMap || sql2.commonTableExpressionsMap.isEmpty()))
             return select1.equals(select2);
 
         select1 = markerPattern.matcher(select1).replaceAll("CTE");
@@ -455,20 +455,19 @@ public class SQLFragment
 
     public SQLFragment unsafeAppend(@CompileTimeConstant String str)
     {
-        // these should not need any checking at all.
-        // but calling append() with it's checks for now.
+        // These should not need any checking at all,
+        // but calling append() with its checks for now.
         return append(str);
     }
 
-    @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
             return this;
 
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
-            StringUtils.contains(charseq, ';'))
+                (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+                StringUtils.contains(charseq, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
         }
@@ -776,7 +775,7 @@ public class SQLFragment
         String name = e.name();
         // Enum.name() returns a legal Java identifier per JLS, so none of these characters can appear
         // in practice. Defense in depth: reject anything SQL-active rather than only the apostrophe.
-        if (StringUtils.containsAny(name, "'\"\\;\r\n "))
+        if (StringUtils.containsAny(name, "'\"\\;\r\n "))
             throw new IllegalStateException("Unexpected character in Enum.name(): " + name);
         getStringBuilder().append("'").append(name).append("'");
         return this;
@@ -964,8 +963,8 @@ public class SQLFragment
     public void insert(int index, String str)
     {
         if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
-            (StringUtils.countMatches(str, '\"') % 2) != 0 ||
-            StringUtils.contains(str, ';'))
+                (StringUtils.countMatches(str, '\"') % 2) != 0 ||
+                StringUtils.contains(str, ';'))
         {
             throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
         }
@@ -1527,17 +1526,6 @@ public class SQLFragment
             cond.append(terms.last());
             assertEquals("(x) AND (y) AND (z)", cond.getRawSQL());
             assertEquals(")", terms.last().getRawSQL());
-        }
-
-        @Test
-        public void testSeparatorReturnsIndependentFragments()
-        {
-            var comma = SQLFragment.sep("", ", ");
-            comma.next().unsafeAppend("a");
-            SQLFragment second = comma.next();
-            second.unsafeAppend("b");
-            assertEquals(", ", comma.next().getRawSQL());
-            assertEquals(", b", second.getRawSQL());
         }
     }
 

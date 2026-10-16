@@ -197,7 +197,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
         // this identifier is not used to generate SQL
-        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), SQLFragment.unchecked(rsmd.getColumnName(col))));
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment().setSqlUnsafe(rsmd.getColumnName(col))));
     }
 
     /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
