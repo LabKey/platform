@@ -466,7 +466,7 @@ public class AttachmentServiceImpl implements AttachmentService
     /**
      * Transaction-scoped counter of deferred AttachmentCache removals. Coalesced via addCommitTask()'s equals()-based
      * dedup, which hands back the task already registered for this transaction; the same approach
-     * DatabaseCache.BlockingDatabaseCache.CacheReloadCounterTask uses to bound its own post-commit work. run() is a
+     * CacheReplayCommitTask uses to collect DatabaseCache post-commit work. run() is a
      * no-op -- the task exists only to carry the count.
      */
     private static class DeferredInvalidationCounter implements Runnable

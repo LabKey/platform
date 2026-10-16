@@ -141,7 +141,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public boolean remove(@NotNull K key)
     {
-        _transaction.addCommitTask(new CacheKeyRemovalCommitTask(key), DbScope.CommitTaskOption.POSTCOMMIT);
+        CacheReplayCommitTask.get(_transaction).add(new CacheKeyRemovalCommitTask(key));
         _privateCache.put(key, REMOVED_MARKER);
         return true; // We could issue a get to determine if the key is already there, but very few callers care, so skip the work
     }
@@ -149,7 +149,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public int removeUsingFilter(Predicate<K> filter)
     {
-        _transaction.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
+        CacheReplayCommitTask.get(_transaction).add(new CachePrefixRemovalCommitTask(filter));
         return (int)getKeys()
             .filter(filter)
             .filter(this::remove)
@@ -165,7 +165,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public void clear()
     {
-        _transaction.addCommitTask(new CacheClearingCommitTask(), DbScope.CommitTaskOption.POSTCOMMIT);
+        CacheReplayCommitTask.get(_transaction).add(new CacheClearingCommitTask());
         _hasBeenCleared = true;
         _privateCache.clear();
     }
