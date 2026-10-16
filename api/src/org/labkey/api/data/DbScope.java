@@ -641,7 +641,9 @@ public class DbScope
         if (start != -1)
         {
             start = start + 9;
-            int end = Math.max(url.length(), url.indexOf('&', start));
+            int end = url.indexOf('&', start);
+            if (end == -1)
+                end = url.length();
             url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
         }
         return url;

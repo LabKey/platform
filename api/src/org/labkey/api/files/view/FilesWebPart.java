@@ -120,7 +120,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         }
         else if (legacyFileRoot != null) // legacy file root
         {
-            if (legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK)))
+            if (isLegacyPipelineRoot(legacyFileRoot))
             {
                 _isPipelineFiles = true;
                 PipeRoot root = PipelineService.get().findPipelineRoot(getViewContext().getContainer());
@@ -403,6 +403,19 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             rootPath = rootPath.resolve(relativePath);
 
         return rootPath;
+    }
+
+    private static boolean isLegacyPipelineRoot(String legacyFileRoot)
+    {
+        return legacyFileRoot.equals(FileContentService.PIPELINE_LINK) || legacyFileRoot.equals(PageFlowUtil.encodeURIComponent(FileContentService.PIPELINE_LINK));
+    }
+
+    /** Whether a Files web part with these trimmed property values displays a named file set, mirroring the constructor's precedence */
+    public static boolean usesNamedFileSet(@Nullable String legacyFileRoot, @Nullable String fileRoot)
+    {
+        if (fileRoot != null)
+            return StringUtils.stripStart(fileRoot, "/").startsWith(FileContentService.FILE_SETS_LINK);
+        return legacyFileRoot != null && !isLegacyPipelineRoot(legacyFileRoot) && !legacyFileRoot.startsWith(FileContentService.CLOUD_LINK);
     }
 
     /** @param folderFileRoot not-yet-URI-encoded relative path */

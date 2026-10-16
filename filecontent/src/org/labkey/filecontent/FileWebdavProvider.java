@@ -30,6 +30,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.FileSystemResource;
@@ -43,6 +44,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -208,15 +210,28 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
 
         @Override
+        public Collection<? extends WebdavResource> list()
+        {
+            return _names.stream()
+                .map(name -> resource(Path.toPathPart(name)))
+                .filter(Objects::nonNull)
+                .toList();
+        }
+
+        @Override
         public WebdavResource find(Path.Part name)
         {
+            WebdavResource r = resource(name);
+            // Count only user requests; the search crawler resolves these paths without one
+            if (r != null && HttpView.currentRequest() != null)
+                FileContentModule.incrementNamedFileSetMetric("webdavResolve");
+            return r;
+        }
+
+        private @Nullable WebdavResource resource(Path.Part name)
+        {
             AttachmentDirectory dir = _map.get(name.toString());
-            if (dir != null)
-            {
-                Path path = getPath().append(name);
-                return AttachmentService.get().getAttachmentResource(path, dir);
-            }
-            return null;
+            return dir == null ? null : AttachmentService.get().getAttachmentResource(getPath().append(name), dir);
         }
     }
 }
