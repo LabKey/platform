@@ -19,28 +19,11 @@ import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager.UserListener;
 
-/**
- * User: adam
- * Date: Nov 5, 2008
- * Time: 3:40:18 PM
- */
 public class AnnouncementUserListener implements UserListener
 {
     @Override
     public void userDeletedFromSite(User user)
     {
         AnnouncementManager.deleteUserFromAllMemberLists(user);
-    }
-
-    @Override
-    public void userAccountDisabled(User user)
-    {
-        //TODO: what should go here?
-    }
-
-    @Override
-    public void userAccountEnabled(User user)
-    {
-        //TODO: what should go here?
     }
 }

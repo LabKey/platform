@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -62,6 +63,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
+import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -154,6 +156,7 @@ import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleChangeNotify;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -219,7 +222,11 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.ParticipantVisit;
@@ -241,6 +248,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -267,6 +275,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -353,6 +362,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
+
+    // Shared instance so commit tasks dedupe when one transaction saves or deletes several protocols
+    private static final Runnable CLEAR_PROTOCOL_CACHE_TASK = () -> {
+        AssayService assayService = AssayService.get();
+        if (assayService != null)
+            assayService.clearProtocolCache();
+    };
 
     private final List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private final Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
@@ -2873,7 +2889,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    parents.append("\nSELECT * FROM " + tokens.first);
+                    parents.append("\nSELECT * FROM ").append(tokens.first);
                 }
 
                 parents.append("\nWHERE depth != 0");
@@ -2948,7 +2964,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 else
                 {
-                    children.append("\nSELECT * FROM " + tokens.second);
+                    children.append("\nSELECT * FROM ").append(tokens.second);
                 }
 
                 children.append("\nWHERE depth != 0");
@@ -4722,10 +4738,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
+                // Be sure that we clear the cache after we commit the overall transaction, in case it
+                // gets repopulated by another thread before then
+                transaction.addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, DbScope.CommitTaskOption.IMMEDIATE);
                 transaction.addCommitTask(() -> {
-                    // Be sure that we clear the cache after we commit the overall transaction, in case it
-                    // gets repopulated by another thread before then
-                    assayService.clearProtocolCache();
                     for (Protocol protocol : protocols)
                     {
                         uncacheProtocol(protocol);
@@ -4934,6 +4950,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
+            // Deleted rowIds by sample type LSID, so materialized views can drop just those rows; too many to track forces a full pass.
+            Map<String, Set<Long>> deletedRowIds = new HashMap<>();
+            Set<String> untrackedDeletes = new HashSet<>();
+
             // Document IDs to tell the search indexer should be deleted. Do this at the end to make sure the transaction
             // will be successful
             final List<String> docids = new ArrayList<>();
@@ -4987,13 +5007,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         // verify the material doesn't belong to a SampleType
                         if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
                             throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                    }
-
-                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                    {
-                        ExpSampleType sampleType = material.getSampleType();
-                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (_) -> new HashSet<>())
-                                .add(material.getRootMaterialRowId());
                     }
                 }
 
@@ -5104,11 +5117,49 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            int deletedCount;
             try (Timing ignored = MiniProfiler.step("exp.Material"))
             {
-                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE ");
-                materialSQL.append(materialFilterSQL);
-                executor.execute(materialSQL);
+                // Take ids from the delete itself so they match exactly what was removed
+                SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+                    .append(materialFilterSQL)
+                    .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                    .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+                if (truncateContainer)
+                    materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+                else
+                    materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                        .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                        .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+                materialSQL.append("\nFROM deleted GROUP BY CpasType");
+
+                deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
+                    int total = 0;
+                    while (rs.next())
+                    {
+                        String cpasType = rs.getString("CpasType");
+                        total += rs.getInt("DeletedCount");
+
+                        // No cached view means no reader for the ids, so skip collecting them
+                        Array rowIds = rs.getArray("RowIds");
+                        if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
+                            untrackedDeletes.add(cpasType);
+                        else
+                            deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
+
+                        Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
+                        if (roots != null)
+                        {
+                            ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
+                                    sampleTypes.get(cpasType) :
+                                    SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
+                            if (sampleType != null)
+                                sampleTypeAliquotRoots.computeIfAbsent(sampleType,
+                                        (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
+                        }
+                    }
+                    return total;
+                });
             }
 
             // clean up provenance
@@ -5151,7 +5202,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
             for (var st : sampleTypes.values())
                 if (null != st)
-                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(st, SampleTypeServiceImpl.SampleChangeType.delete);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterDelete(st, untrackedDeletes.contains(st.getLSID()) ? null : deletedRowIds.getOrDefault(st.getLSID(), Set.of()));
 
             // On successful commit, start task to remove items from search index
             transaction.addCommitTask(
@@ -5161,12 +5212,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // Notify connected clients that sample data changed so cached "insights" counts can be flagged stale.
             // Deletes don't go through onSamplesChanged, so the notification is fired here.
-            transaction.addCommitTask(() -> SampleChangeNotify.fireSampleDataChanged(container), POSTCOMMIT);
+            transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
 
             transaction.commit();
             if (timing != null)
                 LOG.info("SampleType delete timings\n{}", timing.dump());
-            return count;
+            return deletedCount;
         }
     }
 
@@ -5201,7 +5252,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 runsUsingItems.removeAll(runsToKeep);
             }
             // add runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(materialItems), getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
         }
 
         if (!dataIds.isEmpty())
@@ -5230,7 +5281,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
             runsUsingItems.addAll(dataInputRuns);
             // get runs that will no longer have any outputs
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(rowIdsWithRun(dataItems), getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<ExpRunImpl> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -5262,6 +5313,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /** Only items output by a run can leave that run without outputs. */
+    private static Set<Long> rowIdsWithRun(Collection<? extends RunItem> items)
+    {
+        return items.stream().filter(item -> item.getRunId() != null).map(RunItem::getRowId).collect(Collectors.toSet());
+    }
+
     /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Long> rowIds, TableInfo primaryTableInfo, Collection<Long> siblingRowIds, TableInfo siblingTableInfo)
     {
@@ -5272,12 +5329,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SELECT DISTINCT m.runId
 	    FROM exp.material m
         WHERE m.rowId in (3592, 3593, 3594)
+            AND m.runId IS NOT NULL
             AND NOT EXIST (
                 -- Check for siblings
-                SELECT DISTINCT m2.runId
+                SELECT 1
                 FROM exp.material m2
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = m2.runId
+                WHERE m2.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5288,10 +5345,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             )
             AND NOT EXIST (
              -- Check for siblings that are not being deleted
-                SELECT DISTINCT d.runId
+                SELECT 1
                 FROM exp.data d
-                WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.runId = d.runId
+                WHERE d.runId = m.runId
                     -- exclude siblings from selected materialIds
                     AND NOT EXIST (
                         SELECT rowId
@@ -5312,21 +5368,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append("SELECT DISTINCT m.runId\n")
                 .append("FROM ").append(primaryTableInfo, "m").append("\n")
                 .append("WHERE m.rowId ").append(idInClause).append("\n")
+                .append("AND m.runId IS NOT NULL\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT m2.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(primaryTableInfo, "m2").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = m2.runId\n")
+                .append("WHERE m2.runId = m.runId\n")
                 .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
                 .append("SELECT rowId FROM ").append(primaryTableInfo, "m3").append("\n")
                 .append("WHERE m3.rowId ").append(idInClause).append("\n")
                 .append("AND m2.rowId = m3.rowId\n")
                 .append("))\n")
                 .append("AND NOT EXISTS (\n")
-                .append("SELECT DISTINCT s.runId\n")
+                .append("SELECT 1\n")
                 .append("FROM ").append(siblingTableInfo, "s").append("\n")
-                .append("WHERE m.rowId ").append(idInClause).append("\n")
-                .append("AND m.runId = s.runId\n");
+                .append("WHERE s.runId = m.runId\n");
         if (!siblingRowIds.isEmpty())
         {
             sql.append("AND NOT EXISTS (\n") // s2.rowID not in siblingRowIds
@@ -6766,7 +6821,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
                 // gets repopulated by another thread before then
-                getExpSchema().getScope().addCommitTask(assayService::clearProtocolCache, POSTCOMMIT, POSTROLLBACK);
+                getExpSchema().getScope().addCommitTask(CLEAR_PROTOCOL_CACHE_TASK, POSTCOMMIT, POSTROLLBACK);
             }
             else
             {
@@ -7034,7 +7089,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != runInputLsids)
             {
-                protApp1.addProvenanceInput(runInputLsids);
+                protApp1.addProvenanceInput(user, runInputLsids);
             }
 
             addDataInputs(inputDatas, protApp1._object, user);
@@ -7138,7 +7193,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (null != finalOutputLsids && !finalOutputLsids.isEmpty())
             {
-                protApp3.addProvenanceMapping(finalOutputLsids);
+                protApp3.addProvenanceMapping(user, finalOutputLsids);
             }
 
             addDataInputs(allOutputDatas, protApp3._object, user);
@@ -10044,7 +10099,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 // to index based on the modified date
                 for (ExpDataClass dataClass : dataClassesMap.keySet())
                     indexDataClass((ExpDataClassImpl) dataClass, SearchService.get().defaultTask().getQueue(dataClass.getContainer(), SearchService.PRIORITY.modified));
-            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            }, POSTCOMMIT);
             transaction.commit();
         }
 
@@ -10736,6 +10791,140 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             // assert we deleted all MaterialInput exp.object
             assertEquals(0L, countMaterialInputObjects(c));
+        }
+
+        @Test
+        public void testEditLineagePermission() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "LineageGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+
+            UserSchema schema = QueryService.get().getUserSchema(admin, c, SchemaKey.fromParts("Samples"));
+            QueryUpdateService svc = schema.getTable("LineageGuardSamples").getUpdateService();
+            BatchValidationException errors = new BatchValidationException();
+            svc.insertRows(admin, c, List.of(CaseInsensitiveHashMap.of("name", "sample")), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            ExpMaterial sample = st.getSample(c, "sample");
+            String lsid = sample.getLSID();
+
+            try
+            {
+                DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, NoPermissionsRole.class), lsid, sample);
+                fail("A user without read access should get NotFoundException");
+            }
+            catch (NotFoundException expected)
+            {
+            }
+
+            for (User u : List.of(new LimitedUser(admin, ReaderRole.class), new LimitedUser(admin, AuthorRole.class)))
+            {
+                try
+                {
+                    DefaultExperimentSaveHandler.assertCanEditLineage(u, lsid, sample);
+                    fail("User without edit rights should not be able to edit lineage of a pre-existing sample");
+                }
+                catch (UnauthorizedException expected)
+                {
+                }
+            }
+
+            // Update (Editor) and full (admin) access can edit an existing sample's lineage
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, EditorRole.class), lsid, sample);
+            DefaultExperimentSaveHandler.assertCanEditLineage(admin, lsid, sample);
+
+            // A sample created in this same request only needs insert rights
+            DefaultExperimentSaveHandler.assertCanEditLineage(new LimitedUser(admin, AuthorRole.class), lsid, sample, true);
+        }
+
+        @Test
+        public void testMaterialPropertyPermissions() throws Exception
+        {
+            Assume.assumeTrue("31193: Experiment module has undeclared dependency on study module", AssayService.get() != null);
+
+            final User admin = TestContext.get().getUser();
+            final Container c = JunitUtil.getTestContainer();
+
+            GWTPropertyDescriptor score = new GWTPropertyDescriptor("score", "int");
+            score.setMvEnabled(true);
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            props.add(new GWTPropertyDescriptor("color", "string"));
+            props.add(new GWTPropertyDescriptor("count", "int"));
+            props.add(new GWTPropertyDescriptor("collected", "dateTime"));
+            props.add(new GWTPropertyDescriptor("shipped", "boolean"));
+            props.add(score);
+            ExpSampleType st = SampleTypeService.get().createSampleType(c, admin, "PropertyGuardSamples", null, props, Collections.emptyList(), -1, -1, -1, -1, null);
+            DomainProperty color = st.getDomain().getPropertyByName("color");
+
+            // Author has Insert but not Update
+            ViewContext context = new ViewContext();
+            context.setContainer(c);
+            context.setUser(new LimitedUser(admin, AuthorRole.class));
+            DefaultExperimentSaveHandler handler = new DefaultExperimentSaveHandler();
+
+            JSONObject sampleTypeJson = new JSONObject();
+            sampleTypeJson.put(ExperimentJSONConverter.NAME, st.getName());
+
+            // Creating a sample and setting its properties in one request needs only insert rights
+            JSONObject createJson = new JSONObject();
+            createJson.put(ExperimentJSONConverter.NAME, "newSample");
+            createJson.put(ExperimentJSONConverter.SAMPLE_TYPE, sampleTypeJson);
+            createJson.put(ExperimentJSONConverter.PROPERTIES,
+                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
+                            .put("shipped", true).put("score", 7));
+
+            ExpMaterial created = handler.handleMaterial(context, createJson);
+            assertNotNull("Author should be able to create a sample with properties", created);
+            assertEquals("red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
+
+            // Setting properties on a sample that already existed needs update rights, which Author lacks
+            JSONObject updateJson = new JSONObject();
+            updateJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            updateJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("color", "blue"));
+            try
+            {
+                handler.handleMaterial(context, updateJson);
+                fail("Author should not be able to edit properties of an existing sample");
+            }
+            catch (UnauthorizedException expected)
+            {
+            }
+
+            assertEquals("Property must be unchanged after an unauthorized edit",
+                    "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
+
+            // Changing the boolean must still be caught and blocked
+            JSONObject shippedJson = new JSONObject();
+            shippedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            shippedJson.put(ExperimentJSONConverter.PROPERTIES, new JSONObject().put("shipped", false));
+            try
+            {
+                handler.handleMaterial(context, shippedJson);
+                fail("Author should not be able to change a boolean property of an existing sample");
+            }
+            catch (UnauthorizedException expected)
+            {
+            }
+
+            // A full round-trip of every field (string, int, dateTime, boolean, MV-enabled int) must not over-gate
+            JSONObject unchangedJson = new JSONObject();
+            unchangedJson.put(ExperimentJSONConverter.LSID, created.getLSID());
+            unchangedJson.put(ExperimentJSONConverter.PROPERTIES,
+                    new JSONObject().put("color", "red").put("count", 5).put("collected", "2024-01-02")
+                            .put("shipped", true).put("score", 7)
+                            .put(ExperimentJSONConverter.NAME, "newSample"));
+            handler.handleMaterial(context, unchangedJson);
+
+            assertEquals("Property must be unchanged after the round-trip",
+                    "red", ExperimentService.get().getExpMaterial(created.getLSID()).getProperty(color));
         }
 
         private int countMaterialInputObjects(Container c)

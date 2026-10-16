@@ -653,8 +653,14 @@ public class AnnouncementManager
     // Most recent member list is attached to the most recent approved post
     static List<Integer> getMemberList(AnnouncementModel ann)
     {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?",
-                AnnouncementManager.getLatestPostId(ann) != null ? AnnouncementManager.getLatestPostId(ann) : ann.getRowId());
+        Integer latestPostId = getLatestPostId(ann);
+        return getPostMemberList(latestPostId != null ? latestPostId : ann.getRowId());
+    }
+
+    // The member list saved on this specific post, which is the thread's current list only if it's the latest post
+    public static List<Integer> getPostMemberList(int messageId)
+    {
+        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + _comm.getTableInfoMemberList() + " WHERE MessageId = ?", messageId);
 
         return new SqlSelector(_comm.getSchema(), sql).getArrayList(Integer.class);
     }
@@ -805,7 +811,7 @@ public class AnnouncementManager
             return EmailOption.MESSAGES_NONE.getValue();
     }
 
-    private static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
+    public static final String MESSAGE_BOARD_SETTINGS = "messageBoardSettings";
 
     public static void saveMessageBoardSettings(Container c, Settings settings)
     {

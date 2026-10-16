@@ -540,8 +540,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",
@@ -1053,8 +1051,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                     scheduler.standby();
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to put Quartz scheduler in standby", e);
                 }
 
                 logTsv(new ActionsTsvWriter());
@@ -1084,12 +1083,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 try
                 {
-                    // Clean up Quartz resources and wait for jobs to complete
-                    Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-                    scheduler.shutdown(true);
+                    QuartzShutdown.shutdown(StdSchedulerFactory.getDefaultScheduler(), QuartzShutdown.DEFAULT_TIMEOUT);
                 }
-                catch (SchedulerException ignored)
+                catch (SchedulerException e)
                 {
+                    LOG.error("Failed to shut down Quartz scheduler", e);
                 }
             }
         });
@@ -1534,6 +1532,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             MultiChoice.TestCase.class,
             OutOfRangeDisplayColumn.TestCase.class,
             PostgreSqlVersion.TestCase.class,
+            QuartzShutdown.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
             SecretServiceImpl.TestCase.class,
             StatsServiceImpl.TestCase.class,

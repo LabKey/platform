@@ -52,6 +52,7 @@ import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
@@ -77,6 +78,7 @@ import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RecordFactory;
+import org.labkey.api.data.RepeatedCommitTaskMonitor;
 import org.labkey.api.data.ResultSetSelectorTestCase;
 import org.labkey.api.data.RowTrackingResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
@@ -114,6 +116,7 @@ import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
+import org.labkey.api.module.ModuleArchiveTestCase;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
@@ -452,6 +455,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleArchiveTestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             ModuleHtmlViewDefinition.TestCase.class,
@@ -465,6 +469,7 @@ public class ApiModule extends CodeOnlyModule
             Path.TestCase.class,
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
+            RepeatedCommitTaskMonitor.TestCase.class,
             ReplacedRunFilter.TestCase.class,
             SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
@@ -489,6 +494,7 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             TabLoader.HeaderMatchTest.class,
             Table.IsSelectTestCase.class,
+            Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
             ValidEmail.TestCase.class,
@@ -516,6 +522,7 @@ public class ApiModule extends CodeOnlyModule
             AbstractAuditDomainKind.TestCase.class,
             AbstractForeignKey.TestCase.class,
             AbstractQueryUpdateService.TestCase.class,
+            AccumulatingCommitTask.TestCase.class,
             ActionURL.TestCase.class,
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
@@ -566,6 +573,7 @@ public class ApiModule extends CodeOnlyModule
             QueryDataIteratorBuilder.TestCase.class,
             QueryView.TestCase.class,
             RecordFactory.TestCase.class,
+            RepeatedCommitTaskMonitor.IntegrationTestCase.class,
             ResultSetDataIterator.TestCase.class,
             ResultSetSelectorTestCase.class,
             RoleSet.TestCase.class,
