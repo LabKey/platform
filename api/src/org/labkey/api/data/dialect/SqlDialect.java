@@ -565,7 +565,8 @@ public abstract class SqlDialect
     }
 
     /**
-     * Most callers should use this method. To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     * Prefer {@link SQLFragment#appendInClause(SQLFragment, Collection, SqlDialect)}, which yields FALSE for an empty collection and negates correctly.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
      */
     public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
