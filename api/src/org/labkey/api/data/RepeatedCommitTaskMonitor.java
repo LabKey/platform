@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -41,9 +42,11 @@ import java.util.stream.Stream;
  */
 public class RepeatedCommitTaskMonitor
 {
-    private static final Logger LOG = LogHelper.getLogger(RepeatedCommitTaskMonitor.class, "Warnings about commit tasks queued repeatedly in one transaction");
+    private static final Logger LOG = LogHelper.getLogger(RepeatedCommitTaskMonitor.class, "Warnings about commit tasks queued repeatedly in one transaction; DEBUG summarizes every large queue");
 
     static final int THRESHOLD = 10;
+    static final int LARGE_QUEUE = 200;
+    static final int LARGE_QUEUE_CLASSES = 10;
 
     // Frames between the registering code and add()
     private static final CallSiteKeys STACK_KEYS = new CallSiteKeys(DbScope.class, RepeatedCommitTaskMonitor.class, AccumulatingCommitTask.class);
@@ -75,7 +78,7 @@ public class RepeatedCommitTaskMonitor
 
     void run(Runnable task)
     {
-        if (!_repeated.containsKey(task.getClass()))
+        if (!_repeated.containsKey(task.getClass()) && !LOG.isDebugEnabled())
         {
             task.run();
             return;
@@ -94,6 +97,10 @@ public class RepeatedCommitTaskMonitor
 
     void warnOfRepeats(CommitTaskOption option, int queueSize)
     {
+        // Unthrottled, unlike the warnings, which stay silent for a call site that warned earlier in the day
+        if (queueSize >= LARGE_QUEUE && LOG.isDebugEnabled())
+            LOG.debug(summarizeLargeQueue(option, queueSize), new Throwable("Stack trace for large commit task queue"));
+
         _repeated.forEach((taskClass, stackTrace) -> {
             RepeatedTaskWarning warning = new RepeatedTaskWarning(getStackKey(stackTrace), option, taskClass.getName(),
                     _counts.get(taskClass), queueSize, TimeUnit.NANOSECONDS.toMillis(_elapsedNanos.getOrDefault(taskClass, 0L)), stackTrace);
@@ -101,6 +108,18 @@ public class RepeatedCommitTaskMonitor
             WARNING_THROTTLE.execute(warning);
             _warningCount++;
         });
+    }
+
+    String summarizeLargeQueue(CommitTaskOption option, int queueSize)
+    {
+        String topClasses = _counts.entrySet().stream()
+                .sorted(Map.Entry.<Class<?>, Integer>comparingByValue().reversed())
+                .limit(LARGE_QUEUE_CLASSES)
+                .map(e -> e.getValue() + " x " + e.getKey().getName() + " (" + TimeUnit.NANOSECONDS.toMillis(_elapsedNanos.getOrDefault(e.getKey(), 0L)) + " ms)")
+                .collect(Collectors.joining("\n    "));
+        long totalMs = TimeUnit.NANOSECONDS.toMillis(_elapsedNanos.values().stream().mapToLong(Long::longValue).sum());
+
+        return queueSize + " " + option + " tasks of " + _counts.size() + " classes ran in " + totalMs + " ms. Most common:\n    " + topClasses;
     }
 
     void clear()
@@ -212,6 +231,21 @@ public class RepeatedCommitTaskMonitor
             monitor.added(task(0));
             assertTrue(monitor._repeated.isEmpty());
             assertEquals(1, monitor._counts.get(task(0).getClass()).intValue());
+        }
+
+        @Test
+        public void summaryListsMostCommonClassesFirst()
+        {
+            RepeatedCommitTaskMonitor monitor = new RepeatedCommitTaskMonitor();
+            Runnable rare = () -> {};
+            monitor.added(rare);
+            for (int i = 0; i < 3; i++)
+                monitor.added(task(i));
+
+            String[] lines = monitor.summarizeLargeQueue(CommitTaskOption.POSTCOMMIT, 4).split("\n");
+            assertTrue(lines[0], lines[0].startsWith("4 POSTCOMMIT tasks of 2 classes ran in "));
+            assertTrue(lines[1], lines[1].contains("3 x " + task(0).getClass().getName()));
+            assertTrue(lines[2], lines[2].contains("1 x " + rare.getClass().getName()));
         }
 
         private static Throwable createThrowable(List<String> classNames)
