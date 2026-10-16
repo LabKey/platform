@@ -150,7 +150,7 @@
     if (!datasets.isEmpty())
     {
         SQLFragment f = new SQLFragment();
-        String union = "";
+        var union = SQLFragment.sep("", "\n  UNION ALL\n");
         for (var pair : datasets)
         {
             DatasetDefinition dd = pair.getKey();
@@ -158,7 +158,7 @@
             String alias = "__x" + dd.getDatasetId() + "__";
             ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
             ColumnInfo seq = t.getColumn("SequenceNum");
-            f.unsafeAppend(union).unsafeAppend("SELECT ")
+            f.append(union.next()).unsafeAppend("SELECT ")
                     .append(ptid.getValueSql(alias)).unsafeAppend(" AS ParticipantId,")
                     .append(seq.getValueSql(alias)).unsafeAppend(" AS SequenceNum,")
                     .appendValue(dd.getDatasetId()).unsafeAppend(" as DatasetId,")
@@ -166,7 +166,6 @@
             f.unsafeAppend("\nFROM ").append(t.getFromSQL(alias));
             f.unsafeAppend("\nWHERE ").append(ptid.getValueSql(alias)).unsafeAppend("=?").add(bean.getParticipantId());
             f.unsafeAppend("\nGROUP BY ").append(ptid.getValueSql(alias)).unsafeAppend(",").append(seq.getValueSql(alias));
-            union = "\n  UNION ALL\n";
         }
         f.unsafeAppend("\n ORDER BY 2");
 

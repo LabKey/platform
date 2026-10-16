@@ -36,7 +36,7 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("SUM(CASE ");
+            SQLFragment sql = SQLFragment.unsafe("SUM(CASE ");
             sql.appendIdentifier(fromColName).unsafeAppend(" WHEN ? THEN 1 ELSE 0 END) AS ").appendIdentifier(toColName);
             sql.add(Boolean.TRUE);
             return sql;
@@ -59,7 +59,7 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("SUM(");
+            SQLFragment sql = SQLFragment.unsafe("SUM(");
             sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }
@@ -81,7 +81,7 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("MAX(");
+            SQLFragment sql = SQLFragment.unsafe("MAX(");
             sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }
@@ -104,7 +104,7 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("MIN(");
+            SQLFragment sql = SQLFragment.unsafe("MIN(");
             sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }

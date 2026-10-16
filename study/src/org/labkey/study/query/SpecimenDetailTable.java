@@ -222,7 +222,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         public CollectionCohortColumn(final StudyQuerySchema schema, TableInfo parent)
         {
             super(parent, "CollectionCohort",
-                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
+                    SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + "$" + COLLECTION_COHORT_JOIN + ".CohortId"),
                     JdbcType.INTEGER);
 
             setFk(new CohortForeignKey(schema, parent.getContainerFilter(), true, this.getLabel()));
@@ -254,7 +254,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             super(parent,
                     "QualityControlFlag",
-                    new SQLFragment("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlFlag = ? THEN ? ELSE ? END)", Boolean.TRUE, Boolean.TRUE, Boolean.FALSE),
+                    SQLFragment.unsafe("(CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlFlag = ? THEN ? ELSE ? END)").addAll(Boolean.TRUE, Boolean.TRUE, Boolean.FALSE),
                     JdbcType.BOOLEAN);
             // our column wrapping is too complex for the description to propagate through- set it here:
             setDescription("Whether this comment is associated with a quality control alert.");
@@ -267,7 +267,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             super(parent,
                     "QualityControlComments",
-                    new SQLFragment("(" + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlComments)"),
+                    SQLFragment.unsafe("(" + ExprColumn.STR_TABLE_ALIAS + "$" + QUALITY_CONTROL_JOIN + ".QualityControlComments)"),
                     JdbcType.VARCHAR);
             // our column wrapping is too complex for the description to propagate through- set it here:
             setDescription("Quality control-associated comments.  Set by the system to indicate which fields are causing quality control alerts.");

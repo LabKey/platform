@@ -477,7 +477,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             @Override
             public SQLFragment getValueSql(String tableAliasName)
             {
-                return new SQLFragment(String.valueOf(_dsd.getDatasetId()));
+                return new SQLFragment().appendValue(_dsd.getDatasetId());
             }
         };
         datasetId.setHidden(true);
@@ -794,6 +794,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                     // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
+                    // NOTE: left deprecated new SQLFragment(CharSequence,...) to make this usage easy to find
                     String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
                     frag = new SQLFragment(sql, temp.getParams());
                 }

@@ -147,7 +147,7 @@ public class QCStateSet
         // all states are defined as 'private' and a user selects the default 'Public' set for viewing.
         // In this case, we'll simply return filter ensures zero rows are returned:
         if (_states.isEmpty() && !_includeUnmarked)
-            return new SQLFragment("0 = 1");
+            return SQLFragment.unsafe("0 = 1");
         
         SQLFragment sql = new SQLFragment();
         boolean hasStates = !_states.isEmpty();

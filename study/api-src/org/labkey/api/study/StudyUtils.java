@@ -118,10 +118,10 @@ public class StudyUtils
     public static SQLFragment getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
         SqlDialect dialect = schema.getSqlDialect();
-        SQLFragment sequenceNum = new SQLFragment("CAST(CAST(").appendIdentifier(sequenceNumColumnName)
+        SQLFragment sequenceNum = SQLFragment.unsafe("CAST(CAST(").appendIdentifier(sequenceNumColumnName)
                 .unsafeAppend(" AS NUMERIC(15,4)) AS ").append(dialect.getSqlTypeNameAsSql(JdbcType.VARCHAR)).unsafeAppend(")");
         SQLFragment ptid = new SQLFragment().appendIdentifier(ptidColumnName);
 
-        return new SQLFragment("(").append(dialect.concatenate(ptid, new SQLFragment("'|'"), sequenceNum)).unsafeAppend(")");
+        return SQLFragment.unsafe("(").append(dialect.concatenate(ptid, SQLFragment.unsafe("'|'"), sequenceNum)).unsafeAppend(")");
     }
 }

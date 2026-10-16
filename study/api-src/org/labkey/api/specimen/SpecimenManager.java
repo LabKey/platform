@@ -82,7 +82,7 @@ public class SpecimenManager
         if (null == visitRangeSql)
             return 0;
 
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) AS NumVials FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT COUNT(*) AS NumVials FROM ");
         sql.append(tableInfoVial.getFromSQL(tableInfoVialAlias)).unsafeAppend(" \n")
                 .unsafeAppend("LEFT OUTER JOIN ").append(tableInfoSpecimen.getFromSQL(tableInfoSpecimenAlias)).unsafeAppend(" ON\n\t")
                 .append(tableInfoVial.getColumn("SpecimenId").getValueSql(tableInfoVialAlias)).unsafeAppend(" = ")
@@ -111,9 +111,9 @@ public class SpecimenManager
         if (null == visitRangeSql1 || null == visitRangeSql2)
             return;
 
-        SQLFragment specimenRowIdWhereSql = new SQLFragment(" WHERE ").append(visitRangeSql2);
+        SQLFragment specimenRowIdWhereSql = SQLFragment.unsafe(" WHERE ").append(visitRangeSql2);
 
-        SQLFragment deleteEventSql = new SQLFragment("DELETE FROM ");
+        SQLFragment deleteEventSql = SQLFragment.unsafe("DELETE FROM ");
         deleteEventSql.appendIdentifier(tableInfoSpecimenEventSelectName)
                 .unsafeAppend(" WHERE RowId IN (\n")
                 .unsafeAppend("SELECT Event.RowId FROM ")
@@ -125,7 +125,7 @@ public class SpecimenManager
                 .append(specimenRowIdWhereSql).unsafeAppend(")");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteEventSql);
 
-        SQLFragment deleteVialSql = new SQLFragment("DELETE FROM ");
+        SQLFragment deleteVialSql = SQLFragment.unsafe("DELETE FROM ");
         deleteVialSql.appendIdentifier(tableInfoVialSelectName)
                 .unsafeAppend(" WHERE RowId IN (\n")
                 .unsafeAppend("SELECT Vial.RowId FROM ")
@@ -136,8 +136,8 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteVialSql);
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " ).append( tableInfoSpecimen ).unsafeAppend( " WHERE ").append(visitRangeSql1);
-        SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
+        SQLFragment specimenRowIdSelectSql = SQLFragment.unsafe("FROM " ).append( tableInfoSpecimen ).unsafeAppend( " WHERE ").append(visitRangeSql1);
+        SQLFragment deleteSpecimenSql = SQLFragment.unsafe("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteSpecimenSql);

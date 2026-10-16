@@ -196,7 +196,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), JdbcType.valueOf(rsmd.getColumnType(col)));
         setSqlTypeName(rsmd.getColumnTypeName(col));
-        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), new SQLFragment(rsmd.getColumnName(col))));
+        // this identifier is not used to generate SQL
+        setAlias(SqlDialect.makeDatabaseIdentifier(rsmd.getColumnName(col), SQLFragment.unchecked(rsmd.getColumnName(col))));
     }
 
     /* Most ColumnInfos represent a column in the database.  However, some are created only for meta-data purposes.
@@ -630,10 +631,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     {
         // call generateSelectName() to avoid asserts in getSelectName()
         var colIdentifier = generateSelectName();
-        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName) || FilteredTable.filterNameAlias.equals(tableAliasName))
-            return SQLFragment.unsafe(tableAliasName).unsafeAppend(".").appendIdentifier(colIdentifier);
-        else
-            return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
+        if (ExprColumn.STR_TABLE_ALIAS.equals(tableAliasName))
+            return SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".").appendIdentifier(colIdentifier);
+        if (FilteredTable.filterNameAlias.equals(tableAliasName))
+            return SQLFragment.unsafe(FilteredTable.filterNameAlias).unsafeAppend(".").appendIdentifier(colIdentifier);
+        return new SQLFragment().appendDottedIdentifiers(tableAliasName, colIdentifier);
     }
 
     @Override
@@ -894,8 +896,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         {
             TableInfo t = getParentTable();
             String tsName = t.getSchema().getName() + "." + Objects.requireNonNull(t.getMetaDataIdentifier()).getId() + "_ts";
-            String sqlString = getSqlDialect().getStringHandler().quoteStringLiteral(tsName);
-            return new SQLFragment("nextval(" + sqlString + ")");
+            return SQLFragment.unsafe("nextval(").appendStringLiteral(tsName,getSqlDialect()).unsafeAppend(")");
         }
 
         return null;

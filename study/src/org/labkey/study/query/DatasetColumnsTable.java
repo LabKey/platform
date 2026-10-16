@@ -45,7 +45,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         setName(NAME);
         setDescription("Metadata table containing one row of metadata for each column in all study datasets.");
         List<FieldKey> defaultCols = new ArrayList<>();
-        SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
+        SQLFragment sql = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
         var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
         datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", null)
         {

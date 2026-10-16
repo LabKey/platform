@@ -99,7 +99,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         SqlDialect d = getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
         int count = 0;
-        String unionAll = "";
+        var unionAll = SQLFragment.sep("", ") UNION ALL\n(");
 
         Set<PropertyDescriptor> sharedProperties = _study.getSharedProperties();
 
@@ -109,7 +109,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
-            sqlf.unsafeAppend(unionAll);
+            sqlf.append(unionAll.next());
             sqlf.unsafeAppend("SELECT ");
             sqlf.appendValue(def.getEntityId(), d).unsafeAppend(" AS dataset, ");
             sqlf.appendValue(def.getDatasetId()).unsafeAppend(" AS datasetid");
@@ -205,7 +205,6 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                     sqlf.unsafeAppend(" participantid IN (select participantid from study.participant where container=").appendValue(def.getContainer()).unsafeAppend(")");
                 }
             }
-            unionAll = ") UNION ALL\n(";
         }
 
         if (0 == count)
@@ -264,7 +263,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             return getFromSQL(alias);
 
         int count = 0;
-        String unionAll = "";
+        var unionAll = SQLFragment.sep("", distinct ? ") UNION \n(" : ") UNION ALL\n(");
         SQLFragment sqlf = new SQLFragment();
         for (DatasetDefinition def : _defs)
         {
@@ -272,17 +271,13 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
-            sqlf.unsafeAppend(unionAll);
+            sqlf.append(unionAll.next());
             sqlf.unsafeAppend("SELECT ParticipantId, SequenceNum FROM ").append(ti,  "_");
             if (def.isShared() && !_crossContainer)
             {
                 sqlf.unsafeAppend(" WHERE container=?");
                 sqlf.add(def.getContainer());
             }
-            if (distinct)
-                unionAll = ") UNION \n(";
-            else
-                unionAll = ") UNION ALL\n(";
         }
         if (count == 0)
             return getFromSQL(alias);

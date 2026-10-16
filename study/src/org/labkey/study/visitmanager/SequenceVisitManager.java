@@ -489,9 +489,8 @@ public class SequenceVisitManager extends VisitManager
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         ValidationException errors = new ValidationException();
 
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
-                "FROM " + tableParticipantVisit + "\n"+
-                "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT SequenceNum\nFROM ").append(tableParticipantVisit)
+                .unsafeAppend("\nWHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer().getId());
 
         final TreeSet<BigDecimal> sequenceNums = new TreeSet<>();
@@ -521,7 +520,7 @@ public class SequenceVisitManager extends VisitManager
 
         try
         {
-            SQLFragment sqlParticipantSequenceNumTemp = new SQLFragment("""
+            SQLFragment sqlParticipantSequenceNumTemp = SQLFragment.unsafe("""
                         SELECT ParticipantSequenceNum
                         FROM\s""").append(tableStudyData.getParticipantSequenceNumSQL("SD")).unsafeAppend("\n");
             sqlParticipantSequenceNumTemp.unsafeAppend("""
@@ -550,7 +549,7 @@ public class SequenceVisitManager extends VisitManager
         {
             if (null != tempTableName)
             {
-                new SqlExecutor(schema).execute(new SQLFragment("DROP TABLE temp.").appendIdentifier(tempTableName));
+                new SqlExecutor(schema).execute(SQLFragment.unsafe("DROP TABLE temp.").appendIdentifier(tempTableName));
             }
         }
     }
@@ -574,7 +573,7 @@ public class SequenceVisitManager extends VisitManager
     {
         Collection<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
         if (visits.isEmpty())
-            return new SQLFragment("-1");
+            return SQLFragment.unsafe("-1");
         return generateSequenceToVisit(visits, sn, 1);
     }
 

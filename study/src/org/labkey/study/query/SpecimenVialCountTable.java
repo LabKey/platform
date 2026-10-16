@@ -52,15 +52,15 @@ public class SpecimenVialCountTable extends BaseStudyTable
         addContainerColumn(true).setHidden(true);
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
 
-        addColumn(new ExprColumn(this, "TotalCount", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "VialCount"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "TotalCount", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".VialCount"), JdbcType.INTEGER));
 
         SpecimenMigrationService sms = SpecimenMigrationService.get();
         boolean enableSpecimenRequest = sms != null && sms.isEnableRequests(getContainer());
 
-        addColumn(new ExprColumn(this, "LockedInRequest", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "LockedInRequestCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
-        addColumn(new ExprColumn(this, "AtRepository", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AtRepositoryCount"), JdbcType.INTEGER));
-        addColumn(new ExprColumn(this, "Available", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "AvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
-        addColumn(new ExprColumn(this, "ExpectedAvailable", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "ExpectedAvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+        addColumn(new ExprColumn(this, "LockedInRequest", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".LockedInRequestCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+        addColumn(new ExprColumn(this, "AtRepository", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".AtRepositoryCount"), JdbcType.INTEGER));
+        addColumn(new ExprColumn(this, "Available", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".AvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
+        addColumn(new ExprColumn(this, "ExpectedAvailable", SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".ExpectedAvailableCount"), JdbcType.INTEGER)).setHidden(!enableSpecimenRequest);
     }
 
     @NotNull
@@ -72,7 +72,7 @@ public class SpecimenVialCountTable extends BaseStudyTable
         if (null == tableInfoVial)
             throw new IllegalStateException("Vial table not found.");
 
-        SQLFragment sql = new SQLFragment("(SELECT ? As Container, Vial.specimenhash, sum(Vial.volume) AS totalvolume,\n" +
+        SQLFragment sql = SQLFragment.unsafe("(SELECT ? As Container, Vial.specimenhash, sum(Vial.volume) AS totalvolume,\n" +
             "        sum(CASE Vial.available\n" +
             "            WHEN ? THEN Vial.volume\n" +
             "            ELSE 0\n" +

@@ -119,7 +119,7 @@
         final String[] commas = new String[]{"\n"};
         final HashMap<String,Integer> ptidMap = new HashMap<>();
 
-        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ")
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT DISTINCT ")
             .append(columnParticipant.getValueSql("P")).unsafeAppend(" AS participantId FROM ")
             .append(tableParticipants.getFromSQL("P"))
             .unsafeAppend(" ORDER BY 1");
@@ -222,7 +222,7 @@
             memberSets[i] = new BitSet();
         if (hasCohorts)
         {
-            sqlf = new SQLFragment("SELECT ")
+            sqlf = SQLFragment.unsafe("SELECT ")
                 .append(columnCurrentCohortId.getValueSql("P")).unsafeAppend(" as currentcohortid, ")
                 .append(columnParticipant.getValueSql("P")).unsafeAppend(" AS participantid FROM ")
                 .append(tableParticipants.getFromSQL("P"));
@@ -250,7 +250,7 @@
 
         if (hasGroups)
         {
-            SQLFragment sqlGroups = new SQLFragment("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).unsafeAppend(")");
+            SQLFragment sqlGroups = SQLFragment.unsafe("SELECT groupid, participantid FROM study.participantgroupmap WHERE groupid IN (select PG.rowid from study.participantgroup PG where PG.container=").appendValue(container).unsafeAppend(")");
             (new SqlSelector(dbschema, sqlGroups)).forEach(rs-> {
                 Integer igroup = groupMap.get(rs.getInt(1));
                 Integer iptid = ptidMap.get(rs.getString(2));

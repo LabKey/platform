@@ -176,7 +176,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         BaseColumnInfo containerCol;
         if (isProvisioned)
         {
-            SQLFragment sql = new SQLFragment("CAST (");
+            SQLFragment sql = SQLFragment.unsafe("CAST (");
             sql.appendValue(getContainer());
             sql.unsafeAppend(" AS ").append(getSchema().getSqlDialect().getGuidTypeAsSql()).unsafeAppend(")");
             containerCol = new ExprColumn(this, "Container", sql, JdbcType.GUID);
@@ -588,12 +588,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             sb.unsafeAppend("THEN ");
 
             SQLFragment[] castFields = new SQLFragment[fields.size()];
-            SQLFragment sep = new SQLFragment("''");
+            SQLFragment sep = SQLFragment.unsafe("''");
 
             for (int i = 0; i < fields.size(); i++)
             {
-                castFields[i] = new SQLFragment("CAST((").append(getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first)).unsafeAppend(") AS VARCHAR)");
-                sep = new SQLFragment("', '");
+                castFields[i] = SQLFragment.unsafe("CAST((").append(getSqlDialect().concatenate(sep, fields.get(i).second, fields.get(i).first)).unsafeAppend(") AS VARCHAR)");
+                sep = SQLFragment.unsafe("', '");
             }
 
             sb.append(getSqlDialect().concatenate(castFields));
@@ -808,7 +808,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         for (DomainProperty domainProperty : optionalProperties)
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
-            SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
+            SQLFragment sql = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS);
             var legalName = property.getLegalSelectName(dialect);
             sql.unsafeAppend(".").appendIdentifier(legalName);
             var column = new ExprColumn(this, legalName.getId(), sql, property.getJdbcType());

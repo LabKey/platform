@@ -330,7 +330,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
 
-    public final static String filterNameAlias = "'' !" + FilteredTable.class.getName() + "! ''";
+    public final static String filterNameAlias = "'' !org.labkey.api.query.FilteredTable! ''";
     private final static String filterNameAliasDot = filterNameAlias + ".";
 
     private SQLFragment filterName(ColumnInfo c)

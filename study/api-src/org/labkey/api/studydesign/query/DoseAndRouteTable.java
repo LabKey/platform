@@ -33,7 +33,7 @@ public class DoseAndRouteTable extends StudyDesignLookupBaseTable
         // add an expr column for label to ba a concatenation of dose and route (need to keep the label generation in sync with code in DoseAndRoute.parseLabel)
         var doseField = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".dose");
         var routeField = SQLFragment.unsafe(ExprColumn.STR_TABLE_ALIAS + ".route");
-        SQLFragment sql = new SQLFragment("CONCAT(CASE WHEN ").append(doseField).unsafeAppend(" IS NOT NULL THEN ").append(doseField).unsafeAppend(" ELSE '' END,")
+        SQLFragment sql = SQLFragment.unsafe("CONCAT(CASE WHEN ").append(doseField).unsafeAppend(" IS NOT NULL THEN ").append(doseField).unsafeAppend(" ELSE '' END,")
             .unsafeAppend("' : ',")
             .unsafeAppend("CASE WHEN ").append(routeField).unsafeAppend(" IS NOT NULL THEN ").append(routeField).unsafeAppend(" ELSE '' END)");
 

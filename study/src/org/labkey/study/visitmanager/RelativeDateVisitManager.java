@@ -217,17 +217,17 @@ public class RelativeDateVisitManager extends VisitManager
         //
         purgeParticipantsFromParticipantsVisitTable(container);
 
-        SQLFragment sqlStartDate = new SQLFragment("(SELECT StartDate FROM ");
+        SQLFragment sqlStartDate = SQLFragment.unsafe("(SELECT StartDate FROM ");
         sqlStartDate.appendIdentifier(tableParticipantSelectName)
                 .unsafeAppend(" WHERE ").append(tableParticipant.getColumn("ParticipantId").getValueSql(tableParticipantSelectName))
                 .unsafeAppend("=").append(tableParticipantVisit.getColumn("ParticipantId").getValueSql(tableParticipantVisitSelectName))
                 .unsafeAppend(" AND ").append(tableParticipant.getColumn("Container").getValueSql(tableParticipantSelectName))
                 .unsafeAppend("=").append(tableParticipantVisit.getColumn("Container").getValueSql(tableParticipantVisitSelectName)).unsafeAppend(")");
 
-        SQLFragment sqlVisitDate = new SQLFragment("CAST(VisitDate AS DATE)::TIMESTAMP");
-        sqlStartDate = new SQLFragment("CAST(").append(sqlStartDate).unsafeAppend(" AS DATE)");
+        SQLFragment sqlVisitDate = SQLFragment.unsafe("CAST(VisitDate AS DATE)::TIMESTAMP");
+        sqlStartDate = SQLFragment.unsafe("CAST(").append(sqlStartDate).unsafeAppend(" AS DATE)");
 
-        SQLFragment sqlUpdateDays = new SQLFragment("UPDATE ");
+        SQLFragment sqlUpdateDays = SQLFragment.unsafe("UPDATE ");
         sqlUpdateDays.appendIdentifier(tableParticipantVisitSelectName).unsafeAppend(" SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE ")
                 .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, sqlVisitDate, sqlStartDate))
                 .unsafeAppend(" END WHERE Container=? AND NOT VisitDate IS NULL");
@@ -244,7 +244,7 @@ public class RelativeDateVisitManager extends VisitManager
 //                }
 //            }
 
-        SQLFragment sqlUpdateParticipantSeqNum = new SQLFragment("UPDATE ").appendIdentifier(tableParticipantVisitSelectName)
+        SQLFragment sqlUpdateParticipantSeqNum = SQLFragment.unsafe("UPDATE ").appendIdentifier(tableParticipantVisitSelectName)
                 .unsafeAppend(" SET ParticipantSequenceNum = (").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"))
                 .unsafeAppend(") WHERE Container = ? AND ParticipantSequenceNum IS NULL").add(container);
         new SqlExecutor(schema).execute(sqlUpdateParticipantSeqNum);
@@ -270,29 +270,30 @@ public class RelativeDateVisitManager extends VisitManager
         // Alternatives to in-memory join a) precompute and maintain a table with this mapping
         // b) do the JOIN on the server but use a (SELECT DISTINCT sequencenum FROM participantvisit) CTE instead of directly
         // joining all rows in ParticipantVisit to Visit.
-        StringBuilder mapDayToRowId = new StringBuilder();
-        String daySql = "SELECT DISTINCT Day FROM " + tableParticipantVisit + " WHERE Container=?";
-        new SqlSelector(schema, daySql, visitStudy.getContainer()).stream(Integer.class)
+        SQLFragment mapDayToRowId = new SQLFragment();
+        SQLFragment daySql = SQLFragment.unsafe("SELECT DISTINCT Day FROM ").append(tableParticipantVisit)
+                .unsafeAppend(" WHERE Container = ").appendValue(visitStudy.getContainer());
+        new SqlSelector(schema, daySql).stream(Integer.class)
                 .filter(Objects::nonNull)
                 .forEach(day ->
                 {
                     var visit = visitStudyVisitManager.findVisitBySequence(new BigDecimal(day));
                     if (null != visit)
-                        mapDayToRowId.append("(").append(day).append(",").append(visit.getRowId()).append("),\n");
+                        mapDayToRowId.unsafeAppend("(").appendValue(day).unsafeAppend(",").appendValue(visit.getRowId()).unsafeAppend("),\n");
                 });
-        mapDayToRowId.append("(").append(NullColumnInfo.nullValue("INTEGER")).append(",-1)");
+        mapDayToRowId.unsafeAppend("(").append(NullColumnInfo.nullValue("INTEGER")).unsafeAppend(",-1)");
 
-        String sqlUpdateVisitRowId =
-                "WITH mapDayToRowId AS (SELECT * FROM (VALUES " + mapDayToRowId + ") AS _values_(Day, RowId))\n" +
-                "UPDATE " + tableParticipantVisit + "\n" +
-                "SET VisitRowId = COALESCE(\n" +
-                " (\n" +
-                " SELECT mapDayToRowId.RowId\n" +
-                " FROM mapDayToRowId\n" +
-                " WHERE ParticipantVisit.Day = mapDayToRowId.Day\n" +
-                " ),-1)\n" +
-                "WHERE Container = ?";
-        new SqlExecutor(schema).execute(sqlUpdateVisitRowId, study.getContainer());
+        SQLFragment sqlUpdateVisitRowId = SQLFragment.unsafe("WITH mapDayToRowId AS (SELECT * FROM (VALUES ").append(mapDayToRowId)
+                .unsafeAppend(") AS _values_(Day, RowId))\n")
+                .unsafeAppend("UPDATE ").append(tableParticipantVisit).unsafeAppend("\n")
+                .unsafeAppend("SET VisitRowId = COALESCE(\n" +
+                        " (\n" +
+                        " SELECT mapDayToRowId.RowId\n" +
+                        " FROM mapDayToRowId\n" +
+                        " WHERE ParticipantVisit.Day = mapDayToRowId.Day\n" +
+                        " ),-1)\n" +
+                        "WHERE Container = ").appendValue(study.getContainer());
+        new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
     }
 
 
@@ -303,9 +304,8 @@ public class RelativeDateVisitManager extends VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
 
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT Day " +
-            "FROM " + tableParticipantVisit + "\n" +
-            "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
+        SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT Day FROM ").append(tableParticipantVisit)
+            .unsafeAppend("\nWHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer());
 
         // Build up a set so that we can create all of them in bulk

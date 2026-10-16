@@ -29,7 +29,6 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
@@ -52,7 +51,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortManager;
@@ -298,7 +296,7 @@ public abstract class VisitManager
             @Override
             SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return new SQLFragment("CAST(COUNT(DISTINCT ").append(ptid).unsafeAppend(") AS INT)");
+                return SQLFragment.unsafe("CAST(COUNT(DISTINCT ").append(ptid).unsafeAppend(") AS INT)");
             }
 
             @Override
@@ -312,7 +310,7 @@ public abstract class VisitManager
             @Override
             SQLFragment getSql(@NotNull SQLFragment ptid)
             {
-                return new SQLFragment("CAST(COUNT(*) AS INT)");
+                return SQLFragment.unsafe("CAST(COUNT(*) AS INT)");
             }
 
             @Override
@@ -420,7 +418,7 @@ public abstract class VisitManager
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo visitTable = StudySchema.getInstance().getTableInfoVisit();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        SQLFragment sql = SQLFragment.unsafe("SELECT * FROM ");
         sql.append(visitTable, "vt");
         sql.unsafeAppend(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
         sql.add(visit.getSequenceNumMin());
@@ -571,8 +569,7 @@ public abstract class VisitManager
     private static SQLFragment studyDataPtids(Collection<DatasetDefinition> defs)
     {
         SQLFragment f = new SQLFragment();
-        var UNION = SQLFragment.unsafe("\nUNION\n");
-        var union = new SQLFragment();
+        var union = SQLFragment.sep("", "\nUNION\n");
         for (DatasetDefinition d : defs)
         {
             if (d.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID)
@@ -590,11 +587,10 @@ public abstract class VisitManager
             }
             if (null == sti)
                 continue;
-            f.append(union);
+            f.append(union.next());
             f.unsafeAppend("SELECT DISTINCT ParticipantId FROM ").append(sti.getFromSQL("_"));
             if (d.isShared())
                 f.unsafeAppend(" WHERE Container = ?").add(d.getContainer());
-            union = UNION;
         }
         return f.isEmpty() ? null : f;
     }
@@ -794,16 +790,5 @@ public abstract class VisitManager
                 TIMER.cancel();
             }
         }
-    }
-
-    void _dump(String sql)
-    {
-        LOGGER.debug("DUMP -- {}", sql);
-        DbScope s = StudySchema.getInstance().getScope();
-        new SqlExecutor(s).executeWithResults(new SQLFragment(sql), (rs, conn) ->
-        {
-            ResultSetUtil.logData(rs, LOGGER);
-            return null;
-        });
     }
 }

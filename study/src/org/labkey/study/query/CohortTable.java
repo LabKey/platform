@@ -95,7 +95,7 @@ public class CohortTable extends BaseStudyTable
         setDefaultVisibleColumns(visibleColumns);
 
         if (!StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
-            addCondition(new SQLFragment("0=1"));
+            addCondition(SQLFragment.unsafe("0=1"));
 
         ActionURL updateURL = new ActionURL(CohortController.UpdateAction.class, getContainer());
         setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("rowId", "rowId")));

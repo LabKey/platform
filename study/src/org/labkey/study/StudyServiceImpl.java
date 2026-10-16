@@ -980,8 +980,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
     private SQLFragment getUnionSql(Collection<BaseStudyTable> terms, Map<TableInfo, SQLFragment> filterFragmentMap, boolean dontAliasColumns, SqlDialect dialect, Map<String, BaseColumnInfo> unionColumns)
     {
         SQLFragment sqlf = new SQLFragment();
-        final SQLFragment UNION_ALL = SQLFragment.unsafe("\nUNION ALL\n");
-        SQLFragment union = new SQLFragment();
+        var union = SQLFragment.sep("", "\nUNION ALL\n");
         int counter = 1;
         for (TableInfo t : terms)
         {
@@ -990,15 +989,15 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
 
             LinkedHashMap<String,SQLFragment> joins = new LinkedHashMap<>();
             String tableAlias = "_" + (counter++);
-            sqlf.append(union);
+            sqlf.append(union.next());
             sqlf.unsafeAppend("SELECT ");
-            String comma = "";
+            var comma = SQLFragment.sep("", ", ");
             Set<FieldKey> selectedColumns = new HashSet<>();
             for (ColumnInfo colUnion : unionColumns.values())
             {
                 // NOTE: getColumn() can be _really_ slow if there are lots of misses, use resolveIfNeeded=false
                 ColumnInfo col = ((AbstractTableInfo)t).getColumn(colUnion.getName(), false);
-                sqlf.unsafeAppend(comma);
+                sqlf.append(comma.next());
                 if (null == col && colUnion.getName().equalsIgnoreCase("ParticipantId"))
                     col = t.getColumn(((StudyQuerySchema)userSchema).getSubjectColumnName());
                 if (null != col)
@@ -1021,7 +1020,6 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                 }
                 if (!dontAliasColumns || "container".equalsIgnoreCase(colUnion.getAlias().getId()))
                     sqlf.unsafeAppend(" AS ").appendIdentifier(colUnion.getAlias());
-                comma = ", ";
             }
             sqlf.unsafeAppend("\nFROM ");
             sqlf.append(t.getFromSQL(tableAlias, selectedColumns));
@@ -1029,8 +1027,6 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                 sqlf.unsafeAppend(" ").append(j);
             if (filterFragmentMap.containsKey(t))
                 sqlf.unsafeAppend(" WHERE ").append(filterFragmentMap.get(t));
-
-            union = UNION_ALL;
         }
         return sqlf;
     }

@@ -190,7 +190,7 @@ public class ParticipantTable extends BaseStudyTable
                 {
                     // Make the SQL that will be used to build the concatenated aliases value
                     // Need to do this with a subquery so that SQLServer is happy with the DISTINCT and ORDER BY
-                    SQLFragment concatSQL = new SQLFragment("SELECT AliasValue ");
+                    SQLFragment concatSQL = SQLFragment.unsafe("SELECT AliasValue ");
                     concatSQL.unsafeAppend(" FROM (SELECT DISTINCT ");
                     concatSQL.append(aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
                     concatSQL.unsafeAppend(" AS AliasValue FROM ");
@@ -223,7 +223,7 @@ public class ParticipantTable extends BaseStudyTable
     {
         if (_participantAliasSources == null)
         {
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT ");
+            SQLFragment sql = SQLFragment.unsafe("SELECT DISTINCT ");
             sql.append(sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
             sql.unsafeAppend(" FROM ");
             sql.append(datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
@@ -256,7 +256,7 @@ public class ParticipantTable extends BaseStudyTable
             Container c = ContainerManager.getForId(_def.getContainerId());
             Study s = null==c ? null : StudyManager.getInstance().getStudy(c);
             if (null == s)
-                return new SQLFragment("NULL");
+                return SQLFragment.unsafe("NULL");
 
             if (s.getShareDatasetDefinitions())
             {
@@ -344,7 +344,7 @@ public class ParticipantTable extends BaseStudyTable
                 if (displayField.equalsIgnoreCase(source))
                 {
                     // There should be zero or one one value per participant/source combination, so we could either use MIN/MAX
-                    SQLFragment sql = new SQLFragment("(SELECT MAX(");
+                    SQLFragment sql = SQLFragment.unsafe("(SELECT MAX(");
                     sql.append(_aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
                     sql.unsafeAppend(") FROM ");
                     sql.append(_datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));

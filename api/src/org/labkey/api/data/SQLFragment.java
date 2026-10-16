@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
@@ -126,7 +127,8 @@ public class SQLFragment
         sql = "";
     }
 
-    public SQLFragment(CharSequence charseq, @Nullable List<?> params)
+    @Deprecated
+    public SQLFragment(@CompileTimeConstant CharSequence charseq, @Nullable List<?> params)
     {
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
             (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
@@ -141,7 +143,8 @@ public class SQLFragment
     }
 
 
-    public SQLFragment(CharSequence sql, Object... params)
+    @Deprecated
+    public SQLFragment(@CompileTimeConstant CharSequence sql, Object... params)
     {
         this(sql, Arrays.asList(params));
     }
@@ -199,9 +202,57 @@ public class SQLFragment
         return this;
     }
 
-    public static SQLFragment unsafe(String unsafe)
+    public static SQLFragment unsafe(@CompileTimeConstant String unsafe)
     {
         return new SQLFragment().setSqlUnsafe(unsafe);
+    }
+
+    /** For SQL text assembled at runtime; use unsafe() for SQL written in source */
+    public static SQLFragment unchecked(String sql)
+    {
+        return new SQLFragment().setSqlUnsafe(sql);
+    }
+
+    /** next() returns {@code first} on its first call and {@code rest} after that */
+    public static SqlSeparator sep(@CompileTimeConstant String first, @CompileTimeConstant String rest)
+    {
+        return new SqlSeparator(first, rest, "");
+    }
+
+    /** Like sep(first, rest); last() returns {@code last} once next() has been called */
+    public static SqlSeparator sep(@CompileTimeConstant String first, @CompileTimeConstant String rest, @CompileTimeConstant String last)
+    {
+        return new SqlSeparator(first, rest, last);
+    }
+
+    public static final class SqlSeparator
+    {
+        private final SQLFragment _first;
+        private final SQLFragment _rest;
+        private final SQLFragment _last;
+        private boolean _started = false;
+
+        private SqlSeparator(
+                @CompileTimeConstant @NotNull String first,
+                @CompileTimeConstant @NotNull String rest,
+                @CompileTimeConstant String last)
+        {
+            _first = SQLFragment.unchecked(first);
+            _rest = SQLFragment.unchecked(rest);
+            _last = null == last ? null : SQLFragment.unchecked(last);
+        }
+
+        public SQLFragment next()
+        {
+            SQLFragment ret = _started ? _rest : _first;
+            _started = true;
+            return ret;
+        }
+
+        public SQLFragment last()
+        {
+            return _started && _last != null ? _last : new SQLFragment();
+        }
     }
 
 
@@ -402,14 +453,13 @@ public class SQLFragment
         return sb;
     }
 
-    public SQLFragment unsafeAppend(String str)
+    public SQLFragment unsafeAppend(@CompileTimeConstant String str)
     {
         // these should not need any checking at all.
         // but calling append() with it's checks for now.
         return append(str);
     }
 
-    /** @deprecated Use {@link #unsafeAppend(String)}, or appendValue()/appendIdentifier() where they apply */
     @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
@@ -551,7 +601,7 @@ public class SQLFragment
         return appendValue(c, null);
     }
 
-    public  SQLFragment appendValue(@NotNull Container c, SqlDialect dialect)
+    public SQLFragment appendValue(@NotNull Container c, SqlDialect dialect)
     {
         appendValue(c.getEntityId(), dialect);
         String name = c.getName();
@@ -1434,6 +1484,60 @@ public class SQLFragment
 
             assertEquals("SELECT 0 UNION ALL SELECT * FROM t WHERE 1=1", sqlf.getRawSQL());
             assertTrue(sqlf.tempTokens.containsAll(List.of(outer, inserted, prepended)));
+        }
+
+        @Test
+        public void testSeparatorWhereClause()
+        {
+            var where = SQLFragment.sep(" WHERE ", " AND ");
+            SQLFragment sqlf = SQLFragment.unsafe("DELETE FROM t");
+            sqlf.append(where.next()).unsafeAppend("a = ?").add(1);
+            sqlf.append(where.next()).unsafeAppend("b = ?").add("x");
+            sqlf.append(where.next()).unsafeAppend("c IS NULL");
+            assertEquals("DELETE FROM t WHERE a = ? AND b = ? AND c IS NULL", sqlf.getRawSQL());
+            assertEquals(List.of(1, "x"), sqlf.getParams());
+        }
+
+        @Test
+        public void testSeparatorUnused()
+        {
+            var where = SQLFragment.sep(" WHERE ", " AND ");
+            SQLFragment sqlf = SQLFragment.unsafe("DELETE FROM t").append(where.last());
+            assertEquals("DELETE FROM t", sqlf.getRawSQL());
+
+            var terms = SQLFragment.sep("(", ") AND (", ")");
+            assertTrue(terms.last().isEmpty());
+        }
+
+        @Test
+        public void testSeparatorLast()
+        {
+            var noLast = SQLFragment.sep("", ", ");
+            noLast.next();
+            assertTrue(noLast.last().isEmpty());
+
+            var single = SQLFragment.sep("(", ") AND (", ")");
+            SQLFragment one = new SQLFragment().append(single.next()).unsafeAppend("x").append(single.last());
+            assertEquals("(x)", one.getRawSQL());
+
+            var terms = SQLFragment.sep("(", ") AND (", ")");
+            SQLFragment cond = new SQLFragment();
+            for (String term : List.of("x", "y", "z"))
+                cond.append(terms.next()).appendIdentifier(term);
+            cond.append(terms.last());
+            assertEquals("(x) AND (y) AND (z)", cond.getRawSQL());
+            assertEquals(")", terms.last().getRawSQL());
+        }
+
+        @Test
+        public void testSeparatorReturnsIndependentFragments()
+        {
+            var comma = SQLFragment.sep("", ", ");
+            comma.next().unsafeAppend("a");
+            SQLFragment second = comma.next();
+            second.unsafeAppend("b");
+            assertEquals(", ", comma.next().getRawSQL());
+            assertEquals(", b", second.getRawSQL());
         }
     }
 

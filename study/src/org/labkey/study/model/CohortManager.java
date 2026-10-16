@@ -139,8 +139,9 @@ public class CohortManager
                 p.setCurrentCohortId(newCohortId);
                 StudyManager.getInstance().updateParticipant(user, p);
 
-                SQLFragment ptidVisitSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                        " SET CohortId = ? WHERE ParticipantId = ? AND Container = ?", newCohortId, p.getParticipantId(), study.getContainer());
+                SQLFragment ptidVisitSql = SQLFragment.unsafe("UPDATE ").append(StudySchema.getInstance().getTableInfoParticipantVisit())
+                        .unsafeAppend(" SET CohortId = ? WHERE ParticipantId = ? AND Container = ?")
+                        .addAll(newCohortId, p.getParticipantId(), study.getContainer());
 
                 new SqlExecutor(StudySchema.getInstance().getSchema()).execute(ptidVisitSql);
             }
@@ -397,7 +398,7 @@ public class CohortManager
 
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
-        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
+        SQLFragment pCohortSql = SQLFragment.unsafe("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
                 .append(   cohortLabelCol.getValueSql("D")).unsafeAppend(" AS ").appendIdentifier(cohortLabelCol.getAlias()).unsafeAppend("\n")
                 .unsafeAppend("FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).unsafeAppend("\n")
                 .unsafeAppend("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).unsafeAppend(" ON ")
