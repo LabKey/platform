@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -27,12 +26,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -68,12 +65,8 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 ///
 /// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
 /// semicolons in appended text.
-public class SQLFragment implements Appendable, CharSequence
+public class SQLFragment
 {
-    private static final Logger LOG = LogHelper.getLogger(SQLFragment.class, "SQL injection safety net diagnostics");
-
-    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "SQLFragmentDisableStrictChecks";
-
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -179,7 +172,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public boolean isEmpty()
     {
         return (null == sb || sb.isEmpty()) && (sql == null || sql.isEmpty());
@@ -418,7 +410,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /** @deprecated Use {@link #unsafeAppend(String)}, or appendValue()/appendIdentifier() where they apply */
-    @Deprecated @Override
+    @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
@@ -473,15 +465,7 @@ public class SQLFragment implements Appendable, CharSequence
 
         // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
         if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
-        {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
-            else
-            {
-                LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
-                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
-            }
-        }
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
 
         getStringBuilder().append(charseq);
         return this;
@@ -553,7 +537,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
@@ -868,14 +851,6 @@ public class SQLFragment implements Appendable, CharSequence
         return append(table.getFromSQL(alias));
     }
 
-    /** Add to the SQL */
-    @Override
-    public SQLFragment append(char ch)
-    {
-        getStringBuilder().append(ch);
-        return this;
-    }
-
     /** This is like appendValue(CharSequence s), but force use of literal syntax
      * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
      *    array_agg('string') fails array_agg('string'::VARCHAR) works
@@ -979,25 +954,6 @@ public class SQLFragment implements Appendable, CharSequence
             sql = sql.replaceFirst("\\?", param);
         }
         return sql.replace("\"", "");
-    }
-
-
-    @Override
-    public char charAt(int index)
-    {
-        return getSqlCharSequence().charAt(index);
-    }
-
-    @Override
-    public int length()
-    {
-        return getSqlCharSequence().length();
-    }
-
-    @Override
-    public @NotNull CharSequence subSequence(int start, int end)
-    {
-        return getSqlCharSequence().subSequence(start, end);
     }
 
     /**
@@ -1470,7 +1426,7 @@ public class SQLFragment implements Appendable, CharSequence
 
             SQLFragment where = new SQLFragment(" WHERE 1=1");
             where.addTempToken(inserted);
-            sqlf.insert(sqlf.length(), where);
+            sqlf.insert(sqlf.getSqlCharSequence().length(), where);
 
             SQLFragment prefix = new SQLFragment("SELECT 0 UNION ALL ");
             prefix.addTempToken(prepended);

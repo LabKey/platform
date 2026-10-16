@@ -15,7 +15,6 @@
  */
 package org.labkey.experiment.api;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -66,7 +65,7 @@ public class ExpUnreferencedSampleFilesTableImpl extends FilteredTable<ExpSchema
             _query.appendComment("<SampleFileListTableInfo>", getSchema().getSqlDialect());
 
             TableInfo expDataTable = ExperimentService.get().getTinfoData();
-            if (!StringUtils.isEmpty(listQuery))
+            if (listQuery != null && !listQuery.isEmpty())
             {
                 TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
 

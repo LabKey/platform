@@ -224,7 +224,7 @@ public class SimpleFilter implements Filter
             if (sqlf.isEmpty())
                 sb.append("1=1");
             else
-                sb.append(sqlf);
+                sb.append(sqlf.getRawSQL());
             return result;
         }
 

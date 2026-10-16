@@ -67,7 +67,9 @@ import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
@@ -76,11 +78,16 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RuntimeValidationException;
@@ -104,6 +111,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -149,8 +157,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -2942,8 +2952,8 @@ public class AnnouncementsController extends SpringActionController
         {
             // A message thread that lives in folder B. SubscribeThreadAction resolves threads by global entityId
             // (cross-container by design), so each test addresses B's thread through a folder-A request.
-            _folderA = createContainer("A");
-            _folderB = createContainer("B");
+            _folderA = getSharedContainer("A");
+            _folderB = getSharedContainer("B");
             AnnouncementModel insert = new AnnouncementModel();
             insert.setTitle("Container scoping test thread");
             insert.setBody("body");
@@ -2975,11 +2985,7 @@ public class AnnouncementsController extends SpringActionController
             // thread's member list. The old plain container-ReadPermission check missed exactly this: it let any
             // reader subscribe to a secure thread they cannot read. Address the request to the thread's own folder so
             // only member-list membership varies.
-            Container secure = createContainer("Secure");
-            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
-            settings.setSecure(Settings.SECURE_WITHOUT_EMAIL);
-            settings.setMemberList(true);
-            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+            Container secure = getSecureBoard();
 
             // Both are plain readers (ReaderRole lacks SecureMessageBoardReadPermission, so neither is an editor who
             // could read every thread). Create them before insert: the member-list validation checks that each listed
@@ -3003,6 +3009,306 @@ public class AnnouncementsController extends SpringActionController
 
             // Positive control: a reader who is on the member list can read the thread, so the subscription succeeds.
             assertStatus(HttpServletResponse.SC_FOUND, post(url, member));
+        }
+
+        // GH Issue 1637
+        @Test
+        public void testQueryEnforcesSecureBoardMemberList() throws Exception
+        {
+            Container secure = getSecureBoard();
+            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
+
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+            for (User user : List.of(member, nonMember, editor))
+                grantRole(user, _folderA, ReaderRole.class);
+
+            AnnouncementModel memberThread = new AnnouncementModel();
+            memberThread.setTitle("Member thread");
+            memberThread.setBody("body");
+            memberThread.setMemberListInput(String.valueOf(member.getUserId()));
+            memberThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), memberThread, null, false);
+
+            AnnouncementModel response = new AnnouncementModel();
+            response.setTitle("Member thread response");
+            response.setBody("body");
+            response.setParent(memberThread.getEntityId());
+            response.setMemberListInput(String.valueOf(member.getUserId()));
+            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
+
+            AnnouncementModel otherThread = new AnnouncementModel();
+            otherThread.setTitle("Other thread");
+            otherThread.setBody("body");
+            otherThread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), otherThread, null, false);
+
+            Set<Integer> all = Set.of(memberThread.getRowId(), response.getRowId(), otherThread.getRowId());
+            assertEquals(Set.of(), queryRowIds(nonMember, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId(), response.getRowId()), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(all, only(queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME), all));
+            assertEquals(all, only(queryRowIds(getAdmin(), secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME), all));
+
+            assertEquals(Set.of(), queryRowIds(nonMember, secure, AnnouncementSchema.THREADS_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId()), queryRowIds(member, secure, AnnouncementSchema.THREADS_TABLE_NAME));
+            assertEquals(Set.of(memberThread.getRowId(), otherThread.getRowId()), only(queryRowIds(editor, secure, AnnouncementSchema.THREADS_TABLE_NAME), all));
+
+            // Same rules apply when querying from the secure folder itself
+            assertEquals(Set.of(), queryCurrentFolderRowIds(nonMember, secure));
+            assertEquals(Set.of(memberThread.getRowId(), response.getRowId()), queryCurrentFolderRowIds(member, secure));
+            assertEquals(all, only(queryCurrentFolderRowIds(editor, secure), all));
+
+            // Without a member list, non-editors can't read any secure message
+            settings.setMemberList(false);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+            assertEquals(Set.of(), queryRowIds(member, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME));
+            assertEquals(all, only(queryRowIds(editor, secure, AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME), all));
+        }
+
+        // GH Issue 1637: on a secure board, AnnouncementSubscription rows are the member list that grants read
+        @Test
+        public void testSubscriptionTableEnforcesSecureBoardMemberList() throws Exception
+        {
+            Container secure = getSecureBoard();
+
+            User member = createUserInRole(secure, ReaderRole.class);
+            User nonMember = createUserInRole(secure, ReaderRole.class);
+            User editor = createUserInRole(secure, EditorRole.class);
+            grantRole(nonMember, _folderA, ReaderRole.class);
+
+            AnnouncementModel thread = new AnnouncementModel();
+            thread.setTitle("Member thread");
+            thread.setBody("body");
+            thread.setMemberListInput(String.valueOf(member.getUserId()));
+            thread = AnnouncementManager.insertAnnouncement(secure, getAdmin(), thread, null, false);
+
+            // The thread's effective member list lives on its latest post
+            AnnouncementModel response = new AnnouncementModel();
+            response.setTitle("Member thread response");
+            response.setBody("body");
+            response.setParent(thread.getEntityId());
+            response.setMemberListInput(String.valueOf(member.getUserId()));
+            response = AnnouncementManager.insertAnnouncement(secure, getAdmin(), response, null, false);
+
+            for (Container from : List.of(secure, _folderA))
+            {
+                for (AnnouncementModel target : List.of(thread, response))
+                    assertThrows(UnauthorizedException.class, () -> insertSubscription(nonMember, from, target));
+            }
+            assertFalse(canRead(nonMember, secure, thread));
+
+            insertSubscription(editor, secure, thread);
+
+            // Members can still remove themselves
+            assertTrue(canRead(member, secure, thread));
+            Map<String, Object> key = new HashMap<>(Map.of("Announcement", response.getRowId(), "User", member.getUserId()));
+            assertEquals(1, getSubscriptionTable(member, secure).getUpdateService().deleteRows(member, secure, List.of(key), null, null).size());
+            assertFalse(canRead(member, secure, thread));
+        }
+
+        @Test
+        public void testForumSubscriptionLimitedToOwnRows() throws Exception
+        {
+            User reader = createUserInRole(_folderB, ReaderRole.class);
+            User victim = createUserInRole(_folderB, ReaderRole.class);
+            User admin = createUserInRole(_folderB, FolderAdminRole.class);
+            grantRole(reader, _folderA, ReaderRole.class);
+            grantRole(victim, _folderA, ReaderRole.class);
+            String folderId = _folderB.getId();
+            int option = EmailOption.MESSAGES_ALL.getValue();
+
+            Map<String, Object> victimRow = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", folderId, "EmailOption", option));
+            forumSubscriptionService(admin).insertRows(admin, _folderB, List.of(new HashMap<>(victimRow)), new BatchValidationException(), null, null);
+            assertEquals(1, forumSubscriptionCount(victim));
+
+            for (Container from : List.of(_folderB, _folderA))
+            {
+                AnnouncementSchema schema = new AnnouncementSchema(reader, from);
+                TableInfo table = schema.getTable(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, ContainerFilter.Type.AllFolders.create(schema));
+                assertEquals(0, new TableSelector(table, new SimpleFilter(FieldKey.fromParts("User"), victim.getUserId()), null).getRowCount());
+            }
+
+            QueryUpdateService qus = forumSubscriptionService(reader);
+            Map<String, Object> key = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", folderId));
+            Map<String, Object> otherFolder = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderA.getId(), "EmailOption", option));
+            assertThrows(UnauthorizedException.class, () -> qus.insertRows(reader, _folderB, List.of(new HashMap<>(Map.of("User", victim.getUserId(), "Folder", folderId, "EmailOption", option, "SrcIdentifier", "x"))), new BatchValidationException(), null, null));
+            assertThrows(UnauthorizedException.class, () -> qus.insertRows(reader, _folderB, List.of(otherFolder), new BatchValidationException(), null, null));
+            assertThrows(UnauthorizedException.class, () -> qus.updateRows(reader, _folderB, List.of(new HashMap<>(victimRow)), List.of(key), new BatchValidationException(), null, null));
+            assertThrows(UnauthorizedException.class, () -> qus.deleteRows(reader, _folderB, List.of(key), null, null));
+            assertEquals(1, forumSubscriptionCount(victim));
+        }
+
+        @Test
+        public void testSubscriptionTablesRequireAdminOfRowFolder() throws Exception
+        {
+            User victim = createUserInRole(_folderB, ReaderRole.class);
+            User adminOfA = createUserInRole(_folderA, FolderAdminRole.class);
+            grantRole(adminOfA, _folderB, ReaderRole.class);
+            User adminOfB = createUserInRole(_folderB, FolderAdminRole.class);
+            grantRole(adminOfB, _folderA, ReaderRole.class);
+
+            Map<String, Object> row = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId(), "EmailOption", EmailOption.MESSAGES_ALL.getValue()));
+            forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(row), new BatchValidationException(), null, null);
+            new SqlExecutor(CommSchema.getInstance().getSchema()).execute("INSERT INTO comm.userlist (UserId, MessageId) VALUES (?, ?)", victim.getUserId(), _thread.getRowId());
+
+            // Both query from A across all folders; only B's admin sees B's rows for another user
+            assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 0L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 0L), subscriptionCounts(adminOfA, victim));
+            assertEquals(Map.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, 1L, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, 1L), subscriptionCounts(adminOfB, victim));
+
+            int mine = EmailOption.MESSAGES_MINE.getValue();
+            Map<String, Object> key = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId()));
+            Map<String, Object> update = new HashMap<>(Map.of("User", victim.getUserId(), "Folder", _folderB.getId(), "EmailOption", mine));
+            BatchValidationException errors = new BatchValidationException();
+            forumSubscriptionService(adminOfB).updateRows(adminOfB, _folderB, List.of(update), List.of(key), errors, null, null);
+            assertFalse(errors.getMessage(), errors.hasErrors());
+            TableInfo emailPrefs = CoreSchema.getInstance().getTableInfoEmailPrefs();
+            assertEquals(Integer.valueOf(mine), new TableSelector(emailPrefs, List.of(emailPrefs.getColumn("EmailOptionId")), new SimpleFilter(FieldKey.fromParts("UserId"), victim.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getObject(Integer.class));
+
+            Map<String, Object> noSuchUser = new HashMap<>(Map.of("User", Integer.MAX_VALUE, "Folder", _folderB.getId(), "EmailOption", mine));
+            assertThrows(QueryUpdateServiceException.class, () -> forumSubscriptionService(adminOfB).insertRows(adminOfB, _folderB, List.of(noSuchUser), new BatchValidationException(), null, null));
+
+            // Admin moves the other user's subscription to another thread, then removes it
+            AnnouncementModel otherThread = new AnnouncementModel();
+            otherThread.setTitle("Other thread");
+            otherThread.setBody("body");
+            otherThread = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), otherThread, null, false);
+            QueryUpdateService qus = new AnnouncementSchema(adminOfB, _folderB).getTable(AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME).getUpdateService();
+            Map<String, Object> oldKey = new HashMap<>(Map.of("Announcement", _thread.getRowId(), "User", victim.getUserId()));
+            Map<String, Object> moved = new HashMap<>(Map.of("Announcement", otherThread.getRowId(), "User", victim.getUserId()));
+            errors = new BatchValidationException();
+            qus.updateRows(adminOfB, _folderB, List.of(moved), List.of(oldKey), errors, null, null);
+            assertFalse(errors.getMessage(), errors.hasErrors());
+            assertEquals(List.of(otherThread.getRowId()), memberListMessageIds(victim));
+
+            qus.deleteRows(adminOfB, _folderB, List.of(new HashMap<>(moved)), null, null);
+            assertEquals(List.of(), memberListMessageIds(victim));
+        }
+
+        private List<Integer> memberListMessageIds(User user)
+        {
+            TableInfo userList = CommSchema.getInstance().getTableInfoUserList();
+            return new TableSelector(userList, List.of(userList.getColumn("MessageId")), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()), null).getArrayList(Integer.class);
+        }
+
+        private Map<String, Long> subscriptionCounts(User user, User target)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, _folderA);
+            Map<String, Long> counts = new HashMap<>();
+            for (String tableName : List.of(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME, AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME))
+            {
+                TableInfo table = schema.getTable(tableName, ContainerFilter.Type.AllFolders.create(schema));
+                counts.put(tableName, new TableSelector(table, new SimpleFilter(FieldKey.fromParts("User"), target.getUserId()), null).getRowCount());
+            }
+            return counts;
+        }
+
+        private QueryUpdateService forumSubscriptionService(User user)
+        {
+            return new AnnouncementSchema(user, _folderB).getTable(AnnouncementSchema.FORUM_SUBSCRIPTION_TABLE_NAME).getUpdateService();
+        }
+
+        private long forumSubscriptionCount(User user)
+        {
+            return new TableSelector(CoreSchema.getInstance().getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()).addCondition(FieldKey.fromParts("Type"), "messages"), null).getRowCount();
+        }
+
+        private void insertSubscription(User user, Container from, AnnouncementModel target) throws Exception
+        {
+            Map<String, Object> row = new HashMap<>(Map.of("Announcement", target.getRowId()));
+            BatchValidationException errors = new BatchValidationException();
+            getSubscriptionTable(user, from).getUpdateService().insertRows(user, from, List.of(row), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+        }
+
+        private TableInfo getSubscriptionTable(User user, Container from)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, from);
+            return schema.getTable(AnnouncementSchema.ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME, ContainerFilter.Type.AllFolders.create(schema));
+        }
+
+        private boolean canRead(User user, Container c, AnnouncementModel thread)
+        {
+            AnnouncementModel fresh = AnnouncementManager.getAnnouncement(c, thread.getRowId());
+            return getPermissions(c, user, getSettings(c)).allowRead(fresh);
+        }
+
+        @Test
+        public void testModerationTablesRequireAdmin() throws Exception
+        {
+            TableInfo announcements = CommSchema.getInstance().getTableInfoAnnouncements();
+            AnnouncementModel pending = new AnnouncementModel();
+            pending.setTitle("Pending review");
+            pending.setBody("body");
+            pending = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), pending, null, false);
+            AnnouncementModel spam = new AnnouncementModel();
+            spam.setTitle("Spam");
+            spam.setBody("body");
+            spam = AnnouncementManager.insertAnnouncement(_folderB, getAdmin(), spam, null, false);
+            new SqlExecutor(announcements.getSchema()).execute("UPDATE " + announcements.getSelectName() + " SET Approved = NULL WHERE RowId IN (?, ?)", pending.getRowId(), spam.getRowId());
+            AnnouncementManager.markAsSpam(_folderB, spam);
+            Set<Integer> mine = Set.of(pending.getRowId(), spam.getRowId());
+
+            User reader = createUserInRole(_folderB, ReaderRole.class);
+            User adminOfB = createUserInRole(_folderB, FolderAdminRole.class);
+            User adminOfAOnly = createUserInRole(_folderA, FolderAdminRole.class);
+            grantRole(adminOfAOnly, _folderB, ReaderRole.class);
+
+            for (String tableName : List.of(AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME, AnnouncementSchema.SPAM_TABLE_NAME))
+            {
+                assertFalse(new AnnouncementSchema(reader, _folderB).getTableNames().contains(tableName));
+                assertTrue(new AnnouncementSchema(adminOfB, _folderB).getTableNames().contains(tableName));
+
+                TableInfo readerTable = new AnnouncementSchema(reader, _folderB).getTable(tableName);
+                assertEquals(tableName, readerTable.getName());
+                assertFalse(readerTable.hasPermission(reader, ReadPermission.class));
+                assertTrue(new AnnouncementSchema(adminOfB, _folderB).getTable(tableName).hasPermission(adminOfB, ReadPermission.class));
+            }
+
+            assertEquals(Set.of(pending.getRowId()), only(queryRowIds(adminOfB, _folderB, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME), mine));
+            assertEquals(Set.of(spam.getRowId()), only(queryRowIds(adminOfB, _folderB, _folderB, AnnouncementSchema.SPAM_TABLE_NAME), mine));
+
+            // Admin of A who only reads B can't reach B's moderation queue across folders
+            assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.MODERATOR_REVIEW_TABLE_NAME), mine));
+            assertEquals(Set.of(), only(queryRowIds(adminOfAOnly, _folderA, _folderB, AnnouncementSchema.SPAM_TABLE_NAME), mine));
+        }
+
+        // Shared across tests, so reset the settings some tests change
+        private Container getSecureBoard()
+        {
+            Container secure = getSharedContainer("Secure");
+            Settings settings = AnnouncementManager.getMessageBoardSettings(secure);
+            settings.setSecure(Settings.SECURE_WITHOUT_EMAIL);
+            settings.setMemberList(true);
+            AnnouncementManager.saveMessageBoardSettings(secure, settings);
+            return secure;
+        }
+
+        private static Set<Integer> only(Set<Integer> rowIds, Set<Integer> mine)
+        {
+            rowIds.retainAll(mine);
+            return rowIds;
+        }
+
+        // Queries from folder A across all folders
+        private Set<Integer> queryRowIds(User user, Container folder, String tableName)
+        {
+            return queryRowIds(user, _folderA, folder, tableName);
+        }
+
+        private Set<Integer> queryRowIds(User user, Container from, Container folder, String tableName)
+        {
+            AnnouncementSchema schema = new AnnouncementSchema(user, from);
+            TableInfo table = schema.getTable(tableName, ContainerFilter.Type.AllFolders.create(schema));
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Folder"), folder.getId());
+            return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), filter, null).getArrayList(Integer.class));
+        }
+
+        private Set<Integer> queryCurrentFolderRowIds(User user, Container folder)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(user, folder, AnnouncementSchema.SCHEMA_NAME);
+            assertNotNull("announcement schema should be available in a secure message board folder", schema);
+            TableInfo table = schema.getTable(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
+            return new HashSet<>(new TableSelector(table, List.of(table.getColumn("RowId")), null, null).getArrayList(Integer.class));
         }
     }
 

@@ -150,8 +150,9 @@ public class QCStateSet
             return new SQLFragment("0 = 1");
         
         SQLFragment sql = new SQLFragment();
+        boolean hasStates = !_states.isEmpty();
         sql.unsafeAppend("(");
-        if (!_states.isEmpty())
+        if (hasStates)
         {
             sql.append(rowIdColumnAlias).unsafeAppend(" IN (");
             String comma = "";
@@ -164,8 +165,7 @@ public class QCStateSet
         }
         if (_includeUnmarked)
         {
-            // our length will be 1 if our statement consists of just the open paren:
-            if (sql.length() > 1)
+            if (hasStates)
                 sql.unsafeAppend(" OR ");
             sql.append(rowIdColumnAlias).unsafeAppend(" IS NULL");
         }

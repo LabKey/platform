@@ -1650,7 +1650,7 @@ public class StudyManager
                     sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
                     sqlf.unsafeAppend(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.Container = ?");
                     sqlf.add(study.getContainer());
-                    sqlf.unsafeAppend(" AND pv.VisitRowId ").append(visitInClause).append(')');
+                    sqlf.unsafeAppend(" AND pv.VisitRowId ").append(visitInClause).unsafeAppend(")");
 
                     int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                     if (count > 0)
