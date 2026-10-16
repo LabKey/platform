@@ -25,8 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.data.Container;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
@@ -387,64 +385,61 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         HtmlString errorHtml = null;
 
         String name = Objects.toString(_debugViewDescription, this.getClass().getSimpleName());
-        try (Timing ignored = MiniProfiler.step(name))
+        boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+        if (isDebugHtml)
+            response.getWriter().print("<!--" + name + "-->");
+
+        WebPartFrame frame = getWebPartFrame();
+
+        frame.doStartTag(response.getWriter());
+
+        if (exceptionToRender == null)
         {
-            boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
-            if (isDebugHtml)
-                response.getWriter().print("<!--" + name + "-->");
-
-            WebPartFrame frame = getWebPartFrame();
-
-            frame.doStartTag(response.getWriter());
-
-            if (exceptionToRender == null)
+            try
             {
-                try
-                {
-                    renderView(getModelBean(), request, response);
-                }
-                catch (RedirectException x)
-                {
-                    LOG.warn("Shouldn't throw redirect during renderView()", x);
-                    throw x;
-                }
-                catch (UnauthorizedException x)
-                {
-                    LOG.warn("Shouldn't throw unauthorized during renderView()", x);
-                    errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
-                }
-                catch (NotFoundException x)
-                {
-                    errorHtml = HtmlString.of("Not Found : " + x.getMessage());
-                }
-                catch (BadRequestException x)
-                {
-                    errorHtml = HtmlString.of(x.getMessage());
-                }
-                catch (Throwable t)
-                {
-                    exceptionToRender = ExceptionUtil.unwrapException(t);
-                    ExceptionUtil.logExceptionToMothership(request, t);
-                }
+                renderView(getModelBean(), request, response);
             }
-
-            //if we received an exception during prepare or render, we'll display it here
-            if (exceptionToRender != null || errorHtml != null)
+            catch (RedirectException x)
             {
-                if (errorHtml != null)
-                {
-                    response.getWriter().write(errorHtml.toString());
-                }
-                if (exceptionToRender != null)
-                {
-                    renderException(exceptionToRender, request, response);
-                }
+                LOG.warn("Shouldn't throw redirect during renderView()", x);
+                throw x;
             }
-
-            frame.doEndTag(response.getWriter());
-            if (isDebugHtml)
-                response.getWriter().print("<!--/" + name + "-->");
+            catch (UnauthorizedException x)
+            {
+                LOG.warn("Shouldn't throw unauthorized during renderView()", x);
+                errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
+            }
+            catch (NotFoundException x)
+            {
+                errorHtml = HtmlString.of("Not Found : " + x.getMessage());
+            }
+            catch (BadRequestException x)
+            {
+                errorHtml = HtmlString.of(x.getMessage());
+            }
+            catch (Throwable t)
+            {
+                exceptionToRender = ExceptionUtil.unwrapException(t);
+                ExceptionUtil.logExceptionToMothership(request, t);
+            }
         }
+
+        //if we received an exception during prepare or render, we'll display it here
+        if (exceptionToRender != null || errorHtml != null)
+        {
+            if (errorHtml != null)
+            {
+                response.getWriter().write(errorHtml.toString());
+            }
+            if (exceptionToRender != null)
+            {
+                renderException(exceptionToRender, request, response);
+            }
+        }
+
+        frame.doEndTag(response.getWriter());
+        if (isDebugHtml)
+            response.getWriter().print("<!--/" + name + "-->");
     }
 
     /**

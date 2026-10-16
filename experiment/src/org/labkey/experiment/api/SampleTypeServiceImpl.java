@@ -701,10 +701,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_MATERIALS, singleton(source.getName()));
 
         // Remove SampleType from search index
-        try (Timing ignored = MiniProfiler.step("search docs"))
-        {
-            SearchService.get().deleteResource(source.getDocumentId());
-        }
+        SearchService.get().deleteResource(source.getDocumentId());
 
         timer.stop();
         LOG.info("Deleted SampleType '{}' from '{}' in {}", source.getName(), c.getPath(), timer.getDuration());
