@@ -497,9 +497,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
                         .append(" ON AR.dataid = ED.rowid")
                         .append(" WHERE ED.runId = ? ").add(run.getRowId())
-                        .append(" AND NOT (AR.plate")
-                        .appendInClause(prevPlateRowIDs, scope.getSqlDialect())
-                        .append(")");
+                        .append(" AND ")
+                        .appendNotInClause("AR.plate", prevPlateRowIDs, scope.getSqlDialect());
 
                 List<Long> rowIds = new SqlSelector(scope, sql).getArrayList(Long.class);
                 if (!rowIds.isEmpty())

@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
@@ -899,10 +901,57 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    /**
+     * Appends an IN list to the expression already in this fragment. Prefer {@link #appendInClause(SQLFragment, Collection, SqlDialect)}:
+     * an empty collection renders as IN (NULL), which is not FALSE, so negating the result never matches.
+     */
     public SQLFragment appendInClause(@NotNull Collection<?> params, SqlDialect dialect)
     {
+        // Postgres renders 2+ values as "= ANY (?)", so "x NOT" + IN clause is invalid SQL
+        assert !NOT_SUFFIX.matcher(getSqlCharSequence()).find() : "Don't append an IN clause after NOT; use appendNotInClause() instead";
         dialect.appendInClauseSql(this, params);
         return this;
+    }
+
+    private static final Pattern NOT_SUFFIX = Pattern.compile("(?i)\\bNOT\\s*$");
+
+    /**
+     * Appends a complete, parenthesized predicate that is true when expr matches one of values. An empty collection
+     * yields FALSE and a null element matches null values of expr, so the predicate negates correctly.
+     */
+    public SQLFragment appendInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        List<?> nonNullValues = values.stream().filter(Objects::nonNull).toList();
+        boolean matchNull = nonNullValues.size() < values.size();
+
+        append("(");
+        if (matchNull)
+        {
+            append(expr).append(" IS NULL");
+            if (!nonNullValues.isEmpty())
+                append(" OR ");
+        }
+        if (!nonNullValues.isEmpty())
+            append(expr).appendInClause(nonNullValues, dialect);
+        else if (!matchNull)
+            append("0 = 1");
+        return append(")");
+    }
+
+    public SQLFragment appendInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return appendInClause(new SQLFragment(expr), values, dialect);
+    }
+
+    /** Negation of {@link #appendInClause(SQLFragment, Collection, SqlDialect)}; an empty collection yields TRUE. */
+    public SQLFragment appendNotInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return append("NOT ").appendInClause(expr, values, dialect);
+    }
+
+    public SQLFragment appendNotInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return appendNotInClause(new SQLFragment(expr), values, dialect);
     }
 
     public CharSequence getSqlCharSequence()
@@ -1496,5 +1545,69 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         return join;
+    }
+
+    public static class InClauseTestCase extends Assert
+    {
+        private static final Set<Integer> ALL = new HashSet<>(Arrays.asList(1, 2, 3, null));
+
+        @Test
+        public void testInClause()
+        {
+            verify(List.of(), Set.of());
+            verify(List.of(2), Set.of(2));
+            verify(List.of(1, 2), Set.of(1, 2));
+            verify(Arrays.asList(2, null), new HashSet<>(Arrays.asList(2, null)));
+            verify(Collections.singletonList(null), Collections.singleton(null));
+            // Large enough for the temp table generator
+            verify(IntStream.concat(IntStream.of(2), IntStream.rangeClosed(4, 2000)).boxed().toList(), Set.of(2));
+        }
+
+        @Test
+        public void testExpressionParameters()
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3)) v(x) WHERE x > ? AND ", 1)
+                .appendInClause(new SQLFragment("x + ?", 10), List.of(12, 13), scope.getSqlDialect())
+                .append(" AND x < ?").add(3);
+            assertEquals(List.of(2), new SqlSelector(scope, sql).getArrayList(Integer.class));
+        }
+
+        @Test
+        public void testNotBeforeInClause()
+        {
+            assumeAssertionsEnabled();
+            SQLFragment sql = new SQLFragment("x NOT");
+            assertThrows(AssertionError.class, () -> sql.appendInClause(List.of(1, 2), CoreSchema.getInstance().getSqlDialect()));
+        }
+
+        private static void assumeAssertionsEnabled()
+        {
+            boolean enabled = false;
+            assert enabled = true;
+            org.junit.Assume.assumeTrue(enabled);
+        }
+
+        private void verify(List<Integer> values, Set<Integer> expected)
+        {
+            assertEquals("IN " + values.size(), expected, select(values, false));
+            Set<Integer> notExpected = new HashSet<>(ALL);
+            notExpected.removeAll(expected);
+            // NOT IN excludes NULL rows unless the list is empty, as in SQL
+            if (!values.isEmpty())
+                notExpected.remove(null);
+            assertEquals("NOT IN " + values.size(), notExpected, select(values, true));
+        }
+
+        private Set<Integer> select(List<Integer> values, boolean not)
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3), (CAST(NULL AS INTEGER))) v(x) WHERE ");
+            if (not)
+                sql.appendNotInClause("x", values, scope.getSqlDialect());
+            else
+                sql.appendInClause("x", values, scope.getSqlDialect());
+            return new HashSet<>(new SqlSelector(scope, sql).getArrayList(Integer.class));
+        }
     }
 }
