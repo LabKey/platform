@@ -66,6 +66,9 @@ public class RepeatedCommitTaskMonitor
     // Registration stack captured when a class reaches the threshold, in the order classes reached it
     private final Map<Class<?>, Throwable> _repeated = new LinkedHashMap<>();
     private final Map<Class<?>, Long> _elapsedNanos = new HashMap<>();
+    private int _queued = 0;
+    // Registration stack captured when the queue reaches LARGE_QUEUE with DEBUG on
+    private Throwable _largeQueueStackTrace = null;
     // Not reset by clear(), so tests can read a transaction's warnings after it closes
     private int _warningCount = 0;
 
@@ -74,11 +77,13 @@ public class RepeatedCommitTaskMonitor
     {
         if (_counts.merge(task.getClass(), 1, Integer::sum) == THRESHOLD)
             _repeated.put(task.getClass(), new Throwable("Stack trace for repeated commit task registration"));
+        if (++_queued == LARGE_QUEUE && LOG.isDebugEnabled())
+            _largeQueueStackTrace = new Throwable("Stack trace for the registration that made the commit task queue large");
     }
 
     void run(Runnable task)
     {
-        if (!_repeated.containsKey(task.getClass()) && !LOG.isDebugEnabled())
+        if (!_repeated.containsKey(task.getClass()) && !(_queued >= LARGE_QUEUE && LOG.isDebugEnabled()))
         {
             task.run();
             return;
@@ -99,7 +104,7 @@ public class RepeatedCommitTaskMonitor
     {
         // Unthrottled, unlike the warnings, which stay silent for a call site that warned earlier in the day
         if (queueSize >= LARGE_QUEUE && LOG.isDebugEnabled())
-            LOG.debug(summarizeLargeQueue(option, queueSize), new Throwable("Stack trace for large commit task queue"));
+            LOG.debug(summarizeLargeQueue(option, queueSize), _largeQueueStackTrace);
 
         _repeated.forEach((taskClass, stackTrace) -> {
             RepeatedTaskWarning warning = new RepeatedTaskWarning(getStackKey(stackTrace), option, taskClass.getName(),
@@ -127,6 +132,8 @@ public class RepeatedCommitTaskMonitor
         _counts.clear();
         _repeated.clear();
         _elapsedNanos.clear();
+        _queued = 0;
+        _largeQueueStackTrace = null;
     }
 
     /** The stack through the first frame outside DbScope's commit task plumbing: the code that registered the task */

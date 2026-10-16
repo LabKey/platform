@@ -23,11 +23,10 @@ import org.labkey.api.data.DbScope.Transaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Replays a transaction's DatabaseCache removals, clears, and loads into the shared caches after commit, in the order
@@ -42,7 +41,6 @@ public final class CacheReplayCommitTask implements Runnable
 
     // Insertion order is replay order; a duplicate keeps the first one's position
     private final Map<Op, Runnable> _operations = new LinkedHashMap<>();
-    private final Map<Object, Set<Op>> _opsByCache = new HashMap<>();
     private final Map<Object, Integer> _reloadCounts = new HashMap<>();
 
     /** The replay task already queued in the transaction, or a newly queued one */
@@ -64,35 +62,44 @@ public final class CacheReplayCommitTask implements Runnable
         add(new Op(cache, Kind.REMOVE, key), removal);
     }
 
-    void removeUsingFilter(@NotNull Object cache, @NotNull Object filter, @NotNull Runnable removal)
+    @SuppressWarnings("unchecked")
+    <K> void removeUsingFilter(@NotNull Object cache, @NotNull Predicate<K> filter, @NotNull Runnable removal)
     {
+        List.copyOf(_operations.keySet()).stream()
+            .filter(op -> op.kind() == Kind.RELOAD && op.cache().equals(cache) && filter.test((K)op.key()))
+            .forEach(this::drop);
         add(new Op(cache, Kind.FILTER, filter), removal);
     }
 
+    /**
+     * Replaces the cache's other operations with one clear at the position of its earliest invalidation. Moving the
+     * clear later would let a reload of another cache queued in between read this cache's stale entries.
+     */
     void clear(@NotNull Object cache, @NotNull Runnable clear)
     {
-        Set<Op> ops = _opsByCache.remove(cache);
-        if (ops != null)
-            ops.forEach(_operations::remove);
+        Op clearOp = new Op(cache, Kind.CLEAR, null);
+        Map<Op, Runnable> replay = new LinkedHashMap<>();
+        _operations.forEach((op, operation) -> {
+            if (!op.cache().equals(cache))
+                replay.put(op, operation);
+            else if (op.kind() != Kind.RELOAD)
+                replay.putIfAbsent(clearOp, op.kind() == Kind.CLEAR ? operation : clear);
+        });
+        replay.putIfAbsent(clearOp, clear);
+        _operations.clear();
+        _operations.putAll(replay);
         _reloadCounts.remove(cache);
-        add(new Op(cache, Kind.CLEAR, null), clear);
     }
 
     private boolean add(Op op, Runnable operation)
     {
-        if (_operations.putIfAbsent(op, operation) != null)
-            return false;
-        _opsByCache.computeIfAbsent(op.cache(), c -> new HashSet<>()).add(op);
-        return true;
+        return _operations.putIfAbsent(op, operation) == null;
     }
 
     private void drop(Op reload)
     {
         if (_operations.remove(reload) != null)
-        {
-            _opsByCache.get(reload.cache()).remove(reload);
             _reloadCounts.merge(reload.cache(), -1, Integer::sum);
-        }
     }
 
     int size()
@@ -103,7 +110,8 @@ public final class CacheReplayCommitTask implements Runnable
     @Override
     public void run()
     {
-        // Copy: a reload can register more operations when commitAndKeepConnection() leaves a transaction on the thread
+        // Copy guards against concurrent modification only: when commitAndKeepConnection() runs on a transaction that
+        // isn't the innermost, a reload registers operations here that never run, since clearCommitTasks() discards them
         List.copyOf(_operations.values()).forEach(Runnable::run);
     }
 
@@ -187,18 +195,53 @@ public final class CacheReplayCommitTask implements Runnable
         }
 
         @Test
-        public void clearDropsEarlierOperationsOnTheCache()
+        public void filterDropsEarlierMatchingReloads()
+        {
+            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            task.reload("c1", "a1", 2, op("reload a1"));
+            task.reload("c1", "b1", 2, op("reload b1"));
+            task.reload("c2", "a1", 2, op("reload c2 a1"));
+            task.removeUsingFilter("c1", (String key) -> key.startsWith("a"), op("filter"));
+            task.reload("c1", "a2", 2, op("reload a2")); // Freed slot
+            assertEquals(List.of("reload b1", "reload c2 a1", "filter", "reload a2"), run(task));
+        }
+
+        @Test
+        public void clearReplacesTheCachesOperationsAtItsEarliestInvalidation()
         {
             CacheReplayCommitTask task = new CacheReplayCommitTask();
             task.reload("c1", "a", 1, op("reload a"));
             task.remove("c1", "b", op("remove b"));
-            task.removeUsingFilter("c1", "filter", op("filter"));
+            task.removeUsingFilter("c1", (String key) -> false, op("filter"));
             task.remove("c2", "b", op("remove c2 b"));
             task.clear("c1", op("clear"));
             task.reload("c1", "c", 1, op("reload c"));
             task.clear("c1", op("clear again"));
             task.reload("c1", "d", 1, op("reload d"));
-            assertEquals(List.of("remove c2 b", "clear again", "reload d"), run(task));
+            assertEquals(List.of("clear", "remove c2 b", "reload d"), run(task));
+        }
+
+        @Test
+        public void clearNeverRunsAfterAReloadQueuedBehindAnEarlierInvalidation()
+        {
+            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            task.clear("c1", op("clear c1"));
+            task.reload("c2", "x", 10, op("reload c2 x"));
+            task.clear("c1", op("clear c1 again"));
+            task.remove("c3", "a", op("remove c3 a"));
+            task.reload("c2", "y", 10, op("reload c2 y"));
+            task.clear("c3", op("clear c3"));
+            assertEquals(List.of("clear c1", "reload c2 x", "clear c3", "reload c2 y"), run(task));
+        }
+
+        @Test
+        public void clearIsAppendedWhenTheCacheHasNoEarlierInvalidation()
+        {
+            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            task.reload("c1", "a", 1, op("reload a"));
+            task.remove("c2", "b", op("remove c2 b"));
+            task.clear("c1", op("clear"));
+            assertEquals(List.of("remove c2 b", "clear"), run(task));
         }
 
         @Test
