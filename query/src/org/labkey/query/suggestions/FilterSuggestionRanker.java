@@ -278,7 +278,7 @@ public class FilterSuggestionRanker
         }
 
         String prefix = "Filter a " + valueType + " field for ";
-        String label = prefix + raw + " (" + fields.size() + " columns)";
+        String label = prefix + raw + " (" + fields.size() + " fields)";
         return FilterSuggestion.compose(fields, value, valueType, label, new Match(prefix.length(), prefix.length() + raw.length()), null);
     }
 

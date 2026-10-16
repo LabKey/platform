@@ -80,7 +80,7 @@ public record FilterSuggestion(
 
     public static FilterSuggestion search(String value)
     {
-        String prefix = "Search all columns for ";
+        String prefix = "Search all fields for ";
         return new FilterSuggestion(KIND_SEARCH, prefix + value, "fallback", value, null, null, null, null, new Match(prefix.length(), prefix.length() + value.length()), null);
     }
 }
