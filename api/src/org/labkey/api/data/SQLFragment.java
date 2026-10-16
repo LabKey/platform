@@ -917,7 +917,10 @@ public class SQLFragment
         return appendInClause(new SQLFragment(expr), values, dialect);
     }
 
-    /** Negation of {@link #appendInClause(SQLFragment, Collection, SqlDialect)}; an empty collection yields TRUE. */
+    /**
+     * Negation of {@link #appendInClause(SQLFragment, Collection, SqlDialect)}; an empty collection yields TRUE.
+     * Unlike SimpleFilter's NOT_IN, null values of expr never match unless the collection is empty.
+     */
     public SQLFragment appendNotInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
     {
         return append("NOT ").appendInClause(expr, values, dialect);
