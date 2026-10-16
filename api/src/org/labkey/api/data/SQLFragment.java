@@ -881,13 +881,9 @@ public class SQLFragment
      */
     public SQLFragment appendInClause(@NotNull Collection<?> params, SqlDialect dialect)
     {
-        // Postgres renders 2+ values as "= ANY (?)", so "x NOT" + IN clause is invalid SQL
-        assert !NOT_SUFFIX.matcher(getSqlCharSequence()).find() : "Don't append an IN clause after NOT; use appendNotInClause() instead";
         dialect.appendInClauseSql(this, params);
         return this;
     }
-
-    private static final Pattern NOT_SUFFIX = Pattern.compile("(?i)\\bNOT\\s*$");
 
     /**
      * Appends a complete, parenthesized predicate that is true when expr matches one of values. An empty collection
@@ -1535,8 +1531,10 @@ public class SQLFragment
         public void testNotBeforeInClause()
         {
             assumeAssertionsEnabled();
-            SQLFragment sql = new SQLFragment("x NOT");
-            assertThrows(AssertionError.class, () -> sql.appendInClause(List.of(1, 2), CoreSchema.getInstance().getSqlDialect()));
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x NOT"), List.of(1, 2)));
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x not "), List.of()));
+            assertThrows(AssertionError.class, () -> new SQLFragment("x NOT").appendInClause(List.of(1), dialect));
         }
 
         private static void assumeAssertionsEnabled()

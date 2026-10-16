@@ -564,15 +564,24 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Most callers should use this method
+    /**
+     * Most callers should use this method. To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return appendInClauseSqlWithCustomInClauseGenerator(sql, params, getTempTableInClauseGenerator());
     }
 
-    // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    private static final Pattern NOT_SUFFIX = Pattern.compile("(?i)\\bNOT\\s*$");
+
+    /**
+     * Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
     {
+        // Postgres renders 2+ values as "= ANY (?)" and an empty list as "IN (NULL)", so "x NOT" + IN clause is invalid or never matches
+        assert !NOT_SUFFIX.matcher(sql.getSqlCharSequence()).find() : "Don't append an IN clause after NOT; use SQLFragment.appendNotInClause() instead";
         if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
         {
             SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
