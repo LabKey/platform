@@ -64,6 +64,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class NotificationServiceImpl implements ContainerManager.ContainerListener, NotificationService
 {
@@ -210,9 +212,27 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
     }
 
     @Override
+    public void forEachNotificationByUser(@Nullable Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer)
+    {
+        try (Stream<Notification> stream = createSelectorByUserOrType(container, null, notifyUserId, unreadOnly, containerFilter).uncachedStream(Notification.class))
+        {
+            stream.forEach(consumer);
+        }
+    }
+
+    @Override
     public long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId)
     {
         return _unreadCountCache.get(new UnreadCountKey(notifyUserId, container == null ? null : container.getRowId()));
+    }
+
+    @Override
+    public boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId)
+    {
+        SimpleFilter filter = null == container ? new SimpleFilter() : SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("UserID"), notifyUserId);
+        filter.addCondition(FieldKey.fromParts("ReadOn"), null, CompareType.NONBLANK);
+        return new TableSelector(getTable(), filter, null).exists();
     }
 
     @Override
@@ -496,6 +516,11 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             assertEquals("Unexpected number of notifications for type 'type1'", 1, _service.getNotificationsByType(_container, "type1", _user.getUserId(), false).size());
             assertEquals("Unexpected number of notifications for type 'type2'", 1, _service.getNotificationsByType(_container, "type2", _user.getUserId(), false).size());
             assertEquals("Unexpected number of notifications for type 'type3'", 0, _service.getNotificationsByType(_container, "type3", _user.getUserId(), false).size());
+
+            // verify streaming notification query by user
+            List<Notification> streamed = new ArrayList<>();
+            _service.forEachNotificationByUser(_container, _user.getUserId(), false, null, streamed::add);
+            assertEquals("Unexpected number of streamed notifications", 2, streamed.size());
         }
 
         @Test
@@ -504,11 +529,13 @@ public class NotificationServiceImpl implements ContainerManager.ContainerListen
             // no records updated when we give it a mis-matching objectId
             int count = _service.markAsRead(_container, _user, "objectId0", Collections.singletonList("type1"), _user.getUserId());
             assertEquals("Unexpected number of notifications updated", 0, count);
+            assertFalse("Unexpected read notification", _service.hasReadNotificationsByUser(_container, _user.getUserId()));
 
             // mark one record as read and verify that it isn't deleted or changed in any other way
             count = _service.markAsRead(_container, _user, "objectId1", Collections.singletonList("type1"), _user.getUserId());
             assertEquals("Unexpected number of notifications updated", 1, count);
             assertEquals("Unexpected number of unread notifications", 0, _service.getNotificationsByType(_container, "type1", _user.getUserId(), true).size());
+            assertTrue("Expected a read notification", _service.hasReadNotificationsByUser(_container, _user.getUserId()));
             verifyNotificationDetails(_notif1, _service.getNotification(_container, _notif1));
         }
 

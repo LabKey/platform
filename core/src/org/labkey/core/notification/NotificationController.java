@@ -393,21 +393,14 @@ public class NotificationController extends SpringActionController
         {
             Map<Integer, Map<String, Object>> notificationsPropMap = new IntHashMap<>();
             Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
-            int unreadCount = 0;
             boolean hasRead = false;
 
             NotificationService service = NotificationService.get();
             if (service != null && user != null && !user.isGuest())
             {
-                List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false, null);
-                for (Notification notification : userNotifications)
-                {
-                    if (notification.getReadOn() != null)
-                    {
-                        hasRead = true;
-                        continue;
-                    }
-
+                // GH Issue 1632: load only unread rows; read history can include a large number of rows for a given user
+                hasRead = service.hasReadNotificationsByUser(null, user.getUserId());
+                service.forEachNotificationByUser(null, user.getUserId(), true, null, notification -> {
                     Map<String, Object> notifPropMap = notification.asPropMap();
                     notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), user));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
@@ -419,14 +412,12 @@ public class NotificationController extends SpringActionController
                         notificationGroupingsMap.put(groupLabel, new ArrayList<>());
                     }
                     notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
-
-                    unreadCount++;
-                }
+                });
             }
 
             JSONObject notifications = new JSONObject(notificationsPropMap);
             notifications.put("grouping", notificationGroupingsMap);
-            notifications.put("unreadCount", unreadCount);
+            notifications.put("unreadCount", notificationsPropMap.size());
             notifications.put("hasRead", hasRead);
             return notifications;
         }

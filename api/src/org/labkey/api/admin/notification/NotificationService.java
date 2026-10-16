@@ -28,6 +28,7 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Service for adding/getting/removing user notifications attached to specific objects.
@@ -70,11 +71,21 @@ public interface NotificationService
     }
 
     List<Notification> getNotificationsByUser(Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter);
+
+    /*
+     * Streams notifications for a specific user to the consumer without collecting them. Sorted descending by created date.
+     */
+    void forEachNotificationByUser(@Nullable Container container, int notifyUserId, boolean unreadOnly, @Nullable ContainerFilter containerFilter, Consumer<Notification> consumer);
     /*
      * Returns just the count of notifications for a specific user. At any given instant, will match the length of the
      * list returned by getNotificationsByUser(), and is significantly more efficient to query.
      */
     long getUnreadNotificationCountByUser(@Nullable Container container, int notifyUserId);
+
+    /*
+     * Returns true if the user has at least one read notification.
+     */
+    boolean hasReadNotificationsByUser(@Nullable Container container, int notifyUserId);
 
     /*
      * Returns a list of notifications for a specific user based on the specified type.
