@@ -24,7 +24,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.data.DbScope.Transaction;
 
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -141,7 +140,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public boolean remove(@NotNull K key)
     {
-        CacheReplayCommitTask.get(_transaction).add(new CacheKeyRemovalCommitTask(key));
+        CacheReplayCommitTask.get(_transaction).remove(_databaseCache, key, () -> _databaseCache.getCache().remove(key));
         _privateCache.put(key, REMOVED_MARKER);
         return true; // We could issue a get to determine if the key is already there, but very few callers care, so skip the work
     }
@@ -149,7 +148,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public int removeUsingFilter(Predicate<K> filter)
     {
-        CacheReplayCommitTask.get(_transaction).add(new CachePrefixRemovalCommitTask(filter));
+        CacheReplayCommitTask.get(_transaction).removeUsingFilter(_databaseCache, filter, () -> _databaseCache.getCache().removeUsingFilter(filter));
         return (int)getKeys()
             .filter(filter)
             .filter(this::remove)
@@ -165,7 +164,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
     @Override
     public void clear()
     {
-        CacheReplayCommitTask.get(_transaction).add(new CacheClearingCommitTask());
+        CacheReplayCommitTask.get(_transaction).clear(_databaseCache, () -> _databaseCache.getCache().clear());
         _hasBeenCleared = true;
         _privateCache.clear();
     }
@@ -186,100 +185,6 @@ public class TransactionCache<K, V> implements Cache<K, V>
     public Cache<K, V> createTemporaryCache()
     {
         throw new UnsupportedOperationException();
-    }
-
-    private class CacheClearingCommitTask implements Runnable
-    {
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CacheClearingCommitTask that = (CacheClearingCommitTask) o;
-
-            return getCache().equals(that.getCache());
-        }
-
-        private Cache<K, V> getCache()
-        {
-            return _databaseCache.getCache();
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return getCache().hashCode();
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().clear();
-        }
-    }
-
-    private abstract class AbstractCacheRemovalCommitTask<ObjectType> implements Runnable
-    {
-        protected final ObjectType object;
-
-        public AbstractCacheRemovalCommitTask(ObjectType object)
-        {
-            this.object = object;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            AbstractCacheRemovalCommitTask<ObjectType> that = (AbstractCacheRemovalCommitTask<ObjectType>) o;
-
-            if (!getCache().equals(that.getCache())) return false;
-            return Objects.equals(object, that.object);
-        }
-
-        protected Cache<K, V> getCache()
-        {
-            return _databaseCache.getCache();
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getCache().hashCode();
-            result = 31 * result + (object != null ? object.hashCode() : 0);
-            return result;
-        }
-    }
-
-    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<K>
-    {
-        public CacheKeyRemovalCommitTask(K key)
-        {
-            super(key);
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().remove(object);
-        }
-    }
-
-    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Predicate<K>>
-    {
-        public CachePrefixRemovalCommitTask(Predicate<K> filter)
-        {
-            super(filter);
-        }
-
-        @Override
-        public void run()
-        {
-            getCache().removeUsingFilter(object);
-        }
     }
 
     private static class MissingCacheEntryException extends RuntimeException

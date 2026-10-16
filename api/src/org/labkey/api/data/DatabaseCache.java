@@ -91,58 +91,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             TransactionImpl t = _databaseCache.getCurrentTransaction();
 
             if (null != t)
-                CacheReplayCommitTask.get(t).addReload(this, getTrackingCache().getLimit(), new CacheReloadCommitTask<>(this, key, argument, loader));
+                CacheReplayCommitTask.get(t).reload(_databaseCache, key, getTrackingCache().getLimit(), () -> get(key, argument, loader));
 
             return value;
-        }
-
-        // Replays a load that took place inside a transaction into the shared cache on successful commit
-        private static class CacheReloadCommitTask<K, V> implements Runnable
-        {
-            private final Cache<K, V> _cache;
-            private final K _key;
-            private final Object _arg;
-            private final CacheLoader<K, V> _loader;
-
-            public CacheReloadCommitTask(Cache<K, V> cache, K key, Object arg, CacheLoader<K, V> loader)
-            {
-                _cache = cache;
-                _key = key;
-                _arg = arg;
-                _loader = loader;
-            }
-
-            @Override
-            public boolean equals(Object o)
-            {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-
-                @SuppressWarnings("unchecked")
-                CacheReloadCommitTask<K, V> that = (CacheReloadCommitTask<K, V>) o;
-
-                if (!getCache().equals(that.getCache())) return false;
-                return Objects.equals(_key, that._key);
-            }
-
-            protected Cache<K, V> getCache()
-            {
-                return _cache;
-            }
-
-            @Override
-            public int hashCode()
-            {
-                int result = getCache().hashCode();
-                result = 31 * result + (_key != null ? _key.hashCode() : 0);
-                return result;
-            }
-
-            @Override
-            public void run()
-            {
-                getCache().get(_key, _arg, _loader);
-            }
         }
 
         @Override
