@@ -513,6 +513,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
     }
 
+    @Override
+    public ExpSampleTypeImpl getSampleTypeByLsid(@NotNull Container c, @NotNull String lsid, boolean includeOtherContainers)
+    {
+        return getSampleType(c, includeOtherContainers, (materialSource -> lsid.equals(materialSource.getLSID())));
+    }
+
     private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
     {
         for (Container scopeContainer : ExperimentServiceImpl.get().createContainerList(c, includeOtherContainers))

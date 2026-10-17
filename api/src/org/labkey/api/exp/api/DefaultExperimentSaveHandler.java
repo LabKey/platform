@@ -598,8 +598,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 else if (sampleTypeJson.has(ExperimentJSONConverter.LSID))
                 {
                     String lsid = sampleTypeJson.getString(ExperimentJSONConverter.LSID);
-                    sampleType = SampleTypeService.get().getSampleType(lsid);
-                    if (sampleType == null || !isSampleTypeInScope(context.getContainer(), sampleType))
+                    sampleType = SampleTypeService.get().getSampleTypeByLsid(context.getContainer(), lsid, true);
+                    if (sampleType == null)
                         throw new NotFoundException("A sample type with LSID '" + lsid + "' doesn't exist.");
                 }
             }
@@ -680,16 +680,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
 
         return material;
-    }
-
-    private boolean isSampleTypeInScope(Container c, ExpSampleType sampleType)
-    {
-        for (ExpSampleType inScope : SampleTypeService.get().getSampleTypes(c, true))
-        {
-            if (inScope.getLSID().equals(sampleType.getLSID()))
-                return true;
-        }
-        return false;
     }
 
     private boolean propertiesWouldChange(ViewContext context, ExpMaterial material, List<? extends DomainProperty> dps, JSONObject submitted) throws ValidationException
