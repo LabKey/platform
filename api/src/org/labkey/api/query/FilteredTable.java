@@ -16,7 +16,7 @@
 
 package org.labkey.api.query;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -338,7 +338,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         // This is kinda messed up because getFromSQL() doesn't use a known alias in the from clause
         // CONSIDER: always use "_x" and track down and fix usages that assume known table name
         SQLFragment name = c.getValueSql(filterNameAlias);
-        name.setSqlUnsafe(StringUtils.replace(name.getRawSQL(),filterNameAliasDot,""));
+        name.setSqlUnsafe(Strings.CS.replace(name.getRawSQL(),filterNameAliasDot,""));
         return name;
     }
 

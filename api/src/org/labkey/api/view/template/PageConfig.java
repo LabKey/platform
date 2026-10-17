@@ -735,7 +735,7 @@ public class PageConfig
             for (var l : _eventHandlers.values())
             {
                 var index = codeMap.size();
-                var handler = StringUtils.appendIfMissing(l.handler, ";");
+                var handler = Strings.CS.appendIfMissing(l.handler, ";");
                 var prev = codeMap.putIfAbsent(handler, index);
                 if (null == prev)
                     out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints

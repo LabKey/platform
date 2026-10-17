@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -484,7 +485,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
 
     private boolean isCloudFileRoot(String fileRootPseudoPath)
     {
-        return StringUtils.startsWith(fileRootPseudoPath, FileContentService.CLOUD_ROOT_PREFIX);
+        return Strings.CS.startsWith(fileRootPseudoPath, FileContentService.CLOUD_ROOT_PREFIX);
     }
 
     private String getCloudRootName(@NotNull String fileRootPseudoPath)
@@ -1516,7 +1517,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 filesRoot = rootPath;
 
             String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl, container);
-            if (StringUtils.startsWith(absoluteFilePath, rootPath))
+            if (Strings.CS.startsWith(absoluteFilePath, rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
                 int lastSlash = offset.lastIndexOf("/");

@@ -15,7 +15,7 @@
  */
 package org.labkey.visualization.sql;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -542,7 +542,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 aggregatedSQL.append(separator);
                 separator = " AND ";
                 aggregatedSQL.append("x.");
-                VisualizationSourceColumn vsc = (VisualizationSourceColumn)pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
+                VisualizationSourceColumn vsc = pickFirst(columnAliases.get(pair.getKey().getOriginalName()));
                 aggregatedSQL.append(vsc.getSQLAlias());
                 aggregatedSQL.append(" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
@@ -670,9 +670,9 @@ public class VisualizationSQLGenerator implements HasViewContext
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
             {
-                VisualizationSourceColumn col = (VisualizationSourceColumn)pickFirst(selectAliases);
+                VisualizationSourceColumn col = pickFirst(selectAliases);
                 String label = col.getLabel();
-                selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'", "''") + "'");
+                selectAlias = col.getSQLAlias() + (null == label ? " @preservetitle" : " @title='" + Strings.CS.replace(label,"'", "''") + "'");
                 if (col.isHidden())
                     selectAlias += " @hidden";
 
@@ -1022,7 +1022,7 @@ public class VisualizationSQLGenerator implements HasViewContext
         {
             throw new NotFoundException("No primary schema found.");
         }
-        VisualizationSourceQuery firstQuery = (VisualizationSourceQuery)pickFirst(_sourceQueries.values());
+        VisualizationSourceQuery firstQuery = pickFirst(_sourceQueries.values());
         return firstQuery.getSchema();
     }
 
@@ -1152,7 +1152,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 assertEquals(48,r.getSize());
                 assertEquals(3, r.getMetaData().getColumnCount());
                 ColumnInfo ci = r.getColumnInfo(1);
-                assertTrue(StringUtils.endsWith(ci.getName(), "_age"));
+                assertTrue(Strings.CS.endsWith(ci.getName(), "_age"));
             }
 
             q.addMeasure(ptid);
@@ -1161,7 +1161,7 @@ public class VisualizationSQLGenerator implements HasViewContext
                 assertEquals(48,r.getSize());
                 assertEquals(3, r.getMetaData().getColumnCount());
                 ColumnInfo ci = r.getColumnInfo(2);
-                assertTrue(StringUtils.endsWith(ci.getName(), "_participantid"));
+                assertTrue(Strings.CS.endsWith(ci.getName(), "_participantid"));
             }
 
             q.addMeasure(gender);

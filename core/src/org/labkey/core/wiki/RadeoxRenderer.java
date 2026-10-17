@@ -15,7 +15,7 @@
  */
 package org.labkey.core.wiki;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -313,7 +313,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                 buf.append(" class=\"").append(PageFlowUtil.filter(cssClass)).append("\"");
             if (cssStyle != null)
             {
-                if (StringUtils.containsIgnoreCase(cssStyle, "behavior"))
+                if (Strings.CI.contains(cssStyle, "behavior"))
                     cssStyle = null;
                 if (null != cssStyle)
                     buf.append(" style=\"").append(PageFlowUtil.filter(cssStyle)).append("\"");
