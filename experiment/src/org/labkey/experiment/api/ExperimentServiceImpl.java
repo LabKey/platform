@@ -300,6 +300,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -1050,6 +1051,33 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return emptyList();
 
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
+    }
+
+    /** The per-sample facts an operation confirmation needs, read straight off exp.material. */
+    public record SampleOperationRow(long rowId, Container container, Long sampleState, String cpasType) {}
+
+    /**
+     * Streams the facts an operation confirmation needs about each sample. A confirmation can cover tens of thousands
+     * of samples at once, so nothing is collected here and nothing wider than these four columns is read; callers fold
+     * the rows as they arrive.
+     */
+    public void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block)
+    {
+        if (rowIds.isEmpty())
+            return;
+
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds);
+        Set<String> columns = Set.of("RowId", "Container", "SampleState", "CpasType");
+        new TableSelector(getTinfoMaterial(), columns, filter, null).forEach(Material.class,
+                m -> block.accept(new SampleOperationRow(m.getRowId(), m.getContainer(), m.getSampleState(), m.getCpasType())));
+    }
+
+    public @Nullable ExpSampleTypeImpl getSampleTypeForCpasType(@Nullable String cpasType, Container container)
+    {
+        if (cpasType == null || ExpMaterial.DEFAULT_CPAS_TYPE.equals(cpasType) || "Sample".equals(cpasType))
+            return null;
+
+        return SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
     }
 
     @Override
@@ -4808,7 +4836,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Long> requestIds, Collection<Long> notAllowedIds, List<? extends ExpRunItem> allData)
     {
-        List<Long> allowedIds = new LongArrayList(requestIds);
+        Set<Long> allowedIds = new HashSet<>(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -4833,13 +4861,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
      * and warn user
      */
-    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<? extends ExpMaterial> allMaterials, Set<Long> deletable, User user, Container container)
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(@Nullable ExpSampleType sampleType, Set<Long> deletable, User user, Container container)
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
-        if (studyPublishService != null && !allMaterials.isEmpty())
+        if (studyPublishService != null && sampleType != null)
         {
-            ExpSampleType sampleType = allMaterials.getFirst().getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
             if (tableInfo == null)
