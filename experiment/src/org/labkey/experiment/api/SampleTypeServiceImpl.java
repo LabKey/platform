@@ -41,6 +41,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.data.AuditConfigurable;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -159,6 +160,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -1416,13 +1419,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void addAuditEvents(User user, Container container, String comment, String userComment, Collection<? extends ExpMaterial> samples, Map<String, Object> metadata)
     {
         AuditLogService auditLog = AuditLogService.get();
-        List<SampleTimelineAuditEvent> events = new ArrayList<>(Math.min(samples.size(), AUDIT_BATCH_SIZE));
+        List<SampleTimelineAuditEvent> events = new ArrayList<>(Math.min(samples.size(), BatchSize.get(AUDIT)));
 
         for (ExpMaterial sample : samples)
         {
             events.add(createAuditRecord(container, comment, userComment, sample, metadata));
 
-            if (events.size() >= AUDIT_BATCH_SIZE)
+            if (events.size() >= BatchSize.get(AUDIT))
             {
                 auditLog.addEvents(user, events);
                 events.clear();
@@ -1514,11 +1517,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     private int recomputeSamplesRollup(Collection<Long> parents, Collection<Long> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
-        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
+        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container).size();
     }
 
-    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
-    public int recomputeSamplesRollup(
+    /**
+     * This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedViewAfterRollup} as appropriate.
+     * @return the roots whose rollup columns were recomputed
+     */
+    private Set<Long> recomputeSamplesRollup(
         Collection<Long> parents,
         @Nullable Collection<Long> availableParents,
         Collection<Long> withAmountsParents,
@@ -1553,7 +1559,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
-                ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
+                ListUtils.partition(sampleAliquotCountList, BatchSize.get(ROWS)).forEach(sublist ->
                 {
                     for (Map.Entry<Long, Pair<Integer, String>> sampleAliquotCount: sublist)
                     {
@@ -1588,7 +1594,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 List<Map.Entry<Long, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
 
-                ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
+                ListUtils.partition(sampleAliquotCountList, BatchSize.get(ROWS)).forEach(sublist ->
                 {
                     for (var sampleAliquotCount: sublist)
                     {
@@ -1622,7 +1628,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
 
-                ListUtils.partition(new ArrayList<>(withAmountsParents), 1000).forEach(sublist ->
+                ListUtils.partition(new ArrayList<>(withAmountsParents), BatchSize.get(ROWS)).forEach(sublist ->
                 {
                     if (sublist.isEmpty())
                         return;
@@ -1687,7 +1693,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                     List<Map.Entry<Long, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
 
-                    ListUtils.partition(sampleAliquotAmountsList, 1000).forEach(sublist ->
+                    ListUtils.partition(sampleAliquotAmountsList, BatchSize.get(ROWS)).forEach(sublist ->
                     {
                         for (Map.Entry<Long, List<AliquotAmountUnitResult>> sampleAliquotAmounts: sublist)
                         {
@@ -1714,11 +1720,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        return !parents.isEmpty() ? parents.size() : (availableParents != null ? availableParents.size() : withAmountsParents.size());
+        Set<Long> recomputed = new LongHashSet(parents);
+        if (availableParents != null)
+            recomputed.addAll(availableParents);
+        recomputed.addAll(withAmountsParents);
+        return recomputed;
     }
 
     @Override
     public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws SQLException
+    {
+        return recomputeSampleTypeRollupRoots(sampleType, rootRowIds, parentNames, container).size();
+    }
+
+    /**
+     * This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedViewAfterRollup} as appropriate.
+     * @return the roots whose rollup columns were recomputed
+     */
+    public Set<Long> recomputeSampleTypeRollupRoots(@NotNull ExpSampleType sampleType, @Nullable Set<Long> rootRowIds, @Nullable Set<String> parentNames, Container container) throws SQLException
     {
         Set<Long> rootSamplesToRecalc = new LongHashSet();
         if (rootRowIds != null)
@@ -1726,7 +1745,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (parentNames != null)
             rootSamplesToRecalc.addAll(getRootSampleIdsFromParentNames(sampleType.getLSID(), parentNames));
 
-        return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
+        return recomputeSamplesRollup(rootSamplesToRecalc, null, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
     }
 
     private Set<Long> getRootSampleIdsFromParentNames(String sampleTypeLsid, Set<String> parentNames)
@@ -1919,19 +1938,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
+        // Correlated so Postgres counts only the requested roots; a grouped join counts every aliquot on the server
         SQLFragment sql = new SQLFragment(
                 """
                         SELECT m.RowId as SampleId, m.Units,
-                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
-                        FROM exp.material AS m
-                            LEFT JOIN (
-                            SELECT RootMaterialRowId as rootRowId, COUNT(*) as aliquotCount
-                            FROM exp.material
-                            WHERE RootMaterialRowId <> RowId AND SampleState\s""")
+                        (SELECT COUNT(*) FROM exp.material a
+                            WHERE a.RootMaterialRowId = m.RowId AND a.RowId <> m.RowId AND a.SampleState\s""")
                 .appendInClause(availableSampleStates, dialect)
                 .append("""
-                        GROUP BY RootMaterialRowId
-                    ) AS c ON m.rowId = c.rootRowId
+                        ) as CreatedAliquotCount
+                    FROM exp.material AS m
                     WHERE m.rootmaterialrowid = m.rowid AND m.rowid\s""");
         dialect.appendInClauseSql(sql, sampleIds);
 
@@ -2462,6 +2478,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds)
     {
         ExpMaterialTableImpl.refreshMaterializedViewAfterDelete(st.getLSID(), deletedRowIds);
+    }
+
+    /** @param rootRowIds roots whose rollup columns were recomputed; null forces a full pass */
+    public void refreshSampleTypeMaterializedViewAfterRollup(@NotNull ExpSampleType st, @Nullable Collection<Long> rootRowIds)
+    {
+        ExpMaterialTableImpl.refreshMaterializedViewAfterRollup(st.getLSID(), rootRowIds);
     }
 
     public static class TestCase extends Assert

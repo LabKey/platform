@@ -65,6 +65,7 @@ import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.LongHashMap;
 import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -311,6 +312,7 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.labkey.api.assay.AbstractTsvAssayProvider.GPAT_PROTOCOL_LSID_PREFIX;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.CompareType.IN;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
@@ -332,7 +334,6 @@ import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
@@ -1282,7 +1283,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             try (ParameterMapStatement insertPM = new ParameterMapStatement(getSchema().getScope(), c, insertSql, null);
                  ParameterMapStatement updatePM = new ParameterMapStatement(getSchema().getScope(), c, updateSql, null))
             {
-                ListUtils.partition(updates, 1000).forEach(sublist ->
+                ListUtils.partition(updates, BatchSize.get(ROWS)).forEach(sublist ->
                 {
                     try
                     {
@@ -3058,7 +3059,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             //noinspection SqlResolve
             try (PreparedStatement stmt = conn.prepareStatement("UPDATE " + expTable.getSelectName() + " SET ObjectId=? WHERE LSID=?"))
             {
-                Iterables.partition(allMissingObjectLsids, 1000).forEach(missingObjectLsids -> {
+                Iterables.partition(allMissingObjectLsids, BatchSize.get(ROWS)).forEach(missingObjectLsids -> {
 
                     if (!missingObjectLsids.isEmpty())
                     {
@@ -5188,7 +5189,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         Set<Long> rootSampleIds = sampleTypeRoots.getValue();
                         int recomputeCount = SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
                         if (0 < recomputeCount)
-                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(parentSampleType, rollup);
+                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterRollup(parentSampleType, rootSampleIds);
                     }
                 }
                 catch (SQLException e)
@@ -6601,7 +6602,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!outputDataMap.isEmpty())
         {
             List<Long> dataIds = new LongArrayList(outputDataMap.keySet());
-            int batchSize = 200;
+            int batchSize = BatchSize.get(ROWS);
 
             for (int i = 0; i < dataIds.size(); i += batchSize)
             {
@@ -7311,7 +7312,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException
     {
-        final int MAX_RUNS_IN_BATCH = 1000;
+        final int maxRunsInBatch = BatchSize.get(ROWS);
         int countD = 0;
         int countA = 0;
 
@@ -7330,7 +7331,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     countD++;
                     ExpRunImpl run = createRun(runRecord.getInputMaterialMap(), runRecord.getInputDataMap(), runRecord.getOutputMaterialMap(), runRecord.getOutputDataMap(), info);
                     _prepareRun(derivationHelper, run, runRecord, user, date);
-                    if ((countD % MAX_RUNS_IN_BATCH) == 0)
+                    if ((countD % maxRunsInBatch) == 0)
                     {
                         derivationHelper.saveBatch();
                     }
@@ -7340,7 +7341,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     countA++;
                     ExpRunImpl run = createAliquotRun(runRecord.getAliquotInput(), runRecord.getAliquotOutputs(), info);
                     _prepareRun(aliquotHelper, run, runRecord, user, date);
-                    if ((countA % MAX_RUNS_IN_BATCH) == 0)
+                    if ((countA % maxRunsInBatch) == 0)
                     {
                         aliquotHelper.saveBatch();
                     }

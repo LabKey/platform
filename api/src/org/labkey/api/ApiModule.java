@@ -55,6 +55,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
@@ -404,6 +405,7 @@ public class ApiModule extends CodeOnlyModule
             AssayResultsFileWriter.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
+            BatchSize.TestCase.class,
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
