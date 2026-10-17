@@ -97,6 +97,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -159,25 +160,31 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 Map<String, Object> raw = new TableSelector(queryTable, keyFilter, null).getMap();
 
                 if (null != raw && !raw.isEmpty())
-                    ret = toListRow(queryTable, raw);
+                    ret = toListRow(getListColumns(queryTable), raw);
             }
         }
 
         return ret;
     }
 
-    private Map<String, Object> toListRow(TableInfo queryTable, Map<String, Object> raw)
+    private Map<String, ColumnInfo> getListColumns(TableInfo queryTable)
+    {
+        Map<String, ColumnInfo> columns = new LinkedHashMap<>();
+        for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
+            columns.put(prop.getName(), queryTable.getColumn(prop.getName()));
+        return columns;
+    }
+
+    private Map<String, Object> toListRow(Map<String, ColumnInfo> listColumns, Map<String, Object> raw)
     {
         Map<String, Object> ret = new CaseInsensitiveHashMap<>();
         ret.put("EntityId", raw.get("entityid"));
 
-        for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
-        {
-            String propName = prop.getName();
-            Object value = queryTable.getColumn(propName).getValue(raw);
+        listColumns.forEach((propName, column) -> {
+            Object value = column.getValue(raw);
             if (value != null)
                 ret.put(propName, value);
-        }
+        });
 
         return ret;
     }
@@ -191,11 +198,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         List<Object> keyValues = new ArrayList<>(keys.size());
         for (Map<String, Object> rowKeys : keys)
-            keyValues.add(getKeyValue(rowKeys));
+            keyValues.add(null == rowKeys ? null : getKeyValue(rowKeys));
 
         TableInfo queryTable = getQueryTable();
         FieldKey keyField = FieldKey.fromParts(_list.getKeyName());
         ColumnInfo keyColumn = queryTable.getColumn(keyField);
+        Map<String, ColumnInfo> listColumns = getListColumns(queryTable);
         List<Object> distinctKeys = keyValues.stream().filter(Objects::nonNull).distinct().toList();
 
         // Keyed by string because the request may carry a Long where the column returns an Integer
@@ -204,7 +212,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             SimpleFilter filter = new SimpleFilter(keyField, batch, CompareType.IN);
             new TableSelector(queryTable, filter, null).forEachMap(raw ->
-                    rowsByKey.put(String.valueOf(keyColumn.getValue(raw)), toListRow(queryTable, raw)));
+                    rowsByKey.put(String.valueOf(keyColumn.getValue(raw)), toListRow(listColumns, raw)));
         }
 
         List<Map<String, Object>> result = new ArrayList<>(keys.size());

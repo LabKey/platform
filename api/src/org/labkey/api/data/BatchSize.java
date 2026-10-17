@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
@@ -57,17 +58,36 @@ public final class BatchSize
     {
         for (Kind kind : Kind.values())
         {
-            int size = Integer.getInteger(kind.getSystemProperty(), kind._defaultSize);
-            if (size < 1)
-                throw new IllegalArgumentException(kind.getSystemProperty() + " must be at least 1, but was " + size);
-            if (size != kind._defaultSize)
-                LOG.info("Batch size {} set to {} (default {})", kind, size, kind._defaultSize);
-            SIZES.set(kind.ordinal(), size);
+            SIZES.set(kind.ordinal(), parseSize(kind, System.getProperty(kind.getSystemProperty())));
         }
     }
 
     private BatchSize()
     {
+    }
+
+    // Log and fall back rather than throw, since a static initializer failure surfaces only as NoClassDefFoundError
+    private static int parseSize(Kind kind, String value)
+    {
+        if (null == value)
+            return kind._defaultSize;
+
+        try
+        {
+            int size = Integer.parseInt(value.trim());
+            if (size >= 1)
+            {
+                if (size != kind._defaultSize)
+                    LOG.info("Batch size {} set to {} (default {})", kind, size, kind._defaultSize);
+                return size;
+            }
+        }
+        catch (NumberFormatException ignored)
+        {
+        }
+
+        LOG.error("Ignoring {}={}: must be an integer of at least 1; using default {}", kind.getSystemProperty(), value, kind._defaultSize);
+        return kind._defaultSize;
     }
 
     public static int get(Kind kind)
@@ -90,9 +110,12 @@ public final class BatchSize
         int previous = SIZES.getAndSet(kind.ordinal(), size);
         OVERRIDDEN[kind.ordinal()] = true;
 
+        AtomicBoolean closed = new AtomicBoolean();
         return () -> {
             synchronized (BatchSize.class)
             {
+                if (closed.getAndSet(true))
+                    return;
                 SIZES.set(kind.ordinal(), previous);
                 OVERRIDDEN[kind.ordinal()] = false;
             }
@@ -113,6 +136,30 @@ public final class BatchSize
             }
 
             assertEquals(original, get(Kind.ROWS));
+        }
+
+        @Test
+        public void secondCloseIsNoOp() throws Exception
+        {
+            int original = get(Kind.ROWS);
+            AutoCloseable first = override(Kind.ROWS, 3);
+            first.close();
+
+            try (AutoCloseable ignored = override(Kind.ROWS, 5))
+            {
+                first.close();
+                assertEquals(5, get(Kind.ROWS));
+            }
+
+            assertEquals(original, get(Kind.ROWS));
+        }
+
+        @Test
+        public void invalidPropertyUsesDefault()
+        {
+            assertEquals(Kind.ROWS._defaultSize, parseSize(Kind.ROWS, "0"));
+            assertEquals(Kind.ROWS._defaultSize, parseSize(Kind.ROWS, "10k"));
+            assertEquals(7, parseSize(Kind.ROWS, "7"));
         }
 
         @Test
