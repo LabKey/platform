@@ -1120,7 +1120,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         {
             // Tika mistakenly thinks all .mat are Matlab files. Don't even warn about these.
         }
-        else if (topMessage.equals("image/gif parse error") && StringUtils.endsWithIgnoreCase(r.getName(), ".mht"))
+        else if (topMessage.equals("image/gif parse error") && Strings.CI.endsWith(r.getName(), ".mht"))
         {
             // Tika can't parse all .mht files
             logAsWarning(r, "Can't parse this MHT file", rootMessage);

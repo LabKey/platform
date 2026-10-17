@@ -15,7 +15,7 @@
  */
 package org.labkey.api.stats;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ColumnInfo;
@@ -119,6 +119,6 @@ public abstract class BaseAggregatesAnalyticsProvider extends ColumnAnalyticsPro
     {
         return col.isNumericType() && !col.isKeyField() && !col.isLookup()
                 && !"serial".equalsIgnoreCase(col.getSqlTypeName())
-                && !StringUtils.containsIgnoreCase(col.getSqlTypeName(), "identity");
+                && !Strings.CI.contains(col.getSqlTypeName(), "identity");
     }
 }
