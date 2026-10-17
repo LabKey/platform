@@ -1517,11 +1517,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     private int recomputeSamplesRollup(Collection<Long> parents, Collection<Long> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
-        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
+        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container).size();
     }
 
-    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
-    public int recomputeSamplesRollup(
+    /**
+     * This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedViewAfterRollup} as appropriate.
+     * @return the roots whose rollup columns were recomputed
+     */
+    private Set<Long> recomputeSamplesRollup(
         Collection<Long> parents,
         @Nullable Collection<Long> availableParents,
         Collection<Long> withAmountsParents,
@@ -1717,11 +1720,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        return !parents.isEmpty() ? parents.size() : (availableParents != null ? availableParents.size() : withAmountsParents.size());
+        Set<Long> recomputed = new LongHashSet(parents);
+        if (availableParents != null)
+            recomputed.addAll(availableParents);
+        recomputed.addAll(withAmountsParents);
+        return recomputed;
     }
 
     @Override
     public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws SQLException
+    {
+        return recomputeSampleTypeRollupRoots(sampleType, rootRowIds, parentNames, container).size();
+    }
+
+    /**
+     * This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedViewAfterRollup} as appropriate.
+     * @return the roots whose rollup columns were recomputed
+     */
+    public Set<Long> recomputeSampleTypeRollupRoots(@NotNull ExpSampleType sampleType, @Nullable Set<Long> rootRowIds, @Nullable Set<String> parentNames, Container container) throws SQLException
     {
         Set<Long> rootSamplesToRecalc = new LongHashSet();
         if (rootRowIds != null)
@@ -1729,7 +1745,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (parentNames != null)
             rootSamplesToRecalc.addAll(getRootSampleIdsFromParentNames(sampleType.getLSID(), parentNames));
 
-        return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
+        return recomputeSamplesRollup(rootSamplesToRecalc, null, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
     }
 
     private Set<Long> getRootSampleIdsFromParentNames(String sampleTypeLsid, Set<String> parentNames)
@@ -2462,6 +2478,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds)
     {
         ExpMaterialTableImpl.refreshMaterializedViewAfterDelete(st.getLSID(), deletedRowIds);
+    }
+
+    /** @param rootRowIds roots whose rollup columns were recomputed; null forces a full pass */
+    public void refreshSampleTypeMaterializedViewAfterRollup(@NotNull ExpSampleType st, @Nullable Collection<Long> rootRowIds)
+    {
+        ExpMaterialTableImpl.refreshMaterializedViewAfterRollup(st.getLSID(), rootRowIds);
     }
 
     public static class TestCase extends Assert

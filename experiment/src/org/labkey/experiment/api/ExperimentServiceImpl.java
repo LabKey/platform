@@ -334,7 +334,6 @@ import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 import static org.labkey.api.util.IntegerUtils.asIntegerElseNull;
 import static org.labkey.api.util.IntegerUtils.asLong;
 import static org.labkey.api.util.IntegerUtils.asLongElseNull;
-import static org.labkey.experiment.api.SampleTypeServiceImpl.SampleChangeType.rollup;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
@@ -5191,7 +5190,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         Set<Long> rootSampleIds = sampleTypeRoots.getValue();
                         int recomputeCount = SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
                         if (0 < recomputeCount)
-                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(parentSampleType, rollup);
+                            SampleTypeServiceImpl.get().refreshSampleTypeMaterializedViewAfterRollup(parentSampleType, rootSampleIds);
                     }
                 }
                 catch (SQLException e)
