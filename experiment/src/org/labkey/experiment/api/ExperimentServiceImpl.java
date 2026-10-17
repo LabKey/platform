@@ -1169,10 +1169,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> {
-            ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
-            expMaterial.index(queue, null);
-        });
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
+        tracker.forEach(selector.getArrayList(Material.class), Material::getRowId, m -> new ExpMaterialImpl(m).indexWithTableCache(queue, tableCache));
 
         if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
@@ -1203,10 +1201,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService.IndexBatchCursor tracker = new SearchService.IndexBatchCursor(minRowId);
 
         // Work in modest block sizes and fetch as a list so we don't keep the ResultSet open, which could lock the tables
-        tracker.forEach(selector.getArrayList(Data.class), Data::getRowId, d -> {
-            ExpDataImpl expData = new ExpDataImpl(d);
-            expData.index(queue, null);
-        });
+        Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
+        tracker.forEach(selector.getArrayList(Data.class), Data::getRowId, d -> new ExpDataImpl(d).indexWithTableCache(queue, tableCache));
 
         if (tracker.wasFull())
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
@@ -1383,9 +1379,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         var scope = table.getSchema().getScope();
         scope.executeWithRetryReadOnly(_ ->
                 new SqlSelector(scope, sql).forEachBatch(Data.class, 1000, batch ->
-                        queue.addRunnable((q) -> batch.forEach(data ->
-                                new ExpDataImpl(data).index(q, null))
-                        )
+                        queue.addRunnable((q) -> {
+                            Map<AbstractRunItemImpl.TableCacheKey, TableInfo> tableCache = new HashMap<>();
+                            batch.forEach(data -> new ExpDataImpl(data).indexWithTableCache(q, tableCache));
+                        })
                 ));
     }
 
