@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
@@ -1389,8 +1390,10 @@ public abstract class Method
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
-                ret.append("(").append(groupArg).append(")");
-                ret.appendInClause(user.getGroups().stream().toList(), dialect);
+                // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
+                ret.append("(").append(groupArg).append(") IN (").append(
+                        user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
+                ).append(")");
                 return ret;
             }
 
