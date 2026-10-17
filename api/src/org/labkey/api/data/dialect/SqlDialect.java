@@ -1544,6 +1544,15 @@ public abstract class SqlDialect
         return false;
     }
 
+    /**
+     * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
+     * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
+     */
+    public Set<ConnectionWrapper> cancelQueriesWithoutConnection(Collection<ConnectionWrapper> connections)
+    {
+        return Set.of();
+    }
+
     public boolean updateStatistics(TableInfo table)
     {
         SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());

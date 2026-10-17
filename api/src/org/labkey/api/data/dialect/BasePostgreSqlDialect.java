@@ -46,6 +46,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.postgresql.core.BaseConnection;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -58,6 +59,7 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -108,7 +110,8 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
         String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
 
-        try (Connection conn = scope.getPooledConnection())
+        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis
+        try (Connection conn = scope.getUnpooledConnection())
         {
             // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
             SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
@@ -147,6 +150,34 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
 
         return true;
+    }
+
+    @Override
+    public Set<ConnectionWrapper> cancelQueriesWithoutConnection(Collection<ConnectionWrapper> connections)
+    {
+        Set<ConnectionWrapper> signalled = new HashSet<>();
+        for (ConnectionWrapper connection : connections)
+        {
+            // Same reuse race as cancelQueries(): don't signal a session the pool may have handed to someone else
+            if (!connection.isAllocated())
+                continue;
+
+            // The driver's cancel request opens its own socket and authenticates with the session's secret key
+            if (connection.getPhysicalConnection() instanceof BaseConnection pgConnection)
+            {
+                try
+                {
+                    pgConnection.cancelQuery();
+                    signalled.add(connection);
+                }
+                catch (SQLException e)
+                {
+                    LOG.warn("Cancel request for SPID {} failed", connection.getSPID(), e);
+                }
+            }
+        }
+
+        return signalled;
     }
 
     @Override

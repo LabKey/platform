@@ -42,6 +42,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -708,9 +709,35 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                isServerCancelledQuery(ex) ||
                 isInvalidParameterException(ex) ||
                 isMaxPostSizeExceeded(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
+    }
+
+    /** The server stopped this request's query itself, on timeout or shutdown */
+    private static boolean isServerCancelledQuery(Throwable ex)
+    {
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx))
+                return RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown();
+        }
+        return false;
+    }
+
+    /** Unlike a client abort, the client is still waiting for a response */
+    private static boolean isRequestTimeout(Throwable ex)
+    {
+        if (RequestCancellation.getSource(Thread.currentThread()) != RequestCancellation.Source.TIMEOUT)
+            return false;
+
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof AbortedRequestException)
+                return true;
+        }
+        return isServerCancelledQuery(ex);
     }
 
     /**
@@ -881,8 +908,8 @@ public class ExceptionUtil
         Throwable unhandledException = ex;
         String responseStatusMessage = null;    // set to use non default status message
 
-        // A malformed upload looks like a client abort, but the client is still waiting for a response
-        if (isClientAbortException(ex) && !isInvalidParameterException(ex))
+        // A request timeout or malformed upload looks like a client abort, but the client is still waiting for a response
+        if (isClientAbortException(ex) && !isRequestTimeout(ex) && !isInvalidParameterException(ex))
         {
             // The client dropped the connection. We don't care about this case,
             // and don't need to send an error back to the browser either.
@@ -988,6 +1015,13 @@ public class ExceptionUtil
                 // Do nothing; IllegalStateException means the response was already committed
             }
             return null;
+        }
+        else if (isRequestTimeout(ex))
+        {
+            responseStatus = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            message = "This request took too long and was cancelled";
+            responseStatusMessage = message;
+            unhandledException = null;
         }
         else if (ex instanceof ApiUsageException)
         {
@@ -1689,6 +1723,51 @@ public class ExceptionUtil
             answer = handleIt(me, new NullPointerException());
             assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Logger.error"));
+        }
+
+        @Test
+        public void testCancelledQuery() throws Exception
+        {
+            User me = TestContext.get().getUser();
+
+            // A statement cancelled by something other than the server is still an error
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(null, () -> {
+                assertFalse(isIgnorable(cancelledQuery()));
+                ExceptionResponse answer = handleIt(me, cancelledQuery());
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+                assertTrue(answer.response.headers.containsKey("Logger.error"));
+            }));
+
+            // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertTrue(isRequestTimeout(cancelledQuery()));
+                assertTrue(isRequestTimeout(new AbortedRequestException("test")));
+                assertTrue(isRequestTimeout(new RuntimeException(new AbortedRequestException("test"))));
+
+                for (Exception ex : List.of(cancelledQuery(), new AbortedRequestException("test")))
+                {
+                    ExceptionResponse answer = handleIt(me, ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, answer.response.status);
+                    assertFalse(answer.response.headers.containsKey("Logger.error"));
+                }
+            }));
+
+            // Nobody's waiting on a disconnected client
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertFalse(isRequestTimeout(cancelledQuery()));
+                assertFalse(isRequestTimeout(new AbortedRequestException("test")));
+
+                ExceptionResponse answer = handleIt(me, new AbortedRequestException("test"));
+                assertEquals(0, answer.response.status);
+                assertFalse(answer.response.headers.containsKey("Logger.error"));
+            }));
+        }
+
+        private static RuntimeSQLException cancelledQuery()
+        {
+            return new RuntimeSQLException(new SQLException("ERROR: canceling statement due to user request", "57014"));
         }
 
         @Test
