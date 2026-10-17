@@ -16,6 +16,7 @@
 package org.labkey.core.notification;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -159,11 +160,9 @@ public class NotificationController extends SpringActionController
                 if (form.isByContainer() && !StringUtils.isEmpty(form.getContainerFilter()))
                     containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
 
-                List<Notification> notifications;
-                if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
-                    notifications = service.getNotificationsByUser(notificationContainer, getUser().getUserId(), true, containerFilter);
-                else
-                    notifications = service.getNotificationsByTypeLabels(notificationContainer, form.getTypeLabels(), getUser().getUserId(), true, containerFilter);
+                // TODO: replace with a single bulk UPDATE of ReadOn; this runs a select, update, and websocket event per unread notification
+                List<Notification> notifications = new ArrayList<>();
+                service.forEachNotification(notificationContainer, getUser().getUserId(), form.getTypeLabels(), true, containerFilter, notifications::add);
 
                 for (Notification notification : notifications)
                 {
@@ -297,17 +296,10 @@ public class NotificationController extends SpringActionController
             if (form.isByContainer() && !StringUtils.isEmpty(form.getContainerFilter()))
                 containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser());
 
-            List<Notification> notifications;
-            if (form.getTypeLabels() == null || form.getTypeLabels().isEmpty())
-                notifications = service.getNotificationsByUser(notificationContainer, getUser().getUserId(), false, containerFilter);
-            else
-                notifications = service.getNotificationsByTypeLabels(notificationContainer, form.getTypeLabels(), getUser().getUserId(), false, containerFilter);
-
-            int i = 0;
-            int unreadCount = 0;
-            for (Notification notification : notifications)
-            {
-                if (form.getMaxRows() == null || i < form.getMaxRows())
+            MutableInt totalRows = new MutableInt();
+            MutableInt unreadCount = new MutableInt();
+            service.forEachNotification(notificationContainer, getUser().getUserId(), form.getTypeLabels(), false, containerFilter, notification -> {
+                if (form.getMaxRows() == null || totalRows.intValue() < form.getMaxRows())
                 {
                     Map<String, Object> notifPropMap = notification.asPropMap();
                     notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), getUser()));
@@ -315,15 +307,15 @@ public class NotificationController extends SpringActionController
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
                     notificationList.add(notifPropMap);
                 }
-                i++;
+                totalRows.increment();
                 if (notification.getReadOn() == null)
-                    unreadCount++;
-            }
+                    unreadCount.increment();
+            });
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("notifications", notificationList);
-            response.put("totalRows", notifications.size());
-            response.put("unreadCount", unreadCount);
+            response.put("totalRows", totalRows.intValue());
+            response.put("unreadCount", unreadCount.intValue());
             response.put("success", true);
             return response;
         }
@@ -393,21 +385,14 @@ public class NotificationController extends SpringActionController
         {
             Map<Integer, Map<String, Object>> notificationsPropMap = new IntHashMap<>();
             Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
-            int unreadCount = 0;
             boolean hasRead = false;
 
             NotificationService service = NotificationService.get();
             if (service != null && user != null && !user.isGuest())
             {
-                List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false, null);
-                for (Notification notification : userNotifications)
-                {
-                    if (notification.getReadOn() != null)
-                    {
-                        hasRead = true;
-                        continue;
-                    }
-
+                // GH Issue 1632: load only unread rows; read history can include a large number of rows for a given user
+                hasRead = service.hasReadNotificationsByUser(null, user.getUserId());
+                service.forEachNotification(null, user.getUserId(), null, true, null, notification -> {
                     Map<String, Object> notifPropMap = notification.asPropMap();
                     notifPropMap.put("CreatedBy", UserManager.getDisplayName(asInteger(notifPropMap.get("CreatedBy")), user));
                     notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
@@ -419,14 +404,12 @@ public class NotificationController extends SpringActionController
                         notificationGroupingsMap.put(groupLabel, new ArrayList<>());
                     }
                     notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
-
-                    unreadCount++;
-                }
+                });
             }
 
             JSONObject notifications = new JSONObject(notificationsPropMap);
             notifications.put("grouping", notificationGroupingsMap);
-            notifications.put("unreadCount", unreadCount);
+            notifications.put("unreadCount", notificationsPropMap.size());
             notifications.put("hasRead", hasRead);
             return notifications;
         }
