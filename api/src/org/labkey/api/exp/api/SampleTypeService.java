@@ -271,6 +271,9 @@ public interface SampleTypeService
     /** Callers that delete exp.material rows directly must call this, or the sample type's materialized view keeps them. @param deletedRowIds null forces a full reconcile */
     void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds);
 
+    /** @return a token that changes whenever the sample type's samples change; read it before reading the data it guards */
+    @NotNull String getDataChangeToken(@NotNull ExpSampleType sampleType);
+
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     long getCurrentCount(NameGenerator.EntityCounter counterType, Container container);
