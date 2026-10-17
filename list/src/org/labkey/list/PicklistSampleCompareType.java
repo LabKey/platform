@@ -16,12 +16,15 @@
 package org.labkey.list;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.FieldKey;
@@ -30,6 +33,8 @@ import org.labkey.api.security.User;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class PicklistSampleCompareType extends CompareType
 {
@@ -53,7 +58,62 @@ public class PicklistSampleCompareType extends CompareType
 
         ContainerFilter cf = ListService.get().getPicklistContainerFilter(container, user, listDef);
         TableInfo listTable = listDef.getTable(user, container, cf);
-        Integer[] sampleIds = new TableSelector(listTable, Collections.singleton("SampleID")).getArray(Integer.class);
-        return new SimpleFilter.InClause(fieldKey, Arrays.asList(sampleIds));
+        if (listTable == null)
+            return new SimpleFilter.FalseClause();
+
+        return new PicklistSamplesClause(fieldKey, listName, listTable);
+    }
+
+    /** Filters to the picklist's samples with a subquery, so a large picklist isn't loaded into an IN list. */
+    private static class PicklistSamplesClause extends SimpleFilter.FilterClause
+    {
+        private final FieldKey _fieldKey;
+        private final String _listName;
+        private final TableInfo _listTable;
+        private final ColumnInfo _sampleIdColumn;
+        private final SQLFragment _picklistSql;
+
+        PicklistSamplesClause(FieldKey fieldKey, String listName, TableInfo listTable)
+        {
+            _fieldKey = fieldKey;
+            _listName = listName;
+            _listTable = listTable;
+            _sampleIdColumn = listTable.getColumn("SampleID");
+            // The query table applies the picklist's container filter and permissions
+            _picklistSql = QueryService.get().getSelectBuilder(listTable).columns(_sampleIdColumn).buildSqlFragment();
+        }
+
+        @Override
+        public List<FieldKey> getFieldKeys()
+        {
+            return Collections.singletonList(_fieldKey);
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            ColumnInfo colInfo = null != columnMap ? columnMap.get(_fieldKey) : null;
+
+            return new SQLFragment()
+                    .appendIdentifier(SimpleFilter.getAliasForColumnFilter(_listTable.getSqlDialect(), colInfo, _fieldKey))
+                    .append(" IN (SELECT ").appendIdentifier(_sampleIdColumn.getAlias())
+                    .append(" FROM (").append(_picklistSql).append(") picklist)");
+        }
+
+        /** LabKey SQL can't embed the provisioned subquery, so fall back to the picklist's current sample ids. */
+        @Override
+        public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
+        {
+            Integer[] sampleIds = new TableSelector(_listTable, Collections.singleton("SampleID")).getArray(Integer.class);
+            return new SimpleFilter.InClause(_fieldKey, Arrays.asList(sampleIds)).getLabKeySQLWhereClause(columnMap);
+        }
+
+        @Override
+        protected int appendFilterValueText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)
+        {
+            int result = sb.length();
+            sb.append(formatter.format(_fieldKey)).append(" matches picklist ").append(_listName);
+            return result;
+        }
     }
 }

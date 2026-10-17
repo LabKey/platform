@@ -30,6 +30,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.IntHashMap;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderPropertiesImpl;
@@ -126,6 +127,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.util.IntegerUtils.asLong;
 
 /**
@@ -294,7 +296,6 @@ public class OntologyManager
         return m;
     }
 
-    public static final int MAX_PROPS_IN_BATCH = 1000;  // Keep this reasonably small so progress indicator is updated regularly
     public static final int UPDATE_STATS_BATCH_COUNT = 1000;
 
     public static void insertTabDelimited(Container c,
@@ -378,8 +379,10 @@ public class OntologyManager
         assert total.start();
         assert getExpSchema().getScope().isTransactionActive();
 
+        int maxPropsInBatch = BatchSize.get(ROWS);
+
         // Make sure we have enough rows to handle the overflow of the current row so we don't have to resize the list
-        List<PropertyRow> propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
+        List<PropertyRow> propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
 
         ValidatorContext validatorCache = new ValidatorContext(c, user);
 
@@ -466,13 +469,13 @@ public class OntologyManager
 
                 rowCount++;
 
-                if (propsToInsert.size() > MAX_PROPS_IN_BATCH)
+                if (propsToInsert.size() > maxPropsInBatch)
                 {
                     assert insert.start();
                     insertPropertiesBulk(c, propsToInsert, false);
                     helper.afterBatchInsert(rowCount);
                     assert insert.stop();
-                    propsToInsert = new ArrayList<>(MAX_PROPS_IN_BATCH + descriptors.size());
+                    propsToInsert = new ArrayList<>(maxPropsInBatch + descriptors.size());
 
                     if (++batchCount % UPDATE_STATS_BATCH_COUNT == 0)
                     {

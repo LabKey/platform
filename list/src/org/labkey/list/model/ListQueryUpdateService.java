@@ -15,6 +15,7 @@
  */
 package org.labkey.list.model;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,12 +27,12 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -101,6 +102,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.BatchSize.Kind.AUDIT;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.util.IntegerUtils.isIntegral;
 
 /**
@@ -156,25 +159,63 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 Map<String, Object> raw = new TableSelector(queryTable, keyFilter, null).getMap();
 
                 if (null != raw && !raw.isEmpty())
-                {
-                    ret = new CaseInsensitiveHashMap<>();
-
-                    // EntityId
-                    ret.put("EntityId", raw.get("entityid"));
-
-                    for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
-                    {
-                        String propName = prop.getName();
-                        ColumnInfo column = queryTable.getColumn(propName);
-                        Object value = column.getValue(raw);
-                        if (value != null)
-                            ret.put(propName, value);
-                    }
-                }
+                    ret = toListRow(queryTable, raw);
             }
         }
 
         return ret;
+    }
+
+    private Map<String, Object> toListRow(TableInfo queryTable, Map<String, Object> raw)
+    {
+        Map<String, Object> ret = new CaseInsensitiveHashMap<>();
+        ret.put("EntityId", raw.get("entityid"));
+
+        for (DomainProperty prop : _list.getDomainOrThrow().getProperties())
+        {
+            String propName = prop.getName();
+            Object value = queryTable.getColumn(propName).getValue(raw);
+            if (value != null)
+                ret.put(propName, value);
+        }
+
+        return ret;
+    }
+
+    /** Batched {@link #getRow}: one result per found key, in key order, so a reselect of N rows isn't N queries. */
+    @Override
+    public List<Map<String, Object>> getRows(User user, Container container, List<Map<String, Object>> keys) throws InvalidKeyException
+    {
+        if (!hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("You do not have permission to read data from this table.");
+
+        List<Object> keyValues = new ArrayList<>(keys.size());
+        for (Map<String, Object> rowKeys : keys)
+            keyValues.add(getKeyValue(rowKeys));
+
+        TableInfo queryTable = getQueryTable();
+        FieldKey keyField = FieldKey.fromParts(_list.getKeyName());
+        ColumnInfo keyColumn = queryTable.getColumn(keyField);
+        List<Object> distinctKeys = keyValues.stream().filter(Objects::nonNull).distinct().toList();
+
+        // Keyed by string because the request may carry a Long where the column returns an Integer
+        Map<String, Map<String, Object>> rowsByKey = new HashMap<>();
+        for (List<Object> batch : ListUtils.partition(distinctKeys, BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = new SimpleFilter(keyField, batch, CompareType.IN);
+            new TableSelector(queryTable, filter, null).forEachMap(raw ->
+                    rowsByKey.put(String.valueOf(keyColumn.getValue(raw)), toListRow(queryTable, raw)));
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>(keys.size());
+        for (Object keyValue : keyValues)
+        {
+            Map<String, Object> row = null == keyValue ? null : rowsByKey.get(String.valueOf(keyValue));
+            if (null != row)
+                result.add(row);
+        }
+
+        return result;
     }
 
 
@@ -238,7 +279,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             _events.add(ListManager.get().createAuditEvent(_list, c, comment, entityId, oldRecord, newRecord));
 
-            if (_events.size() >= AbstractAuditHandler.AUDIT_BATCH_SIZE)
+            if (_events.size() >= BatchSize.get(AUDIT))
                 flush();
         }
 
@@ -616,7 +657,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 .anyMatch(prop -> PropertyType.ATTACHMENT.equals(prop.getPropertyType()));
 
         ListAuditProvider listAuditProvider = new ListAuditProvider();
-        final int BATCH_SIZE = 5_000;
+        final int batchSize = BatchSize.get(ROWS);
         boolean isAuditEnabled = auditBehavior != null && AuditBehaviorType.NONE != auditBehavior;
 
         try (DbScope.Transaction tx = getDbTable().getSchema().getScope().ensureTransaction())
@@ -646,9 +687,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 List<ListRecord> records = containerRows.get(containerId);
                 int numRecords = records.size();
 
-                for (int start = 0; start < numRecords; start += BATCH_SIZE)
+                for (int start = 0; start < numRecords; start += batchSize)
                 {
-                    int end = Math.min(start + BATCH_SIZE, numRecords);
+                    int end = Math.min(start + batchSize, numRecords);
                     List<ListRecord> batch = records.subList(start, end);
                     List<Object> rowPks = batch.stream().map(ListRecord::key).toList();
 
@@ -925,6 +966,12 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Nullable
     public SimpleFilter getKeyFilter(Map<String, Object> map) throws InvalidKeyException
     {
+        Object key = getKeyValue(map);
+        return null == key ? null : new SimpleFilter(FieldKey.fromParts(_list.getKeyName()), key);
+    }
+
+    private @Nullable Object getKeyValue(Map<String, Object> map) throws InvalidKeyException
+    {
         String keyName = _list.getKeyName();
         Object key = getField(map, keyName);
 
@@ -936,7 +983,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             throw new InvalidKeyException("No " + keyName + " provided for list \"" + _list.getName() + "\"");
         }
 
-        return new SimpleFilter(FieldKey.fromParts(keyName), getKeyFilterValue(key));
+        return getKeyFilterValue(key);
     }
 
     @NotNull
@@ -990,7 +1037,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     /**
-     * RowAuditBatch accumulates row audit events and flushes in AUDIT_BATCH_SIZE chunks, so an operation has to
+     * RowAuditBatch accumulates row audit events and flushes in AUDIT batch size chunks, so an operation has to
      * cross that boundary for the mid-operation flush to run at all. A batch that gets dropped, or replayed by the
      * flush in close(), changes the audit row count - which is what these assertions watch.
      */
@@ -1002,8 +1049,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         private static final String KEY_NAME = "Key";
         private static final String VALUE_FIELD = "value";
 
-        // Enough to force one flush from add() and leave a partial batch for close()
-        private static final int ROW_COUNT = AbstractAuditHandler.AUDIT_BATCH_SIZE + 7;
+        private static final int BATCH_SIZE = 5;
+        // Enough to force flushes from add() and leave a partial batch for close()
+        private static final int ROW_COUNT = BATCH_SIZE * 2 + 2;
 
         private static User _user;
         private static Container _container;
@@ -1065,34 +1113,127 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             BatchValidationException errors = new BatchValidationException();
             List<Map<String, Object>> inserted;
-
-            // Without a transaction LogManager declines to batch, so the batched insert path only runs inside one
-            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
-            {
-                inserted = table.getUpdateService().insertRows(_user, _container, rows, errors, null, null);
-                if (errors.hasErrors())
-                    throw errors.getLastRowError();
-                tx.commit();
-            }
-
-            assertEquals("expected every row to be inserted", ROW_COUNT, inserted.size());
-            assertEquals("one insert audit event per row", ROW_COUNT, auditCount(AUDIT_COMMENT_INSERT));
-
-            List<Map<String, Object>> keys = new ArrayList<>(ROW_COUNT);
-            for (Map<String, Object> row : inserted)
-                keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, row.get(KEY_NAME)));
-
             List<Map<String, Object>> deleted;
 
-            try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+            try (AutoCloseable ignored = BatchSize.override(AUDIT, BATCH_SIZE))
             {
-                deleted = table.getUpdateService().deleteRows(_user, _container, keys, null, null);
-                tx.commit();
+                // Without a transaction LogManager declines to batch, so the batched insert path only runs inside one
+                try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+                {
+                    inserted = table.getUpdateService().insertRows(_user, _container, rows, errors, null, null);
+                    if (errors.hasErrors())
+                        throw errors.getLastRowError();
+                    tx.commit();
+                }
+
+                assertEquals("expected every row to be inserted", ROW_COUNT, inserted.size());
+                assertEquals("one insert audit event per row", ROW_COUNT, auditCount(AUDIT_COMMENT_INSERT));
+
+                List<Map<String, Object>> keys = new ArrayList<>(ROW_COUNT);
+                for (Map<String, Object> row : inserted)
+                    keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, row.get(KEY_NAME)));
+
+                try (DbScope.Transaction tx = table.getSchema().getScope().ensureTransaction())
+                {
+                    deleted = table.getUpdateService().deleteRows(_user, _container, keys, null, null);
+                    tx.commit();
+                }
             }
 
             assertEquals("expected every row to be deleted", ROW_COUNT, deleted.size());
             assertEquals("one delete audit event per row", ROW_COUNT, auditCount(AUDIT_COMMENT_DELETE));
             assertEquals("deleting rows must not emit insert events", ROW_COUNT, auditCount(AUDIT_COMMENT_INSERT));
+        }
+    }
+
+    @TestTimeout(TestTimeout.DEFAULT * 5)
+    public static class GetRowsTestCase extends Assert
+    {
+        private static final String PROJECT_NAME = "ListGetRowsTest Project";
+        private static final String LIST_NAME = "Get rows list";
+        private static final String KEY_NAME = "Key";
+        private static final String VALUE_FIELD = "value";
+
+        private static final int BATCH_SIZE = 4;
+        // Crosses batch boundaries so results from separate queries have to merge back into key order
+        private static final int ROW_COUNT = BATCH_SIZE * 2 + 2;
+
+        private static User _user;
+        private static Container _container;
+        private static ListDefinition _list;
+
+        @BeforeClass
+        public static void setup() throws Exception
+        {
+            _user = TestContext.get().getUser();
+
+            deleteTestContainer();
+            _container = ContainerManager.ensureContainer(PROJECT_NAME, _user);
+
+            _list = ListService.get().createList(_container, LIST_NAME, ListDefinition.KeyType.AutoIncrementInteger);
+            _list.setKeyName(KEY_NAME);
+
+            DomainProperty dp = _list.getDomain().addProperty();
+            dp.setName(VALUE_FIELD);
+            dp.setType(PropertyService.get().getType(_container, PropertyType.STRING.getXmlName()));
+            dp.setPropertyURI(ListDomainKind.createPropertyURI(LIST_NAME, VALUE_FIELD, _container, _list.getKeyType()).toString());
+            _list.save(_user);
+        }
+
+        @AfterClass
+        public static void cleanup()
+        {
+            _list = null;
+            _container = null;
+            _user = null;
+
+            deleteTestContainer();
+        }
+
+        private static void deleteTestContainer()
+        {
+            Container project = ContainerManager.getForPath(PROJECT_NAME);
+
+            if (null != project)
+                ContainerManager.deleteAll(project, TestContext.get().getUser());
+        }
+
+        @Test
+        public void matchesGetRowInKeyOrder() throws Exception
+        {
+            TableInfo table = _list.getTable(_user);
+            assertNotNull("expected the list table to resolve", table);
+            ListQueryUpdateService qus = (ListQueryUpdateService) table.getUpdateService();
+            assertNotNull(qus);
+
+            List<Map<String, Object>> rows = new ArrayList<>(ROW_COUNT);
+            for (int i = 0; i < ROW_COUNT; i++)
+                rows.add(CaseInsensitiveHashMap.<Object>of(VALUE_FIELD, "row-" + i));
+
+            BatchValidationException errors = new BatchValidationException();
+            List<Map<String, Object>> inserted = qus.insertRows(_user, _container, rows, errors, null, null);
+            if (errors.hasErrors())
+                throw errors.getLastRowError();
+
+            // Reversed to prove request order wins over DB order; Long keys exercise the Integer column match
+            List<Map<String, Object>> keys = new ArrayList<>();
+            for (Map<String, Object> row : inserted.reversed())
+                keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, ((Number) row.get(KEY_NAME)).longValue()));
+            keys.add(CaseInsensitiveHashMap.<Object>of(KEY_NAME, -1L)); // absent key is skipped, as getRow() returns null
+
+            List<Map<String, Object>> expected = new ArrayList<>();
+            for (Map<String, Object> key : keys)
+            {
+                Map<String, Object> row = qus.getRow(_user, _container, key);
+                if (null != row)
+                    expected.add(row);
+            }
+
+            assertEquals("absent key should be dropped", ROW_COUNT, expected.size());
+            try (AutoCloseable ignored = BatchSize.override(ROWS, BATCH_SIZE))
+            {
+                assertEquals(expected, qus.getRows(_user, _container, keys));
+            }
         }
     }
 }
