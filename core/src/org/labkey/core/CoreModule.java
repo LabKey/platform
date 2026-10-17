@@ -370,6 +370,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -591,44 +592,50 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
+    private static HealthCheck.Result checkDataSources(Predicate<DbScope> filter, Set<String> failedDataSources)
+    {
+        Map<String, Object> healthValues = new HashMap<>();
+        boolean allConnected = true;
+        for (DbScope dbScope : DbScope.getDbScopes())
+        {
+            if (!filter.test(dbScope))
+                continue;
+
+            boolean dbConnected;
+            try (Connection conn = dbScope.getConnection())
+            {
+                dbConnected = conn != null;
+            }
+            // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+            // we return a 200 saying we're not healthy instead of a 500
+            catch (Exception e)
+            {
+                if (failedDataSources.add(dbScope.getDataSourceName()))
+                    LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
+                dbConnected = false;
+            }
+
+            if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+                LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
+
+            healthValues.put(dbScope.getDatabaseName(), dbConnected);
+            allConnected &= dbConnected;
+        }
+
+        return new HealthCheck.Result(allConnected, healthValues);
+    }
+
     private void registerHealthChecks()
     {
         // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
         Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
 
-        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
-            {
-                Map<String, Object> healthValues = new HashMap<>();
-                boolean allConnected = true;
-                for (DbScope dbScope : DbScope.getDbScopes())
-                {
-                    if (dbScope.isLabKeyScope())
-                    {
-                        boolean dbConnected;
-                        try (Connection conn = dbScope.getConnection())
-                        {
-                            dbConnected = conn != null;
-                        }
-                        // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
-                        // we return a 200 saying we're not healthy instead of a 500
-                        catch (Exception e)
-                        {
-                            if (failedDataSources.add(dbScope.getDataSourceName()))
-                                LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
-                            dbConnected = false;
-                        }
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY,
+                () -> checkDataSources(DbScope::isLabKeyScope, failedDataSources));
 
-                        if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
-                            LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
-
-                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                        allConnected &= dbConnected;
-                    }
-                }
-
-                return new HealthCheck.Result(allConnected, healthValues);
-            }
-        );
+        // Default-category failures take the server out of rotation, which shouldn'y include a problem with an external database
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.EXTERNAL_DATA_SOURCES_CATEGORY,
+                () -> checkDataSources(scope -> !scope.isLabKeyScope(), failedDataSources));
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
             Map<String, Throwable> failures =  ModuleLoader.getInstance().getModuleFailures();
