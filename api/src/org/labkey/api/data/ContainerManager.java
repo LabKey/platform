@@ -126,7 +126,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -1365,8 +1364,10 @@ public class ContainerManager
             deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR Path");
-                deleteSQL.appendInClause(aliases.stream().map(alias -> alias.toLowerCase(Locale.ROOT)).toList(), CORE.getSqlDialect());
+                // Not appendInClause(): values must go through the DB's LOWER(), matching how the insert below stores paths
+                deleteSQL.append(" OR Path IN (")
+                    .append(SQLFragment.join(aliases.stream().map(alias -> new SQLFragment("LOWER(?)", alias)).toList(), new SQLFragment(", ")))
+                    .append(")");
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 
