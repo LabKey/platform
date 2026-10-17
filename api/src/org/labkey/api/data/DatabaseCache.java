@@ -90,117 +90,10 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             LOG.debug("Just loaded: {} ({})", key, getTrackingCache().getDebugName());
             TransactionImpl t = _databaseCache.getCurrentTransaction();
 
-            // Only add post commit cache reload if there's a transaction and the transaction post commit queue is not
-            // larger than the cache size.
             if (null != t)
-            {
-                // Create a new or get existing post commit counter task
-                CacheReloadCounterTask task = t.addCommitTask(new CacheReloadCounterTask(this), DbScope.CommitTaskOption.POSTCOMMIT);
-                if (task.shouldAddReloadTask())
-                {
-                    // Add reload task, if it doesn't already exist, and decrement transaction reload counter
-                    CacheReloadCommitTask<K, V> cacheTask = new CacheReloadCommitTask<>(this, key, argument, loader);
-                    boolean alreadyQueued = (cacheTask != t.addCommitTask(cacheTask, DbScope.CommitTaskOption.POSTCOMMIT));
-                    if (!alreadyQueued)
-                        task.decrementReloadCount();
-                }
-            }
+                CacheReplayCommitTask.get(t).reload(_databaseCache, key, getTrackingCache().getLimit(), () -> get(key, argument, loader));
 
             return value;
-        }
-
-        // This is a post commit task that counts how many cache reload post commits have been queued and is
-        // scoped to the transaction.
-        private static class CacheReloadCounterTask implements Runnable
-        {
-            private final Cache<?, ?> _cache;
-            private int _remainingReloadCommitTasks;
-
-            public CacheReloadCounterTask(Cache<?, ?> cache)
-            {
-                _cache = cache;
-                _remainingReloadCommitTasks = cache.getTrackingCache().getLimit();
-            }
-
-            @Override
-            public void run()
-            {
-                // noop
-            }
-
-            @Override
-            public boolean equals(Object o)
-            {
-                if (o == null || getClass() != o.getClass()) return false;
-                CacheReloadCounterTask that = (CacheReloadCounterTask) o;
-                return Objects.equals(_cache, that._cache);
-            }
-
-            @Override
-            public int hashCode()
-            {
-                return Objects.hashCode(_cache);
-            }
-
-            public boolean shouldAddReloadTask()
-            {
-                return _remainingReloadCommitTasks > 0;
-            }
-
-            public void decrementReloadCount()
-            {
-                _remainingReloadCommitTasks--;
-            }
-        }
-
-        // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
-        // re-played on successful commit.
-        private static class CacheReloadCommitTask<K, V> implements Runnable
-        {
-            private final Cache<K, V> _cache;
-            private final K _key;
-            private final Object _arg;
-            private final CacheLoader<K, V> _loader;
-
-            public CacheReloadCommitTask(Cache<K, V> cache, K key, Object arg, CacheLoader<K, V> loader)
-            {
-                _cache = cache;
-                _key = key;
-                _arg = arg;
-                _loader = loader;
-            }
-
-            @Override
-            public boolean equals(Object o)
-            {
-                if (this == o) return true;
-                if (o == null || getClass() != o.getClass()) return false;
-
-                @SuppressWarnings("unchecked")
-                CacheReloadCommitTask<K, V> that = (CacheReloadCommitTask<K, V>) o;
-
-                if (!getCache().equals(that.getCache())) return false;
-                return Objects.equals(_key, that._key);
-            }
-
-            protected Cache<K, V> getCache()
-            {
-                return _cache;
-            }
-
-            @Override
-            public int hashCode()
-            {
-                int result = getCache().hashCode();
-                result = 31 * result + (_key != null ? _key.hashCode() : 0);
-                return result;
-            }
-
-            @Override
-            public void run()
-            {
-                getCache().get(_key, _arg, _loader);
-            }
         }
 
         @Override
@@ -491,26 +384,17 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader()); DbScope.Transaction transaction = scope.beginTransaction())
             {
-                int taskCount;
                 for (int i = 1; i <= 15; i++)
                 {
                     cache.get("key_" + i);
-                    taskCount = DbScope.CommitTaskOption.POSTCOMMIT.getQueue(scope.getCurrentTransactionImpl()).size();
 
-                    // Try another cache miss for this key to ensure another post commit is not added
+                    // Try another cache miss for this key to ensure another reload is not added
                     if (i == 5)
                         cache.get("key_" + i);
 
-                    // 10 is the cache size so shouldn't be adding more cache reload tasks beyond that. Less than 10 should
-                    // be adding post commit task for each miss. Plus one post commit task for the reload counter task
-                    if (i >= 10)
-                    {
-                        assertEquals(11, taskCount);
-                    }
-                    else
-                    {
-                        assertEquals(i + 1, taskCount);
-                    }
+                    // One replay task holds every reload, capped at the cache size
+                    assertEquals(1, DbScope.CommitTaskOption.POSTCOMMIT.getQueue(scope.getCurrentTransactionImpl()).size());
+                    assertEquals(Math.min(i, maxSize), CacheReplayCommitTask.get(transaction).size());
                 }
                 transaction.commit();
             }
