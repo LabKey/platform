@@ -1053,14 +1053,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
     }
 
-    /** The per-sample facts an operation confirmation needs, read straight off exp.material. */
-    public record SampleOperationRow(long rowId, Container container, Long sampleState, String cpasType) {}
-
-    /**
-     * Streams the facts an operation confirmation needs about each sample. A confirmation can cover tens of thousands
-     * of samples at once, so nothing is collected here and nothing wider than these four columns is read; callers fold
-     * the rows as they arrive.
-     */
+    @Override
     public void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block)
     {
         if (rowIds.isEmpty())
