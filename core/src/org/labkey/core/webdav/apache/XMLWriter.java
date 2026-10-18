@@ -17,7 +17,7 @@
 
 package org.labkey.core.webdav.apache;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -486,6 +486,6 @@ public class XMLWriter {
                 continue;
             return false;
         }
-        return !StringUtils.startsWithIgnoreCase(name,"xml");
+        return !Strings.CI.startsWith(name,"xml");
     }
 }

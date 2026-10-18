@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.ActionURL;
@@ -25,7 +26,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
-import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 public class RExportScriptModel extends ExportScriptModel
@@ -63,7 +63,7 @@ public class RExportScriptModel extends ExportScriptModel
     {
         if (!Pattern.matches("[\\p{Alnum}\\._]+",v) || Pattern.matches("^\\.\\p{Digit}.*",v))
             return false;
-        if (startsWith(v,"."))
+        if (Strings.CS.startsWith(v,"."))
             return false;
         if (Arrays.asList("TRUE","FALSE","NULL","Inf","NaN","NA","NA_integer_","NA_real_","NA_complex_","NA_character_").contains(v))
             return false;

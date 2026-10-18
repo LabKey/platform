@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
@@ -187,7 +187,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
     {
         // Basic fixup, since users won't always encode spaces when defining custom button bars via metadata XML
         if (-1 != url.indexOf(' '))
-            url = StringUtils.replace(url, " ", "%20");
+            url = Strings.CS.replace(url, " ", "%20");
 
         StringExpression urlExpr = StringExpressionFactory.createURL(url);
         if (urlExpr != null)
