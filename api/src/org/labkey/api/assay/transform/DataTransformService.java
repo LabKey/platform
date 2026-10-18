@@ -299,7 +299,8 @@ public class DataTransformService
 
     private void logIfInTransaction(AssayRunUploadContext<?> context, TransformOperation operation)
     {
-        if (operation == TransformOperation.INSERT
+        if (LOG.isDebugEnabled()
+                && operation == TransformOperation.INSERT
                 && context.getProvider().isTransformBeforeRunSupported(context.getProtocol())
                 && ExperimentService.get().getSchema().getScope().isTransactionActive())
         {
