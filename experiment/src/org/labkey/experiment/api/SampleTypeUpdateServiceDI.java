@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -29,6 +30,7 @@ import org.labkey.api.collections.LongHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BatchSize;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -138,6 +140,7 @@ import static java.util.Collections.emptyMap;
 import static org.labkey.api.audit.AuditHandler.DELTA_PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.PROVIDED_DATA_PREFIX;
 import static org.labkey.api.audit.AuditHandler.USER_PROVIDED_DATA_PREFIX;
+import static org.labkey.api.data.BatchSize.Kind.ROWS;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.dataiterator.DataIteratorUtil.DUPLICATE_COLUMN_IN_DATA_ERROR;
 import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
@@ -938,15 +941,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<SampleNameKey, Map<String, Object>> byName = new HashMap<>();
         // Names are unique only per container, so a name can match a row in each container in scope
         Set<SampleNameKey> ambiguousNames = new HashSet<>();
-        if (!rowIds.isEmpty())
-            selectMaterialMaps(new SimpleFilter(RowId.fieldKey(), rowIds, CompareType.IN), row -> byRowId.put(getMaterialRowId(row), row));
-        if (!lsids.isEmpty())
-            selectMaterialMaps(new SimpleFilter(LSID.fieldKey(), lsids, CompareType.IN), row -> byLsid.put(getMaterialLsid(row), row));
+        selectMaterialMaps(RowId.fieldKey(), rowIds, null, row -> byRowId.put(getMaterialRowId(row), row));
+        selectMaterialMaps(LSID.fieldKey(), lsids, null, row -> byLsid.put(getMaterialLsid(row), row));
         for (Map.Entry<Long, Set<String>> e : namesBySource.entrySet())
         {
-            SimpleFilter filter = new SimpleFilter(Name.fieldKey(), e.getValue(), CompareType.IN);
-            filter.addCondition(MaterialSourceId.fieldKey(), e.getKey());
-            selectMaterialMaps(filter, row -> {
+            selectMaterialMaps(Name.fieldKey(), e.getValue(), e.getKey(), row -> {
                 SampleNameKey key = new SampleNameKey(getMaterialSourceId(row), getMaterialName(row));
                 if (null != byName.put(key, row))
                     ambiguousNames.add(key);
@@ -973,10 +972,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return result;
     }
 
-    private void selectMaterialMaps(SimpleFilter filter, Consumer<Map<String, Object>> consumer)
+    private <T> void selectMaterialMaps(FieldKey fieldKey, Collection<T> values, @Nullable Long materialSourceId, Consumer<Map<String, Object>> consumer)
     {
-        for (Map<String, Object> row : new TableSelector(getQueryTable(), filter, null).getMapArray())
-            consumer.accept(row);
+        for (List<T> batch : ListUtils.partition(new ArrayList<>(values), BatchSize.get(ROWS)))
+        {
+            SimpleFilter filter = new SimpleFilter(fieldKey, batch, CompareType.IN);
+            if (materialSourceId != null)
+                filter.addCondition(MaterialSourceId.fieldKey(), materialSourceId);
+            new TableSelector(getQueryTable(), filter, null).forEachMap(consumer::accept);
+        }
     }
 
     private record SampleNameKey(Long materialSourceId, String name) {}
