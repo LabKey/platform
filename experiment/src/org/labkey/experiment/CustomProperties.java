@@ -21,14 +21,15 @@ import org.labkey.api.exp.ObjectProperty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by adam on 9/4/2016.
  */
 public class CustomProperties
 {
-    public static void iterate(Container c, Collection<ObjectProperty> properties, Map<String, CustomPropertyRenderer> rendererMap, PropertyHandler handler)
+    private static final CustomPropertyRenderer RENDERER = new CustomPropertyRenderer();
+
+    public static void iterate(Container c, Collection<ObjectProperty> properties, PropertyHandler handler)
     {
         List<List<ObjectProperty>> stack = new ArrayList<>();
         stack.add(new ArrayList<>(properties));
@@ -49,11 +50,7 @@ public class CustomProperties
             else
             {
                 ObjectProperty value = values.get(currentIndex);
-                CustomPropertyRenderer renderer = rendererMap.get(value.getPropertyURI());
-                if (renderer.shouldRender(value, values))
-                {
-                    handler.handle(stack.size() - 1, renderer.getDescription(value, values), renderer.getValue(value, values, c));
-                }
+                handler.handle(stack.size() - 1, RENDERER.getDescription(value), RENDERER.getValue(value, c));
                 if (!value.retrieveChildProperties().isEmpty())
                 {
                     stack.add(new ArrayList<>(value.retrieveChildProperties().values()));
