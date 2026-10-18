@@ -590,7 +590,7 @@ public class QueryServiceImpl implements QueryService
     {
         static InLineageOfClause create(boolean parents, FieldKey fk, String value, boolean negate)
         {
-            if (null != fk.getParent() || !StringUtils.startsWithIgnoreCase(value, "SELECT "))
+            if (null != fk.getParent() || !Strings.CI.startsWith(value, "SELECT "))
                 throw new IllegalArgumentException("Bad filter syntax, value should start with 'SELECT '");
             return new InLineageOfClause(parents, value, negate);
         }

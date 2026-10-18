@@ -17,6 +17,7 @@
 --%>
 <%@ page buffer="none" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.apache.commons.lang3.Strings" %>
 <%@ page import="org.labkey.api.analytics.AnalyticsService" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -79,7 +80,7 @@
 </head>
 <body class="<%=h(PageTemplate.getTemplatePrefix(model) + "-template-body")%>">
 <%
-    if (context.isRobot() && StringUtils.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
+    if (context.isRobot() && Strings.CS.contains(robotsTag, "noindex") && OptionalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHORT_CIRCUIT_ROBOTS))
     {
         %></body></html><%
         return;
