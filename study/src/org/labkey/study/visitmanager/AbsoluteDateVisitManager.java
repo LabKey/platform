@@ -109,8 +109,9 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
                             .append(container.getValueSql(alias)).append(" = P.Container)\n");
                     sql.append("\nWHERE ")
                             .append(" P.").append(cohortFilter.getType() == CohortFilter.Type.PTID_CURRENT ? "CurrentCohortId" : "InitialCohortId")
-                            .append(" = ?\n").append(qcStates != null ? "AND " + qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME) + "\n" : "");
-                    sql.add(cohortFilter.getCohortId());
+                            .append(" = ").appendValue(cohortFilter.getCohortId()).append("\n");
+                    if (qcStates != null)
+                        sql.append("AND ").append(qcStates.getStateInClause(DatasetTableImpl.QCSTATE_ID_COLNAME)).append("\n");
                     sql.append("\nGROUP BY ").append(keyCols);
                     sql.append("\nORDER BY 1, 2");
                     break;

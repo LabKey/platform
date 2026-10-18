@@ -1,20 +1,19 @@
 package org.mitre.dsmiley.httpproxy;
 
-import org.apache.commons.lang3.StringUtils;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.Strings;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.PageFlowUtil;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.net.HttpCookie;
 import java.util.Objects;
 
-import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 public class LabKeyProxyServlet extends ProxyServlet
@@ -107,7 +106,7 @@ public class LabKeyProxyServlet extends ProxyServlet
     @Override
     protected String getCookieNamePrefix(String cName)
     {
-        String name = StringUtils.replace(getServletName()," ","-");
+        String name = Strings.CS.replace(getServletName()," ","-");
         // make sure this is a legal cookie name
         return "!Proxy!" + PageFlowUtil.encodeURIComponent(name) + "!";
     }
@@ -116,8 +115,8 @@ public class LabKeyProxyServlet extends ProxyServlet
     protected void setCookiePath(Cookie servletCookie, HttpServletRequest servletRequest, HttpCookie cookie)
     {
         String path = getSourcePath(servletRequest);
-        String proxyCookiePath = replace(trimToEmpty(cookie.getPath()),"//","/");
-        if (StringUtils.startsWith(proxyCookiePath, path))
+        String proxyCookiePath = Strings.CS.replace(trimToEmpty(cookie.getPath()),"//","/");
+        if (Strings.CS.startsWith(proxyCookiePath, path))
             servletCookie.setPath( appendPath(new StringBuilder(proxyCookiePath),"",true).toString() );
         else
             servletCookie.setPath( appendPath(new StringBuilder(path),proxyCookiePath,true).toString() );

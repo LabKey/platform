@@ -540,8 +540,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         OptionalFeatureService.get().addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
             "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false, true);
-        OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
-            "Disables strict SQL generation safeguards in SQLFragment.appendIdentifier and QueryPivot value emission", false, true, FeatureType.Deprecated));
         OptionalFeatureService.get().addFeatureFlag(new OptionalFeatureFlag(SecurityManager.FEATUREFLAG_ALLOW_TRANSFORM_SESSION_ID,
             "Allow script authentication via legacy substitution parameters",
             "Allows pipeline/transform scripts to authenticate via legacy approaches ('LabKeyTransformSessionId', 'rLabkeySessionId', 'httpSessionId', and 'sessionCookieName' substitution parameters) instead of 'apikey' header authentication. This option will be removed in a future release of LabKey Server.",

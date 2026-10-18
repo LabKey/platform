@@ -18,7 +18,6 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -27,12 +26,10 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.logging.LogHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +47,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 
@@ -68,12 +67,8 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 ///
 /// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
 /// semicolons in appended text.
-public class SQLFragment implements Appendable, CharSequence
+public class SQLFragment
 {
-    private static final Logger LOG = LogHelper.getLogger(SQLFragment.class, "SQL injection safety net diagnostics");
-
-    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "SQLFragmentDisableStrictChecks";
-
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -179,7 +174,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public boolean isEmpty()
     {
         return (null == sb || sb.isEmpty()) && (sql == null || sql.isEmpty());
@@ -411,7 +405,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
@@ -466,15 +459,7 @@ public class SQLFragment implements Appendable, CharSequence
 
         // A quote-wrapped value must be a well-formed quoted identifier, or dotted sequence of them.
         if (quoteWrapped && !isQuotedIdentifierSequence(identifier))
-        {
-            if (AppProps.getInstance().isOptionalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                LOG.warn("appendIdentifier strict pre-quoted check would have rejected (flag-on, allowed): {}", identifier);
-            else
-            {
-                LOG.warn("appendIdentifier strict pre-quoted check rejected (flag-off): {}", identifier);
-                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
-            }
-        }
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) pre-quoted value is not a well-formed quoted identifier (or dotted sequence of them): " + identifier);
 
         getStringBuilder().append(charseq);
         return this;
@@ -546,7 +531,6 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    @Override
     public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
@@ -861,14 +845,6 @@ public class SQLFragment implements Appendable, CharSequence
         return append(table.getFromSQL(alias));
     }
 
-    /** Add to the SQL */
-    @Override
-    public SQLFragment append(char ch)
-    {
-        getStringBuilder().append(ch);
-        return this;
-    }
-
     /** This is like appendValue(CharSequence s), but force use of literal syntax
      * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
      *    array_agg('string') fails array_agg('string'::VARCHAR) works
@@ -899,10 +875,56 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
+    /**
+     * Appends an IN list to the expression already in this fragment. Prefer {@link #appendInClause(SQLFragment, Collection, SqlDialect)}:
+     * an empty collection renders as IN (NULL), which is not FALSE, so negating the result never matches.
+     */
     public SQLFragment appendInClause(@NotNull Collection<?> params, SqlDialect dialect)
     {
         dialect.appendInClauseSql(this, params);
         return this;
+    }
+
+    /**
+     * Appends a complete, parenthesized predicate that is true when expr matches one of values. An empty collection
+     * yields FALSE and a null element matches null values of expr, so the predicate negates correctly.
+     */
+    public SQLFragment appendInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        List<?> nonNullValues = values.stream().filter(Objects::nonNull).toList();
+        boolean matchNull = nonNullValues.size() < values.size();
+
+        append("(");
+        if (matchNull)
+        {
+            append(expr).append(" IS NULL");
+            if (!nonNullValues.isEmpty())
+                append(" OR ");
+        }
+        if (!nonNullValues.isEmpty())
+            append(expr).appendInClause(nonNullValues, dialect);
+        else if (!matchNull)
+            append("0 = 1");
+        return append(")");
+    }
+
+    public SQLFragment appendInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return appendInClause(new SQLFragment(expr), values, dialect);
+    }
+
+    /**
+     * Negation of {@link #appendInClause(SQLFragment, Collection, SqlDialect)}; an empty collection yields TRUE.
+     * Unlike SimpleFilter's NOT_IN, null values of expr never match unless the collection is empty.
+     */
+    public SQLFragment appendNotInClause(@NotNull SQLFragment expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return append("NOT ").appendInClause(expr, values, dialect);
+    }
+
+    public SQLFragment appendNotInClause(@NotNull CharSequence expr, @NotNull Collection<?> values, SqlDialect dialect)
+    {
+        return appendNotInClause(new SQLFragment(expr), values, dialect);
     }
 
     public CharSequence getSqlCharSequence()
@@ -974,25 +996,6 @@ public class SQLFragment implements Appendable, CharSequence
             sql = sql.replaceFirst("\\?", param);
         }
         return sql.replace("\"", "");
-    }
-
-
-    @Override
-    public char charAt(int index)
-    {
-        return getSqlCharSequence().charAt(index);
-    }
-
-    @Override
-    public int length()
-    {
-        return getSqlCharSequence().length();
-    }
-
-    @Override
-    public @NotNull CharSequence subSequence(int start, int end)
-    {
-        return getSqlCharSequence().subSequence(start, end);
     }
 
     /**
@@ -1496,5 +1499,71 @@ public class SQLFragment implements Appendable, CharSequence
         }
 
         return join;
+    }
+
+    public static class InClauseTestCase extends Assert
+    {
+        private static final Set<Integer> ALL = new HashSet<>(Arrays.asList(1, 2, 3, null));
+
+        @Test
+        public void testInClause()
+        {
+            verify(List.of(), Set.of());
+            verify(List.of(2), Set.of(2));
+            verify(List.of(1, 2), Set.of(1, 2));
+            verify(Arrays.asList(2, null), new HashSet<>(Arrays.asList(2, null)));
+            verify(Collections.singletonList(null), Collections.singleton(null));
+            // Large enough for the temp table generator
+            verify(IntStream.concat(IntStream.of(2), IntStream.rangeClosed(4, 2000)).boxed().toList(), Set.of(2));
+        }
+
+        @Test
+        public void testExpressionParameters()
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3)) v(x) WHERE x > ? AND ", 1)
+                .appendInClause(new SQLFragment("x + ?", 10), List.of(12, 13), scope.getSqlDialect())
+                .append(" AND x < ?").add(3);
+            assertEquals(List.of(2), new SqlSelector(scope, sql).getArrayList(Integer.class));
+        }
+
+        @Test
+        public void testNotBeforeInClause()
+        {
+            assumeAssertionsEnabled();
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x NOT"), List.of(1, 2)));
+            assertThrows(AssertionError.class, () -> dialect.appendInClauseSql(new SQLFragment("x not "), List.of()));
+            assertThrows(AssertionError.class, () -> new SQLFragment("x NOT").appendInClause(List.of(1), dialect));
+        }
+
+        private static void assumeAssertionsEnabled()
+        {
+            boolean enabled = false;
+            assert enabled = true;
+            org.junit.Assume.assumeTrue(enabled);
+        }
+
+        private void verify(List<Integer> values, Set<Integer> expected)
+        {
+            assertEquals("IN " + values.size(), expected, select(values, false));
+            Set<Integer> notExpected = new HashSet<>(ALL);
+            notExpected.removeAll(expected);
+            // NOT IN excludes NULL rows unless the list is empty, as in SQL
+            if (!values.isEmpty())
+                notExpected.remove(null);
+            assertEquals("NOT IN " + values.size(), notExpected, select(values, true));
+        }
+
+        private Set<Integer> select(List<Integer> values, boolean not)
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+            SQLFragment sql = new SQLFragment("SELECT x FROM (VALUES (1), (2), (3), (CAST(NULL AS INTEGER))) v(x) WHERE ");
+            if (not)
+                sql.appendNotInClause("x", values, scope.getSqlDialect());
+            else
+                sql.appendInClause("x", values, scope.getSqlDialect());
+            return new HashSet<>(new SqlSelector(scope, sql).getArrayList(Integer.class));
+        }
     }
 }

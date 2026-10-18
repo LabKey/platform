@@ -25,6 +25,7 @@ import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -150,22 +151,16 @@ public class QCStateSet
             return new SQLFragment("0 = 1");
         
         SQLFragment sql = new SQLFragment();
+        boolean hasStates = !_states.isEmpty();
         sql.append("(");
-        if (!_states.isEmpty())
+        if (hasStates)
         {
-            sql.append(rowIdColumnAlias).append(" IN (");
-            String comma = "";
-            for (DataState state : _states)
-            {
-                sql.append(comma).appendValue(state.getRowId());
-                comma = ", ";
-            }
-            sql.append(")");
+            sql.append(rowIdColumnAlias);
+            sql.appendInClause(_states.stream().map(DataState::getRowId).toList(), StudySchema.getInstance().getSqlDialect());
         }
         if (_includeUnmarked)
         {
-            // our length will be 1 if our statement consists of just the open paren:
-            if (sql.length() > 1)
+            if (hasStates)
                 sql.append(" OR ");
             sql.append(rowIdColumnAlias).append(" IS NULL");
         }

@@ -15,7 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -55,7 +55,7 @@ public class CspUtils
             if (null != hrefNode)
             {
                 String href = hrefNode.getTextContent();
-                if (StringUtils.startsWithIgnoreCase(href, "javascript:"))
+                if (Strings.CI.startsWith(href, "javascript:"))
                 {
                     consumer.accept("<a> tag with href=" + href);
                 }
@@ -72,7 +72,7 @@ public class CspUtils
             if (null != actionNode)
             {
                 String action = actionNode.getTextContent();
-                if (StringUtils.startsWithIgnoreCase(action, "javascript:"))
+                if (Strings.CI.startsWith(action, "javascript:"))
                 {
                     consumer.accept("<form> tag with action=" + action);
                 }

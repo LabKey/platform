@@ -47,23 +47,23 @@ public class DefaultProvenanceProvider implements ProvenanceService
     }
 
     @Override
-    public OntologyManager.RowCallback getAssayRowCallback(ExpRun run, Container container)
+    public OntologyManager.RowCallback getAssayRowCallback(User user, ExpRun run, Container container)
     {
         return OntologyManager.NO_OP_ROW_CALLBACK;
     }
 
     @Override
-    public void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs)
+    public void addProvenanceInputs(User user, Container container, ExpProtocolApplication app, Set<String> inputLSIDs)
     {
     }
 
     @Override
-    public void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs)
+    public void addProvenanceOutputs(User user, Container container, ExpProtocolApplication app, Set<String> outputLSIDs)
     {
     }
 
     @Override
-    public void addProvenance(Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs)
+    public void addProvenance(User user, Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs)
     {
     }
 

@@ -19,7 +19,7 @@ package org.labkey.api.study.assay;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.data.Container;
@@ -123,7 +123,7 @@ public interface ParticipantVisitResolverType
                 Map<String, String> values = new HashMap<>();
                 IteratorUtils.asIterator(request.getParameterNames()).forEachRemaining(name -> {
                     // Issue 21126 If lookup was pasted tsv, could still get a default list entry in parameter map. Don't add it to properties list.
-                    if (!isLookupTextType || !StringUtils.startsWith(name, ThawListResolverType.NAMESPACE_PREFIX + ThawListResolverType.LIST_NAMESPACE_SUFFIX))
+                    if (!isLookupTextType || !Strings.CS.startsWith(name, ThawListResolverType.NAMESPACE_PREFIX + ThawListResolverType.LIST_NAMESPACE_SUFFIX))
                         values.put(name, request.getParameter(name));
                 });
                 for (Map.Entry<String, String> entry : values.entrySet())

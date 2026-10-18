@@ -16,7 +16,6 @@
 
 package org.labkey.study.query;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -770,7 +769,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     else
                     {
                         // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm prepending and hoping...
-                        if (!StringUtils.startsWithIgnoreCase(sqlCF.getRawSQL(), "container"))
+                        if (!Strings.CI.startsWith(sqlCF.getRawSQL(), "container"))
                             throw new IllegalStateException("problem generating dataset SQL");
                         sqlf.append(hasWhere ? " AND " : " WHERE ").append(innerAlias).append(".").append(sqlCF);
                         hasWhere = true;
@@ -794,7 +793,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                     // TODO: I'd like to pass in innerAlias to toSQLFragment(), but I can't so I'm string replacing and hoping...
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
-                    String sql = StringUtils.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
+                    String sql = Strings.CS.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
                     frag = new SQLFragment(sql, temp.getParams());
                 }
                 else

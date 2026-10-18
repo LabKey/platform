@@ -16,7 +16,6 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -51,9 +50,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 import org.springframework.dao.DataAccessException;
@@ -80,8 +77,6 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
  */
 public class QueryPivot extends AbstractQueryRelation
 {
-    private static final Logger LOG = LogHelper.getLogger(QueryPivot.class, "Pivot value emission diagnostics");
-
     final QuerySelect _from;
     final AliasManager _manager;
     final Map<FieldKey,String> pivotColumnAliases = new HashMap<>();
@@ -853,16 +848,7 @@ public class QueryPivot extends AbstractQueryRelation
                 {
                     // Route QString pivot values through the dialect's string handler so
                     // dialect-specific escape rules (e.g. PG non-conforming strings) are honored.
-                    sql.append("=");
-                    if (AppProps.getInstance().isOptionalFeatureEnabled(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                    {
-                        LOG.debug("Pivot QString value emitted via legacy LabKey-SQL escape (flag-on, dialect string handler bypassed)");
-                        sql.append(value.getSourceText());
-                    }
-                    else
-                    {
-                        sql.appendStringLiteral(qs.getValue(), getSqlDialect());
-                    }
+                    sql.append("=").appendStringLiteral(qs.getValue(), getSqlDialect());
                 }
                 else
                 {

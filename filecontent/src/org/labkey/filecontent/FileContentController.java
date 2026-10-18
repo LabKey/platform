@@ -226,6 +226,9 @@ public class FileContentController extends SpringActionController
             if (null == p)
                 throw new NotFoundException();
 
+            if (null != fileSet)
+                FileContentModule.incrementNamedFileSetMetric("legacySendFile");
+
             java.nio.file.Path dir = p.getFileSystemDirectoryPath();
             if (null == dir)
             {
