@@ -1238,26 +1238,20 @@ public class OntologyManager
                     " AND PD.Container = DD.Container";
             Long[] objIdsToDelete = new SqlSelector(getExpSchema(), selectObjectsToDelete).getArray(Long.class);
 
-            String sep;
-            StringBuilder sqlIN = null;
+            SqlDialect dialect = getExpSchema().getSqlDialect();
+            List<Long> objIdsToDeleteList = Arrays.asList(objIdsToDelete);
             Long[] ownerObjIds = null;
 
             if (objIdsToDelete.length > 0)
             {
                 //also need list of owner objects whose subobjects are going to be deleted
                 // Seems cheaper but less correct to delete the subobjects then cleanup any owner objects with no children
-                sep = "";
-                sqlIN = new StringBuilder();
-                for (Long id : objIdsToDelete)
-                {
-                    sqlIN.append(sep).append(id);
-                    sep = ", ";
-                }
-
-                String selectOwnerObjects = "SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
+                SQLFragment selectOwnerObjects = new SQLFragment("SELECT O.ObjectId FROM " + getTinfoObject() + " O " +
                         " WHERE ObjectId IN " +
                         " (SELECT DISTINCT SUBO.OwnerObjectId FROM " + getTinfoObject() + " SUBO " +
-                        " WHERE SUBO.ObjectId IN ( " + sqlIN + " ) )";
+                        " WHERE SUBO.ObjectId")
+                        .appendInClause(objIdsToDeleteList, dialect)
+                        .append(" )");
 
                 ownerObjIds = new SqlSelector(getExpSchema(), selectOwnerObjects).getArray(Long.class);
             }
@@ -1276,25 +1270,18 @@ public class OntologyManager
             {
                 // now cleanup the object table entries from the list we made, but make sure they don't have
                 // other properties attached to them
-                String deleteObjSql = "DELETE FROM " + getTinfoObject() +
-                        " WHERE ObjectId IN ( " + sqlIN + " ) " +
-                        " AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
-                        " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)";
+                SQLFragment deleteObjSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                        .appendInClause(objIdsToDeleteList, dialect)
+                        .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
+                        " WHERE  OP.ObjectId = " + getTinfoObject() + ".ObjectId)");
                 new SqlExecutor(getExpSchema()).execute(deleteObjSql);
 
                 if (ownerObjIds.length > 0)
                 {
-                    sep = "";
-                    sqlIN = new StringBuilder();
-                    for (Long id : ownerObjIds)
-                    {
-                        sqlIN.append(sep).append(id);
-                        sep = ", ";
-                    }
-                    String deleteOwnerSql = "DELETE FROM " + getTinfoObject() +
-                            " WHERE ObjectId IN ( " + sqlIN + " ) " +
-                            " AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
-                            " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)";
+                    SQLFragment deleteOwnerSql = new SQLFragment("DELETE FROM " + getTinfoObject() + " WHERE ObjectId")
+                            .appendInClause(Arrays.asList(ownerObjIds), dialect)
+                            .append(" AND NOT EXISTS (SELECT * FROM " + getTinfoObject() + " SUBO " +
+                            " WHERE SUBO.OwnerObjectId = " + getTinfoObject() + ".ObjectId)");
                     new SqlExecutor(getExpSchema()).execute(deleteOwnerSql);
                 }
             }
@@ -1340,26 +1327,20 @@ public class OntologyManager
 
             if (pdIdsToDelete.length > 0)
             {
-                String sep = "";
-                StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
                     PropertyService.get().deleteValidatorsAndFormats(container, id);
-
-                    sqlIN.append(sep);
-                    sqlIN.append(id);
-                    sep = ", ";
                 }
 
-                String deletePDs = "DELETE FROM " + getTinfoPropertyDescriptor() +
-                        " WHERE PropertyId IN ( " + sqlIN + " ) " +
-                        "AND Container = ? " +
-                        "AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
+                SQLFragment deletePDs = new SQLFragment("DELETE FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyId")
+                        .appendInClause(Arrays.asList(pdIdsToDelete), getExpSchema().getSqlDialect())
+                        .append(" AND Container = ? ").add(dd.getContainer().getId())
+                        .append("AND NOT EXISTS (SELECT * FROM " + getTinfoObjectProperty() + " OP " +
                         "WHERE OP.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId) " +
                         "AND NOT EXISTS (SELECT * FROM " + getTinfoPropertyDomain() + " PDM " +
-                        "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)";
+                        "WHERE PDM.PropertyId = " + getTinfoPropertyDescriptor() + ".PropertyId)");
 
-                new SqlExecutor(getExpSchema()).execute(deletePDs, dd.getContainer().getId());
+                new SqlExecutor(getExpSchema()).execute(deletePDs);
             }
 
             String deleteDD = "DELETE FROM " + getTinfoDomainDescriptor() +
@@ -1442,8 +1423,7 @@ public class OntologyManager
                 " AND O.Container <> PD.Container ";
 
         final Map<String, ObjectProperty> mObjsUsingMyProps = new HashMap<>();
-        final StringBuilder sqlIn = new StringBuilder();
-        final StringBuilder sep = new StringBuilder();
+        final List<Integer> propIds = new ArrayList<>();
 
         if (_log.isDebugEnabled())
         {
@@ -1463,10 +1443,7 @@ public class OntologyManager
             Integer propId = rs.getInt(3);
             String propURI = rs.getString(4);
 
-            sqlIn.append(sep).append(propId);
-
-            if (sep.isEmpty())
-                sep.append(", ");
+            propIds.add(propId);
 
             Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
 
@@ -1488,18 +1465,21 @@ public class OntologyManager
 
         if (!mObjsUsingMyProps.isEmpty())
         {
-            sql = "SELECT PD.PropertyURI, DD.DomainURI " +
+            SqlDialect dialect = getExpSchema().getSqlDialect();
+            SQLFragment myPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
                     " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                     " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
                     " ON (PD.PropertyId = PDM2.PropertyId) " +
-                    " WHERE PDM.PropertyId IN (" + sqlIn + ") " +
-                    " OR PD.PropertyId IN (" + sqlIn + ") ";
+                    " WHERE PDM.PropertyId")
+                    .appendInClause(propIds, dialect)
+                    .append(" OR PD.PropertyId")
+                    .appendInClause(propIds, dialect);
 
             if (_log.isDebugEnabled())
             {
-                try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                try (ResultSet rs = new SqlSelector(getExpSchema(), myPropsSql).getResultSet())
                 {
                     ResultSetUtil.logData(rs, _log);
                 }
@@ -1509,7 +1489,7 @@ public class OntologyManager
                 }
             }
 
-            new SqlSelector(getExpSchema(), sql).forEach(rsMyProps -> {
+            new SqlSelector(getExpSchema(), myPropsSql).forEach(rsMyProps -> {
                 String propUri = rsMyProps.getString(1);
                 String domUri = rsMyProps.getString(2);
                 PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
@@ -1643,18 +1623,14 @@ public class OntologyManager
 
 
             final Map<String, ObjectProperty> mMyObjsThatRefProjProps = new HashMap<>();
-            final StringBuilder sqlIn = new StringBuilder();
-            final StringBuilder sep = new StringBuilder();
+            final List<Integer> propIds = new ArrayList<>();
 
             new SqlSelector(getExpSchema(), sql, c, ContainerManager.getSharedContainer(), newProject).forEach(rs -> {
                 String objURI = rs.getString(1);
                 String propURI = rs.getString(2);
                 Integer propId = rs.getInt(3);
 
-                sqlIn.append(sep).append(propId);
-
-                if (sep.isEmpty())
-                    sep.append(", ");
+                propIds.add(propId);
 
                 Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
 
@@ -1673,17 +1649,18 @@ public class OntologyManager
             //todo  what about materialsource ?
             if (!mMyObjsThatRefProjProps.isEmpty())
             {
-                sql = "SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
+                SQLFragment refdPropsSql = new SQLFragment("SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
                         " FROM " + getTinfoPropertyDescriptor() + " PD " +
                         " LEFT JOIN (" + getTinfoPropertyDomain() + " PDM " +
                         " INNER JOIN " + getTinfoPropertyDomain() + " PDM2 ON (PDM.DomainId = PDM2.DomainId) " +
                         " INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId)) " +
                         " ON (PD.PropertyId = PDM2.PropertyId) " +
-                        " WHERE PDM.PropertyId IN (" + sqlIn + " ) ";
+                        " WHERE PDM.PropertyId")
+                        .appendInClause(propIds, getExpSchema().getSqlDialect());
 
                 if (_log.isDebugEnabled())
                 {
-                    try (ResultSet rs = new SqlSelector(getExpSchema(), sql).getResultSet())
+                    try (ResultSet rs = new SqlSelector(getExpSchema(), refdPropsSql).getResultSet())
                     {
                         ResultSetUtil.logData(rs, _log);
                     }
@@ -1691,7 +1668,7 @@ public class OntologyManager
 
                 final Container fNewProject = newProject;
 
-                new SqlSelector(getExpSchema(), sql).forEach(rsPropsRefdByMe -> {
+                new SqlSelector(getExpSchema(), refdPropsSql).forEach(rsPropsRefdByMe -> {
                     String propUri = rsPropsRefdByMe.getString(1);
                     String domUri = rsPropsRefdByMe.getString(2);
                     PropertyDescriptor pd = getPropertyDescriptor(propUri, oldProject);

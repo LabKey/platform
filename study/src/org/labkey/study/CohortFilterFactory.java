@@ -287,7 +287,7 @@ public class CohortFilterFactory
                 continue;
             }
 
-            if (StringUtils.isEmpty(dataregion) || !StringUtils.startsWithIgnoreCase(name, dataregion + "."))
+            if (StringUtils.isEmpty(dataregion) || !Strings.CI.startsWith(name, dataregion + "."))
                 continue;
             int tilde = name.indexOf('~');
             if (-1 == tilde || -1 == name.indexOf('/'))

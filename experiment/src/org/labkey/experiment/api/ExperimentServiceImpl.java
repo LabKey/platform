@@ -4570,21 +4570,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Set<Long> idsToCheck = new HashSet<>(allIds);
         while (!idsToCheck.isEmpty())
         {
-            String idsString = StringUtils.join(idsToCheck.iterator(), ", ");
+            SqlDialect dialect = getExpSchema().getSqlDialect();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId IN (");
-            sb.append(idsString);
-            sb.append(")");
-            Long[] newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Long.class);
+            SQLFragment parentSql = new SQLFragment("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId");
+            parentSql.appendInClause(idsToCheck, dialect);
+            SQLFragment childSql = new SQLFragment("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId");
+            childSql.appendInClause(idsToCheck, dialect);
+
+            Long[] newIds = new SqlSelector(getExpSchema(), parentSql).getArray(Long.class);
 
             idsToCheck = new HashSet<>(Arrays.asList(newIds));
 
-            sb = new StringBuilder();
-            sb.append("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId IN (");
-            sb.append(idsString);
-            sb.append(")");
-            newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Long.class);
+            newIds = new SqlSelector(getExpSchema(), childSql).getArray(Long.class);
 
             idsToCheck.addAll(Arrays.asList(newIds));
             idsToCheck.removeAll(allIds);
@@ -4620,13 +4617,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
         }
 
-        String sb = "SELECT * FROM " +
-                getTinfoExperimentRun().getSelectName() +
-                " WHERE ProtocolLSID IN (" +
-                "SELECT LSID FROM exp.Protocol WHERE RowId IN (" +
-                StringUtils.join(allProtocolIds, ", ") +
-                "))";
-        return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb).getArrayList(ExperimentRun.class));
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoExperimentRun().getSelectName())
+                .append(" WHERE ProtocolLSID IN (SELECT LSID FROM exp.Protocol WHERE RowId")
+                .appendInClause(allProtocolIds, getExpSchema().getSqlDialect())
+                .append(")");
+        return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
     public void deleteProtocolByRowIds(Container c, User user, @Nullable String auditUserComment, long... selectedProtocolIds) throws ExperimentException
@@ -4636,14 +4632,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
 
-        String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ", ");
+        List<Long> protocolIds = Arrays.asList(ArrayUtils.toObject(selectedProtocolIds));
+        SqlDialect dialect = getExpSchema().getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")");
+        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect);
         Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
 
         sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
-        sql.append(" WHERE (ChildProtocolId IN (").append(protocolIds).append(")");
-        sql.append(" OR ParentProtocolId IN (").append(protocolIds).append(") )");
+        sql.append(" WHERE (ChildProtocolId").appendInClause(protocolIds, dialect);
+        sql.append(" OR ParentProtocolId").appendInClause(protocolIds, dialect).append(" )");
         Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
         List<ExpProtocolImpl> expProtocols = Arrays.stream(protocols).map(ExpProtocolImpl::new).collect(toList());
 
@@ -4710,12 +4707,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     LOG.info("Skipping delete of assay protocol: Assay service not available.");
                 }
 
-                String actionIdsJoined = "(" + StringUtils.join(actionIds, ", ") + ")";
-                executor.execute("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined);
-                executor.execute("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined);
+                List<Integer> actionIdList = Arrays.asList(actionIds);
+                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId").appendInClause(actionIdList, dialect)
+                        .append(" OR PredecessorId").appendInClause(actionIdList, dialect));
+                executor.execute(new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId").appendInClause(actionIdList, dialect));
             }
 
-            executor.execute("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")");
+            executor.execute(new SQLFragment("DELETE FROM exp.ProtocolParameter WHERE ProtocolId").appendInClause(protocolIds, dialect));
 
             deleteAllProtocolInputs(c, protocolIds);
 
@@ -4728,14 +4726,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
 
-            executor.execute("DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")");
+            executor.execute(new SQLFragment("DELETE FROM exp.Protocol WHERE RowId").appendInClause(protocolIds, dialect));
 
             sql = new SQLFragment("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());
             long[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Long.class));
             deleteProtocolByRowIds(c, user,null, orphanedProtocolIds);
 
-            removeDataTypeExclusion(Arrays.asList(ArrayUtils.toObject(selectedProtocolIds)), DataTypeForExclusion.AssayDesign);
+            removeDataTypeExclusion(protocolIds, DataTypeForExclusion.AssayDesign);
             if (assayService != null)
             {
                 // Be sure that we clear the cache after we commit the overall transaction, in case it
@@ -4778,10 +4776,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
+    private void deleteAllProtocolInputs(Container c, Collection<Long> protocolIds)
     {
-        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c);
-        new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
+        SqlDialect dialect = getSchema().getSqlDialect();
+        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect), c);
+        new SqlExecutor(getSchema()).execute(new SQLFragment("DELETE FROM exp.ProtocolInput WHERE ProtocolId").appendInClause(protocolIds, dialect));
     }
 
     private void deleteProtocolInputs(@NotNull Protocol protocol, Collection<? extends ExpProtocolInput> protocolInputsToDelete)
@@ -6608,16 +6607,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             for (int i = 0; i < dataIds.size(); i += batchSize)
             {
                 List<Long> subset = dataIds.subList(i, Math.min(dataIds.size(), i + batchSize));
-                String inClause = StringUtils.join(subset, ", ");
-                dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
-                        + " FROM " + getTinfoDataInput().getSelectName() + " D  "
-                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
-                        + " ON D.TargetApplicationId = PA.RowId "
-                        + " WHERE DataId IN ( " + inClause + " ) "
-                        + " AND PA.RunId <> ? "
-                        + " ORDER BY TargetApplicationId, DataId";
+                SQLFragment sql = new SQLFragment("SELECT TargetApplicationId, DataId, PA.RunId ")
+                        .append(" FROM ").append(getTinfoDataInput().getSelectName()).append(" D  ")
+                        .append(" INNER JOIN ").append(getTinfoProtocolApplication().getSelectName()).append(" PA ")
+                        .append(" ON D.TargetApplicationId = PA.RowId ")
+                        .append(" WHERE DataId").appendInClause(subset, getExpSchema().getSqlDialect())
+                        .append(" AND PA.RunId <> ? ").add(runId)
+                        .append(" ORDER BY TargetApplicationId, DataId");
 
-                new SqlSelector(getExpSchema(), dataSQL, runId).forEach(dataOutputRS -> {
+                new SqlSelector(getExpSchema(), sql).forEach(dataOutputRS -> {
                     long successorRunId = dataOutputRS.getLong("RunId");
                     Long datId = dataOutputRS.getLong("DataId");
                     ExpDataImpl dat = outputDataMap.get(datId);
@@ -6801,7 +6799,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!newProtocol)
             {
                 if (null == protocolInputsToDeleteOnUpdate)
-                    deleteAllProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+                    deleteAllProtocolInputs(protocol.getContainer(), List.of(protocol.getRowId()));
                 else
                     deleteProtocolInputs(protocol, protocolInputsToDeleteOnUpdate);
             }

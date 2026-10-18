@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Generator for very long in-clauses
@@ -66,8 +67,9 @@ public class TempTableInClauseGenerator implements InClauseGenerator
      * @return null if can't use TempTableInClauseGenerator, therefore requires a fallback generator
      */
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, final @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
+        params = unwrap(params);
         JdbcType jdbcType = jdbcTypeFor(params);
         if (null == jdbcType)
             return null;
@@ -82,8 +84,17 @@ public class TempTableInClauseGenerator implements InClauseGenerator
     @Override
     public @Nullable TempTableInfo getTempTableInfo(@NotNull Collection<?> params)
     {
+        params = unwrap(params);
         JdbcType jdbcType = jdbcTypeFor(params);
         return null == jdbcType ? null : getOrCreateTempTable(params, jdbcType);
+    }
+
+    // Container, User, GUID, etc. bind as their ids, so the temp table must hold those ids
+    private static @NotNull Collection<?> unwrap(@NotNull Collection<?> params)
+    {
+        if (params.stream().noneMatch(p -> p instanceof Parameter.JdbcParameterValue))
+            return params;
+        return params.stream().map(p -> p instanceof Parameter.JdbcParameterValue v ? v.getJdbcParameterValue() : p).toList();
     }
 
     private static @Nullable JdbcType jdbcTypeFor(@NotNull Collection<?> params)
@@ -277,6 +288,16 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             Assert.assertEquals("Validate second string IN clause", 2, new SqlSelector(_scope, secondSQL).getRowCount());
 
             Assert.assertEquals("Validate SQL matches, indicated cached results", firstSQL, secondSQL);
+        }
+
+        @Test
+        public void testJdbcParameterValues()
+        {
+            List<GUID> guids = Stream.generate(GUID::new).limit(4).toList();
+            SQLFragment sql = new SQLFragment("SELECT a FROM (SELECT ").appendValue(guids.get(0)).append(" AS a UNION SELECT ").appendValue(guids.get(1)).append(" AS a UNION SELECT 'g' AS a) b WHERE a ");
+            SQLFragment inClause = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sql), guids);
+            Assert.assertNotNull("GUIDs should use a temp table", inClause);
+            Assert.assertEquals("Validate GUID IN clause", 2, new SqlSelector(_scope, inClause).getRowCount());
         }
     }
 }

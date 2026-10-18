@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -448,7 +449,7 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             // make sure the path does not contain any unencoded spaces cause that will cause new URI to fail
             if (-1 != p.indexOf(' '))
-                p = StringUtils.replace(p, " ", "%20");
+                p = Strings.CS.replace(p, " ", "%20");
             uri = new URI(p);
         }
         catch (URISyntaxException use)
