@@ -15,18 +15,21 @@
  */
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleType;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -39,15 +42,15 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl;
+import org.labkey.experiment.lineage.ExpLineageServiceImpl.LineageResult;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -64,28 +67,49 @@ public class ParentChildView extends VBox
         addView(parentsHBox);
         addView(childrenHBox);
 
-        Pair<Set<ExpData>, Set<ExpMaterial>> parents = ExperimentService.get().getParents(context.getContainer(), context.getUser(), output);
-        Set<ExpData> parentDatas = parents.first;
+        ExpLineageOptions parentOptions = new ExpLineageOptions();
+        parentOptions.setChildren(false);
+        LineageResult parents = ExpLineageServiceImpl.get().getLineageResult(getContainer(), getUser(), Set.of(output), parentOptions);
+        parentsHBox.addView(createDataView(parents.dataIds(), "parentData", "Parent Data"));
+        parentsHBox.addView(createMaterialsView(parents.materialIds(), "parentMaterials", "Precursor Samples"));
 
-        QueryView parentDatasView = createDataView(parentDatas, "parentData", "Parent Data");
-        parentsHBox.addView(parentDatasView);
-
-        Set<ExpMaterial> parentMaterials = parents.second;
-        QueryView parentSamplesView = createMaterialsView(parentMaterials, "parentMaterials", "Precursor Samples");
-        parentsHBox.addView(parentSamplesView);
-
-        Pair<Set<ExpData>, Set<ExpMaterial>> children = ExperimentService.get().getChildren(context.getContainer(), context.getUser(), output);
-        Set<ExpData> childData = children.first;
-        QueryView childDataView = createDataView(childData, "childData", "Child Data");
-        childrenHBox.addView(childDataView);
-
-        Set<ExpMaterial> childMaterials = children.second;
-        QueryView childSamplesView = createMaterialsView(childMaterials, "childMaterials", "Child Samples");
-        childrenHBox.addView(childSamplesView);
+        ExpLineageOptions childOptions = new ExpLineageOptions();
+        childOptions.setParents(false);
+        LineageResult children = ExpLineageServiceImpl.get().getLineageResult(getContainer(), getUser(), Set.of(output), childOptions);
+        childrenHBox.addView(createDataView(children.dataIds(), "childData", "Child Data"));
+        childrenHBox.addView(createMaterialsView(children.materialIds(), "childMaterials", "Child Samples"));
     }
 
     private Container getContainer() { return getViewContext().getContainer(); }
     private User getUser() { return getViewContext().getUser(); }
+
+    /**
+     * @param singleType the type shared by every readable row, or null if they differ
+     * @param containerFilter readable folders holding the rows; lineage crosses folders (Issue 38018)
+     */
+    private record LineageRows(@Nullable Object singleType, ContainerFilter containerFilter) {}
+
+    private LineageRows getLineageRows(TableInfo table, String typeColumn, Set<Long> rowIds)
+    {
+        Set<Container> containers = new HashSet<>();
+        Set<Object> types = new HashSet<>();
+        if (!rowIds.isEmpty())
+        {
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT Container, " + typeColumn + " FROM ").append(table, "t").append(" WHERE RowId ");
+            table.getSqlDialect().appendInClauseSql(sql, rowIds);
+            new SqlSelector(table.getSchema(), sql).forEach(rs -> {
+                Container c = ContainerManager.getForId(rs.getString(1));
+                if (c != null && c.hasPermission(getUser(), ReadPermission.class))
+                {
+                    containers.add(c);
+                    types.add(rs.getObject(2));
+                }
+            });
+        }
+
+        Object singleType = types.size() == 1 ? types.iterator().next() : null;
+        return new LineageRows(singleType, new ContainerFilter.SimpleContainerFilterWithUser(getUser(), containers));
+    }
 
     private QueryView configureView(QueryView view, String title)
     {
@@ -104,26 +128,10 @@ public class ParentChildView extends VBox
         return view;
     }
 
-    private QueryView createDataView(Set<ExpData> data, String dataRegionName, String title)
+    private QueryView createDataView(Set<Long> rowIds, String dataRegionName, String title)
     {
-        Long classId = null;
-        data.removeIf(d -> !d.getContainer().hasPermission(getUser(), ReadPermission.class));
-        for (ExpData d : data)
-        {
-            Long id = ((ExpDataImpl)d).getDataObject().getClassId();
-            if (classId == null)
-            {
-                classId = id;
-            }
-            else if (!classId.equals(id))
-            {
-                classId = null;
-                break;
-            }
-        }
-
-        final List<Long> rowIds = data.stream().map(ExpData::getRowId).toList();
-        final ExpDataClass dataClass = classId == null ? null : ExperimentServiceImpl.get().getDataClass(classId);
+        LineageRows rows = getLineageRows(ExperimentServiceImpl.get().getTinfoData(), "ClassId", rowIds);
+        final ExpDataClass dataClass = rows.singleType() instanceof Number classId ? ExperimentServiceImpl.get().getDataClass(classId.longValue()) : null;
 
         UserSchema schema = new ExpSchema(getUser(), getContainer());
         QuerySettings settings;
@@ -140,9 +148,7 @@ public class ParentChildView extends VBox
         }
 
         QueryView queryView = new QueryView(schema, settings, null);
-        // Issue 38018: Sample Type: Multiple data inputs from different containers are not shown in the Parent Data grid
-        // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
-        queryView.setContainerFilter(ContainerFilter.getUnsafeEverythingFilter());
+        queryView.setContainerFilter(rows.containerFilter());
         TableInfo table = queryView.getTable();
 
         CustomView v = queryView.getCustomView();
@@ -170,35 +176,11 @@ public class ParentChildView extends VBox
         return configureView(queryView, title);
     }
 
-    private QueryView createMaterialsView(final Set<ExpMaterial> materials, String dataRegionName, String title)
+    private QueryView createMaterialsView(Set<Long> rowIds, String dataRegionName, String title)
     {
-        // Strip out materials in folders that the user can't see - this lets us avoid a container filter that
-        // enforces the permissions when we do the query
-        String typeName = null;
-        boolean sameType = true;
-        for (Iterator<ExpMaterial> iter = materials.iterator(); iter.hasNext(); )
-        {
-            ExpMaterial material = iter.next();
-            if (!material.getContainer().hasPermission(getUser(), ReadPermission.class))
-            {
-                iter.remove();
-            }
-
-            String type = material.getCpasType();
-            if (sameType)
-            {
-                if (typeName == null)
-                    typeName = type;
-                else if (!typeName.equals(type))
-                {
-                    typeName = null;
-                    sameType = false;
-                }
-            }
-        }
-
+        LineageRows rows = getLineageRows(ExperimentServiceImpl.get().getTinfoMaterial(), "CpasType", rowIds);
         final ExpSampleType st;
-        if (sameType && typeName != null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
+        if (rows.singleType() instanceof String typeName && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(typeName) && !"Sample".equals(typeName))
             st = SampleTypeService.get().getSampleType(typeName);
         else
             st = null;
@@ -216,7 +198,6 @@ public class ParentChildView extends VBox
             settings = schema.getSettings(getViewContext(), dataRegionName, st.getName());
         }
 
-        final List<Long> rowIds = materials.stream().map(ExpMaterial::getRowId).toList();
         settings.getBaseFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIds);
 
         QueryView queryView = new QueryView(schema, settings, null)
@@ -224,8 +205,7 @@ public class ParentChildView extends VBox
             @Override
             protected TableInfo createTable()
             {
-                // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
-                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(getSchema(), ContainerFilter.getUnsafeEverythingFilter(), st);
+                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(getSchema(), rows.containerFilter(), st);
                 table.populate();
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
