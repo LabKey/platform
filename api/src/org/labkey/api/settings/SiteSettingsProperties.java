@@ -239,9 +239,11 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         return _valueClass;
     }
 
+    /** Empty strings read as null, since saving null stores "" */
     public @Nullable Object getValue(AppProps props)
     {
-        return _getter.apply(props);
+        Object value = _getter.apply(props);
+        return "".equals(value) ? null : value;
     }
 
     /**
@@ -254,7 +256,7 @@ public enum SiteSettingsProperties implements StartupProperty, SafeToRenderEnum
         if (_valueClass == String.class)
         {
             if (json == null || json instanceof String)
-                return json;
+                return "".equals(json) ? null : json;
         }
         else if (_valueClass == Boolean.class)
         {

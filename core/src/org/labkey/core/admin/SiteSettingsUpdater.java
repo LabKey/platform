@@ -44,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -322,6 +323,19 @@ public class SiteSettingsUpdater
         {
             update(_original, true);
             assertEquals(_original, getSettings());
+        }
+
+        @Test
+        public void testClearedStringReadsAsNull()
+        {
+            Map<String, Object> cleared = new HashMap<>();
+            cleared.put(showRibbonMessage.name(), false);
+            cleared.put(ribbonMessage.name(), null);
+            update(cleared, true);
+            assertNull(getSettings().get(ribbonMessage.name()));
+
+            update(Map.of(ribbonMessage.name(), ""), true);
+            assertNull(getSettings().get(ribbonMessage.name()));
         }
 
         @Test
