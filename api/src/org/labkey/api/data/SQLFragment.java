@@ -27,6 +27,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.ontology.Quantity;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -1413,10 +1414,10 @@ public class SQLFragment
         public void testIllegalArgument()
         {
             shouldFail(() -> new SQLFragment(";"));
-            shouldFail(() -> new SQLFragment().unsafeAppend(";"));
+            shouldFail(() -> new SQLFragment().append(";"));
             shouldFail(() -> new SQLFragment("AND name='"));
-            shouldFail(() -> new SQLFragment().unsafeAppend("AND name = '"));
-            shouldFail(() -> new SQLFragment().unsafeAppend("AND name = 'Robert'); DROP TABLE Students; --"));
+            shouldFail(() -> new SQLFragment().append("AND name = '"));
+            shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
 
             shouldFail(() -> new SQLFragment().appendIdentifier("column name"));
             shouldFail(() -> new SQLFragment().appendIdentifier("?"));
