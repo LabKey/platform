@@ -1462,7 +1462,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         String getDataChangeToken()
         {
-            return instance + "-" + update.get() + "-" + insert.get() + "-" + delete.get() + "-" + rollup.get() + "-" + rebuild.get();
+            return instance + "-" + update.get() + "-" + insert.get() + "-" + delete.get() + "-" + rollup.get() + "-" + rebuild.get() + "-" + UnloggedTableGeneration.current();
         }
     }
 

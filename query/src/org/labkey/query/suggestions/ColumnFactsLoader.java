@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -130,7 +131,7 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
         Map<FieldKey, Set<String>> shapes = new LinkedHashMap<>();
         columns.forEach(column -> shapes.put(column.getFieldKey(), new LinkedHashSet<>()));
 
-        TableSelector selector = new TableSelector(table, columns, null, null)
+        TableSelector selector = new TableSelector(table, columns, null, getNewestFirstSort(table))
             .setMaxRows(SHAPE_SAMPLE_SIZE)
             .setNamedParameters(parameters)
             .setQueryTimeout(QUERY_TIMEOUT_SECONDS);
@@ -155,6 +156,17 @@ public class ColumnFactsLoader implements ColumnFactsCache.Source
         Map<FieldKey, ColumnFact.Shapes> result = new HashMap<>();
         shapes.forEach((fieldKey, columnShapes) -> result.put(fieldKey, new ColumnFact.Shapes(List.copyOf(columnShapes))));
         return result;
+    }
+
+    /** Keys are usually auto-increment, so a descending key sort samples the newest rows. Null leaves the default sort, which orders by the sampled columns. */
+    private static @Nullable Sort getNewestFirstSort(TableInfo table)
+    {
+        List<ColumnInfo> pkColumns = table.getPkColumns();
+        if (pkColumns.isEmpty() || !pkColumns.stream().allMatch(ColumnInfo::isSortable))
+            return null;
+        Sort sort = new Sort();
+        pkColumns.forEach(pk -> sort.appendSortColumn(pk.getFieldKey(), Sort.SortDirection.DESC, false));
+        return sort;
     }
 
     private static @Nullable Object getValue(List<Aggregate.Result> results, @Nullable Aggregate aggregate)

@@ -25,6 +25,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnloggedTableGeneration;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -47,7 +48,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/** Adds a sample type's name expressions to its Name column and keys its cached facts to its sample data changes. */
+/** Marks a sample type's Name column as searched by any portion, adds its name expressions, and keys its cached facts to its sample data changes. */
 public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvider
 {
     @Override
@@ -66,6 +67,7 @@ public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvi
         columns.stream()
             .filter(column -> ExpMaterialTable.Column.Name.name().equalsIgnoreCase(column.getFieldKey()))
             .forEach(column -> {
+                column.setPartialMatch(true);
                 column.addNameExpression(sampleType.getNameExpression());
                 // Null when the default applies; default aliquot names extend the parent's name, which the name expression already matches
                 column.addNameExpression(sampleType.getAliquotNameExpression());
@@ -138,6 +140,9 @@ public class SampleTypeFilterSuggestionProvider implements FilterSuggestionProvi
             ExpMaterialTableImpl._materializedQueries.remove(st.getLSID());
             ExpMaterialTableImpl._invalidationCounters.remove(st.getLSID());
             assertNewToken(seen, st, "reset");
+
+            UnloggedTableGeneration.simulateResetForTest();
+            assertNewToken(seen, st, "unlogged reset");
         }
 
         @Test

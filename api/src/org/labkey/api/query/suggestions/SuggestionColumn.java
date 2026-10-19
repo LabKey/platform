@@ -41,6 +41,7 @@ public class SuggestionColumn
     private boolean _uniqueId;
     private boolean _rangeUnknown;
     private boolean _multiValued;
+    private boolean _partialMatch;
     private final List<String> _nameExpressions = new ArrayList<>();
     private @Nullable List<String> _values;
     private @Nullable List<String> _shapes;
@@ -140,6 +141,17 @@ public class SuggestionColumn
     public void setMultiValued(boolean multiValued)
     {
         _multiValued = multiValued;
+    }
+
+    /** Users search this column by any portion of a value, so every term gets a Contains suggestion for it. */
+    public boolean isPartialMatch()
+    {
+        return _partialMatch;
+    }
+
+    public void setPartialMatch(boolean partialMatch)
+    {
+        _partialMatch = partialMatch;
     }
 
     /** Name expressions whose generated names this column holds, e.g. a sample type's name and aliquot expressions. */

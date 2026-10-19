@@ -15,7 +15,6 @@
  */
 package org.labkey.query.suggestions;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -24,14 +23,12 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DateUtil.MonthDayOption;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Year;
 import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.temporal.Temporal;
 import java.util.List;
-import java.util.Locale;
-import java.util.function.ToLongFunction;
-import java.util.regex.Matcher;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /** A grid search term parsed into the forms the suggestion tiers need. */
@@ -44,16 +41,6 @@ public class SuggestionTerm
 
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^-?\\d+(\\.\\d+)?$");
     private static final Pattern LEADING_ZERO_PATTERN = Pattern.compile("^-?0\\d");
-    private static final Pattern YEAR_PATTERN = Pattern.compile("^(\\d{4})$");
-    private static final Pattern YEAR_MONTH_PATTERN = Pattern.compile("^(\\d{4})[-/](\\d{1,2})$");
-    private static final Pattern MONTH_NAME_YEAR_PATTERN = Pattern.compile("^([A-Za-z]{3,9})\\.?\\s+(\\d{4})$");
-    // DateUtil parses bare times as 1970-01-01, and a leading "-" as a separator
-    private static final Pattern DATE_CANDIDATE_PATTERN = Pattern.compile("^[A-Za-z0-9](?=.*\\d)(?=.*[-/., ]).*$");
-    private static final Pattern TIME_ONLY_PATTERN = Pattern.compile("^\\d{1,2}:\\d{2}");
-    // Stripped so an explicit zone can't shift the date when DateUtil converts to the server's zone
-    private static final Pattern TRAILING_TIME_PATTERN = Pattern.compile("[ T]\\d{1,2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:\\s?[AaPp][Mm])?(?:Z|[+-]\\d{2}:?\\d{2})?$");
-    private static final List<String> MONTH_NAMES = List.of("january", "february", "march", "april", "may", "june", "july",
-        "august", "september", "october", "november", "december");
 
     private final String _raw;
     private final @Nullable BigDecimal _number;
@@ -73,15 +60,15 @@ public class SuggestionTerm
     /** Full dates follow the site's month/day parsing setting. */
     public static @NotNull SuggestionTerm parse(@Nullable String term)
     {
-        return parse(term, DateUtil::parseDateTime);
+        return parse(term, DateUtil::parsePartialDate);
     }
 
     public static @NotNull SuggestionTerm parse(@Nullable String term, @NotNull MonthDayOption monthDay)
     {
-        return parse(term, s -> DateUtil.parseDateTime(s, monthDay, true, null));
+        return parse(term, s -> DateUtil.parsePartialDate(s, monthDay));
     }
 
-    private static @NotNull SuggestionTerm parse(@Nullable String term, @NotNull ToLongFunction<String> dateTimeParser)
+    private static @NotNull SuggestionTerm parse(@Nullable String term, @NotNull Function<String, Temporal> dateParser)
     {
         String raw = term == null ? "" : term.trim();
         if (raw.isEmpty())
@@ -97,65 +84,27 @@ public class SuggestionTerm
             leadingZero = LEADING_ZERO_PATTERN.matcher(raw).lookingAt();
         }
 
-        return new SuggestionTerm(raw, number, integer, leadingZero, parseDateSpan(raw, number != null, dateTimeParser));
+        return new SuggestionTerm(raw, number, integer, leadingZero, parseDateSpan(raw, number != null, dateParser));
     }
 
-    private static @Nullable DateSpan parseDateSpan(String raw, boolean isNumber, ToLongFunction<String> dateTimeParser)
+    private static @Nullable DateSpan parseDateSpan(String raw, boolean isNumber, Function<String, Temporal> dateParser)
     {
-        Matcher m = YEAR_MONTH_PATTERN.matcher(raw);
-        if (m.matches())
-            return monthSpan(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)));
-
-        m = MONTH_NAME_YEAR_PATTERN.matcher(raw);
-        if (m.matches())
-        {
-            int month = monthFromName(m.group(1));
-            return month > 0 ? monthSpan(Integer.parseInt(m.group(2)), month) : null;
-        }
-
-        m = YEAR_PATTERN.matcher(raw);
-        if (m.matches())
-        {
-            int year = Integer.parseInt(m.group(1));
-            return new DateSpan(LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), Precision.YEAR);
-        }
-
-        if (isNumber || TIME_ONLY_PATTERN.matcher(raw).lookingAt() || !DATE_CANDIDATE_PATTERN.matcher(raw).matches())
+        // DateUtil skips leading separators, so "-5.5.5" would be a date
+        if (!Character.isLetterOrDigit(raw.charAt(0)))
             return null;
 
-        String datePart = TRAILING_TIME_PATTERN.matcher(raw).replaceFirst("");
-        if (datePart.isEmpty())
+        Temporal date = dateParser.apply(raw);
+        // A number is a year or a quantity, never a yyyyMMdd date
+        if (isNumber && !(date instanceof Year))
             return null;
 
-        try
+        return switch (date)
         {
-            LocalDate date = Instant.ofEpochMilli(dateTimeParser.applyAsLong(datePart)).atZone(ZoneId.systemDefault()).toLocalDate();
-            return new DateSpan(date, date, Precision.DAY);
-        }
-        catch (ConversionException | IllegalArgumentException e)
-        {
-            return null;
-        }
-    }
-
-    private static @Nullable DateSpan monthSpan(int year, int month)
-    {
-        if (month < 1 || month > 12)
-            return null;
-        YearMonth yearMonth = YearMonth.of(year, month);
-        return new DateSpan(yearMonth.atDay(1), yearMonth.atEndOfMonth(), Precision.MONTH);
-    }
-
-    private static int monthFromName(String name)
-    {
-        String lc = name.toLowerCase(Locale.ROOT);
-        for (int i = 0; i < MONTH_NAMES.size(); i++)
-        {
-            String month = MONTH_NAMES.get(i);
-            if (month.equals(lc) || (lc.length() == 3 && month.startsWith(lc)))
-                return i + 1;
-        }
-        return 0;
+            case LocalDate day -> new DateSpan(day, day, Precision.DAY);
+            case YearMonth month -> new DateSpan(month.atDay(1), month.atEndOfMonth(), Precision.MONTH);
+            case Year year -> new DateSpan(year.atDay(1), year.atMonth(12).atEndOfMonth(), Precision.YEAR);
+            case null, default -> null;
+        };
     }
 
     public @NotNull String getRaw()
@@ -277,7 +226,7 @@ public class SuggestionTerm
             assertEquals(feb, parse("Feb 2024").getDateSpan());
             assertEquals(feb, parse("february 2024").getDateSpan());
             assertEquals(feb, parse("Feb. 2024").getDateSpan());
-            assertNull(parse("Febr 2024").getDateSpan());
+            assertNull(parse("Smarch 2024").getDateSpan());
         }
 
         @Test

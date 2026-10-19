@@ -192,6 +192,15 @@ public class FilterSuggestionRanker
             }
         }
 
+        // Ranked below every specific match, but given a reserved slot below so those can't crowd it out
+        List<FilterSuggestion> partialMatches = new ArrayList<>();
+        if (raw.length() >= MIN_PARTIAL_MATCH_LENGTH)
+        {
+            columns.stream()
+                .filter(column -> column.isPartialMatch() && column.getType() == SuggestionColumn.Type.STRING)
+                .forEach(column -> addFilter(partialMatches, seen, column, "contains", raw, "partialMatch", raw));
+        }
+
         List<FilterSuggestion> compose = new ArrayList<>();
 
         if (!stringSignals.isEmpty())
@@ -240,7 +249,12 @@ public class FilterSuggestionRanker
         }
 
         int directLimit = Math.max(0, maxSuggestions - compose.size() - 1);
-        List<FilterSuggestion> suggestions = new ArrayList<>(direct.subList(0, Math.min(directLimit, direct.size())));
+        // Never reserve the only direct slot, which belongs to the strongest specific match
+        int otherLimit = directLimit;
+        if (directLimit > partialMatches.size())
+            otherLimit -= partialMatches.size();
+        List<FilterSuggestion> suggestions = new ArrayList<>(direct.subList(0, Math.min(otherLimit, direct.size())));
+        suggestions.addAll(partialMatches.subList(0, Math.min(partialMatches.size(), directLimit - suggestions.size())));
         suggestions.addAll(compose);
         suggestions.add(FilterSuggestion.search(raw));
         return suggestions;
@@ -423,6 +437,7 @@ public class FilterSuggestionRanker
                 column.setUniqueId(node.path("isUniqueId").asBoolean(false));
                 column.setRangeUnknown(node.path("rangeUnknown").asBoolean(false));
                 column.setMultiValued(node.path("multiValued").asBoolean(false));
+                column.setPartialMatch(node.path("partialMatch").asBoolean(false));
                 column.addNameExpression(node.path("nameExpression").asText(null));
                 column.setValues(toStrings(node.get("values")));
                 column.setShapes(toStrings(node.get("shapes")));
