@@ -152,9 +152,14 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         TableInfo rawTableInfo = getRawTableInfo(schema, queryName, updatedQueryName);
         TablesDocument doc = null;
         TableType xmlTable = null;
+        String savedQueryName = updatedQueryName != null ? updatedQueryName : queryName;
 
         if (queryDef != null)
         {
+            // GH Issue 1736: make sure to put the updated query name into the queryDef
+            if (updatedQueryName != null)
+                queryDef.setName(updatedQueryName);
+
             try
             {
                 doc = parseDocument(queryDef.getMetaData());
@@ -180,7 +185,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             queryDef = new QueryDef();
             queryDef.setSchema(schemaName);
             queryDef.setContainer(container.getId());
-            queryDef.setName(queryName);
+            queryDef.setName(savedQueryName);
         }
 
         if (doc == null)
@@ -192,7 +197,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             TablesType tables = doc.addNewTables();
             xmlTable = tables.addNewTable();
-            xmlTable.setTableName(queryName);
+            xmlTable.setTableName(savedQueryName);
         }
 
         if (xmlTable.getColumns() == null)
