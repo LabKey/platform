@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -72,6 +73,7 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
@@ -121,6 +123,7 @@ public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
     public static final String CALCULATED_COLUMN_SQL_TAG = "/* CALCULATED-EXPRESSION-COLUMN-QUERY */";
+    public static final String REQUEST_TIMEOUT_MESSAGE = "This request took too long and was cancelled";
     /** Stack frames from here down are container plumbing, not useful in a trace */
     public static final String SERVLET_SERVICE_FRAME_PREFIX = HttpServlet.class.getName() + ".service(";
 
@@ -727,7 +730,7 @@ public class ExceptionUtil
     }
 
     /** Unlike a client abort, the client is still waiting for a response */
-    private static boolean isRequestTimeout(Throwable ex)
+    public static boolean isRequestTimeout(Throwable ex)
     {
         if (RequestCancellation.getSource(Thread.currentThread()) != RequestCancellation.Source.TIMEOUT)
             return false;
@@ -1019,7 +1022,7 @@ public class ExceptionUtil
         else if (isRequestTimeout(ex))
         {
             responseStatus = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-            message = "This request took too long and was cancelled";
+            message = REQUEST_TIMEOUT_MESSAGE;
             responseStatusMessage = message;
             unhandledException = null;
         }
@@ -1736,6 +1739,7 @@ public class ExceptionUtil
                 ExceptionResponse answer = handleIt(me, cancelledQuery());
                 assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
                 assertTrue(answer.response.headers.containsKey("Logger.error"));
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, writeApiError(cancelledQuery()).status());
             }));
 
             // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
@@ -1750,6 +1754,11 @@ public class ExceptionUtil
                     ExceptionResponse answer = handleIt(me, ex);
                     assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, answer.response.status);
                     assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+                    // API actions write their own errors
+                    ApiError apiError = writeApiError(ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, apiError.status());
+                    assertTrue(apiError.body(), apiError.body().contains(REQUEST_TIMEOUT_MESSAGE));
                 }
             }));
 
@@ -1763,6 +1772,22 @@ public class ExceptionUtil
                 assertEquals(0, answer.response.status);
                 assertFalse(answer.response.headers.containsKey("Logger.error"));
             }));
+        }
+
+        private record ApiError(int status, String body) {}
+
+        private static ApiError writeApiError(Exception ex)
+        {
+            try
+            {
+                MockHttpServletResponse response = new MockHttpServletResponse();
+                new ApiJsonWriter(response).writeResponse(ex);
+                return new ApiError(response.getStatus(), response.getContentAsString());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
 
         private static RuntimeSQLException cancelledQuery()
