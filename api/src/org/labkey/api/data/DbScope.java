@@ -2256,6 +2256,18 @@ public class DbScope
         BANNED_THREADS.add(thread);
     }
 
+    /** Next connection request from the thread gets a new holder; wrappers already handed out still release through their own */
+    static void detachConnectionHolders(Thread thread)
+    {
+        for (DbScope scope : getInitializedDbScopes())
+        {
+            synchronized (scope._threadConnections)
+            {
+                scope._threadConnections.remove(thread);
+            }
+        }
+    }
+
     /**
      * Shuts down any connections associated with DbScopes that have been handed out to the current thread or its
      * associated/effective thread. Also releases locks acquired as part of opening the transaction.

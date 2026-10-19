@@ -44,10 +44,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -262,6 +265,8 @@ public class AsyncQueryRequest<T>
             if (remaining <= 0)
             {
                 _log.warn("Async query thread '{}' still running {} ms after its request was interrupted", worker.getName(), WORKER_EXIT_TIMEOUT_MS);
+                // The worker still holds this thread's connection, which the thread's next request would otherwise reuse
+                DbScope.detachConnectionHolders(Thread.currentThread());
                 return;
             }
             try
@@ -415,6 +420,89 @@ public class AsyncQueryRequest<T>
                 assertTrue("Request thread's connection holder is still referenced", holderReleased.get());
                 assertNull("Next query on the request thread failed", nextQueryFailure.get());
             }
+        }
+
+        /** A worker that outlives the interrupt wait mustn't leave its connection for the request thread's next request */
+        @Test
+        public void testStuckWorkerDetached() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            CountDownLatch holding = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CountDownLatch workerDone = new CountDownLatch(1);
+            AtomicReference<Integer> workerSpid = new AtomicReference<>();
+            AtomicReference<Throwable> workerFailure = new AtomicReference<>();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            AtomicBoolean holderReleased = new AtomicBoolean();
+            AtomicReference<Integer> nextSpid = new AtomicReference<>();
+            AtomicReference<Throwable> nextQueryFailure = new AtomicReference<>();
+
+            Thread requestThread = new Thread(() -> {
+                try
+                {
+                    AsyncQueryRequest<Object> request = new AsyncQueryRequest<>(new MockHttpServletResponse(), "testStuckWorkerDetached", Map.of());
+                    request.waitForResult(() -> {
+                        try (Connection conn = scope.getConnection())
+                        {
+                            workerSpid.set(((ConnectionWrapper) conn).getSPID());
+                            holding.countDown();
+                            // No statement for the interrupt to cancel, like a worker busy outside JDBC
+                            release.await();
+                        }
+                        catch (Throwable t)
+                        {
+                            workerFailure.set(t);
+                        }
+                        finally
+                        {
+                            workerDone.countDown();
+                        }
+                        return null;
+                    });
+                }
+                catch (Throwable t)
+                {
+                    failure.set(t);
+                }
+
+                try
+                {
+                    holderReleased.set(!scope.isThreadConnectionActive());
+                    try (Connection conn = scope.getConnection())
+                    {
+                        nextSpid.set(((ConnectionWrapper) conn).getSPID());
+                    }
+                }
+                catch (Throwable t)
+                {
+                    nextQueryFailure.set(t);
+                }
+                finally
+                {
+                    DbScope.finishedWithThread();
+                }
+            }, "AsyncQueryRequest stuck worker test");
+
+            try
+            {
+                requestThread.start();
+                assertTrue("Worker never got a connection", holding.await(10, TimeUnit.SECONDS));
+                requestThread.interrupt();
+                requestThread.join(WORKER_EXIT_TIMEOUT_MS + 10_000);
+
+                assertFalse("Request thread didn't exit", requestThread.isAlive());
+                assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
+                assertTrue("Request thread's connection holder still references the worker's connection", holderReleased.get());
+                assertNull("Next query on the request thread failed", nextQueryFailure.get());
+                assertNotEquals("Next request reused the stuck worker's connection", workerSpid.get(), nextSpid.get());
+            }
+            finally
+            {
+                release.countDown();
+            }
+
+            assertTrue("Worker didn't finish", workerDone.await(10, TimeUnit.SECONDS));
+            assertNull("Worker's connection release failed", workerFailure.get());
         }
     }
 }
