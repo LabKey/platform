@@ -953,7 +953,7 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = SQLFragment.unsafe(escapeLabKeySqlValue(params[i], type));
+                fragments[i] = new SQLFragment().setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
 
             return fragments;
         }
@@ -2733,9 +2733,9 @@ public abstract class CompareType
 
         if (dialect.isPostgreSQL())
         {
-            ret.append(
+            ret.unsafeAppend(
                 "WITH RECURSIVE allmembers(userid, groupid) AS (\n" +
-                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).append(
+                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).unsafeAppend(
                 "\nUNION\n" +
                 "   SELECT a.groupid as userid, m.groupid as groupid FROM allmembers a, core.members m WHERE a.groupid=m.userid\n" +
                 ")\n" +
