@@ -370,7 +370,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getAnalyzeCommandForTable(String tableName)
+    public SQLFragment getAnalyzeCommandForTable(SQLFragment tableName)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

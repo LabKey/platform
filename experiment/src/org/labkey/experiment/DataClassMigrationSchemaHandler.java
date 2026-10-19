@@ -111,7 +111,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         // Select all ObjectIds associated with the not-copied rows from the source database
         SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
-            .appendIdentifier(sourceTable.getSelectName())
+            .append(sourceTable.getSQLName())
             .unsafeAppend(" dc ON d.LSID = dc.LSID");
 
         // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.

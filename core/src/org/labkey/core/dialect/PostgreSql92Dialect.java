@@ -505,9 +505,9 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     }
 
     @Override
-    public SQLFragment getAnalyzeCommandForTable(String tableName)
+    public SQLFragment getAnalyzeCommandForTable(SQLFragment tableName)
     {
-        return new SQLFragment("ANALYZE ").appendIdentifier(tableName);
+        return new SQLFragment("ANALYZE ").append(tableName);
     }
 
     private void initializeInClauseGenerator(DbScope scope)

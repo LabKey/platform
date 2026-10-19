@@ -1759,7 +1759,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             DbSchema temp = DbSchema.getTemp();
             String name = _prefix + "_" + GUID.makeHash();
-            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+            _Materialized materialized = new _Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
             initMaterialized(materialized);
             return materialized;
         }
@@ -1948,7 +1948,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         final MaterializedQueryHelper.SupplierInvalidator incrementalDeleteCheck;
         final MaterializedQueryHelper.SupplierInvalidator incrementalUpdateCheck;
 
-        _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, String sql)
+        _Materialized(_MaterializedQueryHelper mqh, String tableName, String cacheKey, long created, SQLFragment sql)
         {
             super(mqh, tableName, cacheKey, created, sql);
             counters = getInvalidateCounters(mqh._lsid);

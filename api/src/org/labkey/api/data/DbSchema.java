@@ -725,7 +725,7 @@ public class DbSchema
                         ColumnInfo pkColumn = pkColumns.getFirst();
                         sbSql.appendValue(pkColumn.getSelectIdentifier().getId());
                         sbSql.unsafeAppend(" AS FirstPKColName, ");
-                        sbSql.unsafeAppend(" CAST( ").appendDottedIdentifiers(t.getSelectName(),pkColumn.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS FirstPKValue, ");
+                        sbSql.unsafeAppend(" CAST( ").append(t.getSQLName()).unsafeAppend(".").appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS FirstPKValue, ");
                     }
                     else
                     {
@@ -738,10 +738,10 @@ public class DbSchema
                         sbSql.unsafeAppend(" NULL AS FirstPKValue, ");
                     }
                     sbSql.appendValue(moduleName).unsafeAppend(" AS ModuleName, ");
-                    sbSql.unsafeAppend(" CAST( ").appendDottedIdentifiers(t.getSelectName(),col.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS OrphanedContainer ");
-                    sbSql.unsafeAppend(" FROM ").appendIdentifier(t.getSelectName());
+                    sbSql.unsafeAppend(" CAST( ").append(t.getSQLName()).unsafeAppend(".").appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" AS VARCHAR(100)) AS OrphanedContainer ");
+                    sbSql.unsafeAppend(" FROM ").append(t.getSQLName());
                     sbSql.unsafeAppend( " LEFT OUTER JOIN  core.Containers C ");
-                    sbSql.unsafeAppend(" ON (").appendIdentifier(t.getSelectName()).unsafeAppend(".").unsafeAppend("Container = C.EntityId ) ");
+                    sbSql.unsafeAppend(" ON (").append(t.getSQLName()).unsafeAppend(".").unsafeAppend("Container = C.EntityId ) ");
                     sbSql.unsafeAppend( " WHERE C.EntityId IS NULL ");
 
                     // special handling of MS2 soft deletes

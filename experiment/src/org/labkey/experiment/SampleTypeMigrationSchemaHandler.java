@@ -113,7 +113,7 @@ class SampleTypeMigrationSchemaHandler extends DefaultMigrationSchemaHandler
             .unsafeAppend(" IN (SELECT ")
             .appendIdentifier(joinColumnName)
             .unsafeAppend(" FROM ")
-            .appendIdentifier(sourceTable.getSelectName())
+            .append(sourceTable.getSQLName())
             .unsafeAppend(" ")
             .append(notCopiedFilter.getSQLFragment(dialect))
             .unsafeAppend(")");

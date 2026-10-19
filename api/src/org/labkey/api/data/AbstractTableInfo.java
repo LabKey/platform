@@ -385,8 +385,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public SQLFragment getFromSQL(String alias)
     {
-        if (null != getSelectName())
-            return new SQLFragment().appendIdentifier(getSelectName()).unsafeAppend(" ").appendIdentifier(alias);
+        SQLFragment sqlName = getSQLName();
+        if (null != sqlName)
+            return new SQLFragment().append(sqlName).unsafeAppend(" ").appendIdentifier(alias);
         else
             return new SQLFragment().unsafeAppend("(").append(getFromSQL()).unsafeAppend(") ").appendIdentifier(alias);
     }

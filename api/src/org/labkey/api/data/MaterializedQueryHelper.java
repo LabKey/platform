@@ -78,7 +78,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         MaterializedQueryHelper _mqh;
         private final long _created;
         private final String _cacheKey;
-        private final String _fromSql;
+        private final SQLFragment _fromSql;
         private final String _tableName;
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
 
@@ -89,7 +89,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         public RuntimeException _loadException = null;
 
 
-        public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, String sql)
+        public Materialized(MaterializedQueryHelper parent, String tableName, String cacheKey, long created, SQLFragment sql)
         {
             _mqh = parent;
             _created = created;
@@ -785,7 +785,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     {
         DbSchema temp = DbSchema.getTemp();
         String name = _prefix + "_" + GUID.makeHash();
-        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+        Materialized materialized = new Materialized(this, name, txCacheKey, HeartBeat.currentTimeMillis(), new SQLFragment().appendDottedIdentifiers("\"" + temp.getName() + "\"", "\"" + name + "\""));
         initMaterialized(materialized);
         return materialized;
     }

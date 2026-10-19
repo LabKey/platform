@@ -102,8 +102,6 @@ public class SpecimenManager
         TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
-        String tableInfoSpecimenEventSelectName = tableInfoSpecimenEvent.getSelectName();
-        String tableInfoVialSelectName = tableInfoVial.getSelectName();
 
         // Fix 19048 (dave); handle "no visit" case better; would be better to call once and get both variations
         SQLFragment visitRangeSql1 = getVisitRangeSql(visit, tableInfoSpecimen, tableInfoSpecimenSelectName);
@@ -114,23 +112,23 @@ public class SpecimenManager
         SQLFragment specimenRowIdWhereSql = SQLFragment.unsafe(" WHERE ").append(visitRangeSql2);
 
         SQLFragment deleteEventSql = SQLFragment.unsafe("DELETE FROM ");
-        deleteEventSql.appendIdentifier(tableInfoSpecimenEventSelectName)
+        deleteEventSql.append(tableInfoSpecimenEvent.getSQLName())
                 .unsafeAppend(" WHERE RowId IN (\n")
                 .unsafeAppend("SELECT Event.RowId FROM ")
-                .appendIdentifier(tableInfoSpecimenEventSelectName).unsafeAppend(" AS Event\n")
-                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoVialSelectName).unsafeAppend(" AS Vial ON\n")
+                .append(tableInfoSpecimenEvent.getSQLName()).unsafeAppend(" AS Event\n")
+                .unsafeAppend("LEFT OUTER JOIN ").append(tableInfoVial.getSQLName()).unsafeAppend(" AS Vial ON\n")
                 .unsafeAppend("\tEvent.VialId = Vial.RowId\n")
-                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoSpecimenSelectName).unsafeAppend(" AS Specimen ON\n")
+                .unsafeAppend("LEFT OUTER JOIN ").append(tableInfoSpecimen.getSQLName()).unsafeAppend(" AS Specimen ON\n")
                 .unsafeAppend("\tVial.SpecimenId = Specimen.RowId\n")
                 .append(specimenRowIdWhereSql).unsafeAppend(")");
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteEventSql);
 
         SQLFragment deleteVialSql = SQLFragment.unsafe("DELETE FROM ");
-        deleteVialSql.appendIdentifier(tableInfoVialSelectName)
+        deleteVialSql.append(tableInfoVial.getSQLName())
                 .unsafeAppend(" WHERE RowId IN (\n")
                 .unsafeAppend("SELECT Vial.RowId FROM ")
-                .appendIdentifier(tableInfoVialSelectName).unsafeAppend(" AS Vial\n")
-                .unsafeAppend("LEFT OUTER JOIN ").appendIdentifier(tableInfoSpecimenSelectName).unsafeAppend(" AS Specimen ON\n")
+                .append(tableInfoVial.getSQLName()).unsafeAppend(" AS Vial\n")
+                .unsafeAppend("LEFT OUTER JOIN ").append(tableInfoSpecimen.getSQLName()).unsafeAppend(" AS Specimen ON\n")
                 .unsafeAppend("\tVial.SpecimenId = Specimen.RowId\n")
                 .append(specimenRowIdWhereSql).unsafeAppend(")");
 

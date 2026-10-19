@@ -183,7 +183,7 @@ public class RelativeDateVisitManager extends VisitManager
         // populate ParticipantVisit
         //
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
-        sqlInsertParticipantVisit.unsafeAppend("INSERT INTO ").appendIdentifier(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.unsafeAppend("INSERT INTO ").append(tableParticipantVisit.getSQLName());
         sqlInsertParticipantVisit.unsafeAppend(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit.unsafeAppend("SELECT ? as Container, ParticipantId, SequenceNum, MIN(_VisitDate), \n");
         sqlInsertParticipantVisit.add(container);
@@ -197,7 +197,7 @@ public class RelativeDateVisitManager extends VisitManager
         new SqlExecutor(schema).execute(sqlInsertParticipantVisit);
 
         SQLFragment sqlInsertParticipantVisit2 = new SQLFragment();
-        sqlInsertParticipantVisit2.unsafeAppend("INSERT INTO ").appendIdentifier(tableParticipantVisitSelectName);
+        sqlInsertParticipantVisit2.unsafeAppend("INSERT INTO ").append(tableParticipantVisit.getSQLName());
         sqlInsertParticipantVisit2.unsafeAppend(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceNum)\n");
         sqlInsertParticipantVisit2.unsafeAppend("SELECT ? As Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, ");
         sqlInsertParticipantVisit2.add(container);
@@ -218,7 +218,7 @@ public class RelativeDateVisitManager extends VisitManager
         purgeParticipantsFromParticipantsVisitTable(container);
 
         SQLFragment sqlStartDate = SQLFragment.unsafe("(SELECT StartDate FROM ");
-        sqlStartDate.appendIdentifier(tableParticipantSelectName)
+        sqlStartDate.append(tableParticipant.getSQLName())
                 .unsafeAppend(" WHERE ").append(tableParticipant.getColumn("ParticipantId").getValueSql(tableParticipantSelectName))
                 .unsafeAppend("=").append(tableParticipantVisit.getColumn("ParticipantId").getValueSql(tableParticipantVisitSelectName))
                 .unsafeAppend(" AND ").append(tableParticipant.getColumn("Container").getValueSql(tableParticipantSelectName))
@@ -228,7 +228,7 @@ public class RelativeDateVisitManager extends VisitManager
         sqlStartDate = SQLFragment.unsafe("CAST(").append(sqlStartDate).unsafeAppend(" AS DATE)");
 
         SQLFragment sqlUpdateDays = SQLFragment.unsafe("UPDATE ");
-        sqlUpdateDays.appendIdentifier(tableParticipantVisitSelectName).unsafeAppend(" SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE ")
+        sqlUpdateDays.append(tableParticipantVisit.getSQLName()).unsafeAppend(" SET Day = CASE WHEN SequenceNum=? THEN 0 ELSE ")
                 .append(schema.getSqlDialect().getDateDiff(Calendar.DATE, sqlVisitDate, sqlStartDate))
                 .unsafeAppend(" END WHERE Container=? AND NOT VisitDate IS NULL");
         sqlUpdateDays.add(VisitImpl.DEMOGRAPHICS_VISIT);
@@ -244,7 +244,7 @@ public class RelativeDateVisitManager extends VisitManager
 //                }
 //            }
 
-        SQLFragment sqlUpdateParticipantSeqNum = SQLFragment.unsafe("UPDATE ").appendIdentifier(tableParticipantVisitSelectName)
+        SQLFragment sqlUpdateParticipantSeqNum = SQLFragment.unsafe("UPDATE ").append(tableParticipantVisit.getSQLName())
                 .unsafeAppend(" SET ParticipantSequenceNum = (").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"))
                 .unsafeAppend(") WHERE Container = ? AND ParticipantSequenceNum IS NULL").add(container);
         new SqlExecutor(schema).execute(sqlUpdateParticipantSeqNum);

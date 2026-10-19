@@ -1569,7 +1569,12 @@ public abstract class SqlDialect
         }
     }
 
-    public abstract SQLFragment getAnalyzeCommandForTable(String tableName);
+    public SQLFragment getAnalyzeCommandForTable(String tableName)
+    {
+        return getAnalyzeCommandForTable(new SQLFragment().appendIdentifier(tableName));
+    }
+
+    public abstract SQLFragment getAnalyzeCommandForTable(SQLFragment tableName);
 
     protected abstract String getSIDQuery();
 
@@ -1598,7 +1603,7 @@ public abstract class SqlDialect
 
     public boolean updateStatistics(TableInfo table)
     {
-        SQLFragment sql = getAnalyzeCommandForTable(table.getSelectName());
+        SQLFragment sql = getAnalyzeCommandForTable(table.getSQLName());
         if (sql != null)
         {
             new SqlExecutor(table.getSchema()).execute(sql);
