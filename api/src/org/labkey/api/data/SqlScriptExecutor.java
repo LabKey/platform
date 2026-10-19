@@ -181,7 +181,7 @@ public class SqlScriptExecutor
             // Null schema allowed for testing
             if (!_sql.isEmpty() && null != _schema)
             {
-                new SqlExecutor(_schema.getScope(), _conn).execute(SQLFragment.unsafe(_sql));
+                new SqlExecutor(_schema.getScope(), _conn).execute(new SQLFragment().setSqlUnsafe(_sql));
             }
         }
     }
