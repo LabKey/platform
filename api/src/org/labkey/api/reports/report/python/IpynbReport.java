@@ -23,7 +23,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
-import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
@@ -82,7 +81,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.util.DOM.DIV;
@@ -104,18 +102,6 @@ public class IpynbReport extends DockerScriptReport
     public static final Env LABKEY_EMAIL = new Env("LABKEY_EMAIL", "X-LABKEY-EMAIL");
     public static final Env LABKEY_APIKEY = new Env( "LABKEY_APIKEY", "X-LABKEY-APIKEY");
     public static final Env LABKEY_CSRF = new Env( "LABKEY_CSRF", "X-LABKEY-CSRF");
-
-    // Must stay >= nbconvert-service's own EVALUATE_TIMEOUT (Dockerfile default 600s), which bounds the actual
-    // notebook execution; this only needs enough slack past that for the service's kill-after grace and tar transfer.
-    private static final int SERVICE_EVALUATE_TIMEOUT_SECONDS = 600;
-    private static final RequestConfig EVALUATE_REQUEST_CONFIG = RequestConfig.custom()
-            .setConnectTimeout(10, TimeUnit.SECONDS)
-            .setResponseTimeout(SERVICE_EVALUATE_TIMEOUT_SECONDS + 60, TimeUnit.SECONDS)
-            .build();
-    private static final RequestConfig PING_REQUEST_CONFIG = RequestConfig.custom()
-            .setConnectTimeout(5, TimeUnit.SECONDS)
-            .setResponseTimeout(5, TimeUnit.SECONDS)
-            .build();
 
 
     public IpynbReport()
@@ -399,7 +385,6 @@ public class IpynbReport extends DockerScriptReport
             try (CloseableHttpClient client = HttpClients.createDefault())
             {
                 HttpPut putRequest = new HttpPut(new URLHelper(service.toString()).setPath("/evaluate").getURIString());
-                putRequest.setConfig(EVALUATE_REQUEST_CONFIG);
 
                 putRequest.setHeader(LABKEY_APIKEY.header(), apiKey);
                 putRequest.setHeader(LABKEY_USERID.header(), String.valueOf(context.getUser().getUserId()));
@@ -485,7 +470,6 @@ public class IpynbReport extends DockerScriptReport
         try (CloseableHttpClient client = HttpClients.createDefault())
         {
             HttpGet getRequest = new HttpGet(new URLHelper(service.toString()).setPath("/ping").getURIString());
-            getRequest.setConfig(PING_REQUEST_CONFIG);
             try (CloseableHttpResponse response = client.execute(getRequest))
             {
                 return new PingResult(response.getCode(),"");
