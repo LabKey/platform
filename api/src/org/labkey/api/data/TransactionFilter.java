@@ -28,10 +28,12 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.StartupListener;
@@ -42,11 +44,13 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -184,7 +188,7 @@ public class TransactionFilter implements Filter
         }
         finally
         {
-            // Waits out a cancel in progress, whose close and interrupt would otherwise land on this thread's next request
+            // Waits out a cancel in progress, whose interrupt and any ban would otherwise land on this thread's next request
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (tracker)
             {
@@ -227,10 +231,6 @@ public class TransactionFilter implements Filter
      */
     private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
-        Map<DbScope, Set<ConnectionWrapper>> unsignalled;
-        RequestCancellation.Cancelled cancelled;
-        boolean first;
-
         // The cancelled query fails within milliseconds, so the request can finish mid-cancel; doFilter() can't release the thread while we hold this
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (tracker)
@@ -238,25 +238,24 @@ public class TransactionFilter implements Filter
             if (_pendingRequests.get(thread) != tracker)
                 return;
 
-            first = RequestCancellation.requestCancelled(thread, tracker, source);
+            boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
             if (!first)
                 RequestCancellation.cancelledRequestStillRunning(thread, tracker);
-            cancelled = tracker.cancellation().get();
+            RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
 
-            // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
-            unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, cancelled, first);
+            // Resent on later sweeps, since a cancel that arrives between statements does nothing
+            Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
+            Map<DbScope, Set<ConnectionWrapper>> unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
 
-            try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
-            {
-                DbScope.closeConnectionsForCurrentThreadWithoutReleasingLocks();
-                PipelineJobService.get().killProcessesForThread(thread);
-            }
+            // Inside the lock, so the request can't finish and hand this thread's connections to its next request first
+            RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first);
+
+            // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it
+            if (connections.isEmpty())
+                DbScope.banNewConnections(thread);
+            PipelineJobService.get().killProcessesForThread(thread);
             thread.interrupt();
         }
-
-        // Outside the lock: opening a connection to a struggling database must not hold up the request's exit.
-        // Safe once the request is gone, since its wrappers are no longer allocated and the fallback skips them.
-        RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first);
     }
 
     public static int getPendingRequestCount()
@@ -349,6 +348,71 @@ public class TransactionFilter implements Filter
             {
                 setReadOnlyTimeout(originalTimeout);
             }
+        }
+
+        /** With the driver's cancel unavailable, the fallback must still stop a query that ignores an interrupt, and its session must not return to the pool */
+        @Test
+        public void testCancelFallback() throws Exception
+        {
+            DbScope scope = DbScope.getLabKeyScope();
+            AtomicReference<RuntimeException> queryFailure = new AtomicReference<>();
+            Set<Integer> spids = ConcurrentHashMap.newKeySet();
+
+            RequestCancellation._skipDriverCancel = true;
+            try
+            {
+                RequestCancellation.TestCase.runOnRequestThread(() -> {
+                    Thread requestThread = Thread.currentThread();
+                    Thread canceller = new Thread(() -> {
+                        try
+                        {
+                            long start = System.currentTimeMillis();
+                            while (ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).isEmpty() && System.currentTimeMillis() - start < 10_000)
+                                //noinspection BusyWait
+                                Thread.sleep(100);
+                            // Let the statement reach the server
+                            Thread.sleep(500);
+                            ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
+                            cancelRequest(requestThread, getRequestSummary(requestThread), RequestCancellation.Source.TIMEOUT);
+                        }
+                        catch (InterruptedException ignored) {}
+                    }, "TransactionFilter test canceller");
+                    canceller.start();
+
+                    RequestCancellation.TestCase.doRequest(null, () -> {
+                        long start = System.currentTimeMillis();
+                        try
+                        {
+                            new SqlSelector(scope, "SELECT pg_sleep(30)").getObject(Object.class);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            queryFailure.set(e);
+                        }
+                        assertTrue("Cancel took too long", System.currentTimeMillis() - start < 15_000);
+                    });
+                    assertTrue("Connection wasn't released", ConnectionWrapper.getConnectionsByScopeForThread(requestThread).isEmpty());
+                });
+            }
+            finally
+            {
+                RequestCancellation._skipDriverCancel = false;
+            }
+
+            assertNotNull("Query wasn't cancelled", queryFailure.get());
+            boolean cancelled = false;
+            for (Throwable t = queryFailure.get(); t != null && !cancelled; t = ExceptionUtil.getCause(t))
+                cancelled = t instanceof SQLException e && SqlDialect.isCancelException(e);
+            assertTrue("Query failed with something other than a cancel: " + queryFailure.get(), cancelled);
+
+            assertFalse("Request had no connections", spids.isEmpty());
+            SQLFragment live = new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
+            long start = System.currentTimeMillis();
+            long count;
+            while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)
+                //noinspection BusyWait
+                Thread.sleep(100);
+            assertEquals("Cancelled session went back to the pool", 0, count);
         }
 
         private static void setReadOnlyTimeout(int seconds)

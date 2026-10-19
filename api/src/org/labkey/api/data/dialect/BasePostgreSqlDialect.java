@@ -111,8 +111,12 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
         String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
 
-        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis
-        try (Connection conn = scope.getUnpooledConnection())
+        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis.
+        // pgjdbc waits forever to log in by default, and a request timeout sweep holds up that request's exit while this runs.
+        Properties props = new Properties();
+        props.setProperty("loginTimeout", "5");
+        props.setProperty("socketTimeout", "5");
+        try (Connection conn = scope.getUnpooledConnection(props))
         {
             // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
             SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);

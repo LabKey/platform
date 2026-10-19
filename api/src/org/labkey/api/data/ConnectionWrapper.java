@@ -165,6 +165,9 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private volatile boolean _allowClose = true;
 
+    // A cancel can land on whatever the session runs next, so a cancelled one is discarded rather than reused
+    private volatile boolean _cancelled = false;
+
     // Captured at borrow because the return can happen on another thread
     private volatile @Nullable ConnectionUsage.Borrow _borrow;
 
@@ -414,6 +417,12 @@ public class ConnectionWrapper implements java.sql.Connection
         return DbScope.getDelegate(_connection);
     }
 
+    /** Set before the cancel is sent, so a release that races it still discards the session */
+    void markCancelled()
+    {
+        _cancelled = true;
+    }
+
     @Nullable DbScope.ConnectionHolder getThreadConnectionHolder()
     {
         return _threadConnectionHolder;
@@ -613,6 +622,8 @@ public class ConnectionWrapper implements java.sql.Connection
             try
             {
                 _runOnClose.close();
+                if (_cancelled)
+                    closePhysicalConnection();
                 _connection.close();
             }
             catch (SQLException e)
@@ -625,6 +636,26 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             _allowClose = true;
             throw new IllegalStateException("Not allowed to close this connection");
+        }
+    }
+
+    /** The pool destroys a connection whose driver connection is already closed instead of returning it to the idle set */
+    private void closePhysicalConnection()
+    {
+        Connection physical = getPhysicalConnection();
+        if (physical == _connection)
+        {
+            LOG.debug("Can't reach the driver connection behind cancelled {}, so the pool will reuse it", this);
+            return;
+        }
+
+        try
+        {
+            physical.close();
+        }
+        catch (SQLException e)
+        {
+            LOG.debug("Failed to close cancelled {}", this, e);
         }
     }
 

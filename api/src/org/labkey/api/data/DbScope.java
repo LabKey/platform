@@ -1321,9 +1321,16 @@ public class DbScope
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
+        return getUnpooledConnection(null);
+    }
+
+    /** @param overrides driver properties that replace the data source's for this connection */
+    public Connection getUnpooledConnection(@Nullable Properties overrides) throws SQLException
+    {
         try
         {
-            Connection raw = getRawConnection(getDbScopeLoader().getLabKeyDataSource());
+            LabKeyDataSource dataSource = getDbScopeLoader().getLabKeyDataSource();
+            Connection raw = getRawConnection(dataSource.getUrl(), dataSource, overrides);
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -2065,6 +2072,11 @@ public class DbScope
     // This bypasses the connection pool.
     private static Connection getRawConnection(String url, LabKeyDataSource dataSource) throws ServletException, SQLException
     {
+        return getRawConnection(url, dataSource, null);
+    }
+
+    private static Connection getRawConnection(String url, LabKeyDataSource dataSource, @Nullable Properties overrides) throws ServletException, SQLException
+    {
         DataSourcePropertyReader reader = dataSource.getDataSourcePropertyReader();
         Driver driver;
         Properties props;
@@ -2080,6 +2092,10 @@ public class DbScope
             if (reader.getPassword() != null)
             {
                 props.put("password", reader.getPassword());
+            }
+            if (overrides != null)
+            {
+                props.putAll(overrides);
             }
         }
         catch (Exception e)
@@ -2234,18 +2250,10 @@ public class DbScope
 
 
 
-    /**
-     * Close connections without releasing their locks. Useful when a third-party thread wants to interrupt another
-     * thread. If no connections were found, we'll also prevent that thread from getting a new connection.
-     */
-    public static void closeConnectionsForCurrentThreadWithoutReleasingLocks()
+    /** The thread's next attempt to get a new connection throws an AbortedRequestException; cleared when it finishes with the thread */
+    static void banNewConnections(Thread thread)
     {
-        boolean closed = ConnectionWrapper.closeConnections(false);
-        if (!closed)
-        {
-            // We didn't find any connections to close. Prevent this thread from getting a connection on its next attempt
-            BANNED_THREADS.add(getEffectiveThread());
-        }
+        BANNED_THREADS.add(thread);
     }
 
     /**

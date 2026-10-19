@@ -57,6 +57,9 @@ public final class RequestCancellation
     private static final String METRIC_AREA = "requestCancel";
     private static final long STUCK_AFTER_MS = 10_000;
 
+    /** Tests set this to make the driver's cancel signal nothing, forcing the pg_cancel_backend fallback */
+    static volatile boolean _skipDriverCancel = false;
+
     public enum Source
     {
         TIMEOUT("timeout", "timeout"),
@@ -228,10 +231,12 @@ public final class RequestCancellation
             if (connections.isEmpty())
                 return;
 
+            connections.forEach(ConnectionWrapper::markCancelled);
+
             Set<ConnectionWrapper> signalled = Set.of();
             try
             {
-                signalled = scope.getSqlDialect().cancelQueriesViaOwningConnection(connections);
+                signalled = _skipDriverCancel ? Set.of() : scope.getSqlDialect().cancelQueriesViaOwningConnection(connections);
                 backendsCancelled(scope, signalled, source, cancelled, count);
             }
             catch (RuntimeException e)
