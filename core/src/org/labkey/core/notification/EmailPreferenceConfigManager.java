@@ -16,7 +16,6 @@
 package org.labkey.core.notification;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -155,34 +154,6 @@ public class EmailPreferenceConfigManager
         }
         // Simple check to see if the email option is the same
         return emailPref.getEmailOptionId() != null && emailPreference == emailPref.getEmailOptionId().intValue();
-    }
-
-    //delete all user records regardless of container
-    public static void deleteUserEmailPref(User user, @Nullable List<Container> containerList)
-    {
-        if (containerList == null)
-        {
-            Table.delete(_core.getTableInfoEmailPrefs(), new SimpleFilter(FieldKey.fromParts("UserId"), user.getUserId()));
-        }
-        else
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("UserId"), user.getUserId());
-            StringBuilder whereClause = new StringBuilder("Container IN (");
-            for (int i = 0; i < containerList.size(); i++)
-            {
-                Container c = containerList.get(i);
-                whereClause.append("'");
-                whereClause.append(c.getId());
-                whereClause.append("'");
-                if (i < containerList.size() - 1)
-                    whereClause.append(", ");
-            }
-            whereClause.append(")");
-            filter.addWhereClause(whereClause.toString(), null);
-
-            Table.delete(_core.getTableInfoEmailPrefs(), filter);
-        }
     }
 
     public static Collection<EmailOption> getEmailOptions(@NotNull String type)

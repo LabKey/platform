@@ -15,7 +15,7 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
@@ -183,7 +183,7 @@ public class MultiValuedLookupColumn extends LookupColumn
 
                 for (SQLFragment fragment : joins.values())
                 {
-                    String join = StringUtils.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
+                    String join = Strings.CS.replace(fragment.getSQL(), "\n\t", "\n\t\t\t\t");
                     join = join.replace("LEFT OUTER", "INNER");
                     select.append(join);
                     select.addAll(fragment.getParams());
@@ -211,7 +211,7 @@ public class MultiValuedLookupColumn extends LookupColumn
         {
             for (SQLFragment fragment : joins.values())
             {
-//                strJoin.append(StringUtils.replace(fragment.toString(), "\n\t", "\n\t\t"));
+//                strJoin.append(Strings.CS.replace(fragment.toString(), "\n\t", "\n\t\t"));
                 strJoin.append(fragment);
             }
         }

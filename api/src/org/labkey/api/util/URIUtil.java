@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.hc.core5.net.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,8 +48,8 @@ public class URIUtil
         // append '/' to both paths to handle these cases
         //     "/atoz" starts with "/a" but is not a descendant
         //     "/a" does not start with "/a/" but should be considered equal
-        var basePath = StringUtils.appendIfMissing(base.getPath(),"/");
-        var descendantPath = StringUtils.appendIfMissing(descendant.getPath(),"/");
+        var basePath = Strings.CS.appendIfMissing(base.getPath(),"/");
+        var descendantPath = Strings.CS.appendIfMissing(descendant.getPath(),"/");
 
         if (descendantPath.contains("/../"))
             return false;
@@ -215,7 +216,7 @@ public class URIUtil
 
         URI res = uri;
         if (FILE_SCHEME.equalsIgnoreCase(uri.getScheme())
-                && !StringUtils.startsWith(uri.getRawSchemeSpecificPart(), "///")
+                && !Strings.CS.startsWith(uri.getRawSchemeSpecificPart(), "///")
                 && StringUtils.isBlank(uri.getHost()))
         {
             //Conform file:/ to file:///

@@ -20,6 +20,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.query.InsertRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsCommand;
+import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @Category(Daily.class)
@@ -50,6 +53,7 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
     private static final String STUDY_NAME = "Merge Participants Test Study";
     private static final String FOLDER_NAME =  "Merge Participants Test Folder";
     private static final String DELETE_PARTICIPANTS_FOLDER_NAME = "Delete Participants Test Folder";
+    private static final String INT_ALIAS_SOURCE_FOLDER_NAME = "Integer Alias Source Test Folder";
     private static final File STUDY_ZIP = TestFileUtils.getSampleData("studies/LabkeyDemoStudy.zip");
     private static final String SUBJECT_NOUN = "Participant";
     private static final String SUBJECT_NOUN_PLURAL = "Participants";
@@ -105,6 +109,12 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
 
         log("Creating study to test deleting participants");
         _containerHelper.createSubfolder(getProjectName(), DELETE_PARTICIPANTS_FOLDER_NAME, "Study");
+        _studyHelper.startCreateStudy()
+                .setTimepointType(StudyHelper.TimepointType.VISIT)
+                .createStudy();
+
+        log("Creating study to test an integer alias source column");
+        _containerHelper.createSubfolder(getProjectName(), INT_ALIAS_SOURCE_FOLDER_NAME, "Study");
         _studyHelper.startCreateStudy()
                 .setTimepointType(StudyHelper.TimepointType.VISIT)
                 .createStudy();
@@ -183,6 +193,50 @@ public class StudyManageParticipantsTest extends BaseWebDriverTest
         List<String> currentPtids = _ext4Helper.getComboBoxOptions(ptidCombo);
         for (String ptid : participantsToDelete)
             assertFalse(String.format("Participant %s was not successfully deleted", ptid), currentPtids.contains(ptid));
+    }
+
+    @Test
+    public void testIntegerAliasSource() throws Exception
+    {
+        final String containerPath = getProjectName() + "/" + INT_ALIAS_SOURCE_FOLDER_NAME;
+        Connection conn = createDefaultConnection();
+
+        log("Creating alias dataset with an integer source column");
+        DatasetDefinition dataset = new DatasetDefinition(ALIAS_DATASET, DatasetDefinition.VISIT_BASED_STUDY);
+        dataset.setFields(List.of(
+                new FieldDefinition(ALIAS_COLUMN, FieldDefinition.ColumnType.String),
+                new FieldDefinition(SOURCE_COLUMN, FieldDefinition.ColumnType.Integer)
+        ));
+        dataset.create(conn, containerPath);
+
+        InsertRowsCommand insert = new InsertRowsCommand("study", ALIAS_DATASET);
+        insert.setRows(List.of(
+                Map.of("ParticipantId", "P1", "SequenceNum", 1, ALIAS_COLUMN, "alpha", SOURCE_COLUMN, 1),
+                Map.of("ParticipantId", "P1", "SequenceNum", 2, ALIAS_COLUMN, "beta", SOURCE_COLUMN, 2),
+                Map.of("ParticipantId", "P2", "SequenceNum", 1, ALIAS_COLUMN, "gamma", SOURCE_COLUMN, 1)
+        ));
+        insert.execute(conn, containerPath);
+
+        goToProjectHome(getProjectName());
+        clickFolder(INT_ALIAS_SOURCE_FOLDER_NAME);
+        goToManageParticipants();
+        _ext4Helper.selectComboBoxItem("Dataset Containing Aliases", ALIAS_DATASET);
+        _ext4Helper.selectComboBoxItem("Alias Column", ALIAS_COLUMN);
+        _ext4Helper.selectComboBoxItem("Source Column", SOURCE_COLUMN);
+        clickButton("Save Changes", 0);
+        waitForText(SUBJECT_NOUN + " alias settings saved successfully");
+        clickButton("OK", 0);
+
+        log("Query the per-source alias lookup columns");
+        SelectRowsCommand select = new SelectRowsCommand("study", "Participant");
+        select.setColumns(List.of("ParticipantId", "LinkedIDs/1", "LinkedIDs/2"));
+        SelectRowsResponse response = select.execute(conn, containerPath);
+        Map<Object, Map<String, Object>> rowsByPtid = response.getRows().stream()
+                .collect(Collectors.toMap(row -> row.get("ParticipantId"), row -> row));
+
+        assertEquals("Wrong source 1 alias for P1", "alpha", rowsByPtid.get("P1").get("LinkedIDs/1"));
+        assertEquals("Wrong source 2 alias for P1", "beta", rowsByPtid.get("P1").get("LinkedIDs/2"));
+        assertEquals("Wrong source 1 alias for P2", "gamma", rowsByPtid.get("P2").get("LinkedIDs/1"));
     }
 
     private void createDataset(Connection conn, String datasetName, String folderName) throws Exception

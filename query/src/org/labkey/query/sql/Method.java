@@ -1390,6 +1390,7 @@ public abstract class Method
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
                 SQLFragment ret = new SQLFragment();
+                // Inline the IDs: appendInClause() may create a temp table in the LabKey DB, but this SQL can run against an external data source
                 ret.unsafeAppend("(").append(groupArg).unsafeAppend(") IN (").append(
                         user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
                 ).unsafeAppend(")");

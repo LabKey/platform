@@ -25,6 +25,7 @@ import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.StudySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -154,14 +155,8 @@ public class QCStateSet
         sql.unsafeAppend("(");
         if (hasStates)
         {
-            sql.append(rowIdColumnAlias).unsafeAppend(" IN (");
-            String comma = "";
-            for (DataState state : _states)
-            {
-                sql.unsafeAppend(comma).appendValue(state.getRowId());
-                comma = ", ";
-            }
-            sql.unsafeAppend(")");
+            sql.append(rowIdColumnAlias);
+            sql.appendInClause(_states.stream().map(DataState::getRowId).toList(), StudySchema.getInstance().getSqlDialect());
         }
         if (_includeUnmarked)
         {

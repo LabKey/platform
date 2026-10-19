@@ -585,7 +585,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             List<Integer> groupIds = participantGroups.stream().map(ParticipantGroup::getRowId).toList();
 
             SQLFragment sql = new SQLFragment();
-            sql.unsafeAppend(" SELECT DISTINCT ParticipantId, ? FROM ").add(getDstContainer()).append(ParticipantGroupManager.getTableInfoParticipantGroupMap(), "");
+            sql.unsafeAppend(" SELECT DISTINCT ParticipantId, ? FROM ").add(getDstContainer()).append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
             sql.unsafeAppend(" WHERE GroupId").appendInClause(groupIds, schema.getSqlDialect());
             SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
 

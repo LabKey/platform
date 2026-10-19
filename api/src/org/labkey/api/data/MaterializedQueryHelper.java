@@ -219,7 +219,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         {
             for (String index : indexes)
             {
-                String sql = StringUtils.replace(index, "${NAME}", _tableName);
+                String sql = Strings.CS.replace(index, "${NAME}", _tableName);
                 try
                 {
                     new SqlExecutor(_mqh._scope).execute(sql);

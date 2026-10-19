@@ -16,6 +16,7 @@
 package org.labkey.core.analytics;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.analytics.AnalyticsService;
 import org.labkey.api.data.Container;
@@ -223,7 +224,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         // Add the server GUID to the URL.  Remove the "-" because they are problematic for Google Analytics regular
         // expressions.
         String guid = AppProps.getInstance().getServerGUID();
-        guid = StringUtils.replace(guid, "-", ".");
+        guid = Strings.CS.replace(guid, "-", ".");
         actionUrl.addParameter("serverGUID", guid);
         return actionUrl.toString();
     }

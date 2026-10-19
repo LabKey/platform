@@ -53,6 +53,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
@@ -76,6 +77,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -206,6 +208,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -590,7 +593,7 @@ public class QueryServiceImpl implements QueryService
     {
         static InLineageOfClause create(boolean parents, FieldKey fk, String value, boolean negate)
         {
-            if (null != fk.getParent() || !StringUtils.startsWithIgnoreCase(value, "SELECT "))
+            if (null != fk.getParent() || !Strings.CI.startsWith(value, "SELECT "))
                 throw new IllegalArgumentException("Bad filter syntax, value should start with 'SELECT '");
             return new InLineageOfClause(parents, value, negate);
         }
@@ -3877,6 +3880,67 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("isnumeric('abc') on " + dialect, 0, results.getInt("n3"));
                 assertEquals("isnumeric(NULL) on " + dialect, 0, results.getInt("n4"));
             }
+        }
+
+        // GH Issue 1736
+        @Test
+        public void testRenameWithConcurrentCacheReload() throws Exception
+        {
+            DbScope scope = QueryManager.get().getDbSchema().getScope();
+            Container c = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            String oldName = "Users";
+            String newName = "junit" + GUID.makeHash();
+
+            QueryDef def = new QueryDef();
+            def.setSchema("core");
+            def.setName(oldName);
+            def.setContainer(c.getId());
+            def.setMetaData("<tables xmlns=\"http://labkey.org/data/xml\"><table tableName=\"" + oldName + "\" tableDbType=\"NOT_IN_DB\"><columns>" +
+                    "<column columnName=\"junitCalc\"><conceptURI>http://www.labkey.org/exp/xml#calculated</conceptURI><valueExpression>1</valueExpression></column>" +
+                    "</columns></table></tables>");
+            int queryDefId = QueryManager.get().insert(user, def).getQueryDefId();
+
+            GWTPropertyDescriptor calcField = new GWTPropertyDescriptor("junitCalc", PropertyType.INTEGER.getTypeUri());
+            calcField.setValueExpression("1");
+            // reloads the cache from committed data, as search indexing can while the rename is uncommitted
+            Runnable concurrentReload = () -> QueryManager.get().getQueryDef(c, "core", oldName, false);
+
+            try
+            {
+                try (DbScope.Transaction tx = scope.ensureTransaction())
+                {
+                    QueryManager.get().renameQuery(user, c, "core", oldName, newName);
+                    runOnOtherThread(concurrentReload);
+                    assertNull("Expected the cache to hold the pre-rename row", QueryManager.get().getQueryDef(c, "core", newName, false));
+
+                    QueryService.get().saveCalculatedFieldsMetadata("core", oldName, newName, List.of(calcField), true, user, c);
+                    runOnOtherThread(concurrentReload);
+                    tx.commit();
+                }
+
+                QueryDef saved = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                assertEquals(newName, saved.getName());
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("tableName=\"" + newName + "\""));
+                assertTrue(saved.getMetaData(), saved.getMetaData().contains("junitCalc"));
+
+                assertNotNull("Cache should reload after commit", QueryManager.get().getQueryDef(c, "core", newName, false));
+                assertNull(QueryManager.get().getQueryDef(c, "core", oldName, false));
+            }
+            finally
+            {
+                QueryDef toDelete = new TableSelector(QueryManager.get().getTableInfoQueryDef()).getObject(queryDefId, QueryDef.class);
+                if (toDelete != null)
+                    QueryManager.get().delete(toDelete);
+            }
+        }
+
+        private void runOnOtherThread(Runnable r) throws InterruptedException
+        {
+            Thread t = new Thread(r);
+            t.start();
+            t.join(TimeUnit.SECONDS.toMillis(30));
+            assertFalse("Reader thread did not finish", t.isAlive());
         }
     }
 }

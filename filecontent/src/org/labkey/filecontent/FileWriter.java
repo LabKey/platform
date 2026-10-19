@@ -15,7 +15,7 @@
  */
 package org.labkey.filecontent;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -129,7 +129,7 @@ public class FileWriter extends BaseFolderWriter
                     return null;
             }
             String fileRootPath = fileRoot.getPath();
-            if (StringUtils.startsWith(fileRootPath, "/"))
+            if (Strings.CS.startsWith(fileRootPath, "/"))
                 fileRootPath = fileRootPath.substring(1);
             resourcePath = new Path(WebdavService.getServletPath()).append(container.getParsedPath()).append(fileRootPath).toString();
         }

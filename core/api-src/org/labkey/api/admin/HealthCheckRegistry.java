@@ -37,6 +37,7 @@ public class HealthCheckRegistry
 
     public static final String DEFAULT_CATEGORY = "default";
     public static final String TRIAL_INSTANCES_CATEGORY = "trial";
+    public static final String EXTERNAL_DATA_SOURCES_CATEGORY = "externalDataSources";
 
     private final Map<String, Map<String, HealthCheck>> _healthCheckCategories = new HashMap<>();
     private static final HealthCheckRegistry _instance = new HealthCheckRegistry();

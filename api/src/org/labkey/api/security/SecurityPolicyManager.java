@@ -38,6 +38,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.AddUserPermission;
@@ -471,23 +472,15 @@ public class SecurityPolicyManager
     public static void removeAllChildren(Container c)
     {
         Set<Container> subtrees = ContainerManager.getAllChildren(c);
-        StringBuilder sb = new StringBuilder();
-        String comma = "";
+        SqlDialect dialect = core.getSqlDialect();
 
-        for (Container sub : subtrees)
-        {
-            sb.append(comma);
-            sb.append("'");
-            sb.append(sub.getId());
-            sb.append("'");
-            comma = ",";
-        }
-
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
-                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
-                sb + "))");
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-                "WHERE Container IN (" + sb + ")");
+        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
+                "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container")
+                .appendInClause(subtrees, dialect)
+                .append(")"));
+        new SqlExecutor(core.getSchema()).execute(new SQLFragment("DELETE FROM " + core.getTableInfoPolicies() + "\n" +
+                "WHERE Container")
+                .appendInClause(subtrees, dialect));
 
         removeAll();
     }

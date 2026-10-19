@@ -778,9 +778,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     .unsafeAppend(" INNER JOIN ")
                     .append(tinfoPropertyDescriptor, "px")
                     .unsafeAppend(" ON pd.PropertyId = px.PropertyId ")
-                    .unsafeAppend("WHERE DomainId = ? AND StorageColumnName NOT ")
+                    .unsafeAppend("WHERE DomainId = ? AND ")
                     .add(domain.domainId())
-                    .appendInClause(badColumnNames, scope.getSqlDialect());
+                    .appendNotInClause("StorageColumnName", badColumnNames, scope.getSqlDialect());
                 new SqlSelector(scope, domainSql).forEach(String.class, nameGenerator::claimName);
 
                 LOG.info("   Renaming {} in table \"{}\"", StringUtilsLabKey.pluralize(badColumns.size(), "column"), domain.fullName());

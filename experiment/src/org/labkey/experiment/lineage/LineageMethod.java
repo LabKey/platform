@@ -15,7 +15,7 @@
  */
 package org.labkey.experiment.lineage;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -132,7 +132,7 @@ public class LineageMethod extends AbstractTableMethodInfo
         if (s.length() < 2 || !s.startsWith("'"))
             return s;
         s = s.substring(1,s.length()-1);
-        s = StringUtils.replace(s,"''","'");
+        s = Strings.CS.replace(s,"''","'");
         return s;
     }
 }

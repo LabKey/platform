@@ -9361,7 +9361,7 @@ public class AdminController extends SpringActionController
             // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
             // \n to newlines to allow them at the beginning or end of the message as well.
             StringBuilder message = new StringBuilder();
-            message.append(StringUtils.replace(logForm.getMessage(), "\\n", "\n"));
+            message.append(Strings.CS.replace(logForm.getMessage(), "\\n", "\n"));
 
             Level level = Level.toLevel(logForm.getLevel(), Level.INFO);
             CLIENT_LOG.log(level, message);
