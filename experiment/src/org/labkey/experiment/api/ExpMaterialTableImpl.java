@@ -2594,26 +2594,33 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         }
                         releaseTimedOut.set(!release.await(1, TimeUnit.MINUTES));
                         tx.commit();
-                        return (long) m.getRowId();
+                        return m.getRowId();
                     }
                 });
 
-                assertTrue("Open transaction never inserted its sample", inserted.await(1, TimeUnit.MINUTES));
-                if (lateCommit.isDone())
-                    lateCommit.get(); // surfaces the save's exception
+                try
+                {
+                    assertTrue("Open transaction never inserted its sample", inserted.await(1, TimeUnit.MINUTES));
+                    if (lateCommit.isDone())
+                        lateCommit.get(); // surfaces the save's exception
 
-                long earlyRowId = insertRoots(st, "R2").getFirst();
-                assertCacheMatchesFreshDerivation(table, st.getLSID());
-                long insertSignal = counters.insert.get();
+                    long earlyRowId = insertRoots(st, "R2").getFirst();
+                    assertCacheMatchesFreshDerivation(table, st.getLSID());
+                    long insertSignal = counters.insert.get();
 
-                release.countDown();
-                long lateRowId = lateCommit.get(1, TimeUnit.MINUTES);
-                assertFalse("R2's insert waited on the open transaction, so the commits never interleaved", releaseTimedOut.get());
-                assertTrue("Open transaction's rowid " + lateRowId + " must be below R2's " + earlyRowId, lateRowId < earlyRowId);
-                assertTrue("Committing the late sample must signal an insert", counters.insert.get() > insertSignal);
+                    release.countDown();
+                    long lateRowId = lateCommit.get(1, TimeUnit.MINUTES);
+                    assertFalse("R2's insert waited on the open transaction, so the commits never interleaved", releaseTimedOut.get());
+                    assertTrue("Open transaction's rowid " + lateRowId + " must be below R2's " + earlyRowId, lateRowId < earlyRowId);
+                    assertTrue("Committing the late sample must signal an insert", counters.insert.get() > insertSignal);
 
-                assertTrue("Late-committing rowid " + lateRowId + " is missing from the materialized view", isCached(table, lateRowId));
-                assertCacheMatchesFreshDerivation(table, st.getLSID());
+                    assertTrue("Late-committing rowid " + lateRowId + " is missing from the materialized view", isCached(table, lateRowId));
+                    assertCacheMatchesFreshDerivation(table, st.getLSID());
+                }
+                finally
+                {
+                    release.countDown();
+                }
             }
         }
 
