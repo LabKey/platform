@@ -15,7 +15,7 @@
  */
 package org.labkey.api.sql;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -30,13 +30,13 @@ public class LabKeySql
         if (str.length() < 2 || !str.startsWith("'") || !str.endsWith("'"))
             throw new IllegalArgumentException("Expected string to be surrounded by single quotes");
         str = str.substring(1, str.length() - 1);
-        str = StringUtils.replace(str, "''", "'");
+        str = Strings.CS.replace(str, "''", "'");
         return str;
     }
 
     static public @NotNull String quoteString(@NotNull String str)
     {
-        return "'" + StringUtils.replace(str, "'", "''") + "'";
+        return "'" + Strings.CS.replace(str, "'", "''") + "'";
     }
 
     static public @NotNull String unquoteIdentifier(@NotNull String str)
@@ -44,12 +44,12 @@ public class LabKeySql
         if (str.length() < 2 || !str.startsWith("\"") || !str.endsWith("\""))
             throw new IllegalArgumentException("Expected identifier to be surrounded by double quotes");
         str = str.substring(1, str.length() - 1);
-        str = StringUtils.replace(str, "\"\"", "\"");
+        str = Strings.CS.replace(str, "\"\"", "\"");
         return str;
     }
 
     static public @NotNull String quoteIdentifier(@NotNull String str)
     {
-        return "\"" + StringUtils.replace(str, "\"", "\"\"") + "\"";
+        return "\"" + Strings.CS.replace(str, "\"", "\"\"") + "\"";
     }
 }

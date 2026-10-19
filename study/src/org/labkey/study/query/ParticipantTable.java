@@ -343,14 +343,17 @@ public class ParticipantTable extends BaseStudyTable
             {
                 if (displayField.equalsIgnoreCase(source))
                 {
-                    // There should be zero or one one value per participant/source combination, so we could either use MIN/MAX
+                    // There should be zero or one value per participant/source combination, so we could either use MIN/MAX
                     SQLFragment sql = new SQLFragment("(SELECT MAX(");
                     sql.append(_aliasColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
                     sql.append(") FROM ");
                     sql.append(_datasetTable.getFromSQL(ALIAS_INNER_QUERY_ALIAS));
                     // Do a LOWER on the source column in case there are multiple casings stored as values
+                    SQLFragment sourceSql = _sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS);
+                    if (!_sourceColumn.getJdbcType().isText())
+                        sourceSql = getSqlDialect().getVarcharCast(sourceSql);
                     sql.append(" WHERE LOWER(");
-                    sql.append(_sourceColumn.getValueSql(ALIAS_INNER_QUERY_ALIAS));
+                    sql.append(sourceSql);
                     sql.append(") = ? AND ");
                     sql.add(source.toLowerCase());
                     sql.append(ALIAS_INNER_QUERY_ALIAS);

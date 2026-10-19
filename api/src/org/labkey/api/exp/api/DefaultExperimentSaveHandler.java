@@ -584,7 +584,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 if (sampleTypeJson.has(ExperimentJSONConverter.ID))
                 {
                     int sampleTypeRowId = sampleTypeJson.getInt(ExperimentJSONConverter.ID);
-                    sampleType = SampleTypeService.get().getSampleType(sampleTypeRowId);
+                    sampleType = SampleTypeService.get().getSampleType(context.getContainer(), sampleTypeRowId, true);
                     if (sampleType == null)
                         throw new NotFoundException("A sample type with row id '" + sampleTypeRowId + "' doesn't exist.");
                 }
@@ -598,7 +598,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 else if (sampleTypeJson.has(ExperimentJSONConverter.LSID))
                 {
                     String lsid = sampleTypeJson.getString(ExperimentJSONConverter.LSID);
-                    sampleType = SampleTypeService.get().getSampleType(lsid);
+                    sampleType = SampleTypeService.get().getSampleTypeByLsid(context.getContainer(), lsid, true);
                     if (sampleType == null)
                         throw new NotFoundException("A sample type with LSID '" + lsid + "' doesn't exist.");
                 }

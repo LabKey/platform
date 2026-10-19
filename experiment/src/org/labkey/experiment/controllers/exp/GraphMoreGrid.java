@@ -22,6 +22,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.NotFoundException;
@@ -29,6 +30,7 @@ import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -97,24 +99,20 @@ public class GraphMoreGrid extends GridView
             throw new NotFoundException();
         }
         String[] inValues = param.split(",");
-        String separator = "";
-        StringBuilder inClause = new StringBuilder(" RowId IN (");
+        List<Integer> rowIds = new ArrayList<>(inValues.length);
         for (String inValue : inValues)
         {
-            inClause.append(separator);
-            separator = ", ";
             try
             {
-                inClause.append(Integer.toString(Integer.parseInt(inValue)));
+                rowIds.add(Integer.parseInt(inValue));
             }
             catch (NumberFormatException e)
             {
                 throw new NotFoundException("Invalid RowId requested: " + inValue);
             }
         }
-        inClause.append(") ");
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(inClause.toString(), new Object[]{});
+        filter.addInClause(FieldKey.fromParts("RowId"), rowIds);
         setFilter(filter);
         setTitle(title);
     }

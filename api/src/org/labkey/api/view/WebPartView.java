@@ -19,6 +19,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -389,7 +390,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         String name = Objects.toString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing ignored = MiniProfiler.step(name))
         {
-            boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+            boolean isDebugHtml = _devMode && _frameConfig._frame != FrameType.NOT_HTML && Strings.CS.startsWith(response.getContentType(), "text/html");
             if (isDebugHtml)
                 response.getWriter().print("<!--" + name + "-->");
 

@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.MvColumn;
@@ -145,7 +145,7 @@ public enum ColumnHeaderType
     protected FieldKey fixMissingValueIndicator(ColumnInfo columnInfo, FieldKey fieldKey)
     {
         // Issue 16476: Importers don't expect "_MVIndicator"
-        if (columnInfo.isMvIndicatorColumn() && StringUtils.endsWithIgnoreCase(fieldKey.getName(), "_" + MvColumn.MV_INDICATOR_SUFFIX))
+        if (columnInfo.isMvIndicatorColumn() && Strings.CI.endsWith(fieldKey.getName(), "_" + MvColumn.MV_INDICATOR_SUFFIX))
         {
             String name = fieldKey.getName();
             name = name.substring(0, name.length() - MvColumn.MV_INDICATOR_SUFFIX.length() - 1) + MvColumn.MV_INDICATOR_SUFFIX;
