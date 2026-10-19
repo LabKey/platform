@@ -1407,9 +1407,11 @@ public abstract class SqlDialect
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return new SQLFragment().setSqlUnsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
-               "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";");
+        // Candidates must stay unquoted, and appendIdentifier() rejects some of them (e.g., end-exec)
+        return new SQLFragment()
+            .unsafeAppend("SELECT ").append(candidate).unsafeAppend(" FROM (SELECT 1 AS ").append(candidate).unsafeAppend(") x ORDER BY ").append(candidate).appendEOS()
+            .unsafeAppend("CREATE ").append(keyword).unsafeAppend(" TABLE ").append(name).unsafeAppend(" (").append(candidate).unsafeAppend(" VARCHAR(50))").appendEOS()
+            .unsafeAppend("DROP TABLE ").append(name).appendEOS();
     }
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException
