@@ -101,6 +101,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1560,7 +1561,9 @@ public abstract class SqlDialect
      */
     public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
     {
-        return Set.of();
+        return connections.stream()
+            .filter(c -> c.isAllocated() && c.cancelOpenStatements())
+            .collect(Collectors.toSet());
     }
 
     /** Add driver settings this dialect wants by default; leave any the data source already sets */

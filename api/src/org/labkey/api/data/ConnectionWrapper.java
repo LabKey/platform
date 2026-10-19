@@ -66,6 +66,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
@@ -167,6 +168,8 @@ public class ConnectionWrapper implements java.sql.Connection
 
     // A cancel can land on whatever the session runs next, so a cancelled one is discarded rather than reused
     private volatile boolean _cancelled = false;
+
+    private final Set<StatementWrapper> _statements = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
     // Captured at borrow because the return can happen on another thread
     private volatile @Nullable ConnectionUsage.Borrow _borrow;
@@ -289,13 +292,8 @@ public class ConnectionWrapper implements java.sql.Connection
         }
     }
 
-    /**
-     * @param expectMatchingConnection whether to check whether the connection is the one we expect for the thread. Use
-     *                                 false in cases where another thread is attempting to kill connections to abort work
-     *                                 as race conditions can cause connection churn that disrupts this check.
-     * @return true if there was a connection to close
-     */
-    public static boolean closeConnections(boolean expectMatchingConnection)
+    /** @return true if there was a connection to close */
+    public static boolean closeConnections()
     {
         Thread thread = DbScope.getEffectiveThread();
         List<ConnectionWrapper> toClose = new ArrayList<>();
@@ -315,7 +313,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             try
             {
-                connectionWrapper.close(expectMatchingConnection);
+                connectionWrapper.close();
             }
             catch (SQLException ignored) {}
         }
@@ -420,6 +418,37 @@ public class ConnectionWrapper implements java.sql.Connection
     void markCancelled()
     {
         _cancelled = true;
+    }
+
+    /**
+     * The JDBC-standard cancel, for drivers without a connection-level one; the running statement's execute call throws
+     * @return false if no open statement was signalled
+     */
+    public boolean cancelOpenStatements()
+    {
+        List<StatementWrapper> statements;
+        synchronized (_statements)
+        {
+            statements = new ArrayList<>(_statements);
+        }
+
+        boolean signalled = false;
+        for (StatementWrapper statement : statements)
+        {
+            try
+            {
+                if (!statement.isClosed())
+                {
+                    statement.cancel();
+                    signalled = true;
+                }
+            }
+            catch (SQLException e)
+            {
+                LOG.debug("Failed to cancel a statement on {}", this, e);
+            }
+        }
+        return signalled;
     }
 
     @Nullable DbScope.ConnectionHolder getThreadConnectionHolder()
@@ -571,11 +600,6 @@ public class ConnectionWrapper implements java.sql.Connection
     @Override
     public void close() throws SQLException
     {
-        close(true);
-    }
-
-    private void close(boolean checkConnectionOwnership) throws SQLException
-    {
         DbScope.Transaction t;
 
         if (_type != ConnectionType.Pooled && null != (t = _scope.getCurrentTransactionImpl()))
@@ -585,8 +609,7 @@ public class ConnectionWrapper implements java.sql.Connection
             if (!match)
             {
                 String message =  "Attempting to close a different connection from the one associated with this thread: " + this + " vs " + t.getConnection();
-                assert !checkConnectionOwnership : message;
-                // When another thread is killing the connection, race conditions are possible
+                assert false : message;
                 LOG.info(message);
             }
         }
@@ -807,18 +830,16 @@ public class ConnectionWrapper implements java.sql.Connection
 
     private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
-        if (null == _scope)
-            return new StatementWrapper(conn, stmt);
-        else
-            return _scope.getSqlDialect().getStatementWrapper(conn, stmt);
+        StatementWrapper wrapper = null == _scope ? new StatementWrapper(conn, stmt) : _scope.getSqlDialect().getStatementWrapper(conn, stmt);
+        _statements.add(wrapper);
+        return wrapper;
     }
 
     private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
-        if (null == _scope)
-            return new StatementWrapper(conn, stmt, sql);
-        else
-            return _scope.getSqlDialect().getStatementWrapper(conn, stmt, sql);
+        StatementWrapper wrapper = null == _scope ? new StatementWrapper(conn, stmt, sql) : _scope.getSqlDialect().getStatementWrapper(conn, stmt, sql);
+        _statements.add(wrapper);
+        return wrapper;
     }
 
 

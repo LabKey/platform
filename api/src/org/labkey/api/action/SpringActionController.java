@@ -569,6 +569,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             checkable.checkPermissions();
 
+            boolean export = ExportAction.class.isAssignableFrom(actionClass);
             // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions
             if (actionClass.isAnnotationPresent(Action.class))
             {
@@ -578,17 +579,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     actionAnnotation.value().equals(ActionType.SelectData.class) ||
                     actionAnnotation.value().equals(ActionType.SelectMetaData.class))
                 {
-                    // Consider these action types read-only and eligible for killing after a timeout
+                    // Consider these action types read-only and, except for exports, eligible for killing after a timeout
                     request.setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
                 }
+                export |= actionAnnotation.value().equals(ActionType.Export.class);
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
 
-            if (ExportAction.class.isAssignableFrom(actionClass) ||
-                (actionClass.isAnnotationPresent(Action.class) && actionClass.getAnnotation(Action.class).value().equals(ActionType.Export.class)))
-            {
+            if (export)
                 request.setAttribute(TransactionFilter.EXPORT_ATTRIBUTE_NAME, true);
-            }
 
             // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
             // through rendering because the action's memory is live for that whole time.

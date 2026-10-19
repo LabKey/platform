@@ -30,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
@@ -155,8 +156,9 @@ public class AsyncQueryRequest<T>
             }
             catch (Throwable t)
             {
-                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure
-                if (!isCancelled())
+                // Cancellation arrives here as a CancelledException or the driver's "statement cancelled" error; tagging that as an APM error makes every client disconnect look like a failure.
+                // A timeout cancels the statement in the database before it interrupts the request thread, so the error can beat cancel().
+                if (!isCancelled() && !isCancelException(t))
                 {
                     Tags.ERROR.set(span, true);
                     span.log(Map.of(Fields.ERROR_OBJECT, t));
@@ -204,8 +206,10 @@ public class AsyncQueryRequest<T>
                     }
                     catch (InterruptedException ie)
                     {
+                        T uncollected = _result;
                         cancel(RequestCancellation.getSource(Thread.currentThread()));
                         awaitWorkerAfterInterrupt(thread);
+                        closeResult(uncollected);
                         throw new AbortedRequestException("Interrupted before DB query completed");
                     }
                 }
@@ -286,17 +290,8 @@ public class AsyncQueryRequest<T>
 
     synchronized public void setResult(T result)
     {
-        if (_cancelled && result instanceof AutoCloseable ac)
-        {
-            try
-            {
-                ac.close();
-            }
-            catch (Exception e)
-            {
-                _log.warn("Failed to close result after cancellation", e);
-            }
-        }
+        if (_cancelled)
+            closeResult(result);
         _result = result;
         _finished = true;
         notify();
@@ -307,6 +302,31 @@ public class AsyncQueryRequest<T>
         _exception = exception;
         _finished = true;
         notify();
+    }
+
+    private void closeResult(@Nullable T result)
+    {
+        if (result instanceof AutoCloseable ac)
+        {
+            try
+            {
+                ac.close();
+            }
+            catch (Exception e)
+            {
+                _log.warn("Failed to close result after cancellation", e);
+            }
+        }
+    }
+
+    private static boolean isCancelException(Throwable t)
+    {
+        for (; t != null; t = t.getCause())
+        {
+            if (t instanceof SQLException e && SqlDialect.isCancelException(e))
+                return true;
+        }
+        return false;
     }
 
     synchronized private boolean isCancelled()

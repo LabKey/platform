@@ -526,5 +526,15 @@ public final class RequestCancellation
             assertTrue("pg_cancel_backend failed", query.scope().getSqlDialect().cancelQueries(query.scope(), query.connections(), false));
             assertStopped(query);
         }
+
+        /** The default for dialects without a connection-level cancel, e.g. SQL Server */
+        @Test
+        public void testStatementCancel() throws Exception
+        {
+            BlockedQuery query = startBlockedQuery();
+            for (ConnectionWrapper connection : query.connections())
+                assertTrue("No open statement to cancel", connection.cancelOpenStatements());
+            assertStopped(query);
+        }
     }
 }
