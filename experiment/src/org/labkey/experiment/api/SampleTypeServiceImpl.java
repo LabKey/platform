@@ -125,6 +125,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleTypeAuditProvider;
@@ -511,6 +512,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl getSampleType(@NotNull Container c, long rowId, boolean includeOtherContainers)
     {
         return getSampleType(c, includeOtherContainers, (materialSource -> materialSource.getRowId() == rowId));
+    }
+
+    @Override
+    public ExpSampleTypeImpl getSampleTypeByLsid(@NotNull Container c, @NotNull String lsid, boolean includeOtherContainers)
+    {
+        return getSampleType(c, includeOtherContainers, (materialSource -> lsid.equals(materialSource.getLSID())));
     }
 
     private ExpSampleTypeImpl getSampleType(@NotNull Container c, boolean includeOtherContainers, Predicate<MaterialSource> predicate)
@@ -2517,6 +2524,63 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             }
 
+        }
+
+        @Test
+        public void testSampleTypeLookupIsContainerScoped() throws Exception
+        {
+            final User user = TestContext.get().getUser();
+            final SampleTypeServiceImpl svc = get();
+            final Container root = ContainerManager.getRoot();
+            final Container shared = ContainerManager.getSharedContainer();
+            final String suffix = GUID.makeHash();
+
+            Container projA = null;
+            Container projB = null;
+            ExpSampleType stShared = null;
+            try
+            {
+                projA = ContainerManager.createContainer(root, "SampleScopeA" + suffix, user);
+                projB = ContainerManager.createContainer(root, "SampleScopeB" + suffix, user);
+                Container subA = ContainerManager.createContainer(projA, "sub", user);
+
+                ExpSampleType stLocal = svc.createSampleType(subA, user, "ScopeLocal", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+                ExpSampleType stProject = svc.createSampleType(projA, user, "ScopeProject", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+                stShared = svc.createSampleType(shared, user, "ScopeShared" + suffix, null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+                ExpSampleType stForeign = svc.createSampleType(projB, user, "ScopeForeign", null, nameProp(), Collections.emptyList(), -1, -1, -1, -1, null, null);
+
+                // In scope from subA (current, project, Shared) -- resolves by rowId and by LSID.
+                assertNotNull("Local sample type should resolve by rowId", svc.getSampleType(subA, stLocal.getRowId(), true));
+                assertNotNull("Local sample type should resolve by LSID", svc.getSampleTypeByLsid(subA, stLocal.getLSID(), true));
+                assertNotNull("Project sample type should resolve by rowId", svc.getSampleType(subA, stProject.getRowId(), true));
+                assertNotNull("Project sample type should resolve by LSID", svc.getSampleTypeByLsid(subA, stProject.getLSID(), true));
+                assertNotNull("Shared sample type should resolve by rowId", svc.getSampleType(subA, stShared.getRowId(), true));
+                assertNotNull("Shared sample type should resolve by LSID", svc.getSampleTypeByLsid(subA, stShared.getLSID(), true));
+
+                // An unrelated project's sample type must NOT resolve from subA, by rowId or LSID.
+                assertNull("Foreign sample type must not resolve by rowId", svc.getSampleType(subA, stForeign.getRowId(), true));
+                assertNull("Foreign sample type must not resolve by LSID", svc.getSampleTypeByLsid(subA, stForeign.getLSID(), true));
+
+                // The unscoped overloads still find it, confirming scoping is what blocks the cross-container reference.
+                assertNotNull("Unscoped rowId lookup still finds the foreign type", svc.getSampleType(stForeign.getRowId()));
+                assertNotNull("Unscoped LSID lookup still finds the foreign type", svc.getSampleType(stForeign.getLSID()));
+            }
+            finally
+            {
+                if (stShared != null)
+                    stShared.delete(user);
+                if (projA != null)
+                    ContainerManager.deleteAll(projA, user);
+                if (projB != null)
+                    ContainerManager.deleteAll(projB, user);
+            }
+        }
+
+        private List<GWTPropertyDescriptor> nameProp()
+        {
+            List<GWTPropertyDescriptor> props = new ArrayList<>();
+            props.add(new GWTPropertyDescriptor("name", "string"));
+            return props;
         }
     }
 }

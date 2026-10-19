@@ -17,6 +17,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
@@ -67,7 +68,7 @@ public class FormTag extends BodyTagSupport
     @Deprecated // TODO: Eliminate all usages and remove
     public void setAction(String s)
     {
-        if (StringUtils.containsNone(s, "/-") && (StringUtils.endsWith(s, ".view") || StringUtils.endsWith(s, ".post")))
+        if (StringUtils.containsNone(s, "/-") && (Strings.CS.endsWith(s, ".view") || Strings.CS.endsWith(s, ".post")))
         {
             ViewContext ctx = HttpView.getRootContext();
             if (null != ctx)

@@ -15,7 +15,7 @@
  */
 package org.labkey.pipeline.api;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
@@ -673,7 +673,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
         String prefix = pipelineId.getName() + LOCAL_TASK_PREFIX;
         for (TaskFactory<?> factory : getTaskFactories((Container)null))
         {
-            if (StringUtils.startsWith(factory.getId().getName(), prefix))
+            if (Strings.CS.startsWith(factory.getId().getName(), prefix))
                 removeTaskFactory(factory.getId());
         }
     }

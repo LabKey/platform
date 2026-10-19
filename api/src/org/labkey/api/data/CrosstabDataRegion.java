@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.DOM.Renderable;
 import org.labkey.api.util.HtmlString;
@@ -105,7 +106,7 @@ public class CrosstabDataRegion extends DataRegion
                                 {
                                     String memberCaption = currentMember.getCaption();
                                     String innerCaption = renderer.getCaption(ctx);
-                                    if (StringUtils.startsWith(innerCaption, memberCaption))
+                                    if (Strings.CS.startsWith(innerCaption, memberCaption))
                                         renderer.setCaption(StringUtils.trim(innerCaption.substring(memberCaption.length())));
                                 }
                             }
