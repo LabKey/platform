@@ -393,7 +393,7 @@ public abstract class SqlDialect
         if (null == sqlState)
             return false;
         return sqlState.equals("57014") || // Postgres
-               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
+               sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
     /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
@@ -1558,9 +1558,14 @@ public abstract class SqlDialect
      * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
      * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
      */
-    public Set<ConnectionWrapper> cancelQueriesWithoutConnection(Collection<ConnectionWrapper> connections)
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
     {
         return Set.of();
+    }
+
+    /** Add driver settings this dialect wants by default; leave any the data source already sets */
+    public void addDefaultConnectionProperties(Properties props)
+    {
     }
 
     public boolean updateStatistics(TableInfo table)

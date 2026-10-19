@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 // Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
@@ -153,7 +154,7 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public Set<ConnectionWrapper> cancelQueriesWithoutConnection(Collection<ConnectionWrapper> connections)
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
     {
         Set<ConnectionWrapper> signalled = new HashSet<>();
         for (ConnectionWrapper connection : connections)
@@ -178,6 +179,14 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
 
         return signalled;
+    }
+
+    @Override
+    public void addDefaultConnectionProperties(Properties props)
+    {
+        // The read-only timeout sweep sends cancels while holding up the request's exit,
+        // so don't wait out pgjdbc's 10 s default on an unreachable database
+        props.putIfAbsent("cancelSignalTimeout", "2");
     }
 
     @Override

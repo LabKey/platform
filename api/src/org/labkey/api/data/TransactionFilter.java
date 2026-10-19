@@ -244,7 +244,7 @@ public class TransactionFilter implements Filter
             cancelled = tracker.cancellation().get();
 
             // Closing a connection doesn't stop the query running on it. Resent on later sweeps, since a cancel that arrives between statements does nothing.
-            unsignalled = RequestCancellation.cancelQueriesWithoutConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, cancelled, first);
+            unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread), source, cancelled, first);
 
             try (DbScope.ConnectionSharingCloseable ignored = DbScope.shareConnections(thread, Thread.currentThread()))
             {
@@ -256,7 +256,7 @@ public class TransactionFilter implements Filter
 
         // Outside the lock: opening a connection to a struggling database must not hold up the request's exit.
         // Safe once the request is gone, since its wrappers are no longer allocated and the fallback skips them.
-        RequestCancellation.cancelQueriesWithNewConnection(unsignalled, source, cancelled, first);
+        RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first);
     }
 
     public static int getPendingRequestCount()

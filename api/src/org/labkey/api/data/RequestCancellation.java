@@ -213,15 +213,15 @@ public final class RequestCancellation
      */
     public static void cancelQueries(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
-        cancelQueriesWithNewConnection(cancelQueriesWithoutConnection(connectionsByScope, source, null, count), source, null, count);
+        cancelQueriesViaNewConnection(cancelQueriesViaOwningConnection(connectionsByScope, source, null, count), source, null, count);
     }
 
     /**
      * The first half of {@link #cancelQueries}, which never waits on the pool
      * @param cancelled the request whose backends these are, which records them for its exit line
-     * @return the connections it couldn't signal, for {@link #cancelQueriesWithNewConnection}
+     * @return the connections it couldn't signal, for {@link #cancelQueriesViaNewConnection}
      */
-    static Map<DbScope, Set<ConnectionWrapper>> cancelQueriesWithoutConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count)
+    static Map<DbScope, Set<ConnectionWrapper>> cancelQueriesViaOwningConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count)
     {
         Map<DbScope, Set<ConnectionWrapper>> remaining = new HashMap<>();
         connectionsByScope.forEach((scope, connections) -> {
@@ -231,7 +231,7 @@ public final class RequestCancellation
             Set<ConnectionWrapper> signalled = Set.of();
             try
             {
-                signalled = scope.getSqlDialect().cancelQueriesWithoutConnection(connections);
+                signalled = scope.getSqlDialect().cancelQueriesViaOwningConnection(connections);
                 backendsCancelled(scope, signalled, source, cancelled, count);
             }
             catch (RuntimeException e)
@@ -248,7 +248,7 @@ public final class RequestCancellation
     }
 
     /** The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it opens a new connection */
-    static void cancelQueriesWithNewConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count)
+    static void cancelQueriesViaNewConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count)
     {
         connectionsByScope.forEach((scope, connections) -> {
             try
@@ -485,8 +485,8 @@ public final class RequestCancellation
             BlockedQuery query = startBlockedQuery();
             Set<Integer> spids = query.connections().stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet());
             Cancelled cancelled = new Cancelled(Source.TIMEOUT, System.currentTimeMillis());
-            Map<DbScope, Set<ConnectionWrapper>> unsignalled = cancelQueriesWithoutConnection(Map.of(query.scope(), query.connections()), Source.TIMEOUT, cancelled, true);
-            cancelQueriesWithNewConnection(unsignalled, Source.TIMEOUT, cancelled, true);
+            Map<DbScope, Set<ConnectionWrapper>> unsignalled = cancelQueriesViaOwningConnection(Map.of(query.scope(), query.connections()), Source.TIMEOUT, cancelled, true);
+            cancelQueriesViaNewConnection(unsignalled, Source.TIMEOUT, cancelled, true);
             assertStopped(query);
             assertEquals("Cancelled backends weren't recorded for the exit line", spids, cancelled._spids);
         }
@@ -496,7 +496,7 @@ public final class RequestCancellation
         public void testDriverCancel() throws Exception
         {
             BlockedQuery query = startBlockedQuery();
-            Set<ConnectionWrapper> signalled = query.scope().getSqlDialect().cancelQueriesWithoutConnection(query.connections());
+            Set<ConnectionWrapper> signalled = query.scope().getSqlDialect().cancelQueriesViaOwningConnection(query.connections());
             assertEquals("Driver cancel didn't signal every connection", query.connections(), signalled);
             assertStopped(query);
         }
