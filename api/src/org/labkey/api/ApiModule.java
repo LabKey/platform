@@ -168,6 +168,7 @@ import org.labkey.api.settings.OptionalFeatureFlag;
 import org.labkey.api.settings.OptionalFeatureService;
 import org.labkey.api.settings.OptionalFeatureService.FeatureType;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.usageMetrics.UsageMetrics;
 import org.labkey.api.util.ChecksumUtil;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -497,6 +498,7 @@ public class ApiModule extends CodeOnlyModule
             Table.LogExceptionTestCase.class,
             TracedOperation.TestCase.class,
             URIUtil.TestCase.class,
+            UsageMetrics.TestCase.class,
             ValidEmail.TestCase.class,
             VersionNumber.TestCase.class,
             ViewContext.TestCase.class,

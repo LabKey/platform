@@ -15,22 +15,18 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
+import org.labkey.api.usageMetrics.UsageMetrics;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class FileLinkMetricsProvider implements UsageMetricsProvider
+public class FileLinkMetricsProvider implements DescribedUsageMetricsProvider
 {
     private final static FileLinkMetricsProvider _instance = new FileLinkMetricsProvider();
-    private final Map<String, Object> _metrics;
+    private volatile Map<String, Object> _metrics = Map.of("Run time", "Not run yet.");
 
     private FileLinkMetricsProvider()
     {
-        _metrics = new HashMap<>();
-        Map<String, Object> missingFilesMetrics = new HashMap<>();
-        missingFilesMetrics.put("Run time", "Not run yet.");
-        _metrics.put(FileLinkMetricsMaintenanceTask.NAME, missingFilesMetrics);
     }
 
     public static FileLinkMetricsProvider getInstance()
@@ -39,13 +35,14 @@ public class FileLinkMetricsProvider implements UsageMetricsProvider
     }
 
     @Override
-    public Map<String, Object> getUsageMetrics()
+    public void addUsageMetrics(UsageMetrics metrics)
     {
-        return _metrics;
+        metrics.group(FileLinkMetricsMaintenanceTask.NAME, "File field files as of the last system maintenance run since startup: run time, missing files, and valid files by schema (assay batch and run files under exp)")
+            .putAll(_metrics);
     }
 
     public void updateMetrics(Map<String, Object> metrics)
     {
-        _metrics.putAll(metrics);
+        _metrics = metrics;
     }
 }

@@ -109,7 +109,7 @@ public class SpecialCharacterMetricsMaintenanceTask implements MaintenanceTask
 
             metric.putAll(counts);
 
-            SpecialCharacterMetricsProvider.getInstance().updateMetrics(Map.of(SpecialCharacterMetricsProvider.METRIC_KEY, metric));
+            SpecialCharacterMetricsProvider.getInstance().updateMetrics(metric);
 
         }
         catch (Exception e)

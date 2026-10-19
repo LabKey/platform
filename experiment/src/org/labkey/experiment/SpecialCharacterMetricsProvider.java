@@ -15,24 +15,20 @@
  */
 package org.labkey.experiment;
 
-import org.labkey.api.usageMetrics.UsageMetricsProvider;
+import org.labkey.api.usageMetrics.DescribedUsageMetricsProvider;
+import org.labkey.api.usageMetrics.UsageMetrics;
 
-import java.util.HashMap;
 import java.util.Map;
 
-public class SpecialCharacterMetricsProvider implements UsageMetricsProvider
+public class SpecialCharacterMetricsProvider implements DescribedUsageMetricsProvider
 {
     public static final String METRIC_KEY = "specialCharacterFields";
 
     private final static SpecialCharacterMetricsProvider _instance = new SpecialCharacterMetricsProvider();
-    private final Map<String, Object> _metrics;
+    private volatile Map<String, Object> _metrics = Map.of("Run time", "Not run yet.");
 
     private SpecialCharacterMetricsProvider()
     {
-        _metrics = new HashMap<>();
-        Map<String, Object> initial = new HashMap<>();
-        initial.put("Run time", "Not run yet.");
-        _metrics.put(METRIC_KEY, initial);
     }
 
     public static SpecialCharacterMetricsProvider getInstance()
@@ -41,13 +37,15 @@ public class SpecialCharacterMetricsProvider implements UsageMetricsProvider
     }
 
     @Override
-    public Map<String, Object> getUsageMetrics()
+    public void addUsageMetrics(UsageMetrics metrics)
     {
-        return _metrics;
+        metrics.group(METRIC_KEY, "Semicolons, commas, newlines, and double quotes as of the last system maintenance run since startup. " +
+            "TextChoice/MVTC: choice fields with such a choice; Text/MultiLine: columns with such a value; dataName: sample type and data class tables with such a name; objectStringValue: non-provisioned properties with such a value")
+            .putAll(_metrics);
     }
 
     public void updateMetrics(Map<String, Object> metrics)
     {
-        _metrics.putAll(metrics);
+        _metrics = metrics;
     }
 }

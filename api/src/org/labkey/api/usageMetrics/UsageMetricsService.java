@@ -18,6 +18,7 @@ package org.labkey.api.usageMetrics;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -60,4 +61,17 @@ public interface UsageMetricsService
      * @throws IllegalArgumentException if moduleName doesn't correspond to an existing module
      */
     void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics);
+
+    /** Overload so a lambda taking {@link UsageMetrics} can be registered directly */
+    default void registerUsageMetrics(String moduleName, DescribedUsageMetricsProvider metrics)
+    {
+        registerUsageMetrics(moduleName, (UsageMetricsProvider) metrics);
+    }
+
+    /**
+     * Never included in the mothership report. Runs every provider, so it costs as much as generating a report.
+     * @return map of module name to its metric descriptions; top-level keys from providers that aren't
+     * {@link DescribedUsageMetricsProvider}s are included with a null description
+     */
+    Map<String, List<UsageMetrics.Description>> getModuleUsageMetricDescriptions();
 }
