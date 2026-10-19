@@ -267,7 +267,9 @@ public class AsyncQueryRequest<T>
             if (remaining <= 0)
             {
                 _log.warn("Async query thread '{}' still running {} ms after its request was interrupted", worker.getName(), WORKER_EXIT_TIMEOUT_MS);
-                // The worker still holds this thread's connection, which the thread's next request would otherwise reuse
+                // The worker still holds this thread's connection. Detaching keeps the thread's next request off it; marking
+                // discards it even if this request's cleanup releases it while the worker is still using it.
+                ConnectionWrapper.getConnectionsByScopeForEffectiveThread(Thread.currentThread()).values().forEach(c -> c.forEach(ConnectionWrapper::markCancelled));
                 DbScope.detachConnectionHolders(Thread.currentThread());
                 return;
             }
@@ -426,20 +428,8 @@ public class AsyncQueryRequest<T>
                 assertTrue("Request thread's connection holder is still referenced", holderReleased.get());
                 assertNull("Next query on the request thread failed", nextQueryFailure.get());
                 assertFalse("Interrupted query had no connections", spids.isEmpty());
-                assertEquals("Cancelled session went back to the pool", 0, countLiveBackends(scope, spids));
+                assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
             }
-        }
-
-        /** Polls briefly, since the backend exits only after the pool closes its connection */
-        private static long countLiveBackends(DbScope scope, Set<Integer> spids) throws InterruptedException
-        {
-            SQLFragment live = new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
-            long start = System.currentTimeMillis();
-            long count;
-            while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)
-                //noinspection BusyWait
-                Thread.sleep(100);
-            return count;
         }
 
         /** A worker that outlives the interrupt wait mustn't leave its connection for the request thread's next request */
@@ -523,6 +513,7 @@ public class AsyncQueryRequest<T>
 
             assertTrue("Worker didn't finish", workerDone.await(10, TimeUnit.SECONDS));
             assertNull("Worker's connection release failed", workerFailure.get());
+            assertEquals("Stuck worker's session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, Set.of(workerSpid.get())));
         }
     }
 }

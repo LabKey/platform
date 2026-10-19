@@ -406,13 +406,7 @@ public class TransactionFilter implements Filter
             assertTrue("Query failed with something other than a cancel: " + queryFailure.get(), cancelled);
 
             assertFalse("Request had no connections", spids.isEmpty());
-            SQLFragment live = new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
-            long start = System.currentTimeMillis();
-            long count;
-            while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)
-                //noinspection BusyWait
-                Thread.sleep(100);
-            assertEquals("Cancelled session went back to the pool", 0, count);
+            assertEquals("Cancelled session went back to the pool", 0, RequestCancellation.TestCase.countLiveBackends(scope, spids));
         }
 
         private static void setReadOnlyTimeout(int seconds)
