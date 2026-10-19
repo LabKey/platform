@@ -836,6 +836,17 @@ public class ColumnFactsCache
         }
 
         @Test
+        public void testShapesSampleNewestRows()
+        {
+            // The oldest rows, S-0 through S-99, have the only one- and two-digit names, and sorting by value would reach them first
+            assertEquals("The sample must skip exactly the oldest 100 rows", 100, ROWS - ColumnFactsLoader.SHAPE_SAMPLE_SIZE);
+            TableInfo table = getTable(SAMPLE_TYPE);
+            ColumnInfo name = Objects.requireNonNull(table.getColumn("Name"));
+            Map<FieldKey, ColumnFact.Shapes> shapes = new ColumnFactsLoader().loadShapes(table, List.of(name), Map.of());
+            assertEquals(List.of("A-999"), shapes.get(name.getFieldKey()).shapes());
+        }
+
+        @Test
         public void testSharingFollowsToken()
         {
             ColumnFactsCache cache = new ColumnFactsCache(_testCache, _executor, new TestSource(0));

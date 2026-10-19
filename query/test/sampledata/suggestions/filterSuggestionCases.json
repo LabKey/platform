@@ -2,7 +2,7 @@
   "description": "Ranking cases for grid search suggestions: a term plus what is known about each column yields an ordered suggestion list.",
   "columnSets": {
     "plasma": [
-      { "fieldKey": "Name", "caption": "Sample ID", "type": "string", "isTitle": true, "nameExpression": "PL-${genId}", "shapes": ["AA-9999999", "AA-9999999-9"] },
+      { "fieldKey": "Name", "caption": "Sample ID", "type": "string", "isTitle": true, "partialMatch": true, "nameExpression": "PL-${genId}", "shapes": ["AA-9999999", "AA-9999999-9"] },
       { "fieldKey": "TubeType", "caption": "Tube Type", "type": "string", "values": ["ACD-B", "EDTA K3", "Heparin Li", "Heparin Na", "Sodium Citrate"] },
       { "fieldKey": "BloodType", "caption": "Blood Type", "type": "string", "values": ["A+", "A-", "AB+", "B+", "B-", "O+", "O-"] },
       { "fieldKey": "ProcessingMethod", "caption": "Processing Method", "type": "string", "values": ["Double Spin", "PRP", "Single Spin", "Standard"] },
@@ -62,11 +62,11 @@
           ],
           "value": "PL-5000000-1",
           "valueType": "string",
-          "label": "Filter a string field for PL-5000000-1 (10 columns)",
+          "label": "Filter a string field for PL-5000000-1 (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 38 }
         },
-        { "kind": "search", "value": "PL-5000000-1", "label": "Search all columns for PL-5000000-1", "source": "fallback", "match": { "start": 23, "end": 35 } }
+        { "kind": "search", "value": "PL-5000000-1", "label": "Search all fields for PL-5000000-1", "source": "fallback", "match": { "start": 22, "end": 34 } }
       ]
     },
     {
@@ -93,11 +93,11 @@
           ],
           "value": "PL-500",
           "valueType": "string",
-          "label": "Filter a string field for PL-500 (10 columns)",
+          "label": "Filter a string field for PL-500 (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 32 }
         },
-        { "kind": "search", "value": "PL-500", "label": "Search all columns for PL-500", "source": "fallback", "match": { "start": 23, "end": 29 } }
+        { "kind": "search", "value": "PL-500", "label": "Search all fields for PL-500", "source": "fallback", "match": { "start": 22, "end": 28 } }
       ]
     },
     {
@@ -106,6 +106,7 @@
       "term": "Sodium",
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "partialValue", "match": { "start": 13, "end": 19 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "Sodium", "label": "Sample ID contains Sodium", "source": "partialMatch", "match": { "start": 19, "end": 25 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Sodium", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
@@ -123,11 +124,11 @@
           ],
           "value": "Sodium",
           "valueType": "string",
-          "label": "Filter a string field for Sodium (10 columns)",
+          "label": "Filter a string field for Sodium (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 32 }
         },
-        { "kind": "search", "value": "Sodium", "label": "Search all columns for Sodium", "source": "fallback", "match": { "start": 23, "end": 29 } }
+        { "kind": "search", "value": "Sodium", "label": "Search all fields for Sodium", "source": "fallback", "match": { "start": 22, "end": 28 } }
       ]
     },
     {
@@ -137,6 +138,7 @@
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Na", "label": "Tube Type is Heparin Na", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "Hep", "label": "Sample ID contains Hep", "source": "partialMatch", "match": { "start": 19, "end": 22 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
@@ -154,15 +156,15 @@
           ],
           "value": "Hep",
           "valueType": "string",
-          "label": "Filter a string field for Hep (10 columns)",
+          "label": "Filter a string field for Hep (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 29 }
         },
-        { "kind": "search", "value": "Hep", "label": "Search all columns for Hep", "source": "fallback", "match": { "start": 23, "end": 26 } }
+        { "kind": "search", "value": "Hep", "label": "Search all fields for Hep", "source": "fallback", "match": { "start": 22, "end": 25 } }
       ]
     },
     {
-      "name": "direct filters are capped to leave room for compose and search",
+      "name": "direct filters are capped to leave room for compose and search; the only slot goes to the specific match",
       "columnSet": "plasma",
       "term": "Hep",
       "maxSuggestions": 4,
@@ -185,11 +187,43 @@
           ],
           "value": "Hep",
           "valueType": "string",
-          "label": "Filter a string field for Hep (10 columns)",
+          "label": "Filter a string field for Hep (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 29 }
         },
-        { "kind": "search", "value": "Hep", "label": "Search all columns for Hep", "source": "fallback", "match": { "start": 23, "end": 26 } }
+        { "kind": "search", "value": "Hep", "label": "Search all fields for Hep", "source": "fallback", "match": { "start": 22, "end": 25 } }
+      ]
+    },
+    {
+      "name": "a capped list reserves a slot for the partial match below the specific matches",
+      "columnSet": "plasma",
+      "term": "Hep",
+      "maxSuggestions": 5,
+      "expected": [
+        { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Heparin Li", "label": "Tube Type is Heparin Li", "source": "partialValue", "match": { "start": 13, "end": 16 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "Hep", "label": "Sample ID contains Hep", "source": "partialMatch", "match": { "start": 19, "end": 22 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
+        { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "Hep", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
+        {
+          "kind": "compose",
+          "fields": [
+            { "fieldKey": "Name", "op": "contains" },
+            { "fieldKey": "TubeType", "op": "contains" },
+            { "fieldKey": "BloodType", "op": "contains" },
+            { "fieldKey": "ProcessingMethod", "op": "contains" },
+            { "fieldKey": "HemolysisGrade", "op": "contains" },
+            { "fieldKey": "SampleState/Label", "op": "contains" },
+            { "fieldKey": "SubjectID", "op": "contains" },
+            { "fieldKey": "Barcode", "op": "contains" },
+            { "fieldKey": "Units", "op": "contains" },
+            { "fieldKey": "CreatedBy/DisplayName", "op": "contains" }
+          ],
+          "value": "Hep",
+          "valueType": "string",
+          "label": "Filter a string field for Hep (10 fields)",
+          "source": "compose",
+          "match": { "start": 26, "end": 29 }
+        },
+        { "kind": "search", "value": "Hep", "label": "Search all fields for Hep", "source": "fallback", "match": { "start": 22, "end": 25 } }
       ]
     },
     {
@@ -198,6 +232,7 @@
       "term": "sodium citrate",
       "expected": [
         { "kind": "filter", "fieldKey": "TubeType", "op": "eq", "value": "Sodium Citrate", "label": "Tube Type is Sodium Citrate", "source": "exactValue", "match": { "start": 13, "end": 27 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "TubeType" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "sodium citrate", "label": "Sample ID contains sodium citrate", "source": "partialMatch", "match": { "start": 19, "end": 33 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "TubeType", "op": "contains" }], "value": "sodium citrate", "valueType": "string", "label": "Filter Tube Type…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "TubeType" } },
         {
           "kind": "compose",
@@ -215,11 +250,11 @@
           ],
           "value": "sodium citrate",
           "valueType": "string",
-          "label": "Filter a string field for sodium citrate (10 columns)",
+          "label": "Filter a string field for sodium citrate (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 40 }
         },
-        { "kind": "search", "value": "sodium citrate", "label": "Search all columns for sodium citrate", "source": "fallback", "match": { "start": 23, "end": 37 } }
+        { "kind": "search", "value": "sodium citrate", "label": "Search all fields for sodium citrate", "source": "fallback", "match": { "start": 22, "end": 36 } }
       ]
     },
     {
@@ -228,6 +263,7 @@
       "term": "A+",
       "expected": [
         { "kind": "filter", "fieldKey": "BloodType", "op": "eq", "value": "A+", "label": "Blood Type is A+", "source": "exactValue", "match": { "start": 14, "end": 16 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "BloodType" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "A+", "label": "Sample ID contains A+", "source": "partialMatch", "match": { "start": 19, "end": 21 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "BloodType", "op": "contains" }], "value": "A+", "valueType": "string", "label": "Filter Blood Type…", "source": "compose", "colMatch": { "start": 7, "end": 17, "fieldKey": "BloodType" } },
         {
           "kind": "compose",
@@ -245,11 +281,11 @@
           ],
           "value": "A+",
           "valueType": "string",
-          "label": "Filter a string field for A+ (10 columns)",
+          "label": "Filter a string field for A+ (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 28 }
         },
-        { "kind": "search", "value": "A+", "label": "Search all columns for A+", "source": "fallback", "match": { "start": 23, "end": 25 } }
+        { "kind": "search", "value": "A+", "label": "Search all fields for A+", "source": "fallback", "match": { "start": 22, "end": 24 } }
       ]
     },
     {
@@ -258,6 +294,7 @@
       "term": "Avail",
       "expected": [
         { "kind": "filter", "fieldKey": "SampleState/Label", "op": "eq", "value": "Available", "label": "Status is Available", "source": "partialValue", "match": { "start": 10, "end": 15 }, "colMatch": { "start": 0, "end": 6, "fieldKey": "SampleState" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "Avail", "label": "Sample ID contains Avail", "source": "partialMatch", "match": { "start": 19, "end": 24 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "SampleState/Label", "op": "contains" }], "value": "Avail", "valueType": "string", "label": "Filter Status…", "source": "compose", "colMatch": { "start": 7, "end": 13, "fieldKey": "SampleState" } },
         {
           "kind": "compose",
@@ -275,11 +312,11 @@
           ],
           "value": "Avail",
           "valueType": "string",
-          "label": "Filter a string field for Avail (10 columns)",
+          "label": "Filter a string field for Avail (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 31 }
         },
-        { "kind": "search", "value": "Avail", "label": "Search all columns for Avail", "source": "fallback", "match": { "start": 23, "end": 28 } }
+        { "kind": "search", "value": "Avail", "label": "Search all fields for Avail", "source": "fallback", "match": { "start": 22, "end": 27 } }
       ]
     },
     {
@@ -298,11 +335,11 @@
           ],
           "value": "PS-29",
           "valueType": "string",
-          "label": "Filter a string field for PS-29 (3 columns)",
+          "label": "Filter a string field for PS-29 (3 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 31 }
         },
-        { "kind": "search", "value": "PS-29", "label": "Search all columns for PS-29", "source": "fallback", "match": { "start": 23, "end": 28 } }
+        { "kind": "search", "value": "PS-29", "label": "Search all fields for PS-29", "source": "fallback", "match": { "start": 22, "end": 27 } }
       ]
     },
     {
@@ -321,11 +358,11 @@
           ],
           "value": "FTR-123",
           "valueType": "string",
-          "label": "Filter a string field for FTR-123 (3 columns)",
+          "label": "Filter a string field for FTR-123 (3 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 33 }
         },
-        { "kind": "search", "value": "FTR-123", "label": "Search all columns for FTR-123", "source": "fallback", "match": { "start": 23, "end": 30 } }
+        { "kind": "search", "value": "FTR-123", "label": "Search all fields for FTR-123", "source": "fallback", "match": { "start": 22, "end": 29 } }
       ]
     },
     {
@@ -352,11 +389,11 @@
           ],
           "value": "XY-1234567",
           "valueType": "string",
-          "label": "Filter a string field for XY-1234567 (10 columns)",
+          "label": "Filter a string field for XY-1234567 (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 36 }
         },
-        { "kind": "search", "value": "XY-1234567", "label": "Search all columns for XY-1234567", "source": "fallback", "match": { "start": 23, "end": 33 } }
+        { "kind": "search", "value": "XY-1234567", "label": "Search all fields for XY-1234567", "source": "fallback", "match": { "start": 22, "end": 32 } }
       ]
     },
     {
@@ -365,6 +402,7 @@
       "term": "SUBJ-028504",
       "expected": [
         { "kind": "filter", "fieldKey": "SubjectID", "op": "eq", "value": "SUBJ-028504", "label": "Subject ID is SUBJ-028504", "source": "shape", "match": { "start": 14, "end": 25 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "SubjectID" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "SUBJ-028504", "label": "Sample ID contains SUBJ-028504", "source": "partialMatch", "match": { "start": 19, "end": 30 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "SubjectID", "op": "eq" }], "value": "SUBJ-028504", "valueType": "string", "label": "Filter Subject ID…", "source": "compose", "colMatch": { "start": 7, "end": 17, "fieldKey": "SubjectID" } },
         {
           "kind": "compose",
@@ -382,11 +420,11 @@
           ],
           "value": "SUBJ-028504",
           "valueType": "string",
-          "label": "Filter a string field for SUBJ-028504 (10 columns)",
+          "label": "Filter a string field for SUBJ-028504 (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 37 }
         },
-        { "kind": "search", "value": "SUBJ-028504", "label": "Search all columns for SUBJ-028504", "source": "fallback", "match": { "start": 23, "end": 34 } }
+        { "kind": "search", "value": "SUBJ-028504", "label": "Search all fields for SUBJ-028504", "source": "fallback", "match": { "start": 22, "end": 33 } }
       ]
     },
     {
@@ -394,8 +432,9 @@
       "columnSet": "plasma",
       "term": "86.76",
       "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "86.76", "label": "Sample ID contains 86.76", "source": "partialMatch", "match": { "start": 19, "end": 24 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "86.76", "valueType": "number", "label": "Filter Concentration Mg ML…", "source": "compose", "colMatch": { "start": 7, "end": 26, "fieldKey": "Concentration" } },
-        { "kind": "search", "value": "86.76", "label": "Search all columns for 86.76", "source": "fallback", "match": { "start": 23, "end": 28 } }
+        { "kind": "search", "value": "86.76", "label": "Search all fields for 86.76", "source": "fallback", "match": { "start": 22, "end": 27 } }
       ]
     },
     {
@@ -417,11 +456,11 @@
           ],
           "value": "3",
           "valueType": "number",
-          "label": "Filter a number field for 3 (5 columns)",
+          "label": "Filter a number field for 3 (5 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 27 }
         },
-        { "kind": "search", "value": "3", "label": "Search all columns for 3", "source": "fallback", "match": { "start": 23, "end": 24 } }
+        { "kind": "search", "value": "3", "label": "Search all fields for 3", "source": "fallback", "match": { "start": 22, "end": 23 } }
       ]
     },
     {
@@ -430,6 +469,7 @@
       "term": "2023",
       "expected": [
         { "kind": "filter", "fieldKey": "RowId", "op": "eq", "value": "2023", "label": "Row Id is 2023", "source": "key", "match": { "start": 10, "end": 14 }, "colMatch": { "start": 0, "end": 6, "fieldKey": "RowId" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "2023", "label": "Sample ID contains 2023", "source": "partialMatch", "match": { "start": 19, "end": 23 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -438,11 +478,11 @@
           ],
           "value": "2023-01-01,2023-12-31",
           "valueType": "date",
-          "label": "Filter a date field for 2023 (2 columns)",
+          "label": "Filter a date field for 2023 (2 fields)",
           "source": "compose",
           "match": { "start": 24, "end": 28 }
         },
-        { "kind": "search", "value": "2023", "label": "Search all columns for 2023", "source": "fallback", "match": { "start": 23, "end": 27 } }
+        { "kind": "search", "value": "2023", "label": "Search all fields for 2023", "source": "fallback", "match": { "start": 22, "end": 26 } }
       ]
     },
     {
@@ -450,6 +490,7 @@
       "columnSet": "plasma",
       "term": "Mar 2023",
       "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "Mar 2023", "label": "Sample ID contains Mar 2023", "source": "partialMatch", "match": { "start": 19, "end": 27 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -458,11 +499,11 @@
           ],
           "value": "2023-03-01,2023-03-31",
           "valueType": "date",
-          "label": "Filter a date field for Mar 2023 (2 columns)",
+          "label": "Filter a date field for Mar 2023 (2 fields)",
           "source": "compose",
           "match": { "start": 24, "end": 32 }
         },
-        { "kind": "search", "value": "Mar 2023", "label": "Search all columns for Mar 2023", "source": "fallback", "match": { "start": 23, "end": 31 } }
+        { "kind": "search", "value": "Mar 2023", "label": "Search all fields for Mar 2023", "source": "fallback", "match": { "start": 22, "end": 30 } }
       ]
     },
     {
@@ -470,6 +511,7 @@
       "columnSet": "plasma",
       "term": "2019-02-03",
       "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "2019-02-03", "label": "Sample ID contains 2019-02-03", "source": "partialMatch", "match": { "start": 19, "end": 29 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -478,11 +520,11 @@
           ],
           "value": "2019-02-03",
           "valueType": "date",
-          "label": "Filter a date field for 2019-02-03 (2 columns)",
+          "label": "Filter a date field for 2019-02-03 (2 fields)",
           "source": "compose",
           "match": { "start": 24, "end": 34 }
         },
-        { "kind": "search", "value": "2019-02-03", "label": "Search all columns for 2019-02-03", "source": "fallback", "match": { "start": 23, "end": 33 } }
+        { "kind": "search", "value": "2019-02-03", "label": "Search all fields for 2019-02-03", "source": "fallback", "match": { "start": 22, "end": 32 } }
       ]
     },
     {
@@ -491,6 +533,7 @@
       "term": "005004441",
       "expected": [
         { "kind": "filter", "fieldKey": "Barcode", "op": "eq", "value": "005004441", "label": "Barcode is 005004441", "source": "identity", "match": { "start": 11, "end": 20 }, "colMatch": { "start": 0, "end": 7, "fieldKey": "Barcode" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "005004441", "label": "Sample ID contains 005004441", "source": "partialMatch", "match": { "start": 19, "end": 28 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         { "kind": "compose", "fields": [{ "fieldKey": "Barcode", "op": "eq" }], "value": "005004441", "valueType": "string", "label": "Filter Barcode…", "source": "compose", "colMatch": { "start": 7, "end": 14, "fieldKey": "Barcode" } },
         {
           "kind": "compose",
@@ -508,11 +551,11 @@
           ],
           "value": "005004441",
           "valueType": "string",
-          "label": "Filter a string field for 005004441 (10 columns)",
+          "label": "Filter a string field for 005004441 (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 35 }
         },
-        { "kind": "search", "value": "005004441", "label": "Search all columns for 005004441", "source": "fallback", "match": { "start": 23, "end": 32 } }
+        { "kind": "search", "value": "005004441", "label": "Search all fields for 005004441", "source": "fallback", "match": { "start": 22, "end": 31 } }
       ]
     },
     {
@@ -520,6 +563,7 @@
       "columnSet": "plasma",
       "term": "asdf",
       "expected": [
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "asdf", "label": "Sample ID contains asdf", "source": "partialMatch", "match": { "start": 19, "end": 23 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -536,11 +580,11 @@
           ],
           "value": "asdf",
           "valueType": "string",
-          "label": "Filter a string field for asdf (10 columns)",
+          "label": "Filter a string field for asdf (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 30 }
         },
-        { "kind": "search", "value": "asdf", "label": "Search all columns for asdf", "source": "fallback", "match": { "start": 23, "end": 27 } }
+        { "kind": "search", "value": "asdf", "label": "Search all fields for asdf", "source": "fallback", "match": { "start": 22, "end": 26 } }
       ]
     },
     {
@@ -549,6 +593,7 @@
       "term": "true",
       "expected": [
         { "kind": "filter", "fieldKey": "IsAliquot", "op": "eq", "value": "true", "label": "Is Aliquot is true", "source": "exactValue", "match": { "start": 14, "end": 18 }, "colMatch": { "start": 0, "end": 10, "fieldKey": "IsAliquot" } },
+        { "kind": "filter", "fieldKey": "Name", "op": "contains", "value": "true", "label": "Sample ID contains true", "source": "partialMatch", "match": { "start": 19, "end": 23 }, "colMatch": { "start": 0, "end": 9, "fieldKey": "Name" } },
         {
           "kind": "compose",
           "fields": [
@@ -565,11 +610,11 @@
           ],
           "value": "true",
           "valueType": "string",
-          "label": "Filter a string field for true (10 columns)",
+          "label": "Filter a string field for true (10 fields)",
           "source": "compose",
           "match": { "start": 26, "end": 30 }
         },
-        { "kind": "search", "value": "true", "label": "Search all columns for true", "source": "fallback", "match": { "start": 23, "end": 27 } }
+        { "kind": "search", "value": "true", "label": "Search all fields for true", "source": "fallback", "match": { "start": 22, "end": 26 } }
       ]
     },
     {
@@ -579,7 +624,7 @@
       "expected": [
         { "kind": "compose", "fields": [{ "fieldKey": "Concentration", "op": "eq" }], "value": "1000", "valueType": "number", "label": "Filter Concentration…", "source": "compose", "colMatch": { "start": 7, "end": 20, "fieldKey": "Concentration" } },
         { "kind": "compose", "fields": [{ "fieldKey": "Collected", "op": "between" }], "value": "1000-01-01,1000-12-31", "valueType": "date", "label": "Filter Collected…", "source": "compose", "colMatch": { "start": 7, "end": 16, "fieldKey": "Collected" } },
-        { "kind": "search", "value": "1000", "label": "Search all columns for 1000", "source": "fallback", "match": { "start": 23, "end": 27 } }
+        { "kind": "search", "value": "1000", "label": "Search all fields for 1000", "source": "fallback", "match": { "start": 22, "end": 26 } }
       ]
     },
     {
