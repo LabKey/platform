@@ -1791,7 +1791,7 @@ public class Table
         if (null != sqlfDeleteObject)
         {
             sqlfDelete.append(sqlfDeleteObject);
-            sqlfDelete.unsafeAppend(";\n");
+            sqlfDelete.appendEOS();
         }
         sqlfDelete.append(sqlfDeleteTable);
 

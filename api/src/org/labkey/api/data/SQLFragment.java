@@ -777,7 +777,7 @@ public class SQLFragment
         String name = e.name();
         // Enum.name() returns a legal Java identifier per JLS, so none of these characters can appear
         // in practice. Defense in depth: reject anything SQL-active rather than only the apostrophe.
-        if (StringUtils.containsAny(name, "'\"\\;\r\n "))
+        if (StringUtils.containsAny(name, "'\"\\;\r\n\0 "))
             throw new IllegalStateException("Unexpected character in Enum.name(): " + name);
         getStringBuilder().append("'").append(name).append("'");
         return this;
@@ -1413,9 +1413,12 @@ public class SQLFragment
         public void testIllegalArgument()
         {
             shouldFail(() -> new SQLFragment(";"));
+            shouldFail(() -> new SQLFragment().append(";"));
             shouldFail(() -> new SQLFragment().unsafeAppend(";"));
             shouldFail(() -> new SQLFragment("AND name='"));
+            shouldFail(() -> new SQLFragment().append("AND name = '"));
             shouldFail(() -> new SQLFragment().unsafeAppend("AND name = '"));
+            shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
             shouldFail(() -> new SQLFragment().unsafeAppend("AND name = 'Robert'); DROP TABLE Students; --"));
 
             shouldFail(() -> new SQLFragment().appendIdentifier("column name"));

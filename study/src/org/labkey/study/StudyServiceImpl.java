@@ -1009,7 +1009,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
                 }
                 else if (col.getJdbcType() != colUnion.getJdbcType())
                 {
-                    var type = Objects.requireNonNull(dialect.getSqlCastTypeNameAsSql(col.getJdbcType()));
+                    var type = Objects.requireNonNull(dialect.getSqlCastTypeNameAsSql(colUnion.getJdbcType()));
                     sqlf.unsafeAppend("CAST(").append(col.getValueSql(tableAlias)).unsafeAppend(" AS ").append(type).unsafeAppend(")");
                     col.declareJoins(tableAlias,joins);
                 }
