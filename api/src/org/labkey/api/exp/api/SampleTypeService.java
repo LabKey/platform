@@ -204,6 +204,11 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, long rowId, boolean includeOtherContainers);
 
+    /**
+     * Get a SampleType by LSID within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
+     */
+    ExpSampleType getSampleTypeByLsid(@NotNull Container scope, @NotNull String lsid, boolean includeOtherContainers);
+
     Lsid getSampleTypeLsid(String name, Container container);
 
     Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);

@@ -592,41 +592,65 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
     }
 
+    private static boolean isConnected(DbScope dbScope, Set<String> failedDataSources)
+    {
+        boolean dbConnected;
+        try (Connection conn = dbScope.getConnection())
+        {
+            dbConnected = conn != null;
+        }
+        // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
+        // we return a 200 saying we're not healthy instead of a 500
+        catch (Exception e)
+        {
+            if (failedDataSources.add(dbScope.getDataSourceName()))
+                LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
+            dbConnected = false;
+        }
+
+        if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
+            LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
+
+        return dbConnected;
+    }
+
     private void registerHealthChecks()
     {
         // Data sources that were unreachable on the previous check, so we can log transitions instead of every poll
         Set<String> failedDataSources = ConcurrentHashMap.newKeySet();
 
-        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+        // Default-category failures take the server out of rotation, so check only the LabKey scope; getDbScopes() would
+        // also connect to external data sources, blocking until an unreachable one times out
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () -> {
+            DbScope labkeyScope = DbScope.getLabKeyScope();
+            boolean dbConnected = isConnected(labkeyScope, failedDataSources);
+            Map<String, Object> healthValues = new HashMap<>();
+            healthValues.put(labkeyScope.getDatabaseName(), dbConnected);
+            return new HealthCheck.Result(dbConnected, healthValues);
+        });
+
+        HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.EXTERNAL_DATA_SOURCES_CATEGORY, () -> {
+            Map<String, Object> healthValues = new HashMap<>();
+            boolean allConnected = true;
+            for (DbScope dbScope : DbScope.getDbScopes())
             {
-                Map<String, Object> healthValues = new HashMap<>();
-                boolean allConnected = true;
-                for (DbScope dbScope : DbScope.getDbScopes())
-                {
-                    boolean dbConnected;
-                    try (Connection conn = dbScope.getConnection())
-                    {
-                        dbConnected = conn != null;
-                    }
-                    // Some failures come as ConfigurationException, not SQLException. Cast a wide net to ensure
-                    // we return a 200 saying we're not healthy instead of a 500
-                    catch (Exception e)
-                    {
-                        if (failedDataSources.add(dbScope.getDataSourceName()))
-                            LOG.warn("Failed to get connection for data source {}", dbScope.getDataSourceName(), e);
-                        dbConnected = false;
-                    }
+                if (dbScope.isLabKeyScope())
+                    continue;
 
-                    if (dbConnected && failedDataSources.remove(dbScope.getDataSourceName()))
-                        LOG.info("Reconnected to data source {}", dbScope.getDataSourceName());
-
-                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                    allConnected &= dbConnected;
-                }
-
-                return new HealthCheck.Result(allConnected, healthValues);
+                boolean dbConnected = isConnected(dbScope, failedDataSources);
+                healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                allConnected &= dbConnected;
             }
-        );
+
+            // getDbScopes() omits data sources that failed to connect, and those have no database name
+            for (String dsName : DbScope.getFailedDataSourceNames())
+            {
+                healthValues.put(dsName, false);
+                allConnected = false;
+            }
+
+            return new HealthCheck.Result(allConnected, healthValues);
+        });
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
             Map<String, Throwable> failures =  ModuleLoader.getInstance().getModuleFailures();
@@ -1485,6 +1509,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             DavController.MoveActionContainerScopingTestCase.class,
             EmailServiceImpl.TestCase.class,
             FilesSiteSettingsAction.TestCase.class,
+            HealthCheckTestCase.class,
             LoggerController.TestCase.class,
             LoggingTestCase.class,
             LoginController.TestCase.class,

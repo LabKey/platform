@@ -16,7 +16,7 @@
 package org.labkey.query.reports;
 
 import org.apache.commons.collections4.ListValuedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -165,7 +165,7 @@ public class ModuleReportCache
 
                 if (isResourceFile(name))
                 {
-                    if (StringUtils.endsWithIgnoreCase(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
+                    if (Strings.CI.endsWith(name, ModuleQueryReportDescriptor.FILE_EXTENSION))
                         possibleQueryReportFiles.put(resource.getPath(), resource);
                     else
                         descriptors.put(resource.getPath(), createModuleReportDescriptorInstance(module, resource));
@@ -189,8 +189,8 @@ public class ModuleReportCache
         {
             return ModuleRReportDescriptor.accept(filename) ||
                     ModuleIpynbReportDescriptor.accept(filename) ||
-                    StringUtils.endsWithIgnoreCase(filename, ModuleJavaScriptReportDescriptor.FILE_EXTENSION) ||
-                    StringUtils.endsWithIgnoreCase(filename, ModuleQueryReportDescriptor.FILE_EXTENSION);
+                    Strings.CI.endsWith(filename, ModuleJavaScriptReportDescriptor.FILE_EXTENSION) ||
+                    Strings.CI.endsWith(filename, ModuleQueryReportDescriptor.FILE_EXTENSION);
         }
 
         // TODO: Create and register factories for these descriptors

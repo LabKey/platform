@@ -15,7 +15,7 @@
  */
 package org.labkey.vfs;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -35,7 +35,7 @@ abstract public class AbstractFileSystemLike implements FileSystemLike
     {
         this.caseSensitive = caseSensitive;
         this.uri = uri;
-        this.strUri = StringUtils.appendIfMissing(uri.toString(),"/");
+        this.strUri = Strings.CS.appendIfMissing(uri.toString(),"/");
         this.scheme = uri.getScheme();
         this.canRead = canRead;
         this.canWrite = canWrite;
