@@ -174,12 +174,11 @@ public class ConnectionWrapper implements java.sql.Connection
     static
     {
         // Issue 51483: DB query can be left running after shutting down server
-        ContextListener.addShutdownListener(ShutdownListener.of("DB connection closer", () -> {
+        ContextListener.addShutdownListener(ShutdownListener.of("DB connection closer", null, () -> {
+            Date cutoffDate = getShutdownCutoff();
+
             // Closing doesn't stop a busy backend, which notices its client is gone only once it sends results
-            Date cutoffDate = getShutdownCutoff();
             RequestCancellation.cancelQueries(getConnectionsByScope(c -> c._allocationTime.before(cutoffDate)), RequestCancellation.Source.SHUTDOWN, true);
-        }, () -> {
-            Date cutoffDate = getShutdownCutoff();
 
             // Build up the list and release the lock on _openConnections
             List<ConnectionWrapper> toClose = new ArrayList<>();
