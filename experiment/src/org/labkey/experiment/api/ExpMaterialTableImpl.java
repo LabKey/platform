@@ -159,6 +159,10 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -1837,12 +1841,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             _scope.executeWithRetryReadOnly((_) -> upsert(sql));
         }
 
+        /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
         void executeIncrementalInsert()
         {
-            SQLFragment incremental = new SQLFragment("INSERT INTO temp.${NAME}\n")
-                    .append("SELECT * FROM (")
-                    .append(getViewSourceSql()).append(") viewsource_\n")
-                    .append("WHERE rowid > (SELECT COALESCE(MAX(rowid),0) FROM temp.${NAME})");
+            var d = CoreSchema.getInstance().getSchema().getSqlDialect();
+            SQLFragment incremental = new SQLFragment()
+                    .append("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
+                    .append(" AND NOT EXISTS (SELECT 1 FROM temp.${NAME} t WHERE t.rowid = em.rowid))\n")
+                    .append("INSERT INTO temp.${NAME}\n")
+                    .append(getViewSourceSql()).append(" AND m.rowId IN (SELECT rowid FROM added)");
             upsertWithRetry(incremental);
         }
 
@@ -2556,6 +2563,61 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         @Test
+        public void testInsertCommittedOutOfRowIdOrder() throws Exception
+        {
+            // GH Issue 1564: a row committed after a higher rowid has already been copied must still reach the view.
+            ExpSampleType st = createSampleType("IncrInsertRace");
+            insertRoots(st, "R1");
+
+            ExpMaterialTableImpl table = getSamplesTable(st);
+            assertCacheMatchesFreshDerivation(table, st.getLSID());
+
+            InvalidationCounters counters = getInvalidateCounters(st.getLSID());
+            CountDownLatch inserted = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            AtomicBoolean releaseTimedOut = new AtomicBoolean();
+            try (ExecutorService executor = Executors.newSingleThreadExecutor())
+            {
+                // Saves like a XAR import, which takes no name-generator lock, so the main thread's insert won't wait on it
+                Future<Long> lateCommit = executor.submit(() -> {
+                    try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
+                    {
+                        ExpMaterial m = ExperimentService.get().createExpMaterial(_c, st.generateSampleLSID().setObjectId("Late").toString(), "Late");
+                        m.setCpasType(st.getLSID());
+                        try
+                        {
+                            m.save(_user);
+                        }
+                        finally
+                        {
+                            inserted.countDown();
+                        }
+                        releaseTimedOut.set(!release.await(1, TimeUnit.MINUTES));
+                        tx.commit();
+                        return (long) m.getRowId();
+                    }
+                });
+
+                assertTrue("Open transaction never inserted its sample", inserted.await(1, TimeUnit.MINUTES));
+                if (lateCommit.isDone())
+                    lateCommit.get(); // surfaces the save's exception
+
+                long earlyRowId = insertRoots(st, "R2").getFirst();
+                assertCacheMatchesFreshDerivation(table, st.getLSID());
+                long insertSignal = counters.insert.get();
+
+                release.countDown();
+                long lateRowId = lateCommit.get(1, TimeUnit.MINUTES);
+                assertFalse("R2's insert waited on the open transaction, so the commits never interleaved", releaseTimedOut.get());
+                assertTrue("Open transaction's rowid " + lateRowId + " must be below R2's " + earlyRowId, lateRowId < earlyRowId);
+                assertTrue("Committing the late sample must signal an insert", counters.insert.get() > insertSignal);
+
+                assertTrue("Late-committing rowid " + lateRowId + " is missing from the materialized view", isCached(table, lateRowId));
+                assertCacheMatchesFreshDerivation(table, st.getLSID());
+            }
+        }
+
+        @Test
         public void testTargetedDelete() throws Exception
         {
             // Deletes by RowId, LSID and Name must each be logged, so the next read drops just those rows.
@@ -2801,6 +2863,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             DbScope scope = ExperimentServiceImpl.getExpSchema().getScope();
             assertEquals("Cached rows not found in fresh derivation", 0, countDiff(scope, cached, fresh));
             assertEquals("Fresh-derivation rows not found in cache", 0, countDiff(scope, fresh, cached));
+        }
+
+        /** Applies any pending incremental work, then checks the temp table for the row. */
+        private boolean isCached(ExpMaterialTableImpl table, long rowId)
+        {
+            SQLFragment sql = new SQLFragment("SELECT rowid FROM ").append(table.getOrCreateMQH().getFromSql(null)).append(" WHERE rowid = ?").add(rowId);
+            return new SqlSelector(ExperimentServiceImpl.getExpSchema().getScope(), sql).exists();
         }
 
         private int countDiff(DbScope scope, SQLFragment a, SQLFragment b)
