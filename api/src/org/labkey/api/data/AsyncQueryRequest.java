@@ -48,7 +48,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -325,6 +327,8 @@ public class AsyncQueryRequest<T>
             try
             {
                 _log.debug("Aborting async statement on connection {}", _statement.getConnection());
+                if (_statement.getConnection() instanceof ConnectionWrapper connection)
+                    connection.markCancelled();
                 _statement.cancel();
             }
             catch (SQLException e)
@@ -372,6 +376,7 @@ public class AsyncQueryRequest<T>
                 AtomicReference<Throwable> failure = new AtomicReference<>();
                 AtomicBoolean holderReleased = new AtomicBoolean();
                 AtomicReference<Throwable> nextQueryFailure = new AtomicReference<>();
+                Set<Integer> spids = ConcurrentHashMap.newKeySet();
 
                 Thread requestThread = new Thread(() -> {
                     try
@@ -411,6 +416,7 @@ public class AsyncQueryRequest<T>
                 }
                 // Let the statement reach the server
                 Thread.sleep(300);
+                ConnectionWrapper.getConnectionsByScopeForEffectiveThread(requestThread).values().forEach(c -> c.forEach(w -> spids.add(w.getSPID())));
 
                 requestThread.interrupt();
                 requestThread.join(30_000);
@@ -419,7 +425,21 @@ public class AsyncQueryRequest<T>
                 assertTrue("Expected an aborted request, got " + failure.get(), failure.get() instanceof AbortedRequestException);
                 assertTrue("Request thread's connection holder is still referenced", holderReleased.get());
                 assertNull("Next query on the request thread failed", nextQueryFailure.get());
+                assertFalse("Interrupted query had no connections", spids.isEmpty());
+                assertEquals("Cancelled session went back to the pool", 0, countLiveBackends(scope, spids));
             }
+        }
+
+        /** Polls briefly, since the backend exits only after the pool closes its connection */
+        private static long countLiveBackends(DbScope scope, Set<Integer> spids) throws InterruptedException
+        {
+            SQLFragment live = new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE pid ").appendInClause(spids, scope.getSqlDialect());
+            long start = System.currentTimeMillis();
+            long count;
+            while ((count = new SqlSelector(scope, live).getObject(Long.class)) > 0 && System.currentTimeMillis() - start < 5_000)
+                //noinspection BusyWait
+                Thread.sleep(100);
+            return count;
         }
 
         /** A worker that outlives the interrupt wait mustn't leave its connection for the request thread's next request */
