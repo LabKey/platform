@@ -15,7 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -425,7 +425,7 @@ public class StatementDataIterator extends AbstractDataIterator
             SQLException sqlx = rtsqlx.getSQLException();
             if (sqlx instanceof BatchUpdateException && null != sqlx.getNextException())
                 sqlx = sqlx.getNextException();
-            if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
+            if (Strings.CS.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
             {
                 getGlobalError().addGlobalError(sqlx);
 //              see bug21719

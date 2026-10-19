@@ -30,6 +30,7 @@ import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -2596,7 +2597,7 @@ public class SqlParser
                 new SqlParser().parseQuery(test.first, errors, null);
                 assertFalse("expected a parse error: " + test.first, errors.isEmpty());
                 assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
-                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+                        errors.stream().anyMatch(e -> Strings.CS.contains(e.getMessage(), test.second)));
             }
         }
 
@@ -2609,7 +2610,7 @@ public class SqlParser
                 new SqlParser().setFailOnUnrecognizedMethodName(true).parseQuery(test.first, errors, null);
                 assertFalse("expected a parse error: " + test.first, errors.isEmpty());
                 assertTrue("expected error containing <<" + test.second + ">> for: " + test.first + "\nfound: " + errors.getFirst().getMessage(),
-                        errors.stream().anyMatch(e -> StringUtils.contains(e.getMessage(), test.second)));
+                        errors.stream().anyMatch(e -> Strings.CS.contains(e.getMessage(), test.second)));
             }
         }
 
@@ -2622,9 +2623,9 @@ public class SqlParser
             new SqlParser(d, null).setFailOnUnrecognizedMethodName(true).parseQuery("SELECT TRIM(a) FROM R", errors, null);
             assertFalse(errors.isEmpty());
             String message = errors.getFirst().getMessage();
-            assertTrue(message, StringUtils.contains(message, "LTRIM(RTRIM"));
-            assertEquals(message, d.isPostgreSQL(), StringUtils.contains(message, "btrim"));
-            assertFalse(message, StringUtils.containsIgnoreCase(message, "postgres"));
+            assertTrue(message, Strings.CS.contains(message, "LTRIM(RTRIM"));
+            assertEquals(message, d.isPostgreSQL(), Strings.CS.contains(message, "btrim"));
+            assertFalse(message, Strings.CI.contains(message, "postgres"));
         }
 
         @Test

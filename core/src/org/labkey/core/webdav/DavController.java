@@ -4614,7 +4614,7 @@ public class DavController extends SpringActionController
         }
 
         // TODO actually parse the headers instead of using ifHeader.contains(token)
-        boolean tokenSpecified = StringUtils.contains(ifHeader,"<opaquelocktoken:") && StringUtils.contains(ifHeader,"{") && StringUtils.contains(ifHeader,"}");
+        boolean tokenSpecified = Strings.CS.contains(ifHeader,"<opaquelocktoken:") && Strings.CS.contains(ifHeader,"{") && Strings.CS.contains(ifHeader,"}");
         if (tokenSpecified && ret == LockResult.NOT_LOCKED)
             return LockResult.TOKEN_NOT_FOUND;
         return ret;

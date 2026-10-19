@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.StringUtils.replace;
 
 /**
  * Holds configuration information about a {@link QueryView}, to be used by a {@link ExportScriptFactory}.
@@ -256,8 +256,8 @@ public abstract class ExportScriptModel
     {
         if (null == s)
             s = "";
-        s = replace(s, "\\", "\\\\");
-        s = replace(s, "\"","\\\"");
+        s = Strings.CS.replace(s, "\\", "\\\\");
+        s = Strings.CS.replace(s, "\"","\\\"");
         return "\"" + s + "\"";
     }
 
