@@ -140,11 +140,6 @@ class QueryTracker
         return _parameters;
     }
 
-    public boolean canShowExecutionPlan(ExecutionPlanType type)
-    {
-        return null == getExecutionPlanUnavailableReason(type);
-    }
-
     /** Why this type of execution plan can't be shown, or null if it can */
     public @Nullable String getExecutionPlanUnavailableReason(ExecutionPlanType type)
     {

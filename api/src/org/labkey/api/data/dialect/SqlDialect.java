@@ -22,6 +22,7 @@ import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -104,8 +105,6 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -2092,6 +2091,9 @@ public abstract class SqlDialect
                     return null;
 
                 String firstWord = new SqlScanner(sql).stripComments().toString().strip().split("\\s+", 2)[0].toUpperCase();
+                // isSelect() also rejects a SELECT or WITH it can't parse, e.g. an unbalanced CTE
+                if (firstWord.equals("SELECT") || firstWord.equals("WITH"))
+                    return "It starts with " + firstWord + ", but it couldn't be confirmed to be a read-only SELECT, so it isn't re-run to measure actual timing. The estimated plan doesn't run it.";
                 return "It's not a SELECT" + (firstWord.isEmpty() ? "" : " (it starts with " + firstWord + ")") + ", so re-running it to measure actual timing could modify data. The estimated plan doesn't run it.";
             }
         };
@@ -2589,7 +2591,7 @@ public abstract class SqlDialect
         }
     }
 
-    public static class ExecutionPlanTypeTestCase
+    public static class ExecutionPlanTypeTestCase extends Assert
     {
         @Test
         public void testUnavailableReason()
@@ -2603,6 +2605,10 @@ public abstract class SqlDialect
             String reason = ExecutionPlanType.Actual.getUnavailableReason("/* comment */\nupdate\tcore.containers SET Name = ?");
             assertNotNull(reason);
             assertTrue(reason, reason.contains("(it starts with UPDATE)"));
+
+            reason = ExecutionPlanType.Actual.getUnavailableReason("WITH c AS (SELECT 1 AS x SELECT * FROM c");
+            assertNotNull(reason);
+            assertTrue(reason, reason.startsWith("It starts with WITH, but it couldn't be confirmed"));
         }
     }
 

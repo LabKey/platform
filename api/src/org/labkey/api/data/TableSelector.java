@@ -415,38 +415,21 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         Map<String, String> tags = new HashMap<>();
         tags.put("labkey.query", getAsyncQueryName());
-        if (null != _table.getSchema())
-            tags.put("labkey.db_schema", _table.getSchema().getName());
-        if (null != _table.getUserSchema())
-            tags.put(TracedOperation.CONTAINER_TAG, _table.getUserSchema().getContainer().getPath());
+        // A null value removes the tag, so a slower query's tags on the web span don't mix with a faster one's
+        tags.put("labkey.db_schema", null != _table.getSchema() ? _table.getSchema().getName() : null);
+        tags.put(TracedOperation.CONTAINER_TAG, null != _table.getUserSchema() ? _table.getUserSchema().getContainer().getPath() : null);
         return tags;
     }
 
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response, getAsyncResourceName("getResults"), getAsyncSpanTags())
-            .addSpanTag("labkey.max_rows", _maxRows);  // Table.ALL_ROWS (-1) means no limit
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"), getAsyncSpanTags());
         setAsyncRequest(asyncRequest);
 
         try
         {
-            Results results = asyncRequest.waitForResult(() -> getResults(cache, scrollable));
-            // Streamed rows are counted only as they're rendered, after the AsyncRequest span has finished
-            if (results instanceof ResultsImpl impl)
-            {
-                impl.setBeforeClose(() -> {
-                    try
-                    {
-                        asyncRequest.tagRootSpan("labkey.async_query.rows", impl.getSize());
-                    }
-                    catch (IllegalStateException ignored)
-                    {
-                        // A streamed ResultSet knows its size only once every row has been read
-                    }
-                });
-            }
-            return results;
+            return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
         }
         catch (IOException e)
         {

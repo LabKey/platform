@@ -44,7 +44,6 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -53,6 +52,7 @@ public class AsyncQueryRequest<T>
     private static final Logger _log = LogHelper.getLogger(AsyncQueryRequest.class, "Runs DB queries on a background thread");
     private static final String CANCELLED_TAG = "labkey.async_query.cancelled";
     private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
+    private static final String ELAPSED_TAG = "labkey.async_query.ms";
 
     private static class CancelledException extends RuntimeException
     {
@@ -65,7 +65,6 @@ public class AsyncQueryRequest<T>
     private final @Nullable String _resourceName;
     /** Extra tags for APM search and grouping, beyond the resource name */
     private final @NotNull Map<String, String> _spanTags;
-    private final @NotNull Map<String, Number> _numericSpanTags = new LinkedHashMap<>();
     /** The request's web span, which carries the URL, user agent, and client-observed duration */
     private final @Nullable MutableSpan _rootSpan;
 
@@ -84,24 +83,19 @@ public class AsyncQueryRequest<T>
 
         // Constructed on the request thread, so the active span leads to the web span
         _rootSpan = GlobalTracer.get().activeSpan() instanceof MutableSpan active ? active.getLocalRootSpan() : null;
-        if (null != _rootSpan)
-            spanTags.forEach(_rootSpan::setTag);
 
         _rootResponse = getRootResponse(response);
     }
 
-    /** Adds a numeric tag to the AsyncRequest span. Call before waitForResult(). */
-    public AsyncQueryRequest<T> addSpanTag(@NotNull String name, @NotNull Number value)
+    /** A request can run several async queries, so the web span describes only the slowest */
+    private void tagRootSpan(long elapsedMs)
     {
-        _numericSpanTags.put(name, value);
-        return this;
-    }
+        if (null == _rootSpan || _rootSpan.getTag(ELAPSED_TAG) instanceof Number prior && prior.longValue() >= elapsedMs)
+            return;
 
-    /** Tags the request's web span, which outlives the AsyncRequest span, e.g. with details known only after rendering */
-    public void tagRootSpan(@NotNull String name, @NotNull Number value)
-    {
-        if (null != _rootSpan)
-            _rootSpan.setTag(name, value);
+        _rootSpan.setTag(ELAPSED_TAG, elapsedMs);
+        _spanTags.forEach(_rootSpan::setTag);
+        _rootSpan.setTag(CANCELLED_TAG, _cancelled);
     }
 
     private HttpServletResponse getRootResponse(HttpServletResponse response)
@@ -137,6 +131,7 @@ public class AsyncQueryRequest<T>
 
     synchronized public T waitForResult(final Callable<T> callable) throws SQLException, IOException
     {
+        final long start = System.currentTimeMillis();
         final QueryService qs = QueryService.get();
         final Object state = qs.cloneEnvironment();
         final RequestInfo current = MemTracker.getInstance().current();
@@ -149,7 +144,6 @@ public class AsyncQueryRequest<T>
         if (_resourceName != null)
             span.setTag(DDTags.RESOURCE_NAME, _resourceName);
         _spanTags.forEach(span::setTag);
-        _numericSpanTags.forEach(span::setTag);
         _span = span;
 
         Runnable runnable = () -> {
@@ -275,6 +269,8 @@ public class AsyncQueryRequest<T>
             // The runnable finishes the span; without a thread to run it the span stays open and its parent trace never completes
             if (!started)
                 span.finish();
+
+            tagRootSpan(System.currentTimeMillis() - start);
         }
     }
 
@@ -314,8 +310,6 @@ public class AsyncQueryRequest<T>
         _cancelled = true;
         if (_span != null)
             _span.setTag(CANCELLED_TAG, true);
-        if (_rootSpan != null)
-            _rootSpan.setTag(CANCELLED_TAG, true);
         if (_statement != null)
         {
             try

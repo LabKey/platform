@@ -191,20 +191,36 @@ public class Query
             _normalizationReason = "It references \"" + name + "\", a temporary table or other generated object. Its random name was removed so that similar queries are grouped together, and the object likely no longer exists.";
     }
 
-    // Removes each run of exactly 32 hex digits (a GUID.makeHash() name suffix) and any '$' before it. A hand-written
-    // scan because java.util.regex costs ~10x more per character, which matters on the request thread for large SQL.
+    // Removes the last 32 digits of each run of 32+ hex digits (a GUID.makeHash() name suffix, possibly after a prefix
+    // ending in a hex digit) and any '$' before them, skipping string literals and comments. A hand-written scan because
+    // java.util.regex costs ~10x more per character, which matters on the request thread for large SQL.
     private String removeGeneratedHashes(String in)
     {
         StringBuilder out = null;
         int copied = 0;
         int length = in.length();
+        int identifierEnd = -1;  // Closing quote of the double-quoted identifier being scanned, where ' and -- are literal
         int i = 0;
 
         while (i < length)
         {
-            if (!isHexDigit(in.charAt(i)))
+            char c = in.charAt(i);
+
+            if (!isHexDigit(c))
             {
                 i++;
+                // All four delimiters sort at or below '/', so letters, digits, and '_' fail the first comparison
+                if (c <= '/' && (c == '\'' || c == '"' || c == '-' || c == '/') && i > identifierEnd + 1)
+                {
+                    if (c == '\'')
+                        i = skipPast(in, "'", i);  // An escaped '' just reads as two adjacent literals
+                    else if (c == '"')
+                        identifierEnd = skipPast(in, "\"", i) - 1;
+                    else if (i < length && in.charAt(i) == c && c == '-')
+                        i = skipPast(in, "\n", i + 1);
+                    else if (i < length && in.charAt(i) == '*' && c == '/')
+                        i = skipPast(in, "*/", i + 1);
+                }
                 continue;
             }
 
@@ -212,8 +228,9 @@ public class Query
             while (i < length && isHexDigit(in.charAt(i)))
                 i++;
 
-            if (i - start == GENERATED_HASH_LENGTH)
+            if (i - start >= GENERATED_HASH_LENGTH)
             {
+                start = i - GENERATED_HASH_LENGTH;
                 if (start > 0 && in.charAt(start - 1) == '$')
                     start--;
                 if (null == out)
@@ -227,6 +244,13 @@ public class Query
         }
 
         return null == out ? in : out.append(in, copied, length).toString();
+    }
+
+    // Index just past the next occurrence of terminator at or after from, or the end of sql if it's unterminated
+    private static int skipPast(String sql, String terminator, int from)
+    {
+        int index = sql.indexOf(terminator, from);
+        return index < 0 ? sql.length() : index + terminator.length();
     }
 
     // Expands [start, end) to the whole schema-qualified identifier
@@ -271,6 +295,9 @@ public class Query
             assertEquals("SELECT * FROM edges JOIN temp.fn_()", transform("SELECT * FROM edges" + HASH + " JOIN temp.fn_" + HASH.toUpperCase() + "()"));
             assertEquals("CREATE INDEX ix__col ON t", transform("CREATE INDEX ix_" + HASH + "_col ON t"));
             assertEquals("WITH  AS (SELECT 1)", transform("WITH " + HASH + " AS (SELECT 1)"));
+            assertEquals("SELECT * FROM temp.SampleScopeB", transform("SELECT * FROM temp.SampleScopeB" + HASH));
+            assertEquals("SELECT * FROM temp.\"tt_\" WHERE \"Bob's\" = 1", transform("SELECT * FROM temp.\"tt_" + HASH + "\" WHERE \"Bob's\" = 1"));
+            assertEquals("SELECT 'it''s' -- don't\nFROM temp.tt_ /* ' */", transform("SELECT 'it''s' -- don't\nFROM temp.tt_" + HASH + " /* ' */"));
             assertEquals("INSERT INTO SpecimenUpload", transform("INSERT INTO SpecimenUpload123456789"));
         }
 
@@ -281,6 +308,10 @@ public class Query
                 "SELECT * FROM core.containers WHERE entityid = 'c0a8b1e2-3f4d-5e6f-7a8b-9c0d1e2f3a4b'",
                 "SELECT '" + HASH + "abcd'",
                 "SELECT '" + HASH + HASH + "'",
+                "SELECT * FROM t WHERE md5 = 'd41d8cd98f00b204e9800998ecf8427e'",
+                "SELECT * FROM t WHERE x = 'it''s " + HASH + "' -- " + HASH,
+                "SELECT /* " + HASH + " */ 1",
+                "SELECT 'unterminated " + HASH,
                 "SELECT x FROM study.c108d1468_demographics"))
             {
                 Query query = new Query(null, sql, null, 0, null, false);
