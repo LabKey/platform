@@ -33,7 +33,9 @@ import org.labkey.api.util.logging.LogHelper;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -381,8 +383,9 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             MyScope scope = new MyScope();
 
             DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, maxSize, "Test Cache");
+            TestCacheLoader loader = new TestCacheLoader();
 
-            try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, new TestCacheLoader()); DbScope.Transaction transaction = scope.beginTransaction())
+            try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, loader); DbScope.Transaction transaction = scope.beginTransaction())
             {
                 for (int i = 1; i <= 15; i++)
                 {
@@ -397,15 +400,85 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                     assertEquals(Math.min(i, maxSize), CacheReplayCommitTask.get(transaction).size());
                 }
                 transaction.commit();
+
+                // The capped reloads ran after commit and populated the shared cache
+                assertEquals(15 + maxSize, loader._loads);
+                assertEquals(Set.of("key_1", "key_2", "key_3", "key_4", "key_5", "key_6", "key_7", "key_8", "key_9", "key_10"), sharedKeys(dbCache));
             }
+        }
+
+        @Test
+        public void testReplayPrunesReloadsUndoneInTheTransaction()
+        {
+            MyScope scope = new MyScope();
+            DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, 10, "Test Cache");
+            TestCacheLoader loader = new TestCacheLoader();
+
+            try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, loader))
+            {
+                cache.get("x");
+
+                try (DbScope.Transaction transaction = scope.beginTransaction())
+                {
+                    cache.get("a");
+                    cache.get("b");
+                    cache.remove("a");
+                    assertEquals(2, CacheReplayCommitTask.get(transaction).size()); // Reload b, remove a
+
+                    cache.clear();
+                    cache.get("c");
+                    assertEquals(2, CacheReplayCommitTask.get(transaction).size()); // Clear, reload c
+                    assertEquals(Set.of("x"), sharedKeys(dbCache));
+
+                    transaction.commit();
+                }
+
+                // The clear evicted x and b, and only c's reload ran
+                assertEquals(Set.of("c"), sharedKeys(dbCache));
+                assertEquals(5, loader._loads);
+            }
+        }
+
+        @Test
+        public void testRollbackLeavesSharedCacheUntouched()
+        {
+            MyScope scope = new MyScope();
+            DatabaseCache<String, Wrapper<Integer>> dbCache = new TempDatabaseCache<>(scope, 10, "Test Cache");
+            TestCacheLoader loader = new TestCacheLoader();
+
+            try (BlockingDatabaseCache<String, Integer> cache = new BlockingDatabaseCache<>(dbCache, loader))
+            {
+                cache.get("x");
+                cache.get("y");
+
+                try (DbScope.Transaction ignored = scope.beginTransaction())
+                {
+                    cache.get("a");
+                    cache.remove("x");
+                    cache.removeUsingFilter(key -> key.equals("y"));
+                    cache.clear();
+                    cache.get("b");
+                }
+
+                assertEquals(Set.of("x", "y"), sharedKeys(dbCache));
+                assertEquals(4, loader._loads);
+            }
+        }
+
+        private static Set<String> sharedKeys(DatabaseCache<String, ?> dbCache)
+        {
+            return dbCache._sharedCache.getKeys().collect(Collectors.toSet());
         }
 
         private static class TestCacheLoader implements CacheLoader<String, Integer>
         {
+            private int _loads = 0;
+
             @Override
             public Integer load(@NotNull String test, @Nullable Object argument)
             {
                 assertNotNull(test);
+                _loads++;
                 return 0;
             }
         }
