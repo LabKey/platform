@@ -204,6 +204,11 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, long rowId, boolean includeOtherContainers);
 
+    /**
+     * Get a SampleType by LSID within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
+     */
+    ExpSampleType getSampleTypeByLsid(@NotNull Container scope, @NotNull String lsid, boolean includeOtherContainers);
+
     Lsid getSampleTypeLsid(String name, Container container);
 
     Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);
@@ -261,6 +266,9 @@ public interface SampleTypeService
     Collection<? extends ExpMaterial> getSamplesNotPermitted(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
+
+    /** @param totalCount how many samples are blocked, which exceeds the sample list when the caller caps what it collects */
+    String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, int totalCount, SampleOperations operation);
 
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 

@@ -240,16 +240,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
         else
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("RowID IN (");
-            String separator = "";
-            for (ExpRun run : runs)
-            {
-                sql.append(separator);
-                separator = ", ";
-                sql.appendValue(run.getRowId());
-            }
-            sql.append(")");
+            SQLFragment sql = new SQLFragment("RowID");
+            sql.appendInClause(runs.stream().map(ExpRun::getRowId).toList(), getSqlDialect());
             addCondition(sql);
         }
     }

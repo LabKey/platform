@@ -564,15 +564,25 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Most callers should use this method
+    /**
+     * Prefer {@link SQLFragment#appendInClause(SQLFragment, Collection, SqlDialect)}, which yields FALSE for an empty collection and negates correctly.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return appendInClauseSqlWithCustomInClauseGenerator(sql, params, getTempTableInClauseGenerator());
     }
 
-    // Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source
+    private static final Pattern NOT_SUFFIX = Pattern.compile("(?i)\\bNOT\\s*$");
+
+    /**
+     * Call directly only in cases where the default temp-table generator won't do, e.g., you need to apply a large IN clause in an external data source.
+     * To negate, use {@link SQLFragment#appendNotInClause(SQLFragment, Collection, SqlDialect)}; don't append after NOT.
+     */
     public final SQLFragment appendInClauseSqlWithCustomInClauseGenerator(SQLFragment sql, @NotNull Collection<?> params, @Nullable InClauseGenerator largeInClauseGenerator)
     {
+        // Postgres renders 2+ values as "= ANY (?)" and an empty list as "IN (NULL)", so "x NOT" + IN clause is invalid or never matches
+        assert !NOT_SUFFIX.matcher(sql.getSqlCharSequence()).find() : "Don't append an IN clause after NOT; use SQLFragment.appendNotInClause() instead";
         if (params.size() >= TEMP_TABLE_GENERATOR_MIN_SIZE && largeInClauseGenerator != null)
         {
             SQLFragment ret = largeInClauseGenerator.appendInClauseSql(sql, params);
@@ -1355,9 +1365,11 @@ public abstract class SqlDialect
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return SQLFragment.unsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
-               "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";");
+        // Candidates must stay unquoted, and appendIdentifier() rejects some of them (e.g., end-exec)
+        return new SQLFragment()
+            .unsafeAppend("SELECT ").append(candidate).unsafeAppend(" FROM (SELECT 1 AS ").append(candidate).unsafeAppend(") x ORDER BY ").append(candidate).appendEOS()
+            .unsafeAppend("CREATE ").append(keyword).unsafeAppend(" TABLE ").append(name).unsafeAppend(" (").append(candidate).unsafeAppend(" VARCHAR(50))").appendEOS()
+            .unsafeAppend("DROP TABLE ").append(name).appendEOS();
     }
 
     public final void checkSqlScript(String sql) throws SQLSyntaxException

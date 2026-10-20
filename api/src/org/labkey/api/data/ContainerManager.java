@@ -1364,16 +1364,10 @@ public class ContainerManager
             deleteSQL.add(container.getRowId());
             if (!aliases.isEmpty())
             {
-                deleteSQL.append(" OR Path IN (");
-                String separator = "";
-                for (String alias : aliases)
-                {
-                    deleteSQL.append(separator);
-                    separator = ", ";
-                    deleteSQL.append("LOWER(?)");
-                    deleteSQL.add(alias);
-                }
-                deleteSQL.append(")");
+                // Not appendInClause(): values must go through the DB's LOWER(), matching how the insert below stores paths
+                deleteSQL.append(" OR Path IN (")
+                    .append(SQLFragment.join(aliases.stream().map(alias -> new SQLFragment("LOWER(?)", alias)).toList(), new SQLFragment(", ")))
+                    .append(")");
             }
             new SqlExecutor(CORE.getSchema()).execute(deleteSQL);
 

@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -635,7 +636,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (SQLException sqlx)
             {
-                if (StringUtils.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
+                if (Strings.CS.startsWith(sqlx.getSQLState(), "22") || RuntimeSQLException.isConstraintException(sqlx))
                 {
                     ValidationException vex = new ValidationException(sqlx.getMessage());
                     vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i+1);

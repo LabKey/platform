@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -952,7 +953,7 @@ public abstract class CompareType
             }
 
             for (int i = 0; i < params.length; i++)
-                fragments[i] = SQLFragment.unsafe(escapeLabKeySqlValue(params[i], type));
+                fragments[i] = new SQLFragment().setSqlUnsafe(escapeLabKeySqlValue(params[i], type));
 
             return fragments;
         }
@@ -2353,13 +2354,13 @@ public abstract class CompareType
     public static String escapeLikePattern(String value, char escapeChar)
     {
         String strEscape = new String(new char[] { escapeChar } );
-        value = StringUtils.replace(value, strEscape, strEscape + strEscape);
+        value = Strings.CS.replace(value, strEscape, strEscape + strEscape);
         for (char ch : charsToBeEscaped)
         {
             if (ch == escapeChar)
                 continue;
             String strCh = new String(new char[] { ch});
-            value = StringUtils.replace(value, strCh, strEscape + strCh);
+            value = Strings.CS.replace(value, strCh, strEscape + strCh);
         }
         return value;
     }
@@ -2732,9 +2733,9 @@ public abstract class CompareType
 
         if (dialect.isPostgreSQL())
         {
-            ret.append(
+            ret.unsafeAppend(
                 "WITH RECURSIVE allmembers(userid, groupid) AS (\n" +
-                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).append(
+                "   SELECT userid, groupid FROM core.members WHERE userid = ").append(userIdSQL).unsafeAppend(
                 "\nUNION\n" +
                 "   SELECT a.groupid as userid, m.groupid as groupid FROM allmembers a, core.members m WHERE a.groupid=m.userid\n" +
                 ")\n" +

@@ -584,6 +584,7 @@ public class ApiModule extends CodeOnlyModule
             SecurityManager.TestCase.class,
             SimpleQueryUpdateService.TestCase.class,
             SimpleTranslator.TranslateTestCase.class,
+            SQLFragment.InClauseTestCase.class,
             SqlSelectorTestCase.class,
             StandardDialectStringHandler.TestCase.class,
             StatementDataIterator.TestCase.class,
