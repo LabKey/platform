@@ -101,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -797,6 +798,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpData> getAllExpDataByURL(String canonicalURL, @Nullable Container c);
     List<? extends ExpData> getAllExpDataByURL(File f, @Nullable Container c);
     List<? extends ExpData> getAllExpDataByURL(Path p, @Nullable Container c);
+
+    /** The per-sample facts an operation confirmation or a status pre-check needs, read straight off exp.material. */
+    record SampleOperationRow(long rowId, Container container, Long sampleState, String cpasType) {}
+
+    /**
+     * Streams the facts an operation confirmation needs about each sample. A confirmation can cover tens of thousands
+     * of samples at once, so nothing is collected here and nothing wider than these four columns is read; callers fold
+     * the rows as they arrive.
+     */
+    void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block);
 
     TableInfo getTinfoMaterial();
 

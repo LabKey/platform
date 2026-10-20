@@ -301,6 +301,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -1051,6 +1052,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return emptyList();
 
         return getExpMaterials(new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds));
+    }
+
+    @Override
+    public void forEachSampleOperationRow(Collection<Long> rowIds, Consumer<SampleOperationRow> block)
+    {
+        if (rowIds.isEmpty())
+            return;
+
+        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId.name()), rowIds);
+        Set<String> columns = Set.of("RowId", "Container", "SampleState", "CpasType");
+        new TableSelector(getTinfoMaterial(), columns, filter, null).forEach(Material.class,
+                m -> block.accept(new SampleOperationRow(m.getRowId(), m.getContainer(), m.getSampleState(), m.getCpasType())));
+    }
+
+    public @Nullable ExpSampleTypeImpl getSampleTypeForCpasType(@Nullable String cpasType, Container container)
+    {
+        if (cpasType == null || ExpMaterial.DEFAULT_CPAS_TYPE.equals(cpasType) || "Sample".equals(cpasType))
+            return null;
+
+        return SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
     }
 
     @Override
@@ -2818,14 +2839,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (options.isParents())
         {
             String parentsInnerSelect = map.get("$PARENTS_INNER$");
-            SQLFragment parentsInnerSelectFrag = SQLFragment.unsafe(parentsInnerSelect);
+            SQLFragment parentsInnerSelectFrag = new SQLFragment().setSqlUnsafe(parentsInnerSelect);
             parentsInnerSelectFrag.addAll(lsidsFrag.getParams());
             String parentsInnerToken = ret.addCommonTableExpression(dialect, parentsInnerSelect, "org_lk_exp_PARENTS_INNER", parentsInnerSelectFrag, true);
 
             String parentsSelect = map.get("$PARENTS$");
             parentsSelect = Strings.CS.replace(parentsSelect, "$PARENTS_INNER$", parentsInnerToken);
             // don't use parentsSelect as key, it may not consolidate correctly because of parentsInnerToken
-            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", SQLFragment.unsafe(parentsSelect), true);
+            parentsToken = ret.addCommonTableExpression(dialect, "$PARENTS$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + parentsInnerSelect, "org_lk_exp_PARENTS", new SQLFragment().setSqlUnsafe(parentsSelect), true);
         }
 
         String childrenToken = null;
@@ -2833,14 +2854,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String childrenInnerSelect = map.get("$CHILDREN_INNER$");
             childrenInnerSelect = Strings.CS.replace(childrenInnerSelect, "$EDGES$", edgesToken);
-            SQLFragment childrenInnerSelectFrag = SQLFragment.unsafe(childrenInnerSelect);
+            SQLFragment childrenInnerSelectFrag = new SQLFragment().setSqlUnsafe(childrenInnerSelect);
             childrenInnerSelectFrag.addAll(lsidsFrag.getParams());
             String childrenInnerToken = ret.addCommonTableExpression(dialect, childrenInnerSelect, "org_lk_exp_CHILDREN_INNER", childrenInnerSelectFrag, true);
 
             String childrenSelect = map.get("$CHILDREN$");
             childrenSelect = Strings.CS.replace(childrenSelect, "$CHILDREN_INNER$", childrenInnerToken);
             // don't use childrenSelect as key, it may not consolidate correctly because of childrenInnerToken
-            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", SQLFragment.unsafe(childrenSelect), true);
+            childrenToken = ret.addCommonTableExpression(dialect, "$CHILDREN$/" + Objects.toString(options.getExpTypeValue(), "ALL") + "/" + childrenInnerSelect, "org_lk_exp_CHILDREN", new SQLFragment().setSqlUnsafe(childrenSelect), true);
         }
 
         return new Pair<>(parentsToken,childrenToken);
@@ -4809,7 +4830,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(User user, Collection<Long> requestIds, Collection<Long> notAllowedIds, List<? extends ExpRunItem> allData)
     {
-        List<Long> allowedIds = new LongArrayList(requestIds);
+        Set<Long> allowedIds = new HashSet<>(requestIds);
         allowedIds.removeAll(notAllowedIds);
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
@@ -4834,13 +4855,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * For set of rows selected for deletion, find get all linked-to-study datasets that will be affected by the delete
      * and warn user
      */
-    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(List<? extends ExpMaterial> allMaterials, Set<Long> deletable, User user, Container container)
+    public static ArrayList<Map<String, Object>> includeLinkedToStudyText(@Nullable ExpSampleType sampleType, Set<Long> deletable, User user, Container container)
     {
         ArrayList<Map<String, Object>> associatedDatasets = new ArrayList<>();
         StudyPublishService studyPublishService = StudyPublishService.get();
-        if (studyPublishService != null && !allMaterials.isEmpty())
+        if (studyPublishService != null && sampleType != null)
         {
-            ExpSampleType sampleType = allMaterials.getFirst().getSampleType();
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
             TableInfo tableInfo = userSchema.getTable(sampleType.getName());
             if (tableInfo == null)
