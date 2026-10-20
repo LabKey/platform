@@ -67,7 +67,7 @@ public class UsageMetrics
 
     public UsageMetrics put(@NotNull String key, @Nullable Object value, @NotNull String description, @NotNull Kind kind)
     {
-        _descriptions.add(new Description(childPath(key), description, kind));
+        _descriptions.add(new Description(describedPath(key), description, kind));
         _values.put(key, value);
         return this;
     }
@@ -80,7 +80,7 @@ public class UsageMetrics
 
     public UsageMetricGroup group(@NotNull String key, @NotNull String description, @NotNull Kind kind)
     {
-        _descriptions.add(new Description(childPath(key), description, kind));
+        _descriptions.add(new Description(describedPath(key), description, kind));
         return addGroup(key);
     }
 
@@ -89,6 +89,14 @@ public class UsageMetrics
         Map<String, Object> child = new LinkedHashMap<>();
         _values.put(key, child);
         return new UsageMetricGroup(childPath(key), child, _descriptions);
+    }
+
+    /** A '.' in a described key would make its jsonKey indistinguishable from a nested path */
+    private String describedPath(String key)
+    {
+        if (key.contains("."))
+            throw new IllegalArgumentException("Described usage metric keys can't contain '.': " + key);
+        return childPath(key);
     }
 
     String childPath(String key)
@@ -139,6 +147,15 @@ public class UsageMetrics
                 new Description("actionTypes", "Actions by type", Kind.CURRENT),
                 new Description("actionTypes.described", "Overrides the group's description", Kind.CURRENT)),
                 metrics.getDescriptions());
+        }
+
+        @Test
+        public void testRejectsDottedKeys()
+        {
+            UsageMetrics metrics = new UsageMetrics();
+            assertThrows(IllegalArgumentException.class, () -> metrics.put("a.b", 1L, "Dotted"));
+            assertThrows(IllegalArgumentException.class, () -> metrics.group("a.b", "Dotted"));
+            metrics.group("files", "Files by name").put("report.xlsx", 1L);
         }
     }
 }
