@@ -29,6 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
@@ -589,30 +590,35 @@ public class FileSystemResource extends AbstractWebdavResource
         if (file == null || (null != user && !canDelete(user, true, null)))
             return false;
 
-        try {
-            FileContentService svc = FileContentService.get();
-            AttachmentDirectory dir;
-            dir = svc.getMappedAttachmentDirectory(getContainer(), false);
-            String fileDirPath = file.getParent();
-
-            // 23746: If file exists in parent with the same name it was deleted instead
-            if (dir != null && fileDirPath != null && dir.getFileSystemDirectoryPath().toAbsolutePath().toString().equals(fileDirPath))
+        // Resources that aren't in a container (e.g., module resources) can't have legacy file attachments
+        Container c = getContainer();
+        if (c != null)
+        {
+            try
             {
-                // legacy support for files added through the narrow files web part but deleted through
-                // the newer file browser (issue: 11396). This is the difference between files stored through
-                // webdav or via the attachments service.
-                //
-                Attachment attach = AttachmentService.get().getAttachment(dir, file.getName());
-                if (attach != null)
+                FileContentService svc = FileContentService.get();
+                AttachmentDirectory dir = svc.getMappedAttachmentDirectory(c, false);
+                String fileDirPath = file.getParent();
+
+                // 23746: If file exists in parent with the same name it was deleted instead
+                if (dir != null && fileDirPath != null && dir.getFileSystemDirectoryPath().toAbsolutePath().toString().equals(fileDirPath))
                 {
-                    AttachmentService.get().deleteAttachment(dir, file.getName(), null);
-                    return (AttachmentService.get().getAttachment(dir, file.getName()) == null);
+                    // legacy support for files added through the narrow files web part but deleted through
+                    // the newer file browser (issue: 11396). This is the difference between files stored through
+                    // webdav or via the attachments service.
+                    //
+                    Attachment attach = AttachmentService.get().getAttachment(dir, file.getName());
+                    if (attach != null)
+                    {
+                        AttachmentService.get().deleteAttachment(dir, file.getName(), null);
+                        return (AttachmentService.get().getAttachment(dir, file.getName()) == null);
+                    }
                 }
             }
-        }
-        catch (Exception e)
-        {
-            _log.error(e);
+            catch (Exception e)
+            {
+                _log.error(e);
+            }
         }
         boolean deleted = file.delete();
         if (!deleted)

@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -1866,6 +1867,17 @@ public class DbScope
         }
     }
 
+    @TestOnly
+    public static void removeScope(String dsName)
+    {
+        synchronized (_scopeLoaders)
+        {
+            _scopeLoaders.remove(dsName);
+        }
+
+        _dataSourceFailures.remove(dsName);
+    }
+
     public boolean isRds()
     {
         return _rds;
@@ -2231,6 +2243,17 @@ public class DbScope
                 .map(DbScopeLoader::getIfPresent)
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    /**
+     * Returns the names of data sources whose connection attempt failed, which {@link #getDbScopes()} omits
+     */
+    public static @NotNull Set<String> getFailedDataSourceNames()
+    {
+        return getLoaders().stream()
+            .filter(DbScopeLoader::isFailed)
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
