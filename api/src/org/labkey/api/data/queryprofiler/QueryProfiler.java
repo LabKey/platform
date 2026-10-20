@@ -16,6 +16,9 @@
 
 package org.labkey.api.data.queryprofiler;
 
+import datadog.trace.api.interceptor.MutableSpan;
+import io.opentracing.Span;
+import io.opentracing.util.GlobalTracer;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceMap;
 import org.apache.commons.lang3.StringUtils;
@@ -78,6 +81,12 @@ public class QueryProfiler
     private static final int LONG_SQL_LIMIT = 100_000;
     /** How many queries longer than our threshold above to keep around at a time */
     private static final int MAX_LONG_SQL_QUERIES = 5;
+
+    private static final long SLOW_SQL_SPAN_TAG_MS = 1000;
+    // Same hash as the Admin Console's sqlHash parameter, so a trace leads to the query's stack traces and execution plan
+    private static final String SLOW_SQL_HASH_TAG = "labkey.slow_sql.hash";
+    private static final String SLOW_SQL_MS_TAG = "labkey.slow_sql.ms";
+
     private final List<WeakReference<QueryTracker>> _longSqlTextQueries = new ArrayList<>();
 
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
@@ -236,13 +245,30 @@ public class QueryProfiler
 
         MiniProfiler.addQuery(elapsed, sql, stackTrace);
 
-        // Don't block if queue is full
         Query query = new Query(scope, sql, parameters, elapsed, stackTrace, requestThread);
+        if (elapsed >= SLOW_SQL_SPAN_TAG_MS)
+            tagActiveSpan(query);
+
+        // Don't block if queue is full
         if (!_queue.offer(query))
         {
             _droppedQueries++;
         }
         return query;
+    }
+
+    // The driver opens and closes the JDBC span itself, so the enclosing span carries the slowest statement's hash instead
+    private static void tagActiveSpan(Query query)
+    {
+        Span span = GlobalTracer.get().activeSpan();
+        if (null == span)
+            return;
+
+        if (span instanceof MutableSpan ms && ms.getTag(SLOW_SQL_MS_TAG) instanceof Number prior && prior.longValue() >= query.getElapsed())
+            return;
+
+        span.setTag(SLOW_SQL_HASH_TAG, HashHelpers.hash(query.getSql()));
+        span.setTag(SLOW_SQL_MS_TAG, query.getElapsed());
     }
 
     public void resetAllStatistics()
@@ -408,13 +434,18 @@ public class QueryProfiler
                 DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
                 DOM.BR(),
                 Arrays.stream(ExecutionPlanType.values()).
-                    filter(tracker::canShowExecutionPlan).
-                    map(type -> DOM.DIV(
-                        LinkBuilder.labkeyLink("Show " + type.getDescription(),
-                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
-                        ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
-                            executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
-                    )),
+                    map(type -> {
+                        String unavailableReason = tracker.getExecutionPlanUnavailableReason(type);
+                        if (null != unavailableReason)
+                            return DOM.DIV(DOM.cl("text-muted"), type.getDescription() + " isn't available. " + unavailableReason);
+
+                        return DOM.DIV(
+                            LinkBuilder.labkeyLink("Show " + type.getDescription(),
+                                executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
+                            ExecutionPlanType.Actual == type ? DOM.DIV(LinkBuilder.labkeyLink("Log " + type.getDescription() + " to primary site log",
+                                executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
+                        );
+                    }),
                 DOM.BR(),
                 tracker.renderStackTraces()
             ));
@@ -446,8 +477,9 @@ public class QueryProfiler
             if (null == tracker)
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
-            if (!tracker.canShowExecutionPlan(type))
-                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query");
+            String unavailableReason = tracker.getExecutionPlanUnavailableReason(type);
+            if (null != unavailableReason)
+                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query. " + unavailableReason);
 
             scope = tracker.getScope();
 
@@ -584,7 +616,7 @@ public class QueryProfiler
 
                         if (null == tracker)
                         {
-                            tracker = new QueryTracker(query.getScope(), sql, hash, query.getElapsed(), query.getStackTrace(), query.isValidSql(), query.isTruncated());
+                            tracker = new QueryTracker(query.getScope(), sql, hash, query.getElapsed(), query.getStackTrace(), query.getNormalizationReason(), query.isTruncated());
                             if (sql.length() > LONG_SQL_LIMIT)
                             {
                                 manageLongSql(tracker);

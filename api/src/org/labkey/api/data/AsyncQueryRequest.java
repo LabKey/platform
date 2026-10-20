@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import datadog.trace.api.CorrelationIdentifier;
 import datadog.trace.api.DDTags;
+import datadog.trace.api.interceptor.MutableSpan;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
@@ -43,12 +44,15 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class AsyncQueryRequest<T>
 {
     private static final Logger _log = LogHelper.getLogger(AsyncQueryRequest.class, "Runs DB queries on a background thread");
+    private static final String CANCELLED_TAG = "labkey.async_query.cancelled";
+    private static final String CLIENT_DISCONNECTED_TAG = "labkey.client_disconnected";
 
     private static class CancelledException extends RuntimeException
     {
@@ -61,6 +65,9 @@ public class AsyncQueryRequest<T>
     private final @Nullable String _resourceName;
     /** Extra tags for APM search and grouping, beyond the resource name */
     private final @NotNull Map<String, String> _spanTags;
+    private final @NotNull Map<String, Number> _numericSpanTags = new LinkedHashMap<>();
+    /** The request's web span, which carries the URL, user agent, and client-observed duration */
+    private final @Nullable MutableSpan _rootSpan;
 
     boolean _cancelled;
     @Nullable Statement _statement;
@@ -75,7 +82,26 @@ public class AsyncQueryRequest<T>
         _resourceName = resourceName;
         _spanTags = spanTags;
 
+        // Constructed on the request thread, so the active span leads to the web span
+        _rootSpan = GlobalTracer.get().activeSpan() instanceof MutableSpan active ? active.getLocalRootSpan() : null;
+        if (null != _rootSpan)
+            spanTags.forEach(_rootSpan::setTag);
+
         _rootResponse = getRootResponse(response);
+    }
+
+    /** Adds a numeric tag to the AsyncRequest span. Call before waitForResult(). */
+    public AsyncQueryRequest<T> addSpanTag(@NotNull String name, @NotNull Number value)
+    {
+        _numericSpanTags.put(name, value);
+        return this;
+    }
+
+    /** Tags the request's web span, which outlives the AsyncRequest span, e.g. with details known only after rendering */
+    public void tagRootSpan(@NotNull String name, @NotNull Number value)
+    {
+        if (null != _rootSpan)
+            _rootSpan.setTag(name, value);
     }
 
     private HttpServletResponse getRootResponse(HttpServletResponse response)
@@ -123,6 +149,7 @@ public class AsyncQueryRequest<T>
         if (_resourceName != null)
             span.setTag(DDTags.RESOURCE_NAME, _resourceName);
         _spanTags.forEach(span::setTag);
+        _numericSpanTags.forEach(span::setTag);
         _span = span;
 
         Runnable runnable = () -> {
@@ -181,6 +208,8 @@ public class AsyncQueryRequest<T>
 
             // Stash the original disconnect exception if the client has dropped off
             IOException clientDisconnectException = null;
+            // A ping commits the response, so a fast query must not ping just to check for a disconnect
+            boolean pinged = false;
 
             while(true)
             {
@@ -205,6 +234,13 @@ public class AsyncQueryRequest<T>
 
                 if (_result != null)
                 {
+                    // The client may have left since the last ping; catch it here rather than as a Broken pipe while rendering
+                    if (pinged && null != (clientDisconnectException = pingClient()))
+                    {
+                        if (_result instanceof AutoCloseable ac)
+                            closeQuietly(ac);
+                        throw clientDisconnectException;
+                    }
                     return _result;
                 }
 
@@ -230,6 +266,7 @@ public class AsyncQueryRequest<T>
                     // Remember if the client has disconnected, but don't break out of this loop until the async
                     // thread has finished its work and released any resources it holds
                     clientDisconnectException = checkCancelled();
+                    pinged = true;
                 }
             }
         }
@@ -244,18 +281,21 @@ public class AsyncQueryRequest<T>
     synchronized public void setResult(T result)
     {
         if (_cancelled && result instanceof AutoCloseable ac)
-        {
-            try
-            {
-                ac.close();
-            }
-            catch (Exception e)
-            {
-                _log.warn("Failed to close result after cancellation", e);
-            }
-        }
+            closeQuietly(ac);
         _result = result;
         notify();
+    }
+
+    private static void closeQuietly(AutoCloseable ac)
+    {
+        try
+        {
+            ac.close();
+        }
+        catch (Exception e)
+        {
+            _log.warn("Failed to close abandoned result", e);
+        }
     }
     
     synchronized public void setException(Throwable exception)
@@ -273,7 +313,9 @@ public class AsyncQueryRequest<T>
     {
         _cancelled = true;
         if (_span != null)
-            _span.setTag("labkey.async_query.cancelled", true);
+            _span.setTag(CANCELLED_TAG, true);
+        if (_rootSpan != null)
+            _rootSpan.setTag(CANCELLED_TAG, true);
         if (_statement != null)
         {
             try
@@ -291,19 +333,29 @@ public class AsyncQueryRequest<T>
     /** @return the IOException from failing to write a space to the client, or null if the client is still connected */
     private IOException checkCancelled()
     {
+        IOException ioe = pingClient();
+        if (null != ioe)
+            cancel();
+        return ioe;
+    }
+
+    private @Nullable IOException pingClient()
+    {
         try
         {
             _rootResponse.getWriter().write(" ");
             _rootResponse.flushBuffer();
             _log.debug("ping client: success");
+            return null;
         }
         catch (IOException ioe)
         {
             _log.debug("ping client: failure: {}", ioe.getMessage());
-            cancel();
+            // On the root span, since the AsyncRequest span has already finished when the final ping fails
+            if (_rootSpan != null)
+                _rootSpan.setTag(CLIENT_DISCONNECTED_TAG, true);
             return ioe;
         }
-        return null;
     }
 
     @Nullable

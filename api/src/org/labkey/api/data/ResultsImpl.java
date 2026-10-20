@@ -59,6 +59,7 @@ public class ResultsImpl implements Results, DataIterator
     private final Map<FieldKey, Integer> _fieldIndexMap;
     private final ArrayList<ColumnInfo> _columnInfoList;
     private int rowNumber = 0;
+    private @Nullable Runnable _beforeClose = null;
 
     @Deprecated // provide a fieldmap
     public ResultsImpl(ResultSet rs)
@@ -472,9 +473,21 @@ public class ResultsImpl implements Results, DataIterator
         }
     }
 
+    /** Runs when close() is called, before the underlying ResultSet closes */
+    public void setBeforeClose(@Nullable Runnable beforeClose)
+    {
+        _beforeClose = beforeClose;
+    }
+
     @Override
     public void close()
     {
+        if (null != _beforeClose)
+        {
+            Runnable beforeClose = _beforeClose;
+            _beforeClose = null;
+            beforeClose.run();
+        }
         ResultSetUtil.close(_rs);
     }
 

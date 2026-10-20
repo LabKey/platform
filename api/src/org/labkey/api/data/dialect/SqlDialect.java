@@ -104,6 +104,8 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -2074,19 +2076,23 @@ public abstract class SqlDialect
         Estimated("Estimated Execution Plan")
         {
             @Override
-            public boolean canShowExecutionPlan(String sql)
+            public @Nullable String getUnavailableReason(String sql)
             {
                 // Any query
-                return true;
+                return null;
             }
         },
         Actual("Execution Plan With Actual Timing")
         {
             @Override
-            public boolean canShowExecutionPlan(String sql)
+            public @Nullable String getUnavailableReason(String sql)
             {
                 // Only SELECT statements. We don't want to re-execute INSERT, UPDATE, or DELETE statements.
-                return Table.isSelect(sql);
+                if (Table.isSelect(sql))
+                    return null;
+
+                String firstWord = new SqlScanner(sql).stripComments().toString().strip().split("\\s+", 2)[0].toUpperCase();
+                return "It's not a SELECT" + (firstWord.isEmpty() ? "" : " (it starts with " + firstWord + ")") + ", so re-running it to measure actual timing could modify data. The estimated plan doesn't run it.";
             }
         };
 
@@ -2102,7 +2108,8 @@ public abstract class SqlDialect
             return _description;
         }
 
-        public abstract boolean canShowExecutionPlan(String sql);
+        /** Why this type of plan can't be shown for the SQL, or null if it can */
+        public abstract @Nullable String getUnavailableReason(String sql);
     }
 
     public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql, ExecutionPlanType type)
@@ -2579,6 +2586,23 @@ public abstract class SqlDialect
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'a![b]C_' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a[b]C", null, "_").toDebugString(d));
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a!_![b]C%' ESCAPE '!'", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C", "_", "%").toDebugString(d));
             assertEquals("SELECT * FROM A WHERE Name " + d.getCaseInsensitiveLikeOperator() + stringLiteralPrefix + "'_a[_[[b]C!d%' ESCAPE '['", d.appendCaseInsensitiveLikeClause(new SQLFragment("SELECT * FROM A WHERE Name"), "a_[b]C!d", "_", "%", '[').toDebugString(d));
+        }
+    }
+
+    public static class ExecutionPlanTypeTestCase
+    {
+        @Test
+        public void testUnavailableReason()
+        {
+            for (String select : List.of("SELECT * FROM core.containers", "WITH c AS (SELECT 1 AS x) SELECT * FROM c"))
+                for (ExecutionPlanType type : ExecutionPlanType.values())
+                    assertNull(type.getUnavailableReason(select));
+
+            assertNull(ExecutionPlanType.Estimated.getUnavailableReason("DELETE FROM core.containers"));
+
+            String reason = ExecutionPlanType.Actual.getUnavailableReason("/* comment */\nupdate\tcore.containers SET Name = ?");
+            assertNotNull(reason);
+            assertTrue(reason, reason.contains("(it starts with UPDATE)"));
         }
     }
 

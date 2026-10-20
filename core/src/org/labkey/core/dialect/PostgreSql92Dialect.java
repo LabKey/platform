@@ -606,7 +606,7 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     protected Collection<String> getQueryExecutionPlan(Connection conn, DbScope scope, SQLFragment sql, ExecutionPlanType type)
     {
         SQLFragment copy = new SQLFragment(sql);
-        copy.insert(0, type == ExecutionPlanType.Estimated ? "EXPLAIN " : "EXPLAIN ANALYZE ");
+        copy.insert(0, type == ExecutionPlanType.Estimated ? "EXPLAIN " : "EXPLAIN (ANALYZE, BUFFERS, SETTINGS) ");
 
         return new SqlSelector(scope, conn, copy).getCollection(String.class);
     }

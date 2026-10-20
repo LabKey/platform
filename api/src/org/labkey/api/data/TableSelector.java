@@ -425,12 +425,28 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     public Results getResultsAsync(final boolean cache, final boolean scrollable, HttpServletResponse response) throws SQLException
     {
         setLogger(ConnectionWrapper.getConnectionLogger());
-        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<>(response, getAsyncResourceName("getResults"), getAsyncSpanTags());
+        AsyncQueryRequest<Results> asyncRequest = new AsyncQueryRequest<Results>(response, getAsyncResourceName("getResults"), getAsyncSpanTags())
+            .addSpanTag("labkey.max_rows", _maxRows);  // Table.ALL_ROWS (-1) means no limit
         setAsyncRequest(asyncRequest);
 
         try
         {
-            return asyncRequest.waitForResult(() -> getResults(cache, scrollable));
+            Results results = asyncRequest.waitForResult(() -> getResults(cache, scrollable));
+            // Streamed rows are counted only as they're rendered, after the AsyncRequest span has finished
+            if (results instanceof ResultsImpl impl)
+            {
+                impl.setBeforeClose(() -> {
+                    try
+                    {
+                        asyncRequest.tagRootSpan("labkey.async_query.rows", impl.getSize());
+                    }
+                    catch (IllegalStateException ignored)
+                    {
+                        // A streamed ResultSet knows its size only once every row has been read
+                    }
+                });
+            }
+            return results;
         }
         catch (IOException e)
         {
