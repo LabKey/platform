@@ -15,7 +15,7 @@
  */
 package org.labkey.api.search;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -734,7 +734,7 @@ public interface SearchService extends SearchMXBean
             assert tableAliasProvidedInConstructor || tableAlias != null;
             if (this._sqlf.isEmpty() || null == tableAlias)
                 return _sqlf;
-            String sql = StringUtils.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
+            String sql = Strings.CS.replace(_sqlf.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
             SQLFragment ret = new SQLFragment(sql);
             ret.addAll(_sqlf.getParams());
             return ret;

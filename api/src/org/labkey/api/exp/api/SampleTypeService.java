@@ -204,6 +204,11 @@ public interface SampleTypeService
      */
     ExpSampleType getSampleType(@NotNull Container scope, long rowId, boolean includeOtherContainers);
 
+    /**
+     * Get a SampleType by LSID within scope -- current plus, if <code>includeOtherContainers</code> is true, project and shared
+     */
+    ExpSampleType getSampleTypeByLsid(@NotNull Container scope, @NotNull String lsid, boolean includeOtherContainers);
+
     Lsid getSampleTypeLsid(String name, Container container);
 
     Pair<String, String> getSampleTypeSamplePrefixLsids(Container container);
@@ -262,11 +267,17 @@ public interface SampleTypeService
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
+    /** @param totalCount how many samples are blocked, which exceeds the sample list when the caller caps what it collects */
+    String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, int totalCount, SampleOperations operation);
+
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 
     int recomputeSamplesRollup(Collection<Long> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
 
     int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Long> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
+
+    /** Callers that delete exp.material rows directly must call this, or the sample type's materialized view keeps them. @param deletedRowIds null forces a full reconcile */
+    void refreshSampleTypeMaterializedViewAfterDelete(@NotNull ExpSampleType st, @Nullable Collection<Long> deletedRowIds);
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 

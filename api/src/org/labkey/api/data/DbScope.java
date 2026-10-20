@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -636,7 +637,9 @@ public class DbScope
         if (start != -1)
         {
             start = start + 9;
-            int end = Math.max(url.length(), url.indexOf('&', start));
+            int end = url.indexOf('&', start);
+            if (end == -1)
+                end = url.length();
             url = url.substring(0, start) + StringUtils.repeat('?', end - start) + url.substring(end);
         }
         return url;
@@ -1854,6 +1857,17 @@ public class DbScope
         }
     }
 
+    @TestOnly
+    public static void removeScope(String dsName)
+    {
+        synchronized (_scopeLoaders)
+        {
+            _scopeLoaders.remove(dsName);
+        }
+
+        _dataSourceFailures.remove(dsName);
+    }
+
     public boolean isRds()
     {
         return _rds;
@@ -2213,6 +2227,17 @@ public class DbScope
     }
 
     /**
+     * Returns the names of data sources whose connection attempt failed, which {@link #getDbScopes()} omits
+     */
+    public static @NotNull Set<String> getFailedDataSourceNames()
+    {
+        return getLoaders().stream()
+            .filter(DbScopeLoader::isFailed)
+            .map(DbScopeLoader::getDsName)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
      * Clear out the DbScopeLoaders that previously failed to connect to their data source. Next call to getDbScopes()
      * will attempt to retry those failed connections.
      */
@@ -2433,34 +2458,34 @@ public class DbScope
         PRECOMMIT
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._preCommitTasks;
+                return transaction._preCommitQueue;
             }
         },
         /** Run after the main transaction has been committed, separate from the transaction itself */
         POSTCOMMIT
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._postCommitTasks;
+                return transaction._postCommitQueue;
             }
         },
         /** Run after the transaction has been completely rolled back and abandoned, but not if it was committed */
         POSTROLLBACK
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
-                return transaction._postRollbackTasks;
+                return transaction._postRollbackQueue;
             }
         },
         /** Run immediately. Useful for cache-clearing tasks, which often want to fire right away, as well as after the commit */
         IMMEDIATE
         {
             @Override
-            protected Map<Runnable, Runnable> getRunnables(TransactionImpl transaction)
+            CommitTaskQueue getQueue(TransactionImpl transaction)
             {
                 throw new UnsupportedOperationException();
             }
@@ -2473,19 +2498,13 @@ public class DbScope
             }
         };
 
-        protected abstract Map<Runnable, Runnable> getRunnables(TransactionImpl transaction);
+        abstract CommitTaskQueue getQueue(TransactionImpl transaction);
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashMap
-            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction).keySet());
-
             try
             {
-                for (Runnable task : tasks)
-                {
-                    task.run();
-                }
+                getQueue(transaction).run(this);
             }
             finally
             {
@@ -2495,14 +2514,56 @@ public class DbScope
 
         public <T extends Runnable> T add(TransactionImpl transaction, T task)
         {
-            Map<Runnable, Runnable> runnables = getRunnables(transaction);
+            return getQueue(transaction).add(task);
+        }
+    }
+
+    /** The tasks queued for one {@link CommitTaskOption} of a transaction, and the monitor watching them for repeats */
+    static class CommitTaskQueue
+    {
+        // Map so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
+        // originally added task
+        private final Map<Runnable, Runnable> _tasks = new LinkedHashMap<>();
+        private final RepeatedCommitTaskMonitor _monitor = new RepeatedCommitTaskMonitor();
+
+        <T extends Runnable> T add(T task)
+        {
             @SuppressWarnings("unchecked")
-            T existing = (T)runnables.putIfAbsent(task, task);
+            T existing = (T)_tasks.putIfAbsent(task, task);
             if (existing != null)
             {
                 LOG.debug("Skipping duplicate runnable: {}", task.toString());
+                return existing;
             }
-            return existing == null ? task : existing;
+            _monitor.added(task);
+            return task;
+        }
+
+        void run(CommitTaskOption option)
+        {
+            // Copy to avoid ConcurrentModificationExceptions, retaining original order from LinkedHashMap
+            List<Runnable> tasks = new ArrayList<>(_tasks.keySet());
+            for (Runnable task : tasks)
+            {
+                _monitor.run(task);
+            }
+            _monitor.warnOfRepeats(option, tasks.size());
+        }
+
+        int size()
+        {
+            return _tasks.size();
+        }
+
+        RepeatedCommitTaskMonitor getMonitor()
+        {
+            return _monitor;
+        }
+
+        void clear()
+        {
+            _tasks.clear();
+            _monitor.clear();
         }
     }
 
@@ -2657,11 +2718,9 @@ public class DbScope
         private final ConnectionWrapper _conn;
         private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
-        // Maps so that we can coalesce identical tasks and avoid duplicating the effort, and efficiently find the
-        // originally added task
-        private final Map<Runnable, Runnable> _preCommitTasks = new LinkedHashMap<>();
-        private final Map<Runnable, Runnable> _postCommitTasks = new LinkedHashMap<>();
-        private final Map<Runnable, Runnable> _postRollbackTasks = new LinkedHashMap<>();
+        private final CommitTaskQueue _preCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _postCommitQueue = new CommitTaskQueue();
+        private final CommitTaskQueue _postRollbackQueue = new CommitTaskQueue();
 
         private final List<List<Lock>> _locks = new ArrayList<>();
         private final Throwable _creation = new Throwable();
@@ -2738,9 +2797,9 @@ public class DbScope
 
         private void clearCommitTasks()
         {
-            _preCommitTasks.clear();
-            _postCommitTasks.clear();
-            _postRollbackTasks.clear();
+            _preCommitQueue.clear();
+            _postCommitQueue.clear();
+            _postRollbackQueue.clear();
             closeCaches();
         }
 

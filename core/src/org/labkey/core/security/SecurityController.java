@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.graphper.api.Graphviz;
 import org.graphper.draw.ExecuteException;
@@ -2038,7 +2039,7 @@ public class SecurityController extends SpringActionController
             String ldapDetails = formConfigs.stream()
                 .filter(ac->null != ac.getDomain())
                 .filter(ac->!AuthenticationManager.ALL_DOMAINS.equals(ac.getDomain()))
-                .filter(ac->StringUtils.endsWithIgnoreCase(emailAddress, "@" + ac.getDomain()))
+                .filter(ac->Strings.CI.endsWith(emailAddress, "@" + ac.getDomain()))
                 .map(AuthenticationConfiguration::getDescription)
                 .collect(Collectors.joining(", "));
             if (!ldapDetails.isBlank())

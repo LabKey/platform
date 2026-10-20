@@ -16,6 +16,7 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -231,7 +232,7 @@ public class ImportTypesHelper
                 continue;
             }
 
-            if (StringUtils.endsWithIgnoreCase(columnName, MV_INDICATOR_SUFFIX))
+            if (Strings.CI.endsWith(columnName, MV_INDICATOR_SUFFIX))
             {
                 mvColumns.add(columnName);
                 continue;

@@ -271,7 +271,7 @@ public class AssayDatasetTable extends LinkedDatasetTable
         {
             sqlf.append(" LEFT OUTER JOIN ").append(assayResultTable.getFromSQL(assayResultAlias)).append("\n");
             sqlf.append(" ON ").append(assayResultAlias).append(".").append(assayResultTable.getPkColumnNames().getFirst()).append(" = ");
-            sqlf.appendDottedIdentifiers(alias, getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
+            sqlf.appendIdentifier(alias).append(".").append(getSqlDialect().getColumnSelectName(_dsd.getKeyPropertyName()));
         }
 
         return getTransformedFromSQL(sqlf);
