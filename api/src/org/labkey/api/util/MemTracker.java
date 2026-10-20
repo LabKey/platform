@@ -24,14 +24,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -56,9 +53,6 @@ public class MemTracker
 
     private final ThreadLocal<RequestInfo> _requestTracker = new ThreadLocal<>();
     private final List<RequestInfo> _recentRequests = new LinkedList<>();
-
-    private static final String UNVIEWED_KEY = "memtracker-unviewed-requests";
-    private static final int MAX_UNVIEWED = 100;
 
     /** Only keep a short history of allocations for the most recent requests */
     private static final int MAX_TRACKED_REQUESTS = 500;
@@ -265,14 +259,6 @@ public class MemTracker
                 // Now that we're done, move it into the set of recent requests
                 _recentRequests.add(requestInfo);
                 trimOlderRequests();
-                if (requestInfo.getUser() != null)
-                    addUnviewed(requestInfo.getUser(), requestInfo.getId());
-            }
-            else
-            {
-                // Remove it from the list of unviewed requests
-                if (requestInfo.getUser() != null)
-                    setViewed(requestInfo.getUser(), requestInfo.getId());
             }
         }
     }
@@ -285,69 +271,6 @@ public class MemTracker
             for (RequestInfo r : reqs)
                 r.cancel();
             reqs.clear();
-        }
-    }
-
-    private void addUnviewed(Principal user, long id)
-    {
-        ViewContext context = HttpView.getRootContext();
-        if (context == null)
-            return;
-
-        HttpSession session = context.getSession();
-        if (session == null)
-            return;
-
-        synchronized (SessionHelper.getSessionLock(session))
-        {
-            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
-            if (unviewed == null)
-                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
-            unviewed.add(id);
-            if (unviewed.size() > MAX_UNVIEWED)
-            {
-                unviewed.subList(0, unviewed.size() - MAX_UNVIEWED).clear();
-            }
-        }
-    }
-
-    public List<Long> getUnviewed(Principal user)
-    {
-        ViewContext context = HttpView.getRootContext();
-        if (context == null)
-            return Collections.emptyList();
-
-        HttpSession session = context.getSession();
-        if (session == null)
-            return Collections.emptyList();
-
-        synchronized (SessionHelper.getSessionLock(session))
-        {
-            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
-            if (unviewed == null)
-                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
-
-            return new LongArrayList(unviewed);
-        }
-    }
-
-    public void setViewed(Principal user, long id)
-    {
-        ViewContext context = HttpView.getRootContext();
-        if (context == null)
-            return;
-
-        HttpSession session = context.getSession();
-        if (session == null)
-            return;
-
-        synchronized (SessionHelper.getSessionLock(session))
-        {
-            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
-            if (unviewed == null)
-                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
-
-            unviewed.remove(id);
         }
     }
 
