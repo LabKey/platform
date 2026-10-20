@@ -68,6 +68,18 @@ import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
 ///
 /// Enforces basic SQL injection safeguards by rejecting unmatched quotes and
 /// semicolons in appended text.
+///
+/// Use `unsafeAppend()` for compile-time constant SQL and `appendValue()` for values.
+/// Keyword methods such as `SELECT()` and `LEFT_OUTER_JOIN()` add a space before when needed
+/// and one after; punctuation methods (`LP()`, `RP()`, `COMMA()`, `DOT()`, `SP()`, `NL()`) append exactly one character.
+/// ```java
+/// SQLFragment sql = new SQLFragment()
+///     .SELECT().unsafeAppend("RowId, Name").NL()
+///     .FROM().append(table, "t").NL()
+///     .WHERE().unsafeAppend("Container = ").appendValue(container)
+///         .AND().unsafeAppend("Status").IN().LP().appendValue("A").COMMA().appendValue("B").RP().NL()
+///     .ORDER_BY().unsafeAppend("Name");
+/// ```
 public class SQLFragment
 {
     private String sql;
@@ -1187,6 +1199,75 @@ public class SQLFragment
     {
         return DbScope.getLabKeyScope().getSqlDialect().isSqlServer() ? debugString.replace("N'", "'") : debugString;
     }
+
+
+    // Shortcuts e.g. .SELECT() instead of .appendUnsafe(" SELECT ");
+
+    private void ensureWhiteSpace()
+    {
+        var sb = getStringBuilder();
+        if (!sb.isEmpty() && " \t\n(".indexOf(sb.charAt(sb.length() - 1)) < 0)
+            sb.append(" ");
+    }
+
+    private SQLFragment keyword(String keyword)
+    {
+        ensureWhiteSpace();
+        getStringBuilder().append(keyword).append(" ");
+        return this;
+    }
+
+    public SQLFragment SELECT()             { return keyword("SELECT"); }
+    public SQLFragment SELECT_DISTINCT()    { return keyword("SELECT DISTINCT"); }
+    public SQLFragment DISTINCT()           { return keyword("DISTINCT"); }
+    public SQLFragment AS()                 { return keyword("AS"); }
+    public SQLFragment FROM()               { return keyword("FROM"); }
+    public SQLFragment JOIN()               { return keyword("JOIN"); }
+    public SQLFragment INNER_JOIN()         { return keyword("INNER JOIN"); }
+    public SQLFragment LEFT_JOIN()          { return keyword("LEFT JOIN"); }
+    public SQLFragment LEFT_OUTER_JOIN()    { return keyword("LEFT OUTER JOIN"); }
+    public SQLFragment ON()                 { return keyword("ON"); }
+    public SQLFragment WHERE()              { return keyword("WHERE"); }
+    public SQLFragment AND()                { return keyword("AND"); }
+    public SQLFragment OR()                 { return keyword("OR"); }
+    public SQLFragment NOT()                { return keyword("NOT"); }
+    public SQLFragment IN()                 { return keyword("IN"); }
+    public SQLFragment NULL()               { return keyword("NULL"); }
+    public SQLFragment IS_NULL()            { return keyword("IS NULL"); }
+    public SQLFragment IS_NOT_NULL()        { return keyword("IS NOT NULL"); }
+    public SQLFragment CASE()               { return keyword("CASE"); }
+    public SQLFragment WHEN()               { return keyword("WHEN"); }
+    public SQLFragment THEN()               { return keyword("THEN"); }
+    public SQLFragment ELSE()               { return keyword("ELSE"); }
+    public SQLFragment END()                { return keyword("END"); }
+    public SQLFragment GROUP_BY()           { return keyword("GROUP BY"); }
+    public SQLFragment ORDER_BY()           { return keyword("ORDER BY"); }
+    public SQLFragment UNION()              { return keyword("UNION"); }
+    public SQLFragment DESC()               { return keyword("DESC"); }
+    public SQLFragment INSERT_INTO()        { return keyword("INSERT INTO"); }
+    public SQLFragment VALUES()             { return keyword("VALUES"); }
+    public SQLFragment UPDATE()             { return keyword("UPDATE"); }
+    public SQLFragment SET()                { return keyword("SET"); }
+    public SQLFragment DELETE_FROM()        { return keyword("DELETE FROM"); }
+    public SQLFragment DEFAULT()            { return keyword("DEFAULT"); }
+
+    private SQLFragment punctuation(char c)
+    {
+        getStringBuilder().append(c);
+        return this;
+    }
+
+    public SQLFragment LP()                 { return punctuation('('); }
+    public SQLFragment RP()                 { return punctuation(')'); }
+    public SQLFragment COMMA()              { return punctuation(','); }
+    public SQLFragment DOT()                { return punctuation('.'); }
+    public SQLFragment SP()                 { return punctuation(' '); }
+    public SQLFragment NL()                 { return punctuation('\n'); }
+
+
+
+
+    // Tests
 
     public static class UnitTestCase extends Assert
     {
