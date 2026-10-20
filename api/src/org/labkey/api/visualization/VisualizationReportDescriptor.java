@@ -16,11 +16,16 @@
 package org.labkey.api.visualization;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONException;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,6 +68,43 @@ abstract public class VisualizationReportDescriptor extends ReportDescriptor
     public @Nullable String getPointClickFn()
     {
         return getPointClickFn(getJSON());
+    }
+
+    /** GH Issue 1649: only trusted browser developers may add or change the point click function in {@code json}. */
+    public void validatePointClickFn(User user, @Nullable String json, @Nullable ReportDescriptor stored, List<ValidationError> errors)
+    {
+        if (user.isTrustedBrowserDev())
+            return;
+
+        String fn;
+        try
+        {
+            fn = getPointClickFn(json);
+        }
+        catch (JSONException e)
+        {
+            // Fail closed: the browser's JSON parser may read a config org.json rejects (e.g. duplicate keys)
+            errors.add(new SimpleValidationError("Invalid chart configuration: " + e.getMessage()));
+            return;
+        }
+
+        if (fn == null)
+            return;
+
+        String storedFn = null;
+        if (stored instanceof VisualizationReportDescriptor storedDescriptor)
+        {
+            try
+            {
+                storedFn = storedDescriptor.getPointClickFn();
+            }
+            catch (JSONException ignored)
+            {
+            }
+        }
+
+        if (!fn.equals(storedFn))
+            errors.add(new SimpleValidationError("Only trusted developers can add or change a chart's point click function."));
     }
 
     @Override
