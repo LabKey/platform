@@ -45,7 +45,6 @@ public class MiniProfiler
         return settings;
     }
 
-    /** Save per-user settings. */
     public static void saveSettings(@NotNull Settings settings)
     {
         // Troubleshooting stacktraces and connection usage are site-wide only
