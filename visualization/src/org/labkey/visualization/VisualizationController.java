@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1106,38 +1105,12 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    // GH Issue 1649:
+    // ReportService repeats this check on save; running it here reports failures as 400s instead of 403s
     private void validatePointClickFn(VisualizationReportDescriptor descriptor, @Nullable String json, @Nullable Report stored, Errors errors)
     {
-        if (getUser().isTrustedBrowserDev())
-            return;
-
-        String fn;
-        try
-        {
-            fn = descriptor.getPointClickFn(json);
-        }
-        catch (JSONException e)
-        {
-            // Fail closed: the browser's JSON parser may read a config org.json rejects (e.g. duplicate keys)
-            errors.reject(ERROR_MSG, "Invalid chart configuration: " + e.getMessage());
-            return;
-        }
-
-        String storedFn = null;
-        if (stored != null && stored.getDescriptor() instanceof VisualizationReportDescriptor storedDescriptor)
-        {
-            try
-            {
-                storedFn = storedDescriptor.getPointClickFn();
-            }
-            catch (JSONException ignored)
-            {
-            }
-        }
-
-        if (fn != null && !fn.equals(storedFn))
-            errors.reject(ERROR_MSG, "Only trusted developers can add or change a chart's point click function.");
+        List<ValidationError> reportErrors = new ArrayList<>();
+        descriptor.validatePointClickFn(getUser(), json, stored != null ? stored.getDescriptor() : null, reportErrors);
+        ReportUtil.addErrors(reportErrors, errors);
     }
 
     private abstract class AbstractChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
@@ -1763,7 +1736,8 @@ public class VisualizationController extends SpringActionController
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-fn", null, genericChartJson(FN)));
             assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-dup", null,
                     "{\"queryConfig\":{},\"chartConfig\":{\"measures\":{\"pointClickFn\":null,\"pointClickFn\":\"" + FN + "\"}}}"));
-            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-legacy-fn", null,
+            // The client no longer reads the legacy chartOptions.developer location, so a function there never runs
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "author-legacy-fn", null,
                     new JSONObject().put("queryConfig", new JSONObject())
                             .put("chartConfig", new JSONObject().put("chartOptions", new JSONObject().put("developer", new JSONObject().put("pointClickFn", FN))))
                             .toString()));
@@ -1803,6 +1777,16 @@ public class VisualizationController extends SpringActionController
             assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-developer-fn", new JSONObject().put("pointClickFn", FN)));
         }
 
+        @Test
+        public void testStudySaveReportRequiresTrustedDeveloper() throws Exception
+        {
+            Container folder = getSharedContainer("StudyCharts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME), ModuleLoader.getInstance().getModule("study"));
+            User author = createUserInRole(folder, AuthorRole.class);
+
+            assertStatus(HttpServletResponse.SC_FORBIDDEN, saveStudyReport(folder, author, "study-author-fn", genericChartJson(FN)));
+            assertStatus(HttpServletResponse.SC_FOUND, saveStudyReport(folder, author, "study-author-no-fn", genericChartJson(null)));
+        }
+
         private static String genericChartJson(@Nullable String pointClickFn)
         {
             JSONObject measures = new JSONObject();
@@ -1838,6 +1822,20 @@ public class VisualizationController extends SpringActionController
                     .put("thumbnailType", ThumbnailType.NONE.name())
                     .put("json", config.toString());
             return postJson(new ActionURL(SaveVisualizationAction.class, folder), user, body);
+        }
+
+        private MockHttpServletResponse saveStudyReport(Container folder, User user, String label, String json) throws Exception
+        {
+            String params = PageFlowUtil.toQueryString(List.of(
+                    Pair.of(ReportDescriptor.Prop.json.name(), json),
+                    Pair.of(ReportDescriptor.Prop.schemaName.name(), "core"),
+                    Pair.of(ReportDescriptor.Prop.queryName.name(), "Users"),
+                    Pair.of(GenericChartReportDescriptor.Prop.renderType.name(), "scatter_plot")));
+            ActionURL url = new ActionURL("study-reports", "saveReport", folder)
+                    .addParameter("reportType", GenericChartReport.TYPE)
+                    .addParameter("label", label)
+                    .addParameter("params", params);
+            return post(url, user);
         }
     }
 }

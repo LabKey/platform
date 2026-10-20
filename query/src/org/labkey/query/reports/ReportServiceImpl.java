@@ -388,6 +388,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
     public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
     {
         final ReportDescriptor descriptor = report.getDescriptor();
+        Report stored = null;
 
         if (descriptor.isNew())
         {
@@ -396,7 +397,7 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
         }
         else
         {
-            Report stored = getStoredReport(descriptor.getReportId());
+            stored = getStoredReport(descriptor.getReportId());
             if (null != stored && !context.getContainer().getId().equals(stored.getContainerId()))
             {
                 errors.add(new SimpleValidationError("A report can only be saved from the folder that it belongs to."));
@@ -411,6 +412,10 @@ public class ReportServiceImpl implements ContainerManager.ContainerListener, Re
                     toCheck.canShare(context.getUser(), context.getContainer(), errors);
             }
         }
+
+        // GH Issue 1649: generic report actions, such as study-reports-saveReport, can write a chart's config too
+        if (descriptor instanceof VisualizationReportDescriptor vizDescriptor)
+            vizDescriptor.validatePointClickFn(context.getUser(), vizDescriptor.getJSON(), null != stored ? stored.getDescriptor() : null, errors);
 
         return errors.isEmpty();
     }
