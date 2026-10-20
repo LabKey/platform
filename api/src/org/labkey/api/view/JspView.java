@@ -16,6 +16,10 @@
 
 package org.labkey.api.view;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.jsp.HttpJspPage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
@@ -23,8 +27,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.jsp.JspLoader;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -33,10 +35,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.jsp.HttpJspPage;
 import java.util.Map;
 
 
@@ -145,7 +143,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");
 
-        try (Timing _ = MiniProfiler.step(_page.getClass().getSimpleName()))
+        try
         {
             _page._jspService(request, response);
         }
