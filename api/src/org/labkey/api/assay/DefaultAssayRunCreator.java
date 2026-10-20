@@ -187,6 +187,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     private PreparedTransform runTransformBeforeRun(AssayRunUploadContext<ProviderType> context, Collection<ExpData> inputDatas) throws ExperimentException, ValidationException
     {
+        if (ExperimentService.get().getSchema().getScope().isTransactionActive())
+            throw new IllegalStateException("Transform scripts must run before the import transaction is opened");
+
         // No import lock: script callbacks into the server may need it
         PreparedTransform prepared = null;
         try
