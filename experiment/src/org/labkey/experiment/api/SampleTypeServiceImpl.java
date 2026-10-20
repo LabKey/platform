@@ -1480,17 +1480,24 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation)
     {
+        return getOperationNotPermittedMessage(samples, samples.size(), operation);
+    }
+
+    @Override
+    public String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, int totalCount, SampleOperations operation)
+    {
         String message;
-        if (samples.size() == 1)
+        if (totalCount == 1 && samples.size() == 1)
         {
             ExpMaterial sample = samples.iterator().next();
             message = "Sample " + sample.getName() + " has status " + sample.getStateLabel() + ", which prevents";
         }
         else
         {
-            message = samples.size() + " samples (";
-            message += samples.stream().limit(10).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
-            if (samples.size() > 10)
+            int named = Math.min(samples.size(), 10);
+            message = totalCount + " samples (";
+            message += samples.stream().limit(named).map(ExpMaterial::getNameAndStatus).collect(Collectors.joining(", "));
+            if (totalCount > named)
                 message += " ...";
             message += ") have statuses that prevent";
         }

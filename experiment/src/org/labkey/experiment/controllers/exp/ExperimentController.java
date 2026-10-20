@@ -340,6 +340,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -3786,30 +3787,52 @@ public class ExperimentController extends SpringActionController
         {
             Set<Long> requestIds = form.getIds(false);
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
-            List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
+            User user = getUser();
+            SampleTypeService.SampleOperations operation = form.getSampleOperation();
+            Class<? extends Permission> permClass = operation.getPermissionClass();
+            boolean statusSupported = SampleStatusService.get().supportsSampleStatus();
 
             Set<Long> notAllowedIds = new HashSet<>();
             // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc.
-            if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
+            if (operation == SampleTypeService.SampleOperations.Delete)
                 service.getObjectReferencers().forEach(referencer ->
                         notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
-            if (SampleStatusService.get().supportsSampleStatus())
-                notAllowedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
-
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(getUser(), requestIds, notAllowedIds, allMaterials);
-
             Collection<Container> containers = new HashSet<>();
             Collection<Long> notPermittedIds = new ArrayList<>();
-            Class<? extends Permission> permClass = form.getSampleOperation().getPermissionClass();
-            for (ExpMaterial material : allMaterials)
-            {
-                Container c = material.getContainer();
-                if (c.hasPermission(getUser(), ReadPermission.class))
+            List<Map<String, Object>> rows = new ArrayList<>();
+            AtomicReference<ExpSampleType> sampleType = new AtomicReference<>();
+
+            service.forEachSampleOperationRow(requestIds, row -> {
+                Container c = row.container();
+                boolean canRead = c.hasPermission(user, ReadPermission.class);
+                if (canRead)
                     containers.add(c);
-                if (permClass != null && !c.hasPermission(getUser(), permClass))
-                    notPermittedIds.add(material.getRowId());
-            }
+                if (permClass != null && !c.hasPermission(user, permClass))
+                    notPermittedIds.add(row.rowId());
+                if (statusSupported && !SampleStatusService.get().isOperationPermitted(c, row.sampleState(), operation))
+                    notAllowedIds.add(row.rowId());
+                if (rows.isEmpty())
+                    sampleType.set(service.getSampleTypeForCpasType(row.cpasType(), c));
+
+                Map<String, Object> rowMap = new HashMap<>();
+                rowMap.put("RowId", row.rowId());
+                if (canRead)
+                    rowMap.put("ContainerPath", c.getPath());
+                rows.add(rowMap);
+            });
+
+            // the status check above feeds notAllowedIds, so the split waits until every row has been seen
+            Set<Long> allowedIds = new HashSet<>(requestIds);
+            allowedIds.removeAll(notAllowedIds);
+            List<Map<String, Object>> allowedRows = new ArrayList<>();
+            List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+            for (Map<String, Object> rowMap : rows)
+                (allowedIds.contains((Long) rowMap.get("RowId")) ? allowedRows : notAllowedRows).add(rowMap);
+
+            Map<String, Collection<Map<String, Object>>> response = new HashMap<>();
+            response.put("allowed", allowedRows);
+            response.put("notAllowed", notAllowedRows);
 
             NameExpressionOptionService svc = NameExpressionOptionService.get();
 
@@ -3824,7 +3847,7 @@ public class ExperimentController extends SpringActionController
 
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
-                response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, requestIds, getUser(), getContainer()));
+                response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(sampleType.get(), requestIds, getUser(), getContainer()));
 
             return success(response);
         }

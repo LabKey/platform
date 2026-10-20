@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -92,6 +93,11 @@ public class UnloggedTableGeneration
         }
     }
 
+    static @Nullable String markerNameForTest()
+    {
+        return _markerName;
+    }
+
     /**
      * Empties the marker as a reset would and checks it immediately. Callers must empty their own UNLOGGED tables.
      * Invalidates every UNLOGGED materialized table on the server, not just the caller's.
@@ -149,7 +155,8 @@ public class UnloggedTableGeneration
         try
         {
             SQLFragment exists = new SQLFragment("SELECT EXISTS (SELECT 1 FROM ").append(markerTable(markerName)).append(")");
-            if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).getObject(Boolean.class)))
+            // A missing marker is handled below; check() logs other failures through its throttle
+            if (Boolean.TRUE.equals(new SqlSelector(scope, conn, exists).setLogLevel(Level.OFF).getObject(Boolean.class)))
                 return;
 
             // Bump only after the repair succeeds, so a failing repair does not bump again on every retry
@@ -161,6 +168,7 @@ public class UnloggedTableGeneration
         {
             if (!SqlDialect.isObjectNotFoundException(x))
                 throw x;
+
             createMarker(scope, conn);
             _generation.incrementAndGet();
             LOG.info("UNLOGGED table marker {} is missing. Materialized views will rebuild.", markerName);
@@ -169,7 +177,7 @@ public class UnloggedTableGeneration
 
     private static void createMarker(DbScope scope, Connection conn)
     {
-        // A fresh name never collides with tables TempTableTracker purges asynchronously at startup
+        TempTableTracker.init();
         String name = "unlogged_marker_" + GUID.makeHash();
         new SqlExecutor(scope, conn).execute(new SQLFragment("CREATE UNLOGGED TABLE ").append(markerTable(name)).append(" AS SELECT 1 AS x"));
         TempTableTracker.track(name, MARKER_REF);

@@ -1096,5 +1096,25 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM ").append(after)).getObject(Integer.class));
             }
         }
+
+        @Test
+        public void testUnloggedMarkerDropped()
+        {
+            DbSchema temp = DbSchema.getTemp();
+            Assume.assumeTrue("UNLOGGED is only supported on PostgreSQL", temp.getSqlDialect().isPostgreSQL());
+
+            UnloggedTableGeneration.checkForTest();
+            String before = UnloggedTableGeneration.markerNameForTest();
+            assertNotNull("The initial check must create a marker", before);
+            long generation = Long.parseLong(UnloggedTableGeneration.current());
+
+            new SqlExecutor(temp).execute(new SQLFragment("DROP TABLE temp.").appendIdentifier(before));
+            UnloggedTableGeneration.checkForTest();
+
+            assertTrue("A dropped marker must bump the generation", Long.parseLong(UnloggedTableGeneration.current()) > generation);
+            String after = UnloggedTableGeneration.markerNameForTest();
+            assertNotEquals("A dropped marker must be replaced under a new name", before, after);
+            assertEquals(Integer.valueOf(1), new SqlSelector(temp, new SQLFragment("SELECT COUNT(*) FROM temp.").appendIdentifier(after)).getObject(Integer.class));
+        }
     }
 }
