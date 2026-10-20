@@ -68,6 +68,7 @@ public class VisualizationModule extends CodeOnlyModule
     {
         Set<Class<?>> set = new LinkedHashSet<>();
         set.add(VisualizationController.TestCase.class);
+        set.add(VisualizationController.PointClickFnTestCase.class);
         set.add(VisualizationSQLGenerator.GetDataTestCase.class);
         set.add(VisualizationCDSGenerator.TestCase.class);
 
