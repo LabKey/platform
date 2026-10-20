@@ -185,6 +185,30 @@ public final class CacheReplayCommitTask implements Runnable
         }
 
         @Test
+        public void repeatedRemovalDropsReloadBetweenAndKeepsFirstPosition()
+        {
+            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            task.remove("c1", "a", op("remove a"));
+            task.reload("c1", "b", 10, op("reload b"));
+            task.reload("c1", "a", 10, op("reload a"));
+            task.remove("c1", "a", op("remove a again"));
+            assertEquals(List.of("remove a", "reload b"), run(task));
+        }
+
+        @Test
+        public void operationRegisteredDuringReplayDoesNotRun()
+        {
+            CacheReplayCommitTask task = new CacheReplayCommitTask();
+            task.reload("c1", "a", 10, () -> {
+                _log.add("reload a");
+                task.reload("c1", "b", 10, op("reload b"));
+            });
+            task.remove("c2", "a", op("remove c2 a"));
+            assertEquals(List.of("reload a", "remove c2 a"), run(task));
+            assertEquals(3, task.size());
+        }
+
+        @Test
         public void droppedReloadFreesItsSlot()
         {
             CacheReplayCommitTask task = new CacheReplayCommitTask();
