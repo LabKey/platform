@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,6 +64,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
@@ -82,8 +84,12 @@ import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AbstractContainerScopingTest;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -103,15 +109,18 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.VisDataRequest;
 import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.visualization.sql.VisualizationCDSGenerator;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -1056,6 +1065,10 @@ public class VisualizationController extends SpringActionController
             {
                 errors.reject(ERROR_MSG, "Report type \"" + form.getType() + "\" is not an available visualization type.");
             }
+            else if (_currentReport != null)
+            {
+                validatePointClickFn((VisualizationReportDescriptor) _currentReport.getDescriptor(), form.getJson(), report, errors);
+            }
         }
 
         @Override
@@ -1091,6 +1104,40 @@ public class VisualizationController extends SpringActionController
             resp.put("name", _currentReport.getDescriptor().getReportName());
             return resp;
         }
+    }
+
+    // GH Issue 1649:
+    private void validatePointClickFn(VisualizationReportDescriptor descriptor, @Nullable String json, @Nullable Report stored, Errors errors)
+    {
+        if (getUser().isTrustedBrowserDev())
+            return;
+
+        String fn;
+        try
+        {
+            fn = descriptor.getPointClickFn(json);
+        }
+        catch (JSONException e)
+        {
+            // Fail closed: the browser's JSON parser may read a config org.json rejects (e.g. duplicate keys)
+            errors.reject(ERROR_MSG, "Invalid chart configuration: " + e.getMessage());
+            return;
+        }
+
+        String storedFn = null;
+        if (stored != null && stored.getDescriptor() instanceof VisualizationReportDescriptor storedDescriptor)
+        {
+            try
+            {
+                storedFn = storedDescriptor.getPointClickFn();
+            }
+            catch (JSONException ignored)
+            {
+            }
+        }
+
+        if (fn != null && !fn.equals(storedFn))
+            errors.reject(ERROR_MSG, "Only trusted developers can add or change a chart's point click function.");
     }
 
     private abstract class AbstractChartWizardAction extends SimpleViewAction<ChartWizardReportForm>
@@ -1192,6 +1239,13 @@ public class VisualizationController extends SpringActionController
                         if (form.isPublic() && !report.canShare(getUser(), getContainer(), reportErrors))
                             ReportUtil.addErrors(reportErrors, errors);
                     }
+                }
+
+                if (form.getJsonData() != null)
+                {
+                    Report stored = form.getReportId() != null ? form.getReportId().getReport(getViewContext()) : null;
+                    VisualizationReportDescriptor descriptor = stored != null && stored.getDescriptor() instanceof VisualizationReportDescriptor d ? d : new GenericChartReportDescriptor();
+                    validatePointClickFn(descriptor, form.getJsonData(), stored, errors);
                 }
             }
             catch (Exception e)
@@ -1694,4 +1748,96 @@ public class VisualizationController extends SpringActionController
             assertEquals(1,vs.getGroupBys().size());
         }
     } /* TestCase */
+
+    // GH Issue 1649
+    public static class PointClickFnTestCase extends AbstractContainerScopingTest
+    {
+        private static final String FN = "function(data, measureInfo, clickEvent) { alert('clicked'); }";
+
+        @Test
+        public void testGenericChartRequiresTrustedDeveloper() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            User author = createUserInRole(folder, AuthorRole.class);
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-fn", null, genericChartJson(FN)));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-dup", null,
+                    "{\"queryConfig\":{},\"chartConfig\":{\"measures\":{\"pointClickFn\":null,\"pointClickFn\":\"" + FN + "\"}}}"));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, author, "author-legacy-fn", null,
+                    new JSONObject().put("queryConfig", new JSONObject())
+                            .put("chartConfig", new JSONObject().put("chartOptions", new JSONObject().put("developer", new JSONObject().put("pointClickFn", FN))))
+                            .toString()));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "author-no-fn", null, genericChartJson(null)));
+
+            grantRootRole(author, PlatformDeveloperRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, author, "developer-fn", null, genericChartJson(FN)));
+        }
+
+        @Test
+        public void testEditorCanKeepButNotChangeExistingFn() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            Report report = ReportService.get().createReportInstance(GenericChartReport.TYPE);
+            report.getDescriptor().setReportName("developer-chart");
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.json, genericChartJson(FN));
+            int rowId = ReportService.get().saveReportEx(new DefaultContainerUser(folder, getAdmin()), ReportUtil.getReportKey("core", "Users"), report).getRowId();
+            String reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId), getAdmin(), folder).toString();
+
+            User editor = createUserInRole(folder, EditorRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(FN)));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(FN + " ")));
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson("function() { alert('changed'); }")));
+            assertStatus(HttpServletResponse.SC_OK, saveGenericChart(folder, editor, "developer-chart", reportId, genericChartJson(null)));
+        }
+
+        @Test
+        public void testTimeChartRequiresTrustedDeveloper() throws Exception
+        {
+            Container folder = getSharedContainer("Charts", ModuleLoader.getInstance().getModule(VisualizationModule.NAME));
+            User author = createUserInRole(folder, AuthorRole.class);
+
+            assertStatus(HttpServletResponse.SC_BAD_REQUEST, saveTimeChart(folder, author, "time-author-fn", new JSONObject().put("pointClickFn", FN)));
+            assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-author-no-fn", new JSONObject()));
+
+            grantRootRole(author, PlatformDeveloperRole.class);
+            assertStatus(HttpServletResponse.SC_OK, saveTimeChart(folder, author, "time-developer-fn", new JSONObject().put("pointClickFn", FN)));
+        }
+
+        private static String genericChartJson(@Nullable String pointClickFn)
+        {
+            JSONObject measures = new JSONObject();
+            if (pointClickFn != null)
+                measures.put("pointClickFn", pointClickFn);
+            return new JSONObject()
+                    .put("queryConfig", new JSONObject().put("schemaName", "core").put("queryName", "Users"))
+                    .put("chartConfig", new JSONObject().put("geomOptions", new JSONObject()).put("measures", measures))
+                    .toString();
+        }
+
+        private MockHttpServletResponse saveGenericChart(Container folder, User user, String name, @Nullable String reportId, String jsonData) throws Exception
+        {
+            JSONObject body = new JSONObject()
+                    .put("name", name)
+                    .put("schemaName", "core")
+                    .put("queryName", "Users")
+                    .put("renderType", "scatter_plot")
+                    .put("public", true)
+                    .put("thumbnailType", ThumbnailType.NONE.name())
+                    .put("jsonData", jsonData);
+            if (reportId != null)
+                body.put("reportId", reportId);
+            return postJson(new ActionURL(SaveGenericReportAction.class, folder), user, body);
+        }
+
+        private MockHttpServletResponse saveTimeChart(Container folder, User user, String name, JSONObject config) throws Exception
+        {
+            JSONObject body = new JSONObject()
+                    .put("name", name)
+                    .put("type", TimeChartReport.TYPE)
+                    .put("shared", true)
+                    .put("thumbnailType", ThumbnailType.NONE.name())
+                    .put("json", config.toString());
+            return postJson(new ActionURL(SaveVisualizationAction.class, folder), user, body);
+        }
+    }
 }

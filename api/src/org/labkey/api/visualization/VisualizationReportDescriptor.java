@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.ClientDependency;
@@ -50,6 +51,20 @@ abstract public class VisualizationReportDescriptor extends ReportDescriptor
         return null;
     }
 
+    /**
+     * Source of the point click handler in the given chart config, which the client evaluates in every viewer's browser.
+     * @throws org.json.JSONException if the config can't be parsed
+     */
+    public @Nullable String getPointClickFn(@Nullable String json)
+    {
+        return null;
+    }
+
+    public @Nullable String getPointClickFn()
+    {
+        return getPointClickFn(getJSON());
+    }
+
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -58,5 +73,4 @@ abstract public class VisualizationReportDescriptor extends ReportDescriptor
         d.addAll(v.getClientDependencies());
         return d;
     }
-
 }
