@@ -543,7 +543,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
      */
     private static final CacheLoader<String,Date> MODIFIED_DATES_LOADER = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
+        SQLFragment sql = SQLFragment.unsafe("SELECT Modified FROM ").append(ss.getTableInfoDataset()).unsafeAppend(" WHERE EntityId = ?").add(key);
 
         return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };
@@ -564,7 +564,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public static void updateModified(DatasetDefinition def, Date modified)
     {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataset() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
+        SQLFragment sql = SQLFragment.unsafe("UPDATE ").append(ss.getTableInfoDataset()).unsafeAppend(" SET Modified = ? WHERE EntityId = ?").addAll(modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
         MODIFIED_DATES_CACHE.remove(def.getEntityId());
     }
@@ -832,20 +832,19 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM ").append(getStorageTableInfo(false));
-            String and = "\nWHERE ";
+            SQLFragment studyDataFrag = SQLFragment.unsafe("DELETE FROM ").append(getStorageTableInfo(false));
+            var where = SQLFragment.sep("\nWHERE ", " AND ");
 
             // only apply a container filter on delete when this is a shared dataset definition
             // and we are not at the container where the definition lives (see issue 28224)
             if (isShared() && !getContainer().getId().equals(getDefinitionContainer().getId()))
             {
-                studyDataFrag.append(and).append("container=").appendValue(getContainer());
-                and = " AND ";
+                studyDataFrag.append(where.next()).unsafeAppend("container=").appendValue(getContainer());
             }
 
             if (cutoff != null)
             {
-                studyDataFrag.append(and).append(" AND _VisitDate > ?").add(cutoff);
+                studyDataFrag.append(where.next()).unsafeAppend("_VisitDate > ?").add(cutoff);
             }
 
             SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
@@ -1616,7 +1615,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
             // Dataset
 
-            var datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
+            SQLFragment datasetSql = SQLFragment.unsafe("CAST(").appendValue(def.getEntityId(), getSqlDialect()).unsafeAppend(" AS ").append(getSqlDialect().getGuidTypeAsSql()).unsafeAppend(")");
+            var datasetColumn = new ExprColumn(this, "Dataset", datasetSql, JdbcType.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
                 @Override
@@ -1659,14 +1659,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 SQLFragment from = new SQLFragment();
                 from.appendComment("<DatasetDefinition: " + getName() + ">", d); // UNDONE stash name
-                String comma = " ";
-                from.append("(SELECT ");
+                var comma = SQLFragment.sep(" ", ", ");
+                from.unsafeAppend("(SELECT ");
                 for (ColumnInfo ci : _template.getColumns())
                 {
-                    from.append(comma).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).append(" AS ").append(ci.getName());
-                    comma = ", ";
+                    from.append(comma.next()).append(NullColumnInfo.nullValue(ci.getSqlTypeName())).unsafeAppend(" AS ").appendIdentifier(ci.getSelectIdentifier());
                 }
-                from.append("\nWHERE 0=1) AS ").appendIdentifier(alias);
+                from.unsafeAppend("\nWHERE 0=1) AS ").appendIdentifier(alias);
                 from.appendComment("</DatasetDefinition>", d);
                 return from;
             }
@@ -1676,14 +1675,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             {
                 SQLFragment ret = new SQLFragment();
                 ret.appendComment("<DatasetDefinition: " + getName() + (getDataSharingEnum() != DataSharing.NONE ? " sharing=" + getDataSharingEnum().name() : "") + ">", d);
-                ret.append("(SELECT * FROM ");
+                ret.unsafeAppend("(SELECT * FROM ");
                 ret.append(_storage.getFromSQL("_"));
-                ret.append(" WHERE container="); //?) ");
+                ret.unsafeAppend(" WHERE container="); //?) ");
                 if (getDataSharingEnum() == DataSharing.NONE)
                     ret.appendValue(getContainer());
                 else
                     ret.appendValue(getDefinitionContainer());
-                ret.append(")");
+                ret.unsafeAppend(")");
                 ret.appendIdentifier(alias);
                 ret.appendComment("</DatasetDefinition>", d);
                 return ret;
@@ -2438,33 +2437,34 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     public SQLFragment generateLSIDSQL()
     {
         if (null == getStorageTableInfo(false))
-            return new SQLFragment("''");
+            return SQLFragment.unsafe("''");
 
+        SqlDialect dialect = StudySchema.getInstance().getSchema().getSqlDialect();
         List<SQLFragment> parts = new ArrayList<>();
-        parts.add(new SQLFragment("''"));
-        parts.add(new SQLFragment("?", "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
-        parts.add(new SQLFragment("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = '" + getContainer().getId() + "')"));
-        parts.add(new SQLFragment("':" + String.valueOf(getDatasetId()) + ".'"));
-        parts.add(new SQLFragment("participantid"));
+        parts.add(SQLFragment.unsafe("''"));
+        parts.add(SQLFragment.unsafe("?").add("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-"));
+        parts.add(SQLFragment.unsafe("(SELECT CAST(RowId AS VARCHAR(15)) FROM Core.Containers WHERE EntityId = ").appendValue(getContainer()).unsafeAppend(")"));
+        parts.add(new SQLFragment().appendValue(":" + getDatasetId() + ".", dialect));
+        parts.add(SQLFragment.unsafe("participantid"));
 
         if (!isDemographicData())
         {
-            parts.add(new SQLFragment("'.'"));
+            parts.add(SQLFragment.unsafe("'.'"));
             if (!_study.getTimepointType().isVisitBased())
             {
                 SQLFragment seq = new SQLFragment();
-                seq.append("CAST((");
+                seq.unsafeAppend("CAST((");
                 seq.append(StudyUtils.sequenceNumFromDateSQL("date"));
-                seq.append(") AS VARCHAR(36))");
+                seq.unsafeAppend(") AS VARCHAR(36))");
                 parts.add(seq);
-                parts.add(new SQLFragment("'.0000'"));   // Match what insert/import does
+                parts.add(SQLFragment.unsafe("'.0000'"));   // Match what insert/import does
             }
             else
-                parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
+                parts.add(SQLFragment.unsafe("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
 
             if (!_study.getTimepointType().isVisitBased() && getUseTimeKeyField())
             {
-                parts.add(new SQLFragment("'.'"));
+                parts.add(SQLFragment.unsafe("'.'"));
                 parts.add(StudyManager.timePortionFromDateSQL("Date"));
             }
             else if (getKeyPropertyName() != null)
@@ -2474,13 +2474,13 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
                 {
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
                     // so use COALESCE to get rid of NULLs
-                    parts.add(new SQLFragment("'.'"));
-                    parts.add(new SQLFragment("COALESCE(_key,'')"));
+                    parts.add(SQLFragment.unsafe("'.'"));
+                    parts.add(SQLFragment.unsafe("COALESCE(_key,'')"));
                 }
             }
         }
 
-        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[0]));
+        return dialect.concatenate(parts.toArray(new SQLFragment[0]));
     }
 
 
@@ -2578,7 +2578,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
 
         TableInfo tinfo = getStorageTableInfo(false);
         SimpleFilter filter = new SimpleFilter();
-        SQLFragment checkInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment(demographic ?"ParticipantId":"LSID"), idList);
+        SQLFragment checkInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment().appendIdentifier(demographic ? "ParticipantId" : "LSID"), idList);
         filter.addWhereClause(checkInClause);
         if (isShared())
         {
@@ -2613,7 +2613,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
             return null;
 
         SimpleFilter deleteFilter = new SimpleFilter();
-        SQLFragment deleteInClause = tinfo.getSqlDialect().appendInClauseSql(new SQLFragment("LSID"), deleteSet);
+        SQLFragment deleteInClause = tinfo.getSqlDialect().appendInClauseSql(SQLFragment.unsafe("LSID"), deleteSet);
         deleteFilter.addWhereClause(deleteInClause);
         Table.delete(tinfo, deleteFilter);
 
@@ -2627,7 +2627,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Integer, DatasetDefin
     int getMaxKeyValue()
     {
         TableInfo tInfo = getStorageTableInfo(false);
-        SQLFragment sqlf = new SQLFragment("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
+        SQLFragment sqlf = SQLFragment.unsafe("SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM ").append(tInfo.getFromSQL("_"));
         Integer newKey = new SqlSelector(tInfo.getSchema(),sqlf).getObject(Integer.class);
         return newKey.intValue();
     }

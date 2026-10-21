@@ -429,11 +429,11 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 {
                     var colSelectName = autoIncCol.getSelectIdentifier();
                     SQLFragment resetSeq = new SQLFragment();
-                    resetSeq.append("SELECT setval(\n");
-                    resetSeq.append("  pg_get_serial_sequence(").appendValue(t.getSelectName()).append(", ").appendValue(colSelectName.getId()).append("),\n");
-                    resetSeq.append("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).append(")+1 FROM ").append(t).append("), 1),\n");
-                    resetSeq.append("  false");
-                    resetSeq.append(")");
+                    resetSeq.unsafeAppend("SELECT setval(\n");
+                    resetSeq.unsafeAppend("  pg_get_serial_sequence(").appendValue(t.getSelectName()).unsafeAppend(", ").appendValue(colSelectName.getId()).unsafeAppend("),\n");
+                    resetSeq.unsafeAppend("  COALESCE((SELECT MAX(").appendIdentifier(colSelectName).unsafeAppend(")+1 FROM ").append(t).unsafeAppend("), 1),\n");
+                    resetSeq.unsafeAppend("  false");
+                    resetSeq.unsafeAppend(")");
                     new SqlExecutor(_scope, _conn).execute(resetSeq);
                 }
             }

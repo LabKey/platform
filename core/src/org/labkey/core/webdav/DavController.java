@@ -63,8 +63,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -203,7 +201,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -359,22 +356,6 @@ public class DavController extends SpringActionController
             if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(skipProfiling))
             {
                 MemTracker.get().ignore();
-            }
-            else
-            {
-                // Don't send back mini-profiler id if the user won't be able to get the profiler info
-                if (MiniProfiler.isEnabled(getViewContext()))
-                {
-                    RequestInfo req = MemTracker.get().current();
-                    if (req != null)
-                    {
-                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                        ids.add(req.getId());
-                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                    }
-                }
             }
 
             try

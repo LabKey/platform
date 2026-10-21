@@ -102,19 +102,19 @@ public class FileLinkFileListener implements FileListener
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
         sharedSQL.append(OntologyManager.getTinfoObjectProperty());
-        sharedSQL.append(" SET StringValue = ");
+        sharedSQL.unsafeAppend(" SET StringValue = ");
 
         SQLFragment standardWhereSQL = new SQLFragment(" WHERE PropertyId IN (SELECT PropertyId FROM ");
         standardWhereSQL.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        standardWhereSQL.append(" WHERE RangeURI = ?)");
+        standardWhereSQL.unsafeAppend(" WHERE RangeURI = ?)");
         standardWhereSQL.add(PropertyType.FILE_LINK.getTypeUri());
 
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
-        singleEntrySQL.append("? ");
+        singleEntrySQL.unsafeAppend("? ");
         singleEntrySQL.add(destPath);
         singleEntrySQL.append(standardWhereSQL);
-        singleEntrySQL.append(" AND StringValue = ?");
+        singleEntrySQL.unsafeAppend(" AND StringValue = ?");
         singleEntrySQL.add(srcPath);
 
         int rows = new SqlExecutor(OntologyManager.getExpSchema()).execute(singleEntrySQL);
@@ -142,9 +142,9 @@ public class FileLinkFileListener implements FileListener
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
             childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction("StringValue", Integer.toString(srcPath.length() + 1), "5000"))));
             childPathsSQL.append(standardWhereSQL);
-            childPathsSQL.append(" AND ");
+            childPathsSQL.unsafeAppend(" AND ");
             childPathsSQL.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment("StringValue")));
-            childPathsSQL.append(" = 1");
+            childPathsSQL.unsafeAppend(" = 1");
 
             int childRows = new SqlExecutor(OntologyManager.getExpSchema()).execute(childPathsSQL);
             if (childRows > 0)
@@ -183,13 +183,13 @@ public class FileLinkFileListener implements FileListener
         // Figure out all of the FileLink columns in hard tables managed by OntologyManager
         SQLFragment sql = new SQLFragment("SELECT dd.Container, dd.DomainId, dd.StorageTableName, dd.StorageSchemaName, pd.Name, pd.StorageColumnName FROM ");
         sql.append(OntologyManager.getTinfoDomainDescriptor(), "dd");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoPropertyDescriptor(), "pd");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(OntologyManager.getTinfoPropertyDomain(), "m");
-        sql.append(" WHERE dd.DomainId = m.DomainId AND pd.PropertyId = m.PropertyId AND pd.RangeURI = ? ");
+        sql.unsafeAppend(" WHERE dd.DomainId = m.DomainId AND pd.PropertyId = m.PropertyId AND pd.RangeURI = ? ");
         sql.add(PropertyType.FILE_LINK.getTypeUri());
-        sql.append(" AND dd.StorageTableName IS NOT NULL AND dd.StorageSchemaName IS NOT NULL AND pd.Name IS NOT NULL");
+        sql.unsafeAppend(" AND dd.StorageTableName IS NOT NULL AND dd.StorageSchemaName IS NOT NULL AND pd.Name IS NOT NULL");
 
         new SqlSelector(OntologyManager.getExpSchema(), sql).forEachMap(row -> {
             // Find the DbSchema/TableInfo/ColumnInfo for the FileLink column
@@ -233,22 +233,22 @@ public class FileLinkFileListener implements FileListener
     private Collection<File> listObjectPropertyFiles(@Nullable Container container)
     {
         SQLFragment frag = new SQLFragment();
-        frag.append("SELECT StringValue\n");
-        frag.append("FROM\n");
-        frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
-        frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
-        frag.append("WHERE ");
-        frag.append("  o.ObjectId = op.ObjectId AND\n");
+        frag.unsafeAppend("SELECT StringValue\n");
+        frag.unsafeAppend("FROM\n");
+        frag.unsafeAppend("  ").append(OntologyManager.getTinfoObjectProperty(), "op").unsafeAppend(",\n");
+        frag.unsafeAppend("  ").append(OntologyManager.getTinfoObject(), "o").unsafeAppend("\n");
+        frag.unsafeAppend("WHERE ");
+        frag.unsafeAppend("  o.ObjectId = op.ObjectId AND\n");
         if (container != null)
         {
-            frag.append("  o.Container = ? AND \n");
+            frag.unsafeAppend("  o.Container = ? AND \n");
             frag.add(container);
         }
-        frag.append("  PropertyId IN (\n");
-        frag.append("    SELECT PropertyId\n");
-        frag.append("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").append("\n");
-        frag.append("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
-        frag.append("  )\n");
+        frag.unsafeAppend("  PropertyId IN (\n");
+        frag.unsafeAppend("    SELECT PropertyId\n");
+        frag.unsafeAppend("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").unsafeAppend("\n");
+        frag.unsafeAppend("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
+        frag.unsafeAppend("  )\n");
 
         SqlSelector selector = new SqlSelector(OntologyManager.getExpSchema(), frag);
         return selector.getArrayList(File.class);
@@ -280,40 +280,38 @@ public class FileLinkFileListener implements FileListener
         final SQLFragment frag = new SQLFragment();
 
         // Object property files
-        frag.append("SELECT\n");
-        frag.append("  o.Container,\n");
+        frag.unsafeAppend("SELECT\n");
+        frag.unsafeAppend("  o.Container,\n");
         if (!skipCreatedModified)
         {
-            frag.append("  NULL AS Created,\n");
-            frag.append("  NULL AS CreatedBy,\n");
-            frag.append("  NULL AS Modified,\n");
-            frag.append("  NULL AS ModifiedBy,\n");
+            frag.unsafeAppend("  NULL AS Created,\n");
+            frag.unsafeAppend("  NULL AS CreatedBy,\n");
+            frag.unsafeAppend("  NULL AS Modified,\n");
+            frag.unsafeAppend("  NULL AS ModifiedBy,\n");
         }
-        frag.append("  op.StringValue AS FilePath,\n");
-        frag.append("  o.ObjectId AS SourceKey,\n");
-        frag.append("  'exp.object' AS SourceName\n");
-        frag.append("FROM\n");
-        frag.append("  ").append(OntologyManager.getTinfoObjectProperty(), "op").append(",\n");
-        frag.append("  ").append(OntologyManager.getTinfoObject(), "o").append("\n");
-        frag.append("WHERE\n");
+        frag.unsafeAppend("  op.StringValue AS FilePath,\n");
+        frag.unsafeAppend("  o.ObjectId AS SourceKey,\n");
+        frag.unsafeAppend("  'exp.object' AS SourceName\n");
+        frag.unsafeAppend("FROM\n");
+        frag.unsafeAppend("  ").append(OntologyManager.getTinfoObjectProperty(), "op").unsafeAppend(",\n");
+        frag.unsafeAppend("  ").append(OntologyManager.getTinfoObject(), "o").unsafeAppend("\n");
+        frag.unsafeAppend("WHERE\n");
         if (StringUtils.isEmpty(filePath))
-            frag.append("  op.StringValue IS NOT NULL AND\n");
-        else if (filePath instanceof SQLFragment)
-            frag.append("  op.StringValue = ").append(filePath).append(" AND\n");
+            frag.unsafeAppend("  op.StringValue IS NOT NULL AND\n");
         else
-            frag.append("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).append(" AND\n");
+            frag.unsafeAppend("  op.StringValue = ").appendStringLiteral(filePath, OntologyManager.getTinfoObject().getSqlDialect()).unsafeAppend(" AND\n");
 
-        frag.append("  o.ObjectId = op.ObjectId AND\n");
-        frag.append("  PropertyId IN (\n");
-        frag.append("    SELECT PropertyId\n");
-        frag.append("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").append("\n");
-        frag.append("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
-        frag.append("  )\n");
+        frag.unsafeAppend("  o.ObjectId = op.ObjectId AND\n");
+        frag.unsafeAppend("  PropertyId IN (\n");
+        frag.unsafeAppend("    SELECT PropertyId\n");
+        frag.unsafeAppend("    FROM ").append(OntologyManager.getTinfoPropertyDescriptor(), "pd").unsafeAppend("\n");
+        frag.unsafeAppend("    WHERE RangeURI = ?\n").add(PropertyType.FILE_LINK.getTypeUri());
+        frag.unsafeAppend("  )\n");
 
         hardTableFileLinkColumns((schema, table, pathColumn, containerId, domainUri) -> {
             SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
-            frag.append("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).append("\n");
+            frag.unsafeAppend("UNION").append(StringUtils.isEmpty(filePath) ? "" : " ALL" /*keep duplicate*/).unsafeAppend("\n");
             frag.append(updater.listFilesQuery(skipCreatedModified, filePath, false));
         });
 
@@ -331,7 +329,7 @@ public class FileLinkFileListener implements FileListener
                 SQLFragment containerFrag = new SQLFragment("?", containerId);
                 TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, "rowid", containerFrag);
                 if (!frag.isEmpty())
-                    frag.append("UNION").append("").append("\n");
+                    frag.unsafeAppend("UNION").unsafeAppend("").unsafeAppend("\n");
                 frag.append(updater.listFilesQuery(true, null, true));
             }
         });

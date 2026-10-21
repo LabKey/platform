@@ -215,10 +215,10 @@ public class PipelineManager
     static public void purge(Container container, User user)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
-                append(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
+        sql.unsafeAppend("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun()).
+                unsafeAppend(" SET JobId = NULL WHERE JobId IN (SELECT RowId FROM ").
                 append(pipeline.getTableInfoStatusFiles(), "p").
-                append(" WHERE container = ?)");
+                unsafeAppend(" WHERE container = ?)");
         sql.add(container.getId());
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())

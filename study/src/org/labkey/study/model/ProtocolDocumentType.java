@@ -42,6 +42,6 @@ public class ProtocolDocumentType implements AttachmentParentType
     @Override
     public @NotNull SQLFragment getSelectEntityIdAndDescriptionSql()
     {
-        return new SQLFragment("SELECT ProtocolDocumentEntityId AS EntityId, Label AS Description FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
+        return SQLFragment.unsafe("SELECT ProtocolDocumentEntityId AS EntityId, Label AS Description FROM ").append(StudySchema.getInstance().getTableInfoStudy(), "s");
     }
 }

@@ -17,8 +17,6 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -62,11 +60,8 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     {
         FORM form;
         BindException errors;
-        try (Timing ignored = MiniProfiler.step("bind"))
-        {
-            errors = bindParameters(getPropertyValues());
-            form = (errors.hasErrors() && getCommandClass().isRecord()) ? null : (FORM) errors.getTarget();
-        }
+        errors = bindParameters(getPropertyValues());
+        form = (errors.hasErrors() && getCommandClass().isRecord()) ? null : (FORM) errors.getTarget();
 
         return handleRequest(form, errors);
     }
@@ -79,34 +74,25 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         {
             setReshow(true);
 
-            try (Timing ignored = MiniProfiler.step("validate"))
-            {
-                if (success && null != form)
-                    validate(form, errors);
-            }
+            if (success && null != form)
+                validate(form, errors);
             success = errors == null || !errors.hasErrors();
 
-            try (Timing ignored = MiniProfiler.step("handlePost"))
-            {
-                if (success)
-                    success = handlePost(form, errors);
-            }
+            if (success)
+                success = handlePost(form, errors);
 
             if (success)
             {
                 URLHelper url = getSuccessURL(form);
                 if (null != url)
                     return HttpView.redirect(url);
-                try (Timing ignored = MiniProfiler.step("createView"))
-                {
-                    ModelAndView successView = getSuccessView(form);
-                    if (null != successView)
-                        return successView;
-                }
+                ModelAndView successView = getSuccessView(form);
+                if (null != successView)
+                    return successView;
             }
         }
 
-        try (Timing ignored = MiniProfiler.step("createView"))
+        try
         {
             return getView(form, getReshow(), errors);
         }

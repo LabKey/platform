@@ -1294,7 +1294,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     {
         SQLFragment frag = new SQLFragment();
         String union = "";
-        frag.append("(");
+        frag.unsafeAppend("(");
 
         for (FileListener fileListener : _fileListeners)
         {
@@ -1306,7 +1306,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                 union = "UNION\n";
             }
         }
-        frag.append(")");
+        frag.unsafeAppend(")");
         return union.isEmpty() ? new SQLFragment() : frag;
     }
 
@@ -1316,21 +1316,21 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
         SQLFragment frag = new SQLFragment();
         if (currentUser == null || !currentUser.hasSiteAdminPermission())
         {
-            frag.append("SELECT\n");
-            frag.append("  CAST(NULL AS VARCHAR) AS Container,\n");
-            frag.append("  NULL AS Created,\n");
-            frag.append("  NULL AS CreatedBy,\n");
-            frag.append("  NULL AS Modified,\n");
-            frag.append("  NULL AS ModifiedBy,\n");
-            frag.append("  NULL AS FilePath,\n");
-            frag.append("  NULL AS SourceKey,\n");
-            frag.append("  NULL AS SourceName\n");
-            frag.append("WHERE 1 = 0");
+            frag.unsafeAppend("SELECT\n");
+            frag.unsafeAppend("  CAST(NULL AS VARCHAR) AS Container,\n");
+            frag.unsafeAppend("  NULL AS Created,\n");
+            frag.unsafeAppend("  NULL AS CreatedBy,\n");
+            frag.unsafeAppend("  NULL AS Modified,\n");
+            frag.unsafeAppend("  NULL AS ModifiedBy,\n");
+            frag.unsafeAppend("  NULL AS FilePath,\n");
+            frag.unsafeAppend("  NULL AS SourceKey,\n");
+            frag.unsafeAppend("  NULL AS SourceName\n");
+            frag.unsafeAppend("WHERE 1 = 0");
         }
         else
         {
             String union = "";
-            frag.append("(");
+            frag.unsafeAppend("(");
             for (FileListener fileListener : _fileListeners)
             {
                 SQLFragment subselect = fileListener.listFilesQuery();
@@ -1341,7 +1341,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
                     union = "UNION\n";
                 }
             }
-            frag.append(")");
+            frag.unsafeAppend(")");
         }
         return frag;
     }

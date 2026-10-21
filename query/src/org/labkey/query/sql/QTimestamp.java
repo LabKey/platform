@@ -54,7 +54,7 @@ public class QTimestamp extends QExpr implements IConstant
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("{ts ").append(getTokenText()).append("}");
+        builder.unsafeAppend("{ts ").append(getTokenText()).unsafeAppend("}");
     }
 
     @NotNull

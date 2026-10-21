@@ -68,8 +68,8 @@ public class StudyQCStateHandler implements DataStateHandler<StudyController.Man
             return true;
         }
         SQLFragment f = new SQLFragment();
-        f.append("SELECT * FROM ").append(
-                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).append(
+        f.unsafeAppend("SELECT * FROM ").append(
+                StudySchema.getInstance().getTableInfoStudyData(study, null).getFromSQL("SD")).unsafeAppend(
                 " WHERE QCState = ? AND Container = ?");
         f.add(state.getRowId());
         f.add(state.getContainer());

@@ -273,7 +273,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (allColumns.isEmpty())
         {
-            selectFrag.append("* ");
+            selectFrag.unsafeAppend("* ");
         }
         else
         {
@@ -295,7 +295,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 column.declareJoins(tableAlias, joins);
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
-                selectFrag.append(" AS ");
+                selectFrag.unsafeAppend(" AS ");
                 selectFrag.appendIdentifier(column.getAlias());
                 strComma = ",\n";
             }
@@ -378,14 +378,14 @@ public class QuerySelectView extends AbstractQueryRelation
             });
         SQLFragment getFromSql = table.getFromSQL(tableAlias, fieldKeySet);
         fromFrag.append(getFromSql);
-        fromFrag.append(" ");
+        fromFrag.unsafeAppend(" ");
 
         for (SQLFragment drivingJoin : drivingJoins.values())
-            fromFrag.append("\n").append(drivingJoin);
+            fromFrag.unsafeAppend("\n").append(drivingJoin);
 
         for (Map.Entry<String, SQLFragment> entry : joins.entrySet())
         {
-            fromFrag.append("\n").append(entry.getValue());
+            fromFrag.unsafeAppend("\n").append(entry.getValue());
         }
 
         SQLFragment filterFrag = null;
@@ -412,12 +412,12 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if ((filterFrag == null || filterFrag.getSQL().isEmpty()) && sort == null && Table.ALL_ROWS == maxRows && offset == 0 && !distinct)
         {
-            selectFrag.append("\n").append(fromFrag);
+            selectFrag.unsafeAppend("\n").append(fromFrag);
             return selectFrag;
         }
 
         SQLFragment nestedFrom = new SQLFragment();
-        nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x");
+        nestedFrom.unsafeAppend("FROM (\n").append(selectFrag).unsafeAppend("\n").append(fromFrag).unsafeAppend(") x");
         SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
 
         if (AppProps.getInstance().isDevMode())

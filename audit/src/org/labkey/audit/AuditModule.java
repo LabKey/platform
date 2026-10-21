@@ -158,7 +158,7 @@ public class AuditModule extends DefaultModule
         @Override
         public SQLFragment getValueSql(String tableAlias)
         {
-            return new SQLFragment("CAST(").append(super.getValueSql(tableAlias)).append(" AS BIT)");
+            return new SQLFragment("CAST(").append(super.getValueSql(tableAlias)).unsafeAppend(" AS BIT)");
         }
     }
 }

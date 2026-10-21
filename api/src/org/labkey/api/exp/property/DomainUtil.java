@@ -988,7 +988,7 @@ public class DomainUtil
 
                             SQLFragment sql = new SQLFragment("SELECT 1 FROM ")
                                     .append(domainTable)
-                                    .append(" WHERE ")
+                                    .unsafeAppend(" WHERE ")
                                     .append(dialect.array_some_in_array(columnFrag, deletedArray));
 
                             if (new SqlSelector(domainTable.getSchema().getScope(), sql).exists())

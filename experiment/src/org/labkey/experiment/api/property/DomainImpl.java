@@ -446,7 +446,7 @@ public class DomainImpl implements Domain
         // CONSIDER verify table exists: SELECT 1 FROM pg_tables WHERE schemaname = ? AND tablename = ?
         if (null != getStorageTableName())
         {
-            SQLFragment lockSQL = new SQLFragment().append("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).append(" IN ACCESS EXCLUSIVE MODE").appendEOS().append("\n");
+            SQLFragment lockSQL = new SQLFragment().unsafeAppend("LOCK TABLE ").appendDottedIdentifiers(getDomainKind().getStorageSchemaName(), getStorageTableName()).unsafeAppend(" IN ACCESS EXCLUSIVE MODE").appendEOS().unsafeAppend("\n");
             new SqlExecutor(lockSchema).execute(lockSQL);
         }
     }
@@ -1088,19 +1088,19 @@ public class DomainImpl implements Domain
         uniqueIdProps.forEach(prop -> colNames.add(prop.getName()));
         ListofMapsDataIterator mapsDi = new ListofMapsDataIterator(colNames, rows);
         mapsDi.setDebugName(table.getName() + ".ensureUniqueIds");
-        SQLFragment sql = new SQLFragment().append("UPDATE ").append(table).append(" SET ");
+        SQLFragment sql = new SQLFragment().unsafeAppend("UPDATE ").append(table).unsafeAppend(" SET ");
         String separator = "";
         for (DomainProperty prop: uniqueIdProps)
         {
             // Issue 50715: quote column names with spaces for update statement
-            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).append(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
+            sql.append(separator).appendIdentifier(prop.getPropertyDescriptor().getLegalSelectName(dialect)).unsafeAppend(" = ?").add(new Parameter(prop.getName(), prop.getJdbcType()));
             separator = ",";
         }
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         separator = "";
         for (ColumnInfo col: uniqueIndexCols)
         {
-            sql.append(separator).append(col.getName()).append(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
+            sql.append(separator).append(col.getName()).unsafeAppend(" = ?").add(new Parameter(col.getName(), col.getJdbcType()));
             separator = " AND ";
         }
 

@@ -332,7 +332,7 @@ public class DataColorTable extends FilteredTable<ExpSchema>
 
         private long countInContainer(TableInfo table, String containerId)
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(table).append(" WHERE Container = ?").add(containerId);
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ").append(table).unsafeAppend(" WHERE Container = ?").add(containerId);
             return new SqlSelector(ExperimentServiceImpl.getExpSchema(), sql).getObject(Long.class);
         }
 
@@ -494,7 +494,7 @@ public class DataColorTable extends FilteredTable<ExpSchema>
             // the exclusion row is stamped with the caller's container
             String stampedContainer = new SqlSelector(ExperimentServiceImpl.getExpSchema(),
                     new SQLFragment("SELECT Container FROM ").append(ExperimentServiceImpl.get().getTinfoDataTypeColorExclusion())
-                            .append(" WHERE ColorRowId = ? AND DataTypeRowId = ?").add(red).add(typeA)).getObject(String.class);
+                            .unsafeAppend(" WHERE ColorRowId = ? AND DataTypeRowId = ?").add(red).add(typeA)).getObject(String.class);
             assertEquals(_c.getId(), stampedContainer);
 
             // idempotent re-add is a no-op

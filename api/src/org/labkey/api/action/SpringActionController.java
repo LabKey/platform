@@ -33,8 +33,6 @@ import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
@@ -95,7 +93,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -509,22 +506,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             {
                 MemTracker.get().ignore();
             }
-            else
-            {
-                // Don't send back mini-profiler id if the user won't be able to get the profiler info
-                if (MiniProfiler.isEnabled(context))
-                {
-                    RequestInfo req = MemTracker.get().current();
-                    if (req != null)
-                    {
-                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                        ids.add(req.getId());
-                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                    }
-                }
-            }
 
             // MULTIPART-FORMDATA handling (before permission check because permissionCheck needs CSRF parameter)
             String contentType = request.getContentType();
@@ -569,6 +550,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             checkable.checkPermissions();
 
+            boolean export = ExportAction.class.isAssignableFrom(actionClass);
             // Actions can annotate themselves with an ActionType, which helps custom schemas that want to limit access from generic actions
             if (actionClass.isAnnotationPresent(Action.class))
             {
@@ -578,11 +560,15 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     actionAnnotation.value().equals(ActionType.SelectData.class) ||
                     actionAnnotation.value().equals(ActionType.SelectMetaData.class))
                 {
-                    // Consider these action types read-only and eligible for killing after a timeout
+                    // Consider these action types read-only and, except for exports, eligible for killing after a timeout
                     request.setAttribute(TransactionFilter.READ_ONLY_ATTRIBUTE_NAME, true);
                 }
+                export |= actionAnnotation.value().equals(ActionType.Export.class);
                 QueryService.get().setEnvironment(QueryService.Environment.ACTION, actionAnnotation.value());
             }
+
+            if (export)
+                request.setAttribute(TransactionFilter.EXPORT_ATTRIBUTE_NAME, true);
 
             // After the permission check so unauthorized requests can't consume @ConcurrencyLimit permits, and held
             // through rendering because the action's memory is live for that whole time.

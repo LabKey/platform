@@ -332,7 +332,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         {
             SQLFragment sql = new SQLFragment("SELECT DISTINCT Container FROM ")
                 .append(OntologyManager.getTinfoDomainDescriptor())
-                .append(" WHERE ");
+                .unsafeAppend(" WHERE ");
 
             sql.append(domainNamespacePrefixes.stream()
                 .map(prefix -> new SQLFragment("DomainURI LIKE ?")
@@ -713,7 +713,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
                         "textChoiceValues", new SqlSelector(schema,
                                 new SQLFragment("SELECT MIN(NumValues) AS min, MAX(NumValues) AS max, AVG(NumValues) AS avg FROM (")
                                         .append(String.format("SELECT (%s(expression) - %s(replace(expression, '|', '')) + 1) AS NumValues FROM exp.propertyvalidator WHERE typeuri = ?", lengthFn, lengthFn))
-                                        .append(") AS X")
+                                        .unsafeAppend(") AS X")
                                         .add("urn:lsid:labkey.com:PropertyValidator:textchoice")
                             ).getMapCollection().stream().reduce(new HashMap<>(), (x, m) -> {
                                 x.put("min", m.get("min") != null ? m.get("min") : 0);

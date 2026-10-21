@@ -150,7 +150,7 @@
     if (!datasets.isEmpty())
     {
         SQLFragment f = new SQLFragment();
-        String union = "";
+        var union = SQLFragment.sep("", "\n  UNION ALL\n");
         for (var pair : datasets)
         {
             DatasetDefinition dd = pair.getKey();
@@ -158,17 +158,16 @@
             String alias = "__x" + dd.getDatasetId() + "__";
             ColumnInfo ptid = t.getColumn(study.getSubjectColumnName());
             ColumnInfo seq = t.getColumn("SequenceNum");
-            f.append(union).append("SELECT ")
-                    .append(ptid.getValueSql(alias)).append(" AS ParticipantId,")
-                    .append(seq.getValueSql(alias)).append(" AS SequenceNum,")
-                    .appendValue(dd.getDatasetId()).append(" as DatasetId,")
-                    .append("COUNT(*) AS _RowCount");
-            f.append("\nFROM ").append(t.getFromSQL(alias));
-            f.append("\nWHERE ").append(ptid.getValueSql(alias)).append("=?").add(bean.getParticipantId());
-            f.append("\nGROUP BY ").append(ptid.getValueSql(alias)).append(",").append(seq.getValueSql(alias));
-            union = "\n  UNION ALL\n";
+            f.append(union.next()).unsafeAppend("SELECT ")
+                    .append(ptid.getValueSql(alias)).unsafeAppend(" AS ParticipantId,")
+                    .append(seq.getValueSql(alias)).unsafeAppend(" AS SequenceNum,")
+                    .appendValue(dd.getDatasetId()).unsafeAppend(" as DatasetId,")
+                    .unsafeAppend("COUNT(*) AS _RowCount");
+            f.unsafeAppend("\nFROM ").append(t.getFromSQL(alias));
+            f.unsafeAppend("\nWHERE ").append(ptid.getValueSql(alias)).unsafeAppend("=?").add(bean.getParticipantId());
+            f.unsafeAppend("\nGROUP BY ").append(ptid.getValueSql(alias)).unsafeAppend(",").append(seq.getValueSql(alias));
         }
-        f.append("\n ORDER BY 2");
+        f.unsafeAppend("\n ORDER BY 2");
 
         new SqlSelector(dbSchema.getScope(), f, QueryLogging.noValidationNeededQueryLogging()).forEach(rs -> {
             String ptid = rs.getString(1);

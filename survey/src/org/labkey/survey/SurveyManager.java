@@ -345,7 +345,7 @@ public class SurveyManager
     {
         DbSchema schema = SurveySchema.getInstance().getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         sql.append(filter.getSQLFragment(schema, new SQLFragment("sd.container")));
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
@@ -355,7 +355,7 @@ public class SurveyManager
         TableInfo table = SurveySchema.getInstance().getSurveyDesignsTable();
         DbSchema schema = SurveySchema.getInstance().getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(table, "sd");
-        sql.append(" ").append(filter.getSQLFragment(table.getSqlDialect()));
+        sql.unsafeAppend(" ").append(filter.getSQLFragment(table.getSqlDialect()));
 
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
@@ -399,7 +399,7 @@ public class SurveyManager
         if (surveys.length > 0)
         {
             SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-            deleteSurveysSql.append(s.getSurveysTable()).append(" WHERE Container = ?").add(c);
+            deleteSurveysSql.append(s.getSurveysTable()).unsafeAppend(" WHERE Container = ?").add(c);
             executor.execute(deleteSurveysSql);
 
             // invoke any survey listeners to clean up any dependent objects
@@ -432,7 +432,7 @@ public class SurveyManager
                     deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ? AND Container = ?").add(surveyDesignId).add(c);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).unsafeAppend(" WHERE RowId = ? AND Container = ?").add(surveyDesignId).add(c);
             executor.execute(deleteSurveyDesignsSql);
 
             transaction.commit();

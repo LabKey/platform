@@ -190,7 +190,7 @@ public class DilutionManager
     public static void clearWellExclusions(SqlDialect dialect, int runId)
     {
         SQLFragment sql = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                append(" SET excluded = ").append(dialect.getBooleanFALSE()).append(" WHERE runid = ?");
+                unsafeAppend(" SET excluded = ").append(dialect.getBooleanFALSE()).unsafeAppend(" WHERE runid = ?");
         sql.addAll(runId);
         new SqlExecutor(getSchema()).execute(sql);
     }
@@ -201,7 +201,7 @@ public class DilutionManager
     public static int setWellExclusions(SqlDialect dialect, Collection<Integer> wellRowIds)
     {
         SQLFragment update = new SQLFragment("UPDATE ").append(DilutionManager.getTableInfoWellData(), "").
-                append(" SET excluded = ").append(dialect.getBooleanTRUE()).append(" WHERE rowid ");
+                unsafeAppend(" SET excluded = ").append(dialect.getBooleanTRUE()).unsafeAppend(" WHERE rowid ");
         getSchema().getSqlDialect().appendInClauseSql(update, wellRowIds);
         return new SqlExecutor(getSchema()).execute(update);
     }
@@ -271,9 +271,9 @@ public class DilutionManager
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT Cutoff FROM ");
         sql.append(DilutionManager.getTableInfoCutoffValue(), "cv");
-        sql.append(", ");
+        sql.unsafeAppend(", ");
         sql.append(DilutionManager.getTableInfoNAbSpecimen(), "ns");
-        sql.append(" WHERE ns.RowId = cv.NAbSpecimenID AND ns.ProtocolId = ?");
+        sql.unsafeAppend(" WHERE ns.RowId = cv.NAbSpecimenID AND ns.ProtocolId = ?");
         sql.add(protocol.getRowId());
 
         return Collections.synchronizedSet(new HashSet<>(new SqlSelector(getSchema(), sql).getCollection(Double.class)));
