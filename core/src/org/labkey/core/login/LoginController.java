@@ -924,8 +924,7 @@ public class LoginController extends SpringActionController
         try
         {
             // Create a verification key to email the user
-            String verification = LoginManager.createTempPassword();
-            LoginManager.setVerification(user, verification);
+            String verification = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
             try
             {
                 Container c = getContainer();
@@ -1706,7 +1705,7 @@ public class LoginController extends SpringActionController
             if (errors.hasErrors())
             {
                 if (_unrecoverableError)
-                    _log.warn("Verification failed: {} {}", form.getEmail(), form.getVerification());
+                    _log.warn("Verification failed: {}", form.getEmail());
                 else
                     _log.warn("Password entry error: {}", form.getEmail());
             }
@@ -1910,7 +1909,7 @@ public class LoginController extends SpringActionController
             else if (verification.length() < LoginManager.TEMP_PASSWORD_LENGTH)
                 errors.reject("setPassword", "Verification failed. The verification parameter is shorter than expected. Make sure you've copied the entire link into your browser's address bar.");
             else
-                errors.reject("setPassword", "Verification failed. You may have already verified.");
+                errors.reject("setPassword", "Verification failed. The link may have expired or already been used. Request a new one if needed.");
         }
     }
 

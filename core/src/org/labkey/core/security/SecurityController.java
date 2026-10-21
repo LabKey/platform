@@ -128,6 +128,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
@@ -158,6 +159,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -173,6 +175,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.at;
 
 public class SecurityController extends SpringActionController
 {
@@ -1790,12 +1795,50 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    private abstract static class AbstractEmailAction extends SimpleViewAction<UserForm>
+    // Only a token hash is stored, so GET shows the email with the link masked; site admins can POST to replace the token and see the new link
+    private abstract static class AbstractEmailAction extends FormViewAction<UserForm>
     {
+        private String _verification = null;
+
         protected abstract SecurityMessage createMessage(UserForm form);
+        protected abstract Duration getLinkTimeout();
 
         @Override
-        public ModelAndView getView(UserForm form, BindException errors) throws Exception
+        public void validateCommand(UserForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(UserForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return renderEmail(form);
+        }
+
+        @Override
+        public boolean handlePost(UserForm form, BindException errors) throws Exception
+        {
+            User affectedUser = form.getUser(true);
+            createMessage(form); // permission check
+            if (!getUser().hasSiteAdminPermission())
+                throw new UnauthorizedException();
+            if (!LoginManager.isVerified(affectedUser))
+                _verification = LoginManager.createVerification(affectedUser, getLinkTimeout());
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(UserForm form)
+        {
+            return null;
+        }
+
+        @Override
+        public ModelAndView getSuccessView(UserForm form) throws Exception
+        {
+            return renderEmail(form);
+        }
+
+        private ModelAndView renderEmail(UserForm form) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
             User affectedUser = form.getUser();
@@ -1807,7 +1850,7 @@ public class SecurityController extends SpringActionController
             {
                 SecurityMessage message = createMessage(form);
 
-                // Issue 33254: only allow Site Admins to see the verification token
+                // Issue 33254: allow only Site Admins to see the verification token
                 message.setMaskToken(true);
 
                 if (LoginManager.isVerified(affectedUser))
@@ -1816,9 +1859,15 @@ public class SecurityController extends SpringActionController
                 }
                 else
                 {
-                    String verification = LoginManager.getVerification(affectedUser);
-                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, verification, null);
+                    ActionURL verificationURL = LoginManager.createVerificationURL(getContainer(), affectedUser, null != _verification ? _verification : "**********", null);
                     SecurityManager.renderEmail(getContainer(), getUser(), message, affectedUser.getEmail(), verificationURL, out);
+
+                    if (null == _verification && getUser().hasSiteAdminPermission())
+                    {
+                        out.write(DOM.createHtml(DOM.LK.FORM(at(method, "POST"),
+                            DOM.P("To get a usable link, generate a new one. The link already sent will stop working."),
+                            DOM.BUTTON(at(type, "submit"), "Generate New Link"))).toString()); // No page template, so no script for a LabKey button
+                    }
                 }
             }
 
@@ -1848,6 +1897,12 @@ public class SecurityController extends SpringActionController
             }
             return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
         }
+
+        @Override
+        protected Duration getLinkTimeout()
+        {
+            return LoginManager.SETUP_LINK_TIMEOUT;
+        }
     }
 
 
@@ -1858,6 +1913,12 @@ public class SecurityController extends SpringActionController
         protected SecurityMessage createMessage(UserForm form)
         {
             return SecurityManager.getResetMessage(false);
+        }
+
+        @Override
+        protected Duration getLinkTimeout()
+        {
+            return LoginManager.RESET_LINK_TIMEOUT;
         }
     }
 

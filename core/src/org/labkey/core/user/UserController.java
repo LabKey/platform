@@ -1904,7 +1904,7 @@ public class UserController extends SpringActionController
                         {
                             if (!canUpdateUser)  // don't bother auditing admin password link clicks
                             {
-                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), oldEmail, requestedEmail, verificationToken, getUser());
+                                UserManager.auditEmailTimeout(loggedInUser.getUserId(), oldEmail, requestedEmail, getUser());
                             }
                             errors.reject(ERROR_MSG, "This verification link has expired. Please try to change your email address again.");
                         }
@@ -1915,15 +1915,15 @@ public class UserController extends SpringActionController
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), loggedInUser);
                             }
                             errors.reject(ERROR_MSG, "Verification was incorrect. Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                         }
-                        else if (!verificationToken.equals(verifyEmail.verification()))
+                        else
                         {
                             if (!canUpdateUser)  // don't bother auditing admin verification link clicks
                             {
-                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), verificationToken, loggedInUser);
+                                UserManager.auditBadVerificationToken(loggedInUser.getUserId(), oldEmail, verifyEmail.requestedEmail(), loggedInUser);
                             }
                         }
                     }

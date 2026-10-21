@@ -152,6 +152,7 @@ import org.labkey.api.security.Encryption;
 import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.LoginManager.VerificationMaintenanceTask;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.RoleSet;
@@ -288,6 +289,7 @@ public class ApiModule extends CodeOnlyModule
     protected void doStartup(ModuleContext moduleContext)
     {
         SystemMaintenance.addTask(new ApiKeyMaintenanceTask());
+        SystemMaintenance.addTask(new VerificationMaintenanceTask());
         AuthenticationManager.registerMetricsProvider();
         ContentSecurityPolicyFilter.registerMetricsProvider();
         ApiKeyManager.get().handleStartupProperties();

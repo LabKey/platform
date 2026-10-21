@@ -17,7 +17,9 @@ package org.labkey.api.security;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
@@ -26,13 +28,17 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.view.ActionURL;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -45,6 +51,8 @@ import java.util.List;
 public class LoginManager
 {
     public static final int TEMP_PASSWORD_LENGTH = 32;
+    public static final Duration SETUP_LINK_TIMEOUT = Duration.ofDays(7);
+    public static final Duration RESET_LINK_TIMEOUT = Duration.ofDays(1);
     private static final int MAX_HISTORY = 10;
     private static final CoreSchema CORE = CoreSchema.getInstance();
 
@@ -60,8 +68,8 @@ public class LoginManager
         try
         {
             int rowCount = new SqlExecutor(CORE.getSchema()).execute("INSERT INTO " + CORE.getTableInfoLogins() +
-                " (UserId, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                userId, crypt, new Date(), verification, crypt);
+                " (UserId, Crypt, LastChanged, Verification, VerificationTimeout, PreviousCrypts) VALUES (?, ?, ?, ?, ?, ?)",
+                userId, crypt, new Date(), hashVerification(verification), Date.from(Instant.now().plus(SETUP_LINK_TIMEOUT)), crypt);
             if (1 != rowCount)
                 throw new SecurityManager.UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
         }
@@ -187,39 +195,58 @@ public class LoginManager
     // Test if user has been verified for database authentication
     public static boolean isVerified(User user)
     {
-        return (null == getVerification(user));
+        return null == new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
     }
 
-    // Look up a user based on the verification string
+    // Look up a user based on an unexpired verification token
     public static @Nullable User verify(String verification)
     {
         Integer userId = null;
         if (StringUtils.length(verification) == TEMP_PASSWORD_LENGTH)
         {
-            TableInfo logins = CORE.getTableInfoLogins();
-            userId = new TableSelector(CORE.getTableInfoLogins(), Collections.singleton("UserId"), new SimpleFilter(logins.getColumn("Verification").getFieldKey(), verification), null)
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Verification"), hashVerification(verification));
+            filter.addCondition(FieldKey.fromParts("VerificationTimeout"), new Date(), CompareType.GT);
+            userId = new TableSelector(CORE.getTableInfoLogins(), Collections.singleton("UserId"), filter, null)
                 .getObject(Integer.class);
         }
         return userId != null ? UserManager.getUser(userId) : null;
     }
 
-    public static void setVerification(User user, @Nullable String verification) throws SecurityManager.UserManagementException
+    // Store the hash of a new verification token and return the token, which can't be retrieved later
+    public static String createVerification(User user, Duration timeout) throws SecurityManager.UserManagementException
     {
-        int rows = new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification = ? WHERE UserId = ?", verification, user.getUserId());
+        String verification = createTempPassword();
+        updateVerification(user, new SQLFragment("Verification = ?, VerificationTimeout = ?", hashVerification(verification), Date.from(Instant.now().plus(timeout))));
+        return verification;
+    }
+
+    public static void clearVerification(User user) throws SecurityManager.UserManagementException
+    {
+        // Literal NULLs: a null Date parameter binds as varchar, which PostgreSQL rejects for a timestamp column
+        updateVerification(user, new SQLFragment("Verification = NULL, VerificationTimeout = NULL"));
+    }
+
+    private static void updateVerification(User user, SQLFragment assignments) throws SecurityManager.UserManagementException
+    {
+        SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoLogins() + " SET ").append(assignments).append(" WHERE UserId = ?").add(user.getUserId());
+        int rows = new SqlExecutor(CORE.getSchema()).execute(sql);
         if (1 != rows)
             throw new SecurityManager.UserManagementException(user.getEmail(), "Unexpected number of rows returned when setting verification: " + rows);
     }
 
-    public static String getVerification(User user)
+    // Tokens are long and random, so a fast unsalted hash suffices; core-26.008-26.009.sql hashes legacy rows identically
+    private static String hashVerification(String verification)
     {
-        return new SqlSelector(CORE.getSchema(), "SELECT Verification FROM " + CORE.getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
+        return Crypt.SHA256.digestWithPrefix(verification);
     }
 
+    // verification holds the token's hash
     public record VerifyEmail(String requestedEmail, String verification, Date verificationTimeout)
     {
         public boolean isVerified(String userProvidedToken)
         {
-            return userProvidedToken != null && userProvidedToken.equals(verification);
+            return userProvidedToken != null && verification != null &&
+                MessageDigest.isEqual(hashVerification(userProvidedToken).getBytes(StandardCharsets.US_ASCII), verification.getBytes(StandardCharsets.US_ASCII));
         }
     }
 
@@ -240,11 +267,11 @@ public class LoginManager
                 Instant timeoutDate = Instant.now().plus(UserManager.VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
                 int rows = executor.execute("UPDATE " + CORE.getTableInfoLogins() + " SET RequestedEmail = ?, Verification = ?, VerificationTimeout = ? WHERE UserId = ?",
-                        requestedEmail.getEmailAddress(), verificationToken, Date.from(timeoutDate), userToChange.getUserId());
+                        requestedEmail.getEmailAddress(), hashVerification(verificationToken), Date.from(timeoutDate), userToChange.getUserId());
                 if (1 != rows)
                     throw new SecurityManager.UserManagementException(requestedEmail, "Unexpected number of rows returned when setting verification: " + rows);
                 UserManager.addToUserHistory(userToChange, currentUser + " requested email address change from " + userToChange.getEmail() + " to " + requestedEmail +
-                        " with token '" + verificationToken + "' and timeout date '" + Date.from(timeoutDate) + "'.");
+                        " with timeout date '" + Date.from(timeoutDate) + "'.");
                 transaction.commit();
             }
         }
@@ -259,6 +286,39 @@ public class LoginManager
 
             if (adminUser != null)
                 UserManager.addToUserHistory(userToChange, adminUser.getEmail() + " deleted the password.");
+        }
+    }
+
+    public static class VerificationMaintenanceTask implements MaintenanceTask
+    {
+        @Override
+        public String getDescription()
+        {
+            return "Purge expired verification tokens";
+        }
+
+        @Override
+        public String getName()
+        {
+            return "PurgeExpiredVerificationTokens";
+        }
+
+        @Override
+        public void run(Logger log)
+        {
+            new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoLogins() + " SET Verification = NULL, VerificationTimeout = NULL WHERE VerificationTimeout < ?", new Date());
+        }
+
+        @Override
+        public boolean canDisable()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean hideFromAdminPage()
+        {
+            return true;
         }
     }
 }

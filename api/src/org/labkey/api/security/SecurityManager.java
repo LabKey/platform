@@ -132,6 +132,7 @@ import java.beans.PropertyChangeListener;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -2669,9 +2670,8 @@ public class SecurityManager
             {
                 // Create a placeholder password that's impossible to guess and a separate email
                 // verification key that gets emailed.
-                verification = LoginManager.createTempPassword();
                 LoginManager.setPassword(affectedUser, LoginManager.createTempPassword());
-                LoginManager.setVerification(affectedUser, verification);
+                verification = LoginManager.createVerification(affectedUser, LoginManager.RESET_LINK_TIMEOUT);
             }
             else
             {
@@ -3277,7 +3277,23 @@ public class SecurityManager
                 assertNotNull(verifiedUser);
                 assertEquals(user, verifiedUser);
 
-                LoginManager.setVerification(user, null);
+                String stored = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT Verification FROM " + CoreSchema.getInstance().getTableInfoLogins() + " WHERE UserId = ?", user.getUserId()).getObject(String.class);
+                assertNotNull(stored);
+                assertNotEquals("Verification token stored in plain text", status.getVerification(), stored);
+
+                String rotated = LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                assertNull("Replaced verification token still valid", LoginManager.verify(status.getVerification()));
+                assertEquals(user, LoginManager.verify(rotated));
+
+                String expired = LoginManager.createVerification(user, Duration.ofSeconds(-1));
+                assertNull("Expired verification token still valid", LoginManager.verify(expired));
+
+                new LoginManager.VerificationMaintenanceTask().run(LOG);
+                assertTrue("Maintenance task didn't purge expired verification token", LoginManager.isVerified(user));
+
+                LoginManager.createVerification(user, LoginManager.RESET_LINK_TIMEOUT);
+                LoginManager.clearVerification(user);
+                assertTrue(LoginManager.isVerified(user));
 
                 String password = generateStrongPassword(user);
                 LoginManager.setPassword(user, password);
