@@ -231,6 +231,10 @@ public class TransactionFilter implements Filter
      */
     private static void cancelRequest(Thread thread, RequestTracker tracker, RequestCancellation.Source source)
     {
+        boolean first;
+        RequestCancellation.Cancelled cancelled;
+        Map<DbScope, Set<ConnectionWrapper>> unsignalled;
+
         // The cancelled query fails within milliseconds, so the request can finish mid-cancel; doFilter() can't release the thread while we hold this
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (tracker)
@@ -238,17 +242,14 @@ public class TransactionFilter implements Filter
             if (_pendingRequests.get(thread) != tracker)
                 return;
 
-            boolean first = RequestCancellation.requestCancelled(thread, tracker, source);
+            first = RequestCancellation.requestCancelled(thread, tracker, source);
             if (!first)
                 RequestCancellation.cancelledRequestStillRunning(thread, tracker);
-            RequestCancellation.Cancelled cancelled = tracker.cancellation().get();
+            cancelled = tracker.cancellation().get();
 
             // Resent on later sweeps, since a cancel that arrives between statements does nothing
             Map<DbScope, Set<ConnectionWrapper>> connections = ConnectionWrapper.getConnectionsByScopeForEffectiveThread(thread);
-            Map<DbScope, Set<ConnectionWrapper>> unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
-
-            // Inside the lock, so the request can't finish and hand this thread's connections to its next request first
-            RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first);
+            unsignalled = RequestCancellation.cancelQueriesViaOwningConnection(connections, source, cancelled, first);
 
             // Never close the thread's connections from here: the pool would hand one out while the thread is still mid-call on it
             if (connections.isEmpty())
@@ -256,6 +257,16 @@ public class TransactionFilter implements Filter
             PipelineJobService.get().killProcessesForThread(thread);
             thread.interrupt();
         }
+
+        // Connect outside the lock, but signal inside it, so the request can't finish and hand this thread's connections to its next request first
+        RequestCancellation.cancelQueriesViaNewConnection(unsignalled, source, cancelled, first, signal -> {
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (tracker)
+            {
+                if (_pendingRequests.get(thread) == tracker)
+                    signal.run();
+            }
+        });
     }
 
     public static int getPendingRequestCount()

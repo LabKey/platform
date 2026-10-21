@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.security.User;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
@@ -35,6 +36,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -64,12 +67,13 @@ public final class RequestCancellation
     {
         TIMEOUT("timeout", "timeout"),
         CLIENT_DISCONNECT("client_disconnect", "clientDisconnect"),
-        SHUTDOWN("shutdown", "shutdown");
+        SHUTDOWN("shutdown", "shutdown"),
+        PIPELINE("pipeline", null);
 
         private final String _logName;
-        private final String _metricName;
+        private final @Nullable String _metricName;
 
-        Source(String logName, String metricName)
+        Source(String logName, @Nullable String metricName)
         {
             _logName = logName;
             _metricName = metricName;
@@ -212,11 +216,12 @@ public final class RequestCancellation
      * Asks the database to stop whatever these connections are running, which makes the JDBC call that's waiting on
      * each one throw so its thread unwinds and releases the connection itself. Works even when the thread is blocked
      * in a socket read that an interrupt can't break.
-     * @param count false when resending a cancel for a request already counted, so a slow exit doesn't inflate the metric
+     * @param count false to leave the metrics alone, e.g. when resending a cancel for a request already counted
+     * @return the connections neither half could signal
      */
-    public static void cancelQueries(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
+    public static Map<DbScope, Set<ConnectionWrapper>> cancelQueries(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, boolean count)
     {
-        cancelQueriesViaNewConnection(cancelQueriesViaOwningConnection(connectionsByScope, source, null, count), source, null, count);
+        return cancelQueriesViaNewConnection(cancelQueriesViaOwningConnection(connectionsByScope, source, null, count), source, null, count, Runnable::run);
     }
 
     /**
@@ -252,21 +257,35 @@ public final class RequestCancellation
         return remaining;
     }
 
-    /** The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it opens a new connection */
-    static void cancelQueriesViaNewConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count)
+    /**
+     * The fallback half of {@link #cancelQueries}, for sessions the driver's cancel request couldn't reach; it opens a new connection
+     * @param signaller runs the signalling once that connection is open; see {@link SqlDialect#cancelQueries(DbScope, Collection, boolean, Consumer)}
+     * @return the connections the dialect couldn't signal
+     */
+    static Map<DbScope, Set<ConnectionWrapper>> cancelQueriesViaNewConnection(@NotNull Map<DbScope, Set<ConnectionWrapper>> connectionsByScope, @NotNull Source source, @Nullable Cancelled cancelled, boolean count, @NotNull Consumer<Runnable> signaller)
     {
+        Map<DbScope, Set<ConnectionWrapper>> remaining = new HashMap<>();
         connectionsByScope.forEach((scope, connections) -> {
+            List<ConnectionWrapper> allocated = connections.stream().filter(ConnectionWrapper::isAllocated).toList();
+            if (allocated.isEmpty())
+                return;
+
+            boolean signalled = false;
             try
             {
-                List<ConnectionWrapper> allocated = connections.stream().filter(ConnectionWrapper::isAllocated).toList();
-                if (!allocated.isEmpty() && scope.getSqlDialect().cancelQueries(scope, allocated, false))
+                signalled = scope.getSqlDialect().cancelQueries(scope, allocated, false, signaller);
+                if (signalled)
                     backendsCancelled(scope, new HashSet<>(allocated), source, cancelled, count);
             }
             catch (RuntimeException e)
             {
                 LOG.error("Failed to cancel queries on {} for {}", scope.getDisplayName(), source, e);
             }
+
+            if (!signalled)
+                remaining.put(scope, new HashSet<>(allocated));
         });
+        return remaining;
     }
 
     private static void backendsCancelled(DbScope scope, Set<ConnectionWrapper> signalled, Source source, @Nullable Cancelled cancelled, boolean count)
@@ -278,8 +297,8 @@ public final class RequestCancellation
         if (cancelled != null)
             cancelled._spids.addAll(spids);
 
-        // A shutdown cancels no request, so it has no exit line to fold into
-        LOG.log(source == Source.SHUTDOWN ? Level.INFO : Level.DEBUG, "request-cancel-backends source={} scope={} spids={}", source, scope.getDisplayName(), spids);
+        // A shutdown or job cancel has no request, so it has no exit line to fold into
+        LOG.log(cancelled == null ? Level.INFO : Level.DEBUG, "request-cancel-backends source={} scope={} spids={}", source, scope.getDisplayName(), spids);
         if (count)
         {
             signalled.forEach(c -> increment("backendCancelled"));
@@ -503,7 +522,7 @@ public final class RequestCancellation
             Set<Integer> spids = query.connections().stream().map(ConnectionWrapper::getSPID).collect(Collectors.toSet());
             Cancelled cancelled = new Cancelled(Source.TIMEOUT, System.currentTimeMillis());
             Map<DbScope, Set<ConnectionWrapper>> unsignalled = cancelQueriesViaOwningConnection(Map.of(query.scope(), query.connections()), Source.TIMEOUT, cancelled, true);
-            cancelQueriesViaNewConnection(unsignalled, Source.TIMEOUT, cancelled, true);
+            cancelQueriesViaNewConnection(unsignalled, Source.TIMEOUT, cancelled, true, Runnable::run);
             assertStopped(query);
             assertEquals("Cancelled backends weren't recorded for the exit line", spids, cancelled._spids);
         }

@@ -100,6 +100,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -1553,6 +1554,15 @@ public abstract class SqlDialect
      * @return false if this dialect can't stop queries out of band
      */
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    {
+        return cancelQueries(scope, connections, terminate, Runnable::run);
+    }
+
+    /**
+     * Like {@link #cancelQueries(DbScope, Collection, boolean)}, but only the signalling runs through {@code signaller},
+     * so a caller can hold a lock for that without also holding it while the dialect connects
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
     {
         return false;
     }
