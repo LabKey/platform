@@ -263,23 +263,23 @@ public class LocationTable extends BaseStudyTable
         existsSQL.append(inUseColumn.getValueSql(locationTableAlias));
 
         existsSQL
-            .append(" OR\n")
-            .append(EXISTS)
+            .unsafeAppend(" OR\n")
+            .unsafeAppend(EXISTS)
             .append(schema.getTableInfoSampleRequest(), "sr")
-            .append(" WHERE ")
-            .append(locationTableAlias)
-            .append(".RowId = sr.DestinationSiteId AND ")
-            .append(locationTableAlias)
-            .append(".Container = sr.Container) OR\n")
-            .append(EXISTS)
+            .unsafeAppend(" WHERE ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = sr.DestinationSiteId AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = sr.Container) OR\n")
+            .unsafeAppend(EXISTS)
             .append(schema.getTableInfoSampleRequestRequirement(), "srr")
-            .append(" WHERE ")
-            .append(locationTableAlias)
-            .append(".RowId = srr.SiteId AND ")
-            .append(locationTableAlias)
-            .append(".Container = srr.Container) OR\n");
+            .unsafeAppend(" WHERE ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".RowId = srr.SiteId AND ")
+            .appendIdentifier(locationTableAlias)
+            .unsafeAppend(".Container = srr.Container) OR\n");
 
-        StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, EXISTS);
+        StudyService.get().appendLocationInUseClauses(existsSQL, locationTableAlias, SQLFragment.unsafe(EXISTS));
 
         // Wrap the EXISTS expression as needed for this dialect
         return schema.getSqlDialect().wrapBooleanExpression(existsSQL);

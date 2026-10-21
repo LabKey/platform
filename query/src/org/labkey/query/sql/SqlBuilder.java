@@ -56,7 +56,7 @@ public class SqlBuilder extends Builder
      */
     public void appendParam(Object value)
     {
-        append(" ? ");
+        unsafeAppend(" ? ");
         add(value);
     }
 

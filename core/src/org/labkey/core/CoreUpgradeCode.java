@@ -128,9 +128,9 @@ public class CoreUpgradeCode implements UpgradeCode
 
                     SQLFragment updateSql = new SQLFragment("UPDATE ")
                         .append(CoreSchema.getInstance().getTableInfoDocuments())
-                        .append(" SET ParentType = ?")
+                        .unsafeAppend(" SET ParentType = ?")
                         .add(type.getUniqueName())
-                        .append(" WHERE ");
+                        .unsafeAppend(" WHERE ");
                     // TODO: This is the only caller of addWhereSql(), which can be removed when this upgrade code is deleted.
                     type.addWhereSql(updateSql, "Parent", "DocumentName");
 

@@ -44,43 +44,43 @@ public class QJoin implements QJoinOrTable
         boolean parensRight = _right instanceof QJoin && _joinType != JoinType.cross;
 
         if (parensLeft)
-            builder.append("(");
+            builder.unsafeAppend("(");
         _left.appendSource(builder);
         if (parensLeft)
-            builder.append(")");
-        builder.append(" ");
+            builder.unsafeAppend(")");
+        builder.unsafeAppend(" ");
         
         switch (_joinType)
         {
             case inner:
-                builder.append("INNER JOIN ");
+                builder.unsafeAppend("INNER JOIN ");
                 break;
             case left:
-                builder.append("LEFT JOIN ");
+                builder.unsafeAppend("LEFT JOIN ");
                 break;
             case right:
-                builder.append("RIGHT JOIN ");
+                builder.unsafeAppend("RIGHT JOIN ");
                 break;
             case outer:
-                builder.append("OUTER JOIN ");
+                builder.unsafeAppend("OUTER JOIN ");
                 break;
             case full:
-                builder.append("FULL OUTER JOIN ");
+                builder.unsafeAppend("FULL OUTER JOIN ");
                 break;
             case cross:
-                builder.append("CROSS JOIN ");
+                builder.unsafeAppend("CROSS JOIN ");
                 break;
         }
 
         if (parensRight)
-            builder.append("(");
+            builder.unsafeAppend("(");
         _right.appendSource(builder);
         if (parensRight)
-            builder.append(")");
+            builder.unsafeAppend(")");
 
         if (_on != null)
         {
-            builder.append(" ON ");
+            builder.unsafeAppend(" ON ");
             _on.appendSource(builder);
         }
     }
@@ -92,22 +92,22 @@ public class QJoin implements QJoinOrTable
         switch (_joinType)
         {
             case inner:
-                sql.append("\nINNER JOIN ");
+                sql.unsafeAppend("\nINNER JOIN ");
                 break;
             case outer:
-                sql.append("\nOUTER JOIN ");
+                sql.unsafeAppend("\nOUTER JOIN ");
                 break;
             case left:
-                sql.append("\nLEFT JOIN ");
+                sql.unsafeAppend("\nLEFT JOIN ");
                 break;
             case right:
-                sql.append("\nRIGHT JOIN ");
+                sql.unsafeAppend("\nRIGHT JOIN ");
                 break;
             case full:
-                sql.append("\nFULL JOIN ");
+                sql.unsafeAppend("\nFULL JOIN ");
                 break;
             case cross:
-                sql.append("\nCROSS JOIN ");
+                sql.unsafeAppend("\nCROSS JOIN ");
                 break;
         }
         _right.appendSql(sql, select);
@@ -117,7 +117,7 @@ public class QJoin implements QJoinOrTable
 
         if (null != _on)
         {
-            sql.append(" ON ");
+            sql.unsafeAppend(" ON ");
             select.resolveFields(_on, null, null).appendSql(sql, select._query);
         }
     }

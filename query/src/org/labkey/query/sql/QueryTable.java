@@ -322,10 +322,10 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
 
         SQLFragment sql = _getSql();
         if (_generateSelectSQL)
-            ret.append("(");
+            ret.unsafeAppend("(");
         ret.append(sql);
         if (_generateSelectSQL)
-            ret.append(") ").appendIdentifier(getAlias());
+            ret.unsafeAppend(") ").appendIdentifier(getAlias());
 
         assert ret.appendComment("</QueryTable>", _schema.getDbSchema().getSqlDialect());
         return ret;
@@ -400,7 +400,7 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
         if (null == _generateSelectSQL)
             _generateSelectSQL = false;
 
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
         String comma = "";
         int columnCount = 0;
         for (TableColumn col : _selectedColumns.values())
@@ -418,16 +418,16 @@ public class QueryTable extends AbstractQueryRelation implements QueryRelation.C
             sql.append(comma);
             SQLFragment f = col.getInternalSql();
             if (f.getSQL().length() > 80)
-                sql.append("\n").append(f).append("\n");
+                sql.unsafeAppend("\n").append(f).unsafeAppend("\n");
             else
                 sql.append(f);
-            sql.append(" AS ");
+            sql.unsafeAppend(" AS ");
             sql.append(col.getAlias());
             comma = ", ";
         }
         if (0 == columnCount)
-            sql.append("1 AS \"_ONE_\"");
-        sql.append("\nFROM ");
+            sql.unsafeAppend("1 AS \"_ONE_\"");
+        sql.unsafeAppend("\nFROM ");
 
         SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias, tableColumns);
 

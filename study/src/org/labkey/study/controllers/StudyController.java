@@ -1575,7 +1575,7 @@ public class StudyController extends BaseStudyController
             try
             {
                 // Scope the raw DELETE to the request container (DeletePermission is only proven there)
-                SQLFragment sql = new SQLFragment("DELETE FROM study.participantgroupmap WHERE participantid = ? AND container = ?", participantId, getContainer().getId());
+                SQLFragment sql = SQLFragment.unsafe("DELETE FROM study.participantgroupmap WHERE participantid = ? AND container = ?").addAll(participantId, getContainer().getId());
                 new SqlExecutor(ti.getSchema()).execute(sql);
             }
             catch (Exception e)
@@ -2318,10 +2318,7 @@ public class StudyController extends BaseStudyController
 
         private @NotNull Collection<VisitImpl> getUnusedVisits()
         {
-            return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment(
-                "SELECT * FROM study.Visit v WHERE Container = ? AND rowid NOT IN (SELECT DISTINCT VisitRowId FROM study.ParticipantVisit pv WHERE pv.Container = ?)",
-                getContainer(), getContainer()
-            )).getArrayList(VisitImpl.class);
+            return new SqlSelector(StudySchema.getInstance().getSchema(), SQLFragment.unsafe("SELECT * FROM study.Visit v WHERE Container = ? AND rowid NOT IN (SELECT DISTINCT VisitRowId FROM study.ParticipantVisit pv WHERE pv.Container = ?)").addAll(getContainer(), getContainer())).getArrayList(VisitImpl.class);
         }
 
         @Override

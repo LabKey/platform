@@ -144,16 +144,16 @@ public class GenerateUniqueDataIterator<V> extends WrapperDataIterator
         String comma = "";
         for (V v : proposedValues)
         {
-            sqlf.append(comma).append("(?)");
+            sqlf.append(comma).unsafeAppend("(?)");
             sqlf.add(v);
             comma = "\n,";
         }
-        sqlf.append("\n) AS _x (value))\n");
+        sqlf.unsafeAppend("\n) AS _x (value))\n");
 
-        sqlf.append("SELECT _values_.value\n");
-        sqlf.append("FROM _values_ LEFT OUTER JOIN ").append(target.getFromSQL("_target_")).append(" ON ");
-        sqlf.append("(_values_.value").append("=(").append(column.getValueSql("_target_")).append("))\n");
-        sqlf.append("WHERE (").append(column.getValueSql("_target_")).append(") IS NULL");
+        sqlf.unsafeAppend("SELECT _values_.value\n");
+        sqlf.unsafeAppend("FROM _values_ LEFT OUTER JOIN ").append(target.getFromSQL("_target_")).unsafeAppend(" ON ");
+        sqlf.unsafeAppend("(_values_.value").unsafeAppend("=(").append(column.getValueSql("_target_")).unsafeAppend("))\n");
+        sqlf.unsafeAppend("WHERE (").append(column.getValueSql("_target_")).unsafeAppend(") IS NULL");
 
         return new SqlSelector(target.getSchema(), sqlf).getArrayList(clazz);
     }

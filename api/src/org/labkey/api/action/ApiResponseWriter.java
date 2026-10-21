@@ -232,6 +232,9 @@ public abstract class ApiResponseWriter implements AutoCloseable
         if (ex instanceof HttpStatusException statusEx)
             return statusEx.getStatus();
 
+        if (ExceptionUtil.isRequestTimeout(ex))
+            return HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+
         if (ex instanceof BatchValidationException || ex instanceof ValidationException)
             return defaultErrorStatus;
 
@@ -262,12 +265,13 @@ public abstract class ApiResponseWriter implements AutoCloseable
     public void writeResponse(Throwable e) throws IOException
     {
         int status = getErrorResponseStatus(e);
+        boolean timedOut = ExceptionUtil.isRequestTimeout(e);
         e = ExceptionUtil.unwrapException(e);
 
         try
         {
             setResponseStatus(status);
-            var json = toJSON(e);
+            var json = timedOut ? new JSONObject().put("exception", ExceptionUtil.REQUEST_TIMEOUT_MESSAGE) : toJSON(e);
             json.put("success", false);
             writeObject(json);
         }

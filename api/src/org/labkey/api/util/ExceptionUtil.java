@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -42,6 +43,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RequestCancellation;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -71,6 +73,7 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
@@ -120,6 +123,7 @@ public class ExceptionUtil
 {
     public static final String REQUEST_EXCEPTION_ATTRIBUTE = ExceptionUtil.class.getName() + "$exception";
     public static final String CALCULATED_COLUMN_SQL_TAG = "/* CALCULATED-EXPRESSION-COLUMN-QUERY */";
+    public static final String REQUEST_TIMEOUT_MESSAGE = "This request took too long and was cancelled";
     /** Stack frames from here down are container plumbing, not useful in a trace */
     public static final String SERVLET_SERVICE_FRAME_PREFIX = HttpServlet.class.getName() + ".service(";
 
@@ -708,9 +712,35 @@ public class ExceptionUtil
                 null != decorations.get(ExceptionInfo.SkipMothershipLogging) ||
                 ex instanceof SkipMothershipLogging ||
                 isClientAbortException(ex) ||
+                isServerCancelledQuery(ex) ||
                 isInvalidParameterException(ex) ||
                 isMaxPostSizeExceeded(ex) ||
                 (ex instanceof IllegalStateException && "Page needs a session and none is available".equalsIgnoreCase(ex.getMessage()));
+    }
+
+    /** The server stopped this request's query itself, on timeout or shutdown */
+    private static boolean isServerCancelledQuery(Throwable ex)
+    {
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof SQLException sqlEx && SqlDialect.isCancelException(sqlEx))
+                return RequestCancellation.getSource(Thread.currentThread()) != null || ContextListener.isShuttingDown();
+        }
+        return false;
+    }
+
+    /** Unlike a client abort, the client is still waiting for a response */
+    public static boolean isRequestTimeout(Throwable ex)
+    {
+        if (RequestCancellation.getSource(Thread.currentThread()) != RequestCancellation.Source.TIMEOUT)
+            return false;
+
+        for (Throwable t = ex; t != null; t = getCause(t))
+        {
+            if (t instanceof AbortedRequestException)
+                return true;
+        }
+        return isServerCancelledQuery(ex);
     }
 
     /**
@@ -881,8 +911,8 @@ public class ExceptionUtil
         Throwable unhandledException = ex;
         String responseStatusMessage = null;    // set to use non default status message
 
-        // A malformed upload looks like a client abort, but the client is still waiting for a response
-        if (isClientAbortException(ex) && !isInvalidParameterException(ex))
+        // A request timeout or malformed upload looks like a client abort, but the client is still waiting for a response
+        if (isClientAbortException(ex) && !isRequestTimeout(ex) && !isInvalidParameterException(ex))
         {
             // The client dropped the connection. We don't care about this case,
             // and don't need to send an error back to the browser either.
@@ -988,6 +1018,13 @@ public class ExceptionUtil
                 // Do nothing; IllegalStateException means the response was already committed
             }
             return null;
+        }
+        else if (isRequestTimeout(ex))
+        {
+            responseStatus = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+            message = REQUEST_TIMEOUT_MESSAGE;
+            responseStatusMessage = message;
+            unhandledException = null;
         }
         else if (ex instanceof ApiUsageException)
         {
@@ -1689,6 +1726,73 @@ public class ExceptionUtil
             answer = handleIt(me, new NullPointerException());
             assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
             assertTrue(answer.response.headers.containsKey("Logger.error"));
+        }
+
+        @Test
+        public void testCancelledQuery() throws Exception
+        {
+            User me = TestContext.get().getUser();
+
+            // A statement cancelled by something other than the server is still an error
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(null, () -> {
+                assertFalse(isIgnorable(cancelledQuery()));
+                ExceptionResponse answer = handleIt(me, cancelledQuery());
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, answer.response.status);
+                assertTrue(answer.response.headers.containsKey("Logger.error"));
+                assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, writeApiError(cancelledQuery()).status());
+            }));
+
+            // The client is still waiting on a timed-out request, so it gets an error, but nothing's logged
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.TIMEOUT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertTrue(isRequestTimeout(cancelledQuery()));
+                assertTrue(isRequestTimeout(new AbortedRequestException("test")));
+                assertTrue(isRequestTimeout(new RuntimeException(new AbortedRequestException("test"))));
+
+                for (Exception ex : List.of(cancelledQuery(), new AbortedRequestException("test")))
+                {
+                    ExceptionResponse answer = handleIt(me, ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, answer.response.status);
+                    assertFalse(answer.response.headers.containsKey("Logger.error"));
+
+                    // API actions write their own errors
+                    ApiError apiError = writeApiError(ex);
+                    assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, apiError.status());
+                    assertTrue(apiError.body(), apiError.body().contains(REQUEST_TIMEOUT_MESSAGE));
+                }
+            }));
+
+            // Nobody's waiting on a disconnected client
+            RequestCancellation.TestCase.runOnRequestThread(() -> RequestCancellation.TestCase.doRequest(RequestCancellation.Source.CLIENT_DISCONNECT, () -> {
+                assertTrue(isIgnorable(cancelledQuery()));
+                assertFalse(isRequestTimeout(cancelledQuery()));
+                assertFalse(isRequestTimeout(new AbortedRequestException("test")));
+
+                ExceptionResponse answer = handleIt(me, new AbortedRequestException("test"));
+                assertEquals(0, answer.response.status);
+                assertFalse(answer.response.headers.containsKey("Logger.error"));
+            }));
+        }
+
+        private record ApiError(int status, String body) {}
+
+        private static ApiError writeApiError(Exception ex)
+        {
+            try
+            {
+                MockHttpServletResponse response = new MockHttpServletResponse();
+                new ApiJsonWriter(response).writeResponse(ex);
+                return new ApiError(response.getStatus(), response.getContentAsString());
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static RuntimeSQLException cancelledQuery()
+        {
+            return new RuntimeSQLException(new SQLException("ERROR: canceling statement due to user request", "57014"));
         }
 
         @Test

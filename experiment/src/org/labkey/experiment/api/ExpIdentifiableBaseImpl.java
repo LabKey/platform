@@ -176,9 +176,9 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT Name\n")
-                    .append("FROM ").append(tableInfo, "i")
-                    .append(" WHERE i.CpasType = ? AND i.NAME")
+                    .unsafeAppend("SELECT Name\n")
+                    .unsafeAppend("FROM ").append(tableInfo, "i")
+                    .unsafeAppend(" WHERE i.CpasType = ? AND i.NAME")
                     .add(dataTypeLsid);
 
             tableInfo.getSqlDialect().appendCaseInsensitiveStartsWith(sql, namePrefix);

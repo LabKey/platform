@@ -308,7 +308,7 @@ public abstract class AbstractMatrixDataHandler extends AbstractExperimentDataHa
         SqlExecutor executor = new SqlExecutor(DbSchema.get(_dbSchemaName));
         SQLFragment deleteDataSql = new SQLFragment("DELETE FROM " + _dbSchemaName);
         deleteDataSql.append("." + _dataTableName);
-        deleteDataSql.append(" WHERE DataId = ?").add(data.getRowId());
+        deleteDataSql.unsafeAppend(" WHERE DataId = ?").add(data.getRowId());
         executor.execute(deleteDataSql);
     }
 }

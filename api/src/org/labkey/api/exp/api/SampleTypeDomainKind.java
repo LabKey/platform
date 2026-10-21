@@ -631,8 +631,8 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             {
                 String table = domain.getStorageTableName();
                 allRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
-                        .append("SELECT RowId FROM ").append(getStorageSchemaName()).append(".").append(table)
-                        .append(") AND RootMaterialRowId = RowId");
+                        .unsafeAppend("SELECT RowId FROM ").append(getStorageSchemaName()).unsafeAppend(".").append(table)
+                        .unsafeAppend(") AND RootMaterialRowId = RowId");
             }
 
             long totalRows = new SqlSelector(ExperimentService.get().getSchema(), allRowsSQL).getRowCount();

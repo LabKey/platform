@@ -197,23 +197,23 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
         String table = domain.getStorageTableName();
         DatabaseIdentifier columnId = prop.getPropertyDescriptor().getLegalSelectName(dialect);
-        blankRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).append(" WHERE ");
+        blankRowsSQL.unsafeAppend("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).unsafeAppend(" WHERE ");
 
         if (PropertyType.MULTI_CHOICE == prop.getPropertyType())
         {
-            blankRowsSQL.append("(").appendIdentifier(columnId).append(" IS NULL OR cardinality(").appendIdentifier(columnId).append(")=0)");
+            blankRowsSQL.unsafeAppend("(").appendIdentifier(columnId).unsafeAppend(" IS NULL OR cardinality(").appendIdentifier(columnId).unsafeAppend(")=0)");
         }
         else
         {
             // Issue 29047
-            blankRowsSQL.appendIdentifier(columnId).append(" IS NULL");
+            blankRowsSQL.appendIdentifier(columnId).unsafeAppend(" IS NULL");
         }
         if (prop.isMvEnabled())
         {
             TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
             ColumnInfo mvColumn = StorageProvisioner.get().getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
             String mvId = dialect.makeLegalIdentifier(mvColumn.getName());
-            blankRowsSQL.append(" AND ").appendIdentifier(mvId).append(" IS NULL");
+            blankRowsSQL.unsafeAppend(" AND ").appendIdentifier(mvId).unsafeAppend(" IS NULL");
         }
         return true;
     }
@@ -223,15 +223,15 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
         if (getStorageSchemaName() == null)
         {
             SQLFragment sqlObjectIds = sqlObjectIdsInDomain(domain);
-            allRowsSQL.append("SELECT exp.object.objectId FROM exp.object WHERE exp.object.objectid IN (");
+            allRowsSQL.unsafeAppend("SELECT exp.object.objectId FROM exp.object WHERE exp.object.objectid IN (");
             allRowsSQL.append(sqlObjectIds);
-            allRowsSQL.append(")");
+            allRowsSQL.unsafeAppend(")");
 
-            nonBlankRowsSQL.append("SELECT op.objectId FROM exp.objectproperty op WHERE ");
-            nonBlankRowsSQL.append("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
-            nonBlankRowsSQL.append("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
+            nonBlankRowsSQL.unsafeAppend("SELECT op.objectId FROM exp.objectproperty op WHERE ");
+            nonBlankRowsSQL.unsafeAppend("(op.StringValue IS NOT NULL OR op.FloatValue IS NOT NULL OR ");
+            nonBlankRowsSQL.unsafeAppend("op.DateTimeValue IS NOT NULL OR op.MVIndicator IS NULL) AND op.objectid IN (");
             nonBlankRowsSQL.append(sqlObjectIds);
-            nonBlankRowsSQL.append(") AND op.PropertyId = ").appendValue(prop.getPropertyId());
+            nonBlankRowsSQL.unsafeAppend(") AND op.PropertyId = ").appendValue(prop.getPropertyId());
 
             return true;
         }
@@ -241,24 +241,24 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
             SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
             String table = domain.getStorageTableName();
             DatabaseIdentifier columnId = prop.getPropertyDescriptor().getLegalSelectName(dialect);
-            allRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table);
-            nonBlankRowsSQL.append("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).append(" WHERE ");
+            allRowsSQL.unsafeAppend("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table);
+            nonBlankRowsSQL.unsafeAppend("SELECT * FROM ").appendDottedIdentifiers(getStorageSchemaName(),table).unsafeAppend(" WHERE ");
 
             if (PropertyType.MULTI_CHOICE == prop.getPropertyType())
             {
-                nonBlankRowsSQL.append("cardinality(").appendIdentifier(columnId).append(")>0");
+                nonBlankRowsSQL.unsafeAppend("cardinality(").appendIdentifier(columnId).unsafeAppend(")>0");
             }
             else
             {
                 // Issue 29047
-                nonBlankRowsSQL.appendIdentifier(columnId).append(" IS NOT NULL");
+                nonBlankRowsSQL.appendIdentifier(columnId).unsafeAppend(" IS NOT NULL");
             }
             if (prop.isMvEnabled())
             {
                 TableInfo storageTable = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned).getTable(table);
                 ColumnInfo mvColumn = StorageProvisioner.get().getMvIndicatorColumn(storageTable, prop.getPropertyDescriptor(), "No MV column found for" + prop.getName());
                 String mvId = dialect.makeLegalIdentifier(mvColumn.getName());
-                nonBlankRowsSQL.append(" OR ").appendIdentifier(mvId).append(" IS NOT NULL");
+                nonBlankRowsSQL.unsafeAppend(" OR ").appendIdentifier(mvId).unsafeAppend(" IS NOT NULL");
             }
 
             return true;
