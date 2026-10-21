@@ -41,7 +41,7 @@ public class QAs extends QNode implements SupportsAnnotations
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
-        builder.append(" AS ");
+        builder.unsafeAppend(" AS ");
         getLastChild().appendSource(builder);
     }
 

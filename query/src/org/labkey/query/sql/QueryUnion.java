@@ -453,13 +453,13 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 }
                 String message = "Unexpected error parsing union term: " + src;
                 _query.getParseErrors().add(new QueryParseException(message, null, line, col));
-                unionSql.append("#ERROR: ").append(message).append("#");
+                unionSql.unsafeAppend("#ERROR: ").append(message).unsafeAppend("#");
                 return null;
             }
 			unionSql.append(unionOperator);
-			unionSql.append("(");
+			unionSql.unsafeAppend("(");
 			unionSql.append(sql);
-			unionSql.append(")");
+			unionSql.unsafeAppend(")");
 			unionOperator = "\n" + SqlParser.tokenName(_qunion.getTokenType()) + "\n";
 		}
 
@@ -468,15 +468,15 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
         if (null != sort && !sort.isEmpty() || null != _limit)
         {
             SqlBuilder wrap = new SqlBuilder(dialect);
-            wrap.append("SELECT * FROM (");
+            wrap.unsafeAppend("SELECT * FROM (");
             wrap.append(unionSql);
-            wrap.append(") u").appendValue(unionSql.hashCode() & 0x7fffffff);
+            wrap.unsafeAppend(") u").appendValue(unionSql.hashCode() & 0x7fffffff);
             unionSql = wrap;
         }
 
 		if (null != sort && !sort.isEmpty())
 		{
-            unionSql.append("\nORDER BY ");
+            unionSql.unsafeAppend("\nORDER BY ");
             String comma = "";
             for (var entry : sort)
             {
@@ -484,7 +484,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
                 unionSql.append(comma);
                 unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
                 if (!entry.direction())
-                    unionSql.append(" DESC");
+                    unionSql.unsafeAppend(" DESC");
                 comma = ", ";
             }
             if (null == _limit)
@@ -502,7 +502,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             public SQLFragment getFromSQL(String alias)
             {
                 SQLFragment f = new SQLFragment();
-                f.append("(").append(getSql()).append(") ").appendIdentifier(alias);
+                f.unsafeAppend("(").append(getSql()).unsafeAppend(") ").appendIdentifier(alias);
                 return f;
             }
 

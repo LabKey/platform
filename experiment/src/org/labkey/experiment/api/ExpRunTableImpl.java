@@ -430,9 +430,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case ReplacesRun:
                 SQLFragment replacesSQL = new SQLFragment("(SELECT MIN(er.RowId) FROM ");
                 replacesSQL.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-                replacesSQL.append(" WHERE er.ReplacedByRunId = ");
+                replacesSQL.unsafeAppend(" WHERE er.ReplacedByRunId = ");
                 replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
-                replacesSQL.append(".RowId)");
+                replacesSQL.unsafeAppend(".RowId)");
                 var replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
                 replacesRunCol.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 replacesRunCol.setLabel("Replaces");
@@ -483,14 +483,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND ");
         if (role == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.datainput.role = ?");
+            sql.unsafeAppend("exp.datainput.role = ?");
             sql.add(role);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
@@ -504,14 +504,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 "\nAND ");
         if (roleName == null)
         {
-            sql.append("1 = 0");
+            sql.unsafeAppend("1 = 0");
         }
         else
         {
-            sql.append("exp.DataInput.Role = ?");
+            sql.unsafeAppend("exp.DataInput.Role = ?");
             sql.add(roleName);
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return doAdd(new ExprColumn(this, alias, sql, JdbcType.INTEGER));
     }
 
@@ -577,11 +577,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId AS ");
                         sql.append(dataIdName);
-                        sql.append(" FROM ");
+                        sql.unsafeAppend(" FROM ");
                         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-                        sql.append(", ");
+                        sql.unsafeAppend(", ");
                         sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
-                        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = ").appendValue(type);
+                        sql.unsafeAppend(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = ").appendValue(type);
                         return sql;
                     }
                 };
@@ -839,7 +839,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             SQLFragment sql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-                            sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").appendValue(exp.getRowId()).append(")");
+                            sql.unsafeAppend(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).unsafeAppend(" AND ExperimentId = ").appendValue(exp.getRowId()).unsafeAppend(")");
 
                             return getSqlDialect().wrapBooleanExpression(sql);
                         }

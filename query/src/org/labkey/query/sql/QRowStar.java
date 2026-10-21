@@ -25,7 +25,7 @@ public class QRowStar extends QFieldKey
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("*");
+        builder.unsafeAppend("*");
     }
 
     @Override
@@ -37,6 +37,6 @@ public class QRowStar extends QFieldKey
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("*");
+        builder.unsafeAppend("*");
     }
 }

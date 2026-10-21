@@ -254,7 +254,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             ParameterMapStatement updateStmt = new ParameterMapStatement(scope, c,
                     new SQLFragment("UPDATE ")
                             .append(tInfo)
-                            .append(" SET Units = ?, StoredAmount = ?, AliquotUnit = ?, AliquotVolume = ?, AvailableAliquotVolume = ? WHERE RowId = ?")
+                            .unsafeAppend(" SET Units = ?, StoredAmount = ?, AliquotUnit = ?, AliquotVolume = ?, AvailableAliquotVolume = ? WHERE RowId = ?")
                             .addAll(units, amount, aliquotUnits, aliquotAmount, availableAliquotAmount, rowId), null);
 
             for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(container, false))
@@ -270,8 +270,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 List<AuditTypeEvent> auditEvents = new ArrayList<>();
                 SQLFragment sql = new SQLFragment("SELECT m.RowId, m.Name, m.StoredAmount, m.Units, m.AliquotVolume, m.AliquotUnit, m.AvailableAliquotVolume, m.container FROM ")
                     .append(tInfo, "m")
-                    .append(" WHERE cpastype = ?").add(sampleType.getLSID())
-                    .append(" AND (m.StoredAmount IS NOT NULL OR m.Units IS NOT NULL OR m.AliquotVolume IS NOT NULL OR m.AliquotUnit IS NOT NULL OR m.AvailableAliquotVolume IS NOT NULL)");
+                    .unsafeAppend(" WHERE cpastype = ?").add(sampleType.getLSID())
+                    .unsafeAppend(" AND (m.StoredAmount IS NOT NULL OR m.Units IS NOT NULL OR m.AliquotVolume IS NOT NULL OR m.AliquotUnit IS NOT NULL OR m.AvailableAliquotVolume IS NOT NULL)");
                 SqlSelector selector = new SqlSelector(scope, sql);
 
                 selector.mapStream().forEach(sampleMap -> {
@@ -634,7 +634,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         // Set NOT NULL constraint
         SqlExecutor executor = new SqlExecutor(scope);
-        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).append(" ALTER COLUMN rowId SET NOT NULL"));
+        executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName()).unsafeAppend(" ALTER COLUMN rowId SET NOT NULL"));
 
         // Add indexes back via StorageProvisioner
         storageProvisioner.ensureTableIndices(domain);
@@ -643,8 +643,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // Add FK constraint (no StorageProvisioner API for FKs on existing tables)
         String fkName = "fk_rowid_" + domain.getStorageTableName() + "_data";
         executor.execute(new SQLFragment("ALTER TABLE expdataclass.").append(domain.getStorageTableName())
-                .append(" ADD CONSTRAINT ").append(fkName)
-                .append(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
+                .unsafeAppend(" ADD CONSTRAINT ").append(fkName)
+                .unsafeAppend(" FOREIGN KEY (rowId) REFERENCES exp.Data(RowId)"));
         LOG.info("DataClass '{}' ({}) added FK constraint on 'rowId'", dc.getName(), dc.getRowId());
     }
 
@@ -652,14 +652,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
-                .append("UPDATE expdataclass.").append(tableName).append("\n")
-                .append("SET rowId = i.rowid\n")
-                .append("FROM (\n")
-                .append("  SELECT d.lsid, d.RowId\n")
-                .append("  FROM exp.data d\n")
-                .append("  WHERE d.cpasType = ?\n").add(domain.getTypeURI())
-                .append(") AS i\n")
-                .append("WHERE i.lsid = ").append(tableName).append(".lsid");
+                .unsafeAppend("UPDATE expdataclass.").append(tableName).unsafeAppend("\n")
+                .unsafeAppend("SET rowId = i.rowid\n")
+                .unsafeAppend("FROM (\n")
+                .unsafeAppend("  SELECT d.lsid, d.RowId\n")
+                .unsafeAppend("  FROM exp.data d\n")
+                .unsafeAppend("  WHERE d.cpasType = ?\n").add(domain.getTypeURI())
+                .unsafeAppend(") AS i\n")
+                .unsafeAppend("WHERE i.lsid = ").append(tableName).unsafeAppend(".lsid");
 
         int count = new SqlExecutor(scope).execute(update);
         LOG.info("DataClass '{}' ({}) populated 'rowId' column, count={}", dc.getName(), dc.getRowId(), count);
@@ -744,12 +744,12 @@ public class ExperimentUpgradeCode implements UpgradeCode
         TableInfo tinfoPropertyDescriptor = OntologyManager.getTinfoPropertyDescriptor();
         SQLFragment sql = new SQLFragment("SELECT dd.DomainId, dd.Name AS DomainName, px.PropertyId, StorageSchemaName, StorageTableName, StorageColumnName, px.Name FROM ")
             .append(tinfoDomainDescriptor, "dd")
-            .append(" INNER JOIN ")
+            .unsafeAppend(" INNER JOIN ")
             .append(tinfoPropertyDomain, "pd")
-            .append(" ON dd.DomainId = pd.DomainId INNER JOIN ")
+            .unsafeAppend(" ON dd.DomainId = pd.DomainId INNER JOIN ")
             .append(tinfoPropertyDescriptor, "px")
-            .append(" ON pd.PropertyId = px.PropertyId ")
-            .append("WHERE StorageSchemaName IS NOT NULL AND StorageTableName IS NOT NULL AND StorageColumnName IS NOT NULL");
+            .unsafeAppend(" ON pd.PropertyId = px.PropertyId ")
+            .unsafeAppend("WHERE StorageSchemaName IS NOT NULL AND StorageTableName IS NOT NULL AND StorageColumnName IS NOT NULL");
 
         MultiValuedMap<DomainRecord, Property> badDomainMap = new SqlSelector(scope, sql)
             .setJdbcCaching(false)
@@ -775,10 +775,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 StorageNameGenerator nameGenerator = new StorageNameGenerator(dialect);
                 SQLFragment domainSql = new SQLFragment("SELECT StorageColumnName FROM ")
                     .append(tinfoPropertyDomain, "pd")
-                    .append(" INNER JOIN ")
+                    .unsafeAppend(" INNER JOIN ")
                     .append(tinfoPropertyDescriptor, "px")
-                    .append(" ON pd.PropertyId = px.PropertyId ")
-                    .append("WHERE DomainId = ? AND ")
+                    .unsafeAppend(" ON pd.PropertyId = px.PropertyId ")
+                    .unsafeAppend("WHERE DomainId = ? AND ")
                     .add(domain.domainId())
                     .appendNotInClause("StorageColumnName", badColumnNames, scope.getSqlDialect());
                 new SqlSelector(scope, domainSql).forEach(String.class, nameGenerator::claimName);
@@ -955,13 +955,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static void migrateContainerDefaults()
     {
         SQLFragment sql = new SQLFragment()
-            .append("SELECT o.ObjectId, o.ObjectURI, MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
-            .append("FROM ").append(OntologyManager.getTinfoObject(), "o").append("\n")
-            .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.ObjectId = o.ObjectId\n")
-            .append("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").append(" ON pdm.PropertyId = op.PropertyId\n")
+            .unsafeAppend("SELECT o.ObjectId, o.ObjectURI, MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
+            .unsafeAppend("FROM ").append(OntologyManager.getTinfoObject(), "o").unsafeAppend("\n")
+            .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").unsafeAppend(" ON op.ObjectId = o.ObjectId\n")
+            .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").unsafeAppend(" ON pdm.PropertyId = op.PropertyId\n")
             // the legacy prefix is followed by '.'; the qualified form written below inserts '-<kind>' before it
-            .append("WHERE o.ObjectURI LIKE ?\n").add("%:" + LEGACY_CONTAINER_DEFAULTS_PREFIX + ".Folder-%")
-            .append("GROUP BY o.ObjectId, o.ObjectURI");
+            .unsafeAppend("WHERE o.ObjectURI LIKE ?\n").add("%:" + LEGACY_CONTAINER_DEFAULTS_PREFIX + ".Folder-%")
+            .unsafeAppend("GROUP BY o.ObjectId, o.ObjectURI");
 
         List<ContainerDefaultRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(ContainerDefaultRow.class);
         int migrated = 0;
@@ -1001,14 +1001,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static void reparentUserDefaults()
     {
         SQLFragment sql = new SQLFragment()
-            .append("SELECT child.ObjectId, child.ObjectURI, parent.ObjectId AS ParentId, parent.ObjectURI AS ParentURI, parent.Container,\n")
-            .append("  MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
-            .append("FROM ").append(OntologyManager.getTinfoObject(), "parent").append("\n")
-            .append("INNER JOIN ").append(OntologyManager.getTinfoObject(), "child").append(" ON child.OwnerObjectId = parent.ObjectId\n")
-            .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.ObjectId = child.ObjectId\n")
-            .append("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").append(" ON pdm.PropertyId = op.PropertyId\n")
-            .append("WHERE parent.ObjectURI LIKE ?\n").add("%:" + LEGACY_USER_DEFAULTS_PARENT_PREFIX + ".Folder-%")
-            .append("GROUP BY child.ObjectId, child.ObjectURI, parent.ObjectId, parent.ObjectURI, parent.Container");
+            .unsafeAppend("SELECT child.ObjectId, child.ObjectURI, parent.ObjectId AS ParentId, parent.ObjectURI AS ParentURI, parent.Container,\n")
+            .unsafeAppend("  MIN(pdm.DomainId) AS DomainId, COUNT(DISTINCT pdm.DomainId) AS DomainCount\n")
+            .unsafeAppend("FROM ").append(OntologyManager.getTinfoObject(), "parent").unsafeAppend("\n")
+            .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoObject(), "child").unsafeAppend(" ON child.OwnerObjectId = parent.ObjectId\n")
+            .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").unsafeAppend(" ON op.ObjectId = child.ObjectId\n")
+            .unsafeAppend("INNER JOIN ").append(OntologyManager.getTinfoPropertyDomain(), "pdm").unsafeAppend(" ON pdm.PropertyId = op.PropertyId\n")
+            .unsafeAppend("WHERE parent.ObjectURI LIKE ?\n").add("%:" + LEGACY_USER_DEFAULTS_PARENT_PREFIX + ".Folder-%")
+            .unsafeAppend("GROUP BY child.ObjectId, child.ObjectURI, parent.ObjectId, parent.ObjectURI, parent.Container");
 
         List<UserDefaultRow> rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(UserDefaultRow.class);
 
@@ -1052,7 +1052,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 for (UserDefaultRow row : group.getValue())
                 {
                     SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
-                        .append(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.objectId());
+                        .unsafeAppend(" SET OwnerObjectId = ? WHERE ObjectId = ?").addAll(newParentId, row.objectId());
                     new SqlExecutor(ExperimentService.get().getSchema()).execute(update);
                     reparented++;
                 }
@@ -1096,8 +1096,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static boolean renameObject(long objectId, String newUri)
     {
         SQLFragment update = new SQLFragment("UPDATE ").append(OntologyManager.getTinfoObject())
-            .append(" SET ObjectURI = ? WHERE ObjectId = ? AND NOT EXISTS (SELECT 1 FROM ")
-            .append(OntologyManager.getTinfoObject(), "existing").append(" WHERE existing.ObjectURI = ?)")
+            .unsafeAppend(" SET ObjectURI = ? WHERE ObjectId = ? AND NOT EXISTS (SELECT 1 FROM ")
+            .append(OntologyManager.getTinfoObject(), "existing").unsafeAppend(" WHERE existing.ObjectURI = ?)")
             .addAll(newUri, objectId, newUri);
         return new SqlExecutor(ExperimentService.get().getSchema()).execute(update) > 0;
     }

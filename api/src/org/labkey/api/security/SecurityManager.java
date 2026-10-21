@@ -1191,7 +1191,7 @@ public class SecurityManager
         displayName = StringUtils.trimToEmpty(displayName);
 
         SQLFragment select = new SQLFragment("SELECT UserId FROM ").append(core.getTableInfoUsersData());
-        select.append(" WHERE DisplayName = ? AND UserId != ?");
+        select.unsafeAppend(" WHERE DisplayName = ? AND UserId != ?");
         select.add(displayName);
         select.add(userId);
         Integer existingUserId = new SqlSelector(core.getSchema(), select).getObject(Integer.class);
@@ -2072,11 +2072,11 @@ public class SecurityManager
 
         if (c == null || c.isRoot())
         {
-            sql.append("IS NULL");
+            sql.unsafeAppend("IS NULL");
         }
         else
         {
-            sql.append("= ?");
+            sql.unsafeAppend("= ?");
             sql.add(c.getId());
             if (ownerId == null)
                 ownerId = c.isRoot() ? null : c.getId();
@@ -2084,11 +2084,11 @@ public class SecurityManager
 
         if (ownerId == null)
         {
-            sql.append(" AND OwnerId IS NULL");
+            sql.unsafeAppend(" AND OwnerId IS NULL");
         }
         else
         {
-            sql.append(" AND OwnerId = ?");
+            sql.unsafeAppend(" AND OwnerId = ?");
             sql.add(ownerId);
         }
 

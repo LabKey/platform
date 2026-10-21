@@ -63,7 +63,7 @@ public class ParticipantGroupCohortUnionTable extends BaseStudyTable
             addColumn(currentCohortColumn);
         }
 
-        var groupOrderCol = new ExprColumn(this, "GroupingOrder", new SQLFragment("(CASE WHEN GroupId IS NOT NULL THEN 1 ELSE 0 END)"), JdbcType.INTEGER);
+        var groupOrderCol = new ExprColumn(this, "GroupingOrder", SQLFragment.unsafe("(CASE WHEN GroupId IS NOT NULL THEN 1 ELSE 0 END)"), JdbcType.INTEGER);
         groupOrderCol.setHidden(true);
         addColumn(groupOrderCol);
 

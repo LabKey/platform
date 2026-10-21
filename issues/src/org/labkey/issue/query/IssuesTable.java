@@ -395,16 +395,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         TableInfo provisioned = _issueDef.createTable(getUserSchema().getUser());
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM\n");
-        sql.append("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");
+        sql.unsafeAppend("(SELECT * FROM\n");
+        sql.unsafeAppend("(SELECT i.issueid, i.duplicate, i.lastIndexed, i.issueDefId, p.* FROM ");
         sql.append(_rootTable, "i");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON i.entityId = p.entityId");
-        sql.append(") x");
+        sql.unsafeAppend(" INNER JOIN ").append(provisioned, "p").unsafeAppend(" ON i.entityId = p.entityId");
+        sql.unsafeAppend(") x");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), null, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return sql;
     }

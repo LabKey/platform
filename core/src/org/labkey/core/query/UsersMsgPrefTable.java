@@ -128,7 +128,7 @@ public class UsersMsgPrefTable extends UsersTable
             _emailOptionsJoin = name + "$" + "EmailOptionsJoin$";
 
             SQLFragment sql = new SQLFragment();
-            sql.append(ExprColumn.STR_TABLE_ALIAS).append("$").append(_emailOptionsJoin).append(".EmailOption\n");
+            sql.append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend("$").append(_emailOptionsJoin).unsafeAppend(".EmailOption\n");
             setValueSQL(sql);
         }
 
@@ -144,14 +144,14 @@ public class UsersMsgPrefTable extends UsersTable
 
             SQLFragment joinSql = new SQLFragment();
 
-            joinSql.append(" LEFT JOIN ").append(_emailPrefsTable, tableAlias);
-            joinSql.append(" ON ").append(tableAlias).append(".UserId = ").append(parentAlias).append(".UserId");
-            joinSql.append(" AND ").append(tableAlias).append(".Container = ").appendValue(_container);
+            joinSql.unsafeAppend(" LEFT JOIN ").append(_emailPrefsTable, tableAlias);
+            joinSql.unsafeAppend(" ON ").append(tableAlias).unsafeAppend(".UserId = ").append(parentAlias).unsafeAppend(".UserId");
+            joinSql.unsafeAppend(" AND ").append(tableAlias).unsafeAppend(".Container = ").appendValue(_container);
             // Filter to only show container-level subscriptions, not subforums
-            joinSql.append(" AND ").append(tableAlias).append(".SrcIdentifier = ").appendValue(_container);
-            joinSql.append(" AND ").append(tableAlias).append(".Type = ").appendValue(_type);
-            joinSql.append(" LEFT JOIN ").append(_emailOptionsTable, tableOptionsAlias);
-            joinSql.append(" ON ").append(tableAlias).append(".EmailOptionId = ").append(tableOptionsAlias).append(".EmailOptionId");
+            joinSql.unsafeAppend(" AND ").append(tableAlias).unsafeAppend(".SrcIdentifier = ").appendValue(_container);
+            joinSql.unsafeAppend(" AND ").append(tableAlias).unsafeAppend(".Type = ").appendValue(_type);
+            joinSql.unsafeAppend(" LEFT JOIN ").append(_emailOptionsTable, tableOptionsAlias);
+            joinSql.unsafeAppend(" ON ").append(tableAlias).unsafeAppend(".EmailOptionId = ").append(tableOptionsAlias).unsafeAppend(".EmailOptionId");
 
             map.put(tableAlias, joinSql);
         }

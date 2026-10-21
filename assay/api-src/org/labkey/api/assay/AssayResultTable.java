@@ -208,7 +208,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         SQLFragment runIdSQL = new SQLFragment();
         runIdSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        runIdSQL.append(".");
+        runIdSQL.unsafeAppend(".");
         runIdSQL.append(RUN_ID_ALIAS);
         ExprColumn runColumn = new ExprColumn(this, RUN_ID_ALIAS, runIdSQL, JdbcType.INTEGER);
         // TODO ContainerFilter make sure this is still correct
@@ -454,7 +454,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         SQLFragment result = new SQLFragment();
         TableInfo provisioned = getRealTable();
 
-        result.append("(SELECT ");
+        result.unsafeAppend("(SELECT ");
 
         if (includeCreatedModified && provisioned != null)
         {
@@ -464,7 +464,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 {
                     SQLFragment coalescedCol = new SQLFragment("COALESCE(");
                     coalescedCol.append(propertyColumn.getValueSql("innerResults"));
-                    coalescedCol.append(", runData.");
+                    coalescedCol.unsafeAppend(", runData.");
 
                     // without any updates to the results rows, the created and modified date of the result should match the created date of the run
                     // use run.created/by as default result modified/by
@@ -475,7 +475,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                         runSelectCol = SpecialColumn.CreatedBy.name();
 
                     coalescedCol.append(runSelectCol);
-                    coalescedCol.append(") AS ");
+                    coalescedCol.unsafeAppend(") AS ");
                     coalescedCol.append(propertyColumn.getName());
                     result.append(coalescedCol);
                 }
@@ -483,25 +483,25 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                 {
                     result.append(propertyColumn.getValueSql("innerResults"));
                 }
-                result.append(", ");
+                result.unsafeAppend(", ");
             }
         }
         else
-            result.append(" innerResults.*,");
-        result.append(" innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container AS Container" );
-        result.append(" FROM\n");
+            result.unsafeAppend(" innerResults.*,");
+        result.unsafeAppend(" innerData.RunId AS ").append(RUN_ID_ALIAS).unsafeAppend(", innerData.Container AS Container" );
+        result.unsafeAppend(" FROM\n");
         result.append(getFromTable().getFromSQL("innerResults"));
-        result.append("\nINNER JOIN ");
+        result.unsafeAppend("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");
-        result.append(" ON (innerData.RowId = innerResults.DataId) ");
+        result.unsafeAppend(" ON (innerData.RowId = innerResults.DataId) ");
 
         if (includeCreatedModified)
         {
-            result.append("\nINNER JOIN ");
-            result.append("(SELECT RowId as RunRowId, created, createdBy FROM ");
+            result.unsafeAppend("\nINNER JOIN ");
+            result.unsafeAppend("(SELECT RowId as RunRowId, created, createdBy FROM ");
             result.append(ExperimentService.get().getTinfoExperimentRun());
-            result.append(") AS runData");
-            result.append(" ON (runData.RunRowId = innerData.RunId) ");
+            result.unsafeAppend(") AS runData");
+            result.unsafeAppend(" ON (runData.RunRowId = innerData.RunId) ");
         }
 
         var filter = getFilter();
@@ -510,9 +510,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         {
             Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
             SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), "innerResults", columnMap);
-            result.append("\n").append(filterFrag);
+            result.unsafeAppend("\n").append(filterFrag);
         }
-        result.append(") ").appendIdentifier(alias);
+        result.unsafeAppend(") ").appendIdentifier(alias);
         return result;
     }
 

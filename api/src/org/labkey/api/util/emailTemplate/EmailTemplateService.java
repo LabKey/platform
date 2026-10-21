@@ -258,7 +258,7 @@ public class EmailTemplateService
     public void relocateEmailTemplateProperties(String oldClassName, String newClassName)
     {
         TableInfo tinfo = PropertySchema.getInstance().getTableInfoProperties();
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).append(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo).unsafeAppend(" SET Name = REPLACE(Name, ?, ?) WHERE Name LIKE ?");
         sql.add(oldClassName);
         sql.add(newClassName);
         sql.add(oldClassName + "%");

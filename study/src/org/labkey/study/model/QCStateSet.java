@@ -148,11 +148,11 @@ public class QCStateSet
         // all states are defined as 'private' and a user selects the default 'Public' set for viewing.
         // In this case, we'll simply return filter ensures zero rows are returned:
         if (_states.isEmpty() && !_includeUnmarked)
-            return new SQLFragment("0 = 1");
+            return SQLFragment.unsafe("0 = 1");
         
         SQLFragment sql = new SQLFragment();
         boolean hasStates = !_states.isEmpty();
-        sql.append("(");
+        sql.unsafeAppend("(");
         if (hasStates)
         {
             sql.append(rowIdColumnAlias);
@@ -161,10 +161,10 @@ public class QCStateSet
         if (_includeUnmarked)
         {
             if (hasStates)
-                sql.append(" OR ");
-            sql.append(rowIdColumnAlias).append(" IS NULL");
+                sql.unsafeAppend(" OR ");
+            sql.append(rowIdColumnAlias).unsafeAppend(" IS NULL");
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return sql;
     }
 

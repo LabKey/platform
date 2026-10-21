@@ -91,7 +91,7 @@ public class TempTableWriter
         // create table
         //
         SQLFragment sql = new SQLFragment();
-        sql.append("CREATE TABLE ").append(tempTableName).append(" (");
+        sql.unsafeAppend("CREATE TABLE ").append(tempTableName).unsafeAppend(" (");
         String comma = "";
 
         for (int i = 0; i < activeColumns.size(); i++)
@@ -115,15 +115,15 @@ public class TempTableWriter
                 if (length == -1)
                     length = 100;
 
-                sql.appendIdentifier(col.getSelectIdentifier()).append(" ").append(col.getSqlTypeName()).append("(").appendValue(length).append(")");
+                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(col.getSqlTypeName()).unsafeAppend("(").appendValue(length).unsafeAppend(")");
             }
             else
             {
-                sql.appendIdentifier(col.getSelectIdentifier()).append(" ").append(col.getSqlTypeName());
+                sql.appendIdentifier(col.getSelectIdentifier()).unsafeAppend(" ").append(col.getSqlTypeName());
             }
         }
 
-        sql.append(")");
+        sql.unsafeAppend(")");
 
         //
         // Track the table, it will be deleted when tinfoTempTable is GC'd
@@ -137,20 +137,20 @@ public class TempTableWriter
         //
         SQLFragment sqlInsert = new SQLFragment();
         SQLFragment sqlValues = new SQLFragment();
-        sqlInsert.append("INSERT INTO ").append(tempTableName).append(" (");
-        sqlValues.append(" VALUES (");
+        sqlInsert.unsafeAppend("INSERT INTO ").append(tempTableName).unsafeAppend(" (");
+        sqlValues.unsafeAppend(" VALUES (");
         comma = "";
 
         for (ColumnInfo col : activeColumns)
         {
             sqlInsert.append(comma).appendIdentifier(col.getSelectIdentifier());
-            sqlValues.append(comma).append("?");
+            sqlValues.append(comma).unsafeAppend("?");
             comma = ",";
         }
 
-        sqlInsert.append(") ");
+        sqlInsert.unsafeAppend(") ");
         sqlInsert.append(sqlValues);
-        sqlInsert.append(")");
+        sqlInsert.unsafeAppend(")");
 
         List<Collection<?>> paramList = new ArrayList<>(maps.size());
 

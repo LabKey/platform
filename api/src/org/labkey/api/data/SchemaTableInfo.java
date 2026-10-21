@@ -137,14 +137,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         var dialect = parentSchema.getSqlDialect();
         var schemaPart = dialect.makeIdentifierFromMetaDataName(parentSchema.getName());
         var tablePart = dialect.makeIdentifierFromMetaDataName(tableMetaDataName);
-        var full = new SQLFragment().appendIdentifier(schemaPart).append(".").appendIdentifier(tablePart);
+        var full = new SQLFragment().appendIdentifier(schemaPart).unsafeAppend(".").appendIdentifier(tablePart);
         return new SchemaTableInfo(parentSchema, tableType, tableMetaDataName, tableMetaDataName, full);
     }
 
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableMetaDataName)
     {
         this(parentSchema, tableType, tableMetaDataName, tableMetaDataName,
-                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(parentSchema.getName())).append(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(tableMetaDataName)));
+                new SQLFragment().appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(parentSchema.getName())).unsafeAppend(".").appendIdentifier(parentSchema.getSqlDialect().makeIdentifierFromMetaDataName(tableMetaDataName)));
     }
 
     /**
@@ -248,7 +248,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public SQLFragment getFromSQL()
     {
         Objects.requireNonNull(_selectName);
-        return new SQLFragment().append("SELECT * FROM ").append(_selectName);
+        return new SQLFragment().unsafeAppend("SELECT * FROM ").append(_selectName);
     }
 
 
@@ -257,9 +257,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSQLName())
-            return new SQLFragment().append(getSQLName()).append(" ").appendIdentifier(alias);
+            return new SQLFragment().append(getSQLName()).unsafeAppend(" ").appendIdentifier(alias);
         else
-            return new SQLFragment().append("(").append(getFromSQL()).append(") ").appendIdentifier(alias);
+            return new SQLFragment().unsafeAppend("(").append(getFromSQL()).unsafeAppend(") ").appendIdentifier(alias);
     }
 
     @Override

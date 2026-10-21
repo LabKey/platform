@@ -47,7 +47,7 @@ public class AuthenticationLogoType implements AttachmentParentType
 
         return new SQLFragment("SELECT EntityId, ")
             .append(table.getSqlDialect().concatenate("'Configuration #'", "CAST(RowId AS VARCHAR)", "' ('", "description", "')'"))
-            .append(" AS Description FROM ")
+            .unsafeAppend(" AS Description FROM ")
             .append(table, "acs");
     }
 }

@@ -133,12 +133,12 @@ public class PipelineStatusManager
         if (rowIds.length == 0)
             return Collections.emptyList();
 
-        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(_schema.getTableInfoStatusFiles()).append(" WHERE RowId ");
+        SQLFragment sql = new SQLFragment("SELECT * FROM ").append(_schema.getTableInfoStatusFiles()).unsafeAppend(" WHERE RowId ");
         _schema.getSqlDialect().appendInClauseSql(sql, Arrays.stream(rowIds).boxed().collect(Collectors.toList()));
 
         if (!c.isRoot())
         {
-            sql.append(" AND ");
+            sql.unsafeAppend(" AND ");
             sql.append(ContainerFilter.current(c, user).getSQLFragment(_schema.getSchema(), new SQLFragment("Container")));
         }
 
@@ -801,14 +801,14 @@ public class PipelineStatusManager
                 deleteAssociatedRuns(container, user, deleteable);
 
             SQLFragment sql = new SQLFragment();
-            sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
-                    .append(" ").append("WHERE RowId ");
+            sql.unsafeAppend("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
+                    .unsafeAppend(" ").unsafeAppend("WHERE RowId ");
 
             // null any ExpRuns referencing these Jobs -- only executed if we aren't deleting the runs
             SQLFragment expSql = new SQLFragment();
-            expSql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
-                    .append(" SET JobId = NULL ")
-                    .append("WHERE JobId ");
+            expSql.unsafeAppend("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
+                    .unsafeAppend(" SET JobId = NULL ")
+                    .unsafeAppend("WHERE JobId ");
 
             List<Long> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
@@ -833,9 +833,9 @@ public class PipelineStatusManager
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
                 SQLFragment containerSQL = ContainerFilter.current(container, user).getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"));
-                sql.append(" AND ");
+                sql.unsafeAppend(" AND ");
                 sql.append(containerSQL);
-                expSql.append(" AND ");
+                expSql.unsafeAppend(" AND ");
                 expSql.append(containerSQL);
             }
 

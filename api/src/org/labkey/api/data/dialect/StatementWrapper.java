@@ -2444,9 +2444,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     }
 
     @Override
-    public boolean isClosed()
+    public boolean isClosed() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return _stmt.isClosed();
     }
 
     @Override

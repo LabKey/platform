@@ -63,7 +63,7 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS Name, ? AS Description, ? AS Module, ? AS RunLSIDPrefix");
+            sql.unsafeAppend("SELECT ? AS Name, ? AS Description, ? AS Module, ? AS RunLSIDPrefix");
             sql.add(provider.getName());
             // Trim to first sentence to avoid overly long Nab descriptions.
             String desc = provider.getDescription();

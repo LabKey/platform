@@ -79,16 +79,16 @@ public class AutoCompleteAction extends ReadOnlyApiAction<AutoCompleteAction.Aut
         final List<AjaxCompletion> completions = new ArrayList<>();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT ");
-        sql.append(column);
-        sql.append(" FROM ");
-        sql.append(tinfo.getSchema().getName()).append(".").append(tinfo.getName());
+        sql.unsafeAppend("SELECT DISTINCT ");
+        sql.appendIdentifier(column);
+        sql.unsafeAppend(" FROM ");
+        sql.appendIdentifier(tinfo.getSqlDialect().makeDatabaseIdentifier(tinfo.getSchema().getName())).unsafeAppend(".").appendIdentifier(tinfo.getSqlDialect().makeDatabaseIdentifier(tinfo.getName()));
         if (hasContainerColumn)
         {
-            sql.append(" WHERE Container = ?");
+            sql.unsafeAppend(" WHERE Container = ?");
             sql.add(container.getId());
         }
-        sql.append(" ORDER BY ").append(column);
+        sql.unsafeAppend(" ORDER BY ").appendIdentifier(column);
         tinfo.getSqlDialect().limitRows(sql, 50);
 
         new SqlSelector(tinfo.getSchema(), sql).forEach(rs -> completions.add(new AjaxCompletion(rs.getObject(1).toString())));

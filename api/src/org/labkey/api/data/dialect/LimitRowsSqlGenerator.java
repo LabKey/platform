@@ -30,7 +30,7 @@ public class LimitRowsSqlGenerator
 
         if (rowCount != Table.ALL_ROWS)
         {
-            frag.append("\n");
+            frag.unsafeAppend("\n");
             customizer.appendLimit(frag, Table.NO_ROWS == rowCount ? 0 : rowCount);
         }
         else if (offset > 0 && !customizer.supportsOffsetWithoutLimit())
@@ -38,7 +38,7 @@ public class LimitRowsSqlGenerator
             // This is Table.ALL_ROWS plus an offset on MySQL. MySQL OFFSET requires LIMIT (unlike PostgreSQL, where
             // LIMIT and OFFSET are independent clauses). MySQL documentation recommends specifying a very large LIMIT
             // to denote offset + all remaining rows.
-            frag.append("\n");
+            frag.unsafeAppend("\n");
             customizer.appendLimit(frag, Integer.MAX_VALUE);
         }
 
@@ -52,7 +52,7 @@ public class LimitRowsSqlGenerator
     {
         if (offset > 0)
         {
-            frag.append("\n");
+            frag.unsafeAppend("\n");
             customizer.appendOffset(frag, offset);
         }
     }
@@ -78,10 +78,10 @@ public class LimitRowsSqlGenerator
     {
         SQLFragment sql = new SQLFragment();
         sql.append(select);
-        sql.append("\n").append(from);
-        if (filter != null) sql.append("\n").append(filter);
-        if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
+        sql.unsafeAppend("\n").append(from);
+        if (filter != null) sql.unsafeAppend("\n").append(filter);
+        if (groupBy != null) sql.unsafeAppend("\n").append(groupBy);
+        if (order != null) sql.unsafeAppend("\n").append(order);
 
         return sql;
     }
@@ -107,13 +107,13 @@ public class LimitRowsSqlGenerator
         @Override
         public void appendLimit(SQLFragment frag, int limit)
         {
-            frag.append("LIMIT ").appendValue(limit);
+            frag.unsafeAppend("LIMIT ").appendValue(limit);
         }
 
         @Override
         public void appendOffset(SQLFragment frag, long offset)
         {
-            frag.append("OFFSET ").appendValue(offset);
+            frag.unsafeAppend("OFFSET ").appendValue(offset);
         }
 
         @Override

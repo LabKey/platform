@@ -369,49 +369,49 @@ public class QAggregate extends QExpr
             // verify that NULL/0 is NULL not #DIV0
             // postgres[ok]
             // sqlserver[?]
-            builder.append(" (").append(Type.STDDEV.getFunction(builder.getDialect())).append("(");
+            builder.unsafeAppend(" (").append(Type.STDDEV.getFunction(builder.getDialect())).unsafeAppend("(");
             for (QNode child : children())
                 ((QExpr)child).appendSql(builder, query);
-            builder.append(")/SQRT(COUNT(");
+            builder.unsafeAppend(")/SQRT(COUNT(");
             for (QNode child : children())
                 ((QExpr)child).appendSql(builder, query);
-            builder.append(")))");
+            builder.unsafeAppend(")))");
         }
         else if (type == Type.MEDIAN)
         {
             assert !_distinct;
             QNode partitionBy = builder.getDialect().isSqlServer() ? getLastChild() : null;
 
-            builder.append(" (").append(type.getFunction(builder.getDialect())).append("(0.5) WITHIN GROUP (ORDER BY (");
+            builder.unsafeAppend(" (").append(type.getFunction(builder.getDialect())).unsafeAppend("(0.5) WITHIN GROUP (ORDER BY (");
             for (QNode child : children())
             {
                 if (partitionBy != child)
                     ((QExpr) child).appendSql(builder, query);
             }
-            builder.append(")) ");
+            builder.unsafeAppend(")) ");
             if (builder.getDialect().isSqlServer() && partitionBy instanceof QPartitionBy)
             {
                 ((QPartitionBy)partitionBy).appendSql(builder, query);
             }
-            builder.append(")");
+            builder.unsafeAppend(")");
         }
         else if (type == Type.MODE)
         {
             assert !_distinct;
-            builder.append(" (").append(type.getFunction(builder.getDialect())).append("() WITHIN GROUP (ORDER BY (");
+            builder.unsafeAppend(" (").append(type.getFunction(builder.getDialect())).unsafeAppend("() WITHIN GROUP (ORDER BY (");
             for (QNode child : children())
             {
                 ((QExpr)child).appendSql(builder, query);
             }
-            builder.append(")))");
+            builder.unsafeAppend(")))");
         }
         else
         {
             String function = type.getFunction(builder.getDialect());
-            builder.append(" ").append(function).append("(");
+            builder.unsafeAppend(" ").append(function).unsafeAppend("(");
             if (_distinct)
             {
-                builder.append("DISTINCT ");
+                builder.unsafeAppend("DISTINCT ");
             }
             String sep = "";
             for (QNode child : children())
@@ -420,23 +420,23 @@ public class QAggregate extends QExpr
                 ((QExpr)child).appendSql(builder, query);
                 sep = ", ";
             }
-            builder.append(")");
+            builder.unsafeAppend(")");
         }
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" ").append(getTokenText()).append("(");
+        builder.unsafeAppend(" ").append(getTokenText()).unsafeAppend("(");
         if (_distinct)
         {
-            builder.append("DISTINCT ");
+            builder.unsafeAppend("DISTINCT ");
         }
         for (QNode child : children())
         {
             child.appendSource(builder);
         }
-        builder.append(")");
+        builder.unsafeAppend(")");
     }
 
     @Override @NotNull
