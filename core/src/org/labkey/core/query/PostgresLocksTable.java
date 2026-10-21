@@ -55,7 +55,7 @@ public class PostgresLocksTable extends AbstractPostgresAdminOnlyTable
     public @NotNull SQLFragment getFromSQL()
     {
         SQLFragment result = new SQLFragment();
-        result.append("SELECT * FROM pg_locks");
+        result.unsafeAppend("SELECT * FROM pg_locks");
         return result;
     }
 }

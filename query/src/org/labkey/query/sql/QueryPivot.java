@@ -311,9 +311,9 @@ public class QueryPivot extends AbstractQueryRelation
             if (null != fromSql)
             {
                 sqlPivotValues = new SQLFragment();
-                sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
-                sqlPivotValues.append("\nFROM ").append(fromSql);
-                sqlPivotValues.append("\nORDER BY 1 ASC");
+                sqlPivotValues.unsafeAppend("SELECT DISTINCT ").append(_pivotColumn.getValueSql());
+                sqlPivotValues.unsafeAppend("\nFROM ").append(fromSql);
+                sqlPivotValues.unsafeAppend("\nORDER BY 1 ASC");
                 hasPhiColumns = _from._query.getInvolvedTableColumns().stream().anyMatch(tc -> tc._col.getPHI()!=PHI.NotPHI);
             }
         }
@@ -734,7 +734,7 @@ public class QueryPivot extends AbstractQueryRelation
         public SQLFragment getValueSql()
         {
             if (null == _c)
-                return new SQLFragment(NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(getJdbcType())));
+                return NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(getJdbcType()));
             else
                 return new SQLFragment(getTable().getAlias() + "." + _alias);
         }
@@ -752,7 +752,7 @@ public class QueryPivot extends AbstractQueryRelation
         String tableAlias = "_t";
         SqlBuilder sql = new SqlBuilder(getSqlDialect());
         sql.appendComment("<QueryPivot>", getSqlDialect());
-        sql.append("SELECT ");
+        sql.unsafeAppend("SELECT ");
         String comma = "";
 
         for (RelationColumn col : _select.values())
@@ -763,7 +763,7 @@ public class QueryPivot extends AbstractQueryRelation
 
             if (isKey)
             {
-                sql.append(comma).append(col.getValueSql()).append(" AS ").append(col.getAlias());
+                sql.append(comma).append(col.getValueSql()).unsafeAppend(" AS ").append(col.getAlias());
                 comma = ",\n";
                 continue;
             }
@@ -805,7 +805,7 @@ public class QueryPivot extends AbstractQueryRelation
                     }
                 }
 
-                sql.append(comma).append(wrappedAgg).append("(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
+                sql.append(comma).append(wrappedAgg).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").append(col.getAlias());
                 comma = ",\n";
                 continue;
             }
@@ -814,13 +814,13 @@ public class QueryPivot extends AbstractQueryRelation
             if (null == type)
             {
                 // #23919: When inner query returns no results, without CAST we get "failed to find conversion function from unknown to text"
-                sql.append(comma).append("CAST(NULL AS ").append(getSqlDialect().getSqlCastTypeName(col.getJdbcType())).append(") AS ").append(col.getAlias());
+                sql.append(comma).unsafeAppend("CAST(NULL AS ").append(getSqlDialect().getSqlCastTypeName(col.getJdbcType())).unsafeAppend(") AS ").append(col.getAlias());
                 comma = ",\n";
             }
             else
             {
                 String agg = type.name();
-                sql.append(comma).append(agg).append("(").append(col.getValueSql()).append(") AS ").append(col.getAlias());
+                sql.append(comma).append(agg).unsafeAppend("(").append(col.getValueSql()).unsafeAppend(") AS ").append(col.getAlias());
                 comma = ",\n";
             }
 
@@ -839,22 +839,22 @@ public class QueryPivot extends AbstractQueryRelation
             {
                 QNode value = (QNode)pivotValue.getValue();
                 String alias = makePivotColumnAlias(col.getAlias(), pivotValue.getKey());
-                sql.append(comma).append("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
+                sql.append(comma).unsafeAppend("MAX(CASE WHEN (").append(_pivotColumn.getValueSql());
                 if (value instanceof QNull)
                 {
-                    sql.append(" IS NULL");
+                    sql.unsafeAppend(" IS NULL");
                 }
                 else if (value instanceof QString qs)
                 {
                     // Route QString pivot values through the dialect's string handler so
                     // dialect-specific escape rules (e.g. PG non-conforming strings) are honored.
-                    sql.append("=").appendStringLiteral(qs.getValue(), getSqlDialect());
+                    sql.unsafeAppend("=").appendStringLiteral(qs.getValue(), getSqlDialect());
                 }
                 else
                 {
-                    sql.append("=").append(value.getSourceText());
+                    sql.unsafeAppend("=").append(value.getSourceText());
                 }
-                sql.append(") THEN (").append(col.getValueSql()).append(") ELSE NULL END) AS ").appendIdentifier(alias);
+                sql.unsafeAppend(") THEN (").append(col.getValueSql()).unsafeAppend(") ELSE NULL END) AS ").appendIdentifier(alias);
                 comma = ",\n";
             }
         }
@@ -866,7 +866,7 @@ public class QueryPivot extends AbstractQueryRelation
             assert !getParseErrors().isEmpty();
             return null;
         }
-        sql.append("\n FROM ").append(fromSql).append("\n");
+        sql.unsafeAppend("\n FROM ").append(fromSql).unsafeAppend("\n");
 
         // UNDONE: separate grouping columns from extra 'fact' columns
         sql.pushPrefix("GROUP BY ");
@@ -945,7 +945,7 @@ public class QueryPivot extends AbstractQueryRelation
                     _query.decorateException(qpe);
                     throw qpe;
                 }
-                f.append("(").append(fromSql).append(") ");
+                f.unsafeAppend("(").append(fromSql).unsafeAppend(") ");
                 _sqlPivot = f;
             }
             SQLFragment ret = new SQLFragment(_sqlPivot);

@@ -61,7 +61,7 @@ public class SavePaths implements DavCrawler.SavePaths
         SQLFragment f = new SQLFragment(" Path=? ", path);
         if (null != ti.getColumn("csPath"))
         {
-            f.append(" AND csPath=CHECKSUM(?)");
+            f.unsafeAppend(" AND csPath=CHECKSUM(?)");
             f.add(path);
         }
         return f;
@@ -85,7 +85,7 @@ public class SavePaths implements DavCrawler.SavePaths
         SQLFragment upd = new SQLFragment(
                 "UPDATE search.CrawlCollections SET LastCrawled=?, NextCrawl=? ",
                 last, next);
-        upd.append(" WHERE " );
+        upd.unsafeAppend(" WHERE " );
         SQLFragment f = pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr);
         upd.append(f);
 
@@ -274,7 +274,7 @@ public class SavePaths implements DavCrawler.SavePaths
             f.add(nextCrawl);
             f.add(nullDate);
             f.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
-            f.append(")");
+            f.unsafeAppend(")");
             int count = new SqlExecutor(getSearchSchema()).execute(f);
             if (count == 1)
                 _log.debug("insertPath({}, {})", path, nextCrawl);
@@ -408,7 +408,7 @@ public class SavePaths implements DavCrawler.SavePaths
                     map.put(Path.parse(path), new Pair<>(lastCrawl, nextCrawl));
                     paths.add(path);
 
-                    updWHERE.append(or).append(" (Parent=? AND Name=?)");
+                    updWHERE.append(or).unsafeAppend(" (Parent=? AND Name=?)");
                     updWHERE.add(parent);
                     updWHERE.add(name);
                     or = " OR ";

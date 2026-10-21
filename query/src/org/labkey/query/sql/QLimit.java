@@ -26,7 +26,7 @@ public class QLimit extends QNode
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append("\nLIMIT ");
+        builder.unsafeAppend("\nLIMIT ");
         for (QNode child : children())
         {
             child.appendSource(builder);

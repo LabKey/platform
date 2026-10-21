@@ -137,7 +137,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
+            sql.unsafeAppend("SELECT ? AS VALUE, ? AS RowId, ? As Ordinal");
             sql.add(_valueGetter.getValue(e));
             sql.add(_rowIdGetter.getRowId(e));
             sql.add(e.ordinal());

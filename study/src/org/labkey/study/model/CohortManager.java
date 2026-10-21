@@ -139,8 +139,11 @@ public class CohortManager
                 p.setCurrentCohortId(newCohortId);
                 StudyManager.getInstance().updateParticipant(user, p);
 
-                SQLFragment ptidVisitSql = new SQLFragment("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                        " SET CohortId = ? WHERE ParticipantId = ? AND Container = ?", newCohortId, p.getParticipantId(), study.getContainer());
+                SQLFragment ptidVisitSql = new SQLFragment()
+                        .UPDATE().append(StudySchema.getInstance().getTableInfoParticipantVisit())
+                        .SET().unsafeAppend("CohortId = ?")
+                        .WHERE().unsafeAppend("ParticipantId = ? AND Container = ?")
+                        .addAll(newCohortId, p.getParticipantId(), study.getContainer());
 
                 new SqlExecutor(StudySchema.getInstance().getSchema()).execute(ptidVisitSql);
             }
@@ -283,13 +286,17 @@ public class CohortManager
         DbSchema ss = StudySchema.getInstance().getSchema();
 
         // null out cohort for all participants in this container:
-        new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipant() +
-                "\nSET InitialCohortId = NULL, CurrentCohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
+        new SqlExecutor(ss).execute(new SQLFragment()
+                .UPDATE().append(StudySchema.getInstance().getTableInfoParticipant()).NL()
+                .SET().unsafeAppend("InitialCohortId = NULL, CurrentCohortId = NULL").NL()
+                .WHERE().unsafeAppend("Container = ?").add(study.getContainer().getId()));
 
         // null out cohort for all participant/visits in this container (required for advanced cohort support, where participants
         // can change cohorts over time):
-        new SqlExecutor(ss).execute("UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                "\nSET CohortId = NULL\nWHERE Container = ?", study.getContainer().getId());
+        new SqlExecutor(ss).execute(new SQLFragment()
+                .UPDATE().append(StudySchema.getInstance().getTableInfoParticipantVisit()).NL()
+                .SET().unsafeAppend("CohortId = NULL").NL()
+                .WHERE().unsafeAppend("Container = ?").add(study.getContainer().getId()));
 
         StudyManager.getInstance().clearParticipantCache(study.getContainer());
     }
@@ -323,12 +330,14 @@ public class CohortManager
                     clearParticipantCohorts(study);
 
                     // Find the set of cohorts specified in our dataset
-                    SQLFragment sqlFragment = new SQLFragment();
-                    sqlFragment.append("SELECT DISTINCT ").append(cohortLabelCol.getValueSql("CO")).append("\nFROM ");
-                    sqlFragment.append(cohortDatasetTinfo.getFromSQL("CO")).append("\n" +
-                            "WHERE ").append(cohortLabelCol.getValueSql("CO")).append(" IS NOT NULL AND ").append(cohortLabelCol.getValueSql("CO"))
-                            .append(" NOT IN\n" + "  (SELECT Label FROM ").append(StudySchema.getInstance().getTableInfoCohort()).append(" WHERE Container = ?)");
-                    sqlFragment.add(study.getContainer().getId());
+                    SQLFragment sqlFragment = new SQLFragment()
+                            .SELECT_DISTINCT().append(cohortLabelCol.getValueSql("CO")).NL()
+                            .FROM().append(cohortDatasetTinfo.getFromSQL("CO")).NL()
+                            .WHERE().append(cohortLabelCol.getValueSql("CO")).IS_NOT_NULL()
+                                .AND().append(cohortLabelCol.getValueSql("CO")).NOT().IN().LP()
+                                    .SELECT().unsafeAppend("Label").FROM().append(StudySchema.getInstance().getTableInfoCohort())
+                                    .WHERE().unsafeAppend("Container = ?").RP()
+                            .add(study.getContainer().getId());
 
                     Collection<String> labels = new SqlSelector(StudySchema.getInstance().getScope(), sqlFragment, QueryLogging.noValidationNeededQueryLogging()).getCollection(String.class);
                     Set<String> newCohortLabels = new HashSet<>(labels);
@@ -373,15 +382,17 @@ public class CohortManager
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
         SQLFragment pvCohortSql = new SQLFragment()
-                .append("SELECT PV.ParticipantId, PV.VisitRowId, PV.CohortId, ")
-                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
-                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).append("\n")
-                .append("  LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V")).append(" ON PV.VisitRowId = V.RowId\n")
-                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON " +
-                    (!dsd.isDemographicData() ? "\tPV.SequenceNum = D.SequenceNum AND\n" : "") +
-                    "\tPV.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
-                .append("WHERE PV.Container = ").appendValue(study.getContainer()).append(study.getTimepointType() != TimepointType.VISIT  ? " AND PV.VisitDate IS NOT NULL" : "").append("\n")
-                .append("ORDER BY PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
+                .SELECT().unsafeAppend("PV.ParticipantId, PV.VisitRowId, PV.CohortId, ")
+                    .append(cohortLabelCol.getValueSql("D")).AS().appendIdentifier(cohortLabelCol.getAlias()).NL()
+                .FROM().append(StudySchema.getInstance().getTableInfoParticipantVisit().getFromSQL("PV")).NL()
+                    .LEFT_OUTER_JOIN().append(StudySchema.getInstance().getTableInfoVisit().getFromSQL("V"))
+                    .ON().unsafeAppend("PV.VisitRowId = V.RowId").NL()
+                    .LEFT_OUTER_JOIN().append(cohortDatasetTinfo.getFromSQL("D"))
+                    .ON().unsafeAppend(!dsd.isDemographicData() ? "PV.SequenceNum = D.SequenceNum AND " : "")
+                        .unsafeAppend("PV.ParticipantId = ").append(subjectCol.getValueSql("D")).NL()
+                .WHERE().unsafeAppend("PV.Container = ").appendValue(study.getContainer())
+                    .unsafeAppend(study.getTimepointType() != TimepointType.VISIT ? " AND PV.VisitDate IS NOT NULL" : "").NL()
+                .ORDER_BY().unsafeAppend("PV.ParticipantId, V.ChronologicalOrder, V.SequenceNumMin");
         return pvCohortSql;
     }
 
@@ -397,13 +408,14 @@ public class CohortManager
 
         TableInfo cohortDatasetTinfo = dsd.getTableInfo(user);
         ColumnInfo subjectCol = cohortDatasetTinfo.getColumn(study.getSubjectColumnName());
-        SQLFragment pCohortSql = new SQLFragment("SELECT P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
-                .append(   cohortLabelCol.getValueSql("D")).append(" AS ").appendIdentifier(cohortLabelCol.getAlias()).append("\n")
-                .append("FROM ").append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).append("\n")
-                .append("  LEFT OUTER JOIN ").append(cohortDatasetTinfo.getFromSQL("D")).append(" ON ")
-                .append("    P.ParticipantId = ").append(subjectCol.getValueSql("D")).append("\n")
-                .append("WHERE P.Container = ").appendValue(study.getContainer()).append("\n")
-                .append("ORDER BY P.ParticipantId" + (!dsd.isDemographicData() ? ", D.SequenceNum" : ""));
+        SQLFragment pCohortSql = new SQLFragment()
+                .SELECT().unsafeAppend("P.ParticipantId, -1 AS VisitRowId, -1 AS CohortId, ")
+                    .append(cohortLabelCol.getValueSql("D")).AS().appendIdentifier(cohortLabelCol.getAlias()).NL()
+                .FROM().append(StudySchema.getInstance().getTableInfoParticipant().getFromSQL("P")).NL()
+                    .LEFT_OUTER_JOIN().append(cohortDatasetTinfo.getFromSQL("D"))
+                    .ON().unsafeAppend("P.ParticipantId = ").append(subjectCol.getValueSql("D")).NL()
+                .WHERE().unsafeAppend("P.Container = ").appendValue(study.getContainer()).NL()
+                .ORDER_BY().unsafeAppend("P.ParticipantId").unsafeAppend(!dsd.isDemographicData() ? ", D.SequenceNum" : "");
         return pCohortSql;
     }
 
@@ -514,31 +526,30 @@ public class CohortManager
 
         // We've gathered all the necessary data; now we can update participant and participantvisit.
         // Note that some of the data gathered may not be used if we're not doing advanced cohort management.
+        // TODO: Table.batchExecute() should have an overload that takes a SQLFragment, removing these getSQL() calls
         try
         {
             // update ParticipantVisit:
             if (!participantVisitParams.isEmpty())
             {
-                String updateSql;
+                SQLFragment updateSql = new SQLFragment()
+                        .UPDATE().append(StudySchema.getInstance().getTableInfoParticipantVisit())
+                        .SET().unsafeAppend("CohortId = ?");
                 if (study.isAdvancedCohorts())
-                {
-                    updateSql = "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                            " SET CohortId = ? WHERE ParticipantId = ? AND VisitRowId = ? AND Container = ?";
-                }
+                    updateSql.WHERE().unsafeAppend("ParticipantId = ? AND VisitRowId = ? AND Container = ?");
                 else
-                {
-                    updateSql = "UPDATE " + StudySchema.getInstance().getTableInfoParticipantVisit() +
-                            " SET CohortId = ? WHERE ParticipantId = ? AND Container = ?";
-                }
-                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql, participantVisitParams);
+                    updateSql.WHERE().unsafeAppend("ParticipantId = ? AND Container = ?");
+                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql.getSQL(), participantVisitParams);
             }
 
             // update Participant:
             if (!participantParams.isEmpty())
             {
-                String updateSql = "UPDATE " + tableParticipant +
-                    " SET InitialCohortId = ?, CurrentCohortId = ? WHERE ParticipantId = ? AND Container = ?";
-                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql, participantParams);
+                SQLFragment updateSql = new SQLFragment()
+                        .UPDATE().append(tableParticipant)
+                        .SET().unsafeAppend("InitialCohortId = ?, CurrentCohortId = ?")
+                        .WHERE().unsafeAppend("ParticipantId = ? AND Container = ?");
+                Table.batchExecute(StudySchema.getInstance().getSchema(), updateSql.getSQL(), participantParams);
             }
         }
         catch (SQLException e)

@@ -96,14 +96,14 @@ public class Aggregate
                 return null;
 
             SQLFragment sb = new SQLFragment();
-            sb.append(getSQLFunctionName(dialect)).append("(");
+            sb.append(getSQLFunctionName(dialect)).unsafeAppend("(");
             if (distinct)
-                sb.append("DISTINCT ");
+                sb.unsafeAppend("DISTINCT ");
             sb.append(columnNameFragment);
-            sb.append(")");
+            sb.unsafeAppend(")");
             if (asName != null)
             {
-                sb.append(" AS ").appendIdentifier(asName);
+                sb.unsafeAppend(" AS ").appendIdentifier(asName);
             }
             return sb;
         }
@@ -154,21 +154,21 @@ public class Aggregate
                 if (jdbcType != null)
                 {
                     SQLFragment sb = new SQLFragment();
-                    sb.append("SUM(");
+                    sb.unsafeAppend("SUM(");
                     if (distinct)
-                        sb.append("DISTINCT ");
+                        sb.unsafeAppend("DISTINCT ");
                     if (dialect.isSqlServer() && castType(jdbcType) != null)
                     {
-                        sb.append("CAST(").append(columnNameFragment).append(" AS ")
-                            .append(castType(jdbcType)).append(")");
+                        sb.unsafeAppend("CAST(").append(columnNameFragment).unsafeAppend(" AS ")
+                            .append(castType(jdbcType)).unsafeAppend(")");
                     }
                     else
                     {
                         sb.append(columnNameFragment);
                     }
-                    sb.append(")");
+                    sb.unsafeAppend(")");
                     if (null != asName)
-                        sb.append(" AS ").appendIdentifier(asName);
+                        sb.unsafeAppend(" AS ").appendIdentifier(asName);
                     return sb;
                 }
                 else
@@ -221,15 +221,15 @@ public class Aggregate
                 if (jdbcType != null && (jdbcType.equals(JdbcType.INTEGER) || jdbcType.equals(JdbcType.BIGINT) || jdbcType.equals(JdbcType.SMALLINT)))
                 {
                     SQLFragment sb = new SQLFragment();
-                    sb.append(getSQLFunctionName(dialect)).append("(");
+                    sb.append(getSQLFunctionName(dialect)).unsafeAppend("(");
                     if (distinct)
-                        sb.append("DISTINCT ");
-                    sb.append("CAST(").append(columnNameFragment).append(" AS FLOAT)");
-                    sb.append(")");
+                        sb.unsafeAppend("DISTINCT ");
+                    sb.unsafeAppend("CAST(").append(columnNameFragment).unsafeAppend(" AS FLOAT)");
+                    sb.unsafeAppend(")");
 
                     if (asName != null)
                     {
-                        sb.append(" AS ").appendIdentifier(asName);
+                        sb.unsafeAppend(" AS ").appendIdentifier(asName);
                     }
 
                     return sb;
@@ -465,11 +465,11 @@ public class Aggregate
             return _type.getSQLColumnFragment(null, getFieldKey().toSQLString(), alias, JdbcType.INTEGER, _distinct, tableInnerSql);
 
         SQLFragment sb = new SQLFragment();
-        sb.append(_type.getSQLFunctionName(null)).append("(");
+        sb.append(_type.getSQLFunctionName(null)).unsafeAppend("(");
         if (_distinct)
-            sb.append("DISTINCT ");
+            sb.unsafeAppend("DISTINCT ");
         sb.append(getFieldKey().toSQLString());
-        sb.append(") AS ").appendIdentifier(alias);
+        sb.unsafeAppend(") AS ").appendIdentifier(alias);
         return sb;
     }
 

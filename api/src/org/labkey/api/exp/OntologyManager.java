@@ -1068,16 +1068,16 @@ public class OntologyManager
     public static int deleteOntologyObjects(DbSchema schema, SQLFragment objectUriSql, @Nullable Container c)
     {
         SQLFragment objectIdSQL = new SQLFragment("SELECT ObjectId FROM ")
-            .append(getTinfoObject()).append("\n")
-            .append(" WHERE ");
+            .append(getTinfoObject()).unsafeAppend("\n")
+            .unsafeAppend(" WHERE ");
         if (c != null)
         {
-            objectIdSQL.append(" Container = ?").add(c.getId());
-            objectIdSQL.append(" AND ");
+            objectIdSQL.unsafeAppend(" Container = ?").add(c.getId());
+            objectIdSQL.unsafeAppend(" AND ");
         }
-        objectIdSQL.append("ObjectUri IN (");
+        objectIdSQL.unsafeAppend("ObjectUri IN (");
         objectIdSQL.append(objectUriSql);
-        objectIdSQL.append(")");
+        objectIdSQL.unsafeAppend(")");
         return deleteOntologyObjectsByObjectIdSql(schema, objectIdSQL);
     }
 
@@ -1185,18 +1185,18 @@ public class OntologyManager
             // NOTE: owned objects should never be in a different container than the owner, that would be a problem
             SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
                 .append(getTinfoObjectProperty())
-                .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
                 .append(getTinfoObject())
-                .append(" WHERE Container = ? AND OwnerObjectId ")
+                .unsafeAppend(" WHERE Container = ? AND OwnerObjectId ")
                 .add(c)
                 .append(objectIdInClause)
-                .append(")");
+                .unsafeAppend(")");
 
             new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
 
             SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
                 .append(getTinfoObject())
-                .append(" WHERE Container = ? AND OwnerObjectId ")
+                .unsafeAppend(" WHERE Container = ? AND OwnerObjectId ")
                 .add(c)
                 .append(objectIdInClause);
 
@@ -1212,7 +1212,7 @@ public class OntologyManager
         {
             SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
                 .append(getTinfoObject())
-                .append(" WHERE Container = ? AND ObjectId ")
+                .unsafeAppend(" WHERE Container = ? AND ObjectId ")
                 .add(c)
                 .append(objectIdInClause);
 
@@ -1982,10 +1982,10 @@ public class OntologyManager
                         .append(" (Name, DomainURI, Description, Container, Project, StorageTableName, StorageSchemaName, ModifiedBy, Modified, TemplateInfo, SystemFieldConfig)\n" +
                         "SELECT ?,?,?,?,?,?,?,CAST(NULL AS INT),CAST(NULL AS " + timestamp + "),?,?\n")
                         .addAll(ddIn.getName(), ddIn.getDomainURI(), ddIn.getDescription(), ddIn.getContainer(), ddIn.getProject(), ddIn.getStorageTableName(), ddIn.getStorageSchemaName(), templateJson, ddIn.getSystemFieldConfig())
-                .append("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").append(" WHERE x.DomainURI=? AND x.Project=?)\n")
+                .unsafeAppend("WHERE NOT EXISTS (SELECT * FROM ").append(getTinfoDomainDescriptor(),"x").unsafeAppend(" WHERE x.DomainURI=? AND x.Project=?)\n")
                 .add(ddIn.getDomainURI()).add(ddIn.getProject());
                 // belt and suspenders approach to avoiding constraint violation exception
-                insert.append(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
+                insert.unsafeAppend(" ON CONFLICT ON CONSTRAINT uq_domaindescriptor DO NOTHING");
                 int count;
                 try (var tx = expSchema.getScope().ensureTransaction())
                 {
@@ -2171,19 +2171,19 @@ public class OntologyManager
     {
         SQLFragment objectUriSql = new SQLFragment("SELECT ObjectURI FROM ")
                 .append(getTinfoObject(), "o")
-                .append(" WHERE ObjectId ");
+                .unsafeAppend(" WHERE ObjectId ");
         objectUriSql.append(objectIdClause);
 
         List<String> objectURIs = new SqlSelector(getExpSchema(), objectUriSql).getArrayList(String.class);
 
         SQLFragment sqlDeleteProperties = new SQLFragment("DELETE FROM ")
                 .append(getTinfoObjectProperty())
-                .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .unsafeAppend(" WHERE ObjectId IN (SELECT ObjectId FROM ")
                 .append(getTinfoObject())
-                .append(" WHERE Container = ? AND ObjectId ")
+                .unsafeAppend(" WHERE Container = ? AND ObjectId ")
                 .add(objContainer)
                 .append(objectIdClause)
-                .append(")");
+                .unsafeAppend(")");
 
         new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
@@ -2741,7 +2741,7 @@ public class OntologyManager
             if (null == (c = t.getColumn(p)))
                 continue;
             sql.append(comma).append(p);
-            values.append(comma).append("?");
+            values.append(comma).unsafeAppend("?");
             comma = ",";
             Parameter parameter = new Parameter(p, c.getJdbcType());
             values.add(parameter);
@@ -2750,12 +2750,12 @@ public class OntologyManager
             else if ("propertyuri".equals(p))
                 propertyuri = parameter;
         }
-        sql.append(", createdby, created, modifiedby, modified)\n");
+        sql.unsafeAppend(", createdby, created, modifiedby, modified)\n");
         values.append(", " + user.getUserId() + ", {fn now()}, " + user.getUserId() + ", {fn now()}");
         sql.append(values);
         if (ifNotExists)
         {
-            sql.append("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?)\n");
+            sql.unsafeAppend("\nWHERE NOT EXISTS (SELECT propertyid FROM exp.propertydescriptor WHERE propertyuri=? AND container=?)\n");
             sql.add(propertyuri).add(container);
         }
         return new ParameterMapStatement(t.getSchema().getScope(), conn, sql, null);

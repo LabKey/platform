@@ -68,7 +68,7 @@ public class ShortURLServiceImpl implements ShortURLService
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
-        sql.append(" WHERE LOWER(ShortURL) = LOWER(?)");
+        sql.unsafeAppend(" WHERE LOWER(ShortURL) = LOWER(?)");
         sql.add(shortURL);
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getObject(ShortURLRecord.class);
     }
@@ -79,7 +79,7 @@ public class ShortURLServiceImpl implements ShortURLService
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(CoreSchema.getInstance().getTableInfoShortURL(), "s");
-        sql.append(" ORDER BY LOWER(ShortURL)");
+        sql.unsafeAppend(" ORDER BY LOWER(ShortURL)");
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);
     }
 

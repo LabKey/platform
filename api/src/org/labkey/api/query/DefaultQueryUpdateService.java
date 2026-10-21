@@ -706,12 +706,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (null != getObjectUriColumn())
         {
             SQLFragment lsids = new SQLFragment()
-                    .append("SELECT t.").append(getObjectUriColumn().getColumnName())
-                    .append(" FROM ").append(getDbTable(), "t")
-                    .append(" WHERE t.").append(getObjectUriColumn().getColumnName()).append(" IS NOT NULL");
+                    .unsafeAppend("SELECT t.").append(getObjectUriColumn().getColumnName())
+                    .unsafeAppend(" FROM ").append(getDbTable(), "t")
+                    .unsafeAppend(" WHERE t.").append(getObjectUriColumn().getColumnName()).unsafeAppend(" IS NOT NULL");
             if (null != getDbTable().getColumn("container"))
             {
-                lsids.append(" AND t.Container = ?");
+                lsids.unsafeAppend(" AND t.Container = ?");
                 lsids.add(container.getId());
             }
 

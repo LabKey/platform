@@ -30,6 +30,6 @@ public class QDistinct extends QNode
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" DISTINCT ");
+        builder.unsafeAppend(" DISTINCT ");
     }
 }

@@ -295,9 +295,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         TableInfo mapTi = ExperimentService.get().getTinfoMaterialAliasMap();
         TableInfo ti = ExperimentService.get().getTinfoAlias();
         SQLFragment sql = new SQLFragment()
-                .append("SELECT a.name FROM ").append(mapTi, "m")
-                .append(" JOIN ").append(ti, "a")
-                .append(" ON m.alias = a.RowId WHERE m.lsid = ? ");
+                .unsafeAppend("SELECT a.name FROM ").append(mapTi, "m")
+                .unsafeAppend(" JOIN ").append(ti, "a")
+                .unsafeAppend(" ON m.alias = a.RowId WHERE m.lsid = ? ");
         sql.add(getLSID());
         ArrayList<String> aliases = new SqlSelector(mapTi.getSchema(), sql).getArrayList(String.class);
         return Collections.unmodifiableList(aliases);

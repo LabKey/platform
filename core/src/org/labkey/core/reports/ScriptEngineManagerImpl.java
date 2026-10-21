@@ -111,9 +111,9 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
             // fetch script engine definitions scoped to the container
             SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngines(), "")
-                .append(" WHERE RowId IN (SELECT EngineId FROM ")
+                .unsafeAppend(" WHERE RowId IN (SELECT EngineId FROM ")
                 .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                .append(" WHERE Container = ? AND EngineContext = ?)")
+                .unsafeAppend(" WHERE Container = ? AND EngineContext = ?)")
                 .add(containerId)
                 .add(context);
 
@@ -431,7 +431,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
                 SQLFragment sql = new SQLFragment("SELECT EngineId FROM ")
                         .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                        .append(" WHERE Container = ? AND EngineContext = ?")
+                        .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                         .add(container)
                         .add(context);
 
@@ -439,7 +439,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment insert = new SQLFragment("INSERT INTO ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
+                            .unsafeAppend(" (EngineId, Container, EngineContext) VALUES(?,?,?)")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -450,8 +450,8 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
                 {
                     SQLFragment update = new SQLFragment("UPDATE ")
                             .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                            .append(" SET EngineId = ? ")
-                            .append(" WHERE Container = ? AND EngineContext = ?")
+                            .unsafeAppend(" SET EngineId = ? ")
+                            .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                             .add(def.getRowId())
                             .add(container)
                             .add(context);
@@ -473,7 +473,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
 
             SQLFragment sql = new SQLFragment("DELETE FROM ")
                     .append(CoreSchema.getInstance().getTableInfoReportEngineMap(), "")
-                    .append(" WHERE Container = ? AND EngineContext = ?")
+                    .unsafeAppend(" WHERE Container = ? AND EngineContext = ?")
                     .add(container)
                     .add(context);
 

@@ -73,7 +73,7 @@ public class QTable implements QJoinOrTable
         _table.appendSource(builder);
         if (_alias != null)
         {
-            builder.append(" AS ");
+            builder.unsafeAppend(" AS ");
             _alias.appendSource(builder);
         }
     }

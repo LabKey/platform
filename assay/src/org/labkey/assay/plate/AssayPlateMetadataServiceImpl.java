@@ -494,10 +494,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 DbScope scope = AssayDbSchema.getInstance().getScope();
 
                 SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
-                        .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
-                        .append(" ON AR.dataid = ED.rowid")
-                        .append(" WHERE ED.runId = ? ").add(run.getRowId())
-                        .append(" AND ")
+                        .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
+                        .unsafeAppend(" ON AR.dataid = ED.rowid")
+                        .unsafeAppend(" WHERE ED.runId = ? ").add(run.getRowId())
+                        .unsafeAppend(" AND ")
                         .appendNotInClause("AR.plate", prevPlateRowIDs, scope.getSqlDialect());
 
                 List<Long> rowIds = new SqlSelector(scope, sql).getArrayList(Long.class);
@@ -1713,12 +1713,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     if (prevRun != null)
                     {
                         SQLFragment sql = new SQLFragment("SELECT AR.rowId FROM ").append(resultsTable, "AR")
-                                .append(" JOIN ").append(AssayDbSchema.getInstance().getTableInfoHit(), "HT")
-                                .append(" ON AR.welllsid = HT.welllsid")
-                                .append(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
-                                .append(" ON AR.dataid = ED.rowid")
-                                .append(" WHERE HT.runId = ? ").add(prevRun.getRowId())
-                                .append(" AND ED.runId = ? ").add(_run.getRowId());
+                                .unsafeAppend(" JOIN ").append(AssayDbSchema.getInstance().getTableInfoHit(), "HT")
+                                .unsafeAppend(" ON AR.welllsid = HT.welllsid")
+                                .unsafeAppend(" JOIN ").append(ExperimentService.get().getTinfoData(), "ED")
+                                .unsafeAppend(" ON AR.dataid = ED.rowid")
+                                .unsafeAppend(" WHERE HT.runId = ? ").add(prevRun.getRowId())
+                                .unsafeAppend(" AND ED.runId = ? ").add(_run.getRowId());
                         List<Long> rowIds = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql).getArrayList(Long.class);
                         if (!rowIds.isEmpty())
                             PlateManager.get().markHits(_container, _user, _protocol.getRowId(), true, rowIds, null);

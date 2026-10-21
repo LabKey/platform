@@ -155,16 +155,16 @@ public class UpgradeUtils
         }
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT ");
+        sql.unsafeAppend("SELECT DISTINCT ");
         sql.append(selectColumns);
-        sql.append(" FROM ");
+        sql.unsafeAppend(" FROM ");
         sql.append(table, "t");
 
         String where = " WHERE ";
 
         if (filter != null)
         {
-            sql.append(" ");
+            sql.unsafeAppend(" ");
             sql.append(filter.getSQLFragment(table, "t"));
             where = " AND ";
         }
@@ -173,12 +173,12 @@ public class UpgradeUtils
         {
             sql.append(where);
             sql.appendIdentifier(column.getSelectIdentifier());
-            sql.append(" IS NOT NULL");
+            sql.unsafeAppend(" IS NOT NULL");
         }
 
-        sql.append(" GROUP BY Container, ");
+        sql.unsafeAppend(" GROUP BY Container, ");
         sql.append(groupBy);
-        sql.append(" HAVING COUNT(*) > 1");
+        sql.unsafeAppend(" HAVING COUNT(*) > 1");
 
         final List<SimpleFilter> filters = new LinkedList<>();
 

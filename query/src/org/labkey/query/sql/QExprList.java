@@ -42,7 +42,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
     protected void appendSql(SqlBuilder builder, Query query, boolean parens)
     {
         if (parens)
-            builder.append("(");
+            builder.unsafeAppend("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -51,7 +51,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
         }
         builder.popPrefix();
         if (parens)
-            builder.append(")");
+            builder.unsafeAppend(")");
     }
 
     @Override
@@ -63,7 +63,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
     protected void appendSource(SourceBuilder builder, boolean parens)
     {
         if (parens)
-            builder.append("(");
+            builder.unsafeAppend("(");
         builder.pushPrefix("");
         for (QNode child : children())
         {
@@ -72,7 +72,7 @@ public class QExprList extends QExpr implements SupportsAnnotations
         }
         builder.popPrefix();
         if (parens)
-            builder.append(")");
+            builder.unsafeAppend(")");
     }
 
     @Override
