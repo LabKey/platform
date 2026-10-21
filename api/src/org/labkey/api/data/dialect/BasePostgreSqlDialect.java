@@ -46,6 +46,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
+import org.postgresql.core.BaseConnection;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -58,9 +59,12 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 
 // Base dialect for PostgreSQL AND Redshift. IMPORTANT: Make sure everything added here applies to Redshift as well;
 // if not, put it in PostgreSql92Dialect.
@@ -103,43 +107,50 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
     }
 
     @Override
-    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
     {
         // Run the cancel on our own connection; the target connection belongs to the thread we're interrupting.
         String function = terminate ? "pg_terminate_backend" : "pg_cancel_backend";
 
-        try (Connection conn = scope.getPooledConnection())
+        // Unpooled, since an exhausted pool is when a cancel is most needed and borrowing would wait out maxWaitMillis.
+        // pgjdbc waits forever to log in by default, and the request timeout sweep waits on this.
+        Properties props = new Properties();
+        props.setProperty("loginTimeout", "5");
+        props.setProperty("socketTimeout", "5");
+        try (Connection conn = scope.getUnpooledConnection(props))
         {
             // Spring's translator would hand back a DataAccessException, which the per-connection catch below can't narrow on
             SqlExecutor executor = new SqlExecutor(scope, conn).setExceptionFramework(ExceptionFramework.JDBC);
-            for (ConnectionWrapper connection : connections)
-            {
-                Integer spid = connection.getSPID();
-
-                // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
-                // may have handed that physical connection, and this SPID, straight back out to someone else
-                if (!connection.isAllocated())
+            signaller.accept(() -> {
+                for (ConnectionWrapper connection : connections)
                 {
-                    LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
-                    continue;
-                }
+                    Integer spid = connection.getSPID();
 
-                try
-                {
-                    // Reports an already-exited backend by returning false, not by throwing
-                    boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
-
-                    if (!signalled)
+                    // Re-check as late as possible: if the thread let go while we were getting the connection above, the pool
+                    // may have handed that physical connection, and this SPID, straight back out to someone else
+                    if (!connection.isAllocated())
                     {
-                        // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
-                        LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        LOG.debug("Skipping {}({}); the thread released that connection first", function, spid);
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Reports an already-exited backend by returning false, not by throwing
+                        boolean signalled = executor.executeWithResults(new SQLFragment("SELECT " + function + "(?)", spid), (rs, c) -> rs.next() && rs.getBoolean(1));
+
+                        if (!signalled)
+                        {
+                            // A cancel losing the race to the query finishing is routine; a terminate finding nothing means we're out of options
+                            LOG.log(terminate ? Level.WARN : Level.DEBUG, "{}({}) found no such backend", function, spid);
+                        }
+                    }
+                    catch (RuntimeSQLException e)
+                    {
+                        LOG.warn("{}({}) failed", function, spid, e);
                     }
                 }
-                catch (RuntimeSQLException e)
-                {
-                    LOG.warn("{}({}) failed", function, spid, e);
-                }
-            }
+            });
         }
         catch (SQLException e)
         {
@@ -147,6 +158,34 @@ public abstract class BasePostgreSqlDialect extends SqlDialect
         }
 
         return true;
+    }
+
+    @Override
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        Set<ConnectionWrapper> signalled = new HashSet<>();
+        for (ConnectionWrapper connection : connections)
+        {
+            // Same reuse race as cancelQueries(): don't signal a session the pool may have handed to someone else
+            if (!connection.isAllocated())
+                continue;
+
+            // The driver's cancel request opens its own socket and authenticates with the session's secret key
+            if (connection.getPhysicalConnection() instanceof BaseConnection pgConnection)
+            {
+                try
+                {
+                    pgConnection.cancelQuery();
+                    signalled.add(connection);
+                }
+                catch (SQLException e)
+                {
+                    LOG.warn("Cancel request for SPID {} failed", connection.getSPID(), e);
+                }
+            }
+        }
+
+        return signalled;
     }
 
     @Override

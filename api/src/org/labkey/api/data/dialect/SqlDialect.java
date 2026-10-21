@@ -100,7 +100,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -410,7 +412,7 @@ public abstract class SqlDialect
         if (null == sqlState)
             return false;
         return sqlState.equals("57014") || // Postgres
-               sqlState.equalsIgnoreCase("HY000") || sqlState.equalsIgnoreCase("HY008"); // SQLServer
+               sqlState.equalsIgnoreCase("HY008"); // SQLServer
     }
 
     /** Connection failures (class 08) and Postgres shutdown, crash, or failover (57P*) */
@@ -1600,7 +1602,32 @@ public abstract class SqlDialect
      */
     public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate)
     {
+        return cancelQueries(scope, connections, terminate, Runnable::run);
+    }
+
+    /**
+     * Like {@link #cancelQueries(DbScope, Collection, boolean)}, but only the signalling runs through {@code signaller},
+     * so a caller can hold a lock for that without also holding it while the dialect connects
+     */
+    public boolean cancelQueries(DbScope scope, Collection<ConnectionWrapper> connections, boolean terminate, Consumer<Runnable> signaller)
+    {
         return false;
+    }
+
+    /**
+     * Like a {@link #cancelQueries} cancel, but signals each session without opening a database connection.
+     * @return the connections it signalled; the caller should fall back to {@link #cancelQueries} for the rest
+     */
+    public Set<ConnectionWrapper> cancelQueriesViaOwningConnection(Collection<ConnectionWrapper> connections)
+    {
+        return connections.stream()
+            .filter(c -> c.isAllocated() && c.cancelOpenStatements())
+            .collect(Collectors.toSet());
+    }
+
+    /** Add driver settings this dialect wants by default; leave any the data source already sets */
+    public void addDefaultConnectionProperties(Properties props)
+    {
     }
 
     public boolean updateStatistics(TableInfo table)

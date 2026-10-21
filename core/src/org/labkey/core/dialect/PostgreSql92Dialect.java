@@ -68,6 +68,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -133,6 +134,14 @@ abstract class PostgreSql92Dialect extends BasePostgreSqlDialect
     public void setServerType(PostgreSqlServerType serverType)
     {
         _serverType = serverType;
+    }
+
+    @Override
+    public void addDefaultConnectionProperties(Properties props)
+    {
+        // The read-only timeout sweep sends cancels while holding up the request's exit,
+        // so don't wait out pgjdbc's 10 s default on an unreachable database
+        props.putIfAbsent("cancelSignalTimeout", "2");
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
