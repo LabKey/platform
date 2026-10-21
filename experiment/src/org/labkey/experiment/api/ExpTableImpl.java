@@ -438,7 +438,7 @@ abstract public class ExpTableImpl<C extends Enum>
         if (patterns != null)
         {
             SQLFragment condition = new SQLFragment();
-            condition.append("(");
+            condition.unsafeAppend("(");
             String separator = "";
             for (String pattern : patterns)
             {
@@ -449,16 +449,16 @@ abstract public class ExpTableImpl<C extends Enum>
                 // and in other cases we're passed a pattern that matches against all protocols of a given type
                 if (pattern.contains("%"))
                 {
-                    condition.append(" LIKE ?");
+                    condition.unsafeAppend(" LIKE ?");
                 }
                 else
                 {
-                    condition.append(" = ?");
+                    condition.unsafeAppend(" = ?");
                 }
                 condition.add(pattern);
                 separator = " OR ";
             }
-            condition.append(")");
+            condition.unsafeAppend(")");
             addCondition(condition);
         }
     }

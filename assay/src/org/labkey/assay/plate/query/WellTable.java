@@ -155,21 +155,21 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     {
         SQLFragment groupSql = new SQLFragment("SELECT WG.Name FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
-                .append(" INNER JOIN ")
+                .unsafeAppend(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
-                .append(" ON WG.RowId = WGP.WellGroupId ")
-                .append(" INNER JOIN ")
+                .unsafeAppend(" ON WG.RowId = WGP.WellGroupId ")
+                .unsafeAppend(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
-                .append(" ON P.RowId = WG.PlateId ")
-                .append(" WHERE P.AssayType = ?")
+                .unsafeAppend(" ON P.RowId = WG.PlateId ")
+                .unsafeAppend(" WHERE P.AssayType = ?")
                 .add(TsvPlateLayoutHandler.TYPE)
                 .append(" AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
-                .append(" AND WG.TypeName ").append(forReplicateGroup ? "=" : "!=").append(" ?")
+                .unsafeAppend(" AND WG.TypeName ").append(forReplicateGroup ? "=" : "!=").unsafeAppend(" ?")
                 .add(WellGroup.Type.REPLICATE.name());
 
         // The underlying schema allows for multiple well groups per well, however, as a "well group" column
         // we do not support having multiple values. Here we limit the query to return a single result.
-        return new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).append(")");
+        return new SQLFragment("(").append(getSqlDialect().limitRows(groupSql, 1)).unsafeAppend(")");
     }
 
     private void addSampleGroupColumn()
@@ -197,16 +197,16 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     private void addPositionColumn()
     {
         SQLFragment positionSql = new SQLFragment();
-        positionSql.append("(CASE");
+        positionSql.unsafeAppend("(CASE");
         for (int i=0; i < PositionImpl.ALPHABET.length; i++)
         {
-            positionSql.append("\n")
-                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(getSqlDialect().concatenate(".Row = ? THEN (?", "CAST("))
-                    .append(ExprColumn.STR_TABLE_ALIAS).append(".Col + 1 AS VARCHAR))")
+            positionSql.unsafeAppend("\n")
+                    .unsafeAppend("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(getSqlDialect().concatenate(".Row = ? THEN (?", "CAST("))
+                    .append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".Col + 1 AS VARCHAR))")
                     .add(i)
                     .add(PositionImpl.ALPHABET[i]);
         }
-        positionSql.append(" END)");
+        positionSql.unsafeAppend(" END)");
         var positionCol = new ExprColumn(this, Column.Position.fieldKey(), positionSql, JdbcType.VARCHAR);
         positionCol.setSortFieldKeys(List.of(Column.RowId.fieldKey()));
         positionCol.setUserEditable(false);
@@ -218,19 +218,19 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     {
         SQLFragment wellTypeSql = new SQLFragment("SELECT DISTINCT WG.TypeName FROM ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "WGP")
-                .append(" INNER JOIN ")
+                .unsafeAppend(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoWellGroup(), "WG")
-                .append(" ON WG.RowId = WGP.WellGroupId ")
-                .append(" INNER JOIN ")
+                .unsafeAppend(" ON WG.RowId = WGP.WellGroupId ")
+                .unsafeAppend(" INNER JOIN ")
                 .append(AssayDbSchema.getInstance().getTableInfoPlate(), "P")
-                .append(" ON P.RowId = WG.PlateId ")
+                .unsafeAppend(" ON P.RowId = WG.PlateId ")
                 .append(" WHERE P.AssayType = ? AND WG.TypeName != ? AND WGP.WellId = " + STR_TABLE_ALIAS + ".RowId")
                 .add(TsvPlateLayoutHandler.TYPE)
                 .add(WellGroup.Type.REPLICATE);
 
         // The underlying schema allows for multiple well groups per well, however, as a "well type" column
         // we do not support having multiple values. Here we limit the query to return a single result.
-        wellTypeSql = new SQLFragment("(").append(getSqlDialect().limitRows(wellTypeSql, 1)).append(")");
+        wellTypeSql = new SQLFragment("(").append(getSqlDialect().limitRows(wellTypeSql, 1)).unsafeAppend(")");
 
         var column = new ExprColumn(this, Column.Type.fieldKey(), wellTypeSql, JdbcType.VARCHAR);
         column.setFk(new QueryForeignKey(getUserSchema().getTable(WellGroupTypeTable.NAME), null, null));
@@ -332,11 +332,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(SELECT * FROM (SELECT ");
+        sql.unsafeAppend("(SELECT * FROM (SELECT ");
         String delim = "";
         for (String col : baseColumns)
         {
-            sql.append(delim).append("d.").append(col);
+            sql.append(delim).unsafeAppend("d.").append(col);
             delim = ", ";
         }
 
@@ -345,20 +345,20 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             sql.append(delim).append(wellProperties.getColumn(col).getValueSql("p"));
         }
 
-        sql.append(" FROM ").append(_rootTable, "d");
+        sql.unsafeAppend(" FROM ").append(_rootTable, "d");
 
         if (!provisionedColumns.isEmpty())
         {
-            sql.append(" INNER JOIN ").append(wellProperties, "p").append(" ON d.lsid = p.lsid");
+            sql.unsafeAppend(" INNER JOIN ").append(wellProperties, "p").unsafeAppend(" ON d.lsid = p.lsid");
         }
         String subAlias = getSqlDialect().truncate(alias + "_wp_sub", 0);
-        sql.append(") ").appendIdentifier(subAlias);
-        sql.append("\n");
+        sql.unsafeAppend(") ").appendIdentifier(subAlias);
+        sql.unsafeAppend("\n");
 
         // add the WHERE clause
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
-        sql.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        sql.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return sql;
     }

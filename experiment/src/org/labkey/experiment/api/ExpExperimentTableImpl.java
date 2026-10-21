@@ -129,7 +129,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         {
             SQLFragment existsSql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
             existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-            existsSql.append(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+            existsSql.unsafeAppend(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).unsafeAppend(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).unsafeAppend(".RowId)");
 
             sql = getSqlDialect().wrapBooleanExpression(existsSql);
         }
@@ -205,18 +205,18 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 "\nAND exp.runlist.experimentid = " + ExprColumn.STR_TABLE_ALIAS + ".rowid");
         if (parentProtocol != null)
         {
-            sql.append("\nAND exp.experimentrun.protocollsid = ");
+            sql.unsafeAppend("\nAND exp.experimentrun.protocollsid = ");
             sql.appendValue(parentProtocol.getLSID());
         }
         if (childProtocol != null)
         {
-            sql.append("\nAND exp.experimentrun.rowid IN" +
+            sql.unsafeAppend("\nAND exp.experimentrun.rowid IN" +
                     "\n(SELECT exp.protocolapplication.runid" +
                     "\nFROM exp.protocolapplication WHERE exp.protocolapplication.protocollsid = ");
             sql.appendValue(childProtocol.getLSID());
-            sql.append(")");
+            sql.unsafeAppend(")");
         }
-        sql.append(")");
+        sql.unsafeAppend(")");
         return new ExprColumn(this, alias, sql, JdbcType.INTEGER);
     }
 

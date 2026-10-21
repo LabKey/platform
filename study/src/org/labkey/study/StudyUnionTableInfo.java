@@ -99,7 +99,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
         SqlDialect d = getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
         int count = 0;
-        String unionAll = "";
+        var unionAll = SQLFragment.sep("", ") UNION ALL\n(");
 
         Set<PropertyDescriptor> sharedProperties = _study.getSharedProperties();
 
@@ -109,19 +109,19 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
-            sqlf.append(unionAll);
-            sqlf.append("SELECT ");
-            sqlf.appendValue(def.getEntityId(), d).append(" AS dataset, ");
-            sqlf.appendValue(def.getDatasetId()).append(" AS datasetid");
+            sqlf.append(unionAll.next());
+            sqlf.unsafeAppend("SELECT ");
+            sqlf.appendValue(def.getEntityId(), d).unsafeAppend(" AS dataset, ");
+            sqlf.appendValue(def.getDatasetId()).unsafeAppend(" AS datasetid");
 
             String visitPropertyName = def.getVisitDateColumnName();
             ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);
             if (null != visitPropertyName && (null == visitColumn || visitColumn.getJdbcType() != JdbcType.TIMESTAMP))
                 LogManager.getLogger(StudySchema.class).info("Could not find visit column of correct type '{}' in dataset '{}'", visitPropertyName, def.getName());
             if (null != visitColumn && visitColumn.getJdbcType() == JdbcType.TIMESTAMP)
-                sqlf.append(", ").append(visitColumn.getValueSql("D")).append(" AS _visitdate");
+                sqlf.unsafeAppend(", ").append(visitColumn.getValueSql("D")).unsafeAppend(" AS _visitdate");
             else
-                sqlf.append(", ").append(NullColumnInfo.nullValue(getSqlDialect().getDefaultDateTimeDataType())).append(" AS _visitdate");
+                sqlf.unsafeAppend(", ").append(NullColumnInfo.nullValue(getSqlDialect().getDefaultDateTimeDataType())).unsafeAppend(" AS _visitdate");
 
             ColumnInfo dayColumn = ti.getColumn("day");
             if (null == dayColumn)
@@ -129,9 +129,9 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             if (null == dayColumn)
                 dayColumn = ti.getColumn("visit_day");
             if (null != dayColumn && dayColumn.getJdbcType() == JdbcType.INTEGER)
-                sqlf.append(", ").append(dayColumn.getValueSql("D")).append(" AS _visitday");
+                sqlf.unsafeAppend(", ").append(dayColumn.getValueSql("D")).unsafeAppend(" AS _visitday");
             else
-                sqlf.append(", ").append(NullColumnInfo.nullValue(JdbcType.INTEGER.name())).append(" AS _visitday");
+                sqlf.unsafeAppend(", ").append(NullColumnInfo.nullValue(JdbcType.INTEGER.name())).unsafeAppend(" AS _visitday");
 
             // Add all of the standard dataset columns
             for (String column : unionColumns)
@@ -144,13 +144,13 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                 {
                     SQLFragment containerSql = new SQLFragment();
                     containerSql.appendValue(def.getContainer(), d);
-                    containerSql.append(" AS container");
+                    containerSql.unsafeAppend(" AS container");
                     ci = new ExprColumn(this, "container", containerSql, JdbcType.GUID);
                 }
 
                 if (null == ci)
                     throw new RuntimeException("Schema consistency problem, column not found: " + def.getName() + "." + column);
-                sqlf.append(", ").append(ci.getValueSql("D"));
+                sqlf.unsafeAppend(", ").append(ci.getValueSql("D"));
             }
 
             // Add all of the properties that are common to all datasets
@@ -163,13 +163,13 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                     ColumnInfo col = ti.getColumn(pd.getName());
                     if (col != null)
                     {
-                        sqlf.append(", ").append(col.getValueSql("D"));
+                        sqlf.unsafeAppend(", ").append(col.getValueSql("D"));
                     }
                     else
                     {
                         // in at least Postgres, it isn't legal to union two columns where one is NULL and the other is
                         // numeric. It's OK when the other column is text.
-                        String empty;
+                        SQLFragment empty;
                         switch (pd.getJdbcType())
                         {
                             case BIGINT:
@@ -181,63 +181,62 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
                             case TIME:
                             case DATE:
                             case BOOLEAN:
-                                empty = "CAST(NULL AS " + getSqlDialect().getSqlTypeName(pd.getJdbcType()) + ")";
+                                empty = NullColumnInfo.nullValue(getSqlDialect().getSqlTypeName(pd.getJdbcType()));
                                 break;
                             default:
-                                empty = "NULL";
+                                empty = NullColumnInfo.nullValue(null);
                         }
 
-                        sqlf.append(", ").append(empty).append(" AS ").appendIdentifier(getSqlDialect().makeLegalIdentifier(pd.getName()));
+                        sqlf.unsafeAppend(", ").append(empty).unsafeAppend(" AS ").appendIdentifier(getSqlDialect().makeLegalIdentifier(pd.getName()));
                     }
                 }
             }
 
-            sqlf.append(" FROM ").append(ti, "D");
+            sqlf.unsafeAppend(" FROM ").append(ti, "D");
             if (def.isShared() && !_crossContainer)
             {
                 if (def.getDataSharingEnum() == DatasetDefinition.DataSharing.NONE)
                 {
-                    sqlf.append(" WHERE container=").appendValue(def.getContainer());
+                    sqlf.unsafeAppend(" WHERE container=").appendValue(def.getContainer());
                 }
                 else
                 {
-                    sqlf.append(" WHERE container=").appendValue(def.getContainer().getProject()).append(" AND ");
-                    sqlf.append(" participantid IN (select participantid from study.participant where container=").appendValue(def.getContainer()).append(")");
+                    sqlf.unsafeAppend(" WHERE container=").appendValue(def.getContainer().getProject()).unsafeAppend(" AND ");
+                    sqlf.unsafeAppend(" participantid IN (select participantid from study.participant where container=").appendValue(def.getContainer()).unsafeAppend(")");
                 }
             }
-            unionAll = ") UNION ALL\n(";
         }
 
         if (0 == count)
         {
-            sqlf.append("SELECT CAST(NULL AS " + getSqlDialect().getGuidType() + ") as dataset, 0 as datasetid");
+            sqlf.unsafeAppend("SELECT CAST(NULL AS ").append(getSqlDialect().getGuidTypeAsSql()).unsafeAppend(") as dataset, 0 as datasetid");
             for (String column : unionColumns)
             {
-                sqlf.append(", ");
+                sqlf.unsafeAppend(", ");
                 if ("qcstate".equalsIgnoreCase(column) || "sequencenum".equalsIgnoreCase(column) || "createdby".equalsIgnoreCase(column) || "modifiedby".equalsIgnoreCase(column))
-                    sqlf.append("0");
+                    sqlf.unsafeAppend("0");
                 else if ("participantid".equalsIgnoreCase(column) || "participantsequencenum".equalsIgnoreCase(column))
-                    sqlf.append("CAST(NULL as VARCHAR)");
+                    sqlf.unsafeAppend("CAST(NULL as VARCHAR)");
                 else if ("_visitdate".equalsIgnoreCase(column) || "modified".equalsIgnoreCase(column) || "created".equalsIgnoreCase(column))
-                    sqlf.append("CAST(NULL AS " + getSchema().getSqlDialect().getDefaultDateTimeDataType() + ")");
+                    sqlf.unsafeAppend("CAST(NULL AS ").append(getSchema().getSqlDialect().getDefaultDateTimeDataTypeAsSql()).unsafeAppend(")");
                 else if ("_visitday".equalsIgnoreCase(column))
                     sqlf.append(NullColumnInfo.nullValue(JdbcType.INTEGER.name()));
                 else if ("container".equalsIgnoreCase(column))
-                    sqlf.append("CAST('" + _study.getContainer().getId() + "' AS " + getSqlDialect().getGuidType() + ")");
+                    sqlf.unsafeAppend("CAST(").appendValue(_study.getContainer()).unsafeAppend(" AS ").append(getSqlDialect().getGuidTypeAsSql()).unsafeAppend(")");
                 else
-                    sqlf.append(" NULL");
-                sqlf.append(" AS " + column);
+                    sqlf.unsafeAppend(" NULL");
+                sqlf.unsafeAppend(" AS ").appendIdentifier(column);
             }
-            sqlf.append(" WHERE 0=1");
+            sqlf.unsafeAppend(" WHERE 0=1");
         }
 
         unionSql = new SQLFragment();
         unionSql.appendComment("<StudyUnionTableInfo>", getSchema().getSqlDialect());
         if (count > 1)
-            unionSql.append("(");
+            unionSql.unsafeAppend("(");
         unionSql.append(sqlf);
         if (count > 1)
-            unionSql.append(")");
+            unionSql.unsafeAppend(")");
         unionSql.appendComment("</StudyUnionTableInfo>", getSchema().getSqlDialect());
         makeColumnInfos(sharedProperties);
     }
@@ -264,7 +263,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             return getFromSQL(alias);
 
         int count = 0;
-        String unionAll = "";
+        var unionAll = SQLFragment.sep("", distinct ? ") UNION \n(" : ") UNION ALL\n(");
         SQLFragment sqlf = new SQLFragment();
         for (DatasetDefinition def : _defs)
         {
@@ -272,17 +271,13 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
             if (null == ti || (_user != null && !def.canRead(_user)))
                 continue;
             count++;
-            sqlf.append(unionAll);
-            sqlf.append("SELECT ParticipantId, SequenceNum FROM ").append(ti,  "_");
+            sqlf.append(unionAll.next());
+            sqlf.unsafeAppend("SELECT ParticipantId, SequenceNum FROM ").append(ti,  "_");
             if (def.isShared() && !_crossContainer)
             {
-                sqlf.append(" WHERE container=?");
+                sqlf.unsafeAppend(" WHERE container=?");
                 sqlf.add(def.getContainer());
             }
-            if (distinct)
-                unionAll = ") UNION \n(";
-            else
-                unionAll = ") UNION ALL\n(";
         }
         if (count == 0)
             return getFromSQL(alias);
@@ -292,21 +287,21 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 
         if (count > 1)
         {
-            unionSql.append("((");
+            unionSql.unsafeAppend("((");
             unionSql.append(sqlf);
-            unionSql.append(")) ").appendIdentifier(alias);
+            unionSql.unsafeAppend(")) ").appendIdentifier(alias);
         }
         else if (distinct)
         {
-            unionSql.append("(SELECT DISTINCT ParticipantId, SequenceNum FROM (");
+            unionSql.unsafeAppend("(SELECT DISTINCT ParticipantId, SequenceNum FROM (");
             unionSql.append(sqlf);
-            unionSql.append(" _u) ").appendIdentifier(alias);
+            unionSql.unsafeAppend(" _u) ").appendIdentifier(alias);
         }
         else
         {
-            unionSql.append("(");
+            unionSql.unsafeAppend("(");
             unionSql.append(sqlf);
-            unionSql.append(") ").appendIdentifier(alias);
+            unionSql.unsafeAppend(") ").appendIdentifier(alias);
         }
         unionSql.appendComment("</StudyUnionTableInfo>", getSchema().getSqlDialect());
         return unionSql;

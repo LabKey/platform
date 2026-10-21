@@ -33,23 +33,23 @@ public class QCase extends QExpr
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append(" CASE ");
+        builder.unsafeAppend(" CASE ");
         for (QNode child : children())
         {
             ((QExpr)child).appendSql(builder, query);
         }
-        builder.append("\nEND");
+        builder.unsafeAppend("\nEND");
     }
 
     @Override
     public void appendSource(SourceBuilder builder)
     {
-        builder.append(" CASE ");
+        builder.unsafeAppend(" CASE ");
         for (QNode child : children())
         {
             child.appendSource(builder);
         }
-        builder.append("\nEND");
+        builder.unsafeAppend("\nEND");
     }
 
     @Override

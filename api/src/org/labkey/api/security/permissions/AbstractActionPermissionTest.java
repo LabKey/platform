@@ -456,9 +456,11 @@ public abstract class AbstractActionPermissionTest extends Assert
 
     protected void assertNoPermission(Container c, PermissionCheckableAction action, User... users)
     {
+        // use POST by default, because MutableApiAction does not support GET and will throw BadRequestException
+        HttpUtil.Method method = supportedMethod(action, HttpUtil.Method.POST);
         for (User u : users)
         {
-            action.setViewContext(makeContext(u, c));
+            action.setViewContext(makeContext(u, c, method));
 
             try
             {
@@ -470,12 +472,6 @@ public abstract class AbstractActionPermissionTest extends Assert
                 // expected
             }
         }
-    }
-
-    private ViewContext makeContext(User u, Container c)
-    {
-        // use POST by default, because MutableApiAction does not support GET and will throw BadRequestException
-        return makeContext(u, c, HttpUtil.Method.POST);
     }
 
     private ViewContext makeContext(User u, Container c, final HttpUtil.Method method)

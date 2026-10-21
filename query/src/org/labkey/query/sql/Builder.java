@@ -16,6 +16,7 @@
 
 package org.labkey.query.sql;
 
+import com.google.errorprone.annotations.CompileTimeConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
@@ -103,6 +104,7 @@ public class Builder extends SQLFragment
         }
     }
 
+    @Deprecated
     @Override
     public Builder append(CharSequence cs)
     {
@@ -111,6 +113,17 @@ public class Builder extends SQLFragment
         appendPrefix();
         appendIndent();
         super.append(cs);
+        return this;
+    }
+
+    @Override
+    public Builder unsafeAppend(@CompileTimeConstant String str)
+    {
+        if (str == null || str.isEmpty())
+            return this;
+        appendPrefix();
+        appendIndent();
+        super.unsafeAppend(str);
         return this;
     }
 

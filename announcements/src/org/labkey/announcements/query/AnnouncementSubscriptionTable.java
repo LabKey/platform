@@ -85,9 +85,9 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
 
         SQLFragment sql = new SQLFragment("MessageId IN (SELECT RowId FROM ");
         sql.append(CommSchema.getInstance().getTableInfoAnnouncements(), "a");
-        sql.append(" WHERE ");
+        sql.unsafeAppend(" WHERE ");
         sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("a.Container")));
-        sql.append(")");
+        sql.unsafeAppend(")");
 
         addCondition(sql, FieldKey.fromParts("Container"));
 

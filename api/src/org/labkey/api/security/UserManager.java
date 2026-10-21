@@ -486,34 +486,34 @@ public class UserManager
         TableInfo uat = getUserAuditSchemaTableInfo();
         SQLFragment sql = new SQLFragment("SELECT COUNT(");
         sql.append(distinct ?  "DISTINCT uat.CreatedBy" : "*");
-        sql.append(") FROM ");
+        sql.unsafeAppend(") FROM ");
         sql.append(uat, "uat");
         if (excludeSystemUsers)
         {
-            sql.append(" INNER JOIN ");
+            sql.unsafeAppend(" INNER JOIN ");
             sql.append(CoreSchema.getInstance().getTableInfoUsersData(), "ud");
-            sql.append(" ON uat.CreatedBy = ud.UserId");
-            sql.append(" WHERE ud.System = ?");
+            sql.unsafeAppend(" ON uat.CreatedBy = ud.UserId");
+            sql.unsafeAppend(" WHERE ud.System = ?");
             sql.add(false);
         }
         else
         {
             // Make string concat easy
-            sql.append(" WHERE 1=1");
+            sql.unsafeAppend(" WHERE 1=1");
         }
 
-        sql.append(" AND uat.Comment LIKE ");
+        sql.unsafeAppend(" AND uat.Comment LIKE ");
         sql.appendStringLiteral("%" + UserAuditEvent.LOGGED_IN + "%", uat.getSqlDialect());
 
         if (apiKeyOnly)
         {
-            sql.append(" AND uat.Comment LIKE ");
+            sql.unsafeAppend(" AND uat.Comment LIKE ");
             sql.appendStringLiteral("%" + UserAuditEvent.API_KEY + "%", uat.getSqlDialect());
         }
 
         if (since != null)
         {
-            sql.append(" AND uat.Created >= ?");
+            sql.unsafeAppend(" AND uat.Created >= ?");
             sql.add(since);
         }
 

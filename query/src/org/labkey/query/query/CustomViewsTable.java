@@ -92,15 +92,15 @@ public class CustomViewsTable extends FilteredTable<QueryUserSchema>
         ColumnInfo flagsCol = getRealTable().getColumn("Flags");
         var hiddenCol = new ExprColumn(this, "Hidden",
                 new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_HIDDEN + ") != 0")
-                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
-                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                        .unsafeAppend(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .unsafeAppend(" ELSE ").append(getSqlDialect().getBooleanFALSE()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);
         addColumn(hiddenCol);
 
         var inheritableCol = new ExprColumn(this, "Inheritable",
                 new SQLFragment("(CASE WHEN (" + ExprColumn.STR_TABLE_ALIAS + ".Flags & " + QueryManager.FLAG_INHERITABLE + ") != 0")
-                        .append(" THEN ").append(getSqlDialect().getBooleanTRUE())
-                        .append(" ELSE ").append(getSqlDialect().getBooleanFALSE()).append(" END)"),
+                        .unsafeAppend(" THEN ").append(getSqlDialect().getBooleanTRUE())
+                        .unsafeAppend(" ELSE ").append(getSqlDialect().getBooleanFALSE()).unsafeAppend(" END)"),
                 JdbcType.BOOLEAN, flagsCol);
         addColumn(inheritableCol);
 

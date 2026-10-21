@@ -2171,9 +2171,9 @@ public class DataRegion extends DisplayElement
             ColumnInfo col = entry.getValue();
             SQLFragment selectSql = service.getSelectBuilder(table).columns(Collections.singletonList(col)).filter(pkFilter).queryLogging(queryLogging).buildSqlFragment();
 
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).append(" AS value FROM (");
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT ").appendIdentifier(col.getAlias()).unsafeAppend(" AS value FROM (");
             sql.append(selectSql);
-            sql.append(") AS D");
+            sql.unsafeAppend(") AS D");
 
             sql = table.getSqlDialect().limitRows(sql, 2);
 

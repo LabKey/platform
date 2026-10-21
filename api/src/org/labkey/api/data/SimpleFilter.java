@@ -484,9 +484,9 @@ public class SimpleFilter implements Filter
             {
                 sqlFragment.append(separator);
                 separator = _operation;
-                sqlFragment.append("(");
+                sqlFragment.unsafeAppend("(");
                 sqlFragment.append(clause.toSQLFragment(columnMap, dialect));
-                sqlFragment.append(")");
+                sqlFragment.unsafeAppend(")");
             }
             
             return sqlFragment;
@@ -593,9 +593,9 @@ public class SimpleFilter implements Filter
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
-            sqlFragment.append("NOT (");
+            sqlFragment.unsafeAppend("NOT (");
             sqlFragment.append(_clause.toSQLFragment(columnMap, dialect));
-            sqlFragment.append(")");
+            sqlFragment.unsafeAppend(")");
             return sqlFragment;
         }
 
@@ -816,7 +816,7 @@ public class SimpleFilter implements Filter
         private void handleEmptyParams(DatabaseIdentifier alias, SQLFragment in)
         {
             if (isIncludeNull())
-                in.appendIdentifier(alias).append(" IS ").append(isNegated() ? "NOT " : "").append("NULL");
+                in.appendIdentifier(alias).unsafeAppend(" IS ").append(isNegated() ? "NOT " : "").unsafeAppend("NULL");
             else
                 in.append(isNegated() ? "1 = 1" : "0 = 1");
         }
@@ -874,7 +874,7 @@ public class SimpleFilter implements Filter
             in.append(isIncludeNull() || isNegated() ? "((" : "(");
 
             if (isNegated())
-                in.append("NOT ");
+                in.unsafeAppend("NOT ");
 
             in.appendIdentifier(alias);
 
@@ -887,16 +887,16 @@ public class SimpleFilter implements Filter
             if (isIncludeNull())
             {
                 if (isNegated())
-                    in.append(") AND ").appendIdentifier(alias).append(" IS NOT NULL)");
+                    in.unsafeAppend(") AND ").appendIdentifier(alias).unsafeAppend(" IS NOT NULL)");
                 else
-                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
+                    in.unsafeAppend(") OR ").appendIdentifier(alias).unsafeAppend(" IS NULL)");
             }
             else
             {
                 if (isNegated())
-                    in.append(") OR ").appendIdentifier(alias).append(" IS NULL)");
+                    in.unsafeAppend(") OR ").appendIdentifier(alias).unsafeAppend(" IS NULL)");
                 else
-                    in.append(")");
+                    in.unsafeAppend(")");
             }
 
             return in;
@@ -922,8 +922,8 @@ public class SimpleFilter implements Filter
             joins.keySet().forEach(a -> aliasManager.claimAlias(a, a));
             String alias = aliasManager.decideAlias("_drive_");
 
-            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).append(" ").append(alias)
-                .append(" ON ").append(pkColumn.getValueSql(tableAlias)).append(" = ").append(alias).append(".Id");
+            SQLFragment join = new SQLFragment("INNER JOIN ").append(tempTable).unsafeAppend(" ").append(alias)
+                .unsafeAppend(" ON ").append(pkColumn.getValueSql(tableAlias)).unsafeAppend(" = ").append(alias).unsafeAppend(".Id");
             join.addTempToken(tempTable);
             joins.put(alias, join);
             return true;
@@ -1463,7 +1463,7 @@ public class SimpleFilter implements Filter
         for (FilterClause fc : _clauses)
         {
             ret.append(sAND);
-            ret.append("(");
+            ret.unsafeAppend("(");
             try
             {
                 ret.append(fc.toSQLFragment(tableAlias, columnMap, dialect));
@@ -1473,14 +1473,14 @@ public class SimpleFilter implements Filter
                 // Deal with unparseable filter values - see Issue 23321
                 if (e.getSQLException() instanceof SQLGenerationException)
                 {
-                    ret.append("0 = 1");
+                    ret.unsafeAppend("0 = 1");
                 }
                 else
                 {
                     throw e;
                 }
             }
-            ret.append(")");
+            ret.unsafeAppend(")");
             sAND = " AND ";
         }
 

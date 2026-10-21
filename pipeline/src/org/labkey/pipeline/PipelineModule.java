@@ -233,21 +233,21 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             Map<String, Long> jobCounts = new HashMap<>();
             SQLFragment jobSQL = new SQLFragment("SELECT COUNT(*) AS JobCount, COALESCE(Provider, 'Unknown') AS Provider FROM ");
             jobSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            jobSQL.append(" GROUP BY Provider");
+            jobSQL.unsafeAppend(" GROUP BY Provider");
 
             new SqlSelector(pipelineSchema, jobSQL).forEach(rs ->
                     jobCounts.put(rs.getString("Provider"), rs.getLong("JobCount")));
             result.put("jobCounts", jobCounts);
 
             Map<String, Map<String, Long>> triggerCounts = new HashMap<>();
-            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Enabled, ");
-            triggerSQL.append("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).append(" THEN 1 ELSE 0 END) AS Disabled, ");
-            triggerSQL.append("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
+            SQLFragment triggerSQL = new SQLFragment("SELECT SUM(CASE WHEN Enabled = ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Enabled, ");
+            triggerSQL.unsafeAppend("SUM(CASE WHEN Enabled != ").appendValue(true,dialect).unsafeAppend(" THEN 1 ELSE 0 END) AS Disabled, ");
+            triggerSQL.unsafeAppend("COUNT(sf.RowId) AS Jobs, COALESCE(PipelineId, 'Unknown') AS PipelineId FROM \n");
             triggerSQL.append(PipelineSchema.getInstance().getTableInfoTriggerConfigurations(), "tc");
-            triggerSQL.append(" LEFT OUTER JOIN \n");
+            triggerSQL.unsafeAppend(" LEFT OUTER JOIN \n");
             triggerSQL.append(PipelineSchema.getInstance().getTableInfoStatusFiles(), "sf");
-            triggerSQL.append(" ON tc.PipelineId = sf.TaskPipelineId\n");
-            triggerSQL.append(" GROUP BY PipelineId");
+            triggerSQL.unsafeAppend(" ON tc.PipelineId = sf.TaskPipelineId\n");
+            triggerSQL.unsafeAppend(" GROUP BY PipelineId");
 
             new SqlSelector(pipelineSchema, triggerSQL).forEach((rs) ->
                 {

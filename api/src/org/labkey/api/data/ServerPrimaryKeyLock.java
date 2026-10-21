@@ -43,14 +43,14 @@ public class ServerPrimaryKeyLock extends DbScope.ServerLock
         scope = t.getSchema().getScope();
         this.failIfRowNotFound = failIfRowNotFound;
 
-        forUpdate.append("\nWHERE ");
+        forUpdate.unsafeAppend("\nWHERE ");
         String and = " ";
         for (ColumnInfo pkColumn : pkColumns)
         {
             forUpdate.append(and);
-            forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).append("=?").add(pkValues[forUpdate.getParamsArray().length]);
+            forUpdate.appendIdentifier(pkColumn.getSelectIdentifier()).unsafeAppend("=?").add(pkValues[forUpdate.getParamsArray().length]);
         }
-        forUpdate.append("\nFOR UPDATE");
+        forUpdate.unsafeAppend("\nFOR UPDATE");
     }
 
     @Override

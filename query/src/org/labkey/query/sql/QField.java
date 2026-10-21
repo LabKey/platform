@@ -119,7 +119,7 @@ public class QField extends QInternalExpr
                 return;
             String message = "Unexpected error parsing field:" + getSourceText();
             _table.getParseErrors().add(new QueryParseException(message, null, getLine(), getColumn()));
-            builder.append("#ERROR: ").append(message).append("#");
+            builder.unsafeAppend("#ERROR: ").append(message).unsafeAppend("#");
             return;
         }
         builder.append(col.getValueSql());

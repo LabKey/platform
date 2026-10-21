@@ -110,17 +110,17 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         checkReadBeforeExecute();
         SQLFragment ret = new SQLFragment("(SELECT * FROM (SELECT rl.* FROM ");
         ret.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-        ret.append(", ");
+        ret.unsafeAppend(", ");
         ret.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
-        ret.append(", ");
+        ret.unsafeAppend(", ");
         ret.append(ExperimentServiceImpl.get().getTinfoExperiment(), "e");
         // Filter out hidden run groups
-        ret.append(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
+        ret.unsafeAppend(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
         ret.add(false);
         ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container")));
-        ret.append(") X ");
+        ret.unsafeAppend(") X ");
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        ret.append("\n").append(filterFrag).append(") ").appendIdentifier(alias);
+        ret.unsafeAppend("\n").append(filterFrag).unsafeAppend(") ").appendIdentifier(alias);
 
         return ret;
     }

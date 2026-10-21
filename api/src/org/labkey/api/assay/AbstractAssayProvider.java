@@ -1831,11 +1831,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         TableInfo runsTable = experimentService.getTinfoExperimentRun();
         List<Long> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(runsTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(", filePathRoot = ").appendValue(filePathRoot)
-                .append(" WHERE rowid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(", filePathRoot = ").appendValue(filePathRoot)
+                .unsafeAppend(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
         int updateRunsCount = new SqlExecutor(runsTable.getSchema()).execute(updateSql);
         // N.B. The name "runs" is used to extract data for creating a notification in the apps, so keep it in sync
@@ -1853,32 +1853,32 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // update Exp.Object where object.objecturi IN experimentrun.lsid
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
         updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(runsTable)
-                .append(" WHERE rowid ");
+                .unsafeAppend(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
-        updateSql.append(")");
+        updateSql.unsafeAppend(")");
         int expObjectCount = new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
 
         // update Exp.Object where object.objecturi IN exp.data.lsid
         TableInfo expDataTable = experimentService.getTinfoData();
         updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                 .append(expDataTable)
-                .append(" WHERE runid ");
+                .unsafeAppend(" WHERE runid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
-        updateSql.append(")");
+        updateSql.unsafeAppend(")");
         expObjectCount += new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
 
         // update Exp.Data
         updateSql = new SQLFragment("UPDATE ").append(expDataTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE runid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(" WHERE runid ");
         expDataTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
         int expDataCount = new SqlExecutor(expDataTable.getSchema()).execute(updateSql);
         updateCounts.put("expData", updateCounts.getOrDefault("expData", 0) + expDataCount);
@@ -1934,10 +1934,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // update exp.experiment
         SQLFragment updateExperimentSql = new SQLFragment("UPDATE ").append(experimentTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(", modified = ").appendValue(new Date())
+                .unsafeAppend(", modifiedby = ").appendValue(user.getUserId())
+                .unsafeAppend(" WHERE rowid ");
         experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateExperimentSql, runBatchIds);
         int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateExperimentSql);
         updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
@@ -2016,8 +2016,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         // update Exp.Object where object.objecturi IN batchLsids
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
         SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(" WHERE objecturi ");
+                .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                .unsafeAppend(" WHERE objecturi ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, batchLsids);
         int expObjectCount = new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
         updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
@@ -2244,11 +2244,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 TableInfo expDataTable = ExperimentService.get().getTinfoData();
                 TableInfo expObjectTable = OntologyManager.getTinfoObject();
                 SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
-                        .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                        .append(" WHERE objecturi IN ( SELECT lsid FROM ")
+                        .unsafeAppend(" SET container = ").appendValue(targetContainer.getEntityId())
+                        .unsafeAppend(" WHERE objecturi IN ( SELECT lsid FROM ")
                         .append(expDataTable)
-                        .append(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
-                updateSql.append(")");
+                        .unsafeAppend(" WHERE datafileurl = ").appendValue(FileUtil.pathToString(sourceFile.toPath()));
+                updateSql.unsafeAppend(")");
                 new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
 
                 fileContentService.fireFileMoveEvent(sourceFile.toPath(), updatedFile.toPath(), user, sourceContainer, targetContainer);
@@ -2256,10 +2256,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 var realTable = assayResultTable.getRealTable();
                 var realFileColumn = realTable.getColumn(fileField);
                 updateSql = new SQLFragment("UPDATE ").append(assayResultTable.getRealTable())
-                        .append(" SET ")
+                        .unsafeAppend(" SET ")
                         .appendIdentifier(realFileColumn.getSelectIdentifier())
-                        .append(" = ").appendValue(updatedFile.getAbsolutePath())
-                        .append(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
+                        .unsafeAppend(" = ").appendValue(updatedFile.getAbsolutePath())
+                        .unsafeAppend(" WHERE rowId ").appendInClause(fileMoveResultRowIds.get(sourceFileName), realTable.getSqlDialect());
                 new SqlExecutor(assayResultTable.getSchema()).execute(updateSql);
 
                 FileSystemAuditProvider.FileSystemAuditEvent event = new FileSystemAuditProvider.FileSystemAuditEvent(targetContainer, "File moved from " + sourceContainer.getPath() + " to " + targetContainer.getPath() + ".");

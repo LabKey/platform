@@ -80,18 +80,18 @@ public abstract class BaseFieldsTable extends FilteredTable<ExpSchema>
     {
         SQLFragment result = new SQLFragment();
         result.appendComment("<" + _tableName + ">", getSqlDialect());
-        result.append("(SELECT dd.Name AS DomainName, dd.DomainUri, pd.*");
+        result.unsafeAppend("(SELECT dd.Name AS DomainName, dd.DomainUri, pd.*");
 
         addColumnSQL(result);
 
-        result.append(" FROM ")
+        result.unsafeAppend(" FROM ")
             .append(super.getFromSQL("pd"))
-            .append("""
+            .unsafeAppend("""
 
                 JOIN exp.PropertyDomain AS pdom ON pdom.PropertyId = pd.PropertyId
                 JOIN exp.DomainDescriptor AS dd ON dd.DomainId = pdom.DomainId""");
 
-        result.append(")\n")
+        result.unsafeAppend(")\n")
             .appendIdentifier(alias)
             .appendComment("</" + _tableName + ">", getSqlDialect());
 

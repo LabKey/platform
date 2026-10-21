@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -108,15 +109,17 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
 
     // Formats integers as integers; everything else at four significant digits. That's not consistent with
     // formatSequenceNum(), but it's what we've always done when appending into SQL.
-    private static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
+    private static BigDecimal sqlSequenceNum(BigDecimal seqnum)
     {
         // Is seqnum an integer?
         if (seqnum.stripTrailingZeros().scale() <= 0)
-            seqnum = seqnum.setScale(0, RoundingMode.UNNECESSARY);
-        else
-            seqnum = seqnum.setScale(MAX_SCALE, RoundingMode.HALF_UP);
+            return seqnum.setScale(0, RoundingMode.UNNECESSARY);
+        return seqnum.setScale(MAX_SCALE, RoundingMode.HALF_UP);
+    }
 
-        return sb.append(seqnum.toPlainString());
+    private static StringBuilder appendSqlSequenceNum(StringBuilder sb, BigDecimal seqnum)
+    {
+        return sb.append(sqlSequenceNum(seqnum).toPlainString());
     }
 
 
@@ -129,6 +132,16 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
     public StringBuilder appendSqlSequenceNumMax(StringBuilder sb)
     {
         return appendSqlSequenceNum(sb, _sequenceMax);
+    }
+
+    public SQLFragment appendSqlSequenceNumMin(SQLFragment sql)
+    {
+        return sql.appendValue(sqlSequenceNum(_sequenceMin));
+    }
+
+    public SQLFragment appendSqlSequenceNumMax(SQLFragment sql)
+    {
+        return sql.appendValue(sqlSequenceNum(_sequenceMax));
     }
 
 
@@ -486,7 +499,9 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
 
             v = new VisitImpl(c, BigDecimal.ZERO, BigDecimal.valueOf(0.9999), "label", (Type)null);
             assertEquals("0", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("0", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("0.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("0.9999", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
             assertTrue(v.isInRange(BigDecimal.ZERO));
             assertTrue(v.isInRange(BigDecimal.valueOf(0.9999)));
             assertTrue(v.isInRange(BigDecimal.valueOf(0.5)));
@@ -498,23 +513,33 @@ public class VisitImpl extends AbstractStudyEntity<Integer, VisitImpl> implement
 
             v = new VisitImpl(c, BigDecimal.ONE, BigDecimal.valueOf(1.09999999999999999), "label", (Type)null);
             assertEquals("1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("1", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("1.1000", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("1.1000", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
 
             v = new VisitImpl(c, BigDecimal.valueOf(2), BigDecimal.valueOf(2.0099), "label", (Type)null);
             assertEquals("2", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("2", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("2.0099", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("2.0099", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
 
             v = new VisitImpl(c, BigDecimal.valueOf(3), BigDecimal.valueOf(3.0000999999), "label", (Type)null);
             assertEquals("3", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("3", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("3.0001", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("3.0001", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
 
             v = new VisitImpl(c, BigDecimal.valueOf(-1), "label", null);
             assertEquals("-1", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("-1", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("-1", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("-1", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
 
             v = new VisitImpl(c, BigDecimal.valueOf(12345678901.1234), BigDecimal.valueOf(99999999999.9999), "label", (Type)null);
             assertEquals("12345678901.1234", v.appendSqlSequenceNumMin(new StringBuilder()).toString());
+            assertEquals("12345678901.1234", v.appendSqlSequenceNumMin(new SQLFragment()).getRawSQL());
             assertEquals("99999999999.9999", v.appendSqlSequenceNumMax(new StringBuilder()).toString());
+            assertEquals("99999999999.9999", v.appendSqlSequenceNumMax(new SQLFragment()).getRawSQL());
         }
     }
 }
