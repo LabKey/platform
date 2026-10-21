@@ -1084,18 +1084,26 @@ public class OntologyManager
         if (!schema.getScope().equals(getExpSchema().getScope()))
             throw new UnsupportedOperationException("can only use with same DbScope");
 
-        SQLFragment sqlDeleteProperties = new SQLFragment();
-        sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
-                .append(" WHERE ObjectId IN (\n");
-        sqlDeleteProperties.append(objectIdSql);
-        sqlDeleteProperties.append(")");
-        new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
+        try
+        {
+            SQLFragment sqlDeleteProperties = new SQLFragment();
+            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
+                    .append(" WHERE ObjectId IN (\n");
+            sqlDeleteProperties.append(objectIdSql);
+            sqlDeleteProperties.append(")");
+            new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
-        SQLFragment sqlDeleteObjects = new SQLFragment();
-        sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (");
-        sqlDeleteObjects.append(objectIdSql);
-        sqlDeleteObjects.append(")");
-        return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+            SQLFragment sqlDeleteObjects = new SQLFragment();
+            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (");
+            sqlDeleteObjects.append(objectIdSql);
+            sqlDeleteObjects.append(")");
+            return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+        }
+        finally
+        {
+            // The deleted URIs aren't known here, and recreating one would otherwise reuse its deleted ObjectId
+            OBJECT_ID_CACHE.clear();
+        }
     }
 
 
@@ -3223,6 +3231,60 @@ public class OntologyManager
                 }
 
                 assertTrue(getPropertyObjects(c, childObjectLsid).isEmpty());
+            }
+            finally
+            {
+                deleteOntologyObjects(c, parentObjectLsid);
+            }
+        }
+
+        @Test
+        public void testDeleteByUriSqlClearsObjectIdCache() throws Exception
+        {
+            User user = TestContext.get().getUser();
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
+            String parentObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteParent").toString();
+            String childObjectLsid = new Lsid("Junit", "OntologyManager", "sqlDeleteChild").toString();
+            String intProp = new Lsid("Junit", "OntologyManager", "sqlDeleteIntProp").toString();
+            SQLFragment childUriSql = new SQLFragment("SELECT ObjectURI FROM ").append(getTinfoObject())
+                .append(" WHERE ObjectURI = ?").add(childObjectLsid);
+            DbScope scope = getExpSchema().getScope();
+
+            deleteOntologyObjects(c, parentObjectLsid);
+            try
+            {
+                // Insert then look up again in one transaction, so its commit leaves the ObjectId in the shared cache
+                long firstId;
+                try (Transaction tx = scope.ensureTransaction())
+                {
+                    firstId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                    assertEquals(firstId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                    tx.commit();
+                }
+
+                long secondId;
+                try (Transaction tx = scope.ensureTransaction())
+                {
+                    deleteOntologyObjects(getExpSchema(), childUriSql, c);
+                    assertNull(getOntologyObject(c, childObjectLsid));
+
+                    secondId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                    assertNotEquals(firstId, secondId);
+                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 1));
+                    tx.commit();
+                }
+
+                // Same without a transaction, where the delete must invalidate the shared cache directly
+                assertEquals(secondId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                deleteOntologyObjects(getExpSchema(), childUriSql, c);
+                long thirdId = ensureObject(c, childObjectLsid, parentObjectLsid);
+                assertNotEquals(secondId, thirdId);
+                insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 2));
+
+                OntologyObject child = getOntologyObject(c, childObjectLsid);
+                assertNotNull(child);
+                assertEquals(thirdId, child.getObjectId());
+                assertEquals(2, getProperties(c, childObjectLsid).get(intProp));
             }
             finally
             {
