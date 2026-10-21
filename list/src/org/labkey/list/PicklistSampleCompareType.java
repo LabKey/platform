@@ -66,7 +66,11 @@ public class PicklistSampleCompareType extends CompareType
         if (listTable == null)
             return new SimpleFilter.FalseClause();
 
-        return new PicklistSamplesClause(this, fieldKey, listName, container, listTable);
+        ColumnInfo sampleIdColumn = listTable.getColumn("SampleID");
+        if (sampleIdColumn == null)
+            return new SimpleFilter.FalseClause();
+
+        return new PicklistSamplesClause(this, fieldKey, listName, container, listTable, sampleIdColumn);
     }
 
     /** Filters to the picklist's samples with a subquery, so a large picklist isn't loaded into an IN list. */
@@ -81,14 +85,14 @@ public class PicklistSampleCompareType extends CompareType
         private final SQLFragment _picklistSql;
         private Set<Long> _sampleIds;
 
-        PicklistSamplesClause(CompareType compareType, FieldKey fieldKey, String listName, Container container, TableInfo listTable)
+        PicklistSamplesClause(CompareType compareType, FieldKey fieldKey, String listName, Container container, TableInfo listTable, ColumnInfo sampleIdColumn)
         {
             _compareType = compareType;
             _fieldKey = fieldKey;
             _listName = listName;
             _container = container;
             _listTable = listTable;
-            _sampleIdColumn = listTable.getColumn("SampleID");
+            _sampleIdColumn = sampleIdColumn;
             // The query table applies the picklist's container filter and permissions
             _picklistSql = QueryService.get().getSelectBuilder(listTable).columns(_sampleIdColumn).buildSqlFragment();
         }
