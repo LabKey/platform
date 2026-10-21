@@ -141,6 +141,7 @@ public class SQLFragment
         sql = "";
     }
 
+    @Deprecated
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
         if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
@@ -156,6 +157,7 @@ public class SQLFragment
     }
 
 
+    @Deprecated
     public SQLFragment(CharSequence sql, Object... params)
     {
         this(sql, Arrays.asList(params));
@@ -217,6 +219,17 @@ public class SQLFragment
     public static SQLFragment unsafe(@CompileTimeConstant String unsafe)
     {
         return new SQLFragment().setSqlUnsafe(unsafe);
+    }
+
+    public static SQLFragment unsafe(@CompileTimeConstant String unsafe, Object... params)
+    {
+        return unsafe(unsafe).addAll(params);
+    }
+
+    public static SQLFragment unsafe(@CompileTimeConstant String unsafe, @Nullable List<?> params)
+    {
+        SQLFragment ret = unsafe(unsafe);
+        return null == params ? ret : ret.addAll(params);
     }
 
 
@@ -474,6 +487,18 @@ public class SQLFragment
         return append(str);
     }
 
+    public SQLFragment unsafeAppend(@CompileTimeConstant String str, Object... params)
+    {
+        return unsafeAppend(str).addAll(params);
+    }
+
+    public SQLFragment unsafeAppend(@CompileTimeConstant String str, @Nullable List<?> params)
+    {
+        unsafeAppend(str);
+        return null == params ? this : addAll(params);
+    }
+
+    @Deprecated
     public SQLFragment append(CharSequence charseq)
     {
         if (null == charseq)
@@ -593,6 +618,7 @@ public class SQLFragment
     }
 
 
+    @Deprecated
     public SQLFragment append(CharSequence csq, int start, int end)
     {
         append(csq.subSequence(start, end));
@@ -848,19 +874,20 @@ public class SQLFragment
         return this;
     }
 
-    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull String separator)
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @CompileTimeConstant @NotNull String separator)
     {
-        String s = "";
-        for (SQLFragment fragment : fragments)
-        {
-            append(s);
-            s = separator;
-            append(fragment);
-        }
-        return this;
+        return append(fragments, sep("", separator, null));
     }
 
-    // return boolean so this can be used in an assert.  passing in a dialect is not ideal, but parsing comments out
+    /** Appends sep.next() before each fragment, then sep.last() */
+    public SQLFragment append(@NotNull Iterable<SQLFragment> fragments, @NotNull SqlSeparator sep)
+    {
+        for (SQLFragment fragment : fragments)
+            append(sep.next()).append(fragment);
+        return append(sep.last());
+    }
+
+    // return boolean so this can be used in an assert().  passing in a dialect is not ideal, but parsing comments out
     // before submitting the fragment is not reliable and holding statements & comments separately (to eliminate the
     // need to parse them) isn't particularly easy... so punt for now.
     public boolean appendComment(String comment, SqlDialect dialect)
@@ -1012,7 +1039,9 @@ public class SQLFragment
         tempTokens.addAll(sql.tempTokens);
     }
 
-    /** Insert into the SQL */
+    /** Insert into the SQL
+     * TODO @CompileTimeConstant
+     */
     public void insert(int index, String str)
     {
         if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
@@ -1265,6 +1294,19 @@ public class SQLFragment
     public static class UnitTestCase extends Assert
     {
         SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+
+        @Test
+        public void unsafeWithParams()
+        {
+            SQLFragment sql = SQLFragment.unsafe("SELECT a FROM b WHERE x = ?", 5)
+                .unsafeAppend(" AND y IN (?, ?)", List.of("p", "q"))
+                .unsafeAppend(" AND z = ?", "r");
+            assertEquals("SELECT a FROM b WHERE x = ? AND y IN (?, ?) AND z = ?", sql.getSQL());
+            assertEquals(List.of(5, "p", "q", "r"), sql.getParams());
+
+            assertEquals(List.of("s", "t"), SQLFragment.unsafe("?, ?", List.of("s", "t")).getParams());
+            assertTrue(SQLFragment.unsafe("x", (List<?>) null).getParams().isEmpty());
+        }
 
         @Test
         public void cte()
@@ -1651,6 +1693,23 @@ public class SQLFragment
             cond.append(terms.last());
             assertEquals("(x) AND (y) AND (z)", cond.getRawSQL());
             assertEquals(")", terms.last().getRawSQL());
+        }
+
+        @Test
+        public void testAppendIterable()
+        {
+            List<SQLFragment> parts = List.of(SQLFragment.unsafe("a = ?", 1), SQLFragment.unsafe("b = ?", 2));
+
+            SQLFragment joined = new SQLFragment().append(parts, " AND ");
+            assertEquals("a = ? AND b = ?", joined.getRawSQL());
+            assertEquals(List.of(1, 2), joined.getParams());
+
+            SQLFragment wrapped = SQLFragment.unsafe("SELECT * FROM t").append(parts, SQLFragment.sep(" WHERE (", ") AND (", ")"));
+            assertEquals("SELECT * FROM t WHERE (a = ?) AND (b = ?)", wrapped.getRawSQL());
+            assertEquals(List.of(1, 2), wrapped.getParams());
+
+            SQLFragment empty = SQLFragment.unsafe("SELECT * FROM t").append(List.of(), SQLFragment.sep(" WHERE (", ") AND (", ")"));
+            assertEquals("SELECT * FROM t", empty.getRawSQL());
         }
     }
 

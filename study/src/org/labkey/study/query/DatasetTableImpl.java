@@ -795,7 +795,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                     // don't use String.replaceAll(), $ is a special character (in 2nd parameter) and will throw
                     // NOTE: left deprecated new SQLFragment(CharSequence,...) to make this usage easy to find
                     String sql = Strings.CS.replace(temp.getRawSQL(), "ParticipantId", innerAlias + ".ParticipantId");
-                    frag = new SQLFragment(sql, temp.getParams());
+                    frag = new SQLFragment().setSqlUnsafe(sql).addAll(temp.getParams());
                 }
                 else
                 {

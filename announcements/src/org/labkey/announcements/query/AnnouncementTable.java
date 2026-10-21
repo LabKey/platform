@@ -24,6 +24,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
@@ -118,7 +119,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, getRequiredPermission(), "COALESCE(Parent, EntityId)", _userSchema.getUser());
+        return new SecureMessageBoardClause(getSchema(), filter, fieldKey, getRequiredPermission(), SQLFragment.unsafe("COALESCE(Parent, EntityId)"), _userSchema.getUser());
     }
 
     // A method rather than a field because the super constructor applies the container filter
