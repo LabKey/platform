@@ -16,14 +16,14 @@
 
 package org.labkey.api.data;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.collections.LongArrayList;
 import org.labkey.api.collections.ResultSetRowMapFactory;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
@@ -36,8 +36,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -508,7 +506,7 @@ public class DataRegionSelection
         var rgn = regionCtx.first;
         var rc = regionCtx.second;
 
-        try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
+        try (ResultSet rs = rgn.getResults(rc))
         {
             var selection = createSelectionSet(rc, rgn, rs, null);
             return setSelected(view.getViewContext(), key, selection, checked, false, true);
@@ -552,7 +550,7 @@ public class DataRegionSelection
             ctx.setBaseFilter(new SimpleFilter(pkCol.getFieldKey(), pkCol.isNumericType() ? selectedValues.stream().map(Integer::parseInt).toList() : selectedValues, CompareType.IN));
         }
 
-        try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
+        try (Results rs = rgn.getResults(ctx))
         {
             return createSelectionSet(ctx, rgn, rs, selectedValues);
         }
