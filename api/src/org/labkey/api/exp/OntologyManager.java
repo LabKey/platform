@@ -62,6 +62,7 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
@@ -139,6 +140,8 @@ public class OntologyManager
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<PropertyMapKey, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(PropertyMapKey.class, getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final BlockingCache<String, Long> OBJECT_ID_CACHE = DatabaseCache.get(String.class, getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
+    // Bulk deletes larger than this clear the object caches instead of removing each deleted URI
+    private static final int MAX_TARGETED_CACHE_REMOVALS = 1000;
     private static final Cache<ProjectUriKey, PropertyDescriptor> PROP_DESCRIPTOR_CACHE = DatabaseCache.get(ProjectUriKey.class, getExpSchema().getScope(), 40000, "Property descriptors", new CacheLoader<>()
     {
         @Override
@@ -1058,8 +1061,7 @@ public class OntologyManager
         finally
         {
             // deleteObject also deletes owned objects, whose URIs aren't known here
-            clearPropertyCache(c, Arrays.asList(uris), true);
-            OBJECT_ID_CACHE.clear();
+            uncacheDeletedObjects(c, Arrays.asList(uris), true);
         }
     }
 
@@ -1084,25 +1086,53 @@ public class OntologyManager
         if (!schema.getScope().equals(getExpSchema().getScope()))
             throw new UnsupportedOperationException("can only use with same DbScope");
 
+        // Capture the ObjectIds that will be deleted in a temp table
+        String tempTableName = "deleteObjects" + GUID.makeHash();
+        SQLFragment tempTable = new SQLFragment().appendIdentifier(DbSchema.getTemp().getName()).append(".").appendIdentifier(tempTableName);
+        SQLFragment targetIdSql = new SQLFragment("SELECT ObjectId FROM ").append(tempTable);
+        TempTableTracker tracker = TempTableTracker.track(tempTableName, targetIdSql);
+        List<PropertyMapKey> deletedKeys = new ArrayList<>();
         try
         {
-            SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
-                    .append(" WHERE ObjectId IN (\n");
-            sqlDeleteProperties.append(objectIdSql);
-            sqlDeleteProperties.append(")");
-            new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
+            // Run the caller's SQL once, since it can be an expensive union; INSERT matches its id column by position, not name
+            SqlExecutor executor = new SqlExecutor(getExpSchema());
+            executor.execute(new SQLFragment("CREATE TABLE ").append(tempTable).append(" (ObjectId BIGINT)"));
+            executor.execute(new SQLFragment("INSERT INTO ").append(tempTable).append(" (ObjectId) ").append(objectIdSql));
 
-            SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (");
-            sqlDeleteObjects.append(objectIdSql);
-            sqlDeleteObjects.append(")");
-            return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
+            SQLFragment deletedIdFilter = new SQLFragment(" WHERE ObjectId IN (").append(targetIdSql)
+                    .append(") OR OwnerObjectId IN (").append(targetIdSql).append(")");
+            // If it's not a huge number of objects being deleted, capture all of the IDs to do targeted cache clearing
+            new SqlSelector(getExpSchema(), new SQLFragment("SELECT ObjectURI, Container FROM ").append(getTinfoObject()).append(deletedIdFilter))
+                    .setMaxRows(MAX_TARGETED_CACHE_REMOVALS + 1)
+                    .forEach(rs -> deletedKeys.add(new PropertyMapKey(new GUID(rs.getString("Container")), rs.getString("ObjectURI"))));
+
+            try
+            {
+                executor.execute(new SQLFragment("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                        .append(getTinfoObject()).append(deletedIdFilter).append(")"));
+
+                // Owned objects first, excluding those that are also targets so the returned count covers only the targets
+                executor.execute(new SQLFragment("DELETE FROM ").append(getTinfoObject()).append(" WHERE OwnerObjectId IN (").append(targetIdSql)
+                        .append(") AND ObjectId NOT IN (").append(targetIdSql).append(")"));
+
+                return executor.execute(new SQLFragment("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (").append(targetIdSql).append(")"));
+            }
+            finally
+            {
+                if (deletedKeys.size() > MAX_TARGETED_CACHE_REMOVALS)
+                {
+                    PROPERTY_MAP_CACHE.clear();
+                    OBJECT_ID_CACHE.clear();
+                }
+                else
+                {
+                    uncacheDeletedObjects(deletedKeys, null);
+                }
+            }
         }
         finally
         {
-            // The deleted URIs aren't known here, and recreating one would otherwise reuse its deleted ObjectId
-            OBJECT_ID_CACHE.clear();
+            tracker.delete();
         }
     }
 
@@ -1123,8 +1153,7 @@ public class OntologyManager
         }
         finally
         {
-            clearPropertyCache(c, List.of(), true);
-            OBJECT_ID_CACHE.clear();
+            uncacheDeletedObjects(c, List.of(), true);
         }
     }
 
@@ -1203,8 +1232,7 @@ public class OntologyManager
             }
             finally
             {
-                clearPropertyCache(container, List.of(objectURI), deleteOwnedObjects);
-                OBJECT_ID_CACHE.clear();
+                uncacheDeletedObjects(container, List.of(objectURI), deleteOwnedObjects);
             }
         }
     }
@@ -2973,22 +3001,32 @@ public class OntologyManager
     }
 
     /**
-     * Removes deleted objects' property maps. Pass deletedUnknownUris when objects outside deletedUris were also
-     * deleted (owned children, or deletes by object id).
+     * Every exp.Object delete must call this, or a recreated URI reuses its deleted ObjectId or property map. Pass
+     * deletedUnknownUris when objects outside deletedUris were also deleted (owned children, or deletes by object id).
      */
-    private static void clearPropertyCache(Container c, Collection<String> deletedUris, boolean deletedUnknownUris)
+    private static void uncacheDeletedObjects(Container c, Collection<String> deletedUris, boolean deletedUnknownUris)
+    {
+        // Owned objects share their owner's container, so this covers deleted objects whose URIs aren't known
+        uncacheDeletedObjects(deletedUris.stream().map(uri -> getPropertyMapCacheKey(c, uri)).toList(),
+                deletedUnknownUris ? new ContainerPropertyMapKeys(c) : null);
+    }
+
+    private static void uncacheDeletedObjects(Collection<PropertyMapKey> deletedKeys, @Nullable ContainerPropertyMapKeys unknownDeletedKeys)
     {
         // Unlike a filter, remove() marks the key even when it isn't cached, so a deleting transaction never reads
         // a pre-delete map that another thread caches later
-        for (String uri : deletedUris)
+        for (PropertyMapKey key : deletedKeys)
         {
-            PROPERTY_MAP_CACHE.remove(getPropertyMapCacheKey(c, uri));
-            PROPERTY_MAP_CACHE.remove(getPropertyMapCacheKey(null, uri));
+            PROPERTY_MAP_CACHE.remove(key);
+            PROPERTY_MAP_CACHE.remove(getPropertyMapCacheKey(null, key.objectLSID()));
+            OBJECT_ID_CACHE.remove(key.objectLSID());
         }
 
-        // Owned objects share their owner's container, so this covers deleted objects whose URIs aren't known
-        if (deletedUnknownUris)
-            PROPERTY_MAP_CACHE.removeUsingFilter(new ContainerPropertyMapKeys(c));
+        if (unknownDeletedKeys != null)
+        {
+            PROPERTY_MAP_CACHE.removeUsingFilter(unknownDeletedKeys);
+            OBJECT_ID_CACHE.clear();
+        }
     }
 
     /** A record rather than a lambda so a transaction's equal post-commit removal tasks dedupe */
@@ -3239,7 +3277,7 @@ public class OntologyManager
         }
 
         @Test
-        public void testDeleteByUriSqlClearsObjectIdCache() throws Exception
+        public void testDeleteByUriSqlClearsObjectCaches() throws Exception
         {
             User user = TestContext.get().getUser();
             Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", user);
@@ -3259,36 +3297,53 @@ public class OntologyManager
                 {
                     firstId = ensureObject(c, childObjectLsid, parentObjectLsid);
                     assertEquals(firstId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 1));
                     tx.commit();
                 }
+                assertEquals(1, getProperties(c, childObjectLsid).get(intProp));
 
                 long secondId;
                 try (Transaction tx = scope.ensureTransaction())
                 {
                     deleteOntologyObjects(getExpSchema(), childUriSql, c);
                     assertNull(getOntologyObject(c, childObjectLsid));
+                    assertTrue(getProperties(c, childObjectLsid).isEmpty());
 
                     secondId = ensureObject(c, childObjectLsid, parentObjectLsid);
                     assertNotEquals(firstId, secondId);
-                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 1));
+                    insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 2));
                     tx.commit();
                 }
 
-                // Same without a transaction, where the delete must invalidate the shared cache directly
+                // Same without a transaction, where the delete must invalidate the shared caches directly
                 assertEquals(secondId, ensureObject(c, childObjectLsid, parentObjectLsid));
+                assertEquals(2, getProperties(c, childObjectLsid).get(intProp));
                 deleteOntologyObjects(getExpSchema(), childUriSql, c);
+                assertTrue(getProperties(c, childObjectLsid).isEmpty());
                 long thirdId = ensureObject(c, childObjectLsid, parentObjectLsid);
                 assertNotEquals(secondId, thirdId);
-                insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 2));
+                insertProperties(c, user, parentObjectLsid, new ObjectProperty(childObjectLsid, c, intProp, 3));
 
                 OntologyObject child = getOntologyObject(c, childObjectLsid);
                 assertNotNull(child);
                 assertEquals(thirdId, child.getObjectId());
-                assertEquals(2, getProperties(c, childObjectLsid).get(intProp));
+                assertEquals(3, getProperties(c, childObjectLsid).get(intProp));
+
+                // Deleting the owner also deletes and uncaches its owned child
+                SQLFragment parentUriSql = new SQLFragment("SELECT ObjectURI FROM ").append(getTinfoObject())
+                    .append(" WHERE ObjectURI = ?").add(parentObjectLsid);
+                assertEquals(1, deleteOntologyObjects(getExpSchema(), parentUriSql, c));
+                assertNull(getOntologyObject(c, parentObjectLsid));
+                assertNull(getOntologyObject(c, childObjectLsid));
+                assertTrue(getProperties(c, childObjectLsid).isEmpty());
+                assertNotEquals(thirdId, ensureObject(c, childObjectLsid, parentObjectLsid));
             }
             finally
             {
                 deleteOntologyObjects(c, parentObjectLsid);
+                PropertyDescriptor pd = getPropertyDescriptor(intProp, c);
+                if (pd != null)
+                    deletePropertyDescriptor(pd);
             }
         }
 
