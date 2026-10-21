@@ -1844,6 +1844,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         /** Copy every sample missing from the view, including any committed after a higher rowid was already copied. */
         void executeIncrementalInsert()
         {
+            // CTE is preferred over filtering the view's query directly as it can read from the (cpastype, rowid) index alone
             var d = CoreSchema.getInstance().getSchema().getSqlDialect();
             SQLFragment incremental = new SQLFragment()
                     .append("WITH added AS (SELECT rowid FROM exp.material em WHERE em.cpastype = ").appendValue(_lsid, d)
@@ -2578,7 +2579,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             AtomicBoolean releaseTimedOut = new AtomicBoolean();
             try (ExecutorService executor = Executors.newSingleThreadExecutor())
             {
-                // Saves like a XAR import, which takes no name-generator lock, so the main thread's insert won't wait on it
+                // Save without needing to take a name-generator lock, so the main thread's insert won't wait on it
                 Future<Long> lateCommit = executor.submit(() -> {
                     try (DbScope.Transaction tx = ExperimentServiceImpl.getExpSchema().getScope().ensureTransaction())
                     {
