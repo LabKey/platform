@@ -90,7 +90,7 @@ public class EncryptedPropertyStore extends AbstractPropertyStore implements Enc
     @Override
     protected void appendWhereFilter(SQLFragment sql)
     {
-        sql.append("NOT Encryption = ?");
+        sql.unsafeAppend("NOT Encryption = ?");
         sql.add(PropertyEncryption.None.toString());
     }
 

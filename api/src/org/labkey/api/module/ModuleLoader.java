@@ -2474,7 +2474,7 @@ public class ModuleLoader implements MemTrackerListener, ShutdownListener
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM ").
             append(getTableInfoModules(), "m").
-            append(" WHERE LOWER(Name) = LOWER(?)").
+            unsafeAppend(" WHERE LOWER(Name) = LOWER(?)").
             add(name);
         ModuleContext result = new SqlSelector(_core.getSchema(), sql).getObject(ModuleContext.class);
         if (result != null)

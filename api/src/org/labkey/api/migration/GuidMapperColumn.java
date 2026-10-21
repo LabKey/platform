@@ -36,10 +36,10 @@ public final class GuidMapperColumn extends WrappedColumn
         return new SQLFragment("CASE WHEN ")
             .append(columnAlias)
             .append(" LIKE '" + GUID.SQL_LIKE_GUID_PATTERN + "'")
-            .append(" THEN LOWER(")
+            .unsafeAppend(" THEN LOWER(")
             .append(columnAlias)
-            .append(") ELSE ")
+            .unsafeAppend(") ELSE ")
             .append(columnAlias)
-            .append(" END");
+            .unsafeAppend(" END");
     }
 }

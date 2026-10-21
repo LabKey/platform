@@ -187,9 +187,9 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
 
             SQLFragment inRangeSQL = new SQLFragment("CASE WHEN (");
             inRangeSQL.append(indicatorCol.getValueSql(tableAlias));
-            inRangeSQL.append(") IS NULL THEN (");
+            inRangeSQL.unsafeAppend(") IS NULL THEN (");
             inRangeSQL.append(numberCol.getValueSql(tableAlias));
-            inRangeSQL.append(") ELSE NULL END");
+            inRangeSQL.unsafeAppend(") ELSE NULL END");
             return inRangeSQL;
         }
 

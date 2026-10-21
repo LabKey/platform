@@ -47,7 +47,7 @@ public class IssueCommentType implements AttachmentParentType
 
         return new SQLFragment("SELECT EntityId, ")
             .append(table.getSqlDialect().concatenate("'Issue #'", "CAST(IssueId AS VARCHAR)"))
-            .append(" AS Description FROM ")
+            .unsafeAppend(" AS Description FROM ")
             .append(table, "comments");
     }
 }

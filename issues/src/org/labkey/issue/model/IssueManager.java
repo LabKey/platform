@@ -472,7 +472,7 @@ public class IssueManager
                     " ON AssignedTo = UserId\n" +
                     "WHERE Status in ('open', 'resolved') AND Container = ? ");
             params.add(c);
-            sql.append("GROUP BY DisplayName");
+            sql.unsafeAppend("GROUP BY DisplayName");
             sql.addAll(params);
 
             return new SqlSelector(_issuesSchema.getSchema(), sql).getMapCollection();
@@ -779,7 +779,7 @@ public class IssueManager
                     if (destIssueDef != null)
                     {
                         SQLFragment update = new SQLFragment("UPDATE issues.issues SET Container = ?, IssueDefId = ? ", dest, destIssueDef.getRowId());
-                        update.append("WHERE issueId ");
+                        update.unsafeAppend("WHERE issueId ");
                         schema.getSqlDialect().appendInClauseSql(update, issueIds);
                         new SqlExecutor(schema).execute(update);
 
@@ -787,7 +787,7 @@ public class IssueManager
                         // the same domain
                         TableInfo table = issueDef.createTable(user);
                         SQLFragment sql = new SQLFragment("UPDATE ").append(table, "").
-                                append("SET container = ? WHERE entityId ");
+                                unsafeAppend("SET container = ? WHERE entityId ");
                         sql.add(dest);
                         schema.getSqlDialect().appendInClauseSql(sql, entityIds);
 
@@ -968,10 +968,10 @@ public class IssueManager
 
         Container container = queue.getContainer();
         SQLFragment f = new SQLFragment();
-        f.append("SELECT I.issueId, I.container, I.entityid, I.duplicate, ")
-                .append("C.comment\n");
-        f.append("FROM issues.issues I \n")
-                .append("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n");
+        f.unsafeAppend("SELECT I.issueId, I.container, I.entityid, I.duplicate, ")
+                .unsafeAppend("C.comment\n");
+        f.unsafeAppend("FROM issues.issues I \n")
+                .unsafeAppend("LEFT OUTER JOIN issues.comments C ON I.issueid = C.issueid\n");
 
         for (Integer id : ids)
         {
@@ -1246,8 +1246,8 @@ public class IssueManager
 
         // get the list of comments for all issues being deleted (these are the attachment parents)
         SQLFragment commentsSQL = new SQLFragment("SELECT EntityId FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
-                append(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ?)");
+                unsafeAppend(" WHERE IssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                unsafeAppend(" WHERE IssueDefId = ?)");
         commentsSQL.add(issueDef.getRowId());
         new SqlSelector(IssuesSchema.getInstance().getSchema(), commentsSQL).forEach(String.class, entityId -> {
             CommentAttachmentParent parent = new CommentAttachmentParent(c.getId(), entityId);
@@ -1258,33 +1258,33 @@ public class IssueManager
 
         // clean up comments
         SQLFragment deleteCommentsSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoComments(), "").
-                append(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ? )");
+                unsafeAppend(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                unsafeAppend(" WHERE IssueDefId = ? )");
         deleteCommentsSQL.add(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteCommentsSQL);
 
         // clean up related issues
         SQLFragment deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
-                append(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ? )");
+                unsafeAppend(" WHERE IssueId IN (SELECT issueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                unsafeAppend(" WHERE IssueDefId = ? )");
         deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
         deleteRelatedSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoRelatedIssues(), "").
-                append(" WHERE RelatedIssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ? )");
+                unsafeAppend(" WHERE RelatedIssueId IN (SELECT IssueId FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
+                unsafeAppend(" WHERE IssueDefId = ? )");
         deleteRelatedSQL.addAll(issueDef.getRowId());
         new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteRelatedSQL);
 
         // delete records from the issue table
         SQLFragment deleteIssuesSQL = new SQLFragment("DELETE FROM ").append(IssuesSchema.getInstance().getTableInfoIssues(), "").
-                append(" WHERE IssueDefId = ?");
+                unsafeAppend(" WHERE IssueDefId = ?");
         deleteIssuesSQL.add(issueDef.getRowId());
         int count = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteIssuesSQL);
 
         // delete records from the provisioned table
         SQLFragment deleteProvisionedSQL = new SQLFragment("DELETE FROM ").append(issueDefTable, "").
-                append(" WHERE Container = ?");
+                unsafeAppend(" WHERE Container = ?");
         deleteProvisionedSQL.add(c);
         int count2 = new SqlExecutor(IssuesSchema.getInstance().getSchema()).execute(deleteProvisionedSQL);
 

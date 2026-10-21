@@ -119,7 +119,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
     @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
-        return new SQLFragment("NULL");
+        return SQLFragment.unsafe("NULL");
     }
 
     @Override

@@ -121,10 +121,10 @@ public abstract class AbstractPropertyStore implements PropertyStore
     {
         var setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectIdentifier();   // Keyword in some dialects
         SQLFragment deleteProps = new SQLFragment("DELETE FROM ").append(_prop.getTableInfoProperties().getSQLName())
-                .append(" WHERE ").appendIdentifier(setSelectName).append(" IN ")
-                .append("(SELECT ").appendIdentifier(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).append(" WHERE ObjectId = ? AND ").add(c);
+                .unsafeAppend(" WHERE ").appendIdentifier(setSelectName).unsafeAppend(" IN ")
+                .unsafeAppend("(SELECT ").appendIdentifier(setSelectName).unsafeAppend(" FROM ").append(_prop.getTableInfoPropertySets().getSQLName()).unsafeAppend(" WHERE ObjectId = ? AND ").add(c);
         appendWhereFilter(deleteProps);
-        deleteProps.append(")");
+        deleteProps.unsafeAppend(")");
         new SqlExecutor(_prop.getSchema()).execute(deleteProps);
 
         SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE ObjectId = ? AND ");
@@ -219,8 +219,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
         ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
         var setSelectName = setColumn.getSelectIdentifier();   // Keyword in some dialects
 
-        SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(setSelectName).append(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
-                .append(" WHERE UserId = ? AND ObjectId = ? AND Category = ?").addAll(user, container, category);
+        SQLFragment sql = new SQLFragment("SELECT ").appendIdentifier(setSelectName).unsafeAppend(", Encryption FROM ").append(_prop.getTableInfoPropertySets())
+                .unsafeAppend(" WHERE UserId = ? AND ObjectId = ? AND Category = ?").addAll(user, container, category);
 
         PropertySet propertySet = new SqlSelector(_prop.getSchema(), sql).getObject(PropertySet.class);
         if (propertySet == null)

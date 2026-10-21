@@ -333,13 +333,13 @@ public class WikiManager implements WikiService
             // INSERT SQL instead.
             SQLFragment sql = new SQLFragment("INSERT INTO ")
                 .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .append(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
+                .unsafeAppend(" (Container, Alias, PageRowId) SELECT ?, ?, ?\n")
                 .add(wiki.getContainerId())
                 .add(alias)
                 .add(wiki.getRowId())
-                .append("WHERE NOT EXISTS (SELECT * FROM ")
+                .unsafeAppend("WHERE NOT EXISTS (SELECT * FROM ")
                 .append(CommSchema.getInstance().getTableInfoPageAliases())
-                .append(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
+                .unsafeAppend(" WHERE Container = ? AND LOWER(Alias) = LOWER(?))")
                 .add(wiki.getContainerId())
                 .add(alias);
             int rows = executor.execute(sql);
@@ -736,20 +736,20 @@ public class WikiManager implements WikiService
         LOG.debug("indexWikiContainerFast({})", wikiName);
         Container c = queue.getContainer();
         SQLFragment f = new SQLFragment();
-        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
-            .append("V.title, V.body, V.renderertype\n");
-        f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
-        f.append("WHERE P.container = ?");
+        f.unsafeAppend("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
+            .unsafeAppend("V.title, V.body, V.renderertype\n");
+        f.unsafeAppend("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
+        f.unsafeAppend("WHERE P.container = ?");
         f.add(c);
         SQLFragment since = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, "P").toSQLFragment(null, comm.getSqlDialect());
 
         if (!since.isEmpty())
         {
-            f.append(" AND ").append(since);
+            f.unsafeAppend(" AND ").append(since);
         }
         if (null != wikiName)
         {
-            f.append(" AND P.name = ?");
+            f.unsafeAppend(" AND P.name = ?");
             f.add(wikiName);
         }
 

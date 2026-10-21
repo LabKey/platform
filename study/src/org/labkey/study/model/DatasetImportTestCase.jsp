@@ -443,7 +443,7 @@ private void _testDatasetDetailedLogging(StudyImpl study) throws Throwable
     // first get last audit record
     UserSchema auditSchema = AuditLogService.get().createSchema(_context.getUser(), study.getContainer());
     TableInfo auditTable = auditSchema.getTable(DatasetAuditProvider.DATASET_AUDIT_EVENT);
-    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), new SQLFragment("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
+    Integer RowId = new SqlSelector(auditSchema.getDbSchema(), SQLFragment.unsafe("select max(rowid) FROM ").append(auditTable.getFromSQL("_")))
             .getObject(Integer.class);
     int rowid = null==RowId ? 0 : RowId.intValue();
 

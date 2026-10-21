@@ -345,7 +345,7 @@ public class AssayModule extends SpringModule
                 return new SQLClause(
                     new SQLFragment("LSID IN (SELECT LSID FROM assay.Well WHERE Container")
                         .appendInClause(AssaySkipContainers.getFilteredContainers(containers), sourceTable.getSqlDialect())
-                        .append(")")
+                        .unsafeAppend(")")
                 );
             }
         });

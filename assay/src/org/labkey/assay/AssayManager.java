@@ -741,7 +741,7 @@ public class AssayManager implements AssayService
                 .add(protocol.getLSID())
                 .add(minRowId);
         if (modifiedSince != null)
-            filterSQL.append(" AND ER.Modified > ?").add(modifiedSince);
+            filterSQL.unsafeAppend(" AND ER.Modified > ?").add(modifiedSince);
 
         List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(filterSQL, _ -> true, queue.getContainer(), SearchService.INDEXING_LIMIT);
 

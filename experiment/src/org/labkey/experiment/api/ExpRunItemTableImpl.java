@@ -144,11 +144,11 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
             {
                 return new SQLFragment("(SELECT ")
                     .append(getSqlDialect().getGroupConcat(new SQLFragment("AA.name"), false, false, new SQLFragment().appendStringLiteral(MultiValuedRenderContext.VALUE_DELIMITER, getSqlDialect()), true))
-                    .append(" FROM ").append(ExperimentServiceImpl.get().getTinfoAlias(), "AA")
-                    .append(" INNER JOIN ").append(aliasMapTable.get(), "MM")
-                    .append(" ON AA.rowId = MM.alias")
-                    .append(" WHERE MM.lsid = ").append(lsidCol.getValueSql(tableAlias))
-                    .append(")");
+                    .unsafeAppend(" FROM ").append(ExperimentServiceImpl.get().getTinfoAlias(), "AA")
+                    .unsafeAppend(" INNER JOIN ").append(aliasMapTable.get(), "MM")
+                    .unsafeAppend(" ON AA.rowId = MM.alias")
+                    .unsafeAppend(" WHERE MM.lsid = ").append(lsidCol.getValueSql(tableAlias))
+                    .unsafeAppend(")");
             }
 
             @Override

@@ -121,10 +121,10 @@ public class ExpSampleTypeTableImpl extends ExpTableImpl<ExpSampleTypeTable.Colu
     private ExprColumn createSampleCountColumn(@NotNull ContainerFilter sampleCountContainerFilter)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoMaterial(), "m")
-                .append(" WHERE m.CpasType = ").append(ExprColumn.STR_TABLE_ALIAS + ".LSID")
-                .append(" AND ")
+                .unsafeAppend(" WHERE m.CpasType = ").append(ExprColumn.STR_TABLE_ALIAS + ".LSID")
+                .unsafeAppend(" AND ")
                 .append(sampleCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("m.container")))
-                .append(")");
+                .unsafeAppend(")");
         ExprColumn column = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
         column.setDescription("Contains the number of samples currently stored in this sample type");
         column.setFormat("#,##0");

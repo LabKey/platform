@@ -74,7 +74,7 @@ public class ConcentrationUnitsTable extends EnumTableInfo<ConcentrationUnitsTab
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
+            sql.unsafeAppend("SELECT ? AS Value, ? AS RowId, ? AS Label, ? AS Ordinal");
             sql.add(e.getLabel());
             sql.add(_rowIdGetter.getRowId(e));
             sql.add(_valueGetter.getValue(e).toLowerCase().replace("_", " "));

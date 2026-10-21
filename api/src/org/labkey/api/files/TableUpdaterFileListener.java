@@ -229,19 +229,19 @@ public class TableUpdaterFileListener implements FileListener
         // Build up SQL that can be used for both the file and any children
         SQLFragment sharedSQL = new SQLFragment("UPDATE ");
         sharedSQL.append(_table);
-        sharedSQL.append(" SET ");
+        sharedSQL.unsafeAppend(" SET ");
         if (_table.getColumn("Modified") != null)
         {
-            sharedSQL.append("Modified = ?, ");
+            sharedSQL.unsafeAppend("Modified = ?, ");
             sharedSQL.add(new Date());
         }
         if (_table.getColumn("ModifiedBy") != null && user != null)
         {
-            sharedSQL.append("ModifiedBy = ?, ");
+            sharedSQL.unsafeAppend("ModifiedBy = ?, ");
             sharedSQL.add(user.getUserId());
         }
         sharedSQL.appendIdentifier(_pathColumn.getSelectIdentifier());
-        sharedSQL.append(" = ");
+        sharedSQL.unsafeAppend(" = ");
 
         String srcPath = getSourcePath(src, container);
         String destPath = _pathGetter.get(dest);
@@ -257,19 +257,19 @@ public class TableUpdaterFileListener implements FileListener
 
         // Now build up the SQL to handle this specific path
         SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
-        singleEntrySQL.append("? WHERE (");
+        singleEntrySQL.unsafeAppend("? WHERE (");
         singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
-        singleEntrySQL.append(" = ?");
+        singleEntrySQL.unsafeAppend(" = ?");
         singleEntrySQL.add(destPath);
         singleEntrySQL.add(srcPath);
         if (null != srcPathWithout)
         {
-            singleEntrySQL.append(" OR ");
+            singleEntrySQL.unsafeAppend(" OR ");
             singleEntrySQL.appendIdentifier(_pathColumn.getSelectIdentifier());
-            singleEntrySQL.append(" = ?");
+            singleEntrySQL.unsafeAppend(" = ?");
             singleEntrySQL.add(srcPathWithout);
         }
-        singleEntrySQL.append(")");
+        singleEntrySQL.unsafeAppend(")");
 
         int rows = schema.getScope().executeWithRetry(tx -> new SqlExecutor(schema).execute(singleEntrySQL));
         LOG.info("Updated {} row in {} for move from {} to {}", rows, _table, src, dest);
@@ -296,7 +296,7 @@ public class TableUpdaterFileListener implements FileListener
                 srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
             SQLFragment whereClause = new SQLFragment(" WHERE ");
-            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).append(" = 1");
+            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), _pathColumn.getSelectIdentifier().getSql())).unsafeAppend(" = 1");
 
             // Make the SQL to handle children
             SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
@@ -358,69 +358,67 @@ public class TableUpdaterFileListener implements FileListener
     public SQLFragment listFilesQuery(boolean skipCreatedModified, CharSequence filePath, boolean extractName)
     {
         SQLFragment selectFrag = new SQLFragment();
-        selectFrag.append("SELECT\n");
+        selectFrag.unsafeAppend("SELECT\n");
 
         if (_containerFrag != null)
-            selectFrag.append("(").append(_containerFrag).append(") AS Container,\n");
+            selectFrag.unsafeAppend("(").append(_containerFrag).unsafeAppend(") AS Container,\n");
         else if (_table.getColumn("Container") != null)
-            selectFrag.append("  Container,\n");
+            selectFrag.unsafeAppend("  Container,\n");
         else if (_table.getColumn("Folder") != null)
-            selectFrag.append("  Folder AS Container,\n");
+            selectFrag.unsafeAppend("  Folder AS Container,\n");
         else
-            selectFrag.append("  NULL AS Container,\n");
+            selectFrag.unsafeAppend("  NULL AS Container,\n");
 
         if (!skipCreatedModified)
         {
             if (_table.getColumn("Created") != null)
-                selectFrag.append("  Created,\n");
+                selectFrag.unsafeAppend("  Created,\n");
             else
-                selectFrag.append("  NULL AS Created,\n");
+                selectFrag.unsafeAppend("  NULL AS Created,\n");
 
             if (_table.getColumn("CreatedBy") != null)
-                selectFrag.append("  CreatedBy,\n");
+                selectFrag.unsafeAppend("  CreatedBy,\n");
             else
-                selectFrag.append("  NULL AS CreatedBy,\n");
+                selectFrag.unsafeAppend("  NULL AS CreatedBy,\n");
 
             if (_table.getColumn("Modified") != null)
-                selectFrag.append("  Modified,\n");
+                selectFrag.unsafeAppend("  Modified,\n");
             else
-                selectFrag.append("  NULL AS Modified,\n");
+                selectFrag.unsafeAppend("  NULL AS Modified,\n");
 
             if (_table.getColumn("ModifiedBy") != null)
-                selectFrag.append("  ModifiedBy,\n");
+                selectFrag.unsafeAppend("  ModifiedBy,\n");
             else
-                selectFrag.append("  NULL AS ModifiedBy,\n");
+                selectFrag.unsafeAppend("  NULL AS ModifiedBy,\n");
         }
 
-        selectFrag.append("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).append(" AS FilePath,\n");
+        selectFrag.unsafeAppend("  ").appendIdentifier(_pathColumn.getSelectIdentifier()).unsafeAppend(" AS FilePath,\n");
 
         if (extractName)
         {
             SqlDialect dialect = _table.getSchema().getSqlDialect();
             SQLFragment fileNameFrag = new SQLFragment();
-            fileNameFrag.append("regexp_replace(").appendIdentifier(_pathColumn.getSelectIdentifier()).append(", ");
-            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral(".*/")).append(", ");
-            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral("")).append(")");
-            selectFrag.append("  ").append(fileNameFrag).append(" AS FilePathShort,\n");
+            fileNameFrag.unsafeAppend("regexp_replace(").appendIdentifier(_pathColumn.getSelectIdentifier()).unsafeAppend(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral(".*/")).unsafeAppend(", ");
+            fileNameFrag.append(dialect.getStringHandler().quoteStringLiteral("")).unsafeAppend(")");
+            selectFrag.unsafeAppend("  ").append(fileNameFrag).unsafeAppend(" AS FilePathShort,\n");
         }
 
         if (_keyColumn != null)
-            selectFrag.append("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).append(" AS SourceKey,\n");
+            selectFrag.unsafeAppend("  ").appendIdentifier(_keyColumn.getSelectIdentifier()).unsafeAppend(" AS SourceKey,\n");
         else
-            selectFrag.append("  NULL AS SourceKey,\n");
+            selectFrag.unsafeAppend("  NULL AS SourceKey,\n");
 
         //selectFrag.append("  ? AS SourceName\n").add(getName());
-        selectFrag.append("  ").appendValue(getSourceSelect(_table.getSchema().getSqlDialect())).append(" AS SourceName\n");
+        selectFrag.unsafeAppend("  ").appendValue(getSourceSelect(_table.getSchema().getSqlDialect())).unsafeAppend(" AS SourceName\n");
 
-        selectFrag.append("FROM ").append(_table, TABLE_ALIAS).append("\n");
-        selectFrag.append("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier());
+        selectFrag.unsafeAppend("FROM ").append(_table, TABLE_ALIAS).unsafeAppend("\n");
+        selectFrag.unsafeAppend("WHERE ").appendIdentifier(_pathColumn.getSelectIdentifier());
 
         if (StringUtils.isEmpty(filePath))
-            selectFrag.append(" IS NOT NULL\n");
-        else if (filePath instanceof SQLFragment)
-            selectFrag.append(" = ").append(filePath).append("\n");
+            selectFrag.unsafeAppend(" IS NOT NULL\n");
         else
-            selectFrag.append(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).append("\n");
+            selectFrag.unsafeAppend(" = ").appendStringLiteral(filePath, _table.getSchema().getSqlDialect()).unsafeAppend("\n");
 
         return selectFrag;
     }

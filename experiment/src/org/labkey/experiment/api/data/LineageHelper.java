@@ -85,10 +85,10 @@ public class LineageHelper
             return new SQLFragment("(1 = 2)");
 
         SQLFragment sql = new SQLFragment();
-        sql.append("(").append(fieldKeyFrag).append(") IN (");
-        sql.append("SELECT ").append(getLsidColumn()).append(" FROM (");
+        sql.unsafeAppend("(").append(fieldKeyFrag).unsafeAppend(") IN (");
+        sql.unsafeAppend("SELECT ").append(getLsidColumn()).unsafeAppend(" FROM (");
         sql.append(tree);
-        sql.append(") AS X)");
+        sql.unsafeAppend(") AS X)");
 
         return sql;
     }

@@ -36,8 +36,8 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("SUM(CASE ");
-            sql.append(fromColName).append(" WHEN ? THEN 1 ELSE 0 END) AS ").append(toColName);
+            SQLFragment sql = SQLFragment.unsafe("SUM(CASE ");
+            sql.appendIdentifier(fromColName).unsafeAppend(" WHEN ? THEN 1 ELSE 0 END) AS ").appendIdentifier(toColName);
             sql.add(Boolean.TRUE);
             return sql;
         }
@@ -59,8 +59,8 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("SUM(");
-            sql.append(fromColName).append(") AS ").append(toColName);
+            SQLFragment sql = SQLFragment.unsafe("SUM(");
+            sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }
 
@@ -81,8 +81,8 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("MAX(");
-            sql.append(fromColName).append(") AS ").append(toColName);
+            SQLFragment sql = SQLFragment.unsafe("MAX(");
+            sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }
 
@@ -104,8 +104,8 @@ public enum VialSpecimenRollup implements Rollup
         @Override
         public SQLFragment getRollupSql(String fromColName, String toColName)
         {
-            SQLFragment sql = new SQLFragment("MIN(");
-            sql.append(fromColName).append(") AS ").append(toColName);
+            SQLFragment sql = SQLFragment.unsafe("MIN(");
+            sql.appendIdentifier(fromColName).unsafeAppend(") AS ").appendIdentifier(toColName);
             return sql;
         }
 

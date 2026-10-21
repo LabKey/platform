@@ -220,7 +220,7 @@ public class CommonTableExpressions
         {
             // Reference to With
             SQLFragment sql = new SQLFragment()
-                    .append(_cteToken).append(" ")
+                    .append(_cteToken).unsafeAppend(" ")
                     .appendIdentifier(alias);
 
             if (!_parsingWith)

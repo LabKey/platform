@@ -236,7 +236,7 @@ public abstract class ContainerFilter
             else
             {
                 SQLFragment result = new SQLFragment(containerColumnSQL);
-                result.append(" IS NOT NULL");
+                result.unsafeAppend(" IS NOT NULL");
                 return result;
             }
         }
@@ -278,7 +278,7 @@ public abstract class ContainerFilter
         for (GUID containerId : ids)
         {
             list.append(comma);
-            list.append("(");
+            list.unsafeAppend("(");
             if (verbose)
             {
                 Container c = ContainerManager.getForId(containerId);
@@ -291,7 +291,7 @@ public abstract class ContainerFilter
             {
                 list.appendValue(containerId);
             }
-            list.append(")");
+            list.unsafeAppend(")");
             comma = ", ";
         }
 
@@ -299,30 +299,30 @@ public abstract class ContainerFilter
 
         if (!includedChildTypes.isEmpty())
         {
-            select.append("SELECT c.EntityId FROM ");
+            select.unsafeAppend("SELECT c.EntityId FROM ");
             select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
             // Need to add cast to make Postgres happy
-            select.append(" INNER JOIN (SELECT CAST(Id AS ");
+            select.unsafeAppend(" INNER JOIN (SELECT CAST(Id AS ");
             select.append(schema.getSqlDialect().getGuidType());
-            select.append(") AS Id FROM (VALUES ");
+            select.unsafeAppend(") AS Id FROM (VALUES ");
             select.append(list);
-            select.append(") as _containerids_ (Id) ");
+            select.unsafeAppend(") as _containerids_ (Id) ");
             // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type ");
+            select.unsafeAppend(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type ");
             schema.getSqlDialect().appendInClauseSql(select, includedChildTypes);
-            select.append(")");
+            select.unsafeAppend(")");
         }
         else if (ids.size() < 10 || !useCTE())
         {
             SQLFragment result = new SQLFragment(containerColumnSQL);
-            result.append(" IN (").append(list).append(")");
+            result.unsafeAppend(" IN (").append(list).unsafeAppend(")");
             return result;
         }
         else
         {
-            select.append ("SELECT EntityId FROM (VALUES ");
+            select.unsafeAppend ("SELECT EntityId FROM (VALUES ");
             select.append(list);
-            select.append(") AS _containerids_ (EntityId)");
+            select.unsafeAppend(") AS _containerids_ (EntityId)");
         }
 
         if (useCTE())
@@ -331,17 +331,17 @@ public abstract class ContainerFilter
             String shortName = null != this.getType() ? this.getType().name() : this.getClass().getSimpleName();
             String cteKey = this.getClass().getName()+":"+ container.getId();
             String token = result.addCommonTableExpression(schema.getSqlDialect(), cteKey, "cte" + shortName + System.identityHashCode(this), select);
-            result.append(" IN (SELECT EntityId");
-            result.append(" FROM ").append(token);
-            result.append(")");
+            result.unsafeAppend(" IN (SELECT EntityId");
+            result.unsafeAppend(" FROM ").append(token);
+            result.unsafeAppend(")");
             return result;
         }
         else
         {
             SQLFragment result = new SQLFragment(containerColumnSQL);
-            result.append(" IN (");
+            result.unsafeAppend(" IN (");
             result.append(select);
-            result.append(")");
+            result.unsafeAppend(")");
             return result;
         }
     }

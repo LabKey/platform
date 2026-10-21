@@ -303,12 +303,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
+                sqlf.append(comma).unsafeAppend("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
                 List<String> pkKeys = new ArrayList<>();
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
-                    sqlf.append(",?");
+                    sqlf.unsafeAppend(",?");
                     Object pkVal = pkSuppliers.get(p).get();
 
                     // Issue 52922: Rows with blank key in the file are getting ignored in update from file
@@ -322,26 +322,26 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                     if (!_sharedKeys.contains(pkColumns.get(p).getColumnName()))
                         pkKeys.add(pkVal.toString());
                 }
-                sqlf.append(")");
+                sqlf.unsafeAppend(")");
                 checkDuplicateKeys(pkKeys);
                 rowNumContainers.put(lastPrefetchRowNumber, container);
             }
             while (--rows > 0 && _delegate.next());
 
-            sqlf.append("\n) AS _values_ (_row_number_");
+            sqlf.unsafeAppend("\n) AS _values_ (_row_number_");
             for (int p = 0; p < pkColumns.size(); p++)
-                sqlf.append(",").append("key").appendValue(p);
-            sqlf.append("))\n");
+                sqlf.unsafeAppend(",").unsafeAppend("key").appendValue(p);
+            sqlf.unsafeAppend("))\n");
 
-            sqlf.append("SELECT _key_columns_._row_number_, _target_.* FROM ");
-            sqlf.append("_key_columns_ INNER JOIN ");
+            sqlf.unsafeAppend("SELECT _key_columns_._row_number_, _target_.* FROM ");
+            sqlf.unsafeAppend("_key_columns_ INNER JOIN ");
             sqlf.append(target.getFromSQL("_target_ "));
-            sqlf.append(" ON ");
+            sqlf.unsafeAppend(" ON ");
             String and = "";
             for (int p = 0; p < pkColumns.size(); p++)
             {
                 sqlf.append(and);
-                sqlf.append("(_key_columns_.key").appendValue(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
+                sqlf.unsafeAppend("(_key_columns_.key").appendValue(p).unsafeAppend("=(").append(pkColumns.get(p).getValueSql("_target_")).unsafeAppend("))");
                 and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);

@@ -74,7 +74,7 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
             clause = new SQLClause(
                 new SQLFragment("LSID IN (SELECT LSID FROM exp.Data WHERE Container")
                     .appendInClause(containers, sourceTable.getSqlDialect())
-                    .append(")")
+                    .unsafeAppend(")")
             );
         }
         else
@@ -111,12 +111,12 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
 
         // Select all ObjectIds associated with the not-copied rows from the source database
         SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM exp.Data d INNER JOIN ")
-            .appendIdentifier(sourceTable.getSelectName())
-            .append(" dc ON d.LSID = dc.LSID");
+            .append(sourceTable.getSQLName())
+            .unsafeAppend(" dc ON d.LSID = dc.LSID");
 
         // Don't create an empty IN clause; need to work around issue where "NOT xxx IN (NULL)" evaluates to NULL.
         if (!copiedLsids.isEmpty())
-            objectIdSql.append(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
+            objectIdSql.unsafeAppend(" AND NOT dc.LSID").appendInClause(copiedLsids, sourceTable.getSqlDialect());
 
         Collection<Long> notCopiedObjectIds = new SqlSelector(sourceTable.getSchema(), objectIdSql).getCollection(Long.class);
 
@@ -169,13 +169,13 @@ class DataClassMigrationSchemaHandler extends DefaultMigrationSchemaHandler impl
         executor.execute(
             new SQLFragment("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE ObjectId")
                 .append(objectIdClause)
-                .append(")")
+                .unsafeAppend(")")
         );
         LOG.info("   exp.DataAliasMap");
         executor.execute(
             new SQLFragment("DELETE FROM exp.DataAliasMap WHERE LSID IN (SELECT LSID FROM exp.Data WHERE ObjectId")
                 .appendInClause(objectIds, dialect)
-                .append(")")
+                .unsafeAppend(")")
         );
         LOG.info("   exp.Data");
         executor.execute(

@@ -1629,8 +1629,8 @@ public class StudyPublishManager implements StudyPublishService
                 datasetColumn.setReadOnly(true);
                 table.addColumn(datasetColumn);
 
-                String studyLinkedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
-                        "._key IS NOT NULL THEN 'linked' ELSE NULL END)";
+                SQLFragment studyLinkedSql = SQLFragment.unsafe("(SELECT CASE WHEN ").appendIdentifier(datasetColumn.getDatasetIdAlias())
+                        .unsafeAppend("._key IS NOT NULL THEN 'linked' ELSE NULL END)");
 
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
@@ -1653,7 +1653,7 @@ public class StudyPublishManager implements StudyPublishService
 
                 final ExprColumn studyLinkedColumn = new ExprColumn(table,
                         studyColumnName,
-                        new SQLFragment(studyLinkedSql),
+                        studyLinkedSql,
                         JdbcType.VARCHAR,
                         datasetColumn);
                 final String linkedToStudyColumnCaption = "Linked to " + studyName;
