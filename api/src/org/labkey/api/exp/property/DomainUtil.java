@@ -206,24 +206,30 @@ public class DomainUtil
         return defaultValue.toString();
     }
 
-    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
+    @Nullable
+    private static QuerySchema resolveLookupSchema(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap)
     {
         Container lookupContainer = p.getLookupContainer() == null ? c : ContainerService.get().getForPath(p.getLookupContainer());
 
         if (null == lookupContainer)
-            return false;
+            return null;
 
         // Saving default schema for use again if there are multiple lookups from the same schema
-        DefaultSchema defaultSchema = defaultSchemaMap.get(lookupContainer);
-        if (null == defaultSchema)
-        {
-            defaultSchema = DefaultSchema.get(user, lookupContainer);
-            defaultSchemaMap.put(lookupContainer, defaultSchema);
-        }
+        DefaultSchema defaultSchema = defaultSchemaMap.computeIfAbsent(lookupContainer, lc -> DefaultSchema.get(user, lc));
 
-        QuerySchema schema = DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+        return DefaultSchema.resolve(defaultSchema, SchemaKey.fromString(p.getLookupSchema()));
+    }
 
-        if (null == schema)
+    private static boolean isSameScope(QuerySchema schema, DbScope scope)
+    {
+        return null == schema.getDbSchema() || schema.getDbSchema().getScope() == scope;
+    }
+
+    private static boolean isValidPdLookup(User user, Container c, GWTPropertyDescriptor p, Map<Container, DefaultSchema> defaultSchemaMap, DbScope domainScope)
+    {
+        QuerySchema schema = resolveLookupSchema(user, c, p, defaultSchemaMap);
+
+        if (null == schema || !isSameScope(schema, domainScope))
             return false;
 
         // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
@@ -317,7 +323,7 @@ public class DomainUtil
                 if (null == lookupDefaultSchemaMap)
                     lookupDefaultSchemaMap = new HashMap<>();
 
-                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap));
+                field.setLookupIsValid(isValidPdLookup(user, container, field, lookupDefaultSchemaMap, getDomainScope(domainKind)));
             }
 
             //set property as PK
@@ -759,6 +765,7 @@ public class DomainUtil
         DomainKind<?> validateDomainKind = templateInfo == null && strictFieldValidation ? kind : null;
 
         ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
+        validateLookupScopes(domain, null, kind, container, user, ve);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -808,6 +815,7 @@ public class DomainUtil
 
         DomainKind<?> kind = d.getDomainKind();
         ValidationException validationException = validateProperties(d, update, kind, orig, user);
+        validateLookupScopes(update, orig, kind, d.getContainer(), user, validationException);
 
         if (validationException.hasErrors())
         {
@@ -1728,6 +1736,38 @@ public class DomainUtil
         });
 
         return exception;
+    }
+
+    private static DbScope getDomainScope(DomainKind<?> kind)
+    {
+        return Objects.requireNonNullElse(kind.getScope(), DbScope.getLabKeyScope());
+    }
+
+    // GH Issue 438: a lookup join can't span data sources. Unchanged lookups are skipped so an existing bad one doesn't block unrelated edits.
+    private static void validateLookupScopes(GWTDomain<?> updates, @Nullable GWTDomain<?> orig, DomainKind<?> kind, Container c, User user, ValidationException errors)
+    {
+        DbScope domainScope = getDomainScope(kind);
+        Map<Integer, GWTPropertyDescriptor> origFields = null == orig ? Map.of() : orig.getFields().stream()
+            .collect(Collectors.toMap(GWTPropertyDescriptor::getPropertyId, f -> f, (a, b) -> a));
+        Map<Container, DefaultSchema> defaultSchemaMap = new HashMap<>();
+
+        for (GWTPropertyDescriptor field : updates.getFields(true))
+        {
+            if (field.getLookupSchema() == null || field.getLookupQuery() == null || !isLookupChanged(field, origFields.get(field.getPropertyId())))
+                continue;
+
+            QuerySchema schema = resolveLookupSchema(user, c, field, defaultSchemaMap);
+            if (null != schema && !isSameScope(schema, domainScope))
+                errors.addFieldError(field.getName(), getDomainErrorMessage(updates, "Field '" + field.getName() + "' can't look up '" + field.getLookupSchema() + "." + field.getLookupQuery() + "' because it is in a different data source."));
+        }
+    }
+
+    private static boolean isLookupChanged(GWTPropertyDescriptor field, @Nullable GWTPropertyDescriptor origField)
+    {
+        return null == origField
+            || !Strings.CI.equals(field.getLookupContainer(), origField.getLookupContainer())
+            || !Strings.CI.equals(field.getLookupSchema(), origField.getLookupSchema())
+            || !Strings.CI.equals(field.getLookupQuery(), origField.getLookupQuery());
     }
 
     /** Anchor an import alias error on every field that declares the offending alias so the designer can highlight them. */
