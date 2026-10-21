@@ -17,7 +17,6 @@
 package org.labkey.api.data.queryprofiler;
 
 import datadog.trace.api.interceptor.MutableSpan;
-import io.opentracing.Span;
 import io.opentracing.util.GlobalTracer;
 import org.apache.commons.collections4.map.AbstractReferenceMap.ReferenceStrength;
 import org.apache.commons.collections4.map.ReferenceMap;
@@ -27,7 +26,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
@@ -47,6 +49,7 @@ import org.labkey.api.util.LinkBuilder;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.TagRecordingSpan;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -65,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,8 +250,9 @@ public class QueryProfiler
         MiniProfiler.addQuery(elapsed, sql, stackTrace);
 
         Query query = new Query(scope, sql, parameters, elapsed, stackTrace, requestThread);
-        if (elapsed >= SLOW_SQL_SPAN_TAG_MS)
-            tagActiveSpan(query);
+        // dd-trace's spans are MutableSpans, which can report the slowest statement tagged so far
+        if (elapsed >= SLOW_SQL_SPAN_TAG_MS && GlobalTracer.get().activeSpan() instanceof MutableSpan span)
+            tagActiveSpan(span, query);
 
         // Don't block if queue is full
         if (!_queue.offer(query))
@@ -258,13 +263,9 @@ public class QueryProfiler
     }
 
     // The driver opens and closes the JDBC span itself, so the enclosing span carries the slowest statement's hash instead
-    private static void tagActiveSpan(Query query)
+    private static void tagActiveSpan(MutableSpan span, Query query)
     {
-        Span span = GlobalTracer.get().activeSpan();
-        if (null == span)
-            return;
-
-        if (span instanceof MutableSpan ms && ms.getTag(SLOW_SQL_MS_TAG) instanceof Number prior && prior.longValue() >= query.getElapsed())
+        if (span.getTag(SLOW_SQL_MS_TAG) instanceof Number prior && prior.longValue() >= query.getElapsed())
             return;
 
         span.setTag(SLOW_SQL_HASH_TAG, HashHelpers.hash(query.getSql()));
@@ -735,5 +736,78 @@ public class QueryProfiler
     public interface ActionURLFactory
     {
         ActionURL getActionURL(String name);
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static Query query(String sql, long elapsed)
+        {
+            return new Query(null, sql, null, elapsed, null, false);
+        }
+
+        @Test
+        public void testSlowestStatementTagsSpan()
+        {
+            Map<String, Object> tags = new HashMap<>();
+            MutableSpan span = TagRecordingSpan.create(tags);
+
+            Query slow = query("SELECT * FROM core.containers", 2000);
+            tagActiveSpan(span, slow);
+            tagActiveSpan(span, query("SELECT 1", 1500));
+            tagActiveSpan(span, query("SELECT 2", 2000));
+            assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slow.getSql()), SLOW_SQL_MS_TAG, 2000L), tags);
+
+            Query slower = query("SELECT 3", 2500);
+            tagActiveSpan(span, slower);
+            assertEquals(Map.of(SLOW_SQL_HASH_TAG, HashHelpers.hash(slower.getSql()), SLOW_SQL_MS_TAG, 2500L), tags);
+        }
+
+        @Test
+        public void testHashIgnoresGeneratedNames()
+        {
+            Map<String, Object> first = new HashMap<>();
+            Map<String, Object> second = new HashMap<>();
+            tagActiveSpan(TagRecordingSpan.create(first), query("SELECT * FROM temp.tt_lsids$0123456789abcdef0123456789abcdef", 2000));
+            tagActiveSpan(TagRecordingSpan.create(second), query("SELECT * FROM temp.tt_lsids$fedcba9876543210fedcba9876543210", 2000));
+            assertEquals(first.get(SLOW_SQL_HASH_TAG), second.get(SLOW_SQL_HASH_TAG));
+        }
+    }
+
+    public static class ExecutionPlanUnavailableTestCase extends Assert
+    {
+        private static final String UPDATE = "UPDATE core.containers SET Name = ?";
+
+        private static @Nullable String reason(@Nullable DbScope scope, String sql, @Nullable String normalizationReason, boolean truncated, ExecutionPlanType type)
+        {
+            return new QueryTracker(scope, sql, "hash", 0, "", normalizationReason, truncated).getExecutionPlanUnavailableReason(type);
+        }
+
+        private static void assertStartsWith(String expectedPrefix, @Nullable String actual)
+        {
+            assertNotNull(actual);
+            assertTrue(actual, actual.startsWith(expectedPrefix));
+        }
+
+        @Test
+        public void testReasonPrecedence()
+        {
+            DbScope scope = CoreSchema.getInstance().getScope();
+
+            for (ExecutionPlanType type : ExecutionPlanType.values())
+            {
+                // Each case also has every later problem, so a reason checked out of order shows up as the wrong message
+                assertStartsWith("It isn't a SQL statement run against a database connection", reason(null, UPDATE, "Normalized", true, type));
+                assertStartsWith("Its SQL was truncated", reason(scope, UPDATE, "Normalized", true, type));
+                assertEquals("Normalized", reason(scope, UPDATE, "Normalized", false, type));
+
+                if (scope.getSqlDialect().canShowExecutionPlan(type))
+                    assertNull(reason(scope, "SELECT * FROM core.containers", null, false, type));
+            }
+
+            if (scope.getSqlDialect().canShowExecutionPlan(ExecutionPlanType.Actual))
+                assertStartsWith("It's not a SELECT (it starts with UPDATE)", reason(scope, UPDATE, null, false, ExecutionPlanType.Actual));
+            if (scope.getSqlDialect().canShowExecutionPlan(ExecutionPlanType.Estimated))
+                assertNull(reason(scope, UPDATE, null, false, ExecutionPlanType.Estimated));
+        }
     }
 }

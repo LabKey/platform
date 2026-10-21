@@ -29,11 +29,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.AbortedRequestException;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.TagRecordingSpan;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
@@ -44,6 +47,7 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -88,14 +92,14 @@ public class AsyncQueryRequest<T>
     }
 
     /** A request can run several async queries, so the web span describes only the slowest */
-    private void tagRootSpan(long elapsedMs)
+    private static void tagRootSpan(MutableSpan rootSpan, long elapsedMs, Map<String, String> tags, boolean cancelled)
     {
-        if (null == _rootSpan || _rootSpan.getTag(ELAPSED_TAG) instanceof Number prior && prior.longValue() >= elapsedMs)
+        if (rootSpan.getTag(ELAPSED_TAG) instanceof Number prior && prior.longValue() >= elapsedMs)
             return;
 
-        _rootSpan.setTag(ELAPSED_TAG, elapsedMs);
-        _spanTags.forEach(_rootSpan::setTag);
-        _rootSpan.setTag(CANCELLED_TAG, _cancelled);
+        rootSpan.setTag(ELAPSED_TAG, elapsedMs);
+        tags.forEach(rootSpan::setTag);
+        rootSpan.setTag(CANCELLED_TAG, cancelled);
     }
 
     private HttpServletResponse getRootResponse(HttpServletResponse response)
@@ -270,7 +274,8 @@ public class AsyncQueryRequest<T>
             if (!started)
                 span.finish();
 
-            tagRootSpan(System.currentTimeMillis() - start);
+            if (null != _rootSpan)
+                tagRootSpan(_rootSpan, System.currentTimeMillis() - start, _spanTags, _cancelled);
         }
     }
 
@@ -356,5 +361,32 @@ public class AsyncQueryRequest<T>
     public StackTraceElement[] getCreationStackTrace()
     {
         return _creationStackTrace;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private static Map<String, String> queryTags(String query, @Nullable String schema)
+        {
+            Map<String, String> tags = new HashMap<>();
+            tags.put("labkey.query", query);
+            tags.put("labkey.db_schema", schema);
+            return tags;
+        }
+
+        @Test
+        public void testSlowestQueryTagsRootSpan()
+        {
+            Map<String, Object> tags = new HashMap<>();
+            MutableSpan root = TagRecordingSpan.create(tags);
+
+            tagRootSpan(root, 500, queryTags("A", "core"), false);
+            tagRootSpan(root, 200, queryTags("B", "exp"), true);
+            tagRootSpan(root, 500, queryTags("C", "exp"), true);
+            assertEquals(Map.of(ELAPSED_TAG, 500L, "labkey.query", "A", "labkey.db_schema", "core", CANCELLED_TAG, false), tags);
+
+            // A slower query with no schema must not inherit the faster one's
+            tagRootSpan(root, 900, queryTags("D", null), true);
+            assertEquals(Map.of(ELAPSED_TAG, 900L, "labkey.query", "D", CANCELLED_TAG, true), tags);
+        }
     }
 }

@@ -54,6 +54,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.AccumulatingCommitTask;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AsyncQueryRequest;
 import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
@@ -100,6 +101,7 @@ import org.labkey.api.data.dialect.PostgresSnapshot;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.data.queryprofiler.Query;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
@@ -405,6 +407,7 @@ public class ApiModule extends CodeOnlyModule
             ApiXmlWriter.TestCase.class,
             ArrayListMap.TestCase.class,
             AssayResultsFileWriter.TestCase.class,
+            AsyncQueryRequest.TestCase.class,
             AuthenticationManager.ReauthTokenTest.class,
             BaseServerProperties.TestCase.class,
             BooleanFormat.TestCase.class,
@@ -472,6 +475,7 @@ public class ApiModule extends CodeOnlyModule
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
             Query.TestCase.class,
+            QueryProfiler.TestCase.class,
             RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             RepeatedCommitTaskMonitor.TestCase.class,
@@ -577,6 +581,7 @@ public class ApiModule extends CodeOnlyModule
             PostgresSnapshot.TestCase.class,
             PropertyManager.TestCase.class,
             QueryDataIteratorBuilder.TestCase.class,
+            QueryProfiler.ExecutionPlanUnavailableTestCase.class,
             QueryView.TestCase.class,
             RecordFactory.TestCase.class,
             RepeatedCommitTaskMonitor.IntegrationTestCase.class,
