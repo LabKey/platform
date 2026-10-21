@@ -121,6 +121,14 @@ public class ApiKeyManager
      */
     public @NotNull String createKey(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
     {
+        return createKeyWithRowId(user, expirationSeconds, description, restrictionRole).apiKey();
+    }
+
+    public record CreatedApiKey(@NotNull String apiKey, int rowId) {}
+
+    /** Also returns the new key's RowId, which lets a caller delete the key later via {@link #deleteKey(int)} without retaining it */
+    public @NotNull CreatedApiKey createKeyWithRowId(@NotNull User user, int expirationSeconds, @Nullable String description, @Nullable Class<? extends Role> restrictionRole)
+    {
         if (user.isGuest())
             throw new IllegalStateException("Can't create an API key for a guest");
 
@@ -146,19 +154,26 @@ public class ApiKeyManager
         if (restrictionRole != null)
             map.put("RestrictionRole", restrictionRole.getName());
 
+        Map<String, Object> inserted;
         try (Transaction t = CoreSchema.getInstance().getScope().beginTransaction(TRANSACTION_KIND))
         {
-            Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
+            inserted = Table.insert(user, CoreSchema.getInstance().getTableAPIKeys(), map);
             t.commit();
         }
 
-        return apiKey;
+        return new CreatedApiKey(apiKey, asInteger(inserted.get("RowId")));
     }
 
     // Delete a single API key and clear any active sessions that were established using it
     public void deleteKey(String apiKey)
     {
         deleteKeys(new SimpleFilter(FieldKey.fromParts("Crypt"), crypt(apiKey)));
+    }
+
+    // Delete a single API key by RowId and clear any active sessions that were established using it
+    public void deleteKey(int rowId)
+    {
+        deleteKeys(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
     // Delete all API keys that match the filter and clear all active sessions that were established using them
@@ -340,6 +355,19 @@ public class ApiKeyManager
             ApiKeyManager.get().deleteKey(oneSecondKey);
             ApiKeyManager.get().deleteKey(noExpireKey);
             assertNull(ApiKeyManager.get().authenticateFromApiKey(noExpireKey));
+        }
+
+        @Test
+        public void testDeleteByRowId()
+        {
+            User user = TestContext.get().getUser();
+            CreatedApiKey created = ApiKeyManager.get().createKeyWithRowId(user, 10, "Created by ApiKeyManager.TestCase", null);
+            ApiKeyAuthentication auth = ApiKeyManager.get().authenticateFromApiKey(created.apiKey());
+            assertNotNull(auth);
+            assertEquals(created.rowId(), auth.rowId());
+
+            ApiKeyManager.get().deleteKey(created.rowId());
+            assertNull(ApiKeyManager.get().authenticateFromApiKey(created.apiKey()));
         }
 
         @Test(expected = IllegalStateException.class)
