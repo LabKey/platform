@@ -33,8 +33,6 @@ import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TransactionFilter;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
@@ -95,7 +93,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -508,22 +505,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
             if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
             {
                 MemTracker.get().ignore();
-            }
-            else
-            {
-                // Don't send back mini-profiler id if the user won't be able to get the profiler info
-                if (MiniProfiler.isEnabled(context))
-                {
-                    RequestInfo req = MemTracker.get().current();
-                    if (req != null)
-                    {
-                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
-                        ids.add(req.getId());
-                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
-
-                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
-                    }
-                }
             }
 
             // MULTIPART-FORMDATA handling (before permission check because permissionCheck needs CSRF parameter)

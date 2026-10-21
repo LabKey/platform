@@ -37,10 +37,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.SystemUpgradeAuditProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.ContainerKeySimpleCache;
 import org.labkey.api.cache.SimpleKeyMappingCache;
 import org.labkey.api.cache.UserKeySimpleCache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -58,6 +58,7 @@ import org.labkey.api.data.AtomicDatabaseInteger;
 import org.labkey.api.data.BindingTestCase;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.BuilderObjectFactory;
+import org.labkey.api.data.CacheReplayCommitTask;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ConnectionUsage;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -408,6 +409,7 @@ public class ApiModule extends CodeOnlyModule
             BooleanFormat.TestCase.class,
             BuilderObjectFactory.TestCase.class,
             CacheManager.TestCase.class,
+            CacheReplayCommitTask.TestCase.class,
             CachingDataIterator.ScrollTestCase.class,
             CaseInsensitiveHashMap.TestCase.class,
             CaseInsensitiveHashSet.TestCase.class,

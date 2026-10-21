@@ -96,12 +96,6 @@ public class RequestInfo implements AutoCloseable
         }
     }
 
-    /** Create new Timing step and set it as the current step. */
-    protected Timing step(String name)
-    {
-        return new Timing(this, _current, name);
-    }
-
     /** Create new timed CustomTiming and add it to the current Timing step. */
     protected CustomTiming custom(String category, String msg)
     {
