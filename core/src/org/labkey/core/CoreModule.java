@@ -215,6 +215,7 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.SiteSettingsUpdater;
 import org.labkey.core.admin.AllowListType;
 import org.labkey.core.admin.ConnectionUsageTsvWriter;
 import org.labkey.core.admin.CopyFileRootPipelineJob;
@@ -1524,6 +1525,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             SchemaXMLTestCase.class,
             SecurityApiActions.TestCase.class,
             SecurityController.TestCase.class,
+            SiteSettingsUpdater.TestCase.class,
             SqlDialect.DialectTestCase.class,
             SqlDialect.LabKeyScopeDialectTestCase.class,
             SqlScriptController.TestCase.class,

@@ -26,7 +26,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.math.NumberUtils;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -127,6 +126,7 @@ import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.DataColor;
 import org.labkey.api.exp.api.DataType;
+import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -156,7 +156,6 @@ import org.labkey.api.exp.api.ObjectReferencer;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.SampleChangeNotify;
-import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.list.ListService;
@@ -191,7 +190,6 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -3659,33 +3657,27 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         try (CustomTiming timing = MiniProfiler.custom("exp", "rebuildAllEdges"))
         {
-            try (Timing ignored = MiniProfiler.step("delete edges"))
-            {
-                LOG.debug("Deleting all run-based edges");
-                Table.delete(getTinfoEdge(), new SimpleFilter().addCondition(FieldKey.fromParts("runId"), null, CompareType.NONBLANK));
-            }
+            LOG.debug("Deleting all run-based edges");
+            Table.delete(getTinfoEdge(), new SimpleFilter().addCondition(FieldKey.fromParts("runId"), null, CompareType.NONBLANK));
 
             // Local cache of SampleType LSID to objectId. The SampleType objectId will be used as the node's ownerObjectId.
             Map<String, Long> cpasTypeToObjectId = new HashMap<>();
 
             Collection<Map<String, Object>> runs = new TableSelector(getTinfoExperimentRun(),
                     getTinfoExperimentRun().getColumns("rowId", "objectid", "lsid", "container"), null, new Sort("rowId")).getMapCollection();
-            try (Timing ignored = MiniProfiler.step("create edges"))
+            LOG.debug("Rebuilding edges for {} runs", runs.size());
+            for (Map<String, Object> run : runs)
             {
-                LOG.debug("Rebuilding edges for {} runs", runs.size());
-                for (Map<String, Object> run : runs)
-                {
-                    var runId = asLong(run.get("rowId"));
-                    var runObjectId = asLong(run.get("objectid"));
-                    String runLsid = (String)run.get("lsid");
-                    String containerId = (String)run.get("container");
-                    Container runContainer = ContainerManager.getForId(containerId);
-                    new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
-                            .deleteFirst(false)
-                            .verifyEdgesNoInsert(false)
-                            .doIncrementalClosureInvalidation(false)      // don't do incremental invalidation calls
-                            .sync(cpasTypeToObjectId);
-                }
+                var runId = asLong(run.get("rowId"));
+                var runObjectId = asLong(run.get("objectid"));
+                String runLsid = (String)run.get("lsid");
+                String containerId = (String)run.get("container");
+                Container runContainer = ContainerManager.getForId(containerId);
+                new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
+                        .deleteFirst(false)
+                        .verifyEdgesNoInsert(false)
+                        .doIncrementalClosureInvalidation(false)      // don't do incremental invalidation calls
+                        .sync(cpasTypeToObjectId);
             }
 
             if (timing != null)
@@ -3735,26 +3727,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 ts.setMaxRows(limit);
             Collection<Map<String, Object>> runs = ts.getMapCollection();
             int runCount = 0;
-            try (Timing ignored = MiniProfiler.step("create edges"))
+            LOG.info("Verifying edges for {} runs in {}", runs.size(), c.getPath());
+            for (Map<String, Object> run : runs)
             {
-                LOG.info("Verifying edges for {} runs in {}", runs.size(), c.getPath());
-                for (Map<String, Object> run : runs)
-                {
-                    var runId = asLong(run.get("rowId"));
-                    var runObjectId = asLong(run.get("objectid"));
-                    String runLsid = (String)run.get("lsid");
-                    String containerId = (String)run.get("container");
-                    Container runContainer = ContainerManager.getForId(containerId);
-                    new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
-                            .deleteFirst(false)
-                            .verifyEdgesNoInsert(true)
-                            .sync(cpasTypeToObjectId);
-                    runCount++;
+                var runId = asLong(run.get("rowId"));
+                var runObjectId = asLong(run.get("objectid"));
+                String runLsid = (String)run.get("lsid");
+                String containerId = (String)run.get("container");
+                Container runContainer = ContainerManager.getForId(containerId);
+                new SyncRunEdges(runId, runObjectId, runLsid, runContainer)
+                        .deleteFirst(false)
+                        .verifyEdgesNoInsert(true)
+                        .sync(cpasTypeToObjectId);
+                runCount++;
 
-                    if (runCount % 1000 == 0)
-                    {
-                        LOG.info("  verified {} runs...", runCount);
-                    }
+                if (runCount % 1000 == 0)
+                {
+                    LOG.info("  verified {} runs...", runCount);
                 }
             }
 
@@ -4959,8 +4948,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             throw new IllegalArgumentException("Can only delete from multiple sample types when no sample type is provided");
 
         final SqlDialect dialect = getExpSchema().getSqlDialect();
-        try (DbScope.Transaction transaction = ensureTransaction();
-            Timing timing = MiniProfiler.step("delete materials"))
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             Map<ExpSampleType, Set<Long>> sampleTypeAliquotRoots = new HashMap<>();
 
@@ -5028,18 +5016,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     }
                 }
 
-                try (Timing ignored = MiniProfiler.step("beforeDelete"))
+                beforeDeleteMaterials(user, container, materials, auditUserComment);
+                // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                if (deleteRunsUsingMaterials)
                 {
-                    beforeDeleteMaterials(user, container, materials, auditUserComment);
-                }
-
-                try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
-                {
-                    // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                    if (deleteRunsUsingMaterials)
-                    {
-                        deleteRunsUsingInputs(user, null, rawMaterials);
-                    }
+                    deleteRunsUsingInputs(user, null, rawMaterials);
                 }
                 LOG.debug("Completed batch of sample deletion. {} rows processed so far", count);
             }
@@ -5052,38 +5033,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             lsidInFrag.unsafeAppend(")");
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
-
-            try (Timing ignored = MiniProfiler.step("exp.materialAliasMap"))
-            {
-                SQLFragment deleteAliasSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).unsafeAppend(" WHERE LSID ")
-                        .append(lsidInFrag);
-                executor.execute(deleteAliasSql);
-            }
+            SQLFragment deleteAliasSql = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialAliasMap())).unsafeAppend(" WHERE LSID ")
+                    .append(lsidInFrag);
+            executor.execute(deleteAliasSql);
 
             // Stash the ObjectIds that we're going to delete after we delete from exp.material
             final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
             final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
-            try (Timing ignored = MiniProfiler.step("create object temp table"))
-            {
-                executor.execute(new SQLFragment("CREATE ")
-                        .append(getSchema().getSqlDialect().getTempTableKeyword())
-                        .unsafeAppend(" TABLE ")
-                        .append(objectTempTableName)
-                        .unsafeAppend("(ObjectId BIGINT NOT NULL PRIMARY KEY)"));
+            executor.execute(new SQLFragment("CREATE ")
+                    .append(getSchema().getSqlDialect().getTempTableKeyword())
+                    .unsafeAppend(" TABLE ")
+                    .append(objectTempTableName)
+                    .unsafeAppend("(ObjectId BIGINT NOT NULL PRIMARY KEY)"));
 
-                executor.execute(new SQLFragment("INSERT INTO ")
-                        .append(objectTempTableName)
-                        .unsafeAppend("(ObjectId) SELECT ObjectId FROM exp.Material WHERE ")
-                        .append(materialFilterSQL));
-            }
+            executor.execute(new SQLFragment("INSERT INTO ")
+                    .append(objectTempTableName)
+                    .unsafeAppend("(ObjectId) SELECT ObjectId FROM exp.Material WHERE ")
+                    .append(materialFilterSQL));
 
-            try (Timing ignored = MiniProfiler.step("exp.edges"))
-            {
-                TableInfo edge = getTinfoEdge();
-                executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
-                executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
-                executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE sourceId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
-            }
+            TableInfo edge = getTinfoEdge();
+            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
+            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
+            executor.execute(new SQLFragment("DELETE FROM ").append(edge).unsafeAppend(" WHERE sourceId IN (SELECT ObjectId FROM ").append(objectTempTableName).unsafeAppend(")"));
 
             SQLFragment materialIdSql = new SQLFragment("(SELECT RowId FROM ");
             materialIdSql.append(getTinfoMaterial(), "m");
@@ -5092,115 +5063,97 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             materialIdSql.unsafeAppend(")");
 
             // Delete MaterialInput exp.object and properties
-            try (Timing ignored = MiniProfiler.step("MI exp.object"))
-            {
-                SQLFragment inputObjects = new SQLFragment("SELECT ")
-                        .append(dialect.concatenate(
-                                new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
-                                new SQLFragment("CAST(mi.materialId AS VARCHAR)"),
-                                new SQLFragment("'.'"),
-                                new SQLFragment("CAST(mi.targetApplicationId AS VARCHAR)")))
-                        .unsafeAppend(" FROM ").append(getTinfoMaterialInput(), "mi")
-                        .unsafeAppend(" WHERE mi.materialId IN ")
-                        .append(materialIdSql);
-                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
-            }
+            SQLFragment inputObjects = new SQLFragment("SELECT ")
+                    .append(dialect.concatenate(
+                            new SQLFragment().appendValue(MaterialInput.lsidPrefix(), dialect),
+                            new SQLFragment("CAST(mi.materialId AS VARCHAR)"),
+                            new SQLFragment("'.'"),
+                            new SQLFragment("CAST(mi.targetApplicationId AS VARCHAR)")))
+                    .unsafeAppend(" FROM ").append(getTinfoMaterialInput(), "mi")
+                    .unsafeAppend(" WHERE mi.materialId IN ")
+                    .append(materialIdSql);
+            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
 
             // exp.MaterialIndexed handled via a ON DELETE CASCADE foreign key
 
             // delete exp.MaterialInput
-            try (Timing ignored = MiniProfiler.step("exp.MaterialInput"))
-            {
-                SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId IN ");
-                materialInputSQL.append(materialIdSql);
-                executor.execute(materialInputSQL);
-            }
+            SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId IN ");
+            materialInputSQL.append(materialIdSql);
+            executor.execute(materialInputSQL);
 
-            try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
+            for (ExpSampleType st : sampleTypes.values())
             {
-                for (ExpSampleType st : sampleTypes.values())
+                // Material may have been orphaned from its SampleType
+                if (st == null)
+                    continue;
+
+                TableInfo dbTinfo = ((ExpSampleTypeImpl) st).getTinfo();
+                // NOTE: study specimens don't have a domain for their samples, so no table
+                if (null != dbTinfo)
                 {
-                    // Material may have been orphaned from its SampleType
-                    if (st == null)
-                        continue;
-
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl) st).getTinfo();
-                    // NOTE: study specimens don't have a domain for their samples, so no table
-                    if (null != dbTinfo)
-                    {
-                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM ").append(dbTinfo)
-                            .unsafeAppend(" WHERE RowId IN ").append(materialIdSql);
-                        executor.execute(sampleTypeSQL);
-                    }
+                    SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM ").append(dbTinfo)
+                        .unsafeAppend(" WHERE RowId IN ").append(materialIdSql);
+                    executor.execute(sampleTypeSQL);
                 }
             }
 
             int deletedCount;
-            try (Timing ignored = MiniProfiler.step("exp.Material"))
-            {
-                // Take ids from the delete itself so they match exactly what was removed
-                SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
-                    .append(materialFilterSQL)
-                    .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
-                    .append("SELECT CpasType, COUNT(*) AS DeletedCount");
-                if (truncateContainer)
-                    materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
-                else
-                    materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
-                        .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
-                        .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
-                materialSQL.append("\nFROM deleted GROUP BY CpasType");
+            // Take ids from the delete itself so they match exactly what was removed
+            SQLFragment materialSQL = new SQLFragment("WITH deleted AS (DELETE FROM exp.Material WHERE ")
+                .append(materialFilterSQL)
+                .append(" RETURNING RowId, CpasType, RootMaterialRowId)\n")
+                .append("SELECT CpasType, COUNT(*) AS DeletedCount");
+            if (truncateContainer)
+                materialSQL.append(", CAST(NULL AS BIGINT[]) AS RowIds");
+            else
+                materialSQL.append(", CASE WHEN COUNT(*) <= ?").add(ExpMaterialTableImpl.InvalidationCounters.MAX_LOGGED_DELETES)
+                    .append(" THEN array_agg(CAST(RowId AS BIGINT)) END AS RowIds")
+                    .append(", array_agg(DISTINCT CAST(RootMaterialRowId AS BIGINT)) FILTER (WHERE RowId <> RootMaterialRowId) AS AliquotRoots");
+            materialSQL.append("\nFROM deleted GROUP BY CpasType");
 
-                deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
-                    int total = 0;
-                    while (rs.next())
+            deletedCount = executor.executeWithResults(materialSQL, (rs, _) -> {
+                int total = 0;
+                while (rs.next())
+                {
+                    String cpasType = rs.getString("CpasType");
+                    total += rs.getInt("DeletedCount");
+
+                    // No cached view means no reader for the ids, so skip collecting them
+                    Array rowIds = rs.getArray("RowIds");
+                    if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
+                        untrackedDeletes.add(cpasType);
+                    else
+                        deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
+
+                    Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
+                    if (roots != null)
                     {
-                        String cpasType = rs.getString("CpasType");
-                        total += rs.getInt("DeletedCount");
-
-                        // No cached view means no reader for the ids, so skip collecting them
-                        Array rowIds = rs.getArray("RowIds");
-                        if (rowIds == null || !ExpMaterialTableImpl.isMaterialized(cpasType))
-                            untrackedDeletes.add(cpasType);
-                        else
-                            deletedRowIds.put(cpasType, new LongHashSet(Arrays.asList((Long[]) rowIds.getArray())));
-
-                        Array roots = truncateContainer ? null : rs.getArray("AliquotRoots");
-                        if (roots != null)
-                        {
-                            ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
-                                    sampleTypes.get(cpasType) :
-                                    SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
-                            if (sampleType != null)
-                                sampleTypeAliquotRoots.computeIfAbsent(sampleType,
-                                        (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
-                        }
+                        ExpSampleType sampleType = sampleTypes.containsKey(cpasType) ?
+                                sampleTypes.get(cpasType) :
+                                SampleTypeServiceImpl.get().getSampleTypeByType(cpasType, container);
+                        if (sampleType != null)
+                            sampleTypeAliquotRoots.computeIfAbsent(sampleType,
+                                    (_) -> new HashSet<>()).addAll(Arrays.asList((Long[]) roots.getArray()));
                     }
-                    return total;
-                });
-            }
+                }
+                return total;
+            });
 
             // clean up provenance
             ProvenanceService.get().deleteProvenanceByLsids(container, user, lsidInFrag, false, Set.of(StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID));
 
             // delete exp.objects
-            try (Timing ignored = MiniProfiler.step("exp.object"))
-            {
-                SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM ")
-                        .append(objectTempTableName);
-                OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
-            }
+            SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM ")
+                    .append(objectTempTableName);
+            OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
 
             // Get rid of our temp table
-            try (Timing ignored = MiniProfiler.step("drop object temp table"))
-            {
-                executor.execute("DROP TABLE " + objectTempTableName);
-            }
+            executor.execute("DROP TABLE " + objectTempTableName);
 
             // recalculate rollup
             if (!truncateContainer)
             {
-                try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
+                try
                 {
                     for (Map.Entry<ExpSampleType, Set<Long>> sampleTypeRoots : sampleTypeAliquotRoots.entrySet())
                     {
@@ -5233,8 +5186,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             transaction.addCommitTask(new SampleChangeNotify.FireSampleDataChangedTask(container), POSTCOMMIT);
 
             transaction.commit();
-            if (timing != null)
-                LOG.info("SampleType delete timings\n{}", timing.dump());
             return deletedCount;
         }
     }
@@ -6364,10 +6315,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_DATA, singleton(dataClass.getName()));
 
         // remove DataClass from search index
-        try (Timing ignored = MiniProfiler.step("search docs"))
-        {
-            SearchService.get().deleteResource(dataClass.getDocumentId());
-        }
+        SearchService.get().deleteResource(dataClass.getDocumentId());
     }
 
     private void deleteUnusedAliases()

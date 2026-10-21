@@ -283,6 +283,16 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             materialSourceCache.remove(c);
     }
 
+    // Value-equal so a transaction touching many sample types in one container clears its cache once
+    private record ClearMaterialSourceCacheTask(Container c) implements Runnable
+    {
+        @Override
+        public void run()
+        {
+            get().clearMaterialSourceCache(c);
+        }
+    }
+
 
     private TableInfo getTinfoMaterialSource()
     {
@@ -697,7 +707,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
             ExperimentService.get().removeDataColorExclusionsForDataType(rowId, ExperimentService.DataTypeForExclusion.SampleType);
 
-            transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            transaction.addCommitTask(new ClearMaterialSourceCacheTask(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
 
@@ -708,10 +718,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         QueryService.get().fireQueryDeleted(user, c, null, ExpSchema.SCHEMA_EXP_MATERIALS, singleton(source.getName()));
 
         // Remove SampleType from search index
-        try (Timing ignored = MiniProfiler.step("search docs"))
-        {
-            SearchService.get().deleteResource(source.getDocumentId());
-        }
+        SearchService.get().deleteResource(source.getDocumentId());
 
         timer.stop();
         LOG.info("Deleted SampleType '{}' from '{}' in {}", source.getName(), c.getPath(), timer.getDuration());
@@ -971,7 +978,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         if (hasColorChange)
                             auditSampleColorExclusion(c, st, null, u);
                     }
-                    transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                    transaction.addCommitTask(new ClearMaterialSourceCacheTask(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     transaction.addCommitTask(() -> indexSampleType(SampleTypeService.get().getSampleType(domain.getTypeURI()), SearchService.get().defaultTask().getQueue(c, SearchService.PRIORITY.modified)), POSTCOMMIT);
 
                     return st;
